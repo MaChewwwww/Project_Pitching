@@ -1,0 +1,10 @@
+# Dependencies for the one-off scripts in tools/.
+# Not part of the running app (apps/api has its own pyproject.toml) — install into a
+# throwaway venv when you need to regenerate hazard data.
+#
+#   python -m venv .venv && source .venv/bin/activate
+#   pip install -r tools/requirements.txt
+#   python tools/prepare_hazard.py
+
+geopandas>=0.14
+shapely>=2.0

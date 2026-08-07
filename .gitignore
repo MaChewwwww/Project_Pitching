@@ -1,0 +1,40 @@
+# --- Dataset ---
+# Raw source downloads only. The clipped GeoJSON in dataset/derived/ IS committed —
+# see dataset/README.md and docs/architecture.md Section 12.5. Do not add a blanket
+# "dataset/" ignore here; that would gitignore the derived files too.
+dataset/raw/
+
+# Leftover / regenerable preview artifacts
+tools/preview_map.html
+dataset/noah/
+
+# --- Node / Next.js (apps/web, packages/api-types) ---
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+npm-debug.log*
+
+# --- Python (apps/api, services/cron, tools/) ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# --- Build artifacts / copies (not a second source of truth) ---
+apps/web/public/data/*.geojson
+
+# --- Secrets & local env ---
+.env
+.env.local
+*.pem
+
+# --- Editor / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Runtime data (lives on a volume, not in git) ---
+uploads/
