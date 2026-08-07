@@ -286,15 +286,17 @@ Full responsive behaviour in Section 9.3.
 
 ### Radius
 
-| Token | Value | Use |
-|---|---|---|
-| `sm` | 6px | Badges, small chips |
-| `md` | 10px | Inputs, buttons |
-| `lg` | 14px | Cards |
-| `xl` | 20px | Feature panels, the dark KPI panel |
-| `full` | 9999px | Pills, avatars, CTA buttons on the public site |
+| Token | Value | Default use | Public-site override |
+|---|---|---|---|
+| `sm` | 6px | Badges, small chips | — |
+| `md` | 10px | Inputs, buttons | Buttons become `full` |
+| `lg` | 14px | Cards | Cards become `xl` (Section 8) |
+| `xl` | 20px | Feature panels, the dark KPI panel | Also cards |
+| `full` | 9999px | Pills, avatars, CTA buttons on the public site | — |
 
 > The public site uses **fully rounded pill buttons**; the admin console uses **`md` radius**. That difference is deliberate — it signals "public brochure" versus "working tool."
+
+> **The public-site column is an override of the default, not a contradiction of it.** Section 8 gives the public site `xl` cards where this table's default is `lg`; both are correct for their surface. The `Card` composite takes a `radius` prop defaulting to `lg`, and public sections pass `xl` explicitly, so the override is stated in code rather than inferred.
 
 > **The tokens carry these values; the raw shadcn primitives do not use them as assigned here.** A stock shadcn `button` is `rounded-lg` (14px by this scale) and a stock `card` is `rounded-xl` (20px), where this table wants 10px and 14px respectively. The same applies to button heights — shadcn's defaults are not the 32/40/48 of Section 7.3. **This is resolved in `components/common/`, not by editing `components/ui/`** (NFR-MNT-006): the `Button` and `Card` composites apply the right token per component. Until those composites exist, a page built on raw primitives will look subtly off-spec — which is one reason Section 12 puts them at stage 1.
 
@@ -478,6 +480,16 @@ These are the app's actual vocabulary. Each is built from primitives above.
 | `ZoneMap3D` | React Three Fiber. Extruded area polygons coloured by risk. Orbit controls, click-to-select, `Suspense` fallback |
 | `MapLegend` | Shared legend, driven by the domain palettes in Section 3.4 |
 
+**Structure and support**
+
+| Component | Description |
+|---|---|
+| `SectionBoundary` | Wraps one section in an error boundary so a single failed feed degrades that section only (FR-PUB-016). Built on Next's `catchError`. **This, not `error.tsx`, is the mechanism** — a route-level boundary replaces the whole page body, which is the failure BR-0.17 forbids |
+| `MeterBar` | Zero-JavaScript `role="progressbar"` bar for evacuation occupancy and donation progress. Exists instead of `ui/progress`, which carries `"use client"` and would pull a client boundary into the landing page for a static bar |
+| `Attribution` | Data credits and legal disclaimers (NFR-LGL-001…005, FR-MAP-008). Licence terms, not footer decoration — the NOAH data is ODC-ODbL |
+| `LogoLockup` | Logo placeholder while D-OI-2 is open. Inline SVG mark + `APP_NAME` wordmark, with a variant for dark surfaces |
+| `Reveal` | Scroll-reveal wrapper for the public site (Section 8). CSS `animation-timeline: view()` behind `@supports`, so no observer and no JavaScript |
+
 ### 7.3 Component specs
 
 **Buttons**
@@ -493,7 +505,11 @@ These are the app's actual vocabulary. Each is built from primitives above.
 
 Heights: `sm` 32 · `md` 40 · `lg` 48.
 
+The `danger` hover value `#991B1B` is carried in `globals.css` as `--color-danger-hover`. It belongs to this table rather than Section 3.3, which is why the original token transcription missed it.
+
 **Tap targets:** 44×44 minimum on touch, **48×48 for anything used during an emergency** — safety check-in, rescue request, hotline. Where a visual button is smaller than its target, pad the hit area rather than enlarging the button (Section 9.7).
+
+> **The mechanism is `.tap-44` / `.tap-48`** in `globals.css`: a centred `::after` pseudo-element with a minimum size, under `@media (pointer: coarse)`. A 32px `sm` button therefore keeps its 32px appearance and gains a 44px hit region, and the rule costs nothing with a mouse. `Button` applies `.tap-44` to `size="sm"` and forces `.tap-48` plus `min-h-12` on `variant="emergency"` whatever size the caller passed — the emergency floor is not something a call site can opt out of.
 
 **Table** (matching the reference)
 
@@ -736,7 +752,7 @@ Aligns with the build order in BRD 8.
 | D-OI-2 | **Logo design** — mark + wordmark, per Section 2 | Whoever on the team has design skills |
 | D-OI-3 | Confirm **Plus Jakarta Sans + Inter**, or substitute | Whole team |
 | D-OI-4 | **Nutrition status colour ramp** — depends on the indicator set (BRD OI-2) | Nutrition lead + IT lead |
-| D-OI-5 | Whether the **3D map** is a hero element on the public landing page or admin-only. Note Section 9.6 — it is desktop/tablet only regardless, with a 2D fallback on phones | Whole team |
+| ~~D-OI-5~~ | **Resolved: the 3D scene is a hero element on the public landing page.** Section 1's fourth principle already licences it — "the 3D map is the one place to be showy". Section 9.6 still binds: it is desktop and tablet only (≥`md` **and** `hardwareConcurrency > 4`), dynamic-imported so `three` never enters the landing bundle (NFR-PERF-007), and every device below the gate gets an inline-SVG isometric illustration plus an explicit "View in 3D" opt-in | Resolved |
 | D-OI-7 | **Which tables use which mobile variant** (Section 9.4) — decide per table as each screen is designed | IT lead |
 | D-OI-8 | **Offline support for BHW field registration** — local draft persistence is in scope (Section 9.6); full offline sync with conflict resolution is not. Revisit only if field testing shows drafts are insufficient | IT lead |
 | D-OI-9 | **Print stylesheet** for exported reports (BR-10.7) — the barangay will print for MDRRMO submission. Low effort, easy to forget | IT lead |

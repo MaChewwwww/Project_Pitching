@@ -37,6 +37,60 @@ all (`architecture.md` A-5).
 This means the token is gone on reload — which is intended. The refresh cookie is what restores
 the session.
 
+## The public seam, and how to close it
+
+The public site does not use the axios client yet. It reads through
+`src/lib/api/public.ts` — one async getter per future endpoint, each currently returning a
+typed fixture and each marked:
+
+```ts
+/** TODO(FR-PUB-013): `GET /public/announcements` */
+```
+
+`grep -rn "TODO(FR-PUB-013)" src` is therefore the complete integration checklist. Closing
+FR-PUB-013 means replacing those bodies with `api.get(...)` and nothing else: the getters are
+already `async`, already return `Page<T>` envelopes, and already return the exact DTOs in
+`src/lib/api/public-types.ts`.
+
+Three rules keep that swap honest:
+
+- **Pages and sections never import a fixture.** They call the seam. The one exception is the
+  error and not-found boundaries, which import `HOTLINES` directly — a fallback that depends on
+  the fetch which may have just failed is not a fallback.
+- **Fixtures are typed only by the DTOs.** `const x: PublicHotline[] = [...]` means `tsc` fails
+  the moment a fixture drifts from the contract.
+- **Field names are `schema.md` column names, verbatim.** Derived fields — `occupancy`,
+  `is_stale`, `coverage_pct`, `issued_by_name` — are marked as derived in `public-types.ts` so
+  nobody goes looking for a column that does not exist.
+
+Static copy — navigation, footer groups, hero wording, mission and vision — lives in
+`src/lib/content/`, **not** in `fixtures/`. It is never served by an API and never will be;
+mixing the two is how a fixture directory becomes permanent.
+
+### Fixture timestamps are relative, on purpose
+
+`fixtureNow()` is a function called during render, not a module constant. A constant is
+evaluated once when the module first loads and then frozen for the life of the process, so
+"14 minutes ago" becomes "3 weeks ago" the month after it was written — on a page whose entire
+premise is that data freshness is visible. ISR's 60-second revalidation re-runs it.
+
+The two genuinely historical dates (Ondoy 2009, Ulysses 2020) use `fixedDate` instead, because
+there the date is part of the fact.
+
+### Where a null is the right answer
+
+Several figures are genuinely unknown, and the fixtures encode that rather than papering over it:
+
+| Field                                         | Why null                                                        | Renders as                                 |
+| --------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------ |
+| `coverage_pct`, `configured_total_households` | The barangay's household total is unsupplied (BRD OI-12)        | "Barangay-wide total pending from the LGU" |
+| `thresholds` on the river level               | The MDRRMO has not confirmed the Level 1/2/3 heights (BRD OI-4) | Unlabelled gauge segments plus a note      |
+| `area.centroid`                               | No boundary geometry yet (BRD OI-3)                             | Nothing spatial is drawn                   |
+
+Do not fill these in to make a screen look finished. FR-ANL-003 makes coverage the honest
+headline metric, and Marikina's 15/16/18 m thresholds belong to a different river at a different
+gauge — borrowing them would be worse than showing nothing.
+
 ## Types and the contract
 
 `packages/api-types/src/generated.ts` is generated from the API's OpenAPI schema by `make types`

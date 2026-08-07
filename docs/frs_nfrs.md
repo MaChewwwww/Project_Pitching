@@ -149,24 +149,41 @@ A requirement is `✅` only when all of the following hold:
 
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
-| FR-PUB-001 | Hero section | App name, tagline, Get Started/Login action, always-visible hotline action | BR-0.1 | M | ☐ | — |
-| FR-PUB-002 | About section | Mission, vision, why preparedness matters, SDG 11 & 13 alignment | BR-0.2 | M | ☐ | — |
-| FR-PUB-003 | Latest announcements feed | Newest first, pulled live from ALT; emergency notices visually distinct | BR-0.3 | M | ☐ | — |
-| FR-PUB-004 | Weather overview | Current conditions, temperature, rainfall, forecast; each reading timestamped and sourced | BR-0.4 | M | ☐ | — |
-| FR-PUB-005 | Preparedness tip cards | Cards for flood, earthquake, fire, typhoon, San Jose Go Bag; each opens the full guide | BR-0.5 | S | ☐ | — |
-| FR-PUB-006 | Upcoming activities | Date, venue, description; pulled live from ACT | BR-0.6 | S | ☐ | — |
-| FR-PUB-007 | Emergency hotlines section | One-tap callable on mobile | BR-0.7 | M | ☐ | — |
-| FR-PUB-008 | Evacuation centres list | Address, capacity, map preview; live occupancy once EVC is built | BR-0.8 | M | ☐ | — |
-| FR-PUB-009 | Public hazard map embed | Flood-prone areas, safe zones, evacuation centres, facilities | BR-0.9 | M | ☐ | — |
-| FR-PUB-010 | Donation drives section | Active drives, needs, progress, donation form — no account | BR-0.10 | S | ☐ | — |
-| FR-PUB-011 | FAQs | Published, maintainable, accordion presentation | BR-0.11 | S | ☐ | — |
-| FR-PUB-012 | Footer | Barangay info, contacts, socials, hotline, copyright | BR-0.12 | M | ☐ | — |
+| FR-PUB-001 | Hero section | App name, tagline, Get Started/Login action, always-visible hotline action | BR-0.1 | M | ◐ | — |
+| FR-PUB-002 | About section | Mission, vision, why preparedness matters, SDG 11 & 13 alignment | BR-0.2 | M | ◐ | — |
+| FR-PUB-003 | Latest announcements feed | Newest first, pulled live from ALT; emergency notices visually distinct | BR-0.3 | M | ◐ | — |
+| FR-PUB-004 | Weather overview | Current conditions, temperature, rainfall, forecast; each reading timestamped and sourced | BR-0.4 | M | ◐ | — |
+| FR-PUB-005 | Preparedness tip cards | Cards for flood, earthquake, fire, typhoon, San Jose Go Bag; each opens the full guide | BR-0.5 | S | ◐ | — |
+| FR-PUB-006 | Upcoming activities | Date, venue, description; pulled live from ACT | BR-0.6 | S | ◐ | — |
+| FR-PUB-007 | Emergency hotlines section | One-tap callable on mobile | BR-0.7 | M | ◐ | — |
+| FR-PUB-008 | Evacuation centres list | Address, capacity, map preview; live occupancy once EVC is built | BR-0.8 | M | ◐ | — |
+| FR-PUB-009 | Public hazard map embed | Flood-prone areas, safe zones, evacuation centres, facilities | BR-0.9 | M | ◐ | — |
+| FR-PUB-010 | Donation drives section | Active drives, needs, progress, donation form — no account | BR-0.10 | S | ◐ | — |
+| FR-PUB-011 | FAQs | Published, maintainable, accordion presentation | BR-0.11 | S | ◐ | — |
+| FR-PUB-012 | Footer | Barangay info, contacts, socials, hotline, copyright | BR-0.12 | M | ◐ | — |
 | FR-PUB-013 | Live content, single source | Every dynamic section reads from its module; no duplicated content store | BR-0.13 | M | ☐ | — |
-| FR-PUB-014 | No personal data on public pages | Only area-level aggregates rendered; verified by review | BR-0.14, BR-1.52 | M | ☐ | — |
-| FR-PUB-015 | Persistent hotline access | Hotline action reachable without scrolling on all viewports | BR-0.15 | M | ☐ | — |
-| FR-PUB-016 | Section-level failure isolation | A failed weather or map fetch degrades that section only; hotlines always render | BR-0.17 | M | ☐ | — |
-| FR-PUB-017 | Emergency alert takeover | Active alert renders above all content, sticky, non-dismissible while active | BR-0.18 | M | ☐ | — |
-| FR-PUB-018 | Empty sections hidden | Sections with no content are not rendered as empty shells | BR-0.20 | S | ☐ | — |
+| FR-PUB-014 | No personal data on public pages | Only area-level aggregates rendered; verified by review | BR-0.14, BR-1.52 | M | ◐ | — |
+| FR-PUB-015 | Persistent hotline access | Hotline action reachable without scrolling on all viewports | BR-0.15 | M | ◐ | — |
+| FR-PUB-016 | Section-level failure isolation | A failed weather or map fetch degrades that section only; hotlines always render | BR-0.17 | M | ◐ | — |
+| FR-PUB-017 | Emergency alert takeover | Active alert renders above all content, sticky, non-dismissible while active | BR-0.18 | M | ◐ | — |
+| FR-PUB-018 | Empty sections hidden | Sections with no content are not rendered as empty shells | BR-0.20 | S | ◐ | — |
+
+> **Why these are `◐` and not `✅`.** The landing page and the four information
+> routes are built, responsive at 360/768/1440, and verified — but every section
+> reads a typed fixture rather than its module. That makes **FR-PUB-013 (`☐`)
+> definitionally unmet**, and since the other seventeen are *demonstrated* against
+> fixtures rather than against real data, none of them can honestly claim the
+> Definition of Done either. Two more DoD items are also outstanding across the
+> whole set: peer review (item 6), and the loading states that only become
+> meaningful once the fetches are real (item 3).
+>
+> The fixtures are shaped to the exact DTOs the API will return — envelopes,
+> field names, and derived fields included — so closing these is a change to
+> `apps/web/src/lib/api/public.ts` alone. `grep -rn "TODO(FR-PUB-013)"` lists
+> every call site.
+>
+> The **PR column is deliberately empty**: this work is committed locally and has
+> not been pushed, so there is no PR to reference yet.
 
 ---
 

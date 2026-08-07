@@ -23,6 +23,34 @@ silently, and probably during a rebase nobody is reading closely.
 
 So: `ui/` is vendored source. `common/` is where this app's decisions live.
 
+## How a composite overrides a primitive without editing it
+
+`ui/button.tsx` ends with `cn(buttonVariants({ variant, size, className }))`. cva appends
+`className` **last** in the string, and `cn` is `twMerge` — so a class passed in from
+`common/Button` wins the conflict against the primitive's own variant and size classes.
+
+That single detail is what makes the whole two-layer rule practical. We never restyle the
+vendored file; we out-specify it. `common/Button` still passes a `variant` down (mapping
+`danger` and `emergency` onto `destructive`) so the primitive's focus-ring and
+`aria-expanded` handling comes along, then replaces every dimension and colour.
+
+`size` is always passed as `"default"`. Letting the primitive's size classes through would
+mean two sources of truth for button height, and `twMerge` would arbitrate by class order
+rather than by intent.
+
+## Traps in the primitives
+
+- **`ui/card` sets `overflow-hidden`.** Anything meant to overlap a card's edge — the offset
+  badge in the reference layout's alternating split — must be an absolutely-positioned
+  **sibling** inside a `relative` wrapper, never a child. It will be silently clipped
+  otherwise.
+- **`ui/separator` and `ui/progress` carry `"use client"`.** For a decorative divider use a
+  bordered `div`; for a progress bar use `common/MeterBar`. Both exist to keep client
+  boundaries off the landing page, which has the only hard bundle budget in the project
+  (NFR-PERF-006). `ui/progress` is fine in the admin console.
+- **`ui/card` drives its padding through `--card-spacing`**, so overriding that one variable
+  moves the header, content and footer together. Setting `p-*` on the card fights it.
+
 ## The two mismatches you will notice first
 
 `make shadcn` gives you components whose defaults do not match `design.md`:

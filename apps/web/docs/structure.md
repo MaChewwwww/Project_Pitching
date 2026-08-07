@@ -45,6 +45,78 @@ The 3D map's gate is a product decision, not an optimisation. On a low-end Andro
 and drains battery, so below `md` it renders a static image or the 2D map, with an explicit
 "View 3D map" opt-in (`design.md` Section 9.6).
 
+## Section-level error isolation
+
+FR-PUB-016 and BR-0.17 require that a failed weather feed degrade **that section only**. A
+route-level `error.tsx` cannot deliver it — it replaces the whole page body, which is the
+failure being described. So the mechanism is `common/SectionBoundary`, built on Next's
+`catchError`, wrapping each section individually.
+
+Two things about it are worth knowing before touching a public page:
+
+**The boundary is a Client Component; the section inside it is not.** `SectionBoundary`
+receives server-rendered `children` as a prop, so wrapping thirteen sections costs one small
+client component in total rather than thirteen client subtrees.
+
+**Each section must fetch its own data.** This is the part that is easy to get backwards.
+Fetching everything at the top of `page.tsx` in one `Promise.all` and passing it down reads
+better and keeps the data flow visible in one file — and it silently breaks the requirement,
+because every `await` then sits _above_ every boundary. One rejected promise takes the page
+down before a boundary exists to catch it. Verified by fault injection: with the fetch hoisted,
+a throwing getter blanked all thirteen sections; with the fetch inside the section, it cost one
+card and everything else rendered.
+
+There are four layers in total, and only the first is the primary mechanism:
+
+| Layer                    | Scope                          | Purpose                                                      |
+| ------------------------ | ------------------------------ | ------------------------------------------------------------ |
+| `SectionBoundary`        | one section                    | The FR-PUB-016 mechanism                                     |
+| `(public)/error.tsx`     | page body                      | Last resort. Renders hotlines inline                         |
+| `(public)/not-found.tsx` | unknown slug from `notFound()` | Keeps the shell                                              |
+| `app/not-found.tsx`      | unmatched URL                  | Mounts `PublicShell` itself — routing never enters the group |
+| `app/global-error.tsx`   | root layout crash              | Self-contained, zero imports, inline styles                  |
+
+`global-error.tsx` is the one file in this app allowed to contain literal hex and hardcoded
+phone numbers: it replaces `<html>`, so `globals.css` never loads and no import is guaranteed
+to resolve. NFR-AVL-004 outranks tidiness there.
+
+## Timestamps and hydration
+
+`formatDistanceToNowStrict`-style relative time computes from the current clock, so the server
+and client disagree by however long the request took — React reports that as a hydration
+mismatch, and under ISR the server's copy can be a full revalidation window stale.
+
+`hooks/use-relative-time.ts` returns the absolute Philippine time during SSR and the first
+client render, then swaps to relative inside an effect. `DataFreshness` is a Client Component
+for that reason alone.
+
+Every formatter in `lib/format.ts` pins `timeZone: "Asia/Manila"` explicitly. An unpinned
+`Intl.DateTimeFormat` uses the runtime's zone, which differs between the container and the
+reader's phone — the same hydration bug wearing a different hat.
+
+Do not reach for `suppressHydrationWarning`. It silences the class of bug rather than fixing
+the instance.
+
+## The 3D hero's three tiers
+
+The landing hero renders one of three things, and the choice is a product decision rather than
+an optimisation (`design.md` Section 9.6, FR-MAP-012):
+
+| Tier           | Condition                               | Renders                                          |
+| -------------- | --------------------------------------- | ------------------------------------------------ |
+| 3D             | ≥`md` **and** `hardwareConcurrency > 4` | React Three Fiber scene                          |
+| 2D             | anything below that                     | inline SVG isometric, plus a "View in 3D" opt-in |
+| SSR / Suspense | always first paint                      | the same SVG                                     |
+
+`three` is reached only through `dynamic(..., { ssr: false })`, so it lands in its own chunk and
+never enters the landing bundle (NFR-PERF-007). The SVG is server-rendered, which means it costs
+about 3 KB in the document and **zero** against the client-JS budget — cheaper than `next/image`
+with an AVIF, and it needs no binary asset.
+
+The scene reads its colours from the CSS custom properties at runtime. WebGL materials cannot
+take a Tailwind class, and hardcoding the hazard ramp would put a second copy of the palette
+outside `globals.css`.
+
 ## Things that are easy to get wrong
 
 - **`(public)` pages must not render personal data.** Only area-level aggregates (FR-PUB-014).

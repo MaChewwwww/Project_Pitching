@@ -347,7 +347,19 @@ POST /public/donations                  FR-DON-002 — no account
 POST /public/rescue-requests            FR-SAF-009 — no account, rate limited
 GET  /public/activities
 GET  /public/guides
+GET  /public/guides/{slug}              FR-PUB-005 — "each card opens the full guide"
+GET  /public/faqs                       FR-PUB-011, FR-PRP-005
+GET  /public/flood-events               FR-WX-013 — flood history, publicly viewable
 ```
+
+> The last three were missing from this list while the requirements that need them
+> were already marked mandatory. `/public/guides/{slug}` is the only detail route
+> the public site needs — everything else is a list, because the landing page is
+> one document rather than a set of drill-downs.
+>
+> Note also that `/public/weather/current` breaks the plural-noun convention above.
+> Left as-is because it reads better than `/public/weather-readings?latest=true`,
+> but it is the one exception.
 
 **Resident**
 
