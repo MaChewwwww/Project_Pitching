@@ -357,6 +357,7 @@ Respect `prefers-reduced-motion`: disable the rescue-status pulse and all transf
 | Analytics | `BarChart3` |
 | Health worker | `Stethoscope` |
 | Hotline | `Phone` |
+| Siren / alert unit | `Megaphone` / `Volume2` |
 
 ---
 
@@ -721,6 +722,19 @@ Filipino is primary, English secondary (BR-0.19).
 - Never concatenate translated fragments; use full parameterised strings
 - Keep hotline numbers, area names, and facility names untranslated
 - Dates in Filipino locale on the public site
+
+---
+
+### 9.7 Visual Siren Simulation & Audio Feedback (FR-MAP-014, FR-ALT-012)
+
+Although physical IoT siren hardware procurement is out of scope (BR-4.11), a **Visual Siren Simulation & Pin Triggering feature** is built into the interactive map and alert surfaces:
+
+- **`SirenMarker` Component:**
+  - **Idle State:** Pin icon with a subtle beacon ring.
+  - **Sounding State:** Expanding radial soundwave animation (`animate-ping` + translucent red/amber ripple rings), accompanied by visual pulse vibration feedback on the pin container.
+- **Synthesized Audio Playback:**
+  - When triggered, the web client initializes a synthesized siren alarm sweep (oscillating between 600 Hz and 1200 Hz over a 1-second period) using the browser's native **Web Audio API** (`AudioContext`).
+  - No external audio file assets are required, ensuring instant execution without bandwidth overhead.
 
 ---
 

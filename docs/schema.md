@@ -227,6 +227,25 @@ CREATE INDEX idx_facility_location ON facility USING GIST(location);
 CREATE INDEX idx_facility_type ON facility(type) WHERE is_active;
 ```
 
+### `siren` (FR-MAP-014, FR-ALT-012)
+
+Visual siren simulation & alert unit point locations.
+
+| Column | Type | Constraints | Notes |
+|---|---|---|---|
+| `id` | UUID | PK | |
+| `name` | TEXT | NOT NULL | e.g. "Riverside Area 1 Emergency Siren" |
+| `location` | GEOMETRY(Point, 4326) | NOT NULL | Siren pin location on map |
+| `area_id` | UUID | FK → `area` | Derivable via `ST_Contains` |
+| `status` | TEXT | NOT NULL DEFAULT 'idle' CHECK | `idle` · `sounding` · `testing` |
+| `last_triggered_at` | TIMESTAMPTZ | | Timestamp of last siren activation simulation |
+| `is_active` | BOOLEAN | NOT NULL DEFAULT true | |
+
+```sql
+CREATE INDEX idx_siren_location ON siren USING GIST(location);
+CREATE INDEX idx_siren_area ON siren(area_id);
+```
+
 ### `hotline` (FR-SYS-014)
 
 `id`, `label`, `number`, `type` (CHECK: `barangay` · `police` · `fire` · `ambulance` · `hospital` · `rescue` · `mdrrmo`), `sort_order`, `is_active`.

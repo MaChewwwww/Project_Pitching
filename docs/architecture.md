@@ -261,6 +261,7 @@ Every reading surfaced to a user carries `source` and `observed_at` (FR-WX-010).
 | Area boundaries | `GEOMETRY(MultiPolygon, 4326)` | Seeded (FR-SYS-013) |
 | Household location | `GEOMETRY(Point, 4326)` | Draggable pin |
 | Facilities | `GEOMETRY(Point, 4326)` | Admin-managed |
+| Siren alert units | `GEOMETRY(Point, 4326)` | Admin-managed & triggerable simulation (FR-MAP-014, FR-ALT-012) |
 | Flood hazard | `GEOMETRY(MultiPolygon, 4326)` | Vendored GeoJSON, seeded per return period |
 
 **Everything is EPSG:4326.** The NOAH shapefiles arrive in WGS84, Leaflet expects WGS84, GeoJSON's default is WGS84 — so no reprojection exists anywhere in the system. GiST indexes on all four geometry columns.

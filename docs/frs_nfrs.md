@@ -109,7 +109,7 @@ A requirement is `✅` only when all of the following hold:
 | Excluded | Reference |
 |---|---|
 | SMS notifications | BR-4.10, D-6 |
-| Siren / IoT alert units | BR-4.11, D-6 |
+| Siren / IoT alert units (physical hardware) | BR-4.11, D-6 (Physical IoT procurement out of scope; **Visual Siren Simulation & Pin Triggering feature added for map & alert demo**: FR-MAP-014, FR-ALT-012) |
 | Post-registration profile claiming | BRD M1b, D-11 |
 | Safe routes & blocked roads on the map | BR-2.7, D-12 |
 | Donation inventory, allocation, distribution tracking | BRD M7, D-8 |
@@ -281,6 +281,7 @@ A requirement is `✅` only when all of the following hold:
 | FR-MAP-011 | 3D zone visualization | Extruded area polygons coloured by risk; orbit controls; click to select | BR-2.1, BR-2.2 | S | ☐ | — |
 | FR-MAP-012 | 3D fallback on low-end devices | Below `md` or ≤4 cores, render 2D map or static image with opt-in to 3D | Design 9.6 | M | ☐ | — |
 | FR-MAP-013 | Location picker | Draggable pin primary; GPS button only in secure context | Design 9.5 | M | ☐ | — |
+| FR-MAP-014 | Siren / IoT alert unit pins | Pin siren locations on interactive map with status indicators (idle / sounding); admin can add/edit/geo-pin siren units | BR-4.11, BR-2.4 | S | ☐ | — |
 
 ---
 
@@ -322,6 +323,7 @@ A requirement is `✅` only when all of the following hold:
 | FR-ALT-009 | Alert history | Retained and publicly viewable | BR-4.5 | S | ☐ | — |
 | FR-ALT-010 | Channel-extensible design | Delivery abstracted so a channel can be added without redesign | BR-4.9 | S | ☐ | — |
 | FR-ALT-011 | Deactivate an alert | Admin ends an active alert; takeover banner clears | BR-4.3 | M | ☐ | — |
+| FR-ALT-012 | Siren simulation, trigger & audio playback | Triggering a siren pin emits expanding radial soundwave ripples/vibrations on the map pin AND synthesizes/plays a siren audio alarm on the machine via Web Audio API | BR-3.4, BR-4.11 | S | ☐ | — |
 
 ---
 
