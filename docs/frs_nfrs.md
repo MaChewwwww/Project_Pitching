@@ -91,6 +91,8 @@ A requirement is `✅` only when all of the following hold:
 5. Keyboard reachable, visible focus, adequate contrast (`NFR-UX-*`).
 6. Reviewed by one other team member.
 7. This document updated in the same PR.
+8. Affected documentation updated in the same PR — this `docs/` set if the contract changed,
+   the unit's local `docs/` if the implementation did (`AGENTS.md` Section 6).
 
 ### 1.5 Priority
 

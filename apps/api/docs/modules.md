@@ -1,0 +1,77 @@
+# Modules
+
+The API is a **modular monolith**: one deployable application, boundaries enforced by directory
+and import discipline rather than by network calls. Five people on a competition timeline do not
+need service boundaries — they need to not trip over each other
+([`architecture.md`](../../../docs/architecture.md) D-5, A-1).
+
+## The four files
+
+Every module in `src/modules/` has the same four, and they do not swap jobs:
+
+| File | Does | Must not |
+|---|---|---|
+| `router.py` | Declares HTTP routes, applies auth dependencies, calls a service, returns its result | Touch the database. Contain business logic. Decide authorization itself |
+| `schemas.py` | Pydantic request/response models — the API contract | Contain ORM models |
+| `service.py` | Business logic, transaction boundaries, audit writes | Import another module's `models.py` |
+| `models.py` | SQLAlchemy ORM | Invent columns not in `schema.md` |
+
+A fifth file is fine when a module grows (`selectors.py`, `permissions.py`). Four is the floor,
+not the ceiling.
+
+## Why routers stay thin
+
+A router that queries directly is a router that can forget the area-scope filter, and a BHW who
+should see 40 households sees 1,284. Keeping the query in the service means the filter lives in
+one place per resource instead of one place per route.
+
+The same reasoning drives rule 2. If `donations/service.py` queries `registry`'s `Household`
+model directly, then a change to how households are soft-deleted has to be found in every module
+that reached in. Going through `registry`'s service means it is found in one.
+
+## Where things go when it is not obvious
+
+| Logic | Home | Why |
+|---|---|---|
+| Scoring a household's vulnerability | `domain/vulnerability.py` | Pure, heavily tested, no I/O (NFR-MNT-005) |
+| Loading the household to score | `modules/registry/service.py` | Needs a session |
+| Deciding whether this user may score it | `core/deps.py` | Authorization lives in one place |
+| Formatting the score for a response | `modules/registry/schemas.py` | Contract, not logic |
+| Fetching a river level from PAGASA | `services/cron` | **Never** in a request path (D-3) |
+| Parsing PAGASA's HTML | `integrations/pagasa.py` | One file to fix when the markup changes |
+
+If it needs a database session it is not `domain/`. If it makes an outbound HTTP call it is not
+in `apps/api` at all.
+
+## Adding a module
+
+1. Create the package with the four files. Docstrings state the FR range it covers.
+2. Mount the router in `src/main.py`, under the right **access tier** — `/public`, `/me`, or
+   `/admin`. Tiers are split so a public route cannot inherit an authenticated route's
+   serializer and leak household data (`architecture.md` A-11).
+3. **Import the new `models.py` in `src/db/models_registry.py`.** Skip this and Alembic
+   autogenerate will not see the models, and will emit a migration that drops the tables. See
+   [`migrations.md`](./migrations.md).
+4. Generate the migration, review it by hand, apply it.
+5. `make types` and commit the regenerated `packages/api-types/src/generated.ts`.
+6. Update `frs_nfrs.md` Status in the same PR.
+
+## Access tiers
+
+```
+/api/v1/public/*    no auth — the entire public site
+/api/v1/me/*        authenticated resident
+/api/v1/admin/*     admin, BHW, SK — role-checked per route
+```
+
+Routes are grouped by *who may call them*, not by resource. A resource that is readable publicly
+and writable by an admin appears in both tiers, with **different response schemas**. That is the
+point: the public serializer physically cannot return a contact number, because it has no field
+for one.
+
+## The registry module will get big
+
+36 requirements land in `registry` — it is the module most likely to become a monolith inside
+the monolith (`architecture.md` AR-1). Split it internally from the start: `household`,
+`members`, `nutrition`, `vulnerability`, `feedback`. Keep the classification logic in
+`domain/vulnerability.py`, where it stays pure and testable.

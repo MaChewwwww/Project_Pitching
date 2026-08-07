@@ -99,6 +99,18 @@ Five containers: `proxy` (Caddy) → `web` (Next.js) and `api` (FastAPI) → `db
 (PostgreSQL 16 + PostGIS), plus `cron` running the scheduled jobs. Identical locally and on the
 VPS — same Compose file, different `.env` (NFR-MNT-007).
 
+**Every directory above has its own `README.md`**, and the four with real code also have a local
+`docs/`. Start there when you are working inside one:
+
+| | README | Local docs |
+|---|---|---|
+| Backend | [`apps/api`](apps/api/README.md) | [modules](apps/api/docs/modules.md) · [migrations](apps/api/docs/migrations.md) · [auth](apps/api/docs/auth.md) · [observability](apps/api/docs/observability.md) |
+| Frontend | [`apps/web`](apps/web/README.md) | [structure](apps/web/docs/structure.md) · [components](apps/web/docs/components.md) · [data & state](apps/web/docs/data-and-state.md) |
+| Jobs | [`services/cron`](services/cron/README.md) | [jobs](services/cron/docs/jobs.md) |
+| Stack | [`infra`](infra/README.md) | [deployment](infra/docs/deployment.md) · [backup & restore](infra/docs/backup-restore.md) |
+| Contract | [`packages/api-types`](packages/api-types/README.md) | — |
+| Scripts | [`tools`](tools/README.md) | — |
+
 ---
 
 ## Before you write code
@@ -115,8 +127,11 @@ The short version:
 4. **PR title:** `[FR-REG-004] Member profiles with vulnerability flags`.
 5. **Update `frs_nfrs.md`'s Status column in the same PR.** The doc is only a source of truth
    if it moves with the code.
+6. **Update the affected docs in the same PR** — root `docs/` if the contract changed, the
+   unit's local `docs/` if the implementation did (`AGENTS.md` §6). A doc updated in a follow-up
+   PR is wrong for as long as the follow-up takes, and follow-ups slip.
 
-A requirement is not done until it meets the seven-point Definition of Done in `AGENTS.md` §3 —
+A requirement is not done until it meets the eight-point Definition of Done in `AGENTS.md` §3 —
 including *works at 360px*, *loading/empty/error states exist*, and *authorization enforced
 server-side*.
 

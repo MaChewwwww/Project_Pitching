@@ -31,6 +31,11 @@ Before implementing anything, read in this order:
 6. [`docs/business-requirements.md`](./docs/business-requirements.md) — only if you need the
    business rationale behind a requirement. Not needed for routine implementation.
 
+Then, once you know *which* directory you are working in, read that unit's `README.md` and its
+local `docs/` — [`apps/api`](./apps/api/README.md), [`apps/web`](./apps/web/README.md),
+[`services/cron`](./services/cron/README.md), [`infra`](./infra/README.md). Those cover how the
+code is actually organised and the traps specific to it. Section 6 explains the split.
+
 ## 2. ID scheme and git convention
 
 Full detail: `frs_nfrs.md` Section 1. Summary:
@@ -55,6 +60,8 @@ From `frs_nfrs.md` Section 1.4. A requirement is not `✅` until all of these ho
 5. Keyboard reachable, visible focus, adequate contrast (`NFR-UX-*`).
 6. Reviewed by one other team member.
 7. `frs_nfrs.md` updated in the same PR.
+8. Affected documentation updated in the same PR — root `docs/` if the contract changed,
+   the local `docs/` if the implementation did. See Section 6.
 
 Don't mark something done, or imply it's done, if any of these are unmet.
 
@@ -63,16 +70,20 @@ Don't mark something done, or imply it's done, if any of these are unmet.
 Full detail: `architecture.md` Section 12. This is a monorepo:
 
 ```
-apps/web/           Next.js (App Router, TypeScript, Tailwind, shadcn/ui)
-apps/api/            FastAPI (Python 3.12+, SQLAlchemy 2.0, Alembic, GeoAlchemy2)
+apps/web/             Next.js (App Router, TypeScript, Tailwind, shadcn/ui)
+apps/api/             FastAPI (Python 3.12+, SQLAlchemy 2.0, Alembic, GeoAlchemy2)
 services/cron/        Scheduled jobs — the only thing allowed to call external APIs
 packages/api-types/   Generated from OpenAPI. Never hand-edit generated.ts.
 tools/                One-off developer scripts. Not part of the running system.
 infra/                Compose files, Caddyfile, backup/restore scripts
-dataset/raw/           Gitignored — bulky source shapefile downloads
-dataset/derived/       Committed — the canonical clipped hazard GeoJSON
-docs/                 This doc set
+dataset/raw/          Gitignored — bulky source shapefile downloads
+dataset/derived/      Committed — the canonical clipped hazard GeoJSON
+docs/                 The specification set — the contract (Section 6)
 ```
+
+Every top-level unit above carries its own `README.md`, and the four with real code —
+`apps/web`, `apps/api`, `services/cron`, `infra` — also carry a local `docs/`. What goes
+where is Section 6.
 
 `Makefile` is the single entry point (`make dev`, `make test`, `make lint`, `make types`,
 `make hazard`). Prefer it over ad-hoc commands so what you run matches what CI runs.
@@ -113,7 +124,57 @@ docs/                 This doc set
   3.4 for why, and the rule that hazard is always a translucent map fill while alert level is
   always a solid badge, never rendered as the other form.
 
-## 6. Style notes
+## 6. Documentation — what lives where, and when to update it
+
+Docs are two-tier. The tiers answer different questions and change for different reasons.
+
+| | Root `docs/` | Local `<unit>/docs/` |
+|---|---|---|
+| Answers | **What** we are building and **why** | **How** this codebase does it |
+| Owns | FR/NFR IDs, the physical schema, the design system, technology choices, system architecture | Module conventions, workflows, local gotchas, the commands you actually type |
+| Audience | The whole team, including non-IT members | Whoever is editing that directory |
+| Changes when | The product or the contract changes | The code changes |
+| Examples | "Households carry a `reference_no` (FR-REG-006)" · "`primary-600` is `#1F8049`" | "Register every `models.py` in `models_registry.py` or autogenerate drops the table" |
+
+### The rule that keeps them from drifting
+
+> **A local doc never restates a requirement, a column, or a token value. It links to the
+> root doc that owns it.**
+
+If one change would force you to edit both tiers, one of them is in the wrong place. Duplication
+between docs is the failure mode this split exists to avoid — see Section 7.
+
+Concretely: `apps/web/docs/components.md` does **not** list the colour palette. It links to
+`docs/design.md` Section 3 and explains how those tokens are wired into `globals.css`. If the
+palette changes, exactly one file changes.
+
+### What to update, and when
+
+Update docs **in the same PR** as the code. A doc updated in a follow-up PR is a doc that is
+wrong for as long as the follow-up takes, and follow-ups slip.
+
+| You did this | Update |
+|---|---|
+| Implemented an FR | `frs_nfrs.md` Status/PR columns (already required by Section 2) |
+| Added or changed a table or column | `docs/schema.md`, then `apps/api/docs/migrations.md` only if the *workflow* changed |
+| Added an API module or endpoint | `docs/architecture.md` Section 6 if the contract changed; `apps/api/docs/modules.md` if the convention did |
+| Added a `components/common/` composite | `apps/web/docs/components.md` — and `docs/design.md` Section 7.2 only if it is a new entry in the inventory |
+| Added or changed a scheduled job | `docs/architecture.md` Section 9 (the cadence table) and `services/cron/docs/jobs.md` |
+| Changed how the stack is built, run, or deployed | `infra/docs/` and the affected `README.md` |
+| Added a dependency | `docs/tech_stack.md`, with the rationale — before you use it (Section 5) |
+| Discovered a gotcha that cost you an hour | The local `docs/` of the unit it bit you in. This is the highest-value thing in this table |
+| Changed a decision that a doc explains | Fix the explanation, not just the fact. A stale *why* is worse than a missing one |
+
+### Writing them
+
+- Match the terse, direct tone already in the docs. No padding.
+- Explain the **why**, not just the what. Anyone can read the code for the what.
+- Prefer a short table over three paragraphs.
+- A doc that only restates filenames is worse than no doc — it rots and misleads. If you have
+  nothing non-obvious to say about a directory, say nothing.
+- Every local `docs/` has a `README.md` index. Add new files to it.
+
+## 7. Style notes
 
 - Match the terse, direct tone already in the docs. Don't pad PR descriptions or comments.
 - When a correction is made to one doc (e.g. a renamed path, a scope change), check whether
@@ -123,7 +184,7 @@ docs/                 This doc set
   PolSci or Nutrition teammate should be able to follow a PR description even if they can't
   read the diff.
 
-## 7. Adding a new tool-specific pointer file
+## 8. Adding a new tool-specific pointer file
 
 If a teammate uses a coding agent that reads a different filename (e.g. `.cursorrules`,
 `copilot-instructions.md`), add it as a one-line pointer to this file, matching the pattern
