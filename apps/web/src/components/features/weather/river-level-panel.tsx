@@ -18,21 +18,32 @@ import type { PublicRiverLevel } from "@/lib/api/public-types";
  * require that, because an old river level is still information and an empty
  * panel is not.
  *
- * The threshold heights are an open item (BRD OI-4), which `AlertLevelIndicator`
- * handles by saying so rather than inventing metres.
+ * Two densities. `full` is the weather section: thresholds, the open-item note
+ * explaining why they are missing, provenance, and the warning-authority
+ * disclaimer. `compact` is the hero overlay, which showed all of that and grew to
+ * 434px inside a 593px hero — it covered the illustration it was floating over.
+ * Compact keeps the number, the level, the gauge, provenance and a one-line
+ * disclaimer, and drops the explanatory prose to the full panel further down the
+ * page.
+ *
+ * The disclaimer stays in both. NFR-LGL-005 attaches it to alert *surfaces*, and
+ * a card showing "Alert Level 2" is one wherever it sits.
  */
 
 export function RiverLevelPanel({
   river,
   className,
   onDark = false,
+  density = "full",
 }: {
   river: PublicRiverLevel;
   className?: string;
   onDark?: boolean;
+  density?: "full" | "compact";
 }) {
   const reading = river.reading ?? river.last_known_good;
   const usingFallback = river.reading == null && river.last_known_good != null;
+  const compact = density === "compact";
 
   if (!reading) {
     return (
@@ -53,10 +64,10 @@ export function RiverLevelPanel({
     <Card
       radius="xl"
       variant={onDark ? "dark" : "flat"}
-      className={cn("h-full", className)}
+      className={cn("h-full", compact && "[--card-spacing:--spacing(4)]", className)}
     >
-      <CardContent className="flex h-full flex-col gap-4">
-        <div className="flex items-start justify-between gap-3">
+      <CardContent className={cn("flex h-full flex-col", compact ? "gap-2.5" : "gap-4")}>
+        <div className="flex items-center justify-between gap-2">
           <span
             className={cn(
               "text-overline inline-flex items-center gap-1.5",
@@ -72,15 +83,14 @@ export function RiverLevelPanel({
         <div className="flex items-baseline gap-1.5">
           <span
             className={cn(
-              "text-display-md tabular",
+              "tabular",
+              compact ? "text-display-md" : "text-display-md",
               onDark ? "text-white" : "text-neutral-900",
             )}
           >
             {reading.value}
           </span>
-          <span
-            className={cn("text-h3", onDark ? "text-primary-200" : "text-neutral-500")}
-          >
+          <span className={cn("text-h3", onDark ? "text-primary-200" : "text-neutral-500")}>
             {reading.unit}
           </span>
         </div>
@@ -88,7 +98,7 @@ export function RiverLevelPanel({
         {usingFallback ? (
           <p
             className={cn(
-              "text-caption border-warning-border bg-warning-bg/60 rounded-md border p-2",
+              "text-caption rounded-md border border-warning-border bg-warning-bg/60 p-2",
               onDark ? "text-neutral-800" : "text-neutral-700",
             )}
           >
@@ -101,9 +111,12 @@ export function RiverLevelPanel({
           currentValueM={reading.value}
           thresholds={river.thresholds}
           onDark={onDark}
+          // The "why are there no threshold numbers" explanation is two lines of
+          // prose. It belongs beside the full panel, not floating over the hero.
+          explainMissingThresholds={!compact}
         />
 
-        <div className="mt-auto flex flex-col gap-2">
+        <div className={cn("mt-auto flex flex-col", compact ? "gap-1 pt-0.5" : "gap-2")}>
           <DataFreshness
             observedAt={reading.observed_at}
             source={reading.source}
@@ -113,7 +126,11 @@ export function RiverLevelPanel({
             staleAfterMinutes={reading.stale_after_minutes}
             onDark={onDark}
           />
-          <Attribution onDark={onDark} disclaimer="warning-authority" />
+          <Attribution
+            onDark={onDark}
+            disclaimer="warning-authority"
+            short={compact}
+          />
         </div>
       </CardContent>
     </Card>

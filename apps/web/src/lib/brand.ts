@@ -6,8 +6,9 @@
  * every page, email, and metadata tag. Never hardcode the name anywhere else.
  */
 
-export const APP_NAME = "[APP_NAME]";
-export const APP_TAGLINE = "[TAGLINE]";
+export const APP_NAME = "SAGIP-SJ";
+export const APP_TAGLINE =
+  "System for Alert, Guidance, Incident Reporting, and Preparedness for Barangay San Jose";
 export const BARANGAY = "Barangay San Jose, Rodriguez, Rizal";
 
 /** Barangay San Jose centroid — the clip extent in dataset/README.md. */

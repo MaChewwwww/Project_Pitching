@@ -1,5 +1,5 @@
 import { SectionBoundary } from "@/components/common/section-boundary";
-import { AboutSection } from "@/components/features/public/sections/about-section";
+import { AboutBandSection } from "@/components/features/public/sections/about-band-section";
 import { ActivitiesSection } from "@/components/features/public/sections/activities-section";
 import { AnnouncementsSection } from "@/components/features/public/sections/announcements-section";
 import { DonationDrivesSection } from "@/components/features/public/sections/donation-drives-section";
@@ -11,10 +11,15 @@ import { HotlinesSection } from "@/components/features/public/sections/hotlines-
 import { PreparednessSection } from "@/components/features/public/sections/preparedness-section";
 import { StatBandSection } from "@/components/features/public/sections/stat-band-section";
 import { WeatherSection } from "@/components/features/public/sections/weather-section";
-import { WhyPreparednessSection } from "@/components/features/public/sections/why-preparedness-section";
 
 /**
  * The public landing page — M0, sections BR-0.1 through BR-0.12.
+ *
+ * **An overview, not the whole site.** Every section here is capped and carries a
+ * "view all" link to its own route; the full content lives behind those. Before
+ * that split this page *was* the site, with the navbar pointing at `#hash`
+ * anchors into it, which put a static mission statement above the river level on a
+ * 360px screen.
  *
  * Pure composition: this file fetches nothing. **Each section loads its own data**,
  * which is what makes FR-PUB-016 actually hold.
@@ -46,11 +51,7 @@ export default function LandingPage() {
       </SectionBoundary>
 
       <SectionBoundary sectionName="About">
-        <AboutSection />
-      </SectionBoundary>
-
-      <SectionBoundary sectionName="Why preparedness matters">
-        <WhyPreparednessSection />
+        <AboutBandSection />
       </SectionBoundary>
 
       <SectionBoundary sectionName="Announcements">

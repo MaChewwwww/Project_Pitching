@@ -1,4 +1,6 @@
-import { BARANGAY } from "@/lib/brand";
+import type { Route } from "next";
+
+import { APP_TAGLINE, BARANGAY } from "@/lib/brand";
 
 /**
  * Static site copy — navigation, utility bar, footer, hero.
@@ -8,26 +10,126 @@ import { BARANGAY } from "@/lib/brand";
  * belongs in the codebase permanently.
  */
 
+/**
+ * A link target in the nav or footer.
+ *
+ * Bare `Route` covers static routes only — a filled dynamic segment such as a
+ * specific guide needs `Route`'s generic form. The union keeps both checked: a
+ * typo in a static path fails to compile, and so does a guide link if the
+ * `/guides/[slug]` route is ever removed.
+ */
+export type NavHref = Route | Route<`/guides/${string}`>;
+
 export interface NavItem {
   label: string;
-  href: string;
+  href: NavHref;
+  /**
+   * Lucide icon name — must match the fixed icon assignments in design.md Section 6.
+   * Required for items that appear in the navbar dropdown; optional for footer-only extras.
+   */
+  icon?: string;
+  /** One-line hint shown beside the label in the desktop dropdown. */
+  description?: string;
+}
+
+export interface NavGroup {
+  title: string;
+  items: NavItem[];
 }
 
 /**
  * Primary navigation.
  *
- * The first four are in-page anchors on the landing page; the rest are routes.
- * A section that renders nothing (FR-PUB-018) leaves its anchor with no target,
- * and the link simply does not scroll. That is deliberate — the alternative is
- * rendering empty sections purely so the nav has somewhere to land, which is the
- * exact thing FR-PUB-018 forbids.
+ * **Every href is a real route.** An earlier version pointed four of these at
+ * `/#hash` anchors on the landing page, which made the landing page carry the
+ * full content of every feature and left the nav promising destinations that did
+ * not exist. It also interacted badly with FR-PUB-018: a section that renders
+ * nothing leaves its anchor with no target, so the link silently does nothing.
+ *
+ * Typing `href` as `Route` rather than `string` is what makes a stale link a
+ * compile error instead of a 404 nobody clicks until the pitch.
  */
-export const NAV_ITEMS: NavItem[] = [
-  { label: "Hazard Map", href: "/#hazard-map" },
-  { label: "Evacuation", href: "/#evacuation-centers" },
-  { label: "Preparedness", href: "/guides" },
-  { label: "Announcements", href: "/announcements" },
-  { label: "Help & FAQs", href: "/help" },
+export const NAV_GROUPS: NavGroup[] = [
+  {
+    title: "About",
+    items: [
+      {
+        label: "Home",
+        href: "/",
+        icon: "House",
+        description: "Back to the landing page",
+      },
+      {
+        label: "Platform details",
+        href: "/about",
+        icon: "Info",
+        description: "What this platform is and who built it",
+      },
+    ],
+  },
+  {
+    title: "Prepare",
+    items: [
+      {
+        label: "Hazard map",
+        href: "/hazard-map",
+        icon: "Map",
+        description: "Flood-prone areas and barangay facilities",
+      },
+      {
+        label: "Evacuation centres",
+        href: "/evacuation-centers",
+        icon: "Building2",
+        description: "Where to go, capacity and occupancy",
+      },
+      {
+        label: "Preparedness guides",
+        href: "/guides",
+        icon: "BookOpen",
+        description: "What to do before, during and after",
+      },
+    ],
+  },
+  {
+    title: "Stay informed",
+    items: [
+      {
+        label: "Weather & river level",
+        href: "/weather",
+        icon: "CloudRain",
+        description: "Current readings, forecast and flood history",
+      },
+      {
+        label: "Announcements",
+        href: "/announcements",
+        icon: "Megaphone",
+        description: "Advisories, suspensions and emergency notices",
+      },
+      {
+        label: "Activities",
+        href: "/activities",
+        icon: "CalendarDays",
+        description: "Drills, training and community programmes",
+      },
+    ],
+  },
+  {
+    title: "Get involved",
+    items: [
+      {
+        label: "Donation drives",
+        href: "/donation-drives",
+        icon: "HandHeart",
+        description: "What the barangay is collecting right now",
+      },
+      {
+        label: "Help & FAQs",
+        href: "/help",
+        icon: "CircleHelp",
+        description: "How to register, and who to contact",
+      },
+    ],
+  },
 ];
 
 export const UTILITY_BAR = {
@@ -46,7 +148,7 @@ export const UTILITY_BAR = {
 export const AUTH_HREF = "/help#registration";
 
 export const HERO = {
-  eyebrow: "Handa ang San Jose",
+  eyebrow: APP_TAGLINE,
   /**
    * Two-tone headline (design.md Section 4): the first line renders in
    * `neutral-900`, the second in `primary-600` with an underline accent.
@@ -57,34 +159,34 @@ export const HERO = {
   titleLine1: "Ready Before",
   titleLine2: "the Water Rises",
   lead: `Flood readiness, evacuation guidance, and community health information for ${BARANGAY} — updated by the barangay, reachable on any phone.`,
-  primaryCta: { label: "See the hazard map", href: "/#hazard-map" },
+  primaryCta: { label: "See the hazard map", href: "/hazard-map" },
   secondaryCta: { label: "Preparedness guides", href: "/guides" },
+  /** The two quick links over the hero visual. */
+  quickLinks: [
+    { label: "Flood Hazard Map", href: "/hazard-map", icon: "map" },
+    { label: "Evacuation Centres", href: "/evacuation-centers", icon: "shelter" },
+  ],
 } as const;
 
-export const FOOTER_GROUPS: { title: string; items: NavItem[] }[] = [
-  {
-    title: "Prepare",
-    items: [
-      { label: "Preparedness guides", href: "/guides" },
-      { label: "San Jose Go Bag", href: "/guides/san-jose-go-bag" },
-      { label: "Hazard map", href: "/#hazard-map" },
-      { label: "Evacuation centres", href: "/#evacuation-centers" },
-    ],
-  },
-  {
-    title: "Stay informed",
-    items: [
-      { label: "Announcements", href: "/announcements" },
-      { label: "Weather & river level", href: "/#weather" },
-      { label: "Upcoming activities", href: "/#activities" },
-    ],
-  },
-  {
-    title: "Get involved",
-    items: [
-      { label: "Donation drives", href: "/#donation-drives" },
-      { label: "Help & FAQs", href: "/help" },
-      { label: "Register your household", href: AUTH_HREF },
-    ],
-  },
-];
+/**
+ * Footer link groups.
+ *
+ * Derived from `NAV_GROUPS` so a new route is added in exactly one place, plus a
+ * few footer-only extras: `/about` and the Go Bag guide are not worth a topbar
+ * slot, and the register link duplicates a navbar button rather than a nav item.
+ */
+const FOOTER_EXTRAS: Record<string, NavItem[]> = {
+  Prepare: [
+    { label: "San Jose Go Bag", href: "/guides/san-jose-go-bag" },
+  ],
+  "Stay informed": [{ label: "About the platform", href: "/about" }],
+  "Get involved": [{ label: "Register your household", href: AUTH_HREF }],
+};
+
+export const FOOTER_GROUPS: NavGroup[] = NAV_GROUPS.map((group) => ({
+  title: group.title,
+  items: [
+    ...group.items.map(({ label, href }) => ({ label, href })),
+    ...(FOOTER_EXTRAS[group.title] ?? []),
+  ],
+}));

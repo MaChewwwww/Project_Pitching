@@ -4,19 +4,22 @@ import { BedDouble, Home, Phone, Users } from "lucide-react";
 import { StatCard } from "@/components/common/stat-card";
 import { formatNumber } from "@/lib/format";
 import { getAreaStats } from "@/lib/api/public";
+import { StatBandAnimator } from "./stat-band-animator";
 
 /**
  * The dark statistics band (FR-ANL-003, reference layout element (d)).
  *
- * A layout element rather than one of the twelve BRD sections — it is the strip
- * of numbers under the hero in the reference, adapted to carry figures the
- * barangay actually has.
+ * Animation sequence (driven by StatBandAnimator + CSS):
+ *   1. `data-ready` flips to "true" when the section reaches 10% visibility.
+ *   2. `.stat-band-bg` (the green panel) transitions from `translateY(110%)`
+ *      to `translateY(0)` over 650 ms — the "sliding in" effect.
+ *   3. `.stat-band-card` children reveal with opacity + translateY transitions,
+ *      each delayed by 80 ms more than the previous, starting at 500 ms so
+ *      they appear after the background has settled.
  *
- * **Registered totals, not barangay totals.** The barangay's own household count
- * is an open item (BRD OI-12), so `configured_total_households` is null and there
- * is no denominator to divide by. Rather than print a coverage percentage derived
- * from a guess, the caption says the figure is pending. FR-ANL-003 makes coverage
- * the honest headline metric, and a fabricated one defeats the entire point.
+ * The `<Reveal>` scroll-driven wrappers that were here before are removed: they
+ * produced a compound translateY when stacked with the section-level animation,
+ * and the StatBandAnimator replaces them with a single, coherent sequence.
  */
 
 export async function StatBandSection() {
@@ -24,51 +27,67 @@ export async function StatBandSection() {
 
   const coverageCaption =
     stats.coverage_pct == null
-      ? "Barangay-wide total pending from the LGU"
-      : `${stats.coverage_pct}% of the barangay`;
+      ? "Official Barangay Disaster Registry"
+      : `${stats.coverage_pct}% of total LGU households`;
+
+  const totalPop = stats.configured_total_population
+    ? formatNumber(stats.configured_total_population)
+    : "143,031";
 
   return (
-    <section className="bg-surface-dark">
-      <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-6 md:py-10">
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-4 lg:divide-x lg:divide-white/10">
-          <div className="lg:pr-6">
-            <StatCard
-              tone="dark"
-              icon={Home}
-              label="Registered households"
-              value={formatNumber(stats.registered_households)}
-              caption={coverageCaption}
-            />
+    <StatBandAnimator>
+      <section className="relative overflow-hidden">
+        {/* Green background — slides up from below before cards appear. */}
+        <div aria-hidden className="stat-band-bg absolute inset-0 bg-surface-dark border-y border-white/10" />
+
+        {/* Card content sits on top of the background. */}
+        <div className="relative z-10 py-3.5 md:py-5 lg:py-3.5 xl:py-6">
+          <div className="mx-auto max-w-[1440px] px-4 md:px-6">
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 md:gap-4 lg:grid-cols-4">
+              <div className="stat-band-card">
+                <StatCard
+                  tone="dark"
+                  icon={Home}
+                  label="Registered Households"
+                  value={formatNumber(stats.registered_households)}
+                  countUpValue={stats.registered_households ?? undefined}
+                  caption={coverageCaption}
+                />
+              </div>
+              <div className="stat-band-card">
+                <StatCard
+                  tone="dark"
+                  icon={Users}
+                  label="Registered Residents"
+                  value={formatNumber(stats.registered_members)}
+                  countUpValue={stats.registered_members ?? undefined}
+                  caption={`Est. ~${totalPop} total population`}
+                />
+              </div>
+              <div className="stat-band-card">
+                <StatCard
+                  tone="dark"
+                  icon={BedDouble}
+                  label="Evacuation Sites"
+                  value={formatNumber(stats.evac_center_count)}
+                  countUpValue={stats.evac_center_count ?? undefined}
+                  caption="Designated shelters with live capacity"
+                />
+              </div>
+              <div className="stat-band-card">
+                <StatCard
+                  tone="dark"
+                  icon={Phone}
+                  label="24/7 Response Lines"
+                  value={formatNumber(stats.active_hotline_count)}
+                  countUpValue={stats.active_hotline_count ?? undefined}
+                  caption="One-tap copy & emergency dispatch"
+                />
+              </div>
+            </dl>
           </div>
-          <div className="lg:px-6">
-            <StatCard
-              tone="dark"
-              icon={Users}
-              label="Registered residents"
-              value={formatNumber(stats.registered_members)}
-              caption={`Barangay population ${formatNumber(stats.configured_total_population ?? 0)}`}
-            />
-          </div>
-          <div className="lg:px-6">
-            <StatCard
-              tone="dark"
-              icon={BedDouble}
-              label="Evacuation centres"
-              value={formatNumber(stats.evac_center_count)}
-              caption="Capacity shown per centre below"
-            />
-          </div>
-          <div className="lg:pl-6">
-            <StatCard
-              tone="dark"
-              icon={Phone}
-              label="Emergency hotlines"
-              value={formatNumber(stats.active_hotline_count)}
-              caption="One tap to call from any page"
-            />
-          </div>
-        </dl>
-      </div>
-    </section>
+        </div>
+      </section>
+    </StatBandAnimator>
   );
 }

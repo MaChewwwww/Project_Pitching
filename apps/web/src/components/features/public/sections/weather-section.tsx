@@ -1,6 +1,9 @@
 import * as React from "react";
-import { CloudRain } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, CloudRain } from "lucide-react";
 
+import { Button } from "@/components/common/button";
+import { Reveal } from "@/components/common/reveal";
 import { SectionHeader } from "@/components/common/section-header";
 import { RiverLevelPanel } from "@/components/features/weather/river-level-panel";
 import { WeatherPanel } from "@/components/features/weather/weather-panel";
@@ -22,13 +25,23 @@ export async function WeatherSection() {
 
   return (
     <Section id="weather" tone="tint">
-      <SectionHeader
-        icon={CloudRain}
-        eyebrow="Conditions right now"
-        title="Weather &"
-        titleAccent="river level"
-        description="Every reading below shows when it was taken and where it came from. Readings older than 45 minutes are marked."
-      />
+      <Reveal>
+        <SectionHeader
+          icon={CloudRain}
+          eyebrow="Conditions right now"
+          title="Weather &"
+          titleAccent="river level"
+          description="Every reading below shows when it was taken and where it came from. Readings older than 45 minutes are marked."
+          action={
+            <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
+              <Link href="/weather">
+                Forecast &amp; flood history
+                <ArrowRight aria-hidden className="size-4" />
+              </Link>
+            </Button>
+          }
+        />
+      </Reveal>
 
       <div className="mt-8 grid gap-4 md:gap-6 lg:grid-cols-[2fr_1fr]">
         <WeatherPanel weather={weather} />

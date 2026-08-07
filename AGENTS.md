@@ -8,7 +8,7 @@ This is the **single, tool-agnostic rules file**. `CLAUDE.md` and `GEMINI.md` (a
 future tool-specific file) just point here — don't duplicate content into them. If a rule
 needs to change, change it here, once.
 
-**Project:** `[APP_NAME]` — Barangay San Jose Disaster Readiness & Community Health Platform.
+**Project:** `SAGIP-SJ` (System for Alert, Guidance, Incident Reporting, and Preparedness) — Barangay San Jose Disaster Readiness & Community Health Platform.
 A prototype for an SK Project Pitching competition, built by a 5-person interdisciplinary
 student team (PolSci, PubAd, Nutrition & Dietetics, IT). Optimize for a working, coherent
 demo on a fixed deadline — not for production hardening.

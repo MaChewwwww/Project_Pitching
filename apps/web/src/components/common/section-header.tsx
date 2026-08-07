@@ -69,22 +69,20 @@ export function SectionHeader({
     >
       <div className={cn("flex flex-col gap-3", centred && "items-center")}>
         {(eyebrow || Icon) && (
-          <div className={cn("flex items-center gap-2", centred && "justify-center")}>
+          <div className={cn("flex items-center gap-2.5", centred && "justify-center")}>
             {Icon ? (
               <span
                 className={cn(
-                  "grid size-10 shrink-0 place-items-center rounded-md",
+                  "grid size-10 shrink-0 place-items-center rounded-xl transition-transform duration-200",
                   onDark
-                    ? "text-primary-300 bg-white/10"
-                    : "bg-primary-100 text-primary-700",
-                  // The icon chip shrinks to a bare glyph when it sits beside a
-                  // centred eyebrow, where a 40px block would dominate the line.
-                  centred && "size-auto rounded-none bg-transparent",
+                    ? "text-primary-300 bg-white/10 border border-white/10"
+                    : "bg-primary-50 text-primary-700 border border-primary-100/80 shadow-sm-card",
+                  centred && "size-auto rounded-none bg-transparent border-none shadow-none",
                 )}
               >
                 <Icon
                   aria-hidden
-                  className={centred ? "size-4" : "size-5"}
+                  className={centred ? "size-4 text-primary-600" : "size-5"}
                   strokeWidth={2}
                 />
               </span>
@@ -92,7 +90,7 @@ export function SectionHeader({
             {eyebrow ? (
               <span
                 className={cn(
-                  "text-overline",
+                  "text-overline tracking-wider font-bold",
                   onDark ? "text-primary-300" : "text-primary-700",
                 )}
               >
@@ -106,14 +104,16 @@ export function SectionHeader({
           <span
             aria-hidden
             className={cn(
-              "block h-0.5 w-10 rounded-full",
-              onDark ? "bg-primary-400" : "bg-primary-600",
+              "block h-1 w-12 rounded-full",
+              onDark
+                ? "bg-gradient-to-r from-primary-400 to-primary-200"
+                : "bg-gradient-to-r from-primary-600 to-primary-400",
             )}
           />
         ) : null}
 
         <Heading
-          className={cn(TITLE_CLASS[as], onDark ? "text-white" : "text-neutral-900")}
+          className={cn(TITLE_CLASS[as], "tracking-tight", onDark ? "text-white" : "text-neutral-900")}
         >
           {title}
           {titleAccent ? (
@@ -121,7 +121,7 @@ export function SectionHeader({
               {" "}
               <span
                 className={cn(
-                  "relative whitespace-nowrap",
+                  "relative inline-block whitespace-nowrap font-extrabold",
                   onDark ? "text-primary-300" : "text-primary-600",
                 )}
               >
@@ -129,8 +129,10 @@ export function SectionHeader({
                 <span
                   aria-hidden
                   className={cn(
-                    "absolute inset-x-0 -bottom-1 block h-[3px] rounded-full",
-                    onDark ? "bg-primary-400/60" : "bg-primary-600/40",
+                    "absolute inset-x-0 -bottom-1.5 block h-[4px] rounded-full",
+                    onDark
+                      ? "bg-gradient-to-r from-primary-400/80 via-primary-300/60 to-transparent"
+                      : "bg-gradient-to-r from-primary-600/70 via-primary-500/40 to-transparent",
                   )}
                 />
               </span>
@@ -141,8 +143,8 @@ export function SectionHeader({
         {description ? (
           <p
             className={cn(
-              "text-body-lg max-w-2xl",
-              onDark ? "text-primary-100/80" : "text-neutral-600",
+              "text-body-lg max-w-2xl leading-relaxed",
+              onDark ? "text-primary-100/85" : "text-neutral-600",
             )}
           >
             {description}

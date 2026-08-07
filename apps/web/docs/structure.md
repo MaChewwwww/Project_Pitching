@@ -7,7 +7,7 @@ its own layout and its own guard.
 
 | Group      | Surface                                           | Guard                                     |
 | ---------- | ------------------------------------------------- | ----------------------------------------- |
-| `(public)` | Landing, guides, hazard map, donate, hotlines     | None                                      |
+| `(public)` | Landing (`/`), announcements, weather & river level, evacuation centres, hazard map, preparedness guides, activities, donation drives, help & FAQs, about | None                                      |
 | `(auth)`   | Login, register, password reset                   | None — but redirects if already signed in |
 | `(portal)` | Resident's own household, safety check-in, go-bag | Signed in                                 |
 | `(admin)`  | Barangay console                                  | Signed in **and** role-checked            |
@@ -49,8 +49,7 @@ and drains battery, so below `md` it renders a static image or the 2D map, with 
 
 FR-PUB-016 and BR-0.17 require that a failed weather feed degrade **that section only**. A
 route-level `error.tsx` cannot deliver it — it replaces the whole page body, which is the
-failure being described. So the mechanism is `common/SectionBoundary`, built on Next's
-`catchError`, wrapping each section individually.
+failure being described. So the mechanism is `common/SectionBoundary`, built as a React class `ErrorBoundary` (avoiding Turbopack CJS/ESM interop issues), wrapping each section individually.
 
 Two things about it are worth knowing before touching a public page:
 

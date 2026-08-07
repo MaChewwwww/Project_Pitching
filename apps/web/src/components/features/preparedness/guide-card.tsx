@@ -59,35 +59,37 @@ export function GuideCard({
   const Icon = ICONS[guide.hazard_type];
 
   return (
-    <Card radius="xl" topAccent interactive className={cn("group h-full", className)}>
-      <CardContent className="flex h-full flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <span className="bg-primary-100 text-primary-700 grid size-10 shrink-0 place-items-center rounded-md">
-            <Icon aria-hidden className="size-5" strokeWidth={2} />
-          </span>
-          <span className="text-overline text-primary-700">
-            {HAZARD_LABEL[guide.hazard_type]}
-          </span>
+    <Card radius="xl" topAccent interactive className={cn("group h-full transition-all duration-200 card-hover-lift bg-white overflow-hidden", className)}>
+      <CardContent className="flex h-full flex-col gap-4 p-5 md:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="bg-gradient-to-br from-primary-500 to-primary-700 text-white grid size-11 shrink-0 place-items-center rounded-xl shadow-sm group-hover:scale-105 transition-transform duration-200">
+              <Icon aria-hidden className="size-5" strokeWidth={2} />
+            </span>
+            <span className="text-caption font-bold uppercase tracking-wider text-primary-700 bg-primary-50/80 px-2.5 py-1 rounded-full border border-primary-100">
+              {HAZARD_LABEL[guide.hazard_type]}
+            </span>
+          </div>
         </div>
 
-        <h3 className="text-h3 text-neutral-900">
+        <h3 className="text-h3 font-bold text-neutral-900 group-hover:text-primary-800 transition-colors leading-snug">
           {pick(lang, guide.title_fil, guide.title_en)}
         </h3>
 
-        <p className="text-body text-neutral-600">
+        <p className="text-body text-neutral-600 leading-relaxed">
           {pick(lang, guide.excerpt_fil, guide.excerpt_en)}
         </p>
 
         <div className="mt-auto flex flex-col gap-3 pt-3">
-          <span aria-hidden className="block border-t border-neutral-200" />
+          <span aria-hidden className="block border-t border-neutral-100" />
           <Link
             href={`/guides/${guide.slug}`}
-            className="text-overline text-primary-700 hover:text-primary-800 focus-visible:ring-ring inline-flex items-center gap-1.5 rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            className="text-overline font-bold tracking-wider text-primary-700 group-hover:text-primary-800 focus-visible:ring-ring inline-flex items-center gap-2 rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
           >
             Learn more
             <ArrowRight
               aria-hidden
-              className="size-3.5 transition-transform group-hover:translate-x-0.5"
+              className="size-4 transition-transform group-hover:translate-x-1.5"
             />
           </Link>
         </div>

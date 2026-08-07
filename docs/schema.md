@@ -1,6 +1,6 @@
 # Database Schema
 
-**Project:** `[APP_NAME]` — Barangay San Jose Disaster Readiness & Community Health Platform
+**Project:** `SAGIP-SJ` (System for Alert, Guidance, Incident Reporting, and Preparedness) — Barangay San Jose Disaster Readiness & Community Health Platform
 **Database:** PostgreSQL 16 + PostGIS 3.4
 **Version:** 0.1 (Draft) · **Date:** August 2026
 

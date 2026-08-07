@@ -27,8 +27,11 @@ export const ANNOUNCEMENTS: PublicAnnouncement[] = [
     alert_level: 2,
     title: "Alert Level 2 — Evacuate riverside areas now",
     body: "The river has risen past the Level 2 threshold and continues to climb. Residents in Areas 1 and 2, particularly households within 50 metres of the riverbank, must move to an evacuation centre now.",
+    // Terse on purpose. An instruction read under stress, on a phone, in the
+    // dark competes with the water — every clause that is not an action is one
+    // the reader has to skip.
     instruction:
-      "Proceed to San Jose Elementary School or the Barangay Covered Court immediately. Bring your Go Bag, identification, and any maintenance medication. Do not wait for water to reach your doorstep.",
+      "Go to San Jose Elementary School or the Barangay Covered Court now. Bring your Go Bag, IDs, and medication.",
     is_barangay_wide: false,
     published_at: hoursAgo(2),
     expires_at: hoursAhead(10),

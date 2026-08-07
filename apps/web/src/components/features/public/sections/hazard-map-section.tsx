@@ -1,10 +1,12 @@
 import * as React from "react";
-import { Map } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Map } from "lucide-react";
 
+import { Button } from "@/components/common/button";
 import { SectionHeader } from "@/components/common/section-header";
 import { HazardMapPlaceholder } from "@/components/features/map/hazard-map-placeholder";
 import { Section } from "./section";
-import { getAreaStats, getFacilities } from "@/lib/api/public";
+import { getAreaStats, getFacilities, getRiverLevel } from "@/lib/api/public";
 
 /**
  * The hazard map (FR-PUB-009, BR-0.9).
@@ -19,7 +21,11 @@ import { getAreaStats, getFacilities } from "@/lib/api/public";
  */
 
 export async function HazardMapSection() {
-  const [stats, facilities] = await Promise.all([getAreaStats(), getFacilities()]);
+  const [stats, facilities, river] = await Promise.all([
+    getAreaStats(),
+    getFacilities(),
+    getRiverLevel(),
+  ]);
   const areas = stats.areas;
 
   return (
@@ -30,10 +36,18 @@ export async function HazardMapSection() {
         title="Flood"
         titleAccent="hazard map"
         description="Flood-prone areas across the barangay, surveyed by Project NOAH. Colours follow the national hazard-map convention used on every government map."
+        action={
+          <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
+            <Link href="/hazard-map">
+              Exposure by area
+              <ArrowRight aria-hidden className="size-4" />
+            </Link>
+          </Button>
+        }
       />
 
       <div className="mt-8">
-        <HazardMapPlaceholder areas={areas} facilities={facilities} />
+        <HazardMapPlaceholder areas={areas} facilities={facilities} river={river} />
       </div>
     </Section>
   );

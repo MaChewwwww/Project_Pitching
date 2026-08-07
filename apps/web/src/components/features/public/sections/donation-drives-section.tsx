@@ -1,6 +1,8 @@
 import * as React from "react";
-import { HandHeart } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, HandHeart } from "lucide-react";
 
+import { Button } from "@/components/common/button";
 import { Reveal } from "@/components/common/reveal";
 import { SectionHeader } from "@/components/common/section-header";
 import { DriveCard } from "@/components/features/donations/drive-card";
@@ -8,11 +10,10 @@ import { Section } from "./section";
 import { getDonationDrives } from "@/lib/api/public";
 
 /**
- * Donation drives (FR-PUB-010, BR-0.10).
+ * Donation drives (FR-PUB-010, BR-0.10) — the landing teaser.
  *
- * The donation form itself is FR-DON-002 and its own change. This section shows
- * what is needed and how far each drive has got, with drop-off details in the
- * description — which is what a donor needs before a form is involved.
+ * The donation form itself is FR-DON-002 and its own change. Drop-off details and
+ * closed drives live on `/donation-drives`.
  */
 
 export async function DonationDrivesSection() {
@@ -22,16 +23,26 @@ export async function DonationDrivesSection() {
 
   return (
     <Section id="donation-drives">
-      <SectionHeader
-        icon={HandHeart}
-        eyebrow="How to help"
-        title="Donation"
-        titleAccent="drives"
-        description="What the barangay is collecting right now, and how much has actually arrived. No account needed to donate — bring goods to the barangay hall."
-      />
+      <Reveal>
+        <SectionHeader
+          icon={HandHeart}
+          eyebrow="How to help"
+          title="Donation"
+          titleAccent="drives"
+          description="What the barangay is collecting right now, and how much has actually arrived. No account needed to donate."
+          action={
+            <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
+              <Link href="/donation-drives">
+                All drives
+                <ArrowRight aria-hidden className="size-4" />
+              </Link>
+            </Button>
+          }
+        />
+      </Reveal>
 
       <div className="mt-8 grid gap-4 md:grid-cols-2 md:gap-6">
-        {drives.map((drive, i) => (
+        {drives.slice(0, 2).map((drive, i) => (
           <Reveal key={drive.id} delay={(i % 2) as 0 | 1}>
             <DriveCard drive={drive} />
           </Reveal>

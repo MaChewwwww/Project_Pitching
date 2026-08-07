@@ -23,6 +23,11 @@ export interface AlertLevelIndicatorProps {
   thresholds?: RiverThresholds | null;
   className?: string;
   onDark?: boolean;
+  /**
+   * Show the two-line explanation of why threshold numbers are absent. Off in
+   * dense contexts, where the prose costs more room than the gauge itself.
+   */
+  explainMissingThresholds?: boolean;
 }
 
 const SEGMENTS = [
@@ -47,6 +52,7 @@ export function AlertLevelIndicator({
   thresholds,
   className,
   onDark = false,
+  explainMissingThresholds = true,
 }: AlertLevelIndicatorProps) {
   const hasThresholds =
     thresholds != null &&
@@ -106,7 +112,7 @@ export function AlertLevelIndicator({
         })}
       </div>
 
-      {!hasThresholds ? (
+      {!hasThresholds && explainMissingThresholds ? (
         <p
           className={cn(
             "text-caption",

@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { APP_NAME } from "@/lib/brand";
+import { APP_NAME, BARANGAY } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 /**
@@ -77,19 +77,21 @@ export function LogoLockup({
         <span className="flex flex-col leading-none">
           <span
             className={cn(
-              "font-display text-[17px] font-extrabold tracking-tight",
-              onDark ? "text-white" : "text-neutral-900",
+              "font-display text-[18px] font-black tracking-tight bg-clip-text text-transparent",
+              onDark
+                ? "bg-gradient-to-r from-white via-primary-100 to-emerald-300"
+                : "bg-gradient-to-r from-primary-900 via-primary-600 to-emerald-600",
             )}
           >
             {APP_NAME}
           </span>
           <span
             className={cn(
-              "text-overline mt-0.5",
-              onDark ? "text-primary-300" : "text-primary-700",
+              "text-[13.5px] leading-tight mt-0.5 font-semibold tracking-tight",
+              onDark ? "text-neutral-300" : "text-neutral-600",
             )}
           >
-            Barangay San Jose
+            {BARANGAY}
           </span>
         </span>
       ) : null}

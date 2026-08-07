@@ -1,7 +1,6 @@
 # Design System
 
-**Project:** `[APP_NAME]` — Barangay San Jose Disaster Readiness & Community Health Platform
-*App name pending — see BRD OI-1. Use the `[APP_NAME]` placeholder in code and copy until it is decided.*
+**Project:** `SAGIP-SJ` (System for Alert, Guidance, Incident Reporting, and Preparedness) — Barangay San Jose Disaster Readiness & Community Health Platform
 
 **Companion to:** `business-requirements.md`, `tech_stack.md`
 **Version:** 0.2 (Draft) · **Date:** August 2026
@@ -25,12 +24,13 @@ Four rules, derived from what the platform is actually for. When a decision is u
 
 ### Name
 
-`[APP_NAME]` throughout. Define it once as a constant and reference it everywhere, so the rename is a one-line change:
+`SAGIP-SJ` — System for Alert, Guidance, Incident Reporting, and Preparedness for Barangay San Jose. Defined as constants in `lib/brand.ts`:
 
 ```ts
 // lib/brand.ts
-export const APP_NAME = "[APP_NAME]";
-export const APP_TAGLINE = "[TAGLINE]";
+export const APP_NAME = "SAGIP-SJ";
+export const APP_TAGLINE =
+  "System for Alert, Guidance, Incident Reporting, and Preparedness for Barangay San Jose";
 export const BARANGAY = "Barangay San Jose, Rodriguez, Rizal";
 ```
 

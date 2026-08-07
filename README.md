@@ -1,12 +1,10 @@
-# `[APP_NAME]` — Barangay San Jose Disaster Readiness & Community Health Platform
+# `SAGIP-SJ` — Barangay San Jose Disaster Readiness & Community Health Platform
+
+**SAGIP-SJ**: System for Alert, Guidance, Incident Reporting, and Preparedness for Barangay San Jose.
 
 A prototype for an SK Project Pitching competition, built by a five-person interdisciplinary
 student team. Registry, hazard mapping, flood watch, alerts, safety check-in, evacuation,
 donations, activities, preparedness, and analytics for **Barangay San Jose, Rodriguez, Rizal**.
-
-> The app name is still open (BRD OI-1). `[APP_NAME]` is a placeholder — it lives in one
-> constant, [`apps/web/src/lib/brand.ts`](apps/web/src/lib/brand.ts), so renaming is a one-line
-> change.
 
 ---
 

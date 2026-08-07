@@ -23,33 +23,36 @@ import { cn } from "@/lib/utils";
  * `aria-expanded` handling comes along; only the paint is replaced.
  */
 
-const appButton = cva("font-sans font-semibold", {
-  variants: {
-    variant: {
-      primary: "bg-primary-600 text-white hover:bg-primary-700",
-      secondary: "bg-primary-100 text-primary-800 hover:bg-primary-200",
-      outline:
-        "border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900",
-      ghost:
-        "bg-transparent text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900",
-      danger: "bg-danger text-white hover:bg-danger-hover",
-      // The pulse is motion-safe: under prefers-reduced-motion the ring remains
-      // and the animation stops, so the emphasis survives without the movement.
-      emergency:
-        "bg-danger text-white shadow-emergency hover:bg-danger-hover motion-safe:animate-pulse",
+const appButton = cva(
+  "font-sans font-semibold transition-all duration-150 active:scale-[0.96] active:opacity-90",
+  {
+    variants: {
+      variant: {
+        primary: "bg-primary-600 text-white hover:bg-primary-700",
+        secondary: "bg-primary-100 text-primary-800 hover:bg-primary-200",
+        outline:
+          "border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900",
+        ghost:
+          "bg-transparent text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900",
+        danger: "bg-danger text-white hover:bg-danger-hover",
+        // The pulse is motion-safe: under prefers-reduced-motion the ring remains
+        // and the animation stops, so the emphasis survives without the movement.
+        emergency:
+          "bg-danger text-white shadow-emergency hover:bg-danger-hover motion-safe:animate-pulse",
+      },
+      size: {
+        sm: "h-8 gap-1.5 px-3 text-[13px] tap-44",
+        md: "h-10 gap-2 px-4 text-[15px]",
+        lg: "h-12 gap-2 px-6 text-[15px]",
+      },
+      pill: {
+        true: "rounded-full",
+        false: "rounded-md",
+      },
     },
-    size: {
-      sm: "h-8 gap-1.5 px-3 text-[13px] tap-44",
-      md: "h-10 gap-2 px-4 text-[15px]",
-      lg: "h-12 gap-2 px-6 text-[15px]",
-    },
-    pill: {
-      true: "rounded-full",
-      false: "rounded-md",
-    },
+    defaultVariants: { variant: "primary", size: "md", pill: false },
   },
-  defaultVariants: { variant: "primary", size: "md", pill: false },
-});
+);
 
 /** Which primitive variant to sit on, chosen for the focus ring it carries. */
 const BASE_VARIANT = {

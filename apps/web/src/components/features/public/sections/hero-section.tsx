@@ -5,46 +5,19 @@ import {
   BedDouble,
   MapPin,
   ShieldCheck,
-  Sparkles,
   Waves,
 } from "lucide-react";
 
 import { Button } from "@/components/common/button";
-import { RiverLevelPanel } from "@/components/features/weather/river-level-panel";
-import {
-  BarangayIsometric,
-  BarangayIsometricCompact,
-} from "../illustrations/barangay-isometric";
-import { HeroVisual } from "../illustrations/hero-visual";
+import { Logo3DPlaceholder } from "../illustrations/logo-3d-placeholder";
+import { Hero3DTitleCanvas } from "../illustrations/hero-3d-title-canvas";
+import { HeroRainOverlay } from "../illustrations/hero-rain-overlay";
 import { HERO } from "@/lib/content/site";
-import { BARANGAY } from "@/lib/brand";
 import { formatNumber } from "@/lib/format";
-import { getAreaStats, getRiverLevel } from "@/lib/api/public";
-
-/**
- * The hero (FR-PUB-001, BR-0.1).
- *
- * Follows the reference composition: eyebrow with a location chip, two-tone
- * headline where the second line is green with an underline accent, lead
- * paragraph, a filled pill primary action beside an outline secondary, and a row
- * of trust chips — over a green gradient panel carrying the 3D scene.
- *
- * Two departures from the reference, both deliberate:
- *
- * - **The floating card shows the live river level**, not a marketing line. It is
- *   the number a resident opens this page for, and putting it above the fold with
- *   its timestamp satisfies FR-WX-010 in the place people actually look.
- * - **The prev/next arrows are anchors**, not carousel controls. They scroll to
- *   the hazard map and the evacuation centres. Same shape, zero JavaScript, and
- *   they do something.
- *
- * `APP_NAME` is not in the headline. The name is still an open item (BRD OI-1),
- * and a hero built around a placeholder would have to be rewritten when it
- * resolves; this copy stands on its own either way.
- */
+import { getAreaStats } from "@/lib/api/public";
 
 export async function HeroSection() {
-  const [river, stats] = await Promise.all([getRiverLevel(), getAreaStats()]);
+  const stats = await getAreaStats();
 
   const chips = [
     { icon: ShieldCheck, value: "6", label: "Barangay areas" },
@@ -57,61 +30,75 @@ export async function HeroSection() {
   ];
 
   return (
-    <section className="border-b border-neutral-200">
-      <div className="mx-auto grid max-w-[1440px] lg:grid-cols-2">
+    <section className="bg-white relative overflow-hidden">
+      {/* Full Left-Half Atmospheric Rain Overlay (Screen Edge to Center Grid) */}
+      <div className="absolute inset-y-0 left-0 w-full lg:w-1/2 overflow-hidden pointer-events-none z-0">
+        <HeroRainOverlay />
+      </div>
+
+      <div className="mx-auto grid max-w-[1440px] lg:grid-cols-2 relative z-10">
         {/* --- copy ---------------------------------------------------------- */}
-        <div className="flex flex-col justify-center gap-6 px-4 py-10 md:px-6 md:py-16 lg:py-20">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-overline text-primary-700 inline-flex items-center gap-1.5">
-              <Sparkles aria-hidden className="size-3.5" />
+        <div className="flex flex-col justify-center max-lg:items-center max-lg:text-center gap-3.5 sm:gap-4.5 lg:gap-3.5 xl:gap-5 px-4 py-6 md:px-6 md:py-8 lg:py-4 lg:pr-8 xl:py-8 xl:pr-12 relative z-10">
+          <div
+            className="hero-sleek-cascade flex items-center justify-center lg:justify-start gap-2 relative z-10"
+            style={{ "--hi-delay": "0ms" } as React.CSSProperties}
+          >
+            <ShieldCheck aria-hidden className="size-4.5 shrink-0 text-primary-600 fill-primary-100/80" strokeWidth={2.2} />
+            <span className="text-xs sm:text-body-sm font-semibold text-primary-700 text-center lg:text-left max-w-2xl">
               {HERO.eyebrow}
-            </span>
-            <span className="text-caption inline-flex items-center gap-1.5 rounded-full border border-neutral-200 px-2.5 py-1 text-neutral-600">
-              <MapPin aria-hidden className="size-3" />
-              {BARANGAY}
             </span>
           </div>
 
-          <h1 className="text-display-xl text-neutral-900">
-            {HERO.titleLine1}
-            <br />
-            <span className="text-primary-600 relative whitespace-nowrap">
-              {HERO.titleLine2}
-              <span
-                aria-hidden
-                className="bg-primary-600/40 absolute inset-x-0 -bottom-1.5 block h-1 rounded-full md:-bottom-2 md:h-1.5"
-              />
-            </span>
+          {/* Hidden Accessible H1 for SEO & Screen Readers */}
+          <h1 className="sr-only">
+            {HERO.titleLine1} {HERO.titleLine2}
           </h1>
 
-          <p className="text-body-lg max-w-xl text-neutral-600">{HERO.lead}</p>
+          {/* Interactive 3D Title Canvas */}
+          <div
+            className="hero-sleek-cascade my-[-10px] relative z-10"
+            style={{ "--hi-delay": "90ms" } as React.CSSProperties}
+          >
+            <Hero3DTitleCanvas />
+          </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button asChild pill size="lg" className="max-sm:w-full">
+          <p
+            className="hero-sleek-cascade text-body-lg sm:text-xl lg:text-body-lg xl:text-xl max-w-xl text-neutral-600 leading-relaxed font-normal relative z-10"
+            style={{ "--hi-delay": "180ms" } as React.CSSProperties}
+          >
+            {HERO.lead}
+          </p>
+
+          <div
+            className="hero-sleek-cascade flex flex-col gap-3.5 sm:flex-row justify-center lg:justify-start pt-1 relative z-10 max-lg:w-full max-lg:items-center"
+            style={{ "--hi-delay": "270ms" } as React.CSSProperties}
+          >
+            <Button asChild pill size="lg" className="max-sm:w-full shadow-glow-primary text-base h-12 px-7 font-bold">
               <Link href={HERO.primaryCta.href}>
                 {HERO.primaryCta.label}
                 <ArrowRight aria-hidden className="size-4" />
               </Link>
             </Button>
-            <Button asChild variant="outline" pill size="lg" className="max-sm:w-full">
+            <Button asChild variant="outline" pill size="lg" className="max-sm:w-full text-base h-12 px-7 font-semibold">
               <Link href={HERO.secondaryCta.href}>{HERO.secondaryCta.label}</Link>
             </Button>
           </div>
 
-          <ul className="flex flex-wrap gap-2.5">
-            {chips.map((chip) => (
+          <ul className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5 sm:gap-3 pt-1 relative z-10">
+            {chips.map((chip, idx) => (
               <li
                 key={chip.label}
-                className="inline-flex items-center gap-2.5 rounded-full border border-neutral-200 bg-white py-2 pr-4 pl-2"
+                className="chip-pop hero-chip inline-flex items-center gap-2.5 sm:gap-3 rounded-full border border-neutral-200/90 bg-white py-2 sm:py-2.5 pr-4 sm:pr-5 pl-2 sm:pl-2.5 shadow-sm-card cursor-pointer"
+                style={{ "--chip-delay": `${360 + idx * 90}ms` } as React.CSSProperties}
               >
-                <span className="bg-primary-100 text-primary-700 grid size-8 shrink-0 place-items-center rounded-full">
-                  <chip.icon aria-hidden className="size-4" strokeWidth={2} />
+                <span className="hero-chip-icon bg-primary-100 text-primary-700 grid size-8 sm:size-9 shrink-0 place-items-center rounded-full">
+                  <chip.icon aria-hidden className="size-4 sm:size-4.5" strokeWidth={2} />
                 </span>
                 <span className="flex flex-col leading-tight">
-                  <span className="text-label tabular text-neutral-900">
+                  <span className="text-body-sm sm:text-label tabular font-bold text-neutral-900">
                     {chip.value}
                   </span>
-                  <span className="text-overline text-neutral-500">{chip.label}</span>
+                  <span className="text-overline text-neutral-500 font-semibold">{chip.label}</span>
                 </span>
               </li>
             ))}
@@ -119,40 +106,30 @@ export async function HeroSection() {
         </div>
 
         {/* --- visual --------------------------------------------------------- */}
-        <div className="from-primary-700 via-primary-800 to-primary-950 relative min-h-[340px] overflow-hidden bg-gradient-to-br md:min-h-[460px] lg:min-h-[560px]">
-          {/* Two SVGs, one CSS choice — no JavaScript decides which renders, and
-              both are server-rendered markup. */}
-          <HeroVisual
-            fallbackNode={
-              <div className="absolute inset-0 grid place-items-center p-6">
-                <BarangayIsometricCompact className="h-auto w-full max-w-md md:hidden" />
-                <BarangayIsometric className="hidden h-auto w-full max-w-xl md:block" />
-              </div>
-            }
-          />
-
-          <div className="pointer-events-none absolute inset-x-4 bottom-4 flex justify-end md:inset-x-6 md:bottom-6">
-            <div className="pointer-events-auto w-full max-w-xs">
-              <RiverLevelPanel river={river} onDark />
-            </div>
+        <div
+          className="hero-in from-primary-700 via-primary-800 to-primary-950 relative flex h-full min-h-[300px] md:min-h-[360px] lg:min-h-0 flex-col justify-center overflow-hidden bg-gradient-to-br"
+          style={{ "--hi-delay": "100ms" } as React.CSSProperties}
+        >
+          {/* 3D Logo Animation Placeholder */}
+          <div className="absolute inset-0 grid place-items-center p-4 md:p-6">
+            <Logo3DPlaceholder />
           </div>
 
-          {/* Anchors, shaped like the reference's carousel controls. */}
-          <div className="absolute bottom-4 left-4 flex gap-2 md:bottom-6 md:left-6">
-            <a
-              href="#hazard-map"
-              aria-label="Jump to the hazard map"
-              className="grid size-11 place-items-center rounded-full bg-white/15 text-white backdrop-blur-sm transition-colors hover:bg-white/25 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:outline-none"
-            >
-              <MapPin aria-hidden className="size-4" />
-            </a>
-            <a
-              href="#evacuation-centers"
-              aria-label="Jump to the evacuation centres"
-              className="grid size-11 place-items-center rounded-full bg-white/15 text-white backdrop-blur-sm transition-colors hover:bg-white/25 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:outline-none"
-            >
-              <BedDouble aria-hidden className="size-4" />
-            </a>
+          {/* Quick links to the two routes a resident needs during a flood. */}
+          <div className="absolute bottom-4 inset-x-4 flex flex-wrap items-center justify-center gap-2.5 md:bottom-6 md:inset-x-6 z-10">
+            {HERO.quickLinks.map((link) => {
+              const Icon = link.icon === "map" ? MapPin : BedDouble;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-4 py-2 text-white backdrop-blur-md transition-all duration-200 hover:bg-white/30 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:outline-none shadow-lg text-caption font-semibold"
+                >
+                  <Icon aria-hidden className="size-4 text-primary-300" />
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>

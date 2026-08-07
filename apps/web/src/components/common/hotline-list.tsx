@@ -1,7 +1,11 @@
+"use client";
+
 import * as React from "react";
 import {
   Ambulance,
   Building2,
+  Check,
+  Copy,
   Flame,
   LifeBuoy,
   Phone,
@@ -14,15 +18,8 @@ import { cn } from "@/lib/utils";
 import type { HotlineType, PublicHotline } from "@/lib/api/public-types";
 
 /**
- * The one-tap callable hotline directory (FR-PUB-007, FR-SYS-014).
- *
- * Plain `<a href="tel:">` anchors — no JavaScript, no click handler, nothing that
- * can fail to hydrate. NFR-AVL-004 makes this the component that must render when
- * everything else on the page has broken, so it deliberately has no dependency
- * that could break with it.
- *
- * Rows are 48px, not the usual 44px floor: design.md Section 9.7 raises the
- * minimum for anything used during an emergency, and this is the definitive case.
+ * The hotline directory with one-click copy functionality (FR-PUB-007, FR-SYS-014).
+ * Clicking any hotline item copies the phone number directly to the clipboard.
  */
 
 const ICONS: Record<HotlineType, typeof Phone> = {
@@ -48,68 +45,120 @@ export function HotlineList({
   onDark = false,
   className,
 }: HotlineListProps) {
+  const [copiedId, setCopiedId] = React.useState<string | null>(null);
+
+  const handleCopy = (id: string, number: string) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(number);
+    }
+    setCopiedId(id);
+    setTimeout(() => {
+      setCopiedId(null);
+    }, 2000);
+  };
+
   return (
     <ul
       className={cn(
         layout === "grid"
           ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-          : "flex flex-col gap-2",
+          : "flex flex-col gap-2.5",
         className,
       )}
     >
       {hotlines.map((hotline) => {
         const Icon = ICONS[hotline.type];
+        const isCopied = copiedId === hotline.id;
+
         return (
           <li key={hotline.id}>
-            <a
-              href={toTelHref(hotline.number)}
-              // Spelled out because a screen reader announcing "(02) 8555-0100"
-              // as punctuation is not a number anyone can act on.
-              aria-label={`Call ${hotline.label} at ${hotline.number}`}
+            <div
               className={cn(
-                "flex min-h-12 items-center gap-3 rounded-md border px-3 py-2 transition-colors",
-                "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
+                "group flex min-h-14 items-center justify-between gap-3.5 rounded-xl border px-3.5 py-2.5 transition-all duration-200 shadow-sm-card",
                 onDark
-                  ? "border-white/10 bg-white/5 hover:bg-white/10"
-                  : "hover:border-primary-300 hover:bg-primary-50 border-neutral-200 bg-white",
+                  ? "border-white/10 bg-white/5 hover:bg-white/15 hover:border-white/20"
+                  : "hover:border-primary-400 hover:bg-primary-50/60 hover:shadow-md-card border-neutral-200/90 bg-white",
               )}
             >
-              <span
-                className={cn(
-                  "grid size-9 shrink-0 place-items-center rounded-md",
-                  onDark
-                    ? "text-primary-300 bg-white/10"
-                    : "bg-primary-100 text-primary-700",
-                )}
+              {/* Click main body to copy */}
+              <button
+                type="button"
+                onClick={() => handleCopy(hotline.id, hotline.number)}
+                className="flex flex-1 items-center gap-3.5 text-left focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none rounded-lg p-1 -m-1 cursor-pointer"
+                title="Click to copy phone number"
               >
-                <Icon aria-hidden className="size-[18px]" strokeWidth={2} />
-              </span>
-              <span className="flex min-w-0 flex-col">
                 <span
                   className={cn(
-                    "text-label truncate",
-                    onDark ? "text-white" : "text-neutral-800",
+                    "grid size-10 shrink-0 place-items-center rounded-lg transition-transform duration-200 group-hover:scale-105",
+                    onDark
+                      ? "text-primary-300 bg-white/10"
+                      : "bg-primary-100/80 text-primary-700 group-hover:bg-primary-600 group-hover:text-white",
                   )}
                 >
-                  {hotline.label}
+                  <Icon aria-hidden className="size-5" strokeWidth={2} />
                 </span>
-                <span
+                <span className="flex min-w-0 flex-col">
+                  <span
+                    className={cn(
+                      "text-label truncate font-semibold",
+                      onDark ? "text-white" : "text-neutral-900",
+                    )}
+                  >
+                    {hotline.label}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-body-sm tabular font-bold tracking-tight",
+                      onDark ? "text-primary-300" : "text-primary-700",
+                    )}
+                  >
+                    {hotline.number}
+                  </span>
+                </span>
+              </button>
+
+              {/* Action Buttons: Copy Indicator & Direct Call Option */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleCopy(hotline.id, hotline.number)}
                   className={cn(
-                    "text-body-sm tabular font-semibold",
-                    onDark ? "text-primary-300" : "text-primary-700",
+                    "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-caption font-semibold transition-all duration-200 cursor-pointer",
+                    isCopied
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                      : onDark
+                        ? "bg-white/10 text-white hover:bg-white/20"
+                        : "bg-neutral-100 text-neutral-700 hover:bg-primary-100 hover:text-primary-800 border border-neutral-200/80",
                   )}
                 >
-                  {hotline.number}
-                </span>
-              </span>
-              <Phone
-                aria-hidden
-                className={cn(
-                  "ml-auto size-4 shrink-0",
-                  onDark ? "text-primary-300" : "text-primary-600",
-                )}
-              />
-            </a>
+                  {isCopied ? (
+                    <>
+                      <Check className="size-3.5 text-emerald-700" strokeWidth={2.5} />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="size-3.5 text-neutral-500 group-hover:text-primary-700" strokeWidth={2} />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Direct Tel Call Link */}
+                <a
+                  href={toTelHref(hotline.number)}
+                  title={`Direct call ${hotline.number}`}
+                  className={cn(
+                    "grid size-8 shrink-0 place-items-center rounded-lg transition-colors",
+                    onDark
+                      ? "bg-white/10 text-white hover:bg-primary-500"
+                      : "bg-neutral-100 text-neutral-600 hover:bg-primary-600 hover:text-white border border-neutral-200/80",
+                  )}
+                >
+                  <Phone aria-hidden className="size-3.5" strokeWidth={2} />
+                </a>
+              </div>
+            </div>
           </li>
         );
       })}

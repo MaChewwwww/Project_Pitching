@@ -31,9 +31,23 @@ const DISCLAIMERS: Record<DisclaimerKind, string> = {
     "Area boundaries shown are approximations for planning and orientation. They are not cadastral or survey-grade data.",
 };
 
+/**
+ * One-line forms, for surfaces where the full sentence would dominate — the hero
+ * card, a map corner. The obligation is to state the limitation plainly, not to
+ * state it at a particular length, and a disclaimer nobody reads because it
+ * swallowed the panel is worse than a short one they do.
+ */
+const SHORT_DISCLAIMERS: Record<DisclaimerKind, string> = {
+  "warning-authority": "Not an official warning authority — see DOST-PAGASA.",
+  "no-rescue-promise": "Submitting this does not guarantee a response.",
+  boundaries: "Boundaries are approximate.",
+};
+
 export interface AttributionProps {
   sources?: AttributionSource[];
   disclaimer?: DisclaimerKind | DisclaimerKind[] | null;
+  /** Use the condensed wording. */
+  short?: boolean;
   onDark?: boolean;
   className?: string;
 }
@@ -41,6 +55,7 @@ export interface AttributionProps {
 export function Attribution({
   sources = [],
   disclaimer = null,
+  short = false,
   onDark = false,
   className,
 }: AttributionProps) {
@@ -58,7 +73,7 @@ export function Attribution({
     <div className={cn("flex flex-col gap-1.5", className)}>
       {disclaimers.map((kind) => (
         <p key={kind} className={cn("text-caption", muted)}>
-          {DISCLAIMERS[kind]}
+          {short ? SHORT_DISCLAIMERS[kind] : DISCLAIMERS[kind]}
         </p>
       ))}
       {sources.length > 0 ? (

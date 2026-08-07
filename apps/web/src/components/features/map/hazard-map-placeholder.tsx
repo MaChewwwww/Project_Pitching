@@ -4,24 +4,16 @@ import { Layers, MapPin } from "lucide-react";
 import { Attribution } from "@/components/common/attribution";
 import { Badge } from "@/components/common/badge";
 import { BarangayIsometric } from "@/components/features/public/illustrations/barangay-isometric";
+import { RiverLevelPanel } from "@/components/features/weather/river-level-panel";
 import { cn } from "@/lib/utils";
-import type { PublicAreaStat, PublicFacility } from "@/lib/api/public-types";
+import type { PublicAreaStat, PublicFacility, PublicRiverLevel } from "@/lib/api/public-types";
 
 /**
  * The hazard map slot, before the real map exists.
  *
- * The interactive Leaflet map is FR-MAP-001…007 and its own change. What ships
- * here is deliberately **not** a fake map: it is the legend, the area exposure
- * table, the facility count, and the two disclaimers, over the same illustration
- * used in the hero.
- *
- * That choice is the point. A static image styled to look like a slippy map
- * invites someone to pinch it during a flood and conclude the site is broken.
- * This says plainly what it is and still carries the information the map would.
- *
- * The attribution and the boundary disclaimer are not placeholders — NOAH's
- * ODC-ODbL licence and FR-MAP-008 apply to the hazard ramp shown here just as
- * they will to the map.
+ * Deliberately **not** a fake map: it is the legend, the area exposure
+ * table, the facility count, disclaimers, and the live river level overlay,
+ * over the isometric barangay illustration.
  */
 
 const HAZARD_LEGEND = [
@@ -39,31 +31,41 @@ const EXPOSURE_TONE = {
 export function HazardMapPlaceholder({
   areas,
   facilities,
+  river,
   className,
 }: {
   areas: PublicAreaStat[];
   facilities: PublicFacility[];
+  river?: PublicRiverLevel;
   className?: string;
 }) {
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-[20px] border border-neutral-200 bg-white",
+        "overflow-hidden rounded-[20px] border border-neutral-200/90 bg-white shadow-sm-card",
         className,
       )}
     >
       <div className="grid lg:grid-cols-[1.4fr_1fr]">
-        <div className="from-primary-700 via-primary-800 to-primary-950 relative flex min-h-[280px] items-center justify-center bg-gradient-to-br p-6">
+        <div className="from-primary-700 via-primary-800 to-primary-950 relative flex min-h-[340px] items-center justify-center bg-gradient-to-br p-6">
           <BarangayIsometric className="h-auto w-full max-w-lg" />
-          <span className="text-caption absolute top-4 left-4 rounded-full bg-white/15 px-2.5 py-1 text-white backdrop-blur-sm">
-            Interactive map coming with the mapping module
+          <span className="text-caption absolute top-4 left-4 rounded-full bg-white/15 px-3 py-1 font-semibold text-white backdrop-blur-md border border-white/10">
+            Interactive map coming with mapping module
           </span>
+
+          {river ? (
+            <div className="pointer-events-none absolute inset-x-4 bottom-4 flex justify-end md:inset-x-6 md:bottom-6 z-10">
+              <div className="pointer-events-auto w-full max-w-[17rem]">
+                <RiverLevelPanel river={river} onDark density="compact" />
+              </div>
+            </div>
+          ) : null}
         </div>
 
-        <div className="flex flex-col gap-5 p-4 md:p-6">
+        <div className="flex flex-col gap-5 p-5 md:p-6">
           <div>
-            <p className="text-overline mb-2.5 inline-flex items-center gap-1.5 text-neutral-500">
-              <Layers aria-hidden className="size-3" />
+            <p className="text-overline mb-2.5 inline-flex items-center gap-1.5 font-bold tracking-wider text-neutral-600">
+              <Layers aria-hidden className="size-3.5 text-primary-600" />
               Flood hazard levels
             </p>
             <ul className="flex flex-col gap-2">
@@ -72,7 +74,7 @@ export function HazardMapPlaceholder({
                   <span
                     aria-hidden
                     className={cn(
-                      "size-4 shrink-0 rounded-sm border border-black/10",
+                      "size-4 shrink-0 rounded-sm border border-black/10 shadow-xs",
                       entry.swatch,
                     )}
                   />
@@ -88,7 +90,7 @@ export function HazardMapPlaceholder({
           </div>
 
           <div>
-            <p className="text-overline mb-2.5 text-neutral-500">Exposure by area</p>
+            <p className="text-overline mb-2.5 font-bold tracking-wider text-neutral-600">Exposure by area</p>
             <ul className="flex flex-wrap gap-1.5">
               {areas.map((area) => (
                 <li key={area.area_id}>
@@ -104,8 +106,8 @@ export function HazardMapPlaceholder({
             </ul>
           </div>
 
-          <p className="text-body-sm inline-flex items-center gap-1.5 text-neutral-600">
-            <MapPin aria-hidden className="size-3.5 text-neutral-400" />
+          <p className="text-body-sm inline-flex items-center gap-1.5 text-neutral-600 font-medium">
+            <MapPin aria-hidden className="size-4 text-primary-600" />
             {facilities.length} barangay facilities mapped
           </p>
 

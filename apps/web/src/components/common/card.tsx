@@ -33,9 +33,9 @@ import { cn } from "@/lib/utils";
 export interface CardProps extends React.ComponentProps<typeof UiCard> {
   /** `lg` (14px) for admin surfaces, `xl` (20px) for the public site. */
   radius?: "lg" | "xl";
-  /** `flat` is the default and should stay the default. */
-  variant?: "flat" | "raised" | "dark" | "tint";
-  /** Adds hover elevation. Only for cards that are themselves a link or button. */
+  /** Variant style for card background and border. */
+  variant?: "flat" | "raised" | "dark" | "tint" | "glass" | "gradient-edge";
+  /** Adds hover elevation and lift transition. */
   interactive?: boolean;
   /** The green top edge from the reference layout's service cards. */
   topAccent?: boolean;
@@ -47,10 +47,12 @@ const RADIUS = {
 } as const;
 
 const VARIANT = {
-  flat: "bg-card ring-0 border border-neutral-200 shadow-flat",
-  raised: "bg-card ring-0 border border-neutral-200 shadow-sm-card",
-  dark: "bg-primary-950 ring-0 border border-primary-800 text-primary-100 shadow-flat",
-  tint: "bg-surface-tint ring-0 border border-primary-200 shadow-flat",
+  flat: "bg-card ring-0 border border-neutral-200/90 shadow-sm-card",
+  raised: "bg-card ring-0 border border-neutral-200 shadow-md-card",
+  dark: "bg-primary-950 ring-0 border border-primary-800/80 text-primary-100 shadow-sm-card",
+  tint: "bg-surface-tint/80 ring-0 border border-primary-200/80 shadow-flat",
+  glass: "glass-card ring-0 shadow-sm-card",
+  "gradient-edge": "bg-card ring-0 border border-primary-200/70 shadow-sm-card relative overflow-hidden",
 } as const;
 
 export function Card({
@@ -69,7 +71,7 @@ export function Card({
         VARIANT[variant],
         "[--card-spacing:--spacing(4)] md:[--card-spacing:--spacing(6)]",
         interactive &&
-          "hover:shadow-md-card focus-within:shadow-md-card transition-shadow duration-150 ease-out",
+          "card-hover-lift cursor-pointer focus-within:ring-2 focus-within:ring-primary-500/50",
         topAccent && "border-t-primary-600 border-t-[3px]",
         className,
       )}

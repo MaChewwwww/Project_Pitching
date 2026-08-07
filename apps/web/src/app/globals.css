@@ -243,6 +243,7 @@
   html {
     @apply font-sans;
     -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
   }
 
   body {
@@ -266,6 +267,9 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
+    }
+    html {
+      scroll-behavior: auto;
     }
   }
 }
@@ -485,4 +489,389 @@
       transform: none;
     }
   }
+
+  /* Page transition — fires on every navigation via (public)/template.tsx.
+     Gated on prefers-reduced-motion: no-preference (NFR-UX-007). Users who
+     prefer reduced motion get an instant appear; the content is always visible. */
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .page-enter {
+      animation: page-enter 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+  }
+
+  /* Hero illustration motion.
+
+     All of it is CSS on inline SVG nodes, so the scene animates with zero
+     JavaScript and zero bytes against the landing bundle (NFR-PERF-006). The
+     whole block is gated on `prefers-reduced-motion: no-preference` rather than
+     relying on the global duration kill-switch — these are ambient loops with no
+     end state, and shortening their duration would leave them flickering rather
+     than stopping. `transform-box: fill-box` makes `transform-origin: center`
+     mean the element's own box instead of the SVG viewport origin. */
+  @media (prefers-reduced-motion: no-preference) {
+    .iso-rain {
+      animation: iso-rain 1.5s linear infinite;
+    }
+    .iso-shimmer {
+      animation: iso-shimmer 5s ease-in-out infinite;
+    }
+    .iso-beacon {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: iso-beacon 2.8s ease-out infinite;
+    }
+    .iso-float {
+      animation: iso-float 7s ease-in-out infinite;
+    }
+    .iso-flag {
+      transform-box: fill-box;
+      transform-origin: left center;
+      animation: iso-flag 3.2s ease-in-out infinite;
+    }
+  }
+
+  @keyframes iso-rain {
+    0% {
+      transform: translate3d(26px, -70px, 0);
+      opacity: 0;
+    }
+    15% {
+      opacity: 0.5;
+    }
+    85% {
+      opacity: 0.5;
+    }
+    100% {
+      transform: translate3d(-26px, 190px, 0);
+      opacity: 0;
+    }
+  }
+
+  @keyframes iso-shimmer {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+      opacity: 0.25;
+    }
+    50% {
+      transform: translate3d(18px, -9px, 0);
+      opacity: 0.6;
+    }
+  }
+
+  @keyframes iso-beacon {
+    0% {
+      transform: scale(0.5);
+      opacity: 0.7;
+    }
+    100% {
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
+
+  @keyframes iso-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
+  @keyframes iso-flag {
+    0%,
+    100% {
+      transform: skewY(0deg) scaleX(1);
+    }
+    50% {
+      transform: skewY(-4deg) scaleX(0.94);
+    }
+  }
+
+  /* Hero element fade-up: used by .hero-in. The 18px lift matches the reveal
+     distance so the two motions read as one system. */
+  @keyframes hero-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* --- Enhanced visual design utilities ------------------------------------ */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(227, 232, 230, 0.8);
+  }
+
+  .glass-dark {
+    background: rgba(12, 42, 25, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(25, 106, 61, 0.35);
+  }
+
+  .card-hover-lift {
+    transition: transform 0.25s var(--ease-emphasized), box-shadow 0.25s var(--ease-emphasized), border-color 0.25s ease;
+  }
+  .card-hover-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px -5px rgba(25, 106, 61, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    border-color: rgba(31, 128, 73, 0.3);
+  }
+
+  .gradient-subtle-bg {
+    background: linear-gradient(135deg, rgba(242, 250, 245, 0.6) 0%, rgba(248, 250, 250, 1) 100%);
+  }
+
+  .gradient-brand-accent {
+    background: linear-gradient(135deg, #1f8049 0%, #17532f 100%);
+  }
+
+  .shadow-glow-primary {
+    box-shadow: 0 4px 20px -2px rgba(31, 128, 73, 0.2);
+  }
+
+  /* --- Hero entrance animation (fires on page load / reload) ---------------
+     Each element in the hero copy column gets a `hero-in` class with an
+     `--hi-delay` custom property. Unlike `.reveal` (which uses
+     animation-timeline: view()), this is standard CSS animation — no
+     @supports guard needed. The prefers-reduced-motion guard is sufficient:
+     without it the content renders at full opacity immediately. */
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-in {
+      animation: hero-fade-up 0.65s var(--ease-emphasized) both;
+      animation-delay: var(--hi-delay, 0ms);
+    }
+
+    .chip-pop {
+      animation: chip-pop-up 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      animation-delay: var(--chip-delay, 320ms);
+    }
+
+    .hero-sleek-cascade {
+      animation: liquid-water-fill 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: var(--hi-delay, 0ms);
+    }
+  }
+
+  @keyframes liquid-water-fill {
+    0% {
+      opacity: 0;
+      clip-path: inset(100% 0 0 0);
+      transform: translateY(24px) scaleY(0.95);
+    }
+    65% {
+      clip-path: inset(0 0 0 0);
+    }
+    100% {
+      opacity: 1;
+      clip-path: inset(0 0 0 0);
+      transform: translateY(0) scaleY(1);
+    }
+  }
+
+  @keyframes liquid-river-flow {
+    0% {
+      background-position: 300% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  @keyframes water-surface-float {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    25% {
+      transform: translateY(-4px) rotate(-0.4deg);
+    }
+    75% {
+      transform: translateY(3px) rotate(0.4deg);
+    }
+  }
+
+  @keyframes wave-flow {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes droplet-float {
+    0% {
+      transform: translateY(16px) scale(0.7);
+      opacity: 0;
+    }
+    50% {
+      opacity: 0.65;
+    }
+    100% {
+      transform: translateY(-28px) scale(1.1);
+      opacity: 0;
+    }
+  }
+
+  .water-ripple-ring {
+    animation-name: water-ripple-expand;
+    animation-timing-function: cubic-bezier(0, 0, 0.25, 1);
+    animation-iteration-count: infinite;
+  }
+
+  @keyframes water-ripple-expand {
+    0% {
+      transform: scale(0.05);
+      opacity: 0.9;
+      border-width: 2px;
+    }
+    50% {
+      opacity: 0.5;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0;
+      border-width: 1px;
+    }
+  }
+
+  @keyframes light-sweep {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  @keyframes chip-pop-up {
+    0% {
+      opacity: 0;
+      transform: translateY(24px) scale(0.65);
+    }
+    70% {
+      opacity: 1;
+      transform: translateY(-4px) scale(1.08);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* --- Hero Chip pop-up hover & micro-interaction --- */
+  .hero-chip {
+    transition:
+      transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 0.3s ease,
+      border-color 0.3s ease;
+  }
+  .hero-chip:hover {
+    transform: translateY(-4px) scale(1.06);
+    box-shadow:
+      0 12px 24px -6px rgba(31, 128, 73, 0.22),
+      0 4px 8px -2px rgba(0, 0, 0, 0.06);
+    border-color: rgba(31, 128, 73, 0.45);
+  }
+  .hero-chip:active {
+    transform: translateY(0) scale(0.96);
+  }
+
+  .hero-chip-icon {
+    transition:
+      transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+      background-color 0.25s ease,
+      color 0.25s ease;
+  }
+  .hero-chip:hover .hero-chip-icon {
+    transform: scale(1.18) rotate(8deg);
+    background-color: #1f8049;
+    color: #ffffff;
+  }
+
+  /* --- Active press micro-interaction.
+     Applied to buttons and interactive chips so a click feels tactile.
+     The scale drops on :active and springs back on release. */
+  .press-active {
+    transition: transform 0.12s var(--ease-emphasized), opacity 0.12s ease;
+  }
+  .press-active:active {
+    transform: scale(0.96);
+    opacity: 0.85;
+  }
+
+  /* --- Stat band two-phase entrance (StatBandAnimator) --------------------
+     Phase 1 — background: the green panel slides up from off-screen below
+       in 650 ms with ease-emphasized. overflow-hidden on the <section> clips
+       the overshoot cleanly.
+     Phase 2 — cards: each card fades up, staggered 80 ms apart, starting at
+       500 ms so the background has ~77 % of its travel done before any card
+       appears. nth-child(1–4) targets the .stat-band-card wrappers in <dl>.
+
+     When data-ready="true" is already in the HTML (no-JS, SSR, reduced motion),
+     neither rule applies and the content renders at its final state immediately.
+     StatBandAnimator.useLayoutEffect resets the attribute to "false" before the
+     first paint only when animations are going to run. */
+
+  /* Background: off-screen below until triggered. */
+  .stat-band-bg {
+    transition: transform 0.65s var(--ease-emphasized);
+  }
+  [data-ready="false"] .stat-band-bg {
+    transform: translateY(110%);
+  }
+
+  /* Cards: hidden until triggered; reveal after background settles. */
+  .stat-band-card {
+    transition:
+      opacity 0.5s ease,
+      transform 0.5s var(--ease-emphasized);
+  }
+  [data-ready="false"] .stat-band-card {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  /* Staggered reveal delays — 500 ms base + 80 ms per card.
+     Only on the data-ready="true" state so cards snap hidden instantly
+     (no delay needed when useLayoutEffect hides them before first paint). */
+  [data-ready="true"] .stat-band-card:nth-child(1) { transition-delay: 500ms; }
+  [data-ready="true"] .stat-band-card:nth-child(2) { transition-delay: 580ms; }
+  [data-ready="true"] .stat-band-card:nth-child(3) { transition-delay: 660ms; }
+  [data-ready="true"] .stat-band-card:nth-child(4) { transition-delay: 740ms; }
+  /* Snap to hidden state with zero delay (transition runs before paint anyway). */
+  [data-ready="false"] .stat-band-card:nth-child(1),
+  [data-ready="false"] .stat-band-card:nth-child(2),
+  [data-ready="false"] .stat-band-card:nth-child(3),
+  [data-ready="false"] .stat-band-card:nth-child(4) { transition-delay: 0ms; }
+
+  /* Reduced motion: show everything at once, no transitions. */
+  @media (prefers-reduced-motion: reduce) {
+    .stat-band-bg { transform: none !important; transition: none !important; }
+    .stat-band-card {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+    }
+  }
 }
+

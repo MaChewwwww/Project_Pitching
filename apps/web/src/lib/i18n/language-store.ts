@@ -24,9 +24,9 @@ interface LanguageState {
  * cross-cutting UI state that is not server data.
  */
 export const useLanguage = create<LanguageState>((set) => ({
-  lang: "fil",
+  lang: "en",
   setLang: (lang) => set({ lang }),
-  toggle: () => set((s) => ({ lang: s.lang === "fil" ? "en" : "fil" })),
+  toggle: () => set((s) => ({ lang: s.lang === "en" ? "fil" : "en" })),
 }));
 
 /** Pick the field matching the active language from a bilingual row. */

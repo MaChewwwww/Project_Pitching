@@ -3,48 +3,44 @@
 import * as React from "react";
 import { Phone, TriangleAlert } from "lucide-react";
 
-import { toTelHref } from "@/lib/format";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { HotlineList } from "./hotline-list";
 import { cn } from "@/lib/utils";
 import type { PublicAnnouncement, PublicHotline } from "@/lib/api/public-types";
-
-/**
- * The active-alert takeover (FR-PUB-017, BR-0.18, NFR-UX-005).
- *
- * Three requirements shape every decision here:
- *
- * - **It sits above everything, including the navbar.** `PublicShell` puts it
- *   first inside the sticky container, so it is the top of the viewport whatever
- *   the scroll position.
- * - **It is not dismissible while active.** There is no close button — deliberately.
- *   Somebody skimming past an evacuation order is precisely the outcome this
- *   exists to prevent. It disappears when the barangay deactivates the alert
- *   (FR-ALT-011), and only then.
- * - **It announces itself.** `role="alert"` with `aria-live="assertive"` so a
- *   resident using a screen reader hears the order without hunting for it. This is
- *   the one place on the site where interrupting is correct.
- *
- * Client-rendered because architecture.md Section 10.1 requires this to be
- * short-polled rather than picked up at the next ISR revalidation — an evacuation
- * order 60 seconds late is 60 seconds late. The boundary exists now so adding the
- * poll is one hook.
- */
 
 export interface EmergencyAlertBannerProps {
   alert: PublicAnnouncement | null;
   primaryHotline?: PublicHotline;
+  hotlines?: PublicHotline[];
 }
 
-export function EmergencyAlertBanner({
-  alert,
-  primaryHotline,
-}: EmergencyAlertBannerProps) {
+export function EmergencyAlertBanner({ alert, primaryHotline, hotlines }: EmergencyAlertBannerProps) {
   if (!alert || !alert.is_active) return null;
 
   // Level 2 and 3 mean "move now"; level 1 is a preparation notice. The palette
   // separates them so a Prepare notice does not read as an evacuation order.
   const urgent = (alert.alert_level ?? 0) >= 2 || alert.severity === "emergency";
   const levelText =
-    alert.alert_level != null ? `Alert Level ${alert.alert_level}` : "Emergency notice";
+    alert.alert_level != null ? `Level ${alert.alert_level}` : "Emergency";
+
+  // Areas plus the issuing officer (FR-ALT-007). One string, rendered in one of
+  // two places depending on width.
+  const meta = `${
+    alert.area_names.length > 0 ? alert.area_names.join(", ") : "Barangay-wide"
+  } · ${alert.issued_by_name}`;
+
+  const availableHotlines = hotlines && hotlines.length > 0
+    ? hotlines
+    : primaryHotline
+      ? [primaryHotline]
+      : [];
 
   return (
     <div
@@ -52,77 +48,101 @@ export function EmergencyAlertBanner({
       aria-live="assertive"
       aria-atomic="true"
       className={cn(
-        "border-b",
+        "border-b transition-colors shadow-sm",
         urgent
-          ? "border-danger/30 bg-danger text-white"
-          : "border-warning/30 bg-warning-bg text-neutral-900",
+          ? "border-danger-hover bg-gradient-to-r from-danger via-red-600 to-danger text-white"
+          : "border-warning/30 bg-gradient-to-r from-warning-bg via-amber-500/10 to-warning-bg text-neutral-900",
       )}
     >
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:gap-6 md:px-6">
-        <div className="flex min-w-0 flex-1 items-start gap-3">
-          <TriangleAlert
-            aria-hidden
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-6">
+        {/* Left / Center Content */}
+        <div className="flex min-w-0 flex-1 items-center gap-3.5">
+          <span
             className={cn(
-              "mt-0.5 size-5 shrink-0 motion-safe:animate-pulse",
-              urgent ? "text-white" : "text-warning",
+              "grid size-10 shrink-0 place-items-center rounded-xl backdrop-blur-md shadow-xs",
+              urgent ? "bg-white/20 text-white" : "bg-warning/20 text-warning-hover",
             )}
-            strokeWidth={2.5}
-          />
-          <div className="flex min-w-0 flex-col gap-1">
+          >
+            <TriangleAlert
+              aria-hidden
+              className="size-5 motion-safe:animate-pulse"
+              strokeWidth={2.5}
+            />
+          </span>
+
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
             <div className="flex flex-wrap items-center gap-2">
+              <span className="text-h4 font-bold tracking-tight min-w-0 truncate">{alert.title}</span>
+              {!/level/i.test(alert.title) ? (
+                <span
+                  className={cn(
+                    "text-overline shrink-0 rounded-md px-2 py-0.5 font-bold tracking-wider uppercase border",
+                    urgent ? "bg-white/25 text-white border-white/20" : "bg-warning text-white border-warning-hover",
+                  )}
+                >
+                  {levelText}
+                </span>
+              ) : null}
               <span
                 className={cn(
-                  "text-overline rounded-sm px-1.5 py-0.5",
-                  urgent ? "bg-white/20 text-white" : "bg-warning text-white",
+                  "text-caption hidden font-medium lg:inline-block",
+                  urgent ? "text-white/75" : "text-neutral-600",
                 )}
               >
-                {levelText}
+                • {meta}
               </span>
-              <span className="text-h4">{alert.title}</span>
             </div>
 
             {alert.instruction ? (
               <p
                 className={cn(
-                  "text-body-sm",
+                  "text-body-sm font-medium line-clamp-1 leading-snug",
                   urgent ? "text-white/90" : "text-neutral-700",
                 )}
               >
                 {alert.instruction}
               </p>
             ) : null}
-
-            <p
-              className={cn(
-                "text-caption",
-                urgent ? "text-white/70" : "text-neutral-600",
-              )}
-            >
-              {alert.area_names.length > 0
-                ? `Affected areas: ${alert.area_names.join(", ")}`
-                : "Barangay-wide"}
-              {" · Issued by "}
-              {alert.issued_by_name}
-            </p>
           </div>
         </div>
 
+        {/* Right CTA Button */}
         {primaryHotline ? (
-          <a
-            href={toTelHref(primaryHotline.number)}
-            aria-label={`Call ${primaryHotline.label} at ${primaryHotline.number}`}
-            className={cn(
-              // 48px floor — this is an emergency action (design.md Section 9.7).
-              "inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full px-5",
-              "text-label transition-colors focus-visible:ring-3 focus-visible:outline-none",
-              urgent
-                ? "text-danger bg-white hover:bg-white/90 focus-visible:ring-white/50"
-                : "bg-danger hover:bg-danger-hover focus-visible:ring-danger/40 text-white",
-            )}
-          >
-            <Phone aria-hidden className="size-4" strokeWidth={2.5} />
-            Call {primaryHotline.label}
-          </a>
+          <div className="shrink-0 max-sm:w-full">
+            <Dialog>
+              <DialogTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-5 cursor-pointer sm:w-auto",
+                    "text-label font-bold transition-all duration-200 focus-visible:ring-3 focus-visible:outline-none hover:scale-105 shadow-sm-card",
+                    urgent
+                      ? "bg-white text-danger hover:bg-white/95 focus-visible:ring-white/50"
+                      : "bg-danger text-white hover:bg-danger-hover focus-visible:ring-danger/40",
+                  )}
+                >
+                  <Phone aria-hidden className="size-4" strokeWidth={2.5} />
+                  <span>Emergency Hotlines</span>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-neutral-200/90 p-6 shadow-2xl bg-white">
+                <DialogHeader className="space-y-2 pb-2">
+                  <DialogTitle className="flex items-center gap-3 text-h3 font-bold text-neutral-900">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-danger-bg to-red-100 border border-danger/20 text-danger shadow-xs">
+                      <Phone className="size-5" strokeWidth={2.5} />
+                    </span>
+                    Emergency Hotlines
+                  </DialogTitle>
+                  <DialogDescription className="text-body-sm text-neutral-600 leading-relaxed">
+                    Call directly or click to copy emergency contact numbers for Barangay San Jose.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="pt-2">
+                  <HotlineList hotlines={availableHotlines} layout="stack" />
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         ) : null}
       </div>
     </div>

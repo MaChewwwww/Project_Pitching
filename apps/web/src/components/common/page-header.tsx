@@ -1,5 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
+import type { Route } from "next";
 import { ChevronRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -23,7 +24,7 @@ export interface PageHeaderProps {
   /** Rendered in `primary-600`, after `title`. */
   titleAccent?: React.ReactNode;
   description?: React.ReactNode;
-  breadcrumb?: { label: string; href?: string }[];
+  breadcrumb?: { label: string; href?: Route }[];
   action?: React.ReactNode;
   className?: string;
 }
@@ -38,15 +39,16 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <div className={cn("bg-surface-tint border-b border-neutral-200", className)}>
-      <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-6 md:py-12">
+    <div className={cn("relative overflow-hidden bg-gradient-to-b from-primary-50/70 via-surface-tint to-white border-b border-neutral-200/80", className)}>
+      <div aria-hidden className="pointer-events-none absolute -right-20 -top-20 size-80 rounded-full bg-primary-200/30 blur-3xl" />
+      <div className="relative mx-auto max-w-[1440px] px-4 py-8 md:px-6 md:py-12">
         {breadcrumb && breadcrumb.length > 0 ? (
           <nav aria-label="Breadcrumb" className="mb-4">
-            <ol className="flex flex-wrap items-center gap-1">
+            <ol className="inline-flex flex-wrap items-center gap-1.5 rounded-full border border-neutral-200/80 bg-white/80 px-3 py-1 backdrop-blur-sm">
               {breadcrumb.map((crumb, i) => {
                 const last = i === breadcrumb.length - 1;
                 return (
-                  <li key={`${crumb.label}-${i}`} className="flex items-center gap-1">
+                  <li key={`${crumb.label}-${i}`} className="flex items-center gap-1.5">
                     {i > 0 ? (
                       <ChevronRight aria-hidden className="size-3.5 text-neutral-400" />
                     ) : null}
@@ -60,7 +62,7 @@ export function PageHeader({
                     ) : (
                       <span
                         aria-current={last ? "page" : undefined}
-                        className="text-body-sm font-semibold text-neutral-800"
+                        className="text-body-sm font-semibold text-primary-900"
                       >
                         {crumb.label}
                       </span>
@@ -75,16 +77,16 @@ export function PageHeader({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex flex-col gap-2">
             {eyebrow ? (
-              <span className="text-overline text-primary-700">{eyebrow}</span>
+              <span className="text-overline font-bold tracking-wider text-primary-700">{eyebrow}</span>
             ) : null}
-            <h1 className="text-display-md text-neutral-900">
+            <h1 className="text-display-md font-bold tracking-tight text-neutral-900">
               {title}
               {titleAccent ? (
-                <span className="text-primary-600"> {titleAccent}</span>
+                <span className="text-primary-600 font-extrabold"> {titleAccent}</span>
               ) : null}
             </h1>
             {description ? (
-              <p className="text-body-lg max-w-2xl text-neutral-600">{description}</p>
+              <p className="text-body-lg max-w-2xl leading-relaxed text-neutral-600">{description}</p>
             ) : null}
           </div>
 

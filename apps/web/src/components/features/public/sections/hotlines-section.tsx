@@ -4,6 +4,7 @@ import { Phone } from "lucide-react";
 import { Attribution } from "@/components/common/attribution";
 import { EmptyState } from "@/components/common/empty-state";
 import { HotlineList } from "@/components/common/hotline-list";
+import { Reveal } from "@/components/common/reveal";
 import { SectionHeader } from "@/components/common/section-header";
 import { Section } from "./section";
 import { getHotlines } from "@/lib/api/public";
@@ -28,13 +29,15 @@ export async function HotlinesSection() {
 
   return (
     <Section id="hotlines">
-      <SectionHeader
-        icon={Phone}
-        eyebrow="In an emergency"
-        title="Emergency"
-        titleAccent="hotlines"
-        description="Tap any number to call. These are also available from the red button in the corner of every page."
-      />
+      <Reveal>
+        <SectionHeader
+          icon={Phone}
+          eyebrow="In an emergency"
+          title="Emergency"
+          titleAccent="hotlines"
+          description="Tap any number to call. These are also available from the red button in the corner of every page."
+        />
+      </Reveal>
 
       <div className="mt-8">
         {hotlines.length > 0 ? (

@@ -20,15 +20,17 @@ import { cn } from "@/lib/utils";
  */
 
 const OPTIONS: { value: Language; label: string; full: string }[] = [
-  { value: "fil", label: "FIL", full: "Filipino" },
   { value: "en", label: "ENG", full: "English" },
+  { value: "fil", label: "FIL", full: "Filipino" },
 ];
 
 export function LanguageToggle({
   onDark = false,
+  fullWidth = false,
   className,
 }: {
   onDark?: boolean;
+  fullWidth?: boolean;
   className?: string;
 }) {
   const lang = useLanguage((s) => s.lang);
@@ -39,8 +41,11 @@ export function LanguageToggle({
       role="group"
       aria-label="Content language"
       className={cn(
-        "inline-flex items-center rounded-full p-0.5",
-        onDark ? "bg-white/10" : "bg-neutral-100",
+        "inline-flex items-center rounded-full border transition-colors",
+        fullWidth ? "flex w-full p-1" : "h-10 p-1 gap-1",
+        onDark
+          ? "bg-white/10 border-white/15"
+          : "bg-neutral-100/90 border-neutral-200/80",
         className,
       )}
     >
@@ -54,14 +59,17 @@ export function LanguageToggle({
             aria-label={`Show content in ${option.full}`}
             onClick={() => setLang(option.value)}
             className={cn(
-              "text-caption tap-44 rounded-full px-2.5 py-1 font-bold transition-colors",
+              "rounded-full font-bold transition-all duration-200 cursor-pointer flex items-center justify-center text-center",
+              fullWidth
+                ? "flex-1 px-3 py-2 text-caption"
+                : "h-8 px-3.5 text-[13px] font-bold leading-none",
               "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
               active
                 ? onDark
-                  ? "text-primary-900 bg-white"
-                  : "text-primary-800 shadow-sm-card bg-white"
+                  ? "bg-white text-primary-950 shadow-xs"
+                  : "bg-primary-600 text-white shadow-sm shadow-primary-600/30"
                 : onDark
-                  ? "text-primary-100/70 hover:text-white"
+                  ? "text-primary-100/80 hover:text-white"
                   : "text-neutral-500 hover:text-neutral-800",
             )}
           >

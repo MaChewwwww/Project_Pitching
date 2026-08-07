@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, CircleCheck, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/common/button";
+import { Reveal } from "@/components/common/reveal";
 import { SectionHeader } from "@/components/common/section-header";
 import { BarangayIsometric } from "../illustrations/barangay-isometric";
 import { HISTORY_BADGE, WHY_PREPAREDNESS } from "@/lib/content/about";
@@ -60,13 +61,15 @@ export async function WhyPreparednessSection() {
 
         {/* --- copy --------------------------------------------------------- */}
         <div className="flex flex-col gap-6">
-          <SectionHeader
-            icon={ShieldCheck}
-            eyebrow="Why preparedness matters here"
-            title="San Jose floods."
-            titleAccent="Preparation is what changes."
-            description="The river will rise again. What a household can change is how much warning it acts on, and whether it already knows where to go."
-          />
+          <Reveal>
+            <SectionHeader
+              icon={ShieldCheck}
+              eyebrow="Why preparedness matters here"
+              title="San Jose floods."
+              titleAccent="Preparation is what changes."
+              description="The river will rise again. What a household can change is how much warning it acts on, and whether it already knows where to go."
+            />
+          </Reveal>
 
           <ul className="flex flex-col gap-3">
             {WHY_PREPAREDNESS.map((item) => (

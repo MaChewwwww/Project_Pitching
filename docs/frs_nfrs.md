@@ -1,6 +1,6 @@
 # Functional & Non-Functional Requirements
 
-**Project:** `[APP_NAME]` — Barangay San Jose Disaster Readiness & Community Health Platform
+**Project:** `SAGIP-SJ` (System for Alert, Guidance, Incident Reporting, and Preparedness) — Barangay San Jose Disaster Readiness & Community Health Platform
 **Version:** 0.1 · **Date:** August 2026
 **Status:** Source of truth for implementation
 

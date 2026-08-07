@@ -1,6 +1,6 @@
 # System Architecture
 
-**Project:** `[APP_NAME]` — Barangay San Jose Disaster Readiness & Community Health Platform
+**Project:** `SAGIP-SJ` (System for Alert, Guidance, Incident Reporting, and Preparedness) — Barangay San Jose Disaster Readiness & Community Health Platform
 **Version:** 0.1 (Draft) · **Date:** August 2026
 
 **Companions:** [`business-requirements.md`](./business-requirements.md) · [`frs_nfrs.md`](./frs_nfrs.md) · [`tech_stack.md`](./tech_stack.md) · [`design.md`](./design.md) · [`schema.md`](./schema.md)
@@ -38,7 +38,7 @@ graph TB
         D[Donor<br/>no account]
     end
 
-    SYS[["[APP_NAME]<br/>Disaster Readiness &<br/>Community Health Platform"]]
+    SYS[["SAGIP-SJ<br/>Disaster Readiness &<br/>Community Health Platform"]]
 
     subgraph External
         OM[Open-Meteo<br/>weather API]

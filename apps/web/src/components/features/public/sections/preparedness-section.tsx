@@ -29,7 +29,7 @@ export async function PreparednessSection() {
       />
 
       <div className="mt-8 grid gap-4 md:mt-10 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
-        {guides.slice(0, 6).map((guide, i) => (
+        {guides.slice(0, 3).map((guide, i) => (
           <Reveal key={guide.id} delay={(i % 3) as 0 | 1 | 2}>
             <GuideCard guide={guide} />
           </Reveal>
