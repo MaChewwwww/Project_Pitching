@@ -1,0 +1,121 @@
+# The stack. One Compose file, environment-driven differences — no separate
+# production stack, which is what makes "demo from a laptop" a viable fallback if
+# the VPS dies (architecture.md Section 13, T-3, NFR-MNT-007).
+#
+# Run through the Makefile:  make dev  (hot reload)  /  make up  (detached)
+
+name: barangay-platform
+
+services:
+  # --- database -------------------------------------------------------------
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-appdb}
+      # Deterministic collation, so ORDER BY on names does not differ between a
+      # laptop and the VPS.
+      POSTGRES_INITDB_ARGS: "--locale=C.UTF-8 --encoding=UTF8"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backups:/backups
+    healthcheck:
+      # Nothing else starts until this passes (architecture.md Section 13.3).
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-appdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  # --- api ------------------------------------------------------------------
+  api:
+    build:
+      context: ../apps/api
+      target: base
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      ACCESS_TOKEN_MINUTES: ${ACCESS_TOKEN_MINUTES:-15}
+      REFRESH_TOKEN_DAYS: ${REFRESH_TOKEN_DAYS:-14}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+      OPEN_METEO_LAT: ${OPEN_METEO_LAT:-14.735}
+      OPEN_METEO_LON: ${OPEN_METEO_LON:-121.135}
+      PAGASA_STATION: ${PAGASA_STATION:-Montalban}
+      SCRAPE_INTERVAL_MINUTES: ${SCRAPE_INTERVAL_MINUTES:-15}
+      STALE_THRESHOLD_MINUTES: ${STALE_THRESHOLD_MINUTES:-45}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/uploads}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-5}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      DEMO_MODE: ${DEMO_MODE:-false}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    volumes:
+      # Uploads live outside the web root and are served by the proxy, never by
+      # the app (NFR-SEC-008).
+      - uploads:/uploads
+
+  # --- scheduled jobs -------------------------------------------------------
+  cron:
+    build:
+      context: ../services/cron
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    # Exactly one. An in-process scheduler behind multiple workers fires every
+    # job once per worker — duplicate scrapes, duplicate alerts (A-4).
+    deploy:
+      replicas: 1
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      OPEN_METEO_LAT: ${OPEN_METEO_LAT:-14.735}
+      OPEN_METEO_LON: ${OPEN_METEO_LON:-121.135}
+      PAGASA_STATION: ${PAGASA_STATION:-Montalban}
+      SCRAPE_INTERVAL_MINUTES: ${SCRAPE_INTERVAL_MINUTES:-15}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      DEMO_MODE: ${DEMO_MODE:-false}
+      TZ: Asia/Manila
+    # No ports. This container has no HTTP surface by design.
+
+  # --- web ------------------------------------------------------------------
+  web:
+    build:
+      # Repo root: npm workspaces hoist node_modules above apps/web.
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      target: runner
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080/api/v1}
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NODE_ENV: production
+
+  # --- proxy ----------------------------------------------------------------
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+      - api
+    ports:
+      # 80 is usually occupied on Windows, so the host port is configurable.
+      - "${PROXY_PORT:-8080}:80"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - uploads:/srv/uploads:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

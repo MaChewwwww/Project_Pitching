@@ -1,0 +1,52 @@
+# Local development: hot reload, source bind mounts, exposed ports.
+#
+# Applied on top of compose.yml by `make dev`. Never used on the VPS — the whole
+# point of NFR-MNT-007 is that the base file is the same in both places.
+
+services:
+  db:
+    ports:
+      # Exposed so you can point a GUI client (pgAdmin, DBeaver, TablePlus) at it.
+      - "${DB_PORT:-5433}:5432"
+
+  api:
+    build:
+      target: dev
+    volumes:
+      # Source over the image, so an edit reloads instead of rebuilding.
+      - ../apps/api/src:/app/src
+      - ../apps/api/alembic:/app/alembic
+      - ../apps/api/tests:/app/tests
+      - uploads:/uploads
+    environment:
+      ENVIRONMENT: development
+      LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
+    ports:
+      # Direct access, bypassing the proxy — handy when debugging routing.
+      - "${API_PORT:-8000}:8000"
+
+  cron:
+    volumes:
+      - ../services/cron:/app
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
+
+  web:
+    build:
+      target: dev
+    volumes:
+      - ../apps/web:/repo/apps/web
+      - ../packages:/repo/packages
+      # Anonymous volumes keep the image's node_modules and .next from being
+      # shadowed by the host's — Linux and Windows binaries are not compatible.
+      - /repo/node_modules
+      - /repo/apps/web/.next
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080/api/v1}
+      WATCHPACK_POLLING: "true" # bind-mount file events do not always propagate
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+
+volumes:
+  uploads:

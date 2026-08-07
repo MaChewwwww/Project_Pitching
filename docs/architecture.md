@@ -134,7 +134,7 @@ apps/api/src/
 ├── db/
 │   ├── session.py           engine, session factory
 │   ├── base.py              declarative base, mixins (timestamps, soft delete)
-│   └── migrations/          alembic
+│   └── models_registry.py   imports every models.py — Alembic autogenerate reads this
 ├── modules/
 │   ├── auth/                FR-SYS-001..004
 │   ├── users/               FR-SYS-005..009
@@ -168,12 +168,15 @@ service.py    business logic, transaction boundaries
 models.py     SQLAlchemy ORM
 ```
 
+> **Alembic lives at `apps/api/alembic/`**, beside `alembic.ini` and as a sibling of `src/` and `tests/` — see the repository layout in Section 12.2. An earlier draft of this tree showed it as `src/db/migrations/`; that was inconsistent with 12.2 and is corrected above.
+
 **Rules that keep this from rotting**
 
 1. **Routers never touch the database.** They call services.
 2. **Services never import another module's `models.py`.** Cross-module access goes through the owning service.
 3. **`domain/` is pure.** No I/O, no ORM, no framework imports — which is why it is the one place with a real unit test suite (NFR-MNT-005).
 4. **Authorization lives in `deps.py`**, applied as a router dependency. Never inside a service, never in the frontend.
+5. **Every `models.py` is imported by `db/models_registry.py`.** Alembic's autogenerate compares `Base.metadata` against the live database; a model nothing imports is absent from that metadata, and autogenerate will emit a migration that *drops its table*.
 
 ---
 

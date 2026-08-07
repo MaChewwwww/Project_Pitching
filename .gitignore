@@ -25,6 +25,13 @@ venv/
 # --- Build artifacts / copies (not a second source of truth) ---
 apps/web/public/data/*.geojson
 
+# Intermediate step of `make types`. Only the generated .ts is committed, because
+# that is what CI diffs (architecture.md 12.4).
+packages/api-types/openapi.json
+
+# Database dumps — runtime data, and they can be large.
+infra/backups/*.dump
+
 # --- Secrets & local env ---
 .env
 .env.local

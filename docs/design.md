@@ -164,6 +164,10 @@ Convention from the reference dashboard: **solid lines are actuals, dashed lines
 
 shadcn/ui convention, HSL triplets. Drop into `globals.css`.
 
+> **As implemented — Tailwind v4.** The app is on Tailwind v4, where the same tokens are exposed through `@theme inline` rather than a `tailwind.config.ts`, and each value must be a complete colour (`#1F8049`) rather than a bare triplet. **The palette is unchanged**; only the syntax differs.
+>
+> One correction fell out of implementing it: several triplets below are rounded and do not resolve to the hex they name. `hsl(149 61% 31%)` is `#1F7F4D`, not `#1F8049` — close enough to read the same in isolation, but it makes `bg-primary` and `bg-primary-600` visibly different swatches side by side. **`globals.css` uses the hex values from Sections 3.1–3.3**, which are the authoritative ones, and keeps the HSL in a comment on each line.
+
 ```css
 @layer base {
   :root {
@@ -292,6 +296,8 @@ Full responsive behaviour in Section 9.3.
 
 > The public site uses **fully rounded pill buttons**; the admin console uses **`md` radius**. That difference is deliberate — it signals "public brochure" versus "working tool."
 
+> **The tokens carry these values; the raw shadcn primitives do not use them as assigned here.** A stock shadcn `button` is `rounded-lg` (14px by this scale) and a stock `card` is `rounded-xl` (20px), where this table wants 10px and 14px respectively. The same applies to button heights — shadcn's defaults are not the 32/40/48 of Section 7.3. **This is resolved in `components/common/`, not by editing `components/ui/`** (NFR-MNT-006): the `Button` and `Card` composites apply the right token per component. Until those composites exist, a page built on raw primitives will look subtly off-spec — which is one reason Section 12 puts them at stage 1.
+
 ### Elevation
 
 | Token | Shadow | Use |
@@ -366,17 +372,24 @@ components/
 ### 7.1 shadcn/ui primitives to install
 
 ```bash
-npx shadcn@latest add \
-  accordion alert alert-dialog avatar badge breadcrumb button calendar card \
-  chart checkbox collapsible command dialog dropdown-menu form hover-card \
-  input label navigation-menu pagination popover progress radio-group \
-  scroll-area select separator sheet sidebar skeleton slider sonner switch \
-  table tabs textarea toggle tooltip
+make shadcn
 ```
+
+The list lives in `tools/install_shadcn.py` so it exists in exactly one place and a re-run is one command. Re-running is safe and overwrites — primitives are not edited except for token wiring (NFR-MNT-006), and that wiring lives in `globals.css`.
+
+```
+accordion alert alert-dialog avatar badge breadcrumb button calendar card
+chart checkbox collapsible command dialog dropdown-menu field hover-card
+input label navigation-menu pagination popover progress radio-group
+scroll-area select separator sheet sidebar skeleton slider sonner switch
+table tabs textarea toggle tooltip
+```
+
+> **`form` became `field`.** An earlier draft listed `form`. In the current shadcn registry `form` is an empty stub — it was superseded by `field`, which composes with React Hook Form and Zod directly (`FieldError` takes RHF's error objects). Installing `form` silently does nothing, which is worse than failing. `field` also pulls in `input-group`, and `sidebar` pulls in `use-mobile`.
 
 | Primitive | Used by |
 |---|---|
-| `button`, `input`, `label`, `textarea`, `select`, `checkbox`, `radio-group`, `switch`, `form` | Registration, all admin forms |
+| `button`, `input`, `label`, `textarea`, `select`, `checkbox`, `radio-group`, `switch`, `field` | Registration, all admin forms |
 | `table` | DataTable |
 | `badge` | Every status indicator |
 | `card` | Every panel |

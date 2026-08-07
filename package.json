@@ -1,0 +1,25 @@
+{
+  "name": "project-pitching",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Barangay San Jose Disaster Readiness & Community Health Platform — monorepo root",
+  "license": "UNLICENSED",
+  "workspaces": [
+    "apps/web",
+    "packages/api-types"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "lint": "npm run lint --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web",
+    "test": "npm run test --workspace=apps/web"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.6.1"
+  },
+  "overrides": {
+    "js-yaml": "^4.3.1"
+  }
+}

@@ -1,0 +1,4 @@
+# Dumps are runtime data, never committed. The directory is tracked so the
+# compose bind mount has somewhere to land on a fresh clone.
+*
+!.gitignore

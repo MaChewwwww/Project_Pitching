@@ -505,24 +505,32 @@ A requirement is `✅` only when all of the following hold:
 
 | ID | Requirement | Target | Status |
 |---|---|---|---|
-| NFR-MNT-001 | TypeScript strict mode on the frontend | Enabled | ☐ |
-| NFR-MNT-002 | Lint and format enforced in CI | ruff (Python), ESLint + Prettier (TS) | ☐ |
-| NFR-MNT-003 | CI runs lint and tests on every PR | Green required to merge | ☐ |
-| NFR-MNT-004 | All schema changes via Alembic migrations | No manual DDL | ☐ |
+| NFR-MNT-001 | TypeScript strict mode on the frontend | Enabled | 👁 |
+| NFR-MNT-002 | Lint and format enforced in CI | ruff (Python), ESLint + Prettier (TS) | 👁 |
+| NFR-MNT-003 | CI runs lint and tests on every PR | Green required to merge | 👁 |
+| NFR-MNT-004 | All schema changes via Alembic migrations | No manual DDL | 👁 |
 | NFR-MNT-005 | Test coverage on vulnerability classification and alert threshold logic | ≥ 80% on those modules | ☐ |
 | NFR-MNT-006 | shadcn primitives not edited except for token wiring | Enforced by review | ☐ |
-| NFR-MNT-007 | Environment parity — same Compose stack locally and on the VPS | Verified | ☐ |
-| NFR-MNT-008 | README enables a new team member to run the stack | ≤ 30 minutes from clone | ☐ |
-| NFR-MNT-009 | External data adapters isolated behind interfaces | Weather, river level, hazard data | ☐ |
+| NFR-MNT-007 | Environment parity — same Compose stack locally and on the VPS | Verified | 👁 |
+| NFR-MNT-008 | README enables a new team member to run the stack | ≤ 30 minutes from clone | ◐ |
+| NFR-MNT-009 | External data adapters isolated behind interfaces | Weather, river level, hazard data | ◐ |
+
+> **On the `👁` rows above and in 15.8.** These were delivered by the infrastructure bootstrap (`chore/NFR-MNT-007-infra-bootstrap`) and are implemented and verified against a running stack. They are `👁` rather than `✅` because Definition of Done item 6 — reviewed by one other team member — has not happened yet, and NFR-MNT-003's "green required to merge" additionally needs branch protection, which needs a remote.
+>
+> The `◐` rows are partial by design:
+>
+> - **NFR-MNT-008** — the README exists and the stack comes up from a clean clone, but nobody has actually timed a teammate doing it. That is the acceptance criterion, so it stays `◐` until someone does.
+> - **NFR-MNT-009** — the `DataSource` protocol and the three adapter modules exist; the adapters themselves are stubs. The interface is what this NFR asks for, but calling it done before anything implements it would be a lie.
+> - **NFR-OBS-002** — the `@job` decorator logs start, outcome, and duration for every job, so the requirement is structurally met. The six jobs are stubs, so there are no real outcomes to log yet.
 
 ### 15.8 Observability — `OBS`
 
 | ID | Requirement | Target | Status |
 |---|---|---|---|
-| NFR-OBS-001 | Structured application logs with request IDs | JSON output | ☐ |
-| NFR-OBS-002 | Scheduled job outcomes logged — success, failure, duration | Every run | ☐ |
+| NFR-OBS-001 | Structured application logs with request IDs | JSON output | 👁 |
+| NFR-OBS-002 | Scheduled job outcomes logged — success, failure, duration | Every run | ◐ |
 | NFR-OBS-003 | Upstream fetch failures logged with source and reason | Every failure | ☐ |
-| NFR-OBS-004 | Health check endpoint | `/health` returning app and DB status | ☐ |
+| NFR-OBS-004 | Health check endpoint | `/health` returning app and DB status | 👁 |
 | NFR-OBS-005 | Audit log queryable by admin | Filter by actor, action, date | ☐ |
 
 ### 15.9 Data — `DAT`

@@ -1,0 +1,24 @@
+# Repo-root build context (used by apps/web/Dockerfile).
+node_modules
+**/node_modules
+**/.next
+**/out
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.ruff_cache
+**/.pytest_cache
+
+.git
+.github
+docs
+dataset/raw
+uploads
+infra/backups
+
+.env
+.env.*
+!.env.example
+
+**/.DS_Store
+**/Thumbs.db

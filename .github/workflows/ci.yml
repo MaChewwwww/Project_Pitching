@@ -1,0 +1,246 @@
+# One workflow, jobs gated on what changed (architecture.md Section 12.6).
+#
+# The path filters exist because AR-8 is real: without them a docs-only PR
+# rebuilds the frontend and the review loop gets slow enough that people stop
+# opening small PRs.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      web: ${{ steps.filter.outputs.web }}
+      docs: ${{ steps.filter.outputs.docs }}
+      infra: ${{ steps.filter.outputs.infra }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'apps/api/**'
+              - 'services/cron/**'
+              - '.github/workflows/ci.yml'
+            web:
+              - 'apps/web/**'
+              - 'packages/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/ci.yml'
+            docs:
+              - 'docs/**'
+              - '*.md'
+            infra:
+              - 'infra/**'
+              - '**/Dockerfile'
+
+  api:
+    name: api — ruff, pytest, migrations
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-latest
+
+    services:
+      db:
+        # Same image as the stack. A migration that only works against plain
+        # Postgres is not a migration that works.
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app_test_password
+          POSTGRES_DB: appdb_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d appdb_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql+psycopg://app:app_test_password@localhost:5432/appdb_test
+      JWT_SECRET: ci-only-secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.8.2"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install api dependencies
+        working-directory: apps/api
+        run: uv pip install --system -r pyproject.toml --group dev
+
+      - name: Lint (ruff)
+        working-directory: apps/api
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Apply migrations
+        working-directory: apps/api
+        run: alembic upgrade head
+
+      - name: Verify the migration is reversible
+        working-directory: apps/api
+        # A migration nobody can undo is a migration nobody dares to fix.
+        run: |
+          alembic downgrade base
+          alembic upgrade head
+
+      - name: Test
+        working-directory: apps/api
+        run: pytest -q
+
+      - name: Install cron dependencies
+        working-directory: services/cron
+        run: uv pip install --system -r pyproject.toml --group dev
+
+      - name: Lint cron (ruff)
+        working-directory: services/cron
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Cron scheduler builds
+        working-directory: services/cron
+        # Catches an import error or a bad trigger before it silently stops the
+        # jobs at 02:00 on a Sunday.
+        run: python -c "import main; s = main.build_scheduler(); print(sorted(j.id for j in s.get_jobs()))"
+
+  web:
+    name: web — eslint, tsc, next build
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint --workspace=apps/web
+
+      - name: Format check
+        run: npm run format:check --workspace=apps/web
+
+      - name: Typecheck
+        run: npm run typecheck --workspace=apps/web
+
+      - name: Build
+        run: npm run build --workspace=apps/web
+
+  types:
+    name: types — generated.ts is current
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: postgresql+psycopg://app:unused@localhost:5432/unused
+      JWT_SECRET: ci-only-secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.8.2"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install api dependencies
+        working-directory: apps/api
+        run: uv pip install --system -r pyproject.toml
+
+      - name: Regenerate
+        # No database needed — the schema is built from the route definitions.
+        run: |
+          (cd apps/api && python -m src.main --export-openapi) > packages/api-types/openapi.json
+          npx openapi-typescript packages/api-types/openapi.json -o packages/api-types/src/generated.ts
+
+      - name: Fail if generated.ts is stale
+        # Relying on everyone remembering `make types` does not work (AR-9).
+        run: |
+          if ! git diff --exit-code -- packages/api-types/src/generated.ts; then
+            echo "::error::packages/api-types/src/generated.ts is out of date. Run 'make types' and commit the result."
+            exit 1
+          fi
+
+  docs:
+    name: docs — link check
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --no-progress
+            --offline
+            --include-fragments
+            'docs/**/*.md'
+            '*.md'
+          fail: true
+
+  infra:
+    name: infra — compose config is valid
+    needs: changes
+    if: needs.changes.outputs.infra == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate compose files
+        run: |
+          cp .env.example .env
+          docker compose --env-file .env -f infra/compose.yml config --quiet
+          docker compose --env-file .env -f infra/compose.yml -f infra/compose.override.yml config --quiet
+
+  # A single required check, so branch protection does not need updating every
+  # time a job is added or a path filter skips one.
+  ci:
+    name: ci
+    if: always()
+    needs: [api, web, types, docs, infra]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any job failed
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - run: echo "All required checks passed."

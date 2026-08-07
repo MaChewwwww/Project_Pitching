@@ -227,6 +227,10 @@ Use the library the team already has. This is static reference data — load it 
 
 A dedicated **cron container** in the Compose stack, running a small Python script against the API or the database directly.
 
+| Tool | Purpose | Notes |
+|---|---|---|
+| **APScheduler** | Job scheduling inside the cron container | Interval and cron triggers, `coalesce` and `max_instances=1` so a missed run is skipped rather than replayed in a burst. **The objection below is to APScheduler *inside the API*, not to APScheduler itself** — this container runs exactly one replica, so the duplicate-execution problem cannot arise. The alternative, a `while True: sleep()` loop, means hand-rolling misfire handling and cron expressions |
+
 | Job | Frequency | Purpose |
 |---|---|---|
 | Fetch Open-Meteo forecast | 15–30 min | BR-3.1 |

@@ -1,0 +1,417 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* ===========================================================================
+   Design tokens — docs/design.md
+   ---------------------------------------------------------------------------
+   Values are transcribed from design.md Sections 3, 4, and 5. design.md shows
+   them as bare HSL triplets in a Tailwind v3 `@layer base` block; Tailwind v4
+   needs complete colour values, so each is wrapped in hsl(). The numbers are
+   unchanged — this is a syntax difference, not a palette change.
+
+   Do not restyle shadcn primitives in components/ui/ (NFR-MNT-006). Token
+   wiring happens here and only here.
+   =========================================================================== */
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* --- fonts (design.md Section 4) --------------------------------------- */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-jakarta), var(--font-inter), ui-sans-serif, sans-serif;
+  --font-heading: var(--font-jakarta), var(--font-inter), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  /* --- radius (design.md Section 5) -------------------------------------- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-3xl: 28px;
+  --radius-4xl: 32px;
+
+  /* --- shadcn semantic surfaces ------------------------------------------ */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Surfaces shadcn has no token for (design.md Section 3.6) */
+  --color-surface-dark: var(--surface-dark);
+  --color-surface-header: var(--surface-header);
+  --color-surface-tint: var(--surface-tint);
+
+  /* --- sidebar (design.md Section 7.2 — AdminSidebar is primary-950) ------ */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* --- primary: forest green (design.md Section 3.1) ---------------------- */
+  --color-primary-50: #f2faf5;
+  --color-primary-100: #dff3e6;
+  --color-primary-200: #bfe7ce;
+  --color-primary-300: #92d4ac;
+  --color-primary-400: #5bb983;
+  --color-primary-500: #2e9d62;
+  --color-primary-600: #1f8049;
+  --color-primary-700: #196a3d;
+  --color-primary-800: #17532f;
+  --color-primary-900: #123f25;
+  --color-primary-950: #0c2a19;
+
+  /* --- neutrals, slight green cast (design.md Section 3.2) ---------------- */
+  --color-neutral-50: #f8fafa;
+  --color-neutral-100: #f1f4f3;
+  --color-neutral-200: #e3e8e6;
+  --color-neutral-300: #cbd3d0;
+  --color-neutral-400: #9aa5a1;
+  --color-neutral-500: #6b7772;
+  --color-neutral-600: #4e5a55;
+  --color-neutral-700: #3a4541;
+  --color-neutral-800: #252e2b;
+  --color-neutral-900: #141a18;
+
+  /* --- semantic (design.md Section 3.3) ----------------------------------
+     Success is a *different* green from primary-600 on purpose. When the whole
+     interface is green, a green "verified" badge reads as decoration. */
+  --color-success: #15803d;
+  --color-success-bg: #dcfce7;
+  --color-success-border: #bbf7d0;
+  --color-warning: #b45309;
+  --color-warning-bg: #fef3c7;
+  --color-warning-border: #fde68a;
+  --color-danger: #b91c1c;
+  --color-danger-bg: #fee2e2;
+  --color-danger-border: #fecaca;
+  --color-info: #1d4ed8;
+  --color-info-bg: #dbeafe;
+  --color-info-border: #bfdbfe;
+
+  /* --- river alert levels (design.md Section 3.4, BR-3.2) -----------------
+     Always rendered as a solid badge or banner with a number and a word.
+     NEVER as a map fill — that form belongs to flood hazard. */
+  --color-alert-normal: #15803d;
+  --color-alert-normal-bg: #dcfce7;
+  --color-alert-1: #b45309;
+  --color-alert-1-bg: #fef3c7;
+  --color-alert-2: #c2410c;
+  --color-alert-2-bg: #ffedd5;
+  --color-alert-3: #b91c1c;
+  --color-alert-3-bg: #fee2e2;
+
+  /* --- flood hazard (design.md Section 3.4) -------------------------------
+     The official Philippine hazard-map convention used by UP NOAH, LiPAD, MGB,
+     and PHIVOLCS. Do not invent a different ramp, and do not make it blue.
+     Always a translucent map polygon, never a badge. */
+  --color-hazard-low: #ffed4a; /* 1 — 0–0.5 m */
+  --color-hazard-medium: #f59e0b; /* 2 — 0.5–1.5 m */
+  --color-hazard-high: #ef4444; /* 3 — >1.5 m */
+  --color-hazard-assessed: #e5e7eb;
+  --color-hazard-unassessed: #9ca3af;
+
+  /* --- household vulnerability (design.md Section 3.4, BR-1.48) ----------- */
+  --color-vuln-low: #15803d;
+  --color-vuln-low-bg: #dcfce7;
+  --color-vuln-moderate: #ca8a04;
+  --color-vuln-moderate-bg: #fef9c3;
+  --color-vuln-high: #c2410c;
+  --color-vuln-high-bg: #ffedd5;
+  --color-vuln-priority: #b91c1c;
+  --color-vuln-priority-bg: #fee2e2;
+
+  /* --- safety status (design.md Section 3.4, M5) --------------------------
+     "Safe via household action" is the same colour but outlined — BR-5.1c says
+     it carries lower confidence and must be shown differently. */
+  --color-safety-safe: #15803d;
+  --color-safety-unaccounted: #6b7772;
+  --color-safety-rescue: #b91c1c;
+
+  /* --- charts (design.md Section 3.5) ------------------------------------
+     Ordered for categorical series. Colour-blind safe, distinguishable in
+     greyscale. Solid lines are actuals, dashed lines are forecasts. */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+
+  /* --- motion (design.md Section 5) -------------------------------------- */
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+}
+
+:root {
+  /* design.md Section 3.6, given as the hex each triplet names.
+     design.md's own HSL values are rounded — hsl(149 61% 31%) resolves to
+     #1F7F4D, not the #1F8049 the comment beside it claims. Using the hex keeps
+     `bg-primary` and `bg-primary-600` identical, which they must be, since the
+     scale in Section 3.1 is what a designer reads off. The HSL is kept in the
+     comments so the line back to Section 3.6 stays visible. */
+  --background: #f8fafa; /* 180 20% 98% — neutral-50   */
+  --foreground: #141a18; /* 160 10% 9%  — neutral-900  */
+
+  --card: #ffffff; /* 0 0% 100% */
+  --card-foreground: #141a18;
+
+  --popover: #ffffff;
+  --popover-foreground: #141a18;
+
+  --primary: #1f8049; /* 149 61% 31% — primary-600  */
+  --primary-foreground: #ffffff;
+
+  --secondary: #dff3e6; /* 150 44% 91% — primary-100  */
+  --secondary-foreground: #17532f; /* 150 53% 21% — primary-800  */
+
+  --muted: #f1f4f3; /* 160 8% 95%  — neutral-100  */
+  --muted-foreground: #6b7772; /* 160 5% 45%  — neutral-500  */
+
+  --accent: #dff3e6;
+  --accent-foreground: #17532f;
+
+  --destructive: #b91c1c; /* 0 72% 42%   — danger      */
+  --destructive-foreground: #ffffff;
+
+  --border: #e3e8e6; /* 160 8% 89%  — neutral-200  */
+  --input: #cbd3d0; /* 160 8% 82%  — neutral-300  */
+  --ring: #1f8049; /* 149 61% 31% — primary-600  */
+
+  --radius: 0.75rem;
+
+  /* Surfaces not covered by shadcn defaults */
+  --surface-dark: #0c2a19; /* primary-950 — sidebar, utility bar */
+  --surface-header: #17532f; /* primary-800 — table headers        */
+  --surface-tint: #f2faf5; /* primary-50  — striped rows         */
+
+  /* Admin sidebar: primary-950 ground, primary-400 accent (design.md 7.2) */
+  --sidebar: #0c2a19;
+  --sidebar-foreground: #dff3e6;
+  --sidebar-primary: #5bb983;
+  --sidebar-primary-foreground: #0c2a19;
+  --sidebar-accent: #123f25;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #17532f;
+  --sidebar-ring: #5bb983;
+
+  --chart-1: #1f8049; /* forest */
+  --chart-2: #f59e0b; /* amber  */
+  --chart-3: #2563eb; /* blue   */
+  --chart-4: #dc2626; /* red    */
+  --chart-5: #7c3aed; /* violet */
+  --chart-6: #db2777; /* pink   */
+  --chart-7: #0891b2; /* cyan   */
+  --chart-8: #65a30d; /* lime   */
+}
+
+/* Dark mode is deliberately out of scope (design.md Section 3.6). Barangay staff
+   use this in a daylight office and residents on phones outdoors; a second full
+   theme is a second full theme to test (R-8). The `@theme inline` indirection
+   above means adding a `.dark` block later is the only change required. */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-size: 15px; /* `body` token — does not shrink on mobile */
+    line-height: 24px;
+  }
+
+  /* Digits must not jitter as values update (design.md Section 4). */
+  table,
+  [data-slot="table"] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Disable the rescue pulse and all transforms; keep opacity fades. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Type scale (design.md Section 4)
+
+   Mobile is the base value; display and heading sizes scale up at `md`. Body and
+   below never shrink — squeezing more content onto a cheap phone is exactly
+   wrong for this audience.
+   --------------------------------------------------------------------------- */
+
+@layer components {
+  .text-display-xl,
+  .text-display-lg,
+  .text-display-md,
+  .text-h1,
+  .text-h2,
+  .text-h3,
+  .text-h4 {
+    font-family: var(--font-display);
+  }
+
+  .text-display-xl {
+    font-size: 34px;
+    line-height: 40px;
+    font-weight: 800;
+  }
+  .text-display-lg {
+    font-size: 30px;
+    line-height: 36px;
+    font-weight: 800;
+  }
+  .text-display-md {
+    font-size: 28px;
+    line-height: 34px;
+    font-weight: 700;
+  }
+  .text-h1 {
+    font-size: 24px;
+    line-height: 32px;
+    font-weight: 700;
+  }
+  .text-h2 {
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 700;
+  }
+  .text-h3 {
+    font-size: 18px;
+    line-height: 26px;
+    font-weight: 600;
+  }
+  .text-h4 {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 600;
+  }
+
+  @media (min-width: 768px) {
+    .text-display-xl {
+      font-size: 60px;
+      line-height: 64px;
+    }
+    .text-display-lg {
+      font-size: 44px;
+      line-height: 50px;
+    }
+    .text-display-md {
+      font-size: 34px;
+      line-height: 40px;
+    }
+    .text-h1 {
+      font-size: 30px;
+      line-height: 38px;
+    }
+    .text-h2 {
+      font-size: 24px;
+      line-height: 32px;
+    }
+  }
+
+  .text-body-lg {
+    font-size: 16px;
+    line-height: 26px;
+  }
+  @media (min-width: 768px) {
+    .text-body-lg {
+      font-size: 17px;
+      line-height: 28px;
+    }
+  }
+
+  .text-body {
+    font-size: 15px;
+    line-height: 24px;
+  }
+  .text-body-sm {
+    font-size: 13px;
+    line-height: 20px;
+  }
+  .text-label {
+    font-size: 13px;
+    line-height: 16px;
+    font-weight: 600;
+  }
+  .text-caption {
+    font-size: 11px;
+    line-height: 16px;
+  }
+
+  /* The signature style. Every KPI label, table header, and eyebrow uses it —
+     it carries most of the institutional feel (design.md Section 4). */
+  .text-overline {
+    font-size: 11px;
+    line-height: 16px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer utilities {
+  /* Elevation (design.md Section 5). Prefer borders over shadows — the hairline
+     borders are what make dense tables readable. */
+  .shadow-flat {
+    box-shadow: none;
+  }
+  .shadow-sm-card {
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
+  }
+  .shadow-md-card {
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.08);
+  }
+  .shadow-lg-card {
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.12);
+  }
+  .shadow-emergency {
+    box-shadow: 0 0 0 3px var(--color-danger-border);
+  }
+
+  /* Notches and home indicators (design.md Section 9.7). */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+}

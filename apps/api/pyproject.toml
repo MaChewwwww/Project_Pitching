@@ -1,0 +1,47 @@
+[project]
+name = "app-api"
+version = "0.1.0"
+description = "Barangay San Jose Disaster Readiness & Community Health Platform — API"
+requires-python = ">=3.12"
+
+# Every dependency here is named in docs/tech_stack.md Section 3. Do not add one
+# that is not (AGENTS.md Section 5) — add it to tech_stack.md with a rationale first.
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "gunicorn>=23.0",
+    "sqlalchemy[asyncio]>=2.0",
+    "alembic>=1.14",
+    "geoalchemy2>=0.16",
+    "psycopg[binary,pool]>=3.2",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "pyjwt>=2.10",
+    "passlib[argon2]>=1.7",
+    "httpx>=0.28",
+    "slowapi>=0.1.9",
+    "python-multipart>=0.0.20",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.8",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]

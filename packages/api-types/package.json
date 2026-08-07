@@ -1,0 +1,13 @@
+{
+  "name": "@app/api-types",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TypeScript types generated from the API's OpenAPI schema. Never hand-edited.",
+  "types": "./src/generated.ts",
+  "exports": {
+    ".": "./src/generated.ts"
+  },
+  "files": [
+    "src"
+  ]
+}
