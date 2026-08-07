@@ -55,6 +55,7 @@ function forecast(
     metric,
     value,
     unit,
+    horizon: "hourly",
     source: "open_meteo",
     fetched_at: minutesAgo(14),
   };

@@ -336,19 +336,19 @@ export interface PublicReading {
 }
 
 /**
- * A forecast point.
+ * A forecast point — from `forecast` (FR-WX-002).
  *
- * There is **no table for this** — `reading.observed_at` means "when the world
- * was measured", and a forecast is not an observation. FR-WX-002 requires one
- * anyway, so it is modelled separately here rather than by quietly writing
- * future-dated rows into `reading`. Raising a schema open item: either a
- * `forecast` table or a `reading.kind` discriminator.
+ * A separate table from `reading` on purpose. `reading.observed_at` means "when
+ * the world was measured"; a forecast has no such moment, so folding the two
+ * together would leave every "latest reading" query one missed filter away from
+ * rendering a prediction as the current value.
  */
 export interface PublicForecastPoint {
   valid_at: string;
   metric: ReadingMetric;
   value: Numeric;
   unit: string;
+  horizon: "hourly" | "daily";
   source: ReadingSource;
   fetched_at: string;
 }
@@ -404,9 +404,11 @@ export interface PublicFloodEvent {
   notes: string | null;
 
   /**
-   * derived — FR-WX-013 requires "areas affected", but `flood_event` has no area
-   * relation in schema.md. Modelled as derived; needs a `flood_event_area` join
-   * table to match the `announcement_area` pattern.
+   * derived — `flood_event_area` ⋈ `area.name`.
+   *
+   * Unlike `announcement.area_names`, **empty means unrecorded, not
+   * barangay-wide.** Historical events predate the platform, so their extent is
+   * whatever the barangay could reconstruct.
    */
   area_names: string[];
 }

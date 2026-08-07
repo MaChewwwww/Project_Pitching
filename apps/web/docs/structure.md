@@ -80,6 +80,29 @@ There are four layers in total, and only the first is the primary mechanism:
 phone numbers: it replaces `<html>`, so `globals.css` never loads and no import is guaranteed
 to resolve. NFR-AVL-004 outranks tidiness there.
 
+## Verifying in a headless or hidden browser pane
+
+A browser pane that is not displayed does not composite frames, and three things stop working
+in a way that looks exactly like a bug in this app. All three cost an hour to chase; none was
+real.
+
+| Symptom                                                                                                                                      | Actual cause                                                                                                                                     |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The 3D canvas is stuck at 300×150 while every container around it measures correctly                                                         | R3F sizes the drawing buffer from a `ResizeObserver`, which never fires                                                                          |
+| Focus rings appear to be missing — `:focus-visible` matches, `--tw-ring-shadow` holds the right value, but `box-shadow` is fully transparent | The button base has `transition-all`, and transitions never advance without a frame loop, so the animated value stays at its initial `0 0 #0000` |
+| Screenshots time out                                                                                                                         | Same root cause                                                                                                                                  |
+
+Before concluding any of these is a defect, check whether the environment is animating at all:
+
+```js
+new ResizeObserver(() => console.log("RO fired")).observe(document.body);
+requestAnimationFrame(() => console.log("rAF fired"));
+```
+
+If neither logs, the measurement is an artifact. For the focus ring specifically, setting
+`el.style.transition = "none"` and re-reading `getComputedStyle(el).boxShadow` synchronously
+reveals the real value.
+
 ## Timestamps and hydration
 
 `formatDistanceToNowStrict`-style relative time computes from the current clock, so the server

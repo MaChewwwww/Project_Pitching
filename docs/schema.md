@@ -70,9 +70,13 @@ erDiagram
     DONATION_DRIVE ||--o{ DONATION : receives
     READING ||--o{ ALERT_PROMPT : triggers
     ANNOUNCEMENT }o--o{ AREA : targets
+    FLOOD_EVENT }o--o{ AREA : affected
 ```
 
-**Table count: 38.** Grouped below by module.
+> `forecast` stands alone — it has no foreign keys and nothing references it. That
+> isolation is the point: predictions never mix with observations. See Section 6.
+
+**Table count: 40.** Grouped below by module.
 
 ---
 
@@ -439,6 +443,42 @@ CREATE INDEX idx_reading_latest ON reading(metric, source, observed_at DESC);
 
 > **`manual` is a first-class source, not a fallback flag.** An admin-entered river level writes the same row shape with full attribution, so every downstream feature keeps working when the scraper dies mid-storm.
 
+### `forecast` (FR-WX-002, FR-WX-015)
+
+| Column | Type | Constraints | Notes |
+|---|---|---|---|
+| `id` | BIGSERIAL | PK | |
+| `source` | TEXT | NOT NULL CHECK | `open_meteo` · `pagasa` |
+| `metric` | TEXT | NOT NULL CHECK | Same set as `reading.metric` |
+| `value` | NUMERIC(10,3) | NOT NULL | |
+| `unit` | TEXT | NOT NULL | |
+| `valid_at` | TIMESTAMPTZ | NOT NULL | The **future** moment this predicts |
+| `horizon` | TEXT | NOT NULL CHECK | `hourly` · `daily` |
+| `fetched_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | When this prediction was issued |
+| `raw` | JSONB | | Original payload |
+
+```sql
+CREATE UNIQUE INDEX idx_forecast_point
+  ON forecast(source, metric, horizon, valid_at);
+CREATE INDEX idx_forecast_upcoming ON forecast(metric, horizon, valid_at);
+```
+
+> **Why this is not a `kind` column on `reading`.** The tempting shortcut is
+> `reading.kind IN ('observed','forecast')`, and it is a trap. `reading.observed_at`
+> means "when the world was measured" — a forecast has no such moment, so the
+> column would have to hold a future date and quietly change meaning per row.
+> Every "latest reading" query — including the one behind the public river level
+> and the staleness calculation — would then need a filter it currently does not
+> have, and **a single missed filter renders a predicted value as the current
+> one.** During a flood that is the worst bug this schema could produce.
+>
+> They also behave differently. A reading is an immutable historical fact and the
+> table is append-only. A forecast is *superseded*: each fetch returns a fresh
+> series that replaces the previous one for the same `valid_at`, which is what the
+> unique index above enforces via upsert. Forecasts have no `station`, are never
+> `manual` (FR-WX-007 is about observations), and are never subject to
+> `config.reading.stale_after_minutes`.
+
 ### `alert_prompt` (FR-WX-009)
 
 | Column | Type | Constraints | Notes |
@@ -456,7 +496,30 @@ CREATE INDEX idx_reading_latest ON reading(metric, source, observed_at DESC);
 
 ### `flood_event` (FR-WX-013)
 
-`id`, `name`, `started_at`, `ended_at`, `peak_level_m`, `peak_at`, `households_displaced`, `notes`.
+| Column | Type | Constraints | Notes |
+|---|---|---|---|
+| `id` | UUID | PK | |
+| `name` | TEXT | NOT NULL | "Typhoon Ulysses (Vamco)" |
+| `started_at` | TIMESTAMPTZ | NOT NULL | |
+| `ended_at` | TIMESTAMPTZ | | Null while ongoing |
+| `peak_level_m` | NUMERIC(10,3) | | |
+| `peak_at` | TIMESTAMPTZ | | |
+| `households_displaced` | INTEGER | | Recorded after the fact, often revised |
+| `notes` | TEXT | | |
+
+### `flood_event_area` (FR-WX-013)
+
+`flood_event_id`, `area_id`, `PRIMARY KEY (flood_event_id, area_id)`.
+
+> FR-WX-013 requires flood history to show "areas affected", and `flood_event`
+> had nowhere to put them. Same shape as `announcement_area` deliberately — both
+> answer "which parts of the barangay did this concern", and two different
+> patterns for one question is how a schema starts drifting.
+>
+> Unlike `announcement_area`, an **empty set here means unrecorded, not
+> barangay-wide.** Historical events predate the platform and their extent is
+> whatever the barangay can reconstruct; the public view says "areas not recorded"
+> rather than implying the whole barangay flooded.
 
 ### `announcement` (FR-ALT-001 … 011)
 
@@ -751,6 +814,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;      -- fuzzy name matching for duplicat
 | **GIN trigram** | `household.head_name` | Duplicate detection (FR-REG-010) |
 | **Partial** | active alerts, open rescues, current occupancy, unread notifications, current assessments | Keeps hot queries scanning only live rows |
 | **Composite** | `reading(metric, source, observed_at DESC)` | Latest-reading lookup, hit on every page |
+| **Unique** | `forecast(source, metric, horizon, valid_at)` | Makes each fetch an upsert, so a refreshed series replaces the old one instead of accumulating duplicate predictions for the same moment |
 | **Unique partial** | one head per household, one current assessment, one active event | Invariants enforced by the database |
 
 ---
@@ -795,6 +859,6 @@ Loaded by migration, not at runtime (NFR-DAT-007).
 | S-OI-5 | Whether `vulnerability_assessment` scores are stored or recomputed on read. Stored is the default — history matters more than the space | — | IT lead |
 | S-OI-6 | Whether `evac_checkin.person_name` should be dropped in favour of always creating an `unregistered_person` row | FR-EVC-005 | IT lead |
 | S-OI-7 | Whether `announcement` needs a separate `alert` table. Current design uses one table with `kind` — revisit only if the columns diverge | — | IT lead |
-| S-OI-8 | **There is nowhere to store a forecast.** FR-WX-002 requires an hourly and daily forecast, but `reading.observed_at` means "when the world was measured" and a forecast is not an observation. Two options: a `forecast` table (`valid_at`, `metric`, `value`, `unit`, `source`, `fetched_at`), or a `reading.kind` discriminator (`observed` \| `forecast`). **Do not quietly write future-dated rows into `reading`** — it would silently corrupt every "latest reading" query and the staleness calculation with it | FR-WX-002 | IT lead |
-| S-OI-9 | **`flood_event` has no area relation**, but FR-WX-013 requires "areas affected". Needs a `flood_event_area` join table, matching the `announcement_area` pattern | FR-WX-013 | IT lead |
+| ~~S-OI-8~~ | **Resolved: a separate `forecast` table** (Section 6). A `reading.kind` discriminator was rejected — it would make `observed_at` mean two different things and leave every "latest reading" query one missed filter away from rendering a prediction as the current value | Resolved | — |
+| ~~S-OI-9~~ | **Resolved: `flood_event_area`** (Section 6), mirroring `announcement_area`. Note the semantic difference: an empty set means *unrecorded*, not barangay-wide | Resolved | — |
 | S-OI-10 | Whether `evac_center.contact_person` may ever be shown publicly. It names an individual, so FR-PUB-014 and NFR-PRV-006 currently exclude it from the public DTO while `contact_number` (an official line) is exposed. The parallel carve-out for `announcement.issued_by_user_id` → `issued_by_name` is already taken, on the grounds that FR-ALT-007 explicitly requires attributing the issuing officer. Whether "officials in official capacity" is a general exception is a policy call, not an engineering one | FR-PUB-014 | PolSci lead |
