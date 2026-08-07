@@ -105,7 +105,7 @@ A web platform with three faces:
 
 **All eleven modules described in Section 7 will be developed.** The exclusions below are the complete list of what will not be.
 
-- **SMS notifications and siren/IoT alert units** (BR-4.10, BR-4.11) — documented as future integrations and designed for, but not implemented.
+- **SMS notifications and physical Siren/IoT alert hardware** (BR-4.10, BR-4.11) — physical hardware and paid SMS gateway contracts documented as future roadmap. Note: A **Visual Siren Simulation, Pin Triggering, and Web Audio API playback feature** is implemented for map and alert demonstration (FR-MAP-014, FR-ALT-012).
 - **Post-registration profile claiming** (M1b) — a resident cannot claim a household record that a BHW created for them. Duplicate detection and manual merge (BR-1.9) cover the gap.
 - **Safe routes and blocked roads on the map** (M2) — road closures are communicated as announcements instead (BR-4.1).
 - **Any barangay other than San Jose**, and any municipality-wide or multi-barangay capability
@@ -441,7 +441,7 @@ Derived from the area assignment and geotag, not asked of the resident.
 | ID | Capability | Status |
 |---|---|---|
 | BR-4.10 | **Automatic SMS notifications** to registered residents — reaches people who do not have the site open, and works on basic phones | Not developed — roadmap only |
-| BR-4.11 | **Siren / IoT alert units** installed across the barangay's areas, triggered by alert level — reaches residents with no phone at all, and works during power and data outages | Not developed — roadmap only |
+| BR-4.11 | **Siren / IoT alert units** installed across the barangay's areas | Physical IoT hardware out of scope; **Visual Siren Simulation & Pin Triggering feature built for map & alert demo** (FR-MAP-014, FR-ALT-012) |
 
 > These two are the **only** capabilities in the entire project excluded from development. Everything else in this document gets built.
 >
@@ -778,7 +778,7 @@ Recorded so the team does not relitigate them.
 | Capability | Reference | Status |
 |---|---|---|
 | Automatic SMS alert notifications | BR-4.10 | **Not developed.** Roadmap only — requires a paid gateway and ongoing per-message cost |
-| Siren / IoT alert units across barangay areas | BR-4.11 | **Not developed.** Roadmap only — requires hardware, installation, and municipal coordination |
+| Siren / IoT alert units across barangay areas | BR-4.11 | Physical hardware out of scope; **Visual Siren Simulation & Pin Triggering feature built for map & alert demo** (FR-MAP-014, FR-ALT-012) |
 | Post-registration profile claiming | M1b, D-11 | **Not developed.** Too much machinery for a prototype; duplicates handled by BR-1.9 |
 | Safe routes and blocked roads on the map | M2, D-12 | **Not developed.** Road closures communicated as announcements (BR-4.1) |
 
