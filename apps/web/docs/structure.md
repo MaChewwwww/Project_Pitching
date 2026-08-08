@@ -79,6 +79,34 @@ There are four layers in total, and only the first is the primary mechanism:
 phone numbers: it replaces `<html>`, so `globals.css` never loads and no import is guaranteed
 to resolve. NFR-AVL-004 outranks tidiness there.
 
+## Section-level loading isolation
+
+The same argument as above, applied to latency instead of failure. Every async section sits in
+its own `<Suspense>` with a `Section*Skeleton` fallback from `common/skeletons.tsx`, so a slow
+fetch delays one section rather than the first byte of the whole body.
+
+**`SectionBoundary` goes outside `Suspense`, not inside.** Inverting them lets an error thrown
+after streaming has begun escape past the section boundary to the route-level `error.tsx`,
+which replaces the entire page body — the exact failure FR-PUB-016 forbids. The nesting is
+load-bearing, not stylistic.
+
+**Without a Suspense boundary there is no loading state to design.** A Server Component that
+awaits simply delays its own output; nothing renders in the meantime. This is why Definition of
+Done item 3 sat open for the public sections even though the fallbacks existed — the fallbacks
+had nowhere to mount.
+
+Two consequences worth knowing:
+
+- **Fallbacks must reproduce their section's real grid.** They duplicate `Section`'s tone and
+  padding rather than importing it, because `common/` may not import from `features/`. If a
+  section's layout changes, its fallback has to change with it or the page shifts on stream-in.
+- **Sections that return `null` when empty (FR-PUB-018) still show a fallback first**, then
+  collapse to nothing once the fetch resolves empty. Briefly reserving that space is the price
+  of not blocking the rest of the page on it.
+
+`AboutBandSection` is synchronous, so it gets a boundary but no `Suspense` — there is nothing
+to wait for.
+
 ## Verifying in a headless or hidden browser pane
 
 A browser pane that is not displayed does not composite frames, and three things stop working

@@ -114,6 +114,30 @@ Tap targets: **44×44 minimum, 48×48 for anything used during an emergency** �
 rescue request, hotline. Where the visual button is smaller, pad the hit area rather than
 enlarging the button.
 
+## Animation lives in `globals.css`, not in a client component
+
+`WaterSpinner` and the hero illustrations are animated entirely by CSS classes defined in
+`globals.css` (`.ws-*`, `.hero-*`) over static markup. None of them carry `"use client"`.
+
+That is a hard constraint, not a preference. A spinner is needed inside `<Suspense fallback>` on
+the landing page, and anything with `"use client"` there would pull a JavaScript boundary into
+every section it guards — precisely the cost `SectionBoundary` is designed to keep to one
+component per page (NFR-PERF-006). Reach for a client component only when the animation
+genuinely needs state or measurement, as `StatBandAnimator` does.
+
+**Infinite ambient loops need their own `prefers-reduced-motion` guard.** The global kill-switch
+in `@layer base` sets `animation-duration: 0.01ms`, which is right for an entrance animation that
+ends in a visible state — but a loop whose keyframes start and end at `opacity: 0` gets frozen
+invisible by it. So `.ws-*` is gated on `prefers-reduced-motion: no-preference`, and the ungated
+rules are authored to stand alone as a legible static resting state. Test any new loop with
+reduced motion enabled before calling it done.
+
+**3D depth comes from `perspective` + `transform-style: preserve-3d` on inline elements**, not a
+canvas or a WebGL dependency. `WaterSpinner` tilts a ripple plane with `rotateX` and precesses
+two rings by spinning wrappers about Y while the ring inside holds a fixed tilt — so the tilt
+axis rotates rather than the ring spinning flat. Keep transforms that must compose on separate
+nested elements; stacking a squash and a rotation on one node makes both fight.
+
 ## Adding a composite
 
 1. Build it in `common/` from `ui/` primitives.

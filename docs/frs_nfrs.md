@@ -98,6 +98,26 @@ A requirement is `✅` only when all of the following hold:
 
 `M` Must · `S` Should · `C` Could — inherited from the BRD. Priority is build order **within** a module; every module is in scope (BRD 4.2).
 
+### 1.6 Module Progress Overview
+
+| Code | Module | Total | Done (`✅`) | In Progress (`◐`) | In Review (`👁`) | Not Started (`☐`) | Dropped (`✕`) | Active Completion |
+|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `SYS` | Platform Foundation | 19 | 0 | 12 | 0 | 7 | 0 | **63%** |
+| `PUB` | Public Information Site | 19 | 0 | 18 | 0 | 1 | 0 | **95%** |
+| `REG` | Community Registry | 42 | 0 | 19 | 0 | 12 | 11 | **61%** |
+| `MAP` | Barangay Zone Map | 15 | 0 | 0 | 0 | 15 | 0 | **0%** |
+| `WX` | Flood & Weather Watch | 17 | 0 | 14 | 0 | 3 | 0 | **82%** |
+| `ALT` | Alerts & Announcements | 12 | 0 | 11 | 0 | 1 | 0 | **92%** |
+| `SAF` | Safety Check-In & Rescue | 17 | 0 | 0 | 0 | 17 | 0 | **0%** |
+| `EVC` | Evacuation Center Operations | 8 | 0 | 2 | 0 | 6 | 0 | **25%** |
+| `DON` | Donation Drives & Assistance | 14 | 0 | 6 | 0 | 8 | 0 | **43%** |
+| `ACT` | Activities & Volunteers | 9 | 0 | 3 | 0 | 6 | 0 | **33%** |
+| `PRP` | Preparedness Hub | 9 | 0 | 5 | 0 | 4 | 0 | **56%** |
+| `ANL` | Analytics & Reporting | 12 | 0 | 2 | 0 | 9 | 1 | **18%** |
+| `NFR` | Non-Functional Requirements (Cross-Cutting) | 86 | 0 | 7 | 7 | 66 | 0 | **16%** |
+
+*Overall Active Completion: **106 / 267 requirements (40%)** implemented or in progress across active scope (excluding 12 retired/dropped items).*
+
 ---
 
 ## 2. Scope Summary
@@ -174,14 +194,26 @@ A requirement is `✅` only when all of the following hold:
 > now returns nothing. `lib/fixtures/` was deleted except `hotlines.ts`, kept
 > deliberately as the one hard-coded fallback FR-PUB-016/NFR-AVL-004 require.
 >
+> **Per-section loading states are now in place** (Definition of Done item 3).
+> Each async landing section sits in its own `<Suspense>` with a fallback that
+> reproduces that section's grid, so a slow feed delays one section instead of the
+> whole page body. The indicator is `common/WaterSpinner` — a CSS-only 3D droplet
+> and ripple loop, no client component, so guarding twelve sections still costs
+> zero JavaScript. `SectionBoundary` stays *outside* `Suspense`: inverted, an
+> error thrown mid-stream escapes to the route-level `error.tsx` and blanks the
+> page, which is what FR-PUB-016 exists to prevent.
+>
+> Note the earlier reading of this was wrong: the loading states were not
+> unsurfaceable in a Server-Component/ISR model, they simply had nowhere to mount.
+> A Server Component that awaits without a Suspense boundary above it doesn't
+> render a pending state at all — it just delays its own output.
+>
 > **Why the other seventeen are still `◐` and not `✅`.** They are demonstrated
 > against real, seeded data end-to-end — including a live create-in-the-admin-
 > console → audit-log → ISR-revalidate → public-page loop, and a kill-the-API
 > test proving section-level failure isolation (FR-PUB-016) actually holds — but
-> two Definition of Done items remain open across the whole set: peer review
-> (item 6), and per-section loading states (item 3), which the current
-> Server-Component/ISR rendering model doesn't surface the way a client-fetched
-> spinner would. Neither is a fixture problem anymore; both are follow-up work.
+> one Definition of Done item remains open across the whole set: peer review
+> (item 6). That is no longer a fixture problem; it is follow-up work.
 >
 > The **PR column is deliberately empty**: this work is committed locally and has
 > not been pushed, so there is no PR to reference yet.

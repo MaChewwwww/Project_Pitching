@@ -1,4 +1,16 @@
+import * as React from "react";
+
 import { SectionBoundary } from "@/components/common/section-boundary";
+import {
+  CardGridSectionSkeleton,
+  DonationDrivesSectionSkeleton,
+  FaqSectionSkeleton,
+  HazardMapSectionSkeleton,
+  HeroSectionSkeleton,
+  HotlinesSectionSkeleton,
+  StatBandSectionSkeleton,
+  WeatherSectionSkeleton,
+} from "@/components/common/skeletons";
 import { AboutBandSection } from "@/components/features/public/sections/about-band-section";
 import { ActivitiesSection } from "@/components/features/public/sections/activities-section";
 import { AnnouncementsSection } from "@/components/features/public/sections/announcements-section";
@@ -35,6 +47,24 @@ import { WeatherSection } from "@/components/features/public/sections/weather-se
  * With the fetch inside the section, the throw happens inside the boundary, and a
  * dead weather feed costs exactly one card.
  *
+ * **Each section also streams independently.** Every async section sits in its own
+ * `<Suspense>`, so the page shell and the already-resolved sections paint while a
+ * slow one is still awaiting, instead of the whole body waiting on the slowest
+ * fetch. That is the same argument as the boundary, applied to latency rather than
+ * failure — and it is what makes the loading states in Definition of Done item 3
+ * observable at all: without a Suspense boundary there is no pending state for a
+ * Server Component to render, only a longer wait for the first byte.
+ *
+ * Ordering matters here. `SectionBoundary` is **outside** `Suspense`, so a section
+ * that throws after streaming begins is still caught per-section (FR-PUB-016).
+ * Inverting them would let the error escape to the route-level `error.tsx`, which
+ * replaces the whole page body — the failure BR-0.17 forbids.
+ *
+ * Sections that return `null` when empty (FR-PUB-018) still get a fallback: it is
+ * shown while the fetch is in flight, then replaced by nothing once the section
+ * resolves to empty. Reserving that space briefly is the cost of not blocking the
+ * rest of the page on it.
+ *
  * Section order follows the BRD. The hotlines sit seventh there, which during a
  * flood would be far too low — BR-0.15 is satisfied instead by the floating
  * action button and the utility bar, both always on screen.
@@ -43,51 +73,82 @@ export default function LandingPage() {
   return (
     <>
       <SectionBoundary sectionName="Hero">
-        <HeroSection />
+        <React.Suspense fallback={<HeroSectionSkeleton />}>
+          <HeroSection />
+        </React.Suspense>
       </SectionBoundary>
 
       <SectionBoundary sectionName="Barangay statistics">
-        <StatBandSection />
+        <React.Suspense fallback={<StatBandSectionSkeleton />}>
+          <StatBandSection />
+        </React.Suspense>
       </SectionBoundary>
 
+      {/* Static — no fetch, so no Suspense boundary to add. */}
       <SectionBoundary sectionName="About">
         <AboutBandSection />
       </SectionBoundary>
 
       <SectionBoundary sectionName="Announcements">
-        <AnnouncementsSection />
+        <React.Suspense
+          fallback={<CardGridSectionSkeleton label="Loading announcements" />}
+        >
+          <AnnouncementsSection />
+        </React.Suspense>
       </SectionBoundary>
 
       <SectionBoundary sectionName="Weather">
-        <WeatherSection />
+        <React.Suspense fallback={<WeatherSectionSkeleton />}>
+          <WeatherSection />
+        </React.Suspense>
       </SectionBoundary>
 
       <SectionBoundary sectionName="Preparedness">
-        <PreparednessSection />
+        <React.Suspense
+          fallback={<CardGridSectionSkeleton label="Loading preparedness guides" />}
+        >
+          <PreparednessSection />
+        </React.Suspense>
       </SectionBoundary>
 
       <SectionBoundary sectionName="Activities">
-        <ActivitiesSection />
+        <React.Suspense
+          fallback={<CardGridSectionSkeleton label="Loading activities" tone="tint" />}
+        >
+          <ActivitiesSection />
+        </React.Suspense>
       </SectionBoundary>
 
       <SectionBoundary sectionName="Hotlines">
-        <HotlinesSection />
+        <React.Suspense fallback={<HotlinesSectionSkeleton />}>
+          <HotlinesSection />
+        </React.Suspense>
       </SectionBoundary>
 
       <SectionBoundary sectionName="Evacuation centres">
-        <EvacCentersSection />
+        <React.Suspense
+          fallback={<CardGridSectionSkeleton label="Loading evacuation centres" />}
+        >
+          <EvacCentersSection />
+        </React.Suspense>
       </SectionBoundary>
 
       <SectionBoundary sectionName="Hazard map">
-        <HazardMapSection />
+        <React.Suspense fallback={<HazardMapSectionSkeleton />}>
+          <HazardMapSection />
+        </React.Suspense>
       </SectionBoundary>
 
       <SectionBoundary sectionName="Donation drives">
-        <DonationDrivesSection />
+        <React.Suspense fallback={<DonationDrivesSectionSkeleton />}>
+          <DonationDrivesSection />
+        </React.Suspense>
       </SectionBoundary>
 
       <SectionBoundary sectionName="FAQs">
-        <FaqSection />
+        <React.Suspense fallback={<FaqSectionSkeleton />}>
+          <FaqSection />
+        </React.Suspense>
       </SectionBoundary>
     </>
   );

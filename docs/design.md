@@ -447,6 +447,8 @@ These are the app's actual vocabulary. Each is built from primitives above.
 | `DataFreshness` | Timestamp + source + a **stale** marker past a threshold. **Required on every weather and river reading** (BR-3.8) |
 | `EmptyState` | Icon, title, description, optional action |
 | `TableSkeleton` / `CardSkeleton` | Loading placeholders |
+| `WaterSpinner` | The public site's loading indicator: a droplet falling into a rippling surface inside two counter-precessing rings. Green — a spinner in the hazard ramp (Section 3.4) would read as an active warning. Pure CSS on static markup, so it renders inside a Server Component's `<Suspense fallback>` and ships no JavaScript |
+| `Section*Skeleton` | One `<Suspense fallback>` per landing section, each reproducing its section's real grid so nothing shifts when content streams in. Pairs grey shapes with a `WaterSpinner` — shapes alone cannot distinguish "still loading" from "broken" (FR-PUB-016) |
 | `ErrorState` | Failure message + retry. Section-level, so one dead feed does not blank the page (BR-0.17) |
 
 #### Controls

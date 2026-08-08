@@ -6,7 +6,7 @@
 **Locality:** Barangay San Jose, Rodriguez (Montalban), Rizal
 **Prepared for:** Sangguniang Kabataan Project Pitching Competition
 **Prepared by:** PUP Student Team — Political Science, Public Administration, Nutrition & Dietetics, Information Technology
-**Version:** 0.3 (Draft) · **Date:** August 2026
+**Version:** 0.4 · **Date:** August 2026
 **Status:** Reviewed for internal consistency. 15 open items in Section 11 require team decisions; 12 decisions recorded as settled
 
 > **Scope note.** This document describes *what the business needs and why*. Functional/non-functional requirements, architecture, tech stack, data models, and design are covered in separate documents.
