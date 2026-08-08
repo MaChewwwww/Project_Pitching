@@ -3,9 +3,6 @@
 import * as React from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
-import markerIcon from "leaflet/dist/images/marker-icon.png";
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
 import { LocateFixed } from "lucide-react";
 
@@ -25,13 +22,19 @@ import { BARANGAY_CENTER } from "@/lib/brand";
  *   );
  */
 
-// Webpack/Next's asset URLs break Leaflet's own icon-path lookup unless fixed
-// up front — the well-known "marker icon missing" bug with any bundler.
+// Bundler asset URLs break Leaflet's own icon-path lookup unless fixed up
+// front — the well-known "marker icon missing" bug with every bundler, and
+// one that behaves differently between webpack and Turbopack: importing the
+// PNGs directly from `leaflet/dist/images` built fine but produced icons
+// with no resolvable `iconUrl` at runtime under Turbopack (confirmed live —
+// "iconUrl not set in Icon options"). Pointing at the same version's CDN
+// copy sidesteps the bundler entirely; the OSM tiles below are already an
+// external fetch, so this adds no new category of dependency.
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x.src,
-  iconUrl: markerIcon.src,
-  shadowUrl: markerShadow.src,
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
 export interface LatLng {
