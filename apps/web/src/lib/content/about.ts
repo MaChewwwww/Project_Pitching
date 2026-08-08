@@ -4,23 +4,19 @@ import { HeartPulse, Leaf, Salad, ShieldCheck } from "lucide-react";
 /**
  * "About the Platform" copy (BR-0.2, FR-PUB-002).
  *
- * The mission and vision statements are **an open item (BRD OI-10)** — they are
- * the PolSci and PubAd leads' to write, not engineering's. The placeholders below
- * are marked visibly on the page rather than filled with plausible-sounding text,
- * because plausible-sounding placeholder copy is how lorem ipsum ships to
- * production.
+ * The mission and vision statements close BRD OI-10 (Section 11, D-14) —
+ * drafted from the team's own concept paper rather than left as placeholder
+ * prose, still open to PolSci/PubAd wordsmithing before the deck. See
+ * `docs/business-requirements.md` Section 1a for the source and rationale.
  *
  * The SDG alignment is not a placeholder: BRD Section 12 states it explicitly.
  */
 
-export const MISSION_PENDING =
-  "The barangay's mission statement is being drafted by the project's PolSci and PubAd leads.";
+export const MISSION =
+  "To equip Barangay San Jose with a centralized digital platform that shifts disaster management from reactive to proactive — profiling households before disaster strikes, delivering timely hazard information and alerts, and coordinating barangay officials, health workers, and residents so that preparedness, response, and recovery are faster and better informed.";
 
-export const VISION_PENDING =
-  "The barangay's vision statement is being drafted by the project's PolSci and PubAd leads.";
-
-/** Shown beside each placeholder so nobody mistakes it for finished copy. */
-export const OPEN_ITEM_NOTE = "Pending OI-10";
+export const VISION =
+  "A disaster-resilient Barangay San Jose where community-based, technology-enabled disaster risk reduction protects every resident — especially those most vulnerable to being overlooked — through accessible information, coordinated barangay action, and a registry that never has to be rebuilt from scratch after the water recedes.";
 
 export const WHAT_IT_IS = `A single place where residents of Barangay San Jose can see what the river is doing, where to go when it rises, and what the barangay has announced — without needing an account, and on whatever phone they already own.
 

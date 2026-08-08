@@ -1,7 +1,7 @@
 # Business Requirements Document
 
-**Project:** Barangay Disaster Readiness & Community Health Platform
-*(working name — see Section 11, Open Items)*
+**Project:** SAGIP-SJ — System for Alert, Guidance, Incident Reporting, and Preparedness
+*(formerly a working name pending Section 11 OI-1; closed — see Resolved Decisions D-13)*
 
 **Locality:** Barangay San Jose, Rodriguez (Montalban), Rizal
 **Prepared for:** Sangguniang Kabataan Project Pitching Competition
@@ -25,7 +25,21 @@ The platform is designed to be an SK-fundable, SK-operable project: low cost, yo
 
 ---
 
+## 1a. Mission & Vision
+
+*Closes OI-10 — see Section 11's Resolved Decisions, D-14. Drafted from the team's concept paper (Introduction, Problem Statement, and Project Rationale sections) rather than left as placeholder prose; still open to PolSci/PubAd wordsmithing before the deck.*
+
+**Mission.** To equip Barangay San Jose with a centralized digital platform that shifts disaster management from reactive to proactive — profiling households before disaster strikes, delivering timely hazard information and alerts, and coordinating barangay officials, health workers, and residents so that preparedness, response, and recovery are faster and better informed. This mirrors the shift Republic Act No. 10121 (the Philippine Disaster Risk Reduction and Management Act of 2010) asks every LGU to make, at the barangay level where the river actually rises.
+
+**Vision.** A disaster-resilient Barangay San Jose where community-based, technology-enabled disaster risk reduction protects every resident — especially those most vulnerable to being overlooked — through accessible information, coordinated barangay action, and a registry that never has to be rebuilt from scratch after the water recedes.
+
+---
+
 ## 2. Background & Problem Statement
+
+### 2.0 Legal Basis
+
+The Philippines is among the countries most exposed to typhoons, floods, earthquakes, and landslides. **Republic Act No. 10121 (2010)**, the Philippine Disaster Risk Reduction and Management Act, shifted the national approach from reactive disaster response toward proactive risk reduction, preparedness, mitigation, and recovery, and directs LGUs — including barangays — to run community-based disaster risk reduction programs. This project operationalizes that mandate at the barangay level: the modules in Section 7 (registry, alerts, hazard mapping, evacuation, preparedness) are the concrete, digital form of what RA 10121 asks San Jose to already be doing.
 
 ### 2.1 Context
 
@@ -693,7 +707,6 @@ Every module in those two stages is either novel or directly demonstrates the co
 
 | # | Item | Owner | Needed by |
 |---|---|---|---|
-| OI-1 | **Platform name and tagline.** Candidates: *San Jose Ready* (used in the team's draft copy), *HandaSan*, *AlertoSanJose*, *BantaySanJose*, *SAGIP San Jose*. Consider a name that carries both the disaster and health halves. | Whole team | Before deck design |
 | OI-2 | **Nutrition indicator set and classification thresholds** — which measurements are captured, at what ages, and how status is computed (BR-1.5, BR-1.6) | Nutrition & Dietetics lead | Before registry build |
 | OI-3 | **Official area/zone list** for Barangay San Jose — how many, what names, what boundaries | PolSci / PubAd leads, via barangay | Before map build |
 | OI-4 | **Local river alert thresholds.** Marikina City's 15/16/18 m values are for the Sto. Niño station downstream; Rodriguez's own thresholds must be confirmed | PubAd lead, via MDRRMO | Before flood module |
@@ -701,7 +714,6 @@ Every module in those two stages is either novel or directly demonstrates the co
 | OI-6 | **Consent and privacy notice wording** for registration | PolSci / PubAd leads | Before any real data is collected |
 | OI-7 | **Prototype demo data** — seeded households with members, and a scripted flood scenario for the pitch | IT lead | Before demo |
 | OI-8 | **Confirm the build order** in Section 8, and agree a date after which no new features are accepted (R-8) | Whole team | Immediately |
-| OI-10 | **Mission and vision statements** for the About section (BR-0.2) — must be written, not placeholder | PolSci / PubAd leads | Before deck design |
 | OI-11 | **Automated dietary guidance — in or out?** If the team keeps BR-1.14, it must commit to mandatory health-worker review (BR-1.15). If that review cannot be staffed, drop it and keep feedback health-worker-authored only | Nutrition & Dietetics lead + IT lead | Before build |
 | OI-12 | **Official barangay population and household totals** to configure as the analytics denominator (BR-10.1a) | PubAd lead, via barangay | Before demo |
 | OI-13 | **Coverage narrative for the pitch.** Decide how the team presents opt-in registration — recommended framing in Section 4.4 is that nutrition guidance drives sign-up and disaster readiness is the collective payoff | Whole team | Before deck design |
@@ -727,6 +739,8 @@ Recorded so the team does not relitigate them.
 | D-10 | Emergency access | No account required to request rescue (BR-5.9). Unregistered persons can be recorded safe, needing rescue, or checked into a center (BR-5.10, BR-6.7) |
 | D-11 | Post-registration profile claiming | **Out of scope** (M1b). Too much machinery for a pitch prototype. BHW-created records stay barangay-held; duplicates handled by detection and manual merge (BR-1.9). Revisit before live deployment |
 | D-12 | Safe routes and blocked roads | **Out of scope** (M2). Needs a road network layer plus live updating during an event, when staff have least capacity. Road closures are announcements (BR-4.1), not map geometry |
+| D-13 | Platform name and tagline (closes OI-1) | **`SAGIP-SJ`** — System for Alert, Guidance, Incident Reporting, and Preparedness for Barangay San Jose. Confirmed by the team's own concept paper, which names the platform "SAGIP-SJ" outright in its Expected Outcomes section — the candidate list this row used to carry is superseded, not just narrowed. The codebase (`apps/web/src/lib/brand.ts`, root `README.md`, `AGENTS.md`) already treated this as settled before this document did; this row brings the BRD into agreement rather than deciding anything new |
+| D-14 | Mission and vision statements (closes OI-10) | Drafted from the team's concept paper (Introduction, Problem Statement, and Project Rationale sections) rather than left as placeholder prose. See Section 1a. Still open to PolSci/PubAd wordsmithing before the deck — the substance (RA 10121's proactive-DRRM framing, household-level accountability, SDG 3/11/13) is what's fixed, not the exact phrasing |
 
 ---
 

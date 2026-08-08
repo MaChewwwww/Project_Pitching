@@ -762,7 +762,7 @@ Aligns with the build order in BRD 8.
 
 | # | Item | Owner |
 |---|---|---|
-| D-OI-1 | **App name and tagline** (BRD OI-1) — blocks the logo and the hero section | Whole team |
+| ~~D-OI-1~~ | **Resolved: `SAGIP-SJ`** — System for Alert, Guidance, Incident Reporting, and Preparedness (BRD Section 11, D-13). Confirmed by the team's own concept paper, which names the platform outright | Resolved |
 | D-OI-2 | **Logo design** — mark + wordmark, per Section 2 | Whoever on the team has design skills |
 | D-OI-3 | Confirm **Plus Jakarta Sans + Inter**, or substitute | Whole team |
 | D-OI-4 | **Nutrition status colour ramp** — depends on the indicator set (BRD OI-2) | Nutrition lead + IT lead |

@@ -4,13 +4,7 @@ import { Info } from "lucide-react";
 import { Card, CardContent } from "@/components/common/card";
 import { Reveal } from "@/components/common/reveal";
 import { SectionHeader } from "@/components/common/section-header";
-import {
-  MISSION_PENDING,
-  OPEN_ITEM_NOTE,
-  SDG_ENTRIES,
-  VISION_PENDING,
-  WHAT_IT_IS,
-} from "@/lib/content/about";
+import { MISSION, SDG_ENTRIES, VISION, WHAT_IT_IS } from "@/lib/content/about";
 import { Section } from "./section";
 
 /**
@@ -18,11 +12,10 @@ import { Section } from "./section";
  *
  * Mirrors the reference's centred header over a card grid.
  *
- * **The mission and vision are visibly marked as pending** rather than filled
- * with plausible copy. They belong to the PolSci and PubAd leads (BRD OI-10), and
- * placeholder prose that reads like a finished statement is how lorem ipsum
- * reaches production. The SDG alignment beside them is not a placeholder — BRD
- * Section 12 states it outright.
+ * Mission and vision close BRD OI-10 (Section 11, D-14) — drafted from the
+ * team's own concept paper, not invented copy. See `lib/content/about.ts`.
+ * The SDG alignment beside them is not a placeholder either — BRD Section 12
+ * states it outright.
  */
 
 export function AboutSection() {
@@ -41,18 +34,13 @@ export function AboutSection() {
 
       <div className="mt-8 grid gap-4 md:mt-10 md:grid-cols-2 md:gap-6">
         {[
-          { label: "Mission", body: MISSION_PENDING },
-          { label: "Vision", body: VISION_PENDING },
+          { label: "Mission", body: MISSION },
+          { label: "Vision", body: VISION },
         ].map((item, i) => (
           <Reveal key={item.label} delay={i === 0 ? 0 : 1}>
             <Card radius="xl" className="h-full">
               <CardContent className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-overline text-primary-700">{item.label}</span>
-                  <span className="text-caption bg-warning-bg text-warning rounded-sm px-1.5 py-0.5 font-semibold">
-                    {OPEN_ITEM_NOTE}
-                  </span>
-                </div>
+                <span className="text-overline text-primary-700">{item.label}</span>
                 <p className="text-body text-neutral-600">{item.body}</p>
               </CardContent>
             </Card>
