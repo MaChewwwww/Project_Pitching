@@ -1,11 +1,24 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CloudLightning } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/common/page-header";
 import { AdminForm, type AdminField } from "@/components/features/admin/admin-form";
+import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
 import { api } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
@@ -59,8 +72,15 @@ const emptyValues: ReadingFormValues = {
   observed_at: "",
 };
 
+interface SimulateTyphoonResult {
+  readings: unknown[];
+  alert_prompts_created: number;
+  highest_alert_level: 0 | 1 | 2 | 3;
+}
+
 export default function AdminReadingsPage() {
   useRequireRole("admin", "bhw");
+  const queryClient = useQueryClient();
 
   const { data: river } = useQuery({
     queryKey: ["public", "river-level"],
@@ -78,6 +98,22 @@ export default function AdminReadingsPage() {
     onSuccess: () => toast.success("Reading recorded"),
   });
 
+  const simulateMutation = useMutation({
+    mutationFn: () =>
+      api
+        .post<SimulateTyphoonResult>("/admin/readings/simulate-typhoon")
+        .then((r) => r.data),
+    onSuccess: (result) => {
+      toast.success(
+        `Simulated typhoon: ${result.readings.length} readings, ` +
+          `${result.alert_prompts_created} alert prompt(s), ` +
+          `highest level ${result.highest_alert_level}.`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["public", "river-level"] });
+    },
+    onError: () => toast.error("Could not run the simulation"),
+  });
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -85,6 +121,47 @@ export default function AdminReadingsPage() {
         titleAccent="readings"
         description="Enter a reading directly when the automated PAGASA/Open-Meteo fetch is unavailable."
       />
+
+      <Card className="max-w-lg border-dashed">
+        <CardContent className="flex flex-col gap-3">
+          <div>
+            <p className="text-body font-semibold text-neutral-900">Simulate typhoon</p>
+            <p className="text-body-sm text-neutral-500">
+              Demo tool only. Writes a rising sequence of river-level and weather readings
+              and the alert prompts they trigger, so a live pitch does not depend on real
+              weather cooperating. Never publishes a public alert on its own.
+            </p>
+          </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="self-start"
+                disabled={simulateMutation.isPending}
+              >
+                <CloudLightning aria-hidden className="size-3.5" />
+                Simulate typhoon
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Simulate a typhoon?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This writes real manual readings and alert prompts to this environment.
+                  Only use it on the demo stack.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => simulateMutation.mutate()}>
+                  Run simulation
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardContent>
+      </Card>
 
       {river?.reading ? (
         <Card>
