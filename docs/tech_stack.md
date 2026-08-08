@@ -107,7 +107,7 @@ PostGIS is the reason to choose Postgres here rather than anything else, and it 
 
 - Household geotags are points; barangay areas are polygons. `ST_Contains` assigns a household to its area automatically instead of asking the resident to self-select and getting it wrong.
 - Flood hazard zones are polygons. "Which registered households sit inside the 100-year flood zone?" is one spatial query, not an export to a spreadsheet.
-- BR-2.2 (areas shaded by aggregated indicators) and BR-10.2 (nutrition summarized by area) are both spatial aggregations.
+- BR-2.2 (areas shaded by aggregated vulnerability/risk indicators) is a spatial aggregation.
 
 Doing this without PostGIS means computing point-in-polygon in Python on every request.
 

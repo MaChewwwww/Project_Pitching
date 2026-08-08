@@ -52,7 +52,7 @@ export function AboutSection() {
         <p className="text-overline mb-4 text-neutral-500">
           Sustainable Development Goals this supports
         </p>
-        <div className="grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3">
           {SDG_ENTRIES.map((sdg, i) => (
             <Reveal key={sdg.number} delay={(i % 4) as 0 | 1 | 2 | 3}>
               <Card radius="xl" topAccent className="h-full">

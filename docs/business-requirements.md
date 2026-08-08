@@ -17,9 +17,11 @@
 
 Barangay San Jose sits in the upper Marikina River basin. When the river rises, the barangay evacuates — repeatedly, every rainy season. Today that response runs on paper lists, group chats, and the personal knowledge of barangay officials and health workers. Nobody can answer, in the first hour of a flood, the three questions that matter most: **who is at risk, where are they, and who is still unaccounted for.**
 
-This project proposes a single barangay platform that answers those questions. It builds a household registry — one account per family, held by the head of the household, covering every member including the children who cannot register for themselves. Households are captured online *or* by barangay health workers going door to door, so families without phones or internet are not excluded. The registry is enriched with health and nutrition indicators and plotted against a zone map of the barangay, then powers flood alerting, evacuation center management, safety check-ins, rescue requests, and donation drives.
+This project proposes a single barangay platform that answers those questions. It builds a household registry — one account per family, held by the head of the household, covering every member including the children who cannot register for themselves. Households are captured online *or* by barangay health workers going door to door, so families without phones or internet are not excluded. Each member profile flags who needs priority attention — children, seniors, persons with disability, pregnant or lactating women, and people with chronic conditions requiring regular medication — and the registry is plotted against a zone map of the barangay, then powers flood alerting, evacuation center management, safety check-ins, rescue requests, and donation drives.
 
-The nutrition component is deliberately fused into the disaster component rather than bolted on. A household with a stunted child, a pregnant mother, or a bedridden senior is not just a nutrition case — it is a *priority evacuation case*. One registry serves both.
+A household with a bedridden senior or a member with a chronic condition is not just a name on a list — it is a *priority evacuation case*, visible to the barangay before the water rises, not discovered after.
+
+> **Aug 2026 revision.** Earlier drafts of this document fused a clinical nutrition-assessment program (Operation Timbang Plus digitization: per-member indicators, automatic malnutrition classification, health-worker dietary guidance) into the registry as a second, equally-weighted pillar. The team has since confirmed the platform will **not** collect nutrition assessment data. The general vulnerability flags below (child, senior, PWD, pregnant/lactating, chronic condition, bedridden) remain — they are household risk factors, not clinical measurements, and were always a separate concern from OPT+-style data collection. The Go Bag checklist (M9/portal) is unaffected and stays in scope. See Section 4.2 and Section 7's M1/M1a notes for exactly what changed. The SDG alignment (Section 12) was updated to match: SDG 2 (Zero Hunger) was the nutrition program's SDG and is no longer a primary alignment; SDG 13, 11, and 3 remain.
 
 The platform is designed to be an SK-fundable, SK-operable project: low cost, youth-run, and directly aligned with the health, active citizenship, and governance thrusts of the Philippine Youth Development Plan.
 
@@ -70,9 +72,6 @@ Families are marked safe by word of mouth. Rescue requests come in as phone call
 **P5 — Donation drives are uncoordinated.**
 Donors do not know what is actually needed, and the barangay cannot show what was received against what it asked for. Requests circulate on social media and go stale; goods arrive that nobody needed.
 
-**P6 — Nutrition and disaster data are managed separately.**
-The same household is profiled twice by two different programs, and neither view informs the other — even though malnutrition and disaster vulnerability overlap heavily in the same families.
-
 ### 2.3 Consequences of Doing Nothing
 
 Preventable delays in evacuating high-risk households; children and seniors overlooked when assistance is handed out; repeated duplicate data collection that exhausts BHW volunteers; and no evidence base for the barangay to justify budget requests to the municipal or provincial level.
@@ -112,7 +111,7 @@ Because San Jose alone holds roughly 143,000 residents — larger than many enti
 A web platform with three faces:
 
 1. **Public information site** — open to anyone, no login. Announcements, weather, hazard map, hotlines, evacuation centers, preparedness guidance, activities, donation drives.
-2. **Resident portal** — for registered households. Household and member profiles, health worker feedback, alerts, safety check-in, rescue requests, incident reports, go-bag checklist, assistance status.
+2. **Resident portal** — for registered households. Household and member profiles, alerts, safety check-in, rescue requests, incident reports, go-bag checklist, assistance status.
 3. **Barangay admin console** — for barangay officials, BDRRMC, BHWs, and SK. Registry management, assisted registration, map and facility configuration, alerts, evacuation center operations, donation drives, activities, analytics.
 
 ### 4.2 Out of Scope
@@ -120,13 +119,14 @@ A web platform with three faces:
 **All eleven modules described in Section 7 will be developed.** The exclusions below are the complete list of what will not be.
 
 - **SMS notifications and physical Siren/IoT alert hardware** (BR-4.10, BR-4.11) — physical hardware and paid SMS gateway contracts documented as future roadmap. Note: A **Visual Siren Simulation, Pin Triggering, and Web Audio API playback feature** is implemented for map and alert demonstration (FR-MAP-014, FR-ALT-012).
+- **Clinical nutrition assessment and dietary guidance** (M1a; formerly BR-1.5, BR-1.6's nutrition half, BR-1.12–1.19) — **cut, Aug 2026.** No per-member nutrition indicators, malnutrition classification, or health-worker dietary feedback are collected or generated. The general vulnerability flags (child, senior, PWD, pregnant/lactating, chronic condition, bedridden) remain — see D-15. The Go Bag checklist (M9/portal) is unaffected.
 - **Post-registration profile claiming** (M1b) — a resident cannot claim a household record that a BHW created for them. Duplicate detection and manual merge (BR-1.9) cover the gap.
 - **Safe routes and blocked roads on the map** (M2) — road closures are communicated as announcements instead (BR-4.1).
 - **Any barangay other than San Jose**, and any municipality-wide or multi-barangay capability
 - Native mobile applications (iOS/Android)
 - Financial transaction processing — cash donations are *recorded and tracked*, not collected in-platform
 - Integration with national systems (PhilSys, DSWD Listahanan, PhilHealth)
-- Clinical or diagnostic functions; the platform records nutrition status, it does not prescribe treatment
+- Clinical or diagnostic functions of any kind
 - Barangay administrative services unrelated to disaster or health (permits, clearances, blotter)
 - Operating as an official warning authority — the barangay relays and interprets PAGASA/NDRRMC warnings; it does not replace them
 
@@ -139,7 +139,7 @@ A web platform with three faces:
 
 ### 4.4 Registration & Coverage Model
 
-**Registration is opt-in, not a census.** A head of household creates an account primarily to receive the personalized nutrition and dietary guidance described in M1 and M9, for themselves and their family. The registry therefore covers *willing participants*, not all ~143,000 residents of San Jose.
+**Registration is opt-in, not a census.** A head of household creates an account to put their family on the barangay's radar before disaster strikes — flagged for priority assistance if they need it, reachable for alerts, accounted for during an emergency. The registry therefore covers *willing participants*, not all ~143,000 residents of San Jose.
 
 Three consequences follow, and the team should be explicit about all three rather than let a judge discover them:
 
@@ -147,7 +147,7 @@ Three consequences follow, and the team should be explicit about all three rathe
 2. **Coverage is the honest headline metric.** "1,200 households profiled out of roughly 34,000" is a credible year-one result. "Complete barangay registry" is not, and would not survive scrutiny. *The 34,000 figure is an estimate derived from population and average family size; the actual barangay household count must be sourced from the LGU (OI-12).*
 3. **Disaster features operate over registered households only.** Safety check-in, rescue prioritization, and vulnerability flagging apply to families in the registry. For everyone else the barangay's existing manual processes remain in force, unchanged. The platform supplements those processes; it does not replace them.
 
-> **Strategic note for the team.** Nutrition guidance is what motivates a resident to register; disaster protection is what the barangay gains once they have. That is a sound adoption strategy — the incentive is personal and immediate, while the benefit is collective. State it deliberately in the pitch. The corresponding weakness is that coverage grows slowly at first, which is exactly why BHW-assisted registration (BR-1.2) matters so much: it is the only mechanism that reaches households who would never sign up on their own.
+> **Strategic note for the team.** Self-registration's incentive is personal and immediate — knowing your own household is on the barangay's radar before a flood, not after — while the benefit to the barangay is collective. State it deliberately in the pitch. The corresponding weakness is that coverage grows slowly at first, which is exactly why BHW-assisted registration (BR-1.2) matters so much: it is the only mechanism that reaches households who would never sign up on their own.
 
 ---
 
@@ -156,13 +156,13 @@ Three consequences follow, and the team should be explicit about all three rathe
 | Stakeholder | Interest | Role in platform |
 |---|---|---|
 | Residents / households | Timely warning, being found, receiving assistance | Head registers the household, receives alerts, checks the family in safe, requests rescue, reports incidents |
-| Barangay Health Workers & Nutrition Scholars | Reach families who cannot self-register | Assisted registration; record health and nutrition status; give dietary feedback |
+| Barangay Health Workers & Nutrition Scholars | Reach families who cannot self-register | Assisted registration; flag vulnerable members for priority assistance |
 | Barangay Captain & Council | Evidence for decisions and budget | Consume analytics; approve announcements |
 | BDRRMC | Operational response | Issue alerts, manage evacuation centers, dispatch rescue |
 | Sangguniang Kabataan | Deliver and sustain a youth project | Own the platform; run activities and volunteer programs |
 | MDRRMO (Rodriguez) — *external* | Municipal coordination | Not a platform user. Source of official alert thresholds; recipient of reports the barangay submits upward |
 | Donors, NGOs, civic groups | Confidence that help lands where needed | View what is needed; submit donations through a public form, no account |
-| Vulnerable groups — children, seniors, PWDs, pregnant women, malnourished individuals | Priority treatment | Flagged for prioritized assistance |
+| Vulnerable groups — children, seniors, PWDs, pregnant/lactating women, people with chronic conditions | Priority treatment | Flagged for prioritized assistance |
 
 ### 5.1 User Roles
 
@@ -171,8 +171,8 @@ Three consequences follow, and the team should be explicit about all three rathe
 | # | Role | Holds an account? | Access summary |
 |---|---|---|---|
 | 1 | **Public visitor** | No | Public site only. Can also submit a rescue request without registering (BR-5.9) |
-| 2 | **Head of household** | Yes | Own household record and all member profiles, health worker feedback, alerts, safety check-in for the family, incident reports, assistance status |
-| 3 | **Barangay Health Worker / Nutrition Scholar** | Yes | Assisted registration, health and nutrition data entry, dietary feedback — **scoped to assigned area** (BR-1.44) |
+| 2 | **Head of household** | Yes | Own household record and all member profiles, alerts, safety check-in for the family, incident reports, assistance status |
+| 3 | **Barangay Health Worker / Nutrition Scholar** | Yes | Assisted registration — **scoped to assigned area** (BR-1.44) |
 | 4 | **Barangay Admin / BDRRMC** | Yes | Full operational control — alerts, map and facility config, evacuation centers, donation drives and status, assistance records, verification, rescue dispatch. *One role: in this barangay the same people do both jobs* |
 | 5 | **SK Officer** | Yes | Activities, volunteers, announcements; analytics read-only |
 | 6 | **Super Admin** | Yes | Accounts, roles, system configuration, audit logs |
@@ -197,8 +197,8 @@ The team's brainstorm produced roughly 30 candidate features across the landing 
 
 | Module | Absorbs from the brainstorm |
 |---|---|
-| **M1 · Community Registry** | User and household profiling, family members, vulnerable-group flags, medical conditions, contact info, address, geotagging, vulnerability level, nutrition status, health worker feedback |
-| **M2 · Barangay Zone Map** | 3D area map, interactive hazard map (public + portal), flood-prone areas, safe zones, facility pins, nutrition/risk heat layers |
+| **M1 · Community Registry** | User and household profiling, family members, vulnerable-group flags, medical conditions, contact info, address, geotagging, vulnerability level |
+| **M2 · Barangay Zone Map** | 3D area map, interactive hazard map (public + portal), flood-prone areas, safe zones, facility pins, vulnerability/risk heat layers |
 | **M3 · Flood & Weather Watch** | Weather overview, current weather, hourly forecast, rainfall, river level, storm tracking, heat index, typhoon alerts, flood history & prediction, alert levels 1–3 |
 | **M4 · Alerts & Announcements** | Emergency alerts, flood/earthquake/typhoon warnings, announcement board, class suspensions, road closures, utility interruptions, notifications |
 | **M5 · Safety Check-In & Rescue** | Mark-safe (self and admin-assisted), rescue requests, incident reporting with photo and location |
@@ -230,7 +230,7 @@ This resolves the tension that ran through earlier drafts. The objection to hous
 
 > A household is **the set of people the account holder takes responsibility for profiling.** It is a self-declared group, not a verified statement about who sleeps under one roof. The platform does not attempt to prove cohabitation, and nothing in the system depends on it being provable.
 
-That framing is enough for every use the platform has. Nutrition programming needs a responsible adult attached to each child's record. Disaster response needs to know that these five people are connected and where they are. Neither requires proof of residency — only a named adult who is accountable for the data and reachable about it.
+That framing is enough for every use the platform has. Disaster response needs to know that the people in a household are connected, where they are, and which of them need help first — not proof of residency, only a named adult who is accountable for the data and reachable about it.
 
 | ID | Requirement | Priority |
 |---|---|---|
@@ -239,8 +239,8 @@ That framing is enough for every use the platform has. Nutrition programming nee
 | BR-1.3 | Address capture uses the official Philippine Standard Geographic Code hierarchy, plus the barangay's own area/zone designation (Area 1, Area 2, …) | M |
 | BR-1.4 | A household record carries one address, one area assignment, one named head, and at least one contact number where the household has one | M |
 | BR-1.4a | A household with no contact number can still register. It is flagged as unreachable by phone, which raises its vulnerability level (M1f, Group C) rather than blocking registration | M |
-| BR-1.5 | Each member profile captures health and nutrition indicators for that individual. *Final indicator set and thresholds to be specified by the Nutrition & Dietetics lead — see Open Items.* | M |
-| BR-1.6 | The system automatically classifies each member's nutrition status and the household's overall vulnerability level from the data entered, without manual scoring. Criteria are defined in **M1f** | M |
+| ~~BR-1.5~~ | ~~Each member profile captures health and nutrition indicators for that individual.~~ **Cut, Aug 2026** — the platform does not collect clinical nutrition-assessment data. See the Aug 2026 revision note in Section 1 | — |
+| BR-1.6 | The system automatically classifies the household's overall vulnerability level from the vulnerability flags entered (BR-1.32), without manual scoring. Criteria are defined in **M1f** | M |
 | BR-1.7 | A household can be geotagged to a location on the barangay map | S |
 | BR-1.8 | The head can update the household record and all member profiles; changes are auditable | S |
 | BR-1.9 | Duplicate household records are detected and flagged, and the barangay can merge them. **Priority raised** — with profile claiming out of scope (M1b), this is now the only defence against the same family existing twice | M |
@@ -253,26 +253,17 @@ Assisted registration produces records that belong to the barangay and have no a
 
 | ID | Requirement | Priority |
 |---|---|---|
-| BR-1.20 | A BHW can create a complete household record, with all member profiles, without anyone in it having an account. The record is immediately usable by the barangay for nutrition and disaster purposes | M |
+| BR-1.20 | A BHW can create a complete household record, with all member profiles, without anyone in it having an account. The record is immediately usable by the barangay for disaster response and priority-assistance targeting | M |
 | BR-1.20a | Every household record has a named head, an assigned area, and a household reference number generated at creation | M |
 | BR-1.20b | Every barangay-created record retains which health worker created it, and when | M |
 
-#### M1a · Health Worker Feedback Loop
+#### M1a · Health Worker Feedback Loop — **out of scope, Aug 2026**
 
-The registry is not just a collection point. A family who submits their nutrition data receives something back — this is what makes registration worth doing, and it is the mechanism that converts a nutrition user into a disaster-registered household.
+~~The registry is not just a collection point. A family who submits their nutrition data receives something back...~~
 
-| ID | Requirement | Priority |
-|---|---|---|
-| BR-1.12 | A BHW or Barangay Nutrition Scholar can write feedback or dietary guidance against any member's profile | M |
-| BR-1.13 | That feedback appears on the head's portal, attributed to the health worker who wrote it and dated | M |
-| BR-1.14 | The system may **draft** suggested guidance automatically from the recorded nutrition status, to save health worker time | C |
-| BR-1.15 | Automatically drafted guidance is **never published to a resident without a health worker reviewing and approving it.** No health advice reaches a resident unreviewed | M |
-| BR-1.16 | Published guidance clearly indicates whether it was authored or reviewed by a health worker, and is drawn from recognized standards (NNC, DOH, DOST-FNRI) | M |
-| BR-1.17 | Guidance is general dietary advice only. It must not diagnose, prescribe, or replace consultation with a health professional, and must say so | M |
-| BR-1.18 | Residents are notified when new feedback is available on their profile | S |
-| BR-1.19 | Feedback history is retained so progress can be tracked over time | S |
+This entire module was a health-worker dietary-guidance loop built on top of per-member nutrition classification: a BHW or Nutrition Scholar writes feedback drawn from a resident's recorded nutrition status (optionally AI-drafted, always human-reviewed before publish), sourced from NNC/DOH/DOST-FNRI standards. **Cut along with BR-1.5** — with no nutrition status being recorded, there is nothing for this loop to be written from. `BR-1.12` through `BR-1.19` are withdrawn, not just deferred. This closes OI-11 (automated dietary guidance) as **out**, and removes R-13 (automated dietary guidance is wrong or misapplied) as a live risk.
 
-> **Risk note.** Automated drafting is a genuine time-saver for overstretched BHWs, and worth demonstrating. But this is nutrition advice concerning children, pregnant women, and people with chronic conditions. BR-1.15 — mandatory human review before publication — is the control that makes the feature acceptable, and it is not negotiable. If the team cannot commit to that review step, drop automated drafting entirely and keep feedback purely health-worker-authored.
+What the registry still gives back to a household that registers: alerts, priority-assistance targeting for flagged vulnerable members, and visibility during an emergency (Section 4.4). It is no longer a dietary-guidance exchange.
 
 #### M1b · Profile Claiming — **out of scope**
 
@@ -284,8 +275,8 @@ The full design — an "I already have a profile" onboarding fork, BHW-issued cl
 
 | Route | What the resident gets |
 |---|---|
-| **Self-registration online** | A full account: portal access, alerts, safety check-in, dietary feedback |
-| **BHW-assisted registration** | A barangay-held record. Counted in the registry, appears on the map, receives priority in vulnerability targeting, and the BHW delivers dietary guidance in person |
+| **Self-registration online** | A full account: portal access, alerts, safety check-in |
+| **BHW-assisted registration** | A barangay-held record. Counted in the registry, appears on the map, and receives priority in vulnerability targeting |
 
 This is coherent rather than a compromise: the residents a BHW registers are, by definition, the ones without a phone or internet. A login is of no use to them. They are served through the health worker, which is how the barangay reaches them today.
 
@@ -305,14 +296,14 @@ The reason the head-of-household model is necessary rather than merely convenien
 |---|---|---|
 | BR-1.31 | The head can add member profiles for the people in their household — children, spouse, parents, relatives, and others in their care | M |
 | BR-1.32 | Each member profile flags whether the person is a child, senior, PWD, pregnant or lactating, has a chronic medical condition requiring regular medication, or is **bedridden / mobility-limited** | M |
-| BR-1.33 | A member has a full nutrition and vulnerability profile but no account of their own | M |
+| BR-1.33 | A member has a full vulnerability profile but no account of their own | M |
 | BR-1.34 | Each member's relationship to the head is recorded | S |
 | BR-1.35 | Health worker feedback (M1a) can be written against any member's profile and appears on the head's portal | M |
 | BR-1.36 | A BHW can record all members during a single assisted registration visit, rather than one visit per person | M |
-| BR-1.37 | An adult member can be split out into their own household record later — on marriage, or on moving out — retaining their nutrition history | C |
-| BR-1.38 | Household vulnerability is derived from its most vulnerable member, not averaged. One malnourished child makes the household a priority case | M |
+| BR-1.37 | An adult member can be split out into their own household record later — on marriage, or on moving out — retaining their profile history | C |
+| BR-1.38 | Household vulnerability is derived from its most vulnerable member, not averaged. One bedridden member makes the household a priority case | M |
 
-> **Design principle.** Profiling is collected **once**, per household, and serves both nutrition programming and disaster response. Health workers must never be asked to visit the same family twice for two programs.
+> **Design principle.** Profiling is collected **once**, per household, and serves disaster response and priority-assistance targeting together. Health workers must never be asked to visit the same family twice to get the same information into two different systems.
 
 #### M1d · Household Counts
 
@@ -337,7 +328,7 @@ The reason the head-of-household model is necessary rather than merely convenien
 | BR-1.42 | A head can withdraw consent and request deletion of their household record; the barangay must be able to action this | M |
 | BR-1.43 | An adult member can request to see, correct, or be removed from the record they appear in, independently of the head | M |
 | BR-1.44 | A BHW's access is limited to the areas they are assigned to — they cannot browse the whole barangay registry | M |
-| BR-1.45 | Access to health and nutrition data is logged: who viewed which record, and when | S |
+| BR-1.45 | Access to a household's profile data is logged: who viewed which record, and when | S |
 | BR-1.46 | A retention period for inactive records is defined and applied | S |
 
 **Questions parked for the PolSci lead — for deployment, not for the pitch:**
@@ -359,13 +350,12 @@ Carries the most weight. Each is already captured per member (BR-1.32).
 
 | Factor | Why it matters |
 |---|---|
-| Children under 5 | Cannot self-evacuate; highest mortality in floods; overlaps with OPT+ population |
+| Children under 5 | Cannot self-evacuate; highest mortality in floods |
 | Pregnant or lactating women | Restricted mobility; medical needs during displacement |
 | Older persons (60+) | Mobility, medication dependence, heat and cold sensitivity |
 | Persons with disability | May require assisted evacuation or specific transport |
 | Bedridden or mobility-limited persons | Cannot evacuate without physical assistance — often the single most decisive factor |
 | Chronic conditions requiring regular medication | Dialysis, insulin, TB treatment, maintenance drugs — interruption is dangerous |
-| Malnourished members | Reduced resilience; nutrition status supplied by M1 classification (OI-2) |
 
 ##### Group B — Where the household is *(exposure)*
 
@@ -393,7 +383,7 @@ Derived from the area assignment and geotag, not asked of the resident.
 |---|---|---|
 | BR-1.47 | Vulnerability is computed from person factors (A), exposure (B), and capacity (C) — never from person factors alone | M |
 | BR-1.48 | The result is a small number of named levels — proposed: **Low · Moderate · High · Priority** — not a raw score shown to users | M |
-| BR-1.49 | Classification follows the most-vulnerable-member rule (BR-1.38): one bedridden senior or one severely malnourished child places the household at the top tier regardless of other factors | M |
+| BR-1.49 | Classification follows the most-vulnerable-member rule (BR-1.38): one bedridden member places the household at the top tier regardless of other factors | M |
 | BR-1.50 | The barangay can see **why** a household received its level — which factors contributed — so the classification can be questioned and corrected | M |
 | BR-1.51 | Barangay staff can manually override a household's level, with a recorded reason. Local knowledge beats a formula | M |
 | BR-1.52 | Vulnerability level is never shown on the public site, and is not disclosed to other residents (BR-0.14) | M |
@@ -402,14 +392,14 @@ Derived from the area assignment and geotag, not asked of the resident.
 
 > **A caution worth stating.** Labelling families creates real consequences — who gets fetched first, who gets relief. BR-1.50 and BR-1.51 exist because a formula will sometimes be wrong, and the barangay must be able to see the reasoning and overrule it. A classification nobody can question is worse than no classification.
 
-> **Owners.** Group A nutrition thresholds sit with the **Nutrition & Dietetics lead** (OI-2). Groups B and C, and the level definitions, sit with the **PubAd lead** working from the barangay's own DRRM practice (OI-18).
+> **Owners.** Groups A, B, and C, and the level definitions, sit with the **PubAd lead** working from the barangay's own DRRM practice (OI-18).
 
 ### M2 · Barangay Zone Map
 
 | ID | Requirement | Priority |
 |---|---|---|
 | BR-2.1 | A visual map of Barangay San Jose divides the territory into its constituent areas/zones | M |
-| BR-2.2 | Areas are shaded by aggregated indicators — malnutrition concentration, vulnerable-household density, flood exposure — so the areas needing the most action are immediately obvious | M |
+| BR-2.2 | Areas are shaded by aggregated indicators — vulnerable-household density, flood exposure — so the areas needing the most action are immediately obvious | M |
 | BR-2.3 | The map displays hazard layers: flood-prone areas and designated safe zones | M |
 | BR-2.4 | The map displays pinned facilities: evacuation centers, hospitals, clinics, barangay hall, police station, fire station, rescue stations | M |
 | BR-2.5 | Barangay admins can add, edit, remove, and geo-pin facilities without developer assistance | M |
@@ -576,7 +566,7 @@ A separate, resident-facing view. It is **not** connected to the donation drives
 | BR-10.1 | An operations dashboard shows registered residents and households, high-risk and flood-prone households, affected families, active emergencies, and ongoing rescue operations | M |
 | BR-10.1a | **Barangay-wide** population and household totals are **manually configured** by an administrator from official barangay figures, since the registry is opt-in and not a census (Section 4.4) | M |
 | BR-10.1b | **Registered** household and member counts are derived from the registry itself (BR-1.39), and always presented against the configured total so coverage is visible rather than implied | M |
-| BR-10.2 | Nutrition status is summarized by area, identifying which areas need intervention first | M |
+| ~~BR-10.2~~ | ~~Nutrition status is summarized by area, identifying which areas need intervention first~~ **Cut, Aug 2026** — no nutrition status is recorded (see Section 1's Aug 2026 revision note and M1a) | — |
 | BR-10.3 | Affected-family counts are tracked per event | M |
 | BR-10.4 | Donation drives are reportable per event — what was needed, submitted, and received | S |
 | BR-10.5 | Participation in preparedness activities is reportable | S |
@@ -595,7 +585,7 @@ Listed in the team's intended page order. "Fed by" identifies where the content 
 | ID | Section | Content | Fed by | Priority |
 |---|---|---|---|---|
 | BR-0.1 | **Hero** | Platform name, tagline, "Get Started / Login" action, and an always-visible **Emergency Hotline** action | Static + reference data | M |
-| BR-0.2 | **About the Platform** | What the platform is; mission and vision; why disaster preparedness matters for San Jose; SDG alignment — SDG 13 (Climate Action) and SDG 11 (Sustainable Cities and Communities), with SDG 2 and 3 optionally noted per Section 12 | Static content | M |
+| BR-0.2 | **About the Platform** | What the platform is; mission and vision; why disaster preparedness matters for San Jose; SDG alignment — SDG 13 (Climate Action), SDG 11 (Sustainable Cities and Communities), and SDG 3 (Good Health and Well-being) per Section 12. SDG 2 dropped, Aug 2026 (tracked the now-cut nutrition program) | Static content | M |
 | BR-0.3 | **Latest Announcements** | Weather advisories, barangay announcements, class suspensions, road closures, emergency notices — newest first, emergency notices visually distinct | M4 | M |
 | BR-0.4 | **Weather Overview** | Current conditions, temperature, rainfall, short-term forecast, typhoon alerts. Every reading timestamped and attributed to its source | M3 | M |
 | BR-0.5 | **Preparedness Tips** | Quick cards: before a flood, earthquake safety, fire safety, typhoon preparedness, **San Jose Go Bag Essentials**. Each card opens the full guide | M9 | S |
@@ -649,7 +639,7 @@ The sequencing below is therefore a **build order, not a scope cut.** Nothing in
 
 If time runs short, **stages 1 and 2** are what must be working:
 
-*A health worker profiles a family in one visit, including the toddler who could never register herself → the mother gets dietary feedback back, which is why she signed up → the household appears on the map as part of an at-risk area → the river rises and the area is warned → she checks the whole family in safe, or requests rescue.*
+*A health worker profiles a family in one visit, including the toddler who could never register herself and the bedridden grandmother who needs help evacuating → the household is flagged for priority assistance and appears on the map as part of an at-risk area → the river rises and the area is warned → she checks the whole family in safe, or requests rescue.*
 
 Every module in those two stages is either novel or directly demonstrates the core value. Skipping any of them breaks the story.
 
@@ -664,8 +654,8 @@ Every module in those two stages is either novel or directly demonstrates the co
 | BO-1 | Households with a verified profile, against the configured barangay total | 3–5% in year 1 — registration is opt-in (Section 4.4), so coverage grows gradually and the target is set to be defensible rather than impressive |
 | BO-1 | % of households captured through BHW-assisted registration | ≥ 25% — proves the platform reaches the offline population |
 | BO-1 | Registered households in flood-prone areas, as a share of all registered households | Higher than their share of the barangay — shows outreach is targeting risk, not just collecting volume |
-| BO-1 | Children under 5 profiled, against the barangay's OPT+ target population | The registry's value is coverage of the vulnerable, not raw headcount — and this is the number the Nutrition team can benchmark against existing OPT+ records |
-| BO-2 | Areas with a computed risk and nutrition score | 100% of designated areas |
+| BO-1 | Children under 5 profiled, as a share of all registered members | The registry's value is coverage of the vulnerable, not raw headcount |
+| BO-2 | Areas with a computed vulnerability/risk score | 100% of designated areas |
 | BO-3 | Time from alert threshold reached to warning published | Under 15 minutes |
 | BO-4 | % of **registered** residents accounted for within 24 hours of an event | ≥ 80% — denominator is the registry, not the barangay. Counted per member, not per household, since a family can be separated |
 | BO-4 | Rescue requests resolved and closed | 100% closed with a recorded outcome |
@@ -690,10 +680,10 @@ Every module in those two stages is either novel or directly demonstrates the co
 | R-7 | **LGU adoption.** A platform with no barangay staff behind it is dead on arrival | High | Involve barangay officials during development, not after; keep the console genuinely simple |
 | R-8 | **Scope overrun — now the project's single largest risk.** Eleven modules, five students of whom a minority are IT, one competition timeline, and no module descoped | High | Build order in Section 8 ensures a coherent demo exists at every point; stages 1–2 are the non-negotiable core; content work (M9, FAQs, mission/vision) assigned to non-IT members in parallel from day one; team should agree a date after which no new features are accepted |
 | R-9 | **Sustainability after the competition.** Team members graduate | Medium | Institutionalize under the SK with recurring CBYDP/ABYIP funding and documented handover |
-| R-10 | **Nutrition indicators not yet finalized** | Medium | Keep BR-1.5 deliberately open until the Nutrition & Dietetics lead specifies; design the registry to accept an evolving indicator set |
+| R-10 | *Retired.* Nutrition indicators are moot — BR-1.5 is cut (Aug 2026); no nutrition data is collected | — | — |
 | R-11 | **False rescue reports** during a live emergency waste scarce response capacity | Medium | Admin verification and dismissal (BR-5.7); registered requests carry known identity. **Note: this must not be mitigated by requiring an account — see BR-5.9. Accepting some false reports is the correct trade against turning away real ones** |
 | R-12 | **Partial coverage.** Registration is opt-in, so the registry will cover a minority of households — and possibly not the most vulnerable ones, who are least likely to self-register | High | BHW-assisted registration targeted at flood-prone areas; report coverage openly (Section 4.4); never present the registry as complete; existing manual barangay processes continue in parallel |
-| R-13 | **Automated dietary guidance is wrong or misapplied**, affecting children, pregnant women, or people with chronic conditions | High | Mandatory health-worker review before publication (BR-1.15); general advice only, never diagnosis (BR-1.17); sourced from NNC/DOH/DOST-FNRI standards |
+| R-13 | *Retired.* Automated dietary guidance is no longer possible — the whole M1a feedback loop is out of scope (Aug 2026), not just the automated-drafting half | — | — |
 | R-14 | **No SMS or siren** means every alert channel built reaches only people already online — the opposite of the population most at risk | Medium | Position honestly as roadmap (BR-4.10/4.11); alerting supplements rather than replaces existing barangay warning practice; BR-4.9 keeps the design open so the barangay can add these once funded |
 | R-15 | *Retired.* Fraudulent household claiming is no longer possible — claiming is out of scope (M1b). Reinstate this risk if claiming is ever built | — | — |
 | R-16 | **Duplicate records.** With claiming out of scope, a BHW-registered head who later signs up online creates a second record — splitting the family's history and inflating counts | **Raised to High** | Duplicate detection and manual merge (BR-1.9, now Must-have) is the only control. Manageable at prototype scale; revisit before live deployment |
@@ -707,19 +697,17 @@ Every module in those two stages is either novel or directly demonstrates the co
 
 | # | Item | Owner | Needed by |
 |---|---|---|---|
-| OI-2 | **Nutrition indicator set and classification thresholds** — which measurements are captured, at what ages, and how status is computed (BR-1.5, BR-1.6) | Nutrition & Dietetics lead | Before registry build |
 | OI-3 | **Official area/zone list** for Barangay San Jose — how many, what names, what boundaries | PolSci / PubAd leads, via barangay | Before map build |
 | OI-4 | **Local river alert thresholds.** Marikina City's 15/16/18 m values are for the Sto. Niño station downstream; Rodriguez's own thresholds must be confirmed | PubAd lead, via MDRRMO | Before flood module |
 | OI-5 | **Barangay endorsement.** Whether a letter of support or consultation record can be secured — materially strengthens the pitch | PolSci lead | Before submission |
 | OI-6 | **Consent and privacy notice wording** for registration | PolSci / PubAd leads | Before any real data is collected |
 | OI-7 | **Prototype demo data** — seeded households with members, and a scripted flood scenario for the pitch | IT lead | Before demo |
 | OI-8 | **Confirm the build order** in Section 8, and agree a date after which no new features are accepted (R-8) | Whole team | Immediately |
-| OI-11 | **Automated dietary guidance — in or out?** If the team keeps BR-1.14, it must commit to mandatory health-worker review (BR-1.15). If that review cannot be staffed, drop it and keep feedback health-worker-authored only | Nutrition & Dietetics lead + IT lead | Before build |
 | OI-12 | **Official barangay population and household totals** to configure as the analytics denominator (BR-10.1a) | PubAd lead, via barangay | Before demo |
-| OI-13 | **Coverage narrative for the pitch.** Decide how the team presents opt-in registration — recommended framing in Section 4.4 is that nutrition guidance drives sign-up and disaster readiness is the collective payoff | Whole team | Before deck design |
+| OI-13 | **Coverage narrative for the pitch.** Decide how the team presents opt-in registration — recommended framing in Section 4.4 is that being on the barangay's radar before disaster strikes is the incentive, and collective disaster readiness is the payoff | Whole team | Before deck design |
 | OI-14 | **Who may be added as a household member** (BR-1.31) — confirm the scope. Children and dependants are uncontroversial; adult relatives raise the consent question in R-17 | Nutrition & Dietetics lead + PolSci lead | Before registry build |
 | OI-17 | **Privacy and consent requirements (M1e) — review and confirm.** The section is currently a provisional draft, not agreed requirements. Includes: who is the Personal Information Controller, parental consent for minors, whether NPC registration applies, and whether BR-1.43 (adult member right of access) stands | **PolSci lead** | Before any real data is collected |
-| OI-18 | **Vulnerability level definitions and factor weighting (M1f)** — confirm the four levels (Low/Moderate/High/Priority), which exposure and capacity factors the barangay actually uses, and whether any Group A factor should be an automatic top tier beyond BR-1.49 | PubAd lead, via BDRRMC + Nutrition lead for Group A | Before registry build |
+| OI-18 | **Vulnerability level definitions and factor weighting (M1f)** — confirm the four levels (Low/Moderate/High/Priority), which exposure and capacity factors the barangay actually uses, and whether any Group A factor should be an automatic top tier beyond BR-1.49 | PubAd lead, via BDRRMC | Before registry build |
 
 ### Resolved decisions
 
@@ -741,6 +729,7 @@ Recorded so the team does not relitigate them.
 | D-12 | Safe routes and blocked roads | **Out of scope** (M2). Needs a road network layer plus live updating during an event, when staff have least capacity. Road closures are announcements (BR-4.1), not map geometry |
 | D-13 | Platform name and tagline (closes OI-1) | **`SAGIP-SJ`** — System for Alert, Guidance, Incident Reporting, and Preparedness for Barangay San Jose. Confirmed by the team's own concept paper, which names the platform "SAGIP-SJ" outright in its Expected Outcomes section — the candidate list this row used to carry is superseded, not just narrowed. The codebase (`apps/web/src/lib/brand.ts`, root `README.md`, `AGENTS.md`) already treated this as settled before this document did; this row brings the BRD into agreement rather than deciding anything new |
 | D-14 | Mission and vision statements (closes OI-10) | Drafted from the team's concept paper (Introduction, Problem Statement, and Project Rationale sections) rather than left as placeholder prose. See Section 1a. Still open to PolSci/PubAd wordsmithing before the deck — the substance (RA 10121's proactive-DRRM framing, household-level accountability, SDG 3/11/13) is what's fixed, not the exact phrasing |
+| D-15 | Clinical nutrition assessment — **cut** (closes OI-2, OI-11; retires R-10, R-13) | The team confirmed the platform will not collect per-member nutrition indicators, automatic malnutrition classification, or health-worker dietary guidance (M1a; BR-1.5's nutrition half; BR-1.12–1.19). Reason: the barangay is not making this resident data available to the project. General vulnerability flags (child, senior, PWD, pregnant/lactating, chronic condition, bedridden — BR-1.32) are unaffected; they were always a household risk-factor list, not a clinical assessment. The Go Bag checklist (M9/portal) and the Emergency Food Guide (BR-9.3, informational content) are also unaffected — neither depends on collecting resident nutrition data |
 
 ---
 
@@ -748,7 +737,7 @@ Recorded so the team does not relitigate them.
 
 **Sangguniang Kabataan mandate.** Ten percent of the barangay general fund is set aside for the SK and must be spent on youth development. This project fits the health, active citizenship, governance, and social equity thrusts of the Philippine Youth Development Plan, and is structured to be written into the Comprehensive Barangay Youth Development Plan and its annual investment program.
 
-**Sustainable Development Goals.** SDG 11 (Sustainable Cities and Communities), particularly resilience to water-related disasters; SDG 13 (Climate Action), strengthening adaptive capacity; SDG 2 (Zero Hunger), through the nutrition profiling and emergency food components; SDG 3 (Good Health and Well-being).
+**Sustainable Development Goals.** SDG 13 (Climate Action), enhancing resilience and adaptive capacity to climate-related hazards through digital innovation; SDG 11 (Sustainable Cities and Communities), promoting inclusive, safe, resilient, and sustainable communities; SDG 3 (Good Health and Well-being), protecting lives through improved preparedness, timely communication, and coordinated emergency response. SDG 2 (Zero Hunger) is no longer a primary alignment — see the Aug 2026 revision note in Section 1.
 
 **Why a youth team is the right proponent.** The barangay does not lack willingness — it lacks capacity to build and run digital tools. That is precisely the gap an SK-led, student-built project fills, and it demonstrates youth participation in governance rather than merely asking for it.
 
@@ -798,7 +787,7 @@ Recorded so the team does not relitigate them.
 
 Everything else in this document is in scope for development.
 
-*Separately, automated drafting of dietary guidance (BR-1.14) is optional and gated by mandatory health worker review (BR-1.15) — see OI-11. It is a decision the team has yet to make, not an exclusion.*
+*Health worker dietary guidance (formerly BR-1.14/BR-1.15, M1a) — **cut, Aug 2026.** The team confirmed the platform will not collect nutrition assessment data, so there is nothing for a health worker to review or draft guidance from. This closed OI-11; it is not an open decision.*
 
 ## Appendix B — Sources
 

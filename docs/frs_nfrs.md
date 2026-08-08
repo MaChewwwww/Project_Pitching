@@ -150,7 +150,7 @@ A requirement is `✅` only when all of the following hold:
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
 | FR-PUB-001 | Hero section | App name, tagline, Get Started/Login action, always-visible hotline action | BR-0.1 | M | ◐ | — |
-| FR-PUB-002 | About section | Mission, vision, why preparedness matters, SDG 11 & 13 alignment | BR-0.2 | M | ◐ | — |
+| FR-PUB-002 | About section | Mission, vision, why preparedness matters, SDG 13/11/3 alignment | BR-0.2 | M | ◐ | — |
 | FR-PUB-003 | Latest announcements feed | Newest first, pulled live from ALT; emergency notices visually distinct | BR-0.3 | M | ◐ | — |
 | FR-PUB-004 | Weather overview | Current conditions, temperature, rainfall, forecast; each reading timestamped and sourced | BR-0.4 | M | ◐ | — |
 | FR-PUB-005 | Preparedness tip cards | Cards for flood, earthquake, fire, typhoon, San Jose Go Bag; each opens the full guide | BR-0.5 | S | ◐ | — |
@@ -217,7 +217,7 @@ A requirement is `✅` only when all of the following hold:
 | FR-REG-023 | Relationship to head recorded | Selectable relationship per member | BR-1.34 | S | ◐ | — |
 | FR-REG-024 | All members in one visit | BHW flow captures every member in a single session without re-entry | BR-1.36 | M | ◐ | — |
 | FR-REG-025 | Member repeater UX | One member per collapsible card, one open at a time, "Member N of M" progress, sticky save | Design 9.5 | M | ◐ | — |
-| FR-REG-026 | Split an adult member out | Adult member becomes head of a new household, retaining nutrition history | BR-1.37 | C | ☐ | — |
+| FR-REG-026 | Split an adult member out | Adult member becomes head of a new household, retaining profile history | BR-1.37 | C | ☐ | — |
 
 > **Registration and members are real and verified end-to-end** (self-registration
 > at `/register` → `/portal/onboarding`; BHW-assisted at `/admin/households/new`;
@@ -271,13 +271,19 @@ A requirement is `✅` only when all of the following hold:
 >   `react-leaflet` were installed but unused; `/hazard-map` remains an
 >   explicitly non-interactive placeholder, untouched by this work.
 
-### 5.3 Nutrition & health data
+### 5.3 Nutrition & health data — **cut, Aug 2026**
+
+> The team confirmed the platform will not collect clinical nutrition-assessment
+> data (BRD D-15, Section 4.2). `FR-REG-030`/`031`/`032` (formerly BR-1.5,
+> BR-1.6, BR-1.19's nutrition half) are withdrawn, not deferred. This closes
+> BRD OI-2. The general vulnerability flags in 5.2 (`FR-REG-021`) are
+> unaffected — they are household risk factors, not clinical measurements.
 
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
-| FR-REG-030 | Capture nutrition indicators per member | Indicator set configurable; final set from Nutrition lead (OI-2) | BR-1.5 | M | ☐ | — |
-| FR-REG-031 | Automatic nutrition classification | Status computed from entered values without manual scoring; recomputed on edit | BR-1.6 | M | ☐ | — |
-| FR-REG-032 | Nutrition history retained | Successive measurements stored with dates, not overwritten | BR-1.19 | S | ☐ | — |
+| ~~FR-REG-030~~ | ~~Capture nutrition indicators per member~~ | **Cut, Aug 2026** — no nutrition data collected | BR-1.5 | — | ✕ | — |
+| ~~FR-REG-031~~ | ~~Automatic nutrition classification~~ | **Cut, Aug 2026** | BR-1.6 | — | ✕ | — |
+| ~~FR-REG-032~~ | ~~Nutrition history retained~~ | **Cut, Aug 2026** | BR-1.19 | — | ✕ | — |
 
 ### 5.4 Vulnerability classification
 
@@ -285,7 +291,7 @@ A requirement is `✅` only when all of the following hold:
 |---|---|---|---|---|---|---|
 | FR-REG-040 | Compute vulnerability from A + B + C | Person factors, exposure, and capacity all contribute; person factors alone insufficient | BR-1.47 | M | ☐ | — |
 | FR-REG-041 | Four named levels | `Low`, `Moderate`, `High`, `Priority`; raw score never surfaced to users | BR-1.48 | M | ☐ | — |
-| FR-REG-042 | Most-vulnerable-member rule | One bedridden member or one severely malnourished child forces `Priority` regardless of other factors | BR-1.38, BR-1.49 | M | ☐ | — |
+| FR-REG-042 | Most-vulnerable-member rule | One bedridden member forces `Priority` regardless of other factors | BR-1.38, BR-1.49 | M | ☐ | — |
 | FR-REG-043 | Exposure factors from geography | Area hazard class, river proximity, distance to nearest centre, vehicle accessibility — derived, not asked | BR-1.47 | M | ☐ | — |
 | FR-REG-044 | Capacity factors reduce level | Able-bodied adult present, reachable by phone, drill attendance, go-bag prepared | BR-1.47 | S | ☐ | — |
 | FR-REG-045 | Explainability | Admin can see which factors produced the level | BR-1.50 | M | ☐ | — |
@@ -293,20 +299,24 @@ A requirement is `✅` only when all of the following hold:
 | FR-REG-047 | Vulnerability never public | Not rendered on public pages, not visible to other residents | BR-1.52 | M | ☐ | — |
 | FR-REG-048 | Vulnerability visible to barangay | Shown on household record and in registry lists for targeting | BR-1.11 | M | ☐ | — |
 
-### 5.5 Health worker feedback
+### 5.5 Health worker feedback — **out of scope, Aug 2026**
+
+> The entire feedback loop (`FR-REG-050`–`057`, BR-1.12–BR-1.19) was built
+> around a BHW reviewing and delivering nutrition/dietary guidance. With
+> nutrition data collection cut (BRD D-15), there is nothing for a health
+> worker to give feedback on, so the whole section is withdrawn, not just its
+> automated-drafting half. This closes BRD OI-11 as "out" and retires R-13.
 
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
-| FR-REG-050 | BHW writes feedback on a member | Free-text guidance saved against a member profile | BR-1.12 | M | ☐ | — |
-| FR-REG-051 | Feedback appears on head's portal | Attributed to the author, dated | BR-1.13 | M | ☐ | — |
-| FR-REG-052 | Guidance disclaimer | Every published item carries "general dietary advice, not a diagnosis" text | BR-1.17 | M | ☐ | — |
-| FR-REG-053 | Source attribution | Guidance indicates authorship/review and cites NNC/DOH/DOST-FNRI basis | BR-1.16 | M | ☐ | — |
-| FR-REG-054 | Notify on new feedback | Resident notified in-app when feedback is published | BR-1.18 | S | ☐ | — |
-| FR-REG-055 | Feedback history | Prior feedback retained and viewable chronologically | BR-1.19 | S | ☐ | — |
-| FR-REG-056 | Automated draft guidance | System proposes guidance from nutrition status — **draft only** | BR-1.14 | C | ⏸ | — |
-| FR-REG-057 | Mandatory human review before publish | Drafted guidance cannot reach a resident without explicit BHW approval. **Blocks FR-REG-056** | BR-1.15 | M | ⏸ | — |
-
-> `FR-REG-056` / `FR-REG-057` are deferred pending OI-11. If automated drafting is dropped, mark both `✕`. **FR-REG-056 must never ship without FR-REG-057.**
+| ~~FR-REG-050~~ | ~~BHW writes feedback on a member~~ | **Cut, Aug 2026** | BR-1.12 | — | ✕ | — |
+| ~~FR-REG-051~~ | ~~Feedback appears on head's portal~~ | **Cut, Aug 2026** | BR-1.13 | — | ✕ | — |
+| ~~FR-REG-052~~ | ~~Guidance disclaimer~~ | **Cut, Aug 2026** | BR-1.17 | — | ✕ | — |
+| ~~FR-REG-053~~ | ~~Source attribution~~ | **Cut, Aug 2026** | BR-1.16 | — | ✕ | — |
+| ~~FR-REG-054~~ | ~~Notify on new feedback~~ | **Cut, Aug 2026** | BR-1.18 | — | ✕ | — |
+| ~~FR-REG-055~~ | ~~Feedback history~~ | **Cut, Aug 2026** | BR-1.19 | — | ✕ | — |
+| ~~FR-REG-056~~ | ~~Automated draft guidance~~ | **Cut, Aug 2026** | BR-1.14 | — | ✕ | — |
+| ~~FR-REG-057~~ | ~~Mandatory human review before publish~~ | **Cut, Aug 2026** | BR-1.15 | — | ✕ | — |
 
 ### 5.6 Counts
 
@@ -322,7 +332,7 @@ A requirement is `✅` only when all of the following hold:
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
 | FR-MAP-001 | Area/zone rendering | Barangay divided into its areas, each selectable | BR-2.1 | M | ☐ | — |
-| FR-MAP-002 | Area shading by indicator | Toggle between malnutrition concentration, vulnerable-household density, flood exposure | BR-2.2 | M | ☐ | — |
+| FR-MAP-002 | Area shading by indicator | Toggle between vulnerable-household density, flood exposure | BR-2.2 | M | ☐ | — |
 | FR-MAP-003 | Hazard layers | NOAH flood polygons (5/25/100-yr) with low/medium/high fill; safe zones | BR-2.3 | M | ☐ | — |
 | FR-MAP-004 | Hazard data pre-clipped and static | Serves a committed GeoJSON clipped to San Jose; no runtime dependency on NOAH | Tech Stack 6 | M | ☐ | — |
 | FR-MAP-005 | Facility pins | All facility types from FR-SYS-015 rendered with type-specific icons | BR-2.4 | M | ☐ | — |
@@ -479,7 +489,7 @@ A requirement is `✅` only when all of the following hold:
 | FR-ANL-001 | Operations dashboard | Registered households/members, high-risk and flood-prone counts, affected families, active emergencies, open rescues | BR-10.1 | M | ☐ | — |
 | FR-ANL-002 | Configured totals as denominator | Barangay-wide figures admin-set and stored separately | BR-10.1a | M | ◐ | — |
 | FR-ANL-003 | Coverage always visible | Registered counts always presented against the configured total | BR-10.1b | M | ◐ | — |
-| FR-ANL-004 | Nutrition summary by area | Ranked to show which areas need intervention first | BR-10.2 | M | ☐ | — |
+| ~~FR-ANL-004~~ | ~~Nutrition summary by area~~ | **Cut, Aug 2026** — BR-10.2 is cut, no nutrition status is recorded | BR-10.2 | — | ✕ | — |
 | FR-ANL-005 | Affected families per event | Tracked and reportable | BR-10.3 | M | ☐ | — |
 | FR-ANL-006 | Donation drive reporting | Needed vs submitted vs received per drive | BR-10.4 | S | ☐ | — |
 | FR-ANL-007 | Activity participation reporting | Attendance across activities, for SK accomplishment reporting | BR-10.5 | S | ☐ | — |
@@ -544,7 +554,7 @@ A requirement is `✅` only when all of the following hold:
 | NFR-PRV-001 | Consent recorded at registration, covering every member, with the consent text version | Stored | ⏸ |
 | NFR-PRV-002 | Head can request deletion of the household record; barangay can action it | Supported | ⏸ |
 | NFR-PRV-003 | Adult member can request access, correction, or removal independently of the head | Process exists | ⏸ |
-| NFR-PRV-004 | Access to health and nutrition data logged | Actor, record, timestamp | ⏸ |
+| NFR-PRV-004 | Access to a household's profile data logged | Actor, record, timestamp | ⏸ |
 | NFR-PRV-005 | Retention period defined for inactive records | Documented and applied | ⏸ |
 | NFR-PRV-006 | No personal, household-level, or member-level data on any public surface | Verified by review | ☐ |
 | NFR-PRV-007 | Demo and development environments use synthetic data only | No real resident data outside production | ☐ |
@@ -683,9 +693,7 @@ Requirements that cannot start until an open item is resolved.
 
 | Requirement | Blocked by | Owner |
 |---|---|---|
-| FR-REG-030, FR-REG-031 | Nutrition indicator set and thresholds — BRD OI-2 | Nutrition lead |
 | FR-REG-040 – FR-REG-046 | Vulnerability level definitions and weighting — BRD OI-18 | PubAd lead |
-| FR-REG-056, FR-REG-057 | Automated guidance in or out — BRD OI-11 | Nutrition + IT leads |
 | FR-SYS-013, FR-MAP-001 | Official area/zone list and boundaries — BRD OI-3 | PubAd lead |
 | FR-MAP-003, FR-MAP-004 | San Jose boundary polygon for clipping — tech T-OI-2 | IT lead |
 | FR-WX-006 | Local river alert thresholds — BRD OI-4 | PubAd lead |
@@ -705,3 +713,5 @@ Requirements that cannot start until an open item is resolved.
 | Aug 2026 | 0.1 | `contact_number` moved from `/auth/register` to onboarding, required unless `is_unreachable_by_phone` (FR-REG-005). `FR-REG-011` (verification) implemented as an automatic product decision rather than the literal "admin marks verified" text — both creation paths set `verified_at`/`verified_by_user_id` immediately, no review step exists; `☐`→`◐`. See the Section 5.2 note for the trade-off this accepts. | — |
 | Aug 2026 | 0.1 | First live browser click-through of the registration work above (previously verified only via curl + static typecheck). Found and fixed a real bug: `LocationPicker`'s marker icon setup imported the PNGs directly from `leaflet/dist/images`, which built and typechecked fine but threw `iconUrl not set in Icon options` at runtime under Turbopack — switched to the unpkg CDN copies instead (same fix pattern most bundlers need, just a different failure mode than webpack's). Confirmed working end-to-end: self-registration → onboarding with a real map pin placement and drag; the BHW form's member repeater (one-open-at-a-time, "Member N of M"), area-scope filtering, and draft-resume after a real page reload; and an actual merge via the dialog, verified against the database (demotion, re-parenting, single `is_head`). Confirmed at 360px. One rough edge noted, not fixed: the merge dialog's candidate list is every flagged household, not specifically ones correlated to the row you clicked — the admin has to recognize the right pair by name. | — |
 | Aug 2026 | 0.1 | Closed both rough edges from the row above. New `GET /admin/households/{id}/duplicates` (reuses `find_duplicate_candidates`, computed fresh rather than reusing the list snapshot) — the merge dialog now shows only the specific correlated household(s), each labelled with why it matched, instead of every flagged household platform-wide; curl-confirmed against a real pair (one match returned, down from ~50). The BHW form's `location` (map pin) moved from a separate `useState` into the RHF form itself, so `useRegistrationDraft`'s `form.watch()` now covers it — a resumed draft used to lose a placed pin. Mechanically the same `Controller` pattern already used for every other field in that form; not re-verified by click after the fix (Browser pane was closed on the user's end this round). | — |
+| Aug 2026 | 0.1 | Team confirmed the platform will **not** collect clinical nutrition-assessment data (BRD D-15). Cut `FR-REG-030`/`031`/`032` (Section 5.3), the entire health-worker-feedback loop `FR-REG-050`–`057` (Section 5.5, formerly gated by OI-11), and `FR-ANL-004` (Section 14, nutrition summary by area, BR-10.2) — all now `✕`, closing BRD OI-2 and OI-11 and retiring risk-register rows R-10/R-13. Reworded `FR-REG-026`, `FR-REG-042`, `FR-MAP-002`, and `NFR-PRV-004` to drop nutrition-specific language in favor of the vulnerability-flags framing that was always the separate, still-in-scope concern. `schema.md`, `design.md` (D-OI-4), and `architecture.md` (A-OI-3, AR-1, D-1, the `/me/feedback` and `/admin/members/{id}/feedback` routes, the ERD) updated to match. The Go Bag checklist (M9/portal) is unaffected. No code changes — none of the cut requirements had been implemented. | — |
+| Aug 2026 | 0.1 | Follow-up to the row above: SDG 2 (Zero Hunger) dropped as a primary alignment (it tracked the now-cut nutrition program) per the team's concept paper, which states SDG 13, 11, and 3 instead. BRD Section 12, BR-0.2, and `FR-PUB-002` reworded; `about.ts`'s `SDG_ENTRIES` (live UI, `/about`) now lists exactly those three cards in that order, and `about-section.tsx`'s grid dropped from 4 to 3 columns on large screens to match. Verified live at `/about`, desktop and mobile. | — |

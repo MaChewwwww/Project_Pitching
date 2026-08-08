@@ -15,7 +15,7 @@ The requirements that actually shaped this design. Everything else followed from
 
 | # | Driver | Source | Consequence |
 |---|---|---|---|
-| D-1 | **Spatial queries are core, not incidental** — households in areas, households in flood zones, nutrition aggregated by area | BR-2.2, BR-10.2, FR-REG-043 | PostGIS is load-bearing. Spatial logic lives in the database, not in Python |
+| D-1 | **Spatial queries are core, not incidental** — households in areas, households in flood zones, vulnerability aggregated by area | BR-2.2, FR-REG-043 | PostGIS is load-bearing. Spatial logic lives in the database, not in Python |
 | D-2 | **Emergency paths must work when everything else fails** | BR-0.17, FR-SAF-009, NFR-AVL-004 | Anonymous rescue endpoint with no auth dependency; hotlines served statically; section-level failure isolation |
 | D-3 | **External data is unreliable and must never block a page** | BR-3.8, NFR-AVL-002/003 | All upstream data is fetched by a scheduler and read from the database. No request path ever calls an external service |
 | D-4 | **Alerts are human-issued, never automated** | BR-3.4, FR-WX-009 | The threshold evaluator creates a *prompt*, not an alert. No code path publishes to the public without an officer |
@@ -189,8 +189,6 @@ erDiagram
     AREA ||--o{ HOUSEHOLD : contains
     HOUSEHOLD ||--|{ MEMBER : has
     HOUSEHOLD ||--o| USER : "headed by"
-    MEMBER ||--o{ NUTRITION_RECORD : measured
-    MEMBER ||--o{ FEEDBACK : receives
     HOUSEHOLD ||--o{ VULNERABILITY_ASSESSMENT : scored
     HOUSEHOLD ||--o{ SAFETY_STATUS : "checked in"
     HOUSEHOLD ||--o{ ASSISTANCE_RECORD : receives
@@ -375,7 +373,6 @@ POST  /me/household                 implemented — FR-REG-001's onboarding step
 PATCH /me/household                 planned — editing (FR-REG-009) is out of scope so far
 POST  /me/household/members
 PATCH /me/household/members/{id}
-GET   /me/feedback
 POST  /me/safety-status            per member or whole household
 GET   /me/assistance
 GET   /me/go-bag
@@ -396,7 +393,6 @@ POST  /admin/households/{id}/vulnerability-override
 GET   /admin/households/duplicates   folded into GET /admin/households?flagged=true instead
                                      of a separate endpoint — same data, one fewer route
 POST  /admin/households/merge        implemented (FR-REG-010)
-POST  /admin/members/{id}/feedback
 GET   /admin/rescue-requests         queue with triage ordering
 PATCH /admin/rescue-requests/{id}
 POST  /admin/safety-status           on behalf of a resident, incl. unregistered
@@ -963,7 +959,7 @@ mid-way, or after adding a new seed section that predates a running database.
 
 | # | Risk | Mitigation |
 |---|---|---|
-| AR-1 | **Registry module becomes a monolith inside the monolith** — 36 FRs land in one place | Split internally: `household`, `members`, `nutrition`, `vulnerability`, `feedback`. Keep `domain/vulnerability.py` pure |
+| AR-1 | **Registry module becomes a monolith inside the monolith** — FRs land in one place | Split internally: `household`, `members`, `vulnerability`. Keep `domain/vulnerability.py` pure |
 | AR-2 | **Vulnerability classifier changes invalidate history** | Append-only assessments (A-8); store the factor set with each row |
 | AR-3 | **PostGIS unfamiliarity blocks progress** | Only three queries are needed (Section 5.3). Write them first, as tested fixtures |
 | AR-4 | **`cron` silently stops** and stale data goes unnoticed | Staleness is user-visible by design (FR-WX-011); job outcomes logged; `/health` surfaces last successful run |
@@ -981,7 +977,7 @@ mid-way, or after adding a new seed section that predates a running database.
 |---|---|---|---|
 | A-OI-1 | Area boundary polygons — the spatial model cannot be seeded without them | BRD OI-3 | PubAd lead |
 | A-OI-2 | San Jose boundary for the clipping step | T-OI-2 | IT lead |
-| A-OI-3 | Nutrition indicator schema — determines `nutrition_record` columns | BRD OI-2 | Nutrition lead |
+| ~~A-OI-3~~ | ~~Nutrition indicator schema~~ | — | **Resolved: moot.** `nutrition_record` is cut (BRD D-15, closes OI-2) |
 | A-OI-4 | Vulnerability weighting — determines `domain/vulnerability.py` | BRD OI-18 | PubAd lead |
 | A-OI-5 | Whether `alert_prompt` needs its own table or is a status on `reading` | — | IT lead |
 | A-OI-6 | Notification delivery: poll vs SSE for the emergency banner. Poll is the default; SSE only if latency proves inadequate | — | IT lead |

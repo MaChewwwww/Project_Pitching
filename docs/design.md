@@ -136,7 +136,7 @@ Matches the **official Philippine hazard map convention** used by UP NOAH, LiPAD
 | High | `#C2410C` | `#FFEDD5` |
 | **Priority** | `#B91C1C` | `#FEE2E2` |
 
-**Nutrition status** — provisional until the Nutrition lead specifies (OI-2). Reserve a diverging ramp: deficit (amber → red), normal (green), excess (blue → violet).
+~~**Nutrition status colour ramp**~~ — **cut, Aug 2026.** The platform does not collect nutrition-assessment data (BRD D-15), so there is no status to colour. Closes D-OI-4.
 
 **Safety status** (M5)
 
@@ -570,7 +570,7 @@ Responsiveness is not one problem here. Different users hit this from genuinely 
 | Barangay admin — console | Desktop in the barangay hall | Desktop-first, must remain usable on tablet |
 | BDRRMC — during an emergency | Whatever is in their hand | **All admin emergency screens must work on a phone** |
 
-> **The BHW case is the one usually missed.** BR-1.2 and BR-1.36 describe a health worker registering a whole household — head plus every member, with nutrition indicators — in a single visit. That is a long form completed one-handed, on a phone, possibly outdoors in sunlight, likely offline-ish. Designing it desktop-first and shrinking it will not work.
+> **The BHW case is the one usually missed.** BR-1.2 and BR-1.36 describe a health worker registering a whole household — head plus every member, with vulnerability flags — in a single visit. That is a long form completed one-handed, on a phone, possibly outdoors in sunlight, likely offline-ish. Designing it desktop-first and shrinking it will not work.
 
 ### 9.2 Breakpoints
 
@@ -765,7 +765,7 @@ Aligns with the build order in BRD 8.
 | ~~D-OI-1~~ | **Resolved: `SAGIP-SJ`** — System for Alert, Guidance, Incident Reporting, and Preparedness (BRD Section 11, D-13). Confirmed by the team's own concept paper, which names the platform outright | Resolved |
 | D-OI-2 | **Logo design** — mark + wordmark, per Section 2 | Whoever on the team has design skills |
 | D-OI-3 | Confirm **Plus Jakarta Sans + Inter**, or substitute | Whole team |
-| D-OI-4 | **Nutrition status colour ramp** — depends on the indicator set (BRD OI-2) | Nutrition lead + IT lead |
+| ~~D-OI-4~~ | **Resolved: moot.** Nutrition-assessment data is cut from scope (BRD D-15, closes OI-2) — there is no status to colour | Resolved |
 | ~~D-OI-5~~ | **Resolved: the 3D scene is a hero element on the public landing page.** Section 1's fourth principle already licences it — "the 3D map is the one place to be showy". Section 9.6 still binds: it is desktop and tablet only (≥`md` **and** `hardwareConcurrency > 4`), dynamic-imported so `three` never enters the landing bundle (NFR-PERF-007), and every device below the gate gets an inline-SVG isometric illustration plus an explicit "View in 3D" opt-in | Resolved |
 | D-OI-7 | **Which tables use which mobile variant** (Section 9.4) — decide per table as each screen is designed | IT lead |
 | D-OI-8 | **Offline support for BHW field registration** — local draft persistence is in scope (Section 9.6); full offline sync with conflict resolution is not. Revisit only if field testing shows drafts are insufficient | IT lead |

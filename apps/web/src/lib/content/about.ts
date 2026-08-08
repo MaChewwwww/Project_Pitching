@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { HeartPulse, Leaf, Salad, ShieldCheck } from "lucide-react";
+import { HeartPulse, Leaf, ShieldCheck } from "lucide-react";
 
 /**
  * "About the Platform" copy (BR-0.2, FR-PUB-002).
@@ -29,34 +29,31 @@ export interface SdgEntry {
   icon: LucideIcon;
 }
 
-/** BRD Section 12. SDG 11 and 13 are primary; 2 and 3 follow from the health modules. */
+/**
+ * BRD Section 12. SDG 2 (Zero Hunger) was dropped as a primary alignment in
+ * the Aug 2026 revision (it tracked the now-cut nutrition program) — SDG 13,
+ * 11, and 3 remain, in the order the team's concept paper states them.
+ */
 export const SDG_ENTRIES: SdgEntry[] = [
-  {
-    number: 11,
-    title: "Sustainable Cities and Communities",
-    description:
-      "Building the barangay's resilience to water-related disasters — knowing who lives where, and reaching them before the water does.",
-    icon: ShieldCheck,
-  },
   {
     number: 13,
     title: "Climate Action",
     description:
-      "Strengthening adaptive capacity to a river that floods more often and less predictably than it used to.",
+      "Enhancing resilience and adaptive capacity to climate-related hazards through digital innovation.",
     icon: Leaf,
   },
   {
-    number: 2,
-    title: "Zero Hunger",
+    number: 11,
+    title: "Sustainable Cities and Communities",
     description:
-      "Nutrition profiling and emergency food planning, so relief goods reach the households that need them most.",
-    icon: Salad,
+      "Promoting inclusive, safe, resilient, and sustainable communities across the barangay.",
+    icon: ShieldCheck,
   },
   {
     number: 3,
     title: "Good Health and Well-being",
     description:
-      "Community health information and a registry that identifies residents needing help to evacuate.",
+      "Protecting lives through improved preparedness, timely communication, and coordinated emergency response.",
     icon: HeartPulse,
   },
 ];

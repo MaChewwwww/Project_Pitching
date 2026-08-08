@@ -27,7 +27,7 @@
 
 ### Why `TEXT` + `CHECK` rather than native `ENUM`
 
-Adding a value to a PostgreSQL `ENUM` requires `ALTER TYPE`, which is awkward inside a transaction and painful to reverse. A `CHECK` constraint is a one-line migration to widen. Several of these sets — announcement types, facility types, nutrition statuses — will change once the Nutrition and PubAd leads finish their open items. SQLAlchemy treats both identically.
+Adding a value to a PostgreSQL `ENUM` requires `ALTER TYPE`, which is awkward inside a transaction and painful to reverse. A `CHECK` constraint is a one-line migration to widen. Several of these sets — announcement types, facility types — will change once the PubAd lead finishes their open items. SQLAlchemy treats both identically.
 
 ### Shared column groups
 
@@ -58,8 +58,6 @@ erDiagram
     HOUSEHOLD ||--o{ CONSENT_RECORD : consented
     HOUSEHOLD ||--o{ ASSISTANCE_RECORD : receives
     HOUSEHOLD ||--o{ GO_BAG_PROGRESS : tracks
-    MEMBER ||--o{ NUTRITION_RECORD : measured
-    MEMBER ||--o{ FEEDBACK : receives
     MEMBER ||--o{ SAFETY_STATUS : "status during event"
     EMERGENCY_EVENT ||--o{ SAFETY_STATUS : scopes
     EMERGENCY_EVENT ||--o{ RESCUE_REQUEST : scopes
@@ -346,7 +344,9 @@ CREATE INDEX idx_member_vulnerable ON member(household_id)
 
 > **Flags as booleans, not a lookup table.** The set is fixed by BR-1.32, small, and read on every classification pass. A join table would add cost and no flexibility that the CHECK-widening pattern does not already give.
 
-### `nutrition_record` (FR-REG-030 … 032)
+### ~~`nutrition_record`~~ — **cut, Aug 2026** (was FR-REG-030 … 032)
+
+> **Never migrated, and now never will be.** The team confirmed the platform will not collect clinical nutrition-assessment data (BRD D-15, closes OI-2). This table was documented but not implemented — no code change follows from the cut, only this note. The table shape below is kept for historical reference, not as a build target.
 
 | Column | Type | Constraints | Notes |
 |---|---|---|---|
@@ -364,8 +364,6 @@ CREATE INDEX idx_member_vulnerable ON member(household_id)
 ```sql
 CREATE INDEX idx_nutrition_member_date ON nutrition_record(member_id, measured_at DESC);
 ```
-
-> **`indicators JSONB` exists because BRD OI-2 is unresolved.** The Nutrition lead has not finalised the indicator set. Fixed columns cover the OPT+ core (weight, height, MUAC); anything they add later lands in `indicators` without a migration, and gets promoted to a real column once the set stabilises. **Do not let this become a dumping ground** — promote fields as soon as they are confirmed.
 
 ### `vulnerability_assessment` (FR-REG-040 … 048)
 
@@ -406,7 +404,9 @@ ALTER TABLE vulnerability_assessment ADD CONSTRAINT chk_override_reason
 }
 ```
 
-### `feedback` (FR-REG-050 … 057)
+### ~~`feedback`~~ — **cut, Aug 2026** (was FR-REG-050 … 057)
+
+> **Never migrated, and now never will be.** This table existed to carry BHW dietary guidance back to a resident. With nutrition-assessment data cut (BRD D-15), there is nothing for a health worker to give feedback on, so the whole loop — including this table — is withdrawn (closes OI-11, retires R-13). Kept below for historical reference only.
 
 | Column | Type | Constraints | Notes |
 |---|---|---|---|
@@ -418,13 +418,13 @@ ALTER TABLE vulnerability_assessment ADD CONSTRAINT chk_override_reason
 | `reviewed_by_user_id` | UUID | FK → `user` | |
 | `reviewed_at` | TIMESTAMPTZ | | |
 | `published_at` | TIMESTAMPTZ | | |
-| `source_reference` | TEXT | | NNC / DOH / DOST-FNRI basis (FR-REG-053) |
+| `source_reference` | TEXT | | NNC / DOH / DOST-FNRI basis (formerly FR-REG-053) |
 | `author_user_id` | UUID | FK → `user` | |
 
 ```sql
 CREATE INDEX idx_feedback_member ON feedback(member_id, published_at DESC);
 
--- FR-REG-057: drafted guidance cannot be published without review
+-- formerly FR-REG-057: drafted guidance cannot be published without review
 ALTER TABLE feedback ADD CONSTRAINT chk_drafted_requires_review
   CHECK (
     status <> 'published'
@@ -432,8 +432,6 @@ ALTER TABLE feedback ADD CONSTRAINT chk_drafted_requires_review
     OR (reviewed_by_user_id IS NOT NULL AND reviewed_at IS NOT NULL)
   );
 ```
-
-> **That constraint is the schema-level enforcement of FR-REG-057.** Machine-drafted nutrition advice concerning children and pregnant women cannot reach a resident without a named health worker having reviewed it — and the database refuses the write, not just the service layer.
 
 ### `consent_record` (FR-SYS-017)
 
@@ -824,7 +822,7 @@ CREATE INDEX idx_donation_drive_status ON donation(drive_id, status);
 
 ### `notification` (FR-SYS-011)
 
-`id`, `user_id`, `type` (CHECK: `feedback` · `alert` · `activity_reminder` · `assistance` · `system`), `title`, `body`, `link_path`, `read_at`, `created_at`.
+`id`, `user_id`, `type` (CHECK: `alert` · `activity_reminder` · `assistance` · `system`), `title`, `body`, `link_path`, `read_at`, `created_at`. (`feedback` was dropped from the set, Aug 2026 — the `feedback` table it notified for is cut.)
 
 ```sql
 CREATE INDEX idx_notification_unread ON notification(user_id, created_at DESC) WHERE read_at IS NULL;
@@ -878,7 +876,7 @@ Loaded by migration, not at runtime (NFR-DAT-007).
 | Concern | Rule |
 |---|---|
 | Soft delete | `household`, `member`, `user` — default query filter excludes `deleted_at IS NOT NULL` |
-| Hard delete | Only on a privacy request (FR-SYS-018), cascading through members, nutrition records, and assessments |
+| Hard delete | Only on a privacy request (FR-SYS-018), cascading through members and assessments |
 | Append-only | `audit_log`, `vulnerability_assessment`, `reading`, `safety_status` |
 | Retention | `reading` older than 2 years may be downsampled; audit log retained indefinitely at this scale |
 | Backups | Daily `pg_dump`, off-box, restore verified before the pitch (NFR-AVL-006) |
@@ -889,7 +887,7 @@ Loaded by migration, not at runtime (NFR-DAT-007).
 
 | # | Item | Blocked by | Owner |
 |---|---|---|---|
-| S-OI-1 | **Nutrition indicator columns** — which fields graduate from `indicators JSONB` to real columns, and the final `status` CHECK set | BRD OI-2 | Nutrition lead |
+| ~~S-OI-1~~ | ~~Nutrition indicator columns~~ | — | **Resolved: moot.** `nutrition_record` is cut (BRD D-15, closes OI-2) — no indicator set to finalise. |
 | S-OI-2 | **Area boundary geometry** — nothing spatial can be seeded without it | BRD OI-3 | PubAd lead |
 | S-OI-3 | **Alert threshold values** for `config` | BRD OI-4 | PubAd lead |
 
