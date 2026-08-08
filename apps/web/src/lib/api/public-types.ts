@@ -81,7 +81,14 @@ export interface PublicAnnouncement {
   /** NOT NULL when `kind === "alert"` — enforced by `chk_alert_needs_instruction` (FR-ALT-005). */
   instruction: string | null;
   is_barangay_wide: boolean;
-  published_at: string;
+  /**
+   * Nullable — `announcement.published_at` (schema.md Section 6) is null for an
+   * unpublished draft. The public endpoint always filters these out, so a value
+   * read through `getAnnouncements()`/`getActiveAlert()` is never actually null
+   * in practice; the type stays nullable because `PublicAnnouncement` is the
+   * same shape the admin console's draft-creation response uses.
+   */
+  published_at: string | null;
   expires_at: string | null;
   deactivated_at: string | null;
 
@@ -356,10 +363,18 @@ export interface PublicForecastPoint {
 export interface PublicWeatherCurrent {
   /** The latest reading per metric. */
   readings: PublicReading[];
-  /** derived — the representative observation time for the set. */
-  observed_at: string;
-  /** derived — the dominant source. */
-  source: ReadingSource;
+  /**
+   * derived — the representative observation time for the set.
+   *
+   * **Null only when `readings` is empty** — the platform has never received a
+   * weather reading yet (a fresh deployment before the scheduler's first
+   * successful run). This is a real, if rare, empty state (NFR-UX-008), not a
+   * modelling gap: discovered wiring FR-PUB-013 against the live scheduler,
+   * where the fixture this type was drafted against never exercised it.
+   */
+  observed_at: string | null;
+  /** derived — the dominant source. Null under the same condition as `observed_at`. */
+  source: ReadingSource | null;
   /** derived — true when *any* reading in the set is stale. */
   is_stale: boolean;
   forecast: PublicForecastPoint[];

@@ -2,59 +2,68 @@
 
 ## Environments
 
-| Environment | Runs on | Data | Secure context |
-|---|---|---|---|
-| Local dev | Laptop, Compose | Seeded synthetic | Yes — `localhost` is exempt |
-| Demo | Laptop, Compose | Seeded + scripted flood scenario | Yes |
-| VPS | Single host, same Compose | Seeded synthetic | Only if sslip.io is enabled |
+Two isolated **profiles**, `staging` and `demo`, each its own Compose project from the same
+`infra/compose.yml` — separate database, volumes, and ports (`docs/architecture.md` Section
+13.1). Either can run on a laptop or the VPS; a VPS deploy is simply the `demo` profile running
+on a server instead of localhost.
 
-The same `compose.yml` in all three. The only differences are `.env` and whether
-`compose.override.yml` is applied.
+| Profile | Purpose | Runs on | Data | Secure context |
+|---|---|---|---|---|
+| `staging` | Day-to-day dev and feature testing | Laptop, Compose | Seeded synthetic | Yes — `localhost` is exempt |
+| `demo` | Curated, isolated, for the pitch | Laptop or VPS, same Compose | Seeded synthetic | Only if sslip.io is enabled on the VPS |
+
+The same `compose.yml` for both. The only differences are which `.env.<profile>` file is loaded,
+the Compose project name (`-p sagip-<profile>`), and whether `compose.override.yml` is applied.
 
 ## Configuration
 
-Every setting is an environment variable, loaded through `pydantic-settings`. `.env.example` is
-committed; **`.env` never is** (NFR-SEC-010).
+Every setting is an environment variable, loaded through `pydantic-settings`. `.env.staging.example`
+and `.env.demo.example` are committed; **the real `.env.staging` / `.env.demo` are never** (NFR-SEC-010).
 
-> A committed database password in a student repository is a genuinely common failure. `.env` is
-> gitignored — keep it that way, and add new settings to `.env.example` too, or the next
-> person's stack will not start.
+> A committed database password in a student repository is a genuinely common failure. Both
+> `.env.*` files are gitignored — keep it that way, and add new settings to **both** `.example`
+> files, or one profile's stack will not start.
 
-The ones that actually change between environments:
+The ones that actually change between a laptop and the VPS:
 
 | Variable | Local | VPS |
 |---|---|---|
 | `JWT_SECRET` | The dev placeholder | **Generate one**: `openssl rand -hex 32` |
 | `POSTGRES_PASSWORD` | The dev placeholder | **Change it** |
 | `COOKIE_SECURE` | `false` | `true` only if HTTPS is on |
-| `CORS_ORIGINS` | `http://localhost:8080` | The public origin |
-| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:8080/api/v1` | The public origin + `/api/v1` |
-| `PROXY_PORT` | `8080` | `80` |
-| `DEMO_MODE` | `false` | `true` for the pitch |
+| `CORS_ORIGINS` | `http://localhost:8090` (demo) | The public origin |
+| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:8090/api/v1` (demo) | The public origin + `/api/v1` |
+| `PROXY_PORT` | `8090` (demo) / `8080` (staging) | `80` |
 
 `NEXT_PUBLIC_API_BASE_URL` is **inlined at build time**, not read at runtime. Changing it means
 rebuilding `web`, not restarting it.
 
 ## First deploy
 
+The VPS runs the `demo` profile — it's the one meant to be presented, and keeping the same
+profile name whether on a laptop or a server means "runs identically both places" is literally
+true, not just a design goal (`tech_stack.md` T-3).
+
 ```bash
 git clone <repo> && cd Project_Pitching
-cp .env.example .env
-# edit .env — at minimum JWT_SECRET, POSTGRES_PASSWORD, CORS_ORIGINS,
+cp .env.demo.example .env.demo
+# edit .env.demo — at minimum JWT_SECRET, POSTGRES_PASSWORD, CORS_ORIGINS,
 # NEXT_PUBLIC_API_BASE_URL, PROXY_PORT=80
-make up
+make up ENV=demo
 ```
 
-`make up` builds, waits for the database healthcheck, applies migrations, and starts everything.
+`make up ENV=demo` builds, waits for the database healthcheck, applies migrations, seeds (both
+idempotent — safe to rerun), and starts everything.
 
 Startup order is enforced by healthcheck, not by `sleep`:
 
 ```
-db → (healthy) → api (runs alembic upgrade head) → web → proxy
+db → (healthy) → api (alembic upgrade head, then seed) → web → proxy
               └→ cron
 ```
 
-Migrations run on API start rather than as a separate step — one less thing to forget.
+Migrations and seeding run on API start rather than as a separate step — one less thing to
+forget, and `make up ENV=demo` alone leaves you with a fully working, presentable demo.
 
 Sizing: 2 vCPU / 4 GB is comfortable. 1 vCPU / 2 GB works if the budget is tight. A local
 Philippine provider may beat a cheaper EU one on latency, which matters more here than price
@@ -82,25 +91,39 @@ minutes. Then set `COOKIE_SECURE=true`.
 
 ## Demo day
 
-`DEMO_MODE=true` switches readings to a scripted timeline (FR-WX-016). The flag is the *only*
-difference — a flood scenario you control tells the story better than whatever the river happens
-to be doing that morning, and a live scrape failing mid-pitch is an avoidable risk.
+The `demo` profile always fetches live weather and river data, same as `staging` — `DEMO_MODE`
+/ FR-WX-016's scripted timeline was **not built**; the decision taken instead is documented in
+`tech_stack.md` Section 7's decision log. A live scrape failing mid-pitch is a real, accepted
+risk under that decision.
 
-**Say plainly that it is simulated.** Judges respect that more than a fragile live call.
+What covers it: FR-WX-012 (last-known-good with visible age) and FR-WX-007 (manual entry) mean
+a PAGASA outage degrades to a stale-but-labelled number, never a blank panel. And for the
+moment in the pitch that needs a river actually rising on cue, use the **Simulate typhoon**
+button on `/admin/readings` — it writes a real, rising sequence of river-level readings (crossing
+Alert Levels 1, 2, and 3 against the configured thresholds) and creates the matching
+`alert_prompt`s immediately, without waiting for a real flood or a live gauge to cooperate. It
+is a manual `source='manual'` entry like any other FR-WX-007 reading — clearly attributed,
+clearly not a live PAGASA value if anyone checks.
+
+**Say plainly that it is simulated** when you use it. Judges respect that more than a fragile
+live call.
 
 Before the pitch:
 
 - [ ] Restore rehearsed from a real dump ([`backup-restore.md`](./backup-restore.md))
 - [ ] The deployed URL opened on a real phone, not just the browser's device emulator
 - [ ] The local stack proven to run the demo if the VPS dies (T-3)
-- [ ] `DEMO_MODE` set the way you intend, and checked at `/api/v1/health`
+- [ ] `make clean ENV=demo && make up ENV=demo` run once, fresh, so the presented data matches
+      what's actually seeded — not whatever staging experiments left behind
+- [ ] **Simulate typhoon** tried at least once against this exact deployment, and the resulting
+      alert prompt acknowledged/published once so the flow is rehearsed, not just built
 
 ## Updating a running deployment
 
 ```bash
 git pull
-make up          # rebuilds changed images, reapplies migrations
+make up ENV=demo          # rebuilds changed images, reapplies migrations, reseeds (idempotent)
 ```
 
-Take a backup first if the pull contains a migration. `down -v` deletes the database — `make
-clean` is the same thing, named honestly.
+Take a backup first if the pull contains a migration (`make backup ENV=demo`). `down -v` deletes
+the database — `make clean ENV=demo` is the same thing, named honestly, scoped to one profile.

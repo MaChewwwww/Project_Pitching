@@ -26,34 +26,42 @@ Browser → proxy (Caddy, :8080) ─┬→ web (Next.js :3000)
 |---|---|---|
 | `proxy` | 1 | Single entry point. Also serves uploads straight off the volume |
 | `web` | 1 | |
-| `api` | 1 | Gunicorn + Uvicorn workers. Runs `alembic upgrade head` on start |
+| `api` | 1 | Gunicorn + Uvicorn workers. Runs `alembic upgrade head`, then seeds (idempotent), on start |
 | `cron` | **exactly 1** | More than one means every job fires twice (`architecture.md` A-4) |
 | `db` | 1 | Single source of truth |
 
 ## Use it from the root
 
+Two isolated profiles, `staging` (default) and `demo` (`architecture.md` Section 13.1) — each
+its own Compose project (separate database, volumes, ports), so both can run at once and
+breaking staging while testing a feature can never touch the demo data sitting ready for the
+pitch.
+
 ```bash
-make dev      # hot reload, attached
-make up       # detached, production-shaped
-make down     # stop, keep data
-make clean    # stop and DELETE the database
+make dev                 # staging — hot reload, attached
+make dev ENV=demo        # demo — same, on different ports, can run alongside staging
+make up                  # detached, production-shaped
+make down                # stop, keep data
+make clean ENV=demo      # stop and DELETE the demo database — reseed fresh before presenting
 make logs
 ```
 
-Prefer these over raw `docker compose` — they are what CI runs.
+Prefer these over raw `docker compose` — they are what CI runs, and they pass the right
+`-p sagip-<env>` and `--env-file .env.<env>` for you.
 
 ## Ports
 
-| Port | Serves |
-|---|---|
-| **8080** | The proxy. This is the one you use |
-| 3000 | Next.js direct — development only |
-| 8000 | FastAPI direct — development only |
-| 5433 | Postgres, for a GUI client — development only |
+| Port | Serves | Profile |
+|---|---|---|
+| **8080** | The proxy — the one you use day to day | staging |
+| 3000 / 8000 / 5433 | Next.js / FastAPI / Postgres direct — development only | staging |
+| **8090** | The proxy for the demo profile | demo |
+| 3010 / 8010 / 5443 | Next.js / FastAPI / Postgres direct — development only | demo |
 
-**8080, not 80**, because port 80 is occupied on most Windows machines. Change `PROXY_PORT` in
-`.env` if you want something else. The direct ports come from `compose.override.yml` and do not
-exist on the VPS.
+Neither is port 80, because port 80 is occupied on most Windows machines. Change
+`PROXY_PORT`/`WEB_PORT`/`API_PORT`/`DB_PORT` in `.env.staging` or `.env.demo` if you want
+something else — just keep the two profiles distinct if you want to run them together. The
+direct ports come from `compose.override.yml` and do not exist on the VPS.
 
 ## Docs
 

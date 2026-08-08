@@ -37,9 +37,15 @@ git clone <repo-url> && cd Project_Pitching
 make dev
 ```
 
-That is the whole setup. `make dev` copies `.env.example` to `.env` if you don't have one,
-builds all five containers, applies the database migrations, and starts everything with hot
-reload. The first build takes a few minutes; later ones are cached.
+That is the whole setup. `make dev` copies `.env.staging.example` to `.env.staging` if you
+don't have one, builds all five containers, applies the database migrations, seeds demo data
+(idempotent — safe on every restart), and starts everything with hot reload. The first build
+takes a few minutes; later ones are cached.
+
+This is the **staging** profile — the one you use day to day. There is also an isolated
+**demo** profile (`make dev ENV=demo`, port 8090 instead of 8080) for the pitch itself, so
+testing a feature never risks corrupting the curated data you're about to present
+(`docs/architecture.md` Section 13.1). Both can run at the same time.
 
 ### 3. Check it worked
 
@@ -50,7 +56,7 @@ reload. The first build takes a few minutes; later ones are cached.
 | <http://localhost:8080/api/docs> | Interactive OpenAPI docs |
 
 > **Why port 8080 and not 80?** Port 80 is occupied on most Windows machines. Change
-> `PROXY_PORT` in `.env` if you want something else.
+> `PROXY_PORT` in `.env.staging` if you want something else.
 
 If `make dev` fails, the usual causes are Docker Desktop not running, port 8080 already in
 use, or a stale volume — `make clean` wipes the database and lets you start over.
@@ -148,8 +154,11 @@ server-side*.
 
 ## Things that will bite you
 
-- **`.env` is never committed.** It is gitignored. Add new settings to `.env.example` too, or
-  the next person's stack won't start.
+- **`.env.staging` / `.env.demo` are never committed.** Both gitignored. Add new settings to
+  **both** `.env.staging.example` and `.env.demo.example`, or one profile's stack won't start.
+- **Testing something risky? Use `ENV=demo`'s isolation, don't rely on remembering to reseed.**
+  Staging and demo are separate databases precisely so a half-finished feature in staging can't
+  leave the demo data in a broken state before the pitch.
 - **No manual SQL.** Every schema change is an Alembic migration (NFR-MNT-004).
 - **Never edit `apps/web/public/data/*.geojson`.** It is a copy. The source of truth is
   `dataset/derived/`; regenerate with `make hazard`.

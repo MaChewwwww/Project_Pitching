@@ -20,6 +20,7 @@ from typing import Annotated
 
 import jwt
 from fastapi import Depends, Request
+from sqlalchemy import select
 
 from src.core.errors import PermissionDeniedError
 from src.core.security import decode_token
@@ -59,12 +60,14 @@ def _bearer_token(request: Request) -> str:
     return token
 
 
-async def get_current_user(request: Request) -> AuthenticatedUser:
+async def get_current_user(request: Request, session: DbSession) -> AuthenticatedUser:
     """Decode the access token into a user. 401 on anything wrong.
 
-    Area assignments are not in the token — they are loaded from `user_area` when a
-    scoped query needs them, so revoking an assignment takes effect immediately
-    rather than at the next token refresh.
+    Area assignments are not in the token — they are loaded from `user_area` on
+    every request for `bhw` users, so revoking an assignment takes effect
+    immediately rather than at the next token refresh. Deferred (not eagerly
+    imported at module scope) to avoid `core/deps.py` depending on a specific
+    module's `models.py` beyond what auth itself needs.
     """
     try:
         payload = decode_token(_bearer_token(request), expected_type="access")
@@ -80,7 +83,14 @@ async def get_current_user(request: Request) -> AuthenticatedUser:
     if role not in ROLES:
         raise UnauthenticatedError("Token carries an unknown role.")
 
-    return AuthenticatedUser(id=user_id, role=role)
+    if role != "bhw":
+        return AuthenticatedUser(id=user_id, role=role)
+
+    from src.modules.users.models import UserArea  # local import: avoid a module-load cycle
+
+    rows = await session.execute(select(UserArea.area_id).where(UserArea.user_id == user_id))
+    area_ids = tuple(row[0] for row in rows.all())
+    return AuthenticatedUser(id=user_id, role=role, assigned_area_ids=area_ids)
 
 
 CurrentUser = Annotated[AuthenticatedUser, Depends(get_current_user)]

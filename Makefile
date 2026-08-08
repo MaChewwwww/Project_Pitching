@@ -4,8 +4,23 @@
 # Windows: install GNU Make once with  winget install ezwinports.make
 # Recipes below stay portable between cmd.exe and sh — no cp, no rm, no &&-chained
 # shell builtins. Anything filesystem-ish goes through python or docker.
+#
+# --- Environments (architecture.md Section 13.1) ----------------------------
+# ENV selects which isolated profile to run: staging (default) or demo.
+# Each is its own Compose project — separate database, volumes, and ports — so
+# testing a feature in staging can never corrupt the seeded scenario sitting
+# ready for the pitch, and both can run on the same machine at once:
+#
+#   make dev                # staging — the day-to-day environment
+#   make dev ENV=demo       # demo — isolated, curated, reseed before presenting
+#
+# Every target below is ENV-aware because COMPOSE/COMPOSE_DEV already are.
 
-COMPOSE     := docker compose --env-file .env -f infra/compose.yml
+ENV      ?= staging
+ENV_FILE := .env.$(ENV)
+PROJECT  := sagip-$(ENV)
+
+COMPOSE     := docker compose -p $(PROJECT) --env-file $(ENV_FILE) -f infra/compose.yml
 COMPOSE_DEV := $(COMPOSE) -f infra/compose.override.yml
 PY          := python
 
@@ -19,13 +34,13 @@ help:  ## show this help
 
 # --- environment ------------------------------------------------------------
 
-env:  ## create .env from .env.example if it does not exist yet
-	@$(PY) -c "import os,shutil; shutil.copy('.env.example','.env') if not os.path.exists('.env') else None; print('.env ready')"
+env:  ## create .env.$(ENV) from .env.$(ENV).example if it does not exist yet (ENV=staging|demo)
+	@$(PY) -c "import os,shutil; src='.env.$(ENV).example'; dst='.env.$(ENV)'; shutil.copy(src, dst) if not os.path.exists(dst) else None; print(dst+' ready')"
 
 # --- running the stack ------------------------------------------------------
 
-dev: env  ## start the whole stack with hot reload
-	@$(PY) -c "print('  web   http://localhost:8080\n  api   http://localhost:8080/api/v1/health\n  docs  http://localhost:8080/api/docs\n')"
+dev: env  ## start the stack with hot reload (ENV=staging|demo, default staging)
+	@$(PY) tools/print_urls.py $(ENV_FILE) $(ENV)
 	$(COMPOSE_DEV) up --build
 
 up: env  ## start the stack detached, production-shaped (no hot reload)
@@ -51,7 +66,7 @@ migrate:  ## apply all pending migrations
 revision:  ## autogenerate a migration:  make revision m="add household"
 	$(COMPOSE_DEV) run --rm api alembic revision --autogenerate -m "$(m)"
 
-seed:  ## load seed data (schema.md Section 15)
+seed:  ## load seed data (schema.md Section 15) — runs automatically on container start; this is only for a manual re-run
 	$(COMPOSE_DEV) run --rm api python -m src.seed
 
 shell-api:  ## shell into the api container
@@ -99,13 +114,13 @@ hazard:  ## rebuild dataset/derived/ from dataset/raw/, then copy into the web a
 	$(PY) tools/prepare_hazard.py
 	@$(PY) -c "import glob,os,shutil; d='apps/web/public/data'; os.makedirs(d,exist_ok=True); [shutil.copy(f,d) for f in glob.glob('dataset/derived/*.geojson')]; print('copied to '+d)"
 
-# --- operations -------------------------------------------------------------
+# --- operations ---------------------------------------------------------------
 
-backup:  ## dump the database to infra/backups/ (needs bash; Git for Windows provides it)
-	bash infra/scripts/backup.sh
+backup:  ## dump the database to infra/backups/ (needs bash; Git for Windows provides it). ENV=staging|demo
+	ENV=$(ENV) bash infra/scripts/backup.sh
 
-restore:  ## restore a dump — DESTRUCTIVE, asks for confirmation
-	bash infra/scripts/restore.sh $(f)
+restore:  ## restore a dump — DESTRUCTIVE, asks for confirmation. ENV=staging|demo
+	ENV=$(ENV) bash infra/scripts/restore.sh $(f)
 
-clean:  ## stop the stack and delete volumes — wipes the database
+clean:  ## stop the stack and delete volumes — wipes the database for ENV (default staging)
 	$(COMPOSE_DEV) down -v

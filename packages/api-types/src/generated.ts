@@ -50,10 +50,1856 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Log in and receive an access token */
+        post: operations["login_route_api_v1_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Exchange the refresh cookie for a new access token */
+        post: operations["refresh_route_api_v1_auth_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke the current session */
+        post: operations["logout_route_api_v1_auth_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The authenticated user's own profile */
+        get: operations["me_route_api_v1_auth_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/hotlines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Emergency hotline directory */
+        get: operations["public_hotlines_api_v1_public_hotlines_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/facilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Barangay facilities */
+        get: operations["public_facilities_api_v1_public_facilities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/areas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Barangay areas — names only, no personal data */
+        get: operations["public_areas_api_v1_public_areas_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/announcements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Announcements & alerts, newest first */
+        get: operations["public_announcements_api_v1_public_announcements_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/announcements/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The alert that takes over the top of the page, or null (FR-PUB-017) */
+        get: operations["public_active_alert_api_v1_public_announcements_active_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/activities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Upcoming activities */
+        get: operations["public_activities_api_v1_public_activities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/guides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preparedness guide cards */
+        get: operations["public_guides_api_v1_public_guides_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/guides/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The full guide article */
+        get: operations["public_guide_api_v1_public_guides__slug__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/faqs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Frequently asked questions */
+        get: operations["public_faqs_api_v1_public_faqs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/evacuation-centers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Evacuation centres — address, capacity, occupancy */
+        get: operations["public_evac_centers_api_v1_public_evacuation_centers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/donation-drives": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Active donation drives and their progress */
+        get: operations["public_donation_drives_api_v1_public_donation_drives_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/weather/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Current conditions and forecast */
+        get: operations["public_weather_current_api_v1_public_weather_current_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/river-level": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Current river level and alert tier */
+        get: operations["public_river_level_api_v1_public_river_level_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/flood-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Flood history — publicly viewable (FR-WX-013) */
+        get: operations["public_flood_events_api_v1_public_flood_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/area-stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Area-level aggregates — counts only, no personal data */
+        get: operations["public_area_stats_api_v1_public_area_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/hotlines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List hotlines (admin) */
+        get: operations["admin_list_hotlines_api_v1_admin_hotlines_get"];
+        put?: never;
+        /** Create a hotline */
+        post: operations["admin_create_hotline_api_v1_admin_hotlines_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/hotlines/{hotline_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a hotline */
+        delete: operations["admin_delete_hotline_api_v1_admin_hotlines__hotline_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a hotline */
+        patch: operations["admin_update_hotline_api_v1_admin_hotlines__hotline_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/facilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List facilities (admin) */
+        get: operations["admin_list_facilities_api_v1_admin_facilities_get"];
+        put?: never;
+        /** Add a facility */
+        post: operations["admin_create_facility_api_v1_admin_facilities_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/facilities/{facility_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a facility */
+        delete: operations["admin_delete_facility_api_v1_admin_facilities__facility_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a facility */
+        patch: operations["admin_update_facility_api_v1_admin_facilities__facility_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/areas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List areas (admin) */
+        get: operations["admin_list_areas_api_v1_admin_areas_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/areas/{area_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit an area's name/code/exposure */
+        patch: operations["admin_update_area_api_v1_admin_areas__area_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/announcements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all announcements */
+        get: operations["admin_list_announcements_api_v1_admin_announcements_get"];
+        put?: never;
+        /** Publish an announcement or alert */
+        post: operations["admin_create_announcement_api_v1_admin_announcements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/announcements/{announcement_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Deactivate an alert (FR-ALT-011) — never a delete */
+        delete: operations["admin_deactivate_announcement_api_v1_admin_announcements__announcement_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/alert-prompts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Threshold breaches awaiting a decision (FR-WX-009) */
+        get: operations["admin_list_alert_prompts_api_v1_admin_alert_prompts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/alert-prompts/{prompt_id}/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Acknowledge a threshold breach — publishing an alert is a separate, explicit act */
+        post: operations["admin_acknowledge_alert_prompt_api_v1_admin_alert_prompts__prompt_id__acknowledge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/activities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all activities */
+        get: operations["admin_list_activities_api_v1_admin_activities_get"];
+        put?: never;
+        /** Create an activity */
+        post: operations["admin_create_activity_api_v1_admin_activities_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/activities/{activity_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove an activity */
+        delete: operations["admin_delete_activity_api_v1_admin_activities__activity_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update an activity */
+        patch: operations["admin_update_activity_api_v1_admin_activities__activity_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/guides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all guides */
+        get: operations["admin_list_guides_api_v1_admin_guides_get"];
+        put?: never;
+        /** Create a guide */
+        post: operations["admin_create_guide_api_v1_admin_guides_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/guides/{guide_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a guide */
+        delete: operations["admin_delete_guide_api_v1_admin_guides__guide_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a guide */
+        patch: operations["admin_update_guide_api_v1_admin_guides__guide_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/faqs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all FAQs */
+        get: operations["admin_list_faqs_api_v1_admin_faqs_get"];
+        put?: never;
+        /** Create a FAQ */
+        post: operations["admin_create_faq_api_v1_admin_faqs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/faqs/{faq_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a FAQ */
+        delete: operations["admin_delete_faq_api_v1_admin_faqs__faq_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a FAQ */
+        patch: operations["admin_update_faq_api_v1_admin_faqs__faq_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/evacuation-centers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all evacuation centres */
+        get: operations["admin_list_evac_centers_api_v1_admin_evacuation_centers_get"];
+        put?: never;
+        /** Register an evacuation centre */
+        post: operations["admin_create_evac_center_api_v1_admin_evacuation_centers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/evacuation-centers/{center_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update an evacuation centre */
+        patch: operations["admin_update_evac_center_api_v1_admin_evacuation_centers__center_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/donation-drives": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all donation drives */
+        get: operations["admin_list_donation_drives_api_v1_admin_donation_drives_get"];
+        put?: never;
+        /** Create a donation drive */
+        post: operations["admin_create_donation_drive_api_v1_admin_donation_drives_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/donation-drives/{drive_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close a drive */
+        post: operations["admin_close_donation_drive_api_v1_admin_donation_drives__drive_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/donation-drives/{drive_id}/donations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Donations received for a drive */
+        get: operations["admin_list_donations_api_v1_admin_donation_drives__drive_id__donations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/donations/{donation_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change a donation's status (FR-DON-005/006) */
+        patch: operations["admin_update_donation_status_api_v1_admin_donations__donation_id__status_patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/readings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enter a river/weather reading manually (FR-WX-007) */
+        post: operations["admin_record_reading_api_v1_admin_readings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/flood-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all flood events */
+        get: operations["admin_list_flood_events_api_v1_admin_flood_events_get"];
+        put?: never;
+        /** Record a flood event */
+        post: operations["admin_create_flood_event_api_v1_admin_flood_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/flood-events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update a flood event */
+        patch: operations["admin_update_flood_event_api_v1_admin_flood_events__event_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all admin-editable settings */
+        get: operations["admin_list_config_api_v1_admin_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/config/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Edit a setting */
+        put: operations["admin_set_config_api_v1_admin_config__key__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: never;
+    schemas: {
+        /**
+         * AccessTokenResponse
+         * @description The refresh token never appears in a response body — it is set as an
+         *     httpOnly cookie by the router (architecture.md Section 7.1).
+         */
+        AccessTokenResponse: {
+            /** Access Token */
+            access_token: string;
+            /**
+             * Token Type
+             * @default bearer
+             */
+            token_type: string;
+            /** Expires In Minutes */
+            expires_in_minutes: number;
+        };
+        /** ActivityIn */
+        ActivityIn: {
+            /** Title */
+            title: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "drill" | "seminar" | "first_aid" | "cleanup" | "tree_planting" | "ngo_program" | "other";
+            /** Description */
+            description?: string | null;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /** Ends At */
+            ends_at?: string | null;
+            /** Venue */
+            venue?: string | null;
+            /** Area Id */
+            area_id?: string | null;
+            /**
+             * Is Published
+             * @default true
+             */
+            is_published: boolean;
+        };
+        /** AlertPromptOut */
+        AlertPromptOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reading Id */
+            reading_id: number | null;
+            /**
+             * Level
+             * @enum {integer}
+             */
+            level: 1 | 2 | 3;
+            /** Threshold Value */
+            threshold_value: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Acknowledged By User Id */
+            acknowledged_by_user_id: string | null;
+            /** Acknowledged At */
+            acknowledged_at: string | null;
+            /** Resulted In Announcement Id */
+            resulted_in_announcement_id: string | null;
+        };
+        /** AnnouncementIn */
+        AnnouncementIn: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "announcement" | "alert";
+            /** Type */
+            type: string;
+            /** Severity */
+            severity?: ("info" | "warning" | "emergency") | null;
+            /** Alert Level */
+            alert_level?: (1 | 2 | 3) | null;
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+            /** Instruction */
+            instruction?: string | null;
+            /**
+             * Is Barangay Wide
+             * @default true
+             */
+            is_barangay_wide: boolean;
+            /**
+             * Area Ids
+             * @default []
+             */
+            area_ids: string[];
+            /** Expires At */
+            expires_at?: string | null;
+            /**
+             * Publish Now
+             * @default true
+             */
+            publish_now: boolean;
+        };
+        /** AreaOut */
+        AreaOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Code */
+            code: string | null;
+            /** Flood Exposure */
+            flood_exposure: string | null;
+            /** Has Boundary */
+            has_boundary: boolean;
+        };
+        /** AreaPatch */
+        AreaPatch: {
+            /** Name */
+            name?: string | null;
+            /** Code */
+            code?: string | null;
+            /** Flood Exposure */
+            flood_exposure?: string | null;
+        };
+        /** ConfigEntryOut */
+        ConfigEntryOut: {
+            /** Key */
+            key: string;
+            /** Value */
+            value: unknown;
+            /** Description */
+            description: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ConfigValuePatch */
+        ConfigValuePatch: {
+            /** Value */
+            value: unknown;
+            /** Description */
+            description?: string | null;
+        };
+        /** DonationDriveIn */
+        DonationDriveIn: {
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Needs
+             * @default []
+             */
+            needs: components["schemas"]["DriveNeedIn"][];
+        };
+        /** DonationOut */
+        DonationOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Drive Id
+             * Format: uuid
+             */
+            drive_id: string;
+            /** Reference No */
+            reference_no: string;
+            /** Donor Name */
+            donor_name: string;
+            /** Donor Contact */
+            donor_contact: string | null;
+            /** Item Name */
+            item_name: string;
+            /** Quantity Pledged */
+            quantity_pledged: number;
+            /** Quantity Received */
+            quantity_received: number | null;
+            /** Unit */
+            unit: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "submitted" | "received" | "partially_received" | "not_fulfilled";
+            /** Is Walk In */
+            is_walk_in: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** DonationStatusPatch */
+        DonationStatusPatch: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "submitted" | "received" | "partially_received" | "not_fulfilled";
+            /** Quantity Received */
+            quantity_received?: number | null;
+        };
+        /** DriveNeedIn */
+        DriveNeedIn: {
+            /** Item Name */
+            item_name: string;
+            /** Target Quantity */
+            target_quantity: number;
+            /** Unit */
+            unit: string;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
+        };
+        /** EvacCenterIn */
+        EvacCenterIn: {
+            /**
+             * Facility Id
+             * Format: uuid
+             */
+            facility_id: string;
+            /** Capacity */
+            capacity?: number | null;
+            /** Contact Person */
+            contact_person?: string | null;
+            /** Contact Number */
+            contact_number?: string | null;
+            /**
+             * Is Open
+             * @default true
+             */
+            is_open: boolean;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** FacilityIn */
+        FacilityIn: {
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+            /** Address */
+            address?: string | null;
+            /** Contact Number */
+            contact_number?: string | null;
+            /** Longitude */
+            longitude: number;
+            /** Latitude */
+            latitude: number;
+            /** Area Id */
+            area_id?: string | null;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /** FacilityOut */
+        FacilityOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+            /** Address */
+            address: string | null;
+            /** Contact Number */
+            contact_number: string | null;
+            location: components["schemas"]["GeoJsonPoint"];
+            /** Area Id */
+            area_id: string | null;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** FaqIn */
+        FaqIn: {
+            /** Question Fil */
+            question_fil: string;
+            /** Question En */
+            question_en: string;
+            /** Answer Fil */
+            answer_fil: string;
+            /** Answer En */
+            answer_en: string;
+            /**
+             * Category
+             * @default general
+             */
+            category: string;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
+            /**
+             * Is Published
+             * @default true
+             */
+            is_published: boolean;
+        };
+        /** FloodEventIn */
+        FloodEventIn: {
+            /** Name */
+            name: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Ended At */
+            ended_at?: string | null;
+            /** Peak Level M */
+            peak_level_m?: number | null;
+            /** Peak At */
+            peak_at?: string | null;
+            /** Households Displaced */
+            households_displaced?: number | null;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Area Ids
+             * @default []
+             */
+            area_ids: string[];
+        };
+        /** GeoJsonPoint */
+        GeoJsonPoint: {
+            /**
+             * Type
+             * @default Point
+             */
+            type: string;
+            /** Coordinates */
+            coordinates: [
+                number,
+                number
+            ];
+        };
+        /** GuideIn */
+        GuideIn: {
+            /** Slug */
+            slug: string;
+            /**
+             * Hazard Type
+             * @enum {string}
+             */
+            hazard_type: "flood" | "earthquake" | "typhoon" | "fire" | "landslide" | "general" | "food";
+            /** Title Fil */
+            title_fil: string;
+            /** Title En */
+            title_en: string;
+            /** Body Fil */
+            body_fil: string;
+            /** Body En */
+            body_en: string;
+            /**
+             * Phase
+             * @default n/a
+             * @enum {string}
+             */
+            phase: "before" | "during" | "after" | "n/a";
+            /** Source Attribution */
+            source_attribution?: string | null;
+            /** Last Reviewed At */
+            last_reviewed_at?: string | null;
+            /**
+             * Is Published
+             * @default true
+             */
+            is_published: boolean;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HotlineIn */
+        HotlineIn: {
+            /** Label */
+            label: string;
+            /** Number */
+            number: string;
+            /** Type */
+            type: string;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /** HotlineOut */
+        HotlineOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Label */
+            label: string;
+            /** Number */
+            number: string;
+            /** Type */
+            type: string;
+            /** Sort Order */
+            sort_order: number;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** LoginRequest */
+        LoginRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Password */
+            password: string;
+        };
+        /** ManualReadingIn */
+        ManualReadingIn: {
+            /**
+             * Metric
+             * @enum {string}
+             */
+            metric: "river_level" | "rainfall" | "temperature" | "humidity" | "heat_index" | "precipitation_probability";
+            /** Value */
+            value: number;
+            /** Unit */
+            unit: string;
+            /** Observed At */
+            observed_at?: string | null;
+        };
+        /** MeResponse */
+        MeResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Email */
+            email: string;
+            /** Full Name */
+            full_name: string;
+            /** Role */
+            role: string;
+            /** Status */
+            status: string;
+            /**
+             * Assigned Area Ids
+             * @default []
+             */
+            assigned_area_ids: string[];
+        };
+        /** Page[PublicActivity] */
+        Page_PublicActivity_: {
+            /** Items */
+            items: components["schemas"]["PublicActivity"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
+        };
+        /** Page[PublicAnnouncement] */
+        Page_PublicAnnouncement_: {
+            /** Items */
+            items: components["schemas"]["PublicAnnouncement"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
+        };
+        /** Page[PublicDonationDrive] */
+        Page_PublicDonationDrive_: {
+            /** Items */
+            items: components["schemas"]["PublicDonationDrive"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
+        };
+        /** Page[PublicEvacCenter] */
+        Page_PublicEvacCenter_: {
+            /** Items */
+            items: components["schemas"]["PublicEvacCenter"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
+        };
+        /** Page[PublicFloodEvent] */
+        Page_PublicFloodEvent_: {
+            /** Items */
+            items: components["schemas"]["PublicFloodEvent"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
+        };
+        /** Page[PublicGuideSummary] */
+        Page_PublicGuideSummary_: {
+            /** Items */
+            items: components["schemas"]["PublicGuideSummary"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
+        };
+        /** PublicActivity */
+        PublicActivity: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "drill" | "seminar" | "first_aid" | "cleanup" | "tree_planting" | "ngo_program" | "other";
+            /** Description */
+            description: string | null;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /** Ends At */
+            ends_at: string | null;
+            /** Venue */
+            venue: string | null;
+            /** Area Id */
+            area_id: string | null;
+            /** Area Name */
+            area_name: string | null;
+            /** Is Upcoming */
+            is_upcoming: boolean;
+        };
+        /** PublicAnnouncement */
+        PublicAnnouncement: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "announcement" | "alert";
+            /** Type */
+            type: string;
+            /** Severity */
+            severity: ("info" | "warning" | "emergency") | null;
+            /** Alert Level */
+            alert_level: (1 | 2 | 3) | null;
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+            /** Instruction */
+            instruction: string | null;
+            /** Is Barangay Wide */
+            is_barangay_wide: boolean;
+            /** Published At */
+            published_at: string | null;
+            /** Expires At */
+            expires_at: string | null;
+            /** Deactivated At */
+            deactivated_at: string | null;
+            /** Area Names */
+            area_names: string[];
+            /** Issued By Name */
+            issued_by_name: string;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** PublicArea */
+        PublicArea: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Code */
+            code: string | null;
+            /** Flood Exposure */
+            flood_exposure: string | null;
+            /** Has Boundary */
+            has_boundary: boolean;
+        };
+        /** PublicAreaStat */
+        PublicAreaStat: {
+            /**
+             * Area Id
+             * Format: uuid
+             */
+            area_id: string;
+            /** Area Name */
+            area_name: string;
+            /** Area Code */
+            area_code: string | null;
+            /** Flood Exposure */
+            flood_exposure: ("low" | "medium" | "high") | null;
+            /** Centroid */
+            centroid?: null;
+            /** Registered Households */
+            registered_households: number;
+            /** Registered Members */
+            registered_members: number;
+            /** Evac Center Count */
+            evac_center_count: number;
+        };
+        /** PublicBarangayStats */
+        PublicBarangayStats: {
+            /** Registered Households */
+            registered_households: number;
+            /** Registered Members */
+            registered_members: number;
+            /** Configured Total Households */
+            configured_total_households: number | null;
+            /** Configured Total Population */
+            configured_total_population: number | null;
+            /** Coverage Pct */
+            coverage_pct: number | null;
+            /** Evac Center Count */
+            evac_center_count: number;
+            /** Active Hotline Count */
+            active_hotline_count: number;
+            /** Areas */
+            areas: components["schemas"]["PublicAreaStat"][];
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+        };
+        /** PublicDonationDrive */
+        PublicDonationDrive: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "closed";
+            /**
+             * Opened At
+             * Format: date-time
+             */
+            opened_at: string;
+            /** Closed At */
+            closed_at: string | null;
+            /** Event Id */
+            event_id: string | null;
+            /** Event Name */
+            event_name: string | null;
+            /** Needs */
+            needs: components["schemas"]["PublicDriveNeed"][];
+            /** Overall Progress Pct */
+            overall_progress_pct: number;
+        };
+        /** PublicDriveNeed */
+        PublicDriveNeed: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Item Name */
+            item_name: string;
+            /** Target Quantity */
+            target_quantity: number;
+            /** Unit */
+            unit: string;
+            /** Sort Order */
+            sort_order: number;
+            /** Received Quantity */
+            received_quantity: number;
+            /** Pledged Quantity */
+            pledged_quantity: number;
+            /** Progress Pct */
+            progress_pct: number;
+        };
+        /** PublicEvacCenter */
+        PublicEvacCenter: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Capacity */
+            capacity: number | null;
+            /** Is Open */
+            is_open: boolean;
+            /** Notes */
+            notes: string | null;
+            /** Contact Number */
+            contact_number: string | null;
+            facility: components["schemas"]["PublicFacility"];
+            /** Occupancy */
+            occupancy: number;
+            /** Occupancy Pct */
+            occupancy_pct: number | null;
+            /** Is At Capacity */
+            is_at_capacity: boolean;
+            /**
+             * Occupancy As Of
+             * Format: date-time
+             */
+            occupancy_as_of: string;
+        };
+        /** PublicFacility */
+        PublicFacility: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+            /** Address */
+            address: string | null;
+            /** Contact Number */
+            contact_number: string | null;
+            location: components["schemas"]["GeoJsonPoint"];
+            /** Area Id */
+            area_id: string | null;
+            /** Area Name */
+            area_name: string | null;
+        };
+        /** PublicFaq */
+        PublicFaq: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Question Fil */
+            question_fil: string;
+            /** Question En */
+            question_en: string;
+            /** Answer Fil */
+            answer_fil: string;
+            /** Answer En */
+            answer_en: string;
+            /** Category */
+            category: string;
+            /** Sort Order */
+            sort_order: number;
+        };
+        /** PublicFloodEvent */
+        PublicFloodEvent: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Ended At */
+            ended_at: string | null;
+            /** Peak Level M */
+            peak_level_m: number | null;
+            /** Peak At */
+            peak_at: string | null;
+            /** Households Displaced */
+            households_displaced: number | null;
+            /** Notes */
+            notes: string | null;
+            /** Area Names */
+            area_names: string[];
+        };
+        /** PublicForecastPoint */
+        PublicForecastPoint: {
+            /**
+             * Valid At
+             * Format: date-time
+             */
+            valid_at: string;
+            /**
+             * Metric
+             * @enum {string}
+             */
+            metric: "river_level" | "rainfall" | "temperature" | "humidity" | "heat_index" | "precipitation_probability";
+            /** Value */
+            value: number;
+            /** Unit */
+            unit: string;
+            /**
+             * Horizon
+             * @enum {string}
+             */
+            horizon: "hourly" | "daily";
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "open_meteo" | "pagasa" | "manual";
+            /**
+             * Fetched At
+             * Format: date-time
+             */
+            fetched_at: string;
+        };
+        /** PublicGuide */
+        PublicGuide: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slug */
+            slug: string;
+            /**
+             * Hazard Type
+             * @enum {string}
+             */
+            hazard_type: "flood" | "earthquake" | "typhoon" | "fire" | "landslide" | "general" | "food";
+            /** Title Fil */
+            title_fil: string;
+            /** Title En */
+            title_en: string;
+            /**
+             * Phase
+             * @enum {string}
+             */
+            phase: "before" | "during" | "after" | "n/a";
+            /** Source Attribution */
+            source_attribution: string | null;
+            /** Last Reviewed At */
+            last_reviewed_at: string | null;
+            /** Sort Order */
+            sort_order: number;
+            /** Excerpt Fil */
+            excerpt_fil: string;
+            /** Excerpt En */
+            excerpt_en: string;
+            /** Body Fil */
+            body_fil: string;
+            /** Body En */
+            body_en: string;
+        };
+        /** PublicGuideSummary */
+        PublicGuideSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slug */
+            slug: string;
+            /**
+             * Hazard Type
+             * @enum {string}
+             */
+            hazard_type: "flood" | "earthquake" | "typhoon" | "fire" | "landslide" | "general" | "food";
+            /** Title Fil */
+            title_fil: string;
+            /** Title En */
+            title_en: string;
+            /**
+             * Phase
+             * @enum {string}
+             */
+            phase: "before" | "during" | "after" | "n/a";
+            /** Source Attribution */
+            source_attribution: string | null;
+            /** Last Reviewed At */
+            last_reviewed_at: string | null;
+            /** Sort Order */
+            sort_order: number;
+            /** Excerpt Fil */
+            excerpt_fil: string;
+            /** Excerpt En */
+            excerpt_en: string;
+        };
+        /** PublicHotline */
+        PublicHotline: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Label */
+            label: string;
+            /** Number */
+            number: string;
+            /** Type */
+            type: string;
+            /** Sort Order */
+            sort_order: number;
+        };
+        /** PublicReading */
+        PublicReading: {
+            /** Id */
+            id: number;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "open_meteo" | "pagasa" | "manual";
+            /**
+             * Metric
+             * @enum {string}
+             */
+            metric: "river_level" | "rainfall" | "temperature" | "humidity" | "heat_index" | "precipitation_probability";
+            /** Value */
+            value: number;
+            /** Unit */
+            unit: string;
+            /** Station */
+            station: string | null;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /**
+             * Fetched At
+             * Format: date-time
+             */
+            fetched_at: string;
+            /** Age Minutes */
+            age_minutes: number;
+            /** Is Stale */
+            is_stale: boolean;
+            /** Stale After Minutes */
+            stale_after_minutes: number;
+        };
+        /** PublicRiverLevel */
+        PublicRiverLevel: {
+            reading: components["schemas"]["PublicReading"] | null;
+            /**
+             * Alert Level
+             * @enum {integer}
+             */
+            alert_level: 0 | 1 | 2 | 3;
+            thresholds: components["schemas"]["RiverThresholds"] | null;
+            /** Is Stale */
+            is_stale: boolean;
+            last_known_good: components["schemas"]["PublicReading"] | null;
+        };
+        /** PublicWeatherCurrent */
+        PublicWeatherCurrent: {
+            /** Readings */
+            readings: components["schemas"]["PublicReading"][];
+            /** Observed At */
+            observed_at: string | null;
+            /** Source */
+            source: ("open_meteo" | "pagasa" | "manual") | null;
+            /** Is Stale */
+            is_stale: boolean;
+            /** Forecast */
+            forecast: components["schemas"]["PublicForecastPoint"][];
+        };
+        /** RiverThresholds */
+        RiverThresholds: {
+            /** Level 1 M */
+            level_1_m: number | null;
+            /** Level 2 M */
+            level_2_m: number | null;
+            /** Level 3 M */
+            level_3_m: number | null;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
+        };
+    };
     responses: never;
     parameters: never;
     requestBodies: never;
@@ -102,6 +1948,1760 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    login_route_api_v1_auth_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessTokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_route_api_v1_auth_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                refresh_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessTokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout_route_api_v1_auth_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                refresh_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    me_route_api_v1_auth_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+        };
+    };
+    public_hotlines_api_v1_public_hotlines_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicHotline"][];
+                };
+            };
+        };
+    };
+    public_facilities_api_v1_public_facilities_get: {
+        parameters: {
+            query?: {
+                type?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicFacility"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_areas_api_v1_public_areas_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicArea"][];
+                };
+            };
+        };
+    };
+    public_announcements_api_v1_public_announcements_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                kind?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_PublicAnnouncement_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_active_alert_api_v1_public_announcements_active_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicAnnouncement"] | null;
+                };
+            };
+        };
+    };
+    public_activities_api_v1_public_activities_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                upcoming?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_PublicActivity_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_guides_api_v1_public_guides_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_PublicGuideSummary_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_guide_api_v1_public_guides__slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicGuide"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_faqs_api_v1_public_faqs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicFaq"][];
+                };
+            };
+        };
+    };
+    public_evac_centers_api_v1_public_evacuation_centers_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_PublicEvacCenter_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_donation_drives_api_v1_public_donation_drives_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_PublicDonationDrive_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_weather_current_api_v1_public_weather_current_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicWeatherCurrent"];
+                };
+            };
+        };
+    };
+    public_river_level_api_v1_public_river_level_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRiverLevel"];
+                };
+            };
+        };
+    };
+    public_flood_events_api_v1_public_flood_events_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_PublicFloodEvent_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_area_stats_api_v1_public_area_stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicBarangayStats"];
+                };
+            };
+        };
+    };
+    admin_list_hotlines_api_v1_admin_hotlines_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HotlineOut"][];
+                };
+            };
+        };
+    };
+    admin_create_hotline_api_v1_admin_hotlines_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HotlineIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HotlineOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_delete_hotline_api_v1_admin_hotlines__hotline_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hotline_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_hotline_api_v1_admin_hotlines__hotline_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hotline_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HotlineIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HotlineOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_facilities_api_v1_admin_facilities_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicFacility"][];
+                };
+            };
+        };
+    };
+    admin_create_facility_api_v1_admin_facilities_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FacilityIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FacilityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_delete_facility_api_v1_admin_facilities__facility_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                facility_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_facility_api_v1_admin_facilities__facility_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                facility_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FacilityIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FacilityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_areas_api_v1_admin_areas_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AreaOut"][];
+                };
+            };
+        };
+    };
+    admin_update_area_api_v1_admin_areas__area_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                area_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AreaPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AreaOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_announcements_api_v1_admin_announcements_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicAnnouncement"][];
+                };
+            };
+        };
+    };
+    admin_create_announcement_api_v1_admin_announcements_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicAnnouncement"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_deactivate_announcement_api_v1_admin_announcements__announcement_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                announcement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_alert_prompts_api_v1_admin_alert_prompts_get: {
+        parameters: {
+            query?: {
+                unresolved_only?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertPromptOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_acknowledge_alert_prompt_api_v1_admin_alert_prompts__prompt_id__acknowledge_post: {
+        parameters: {
+            query?: {
+                resulted_in_announcement_id?: string | null;
+            };
+            header?: never;
+            path: {
+                prompt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_activities_api_v1_admin_activities_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicActivity"][];
+                };
+            };
+        };
+    };
+    admin_create_activity_api_v1_admin_activities_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicActivity"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_delete_activity_api_v1_admin_activities__activity_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_activity_api_v1_admin_activities__activity_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicActivity"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_guides_api_v1_admin_guides_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicGuide"][];
+                };
+            };
+        };
+    };
+    admin_create_guide_api_v1_admin_guides_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuideIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicGuide"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_delete_guide_api_v1_admin_guides__guide_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                guide_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_guide_api_v1_admin_guides__guide_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                guide_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuideIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicGuide"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_faqs_api_v1_admin_faqs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicFaq"][];
+                };
+            };
+        };
+    };
+    admin_create_faq_api_v1_admin_faqs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FaqIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicFaq"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_delete_faq_api_v1_admin_faqs__faq_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                faq_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_faq_api_v1_admin_faqs__faq_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                faq_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FaqIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicFaq"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_evac_centers_api_v1_admin_evacuation_centers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicEvacCenter"][];
+                };
+            };
+        };
+    };
+    admin_create_evac_center_api_v1_admin_evacuation_centers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvacCenterIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_evac_center_api_v1_admin_evacuation_centers__center_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                center_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvacCenterIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_donation_drives_api_v1_admin_donation_drives_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicDonationDrive"][];
+                };
+            };
+        };
+    };
+    admin_create_donation_drive_api_v1_admin_donation_drives_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DonationDriveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_close_donation_drive_api_v1_admin_donation_drives__drive_id__close_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                drive_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_donations_api_v1_admin_donation_drives__drive_id__donations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                drive_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DonationOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_donation_status_api_v1_admin_donations__donation_id__status_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                donation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DonationStatusPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_record_reading_api_v1_admin_readings_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualReadingIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicReading"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_flood_events_api_v1_admin_flood_events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_PublicFloodEvent_"];
+                };
+            };
+        };
+    };
+    admin_create_flood_event_api_v1_admin_flood_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FloodEventIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_flood_event_api_v1_admin_flood_events__event_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FloodEventIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_config_api_v1_admin_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigEntryOut"][];
+                };
+            };
+        };
+    };
+    admin_set_config_api_v1_admin_config__key__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigValuePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigEntryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -16,11 +16,26 @@ a store, you probably want a query key instead.
 
 ## The API client
 
-One configured axios instance, `src/lib/api/client.ts`. Nothing calls `fetch` or bare `axios`.
+One configured axios instance, `src/lib/api/client.ts`, used by client components and the
+admin console.
 
 ```ts
 import { api } from "@/lib/api/client";
 ```
+
+### The one exception: `lib/api/server.ts`
+
+The public site's Server Components use `fetch` directly, via `serverGet()` in
+`src/lib/api/server.ts`, not axios. This is deliberate, not an oversight: axios in a Server
+Component bypasses Next's own data cache, and ISR (`~60s` revalidate, `architecture.md` Section
+10.1) **is** that cache — there is nothing for `next: { revalidate }` to attach to on an axios
+call. `fetch` is the correct tool for exactly this one job, and it is the only place in the
+codebase that uses it directly.
+
+`serverGet(path, zodSchema, { revalidate, searchParams })` talks to `API_INTERNAL_BASE_URL`
+(container-to-container, no proxy hop — see `.env.example`), Zod-parses the response, and throws
+`ApiFetchError` on any failure. Every getter in `lib/api/public.ts` catches that and returns an
+empty-shaped fallback — see "Section-level failure isolation" below.
 
 - `withCredentials: true` so the httpOnly refresh cookie survives the round trip.
 - A request interceptor attaches the in-memory access token.
@@ -37,31 +52,35 @@ all (`architecture.md` A-5).
 This means the token is gone on reload — which is intended. The refresh cookie is what restores
 the session.
 
-## The public seam, and how to close it
+## The public seam — closed (FR-PUB-013)
 
-The public site does not use the axios client yet. It reads through
-`src/lib/api/public.ts` — one async getter per future endpoint, each currently returning a
-typed fixture and each marked:
+The public site reads through `src/lib/api/public.ts` — one async getter per endpoint, each a
+single `serverGet(...)` call, Zod-parsed against `src/lib/api/public-schemas.ts`. The seam is
+what made this a one-file change: every page and section already called these getters and typed
+its output against `src/lib/api/public-types.ts`, so wiring the real API changed no call site.
 
-```ts
-/** TODO(FR-PUB-013): `GET /public/announcements` */
-```
-
-`grep -rn "TODO(FR-PUB-013)" src` is therefore the complete integration checklist. Closing
-FR-PUB-013 means replacing those bodies with `api.get(...)` and nothing else: the getters are
-already `async`, already return `Page<T>` envelopes, and already return the exact DTOs in
-`src/lib/api/public-types.ts`.
-
-Three rules keep that swap honest:
+Two rules keep it honest going forward:
 
 - **Pages and sections never import a fixture.** They call the seam. The one exception is the
-  error and not-found boundaries, which import `HOTLINES` directly — a fallback that depends on
-  the fetch which may have just failed is not a fallback.
-- **Fixtures are typed only by the DTOs.** `const x: PublicHotline[] = [...]` means `tsc` fails
-  the moment a fixture drifts from the contract.
-- **Field names are `schema.md` column names, verbatim.** Derived fields — `occupancy`,
-  `is_stale`, `coverage_pct`, `issued_by_name` — are marked as derived in `public-types.ts` so
-  nobody goes looking for a column that does not exist.
+  error and not-found boundaries, which import `HOTLINES` from `lib/fixtures/hotlines.ts`
+  directly — a fallback that depends on the fetch which may have just failed is not a fallback.
+- **Field names are `schema.md` column names, verbatim**, in both `public-types.ts` (the
+  TypeScript contract) and `public-schemas.ts` (the Zod runtime check). Derived fields —
+  `occupancy`, `is_stale`, `coverage_pct`, `issued_by_name` — are marked as derived so nobody
+  goes looking for a column that does not exist.
+
+### Section-level failure isolation (FR-PUB-016, NFR-AVL-002/004)
+
+Every getter in `public.ts` catches `ApiFetchError` and returns an empty-shaped fallback —
+`emptyPage()`, `null`, or a zeroed aggregate — rather than throwing into the page. A failed
+weather fetch degrades the weather section only. `getHotlines()` is the deliberate exception:
+on failure it falls back to the static `HOTLINES` fixture, never to an empty list, because
+NFR-AVL-004 requires hotlines to render even when nothing else can.
+
+`lib/fixtures/` is retired except `hotlines.ts` (the load-bearing fallback above) — every other
+fixture file had exactly one consumer, `public.ts`, and is gone along with the fixture bodies it
+returned. `lib/content/` — nav, footer, hero copy, mission/vision — was never a fixture; it is
+static copy that is never served by an API, and stays exactly where it is.
 
 Static copy — navigation, footer groups, hero wording, mission and vision — lives in
 `src/lib/content/`, **not** in `fixtures/`. It is never served by an API and never will be;

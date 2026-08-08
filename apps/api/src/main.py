@@ -12,12 +12,36 @@ from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 
 from src.core.config import settings
 from src.core.errors import register_exception_handlers
 from src.core.logging import RequestContextMiddleware, configure_logging
+from src.core.rate_limit import limiter
 from src.db.session import DbSessionDep, engine
+
+# Each module's router.py declares its own prefix; mounted below under the tier
+# that matches who may call it (architecture.md Section 6.2, A-11).
+from src.modules.activities.router import admin_router as activities_admin_router
+from src.modules.activities.router import public_router as activities_public_router
+from src.modules.alerts.router import admin_router as alerts_admin_router
+from src.modules.alerts.router import public_router as alerts_public_router
+from src.modules.analytics.router import public_router as analytics_public_router
+from src.modules.auth.router import router as auth_router
+from src.modules.config.router import admin_router as config_admin_router
+from src.modules.donations.router import admin_router as donations_admin_router
+from src.modules.donations.router import public_router as donations_public_router
+from src.modules.evacuation.router import admin_router as evacuation_admin_router
+from src.modules.evacuation.router import public_router as evacuation_public_router
+from src.modules.geo.router import admin_router as geo_admin_router
+from src.modules.geo.router import public_router as geo_public_router
+from src.modules.preparedness.router import admin_router as preparedness_admin_router
+from src.modules.preparedness.router import public_router as preparedness_public_router
+from src.modules.weather.router import admin_router as weather_admin_router
+from src.modules.weather.router import public_router as weather_public_router
 
 log = logging.getLogger("api")
 
@@ -59,6 +83,11 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
         expose_headers=["X-Request-ID"],
     )
+    app.add_middleware(SlowAPIMiddleware)
+
+    # FR-SYS-016, NFR-SEC-009 — login and (later) rescue-request throttling.
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     register_exception_handlers(app)
     app.include_router(health_router)
@@ -105,7 +134,26 @@ public_router = APIRouter(prefix="/public", tags=["public"])
 me_router = APIRouter(prefix="/me", tags=["resident"])
 admin_router = APIRouter(prefix="/admin", tags=["admin"])
 
+public_router.include_router(geo_public_router)
+public_router.include_router(alerts_public_router)
+public_router.include_router(activities_public_router)
+public_router.include_router(preparedness_public_router)
+public_router.include_router(evacuation_public_router)
+public_router.include_router(donations_public_router)
+public_router.include_router(weather_public_router)
+public_router.include_router(analytics_public_router)
+
+admin_router.include_router(geo_admin_router)
+admin_router.include_router(alerts_admin_router)
+admin_router.include_router(activities_admin_router)
+admin_router.include_router(preparedness_admin_router)
+admin_router.include_router(evacuation_admin_router)
+admin_router.include_router(donations_admin_router)
+admin_router.include_router(weather_admin_router)
+admin_router.include_router(config_admin_router)
+
 api_v1.include_router(health_router)
+api_v1.include_router(auth_router)
 api_v1.include_router(public_router)
 api_v1.include_router(me_router)
 api_v1.include_router(admin_router)

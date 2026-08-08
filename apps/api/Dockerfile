@@ -29,8 +29,10 @@ HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
     CMD curl -fsS http://localhost:8000/health || exit 1
 
 # Migrations run on API start, not as a separate step — one less thing to forget
-# (architecture.md Section 13.3).
-CMD ["sh", "-c", "alembic upgrade head && gunicorn src.main:app \
+# (architecture.md Section 13.3). Seeding runs right after: src/seed.py checks
+# each table's row count and skips anything already populated, so this is a
+# no-op on every restart after the first and never duplicates data.
+CMD ["sh", "-c", "alembic upgrade head && python -m src.seed && gunicorn src.main:app \
     --worker-class uvicorn.workers.UvicornWorker \
     --workers ${GUNICORN_WORKERS:-2} \
     --bind 0.0.0.0:8000 \
@@ -44,5 +46,5 @@ FROM base AS dev
 
 RUN uv pip install --system --no-cache -r pyproject.toml --group dev
 
-CMD ["sh", "-c", "alembic upgrade head && uvicorn src.main:app \
+CMD ["sh", "-c", "alembic upgrade head && python -m src.seed && uvicorn src.main:app \
     --host 0.0.0.0 --port 8000 --reload --reload-dir /app/src"]

@@ -37,7 +37,14 @@ export function WeatherPanel({
   weather: PublicWeatherCurrent;
   className?: string;
 }) {
-  const peak = Math.max(...weather.forecast.map((f) => f.value), 1);
+  // `forecast` is genuinely multi-metric (Open-Meteo's real feed carries both
+  // rainfall and precipitation_probability per hour, sharing a `valid_at`) —
+  // this strip is specifically "Rainfall, next 18 hours", so it filters down to
+  // that one metric rather than assuming the array is rainfall-only.
+  const rainfallForecast = weather.forecast
+    .filter((f) => f.metric === "rainfall")
+    .slice(0, 6);
+  const peak = Math.max(...rainfallForecast.map((f) => f.value), 1);
 
   return (
     <Card radius="xl" className={cn("h-full", className)}>
@@ -66,7 +73,7 @@ export function WeatherPanel({
         <div className="flex flex-col gap-2">
           <span className="text-overline text-neutral-500">Rainfall, next 18 hours</span>
           <div className="flex h-24 items-end gap-2">
-            {weather.forecast.map((point) => {
+            {rainfallForecast.map((point, i) => {
               const hour = new Intl.DateTimeFormat("en-PH", {
                 timeZone: "Asia/Manila",
                 hour: "numeric",
@@ -74,7 +81,9 @@ export function WeatherPanel({
               }).format(new Date(point.valid_at));
               return (
                 <div
-                  key={point.valid_at}
+                  // `valid_at` alone is not guaranteed unique across sources
+                  // sharing a timestamp; the index makes the key robust either way.
+                  key={`${point.valid_at}-${i}`}
                   className="flex flex-1 flex-col items-center gap-1.5"
                 >
                   <span className="text-caption tabular text-neutral-600">
@@ -94,7 +103,7 @@ export function WeatherPanel({
           </div>
           <p className="sr-only">
             Forecast rainfall in millimetres:{" "}
-            {weather.forecast
+            {rainfallForecast
               .map(
                 (p) =>
                   `${new Intl.DateTimeFormat("en-PH", {
@@ -107,14 +116,22 @@ export function WeatherPanel({
           </p>
         </div>
 
-        <DataFreshness
-          className="mt-auto"
-          observedAt={weather.observed_at}
-          source={weather.source}
-          ageMinutes={weather.readings[0]?.age_minutes ?? 0}
-          isStale={weather.is_stale}
-          staleAfterMinutes={weather.readings[0]?.stale_after_minutes}
-        />
+        {weather.observed_at && weather.source ? (
+          <DataFreshness
+            className="mt-auto"
+            observedAt={weather.observed_at}
+            source={weather.source}
+            ageMinutes={weather.readings[0]?.age_minutes ?? 0}
+            isStale={weather.is_stale}
+            staleAfterMinutes={weather.readings[0]?.stale_after_minutes}
+          />
+        ) : (
+          // A fresh deployment before the scheduler's first successful run —
+          // a real empty state (NFR-UX-008), not a bare panel.
+          <p className="text-caption mt-auto text-neutral-500">
+            No weather reading yet. Check back shortly.
+          </p>
+        )}
       </CardContent>
     </Card>
   );

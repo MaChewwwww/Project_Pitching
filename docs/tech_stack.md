@@ -214,8 +214,66 @@ Poll on a schedule and cache — do not call it per page view. One barangay need
 3. **Last-known-good with visible staleness.** BR-3.8 requires provenance and timestamps on every reading, and stale data must be visibly marked. Never show a number without saying how old it is.
 
 > **For the demo, use seeded data on a scripted timeline.** A live scrape failing mid-pitch is an avoidable risk, and a flood scenario you control tells the story better than whatever the river happens to be doing that morning. Say plainly that it is simulated — judges respect that more than a fragile live call.
+>
+> **Decision taken (Aug 2026): always fetch live, fall back to last-known-good on failure**,
+> rather than a `DEMO_MODE` scripted timeline. FR-WX-016 stays unimplemented and `☐` under this
+> decision. The risk above is accepted, not mitigated — FR-WX-012 (last-known-good with visible
+> age) and FR-WX-007 (manual entry) are what keep a PAGASA outage from blanking the page during
+> the pitch. Revisit before demo day; flipping to scripted data is a one-flag change, not a
+> redesign, if the live dependency proves too risky in rehearsal.
+>
+> **Follow-up (Aug 2026): the isolated `demo` Compose profile plus a "Simulate typhoon" admin
+> action cover the actual need this was for**, at a fraction of FR-WX-016's cost. The `demo`
+> profile (`architecture.md` Section 13.1) keeps a curated database separate from `staging`'s
+> live experiments, and `POST /admin/readings/simulate-typhoon` gives a presenter an on-demand,
+> real rising river-level sequence — crossing all three configured alert tiers, creating the
+> matching `alert_prompt`s immediately — without building a scripted-timeline format or a job to
+> play it back. It is FR-WX-007 manual entry, called several times in a row.
 
-Also worth checking: **PANaHON** (`panahon.gov.ph`), DOST-PAGASA's newer hydromet observation network portal, may expose data more cleanly than the legacy FFWS pages. Investigate before committing to a scraper.
+### Resolved — T-OI-1: FFWS exposes JSON, no scraper needed
+
+Checked directly (Aug 2026): `GET https://pasig-marikina-tullahanffws.pagasa.dost.gov.ph/water/map_list.do`
+returns a plain JSON array — **not HTML** — for all 16 Pasig-Marikina-Tullahan gauges, including
+`Montalban` (14.7331, 121.1306) and `Rodriguez`, both within a few hundred metres of the
+`OPEN_METEO_LAT`/`LON` centroid already in `.env.example`. Each row carries:
+
+```json
+{"obsnm": "Montalban", "lon": 121.1306, "lat": 14.7331, "ymdhm": null, "timestr": null,
+ "wl": null, "alertwl": "22.40", "alarmwl": "23.00", "criticalwl": "23.60", "icon": "nodata"}
+```
+
+`wl` (current water level) is `null` outside active flood events — the gauge only reports a
+reading when there is water to report. That is not a parser failure; it is the expected idle
+state, and the adapter must log it as "no new reading" and write nothing rather than erroring.
+`alertwl`/`alarmwl`/`criticalwl` map directly onto FR-WX-005's three tiers and are seeded into
+`config` (`schema.md` S-OI-3).
+
+**Consequence: no HTML parser, no new dependency.** `httpx.get(...).json()` is the entire fetch;
+`PagasaSource` in `apps/api/src/integrations/pagasa.py` needs no BeautifulSoup/selectolax. The
+"scrape politely" guidance above (identified UA, ≥10 min interval, backoff) still applies — this
+is still a public-information endpoint, not a documented API, and it can change without notice.
+
+> **Gotcha that cost an hour: the FFWS server never sends its intermediate TLS
+> certificate.** `openssl s_client -showcerts` against the host returns only the
+> leaf (`*.pagasa.dost.gov.ph`) — verify code 21, "unable to verify the first
+> certificate". Browsers hide this by fetching the intermediate via the
+> certificate's AIA extension automatically; `httpx`/Python's `ssl` module does
+> not, so every fetch failed `CERTIFICATE_VERIFY_FAILED` — deterministically,
+> not intermittently, which would have quietly turned "always fetch live" into
+> "always fall back to manual" everywhere this runs. `pagasa.py` bundles the
+> missing intermediate (GlobalSign GCC R46 OV TLS CA 2025, valid until
+> 2029-06-23) and verifies against it explicitly, rather than disabling
+> certificate verification — this is a public-internet fetch to a government
+> site and a MITM there is a real, not theoretical, concern.
+
+**`pagasa-parser`** (`pagasa.chlod.net`, `github.com/pagasa-parser`) was considered and is **not
+a substitute**. Its ten repositories parse PAGASA **tropical cyclone bulletins** (PDF/XML → JSON,
+storm-signal maps, Wikipedia tables) — there is no river-gauge or FFWS functionality anywhere in
+the org. It is a legitimate future option for FR-WX-015 (typhoon advisories, `Could` priority,
+currently `☐`), at the cost of a Node dependency inside an otherwise pure-Python `cron`
+container. Not pursued now — FR-WX-015 is not in the current scope.
+
+Also worth checking: **PANaHON** (`panahon.gov.ph`), DOST-PAGASA's newer hydromet observation network portal, may expose data more cleanly than the legacy FFWS pages. Not investigated — the FFWS JSON endpoint above already resolves T-OI-1 — but worth a look if FFWS ever changes shape.
 
 ### PSGC — addresses (BR-1.3)
 
@@ -370,7 +428,7 @@ Recording these so they are not revisited without a reason.
 
 | # | Item | Owner |
 |---|---|---|
-| T-OI-1 | Confirm whether **PANaHON** offers cleaner river-level access than scraping the legacy FFWS pages (Section 7) | IT lead |
+| ~~T-OI-1~~ | *Resolved (Section 7)* — the legacy FFWS endpoint returns JSON directly; no scraper or PANaHON evaluation needed | — |
 | T-OI-2 | Obtain the **San Jose boundary polygon** needed to clip the hazard data. Fastest route is OpenStreetMap via Overpass (`admin_level=10`); alternatives are PSA shapefiles or the barangay itself. A bounding box works as a stopgap | IT lead + PubAd lead |
 | T-OI-7 | *Resolved* — using BetterGov / NOAH province shapefiles under ODC-ODbL after LiPAD downloads corrupted. Attribution required in the map footer and About section | IT lead |
 | T-OI-3 | Confirm the **area/zone boundaries** (BRD OI-3) — the 3D map cannot be built without them | PubAd lead, via barangay |

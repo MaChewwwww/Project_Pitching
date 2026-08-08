@@ -39,10 +39,14 @@ export function AnnouncementCard({
     <Card
       radius="xl"
       className={cn(
-        "group h-full transition-all duration-200 card-hover-lift flex flex-col justify-between overflow-hidden",
-        isAlert ? "border-l-[4px]" : "border border-neutral-200/80 hover:border-primary-300",
-        urgent ? "border-l-danger bg-gradient-to-br from-danger-bg/40 to-white" : "",
-        isAlert && !urgent ? "border-l-warning bg-gradient-to-br from-warning-bg/40 to-white" : "",
+        "group card-hover-lift flex h-full flex-col justify-between overflow-hidden transition-all duration-200",
+        isAlert
+          ? "border-l-[4px]"
+          : "hover:border-primary-300 border border-neutral-200/80",
+        urgent ? "border-l-danger from-danger-bg/40 bg-gradient-to-br to-white" : "",
+        isAlert && !urgent
+          ? "border-l-warning from-warning-bg/40 bg-gradient-to-br to-white"
+          : "",
         !isAlert && "bg-white",
         className,
       )}
@@ -55,50 +59,63 @@ export function AnnouncementCard({
             ) : announcement.severity ? (
               <StatusBadge kind="severity" value={announcement.severity} />
             ) : (
-              <span className="text-caption font-bold uppercase tracking-wider text-primary-700 bg-primary-50 px-2.5 py-1 rounded-full border border-primary-100">
+              <span className="text-caption text-primary-700 bg-primary-50 border-primary-100 rounded-full border px-2.5 py-1 font-bold tracking-wider uppercase">
                 Advisory
               </span>
             )}
             {!announcement.is_active ? (
-              <span className="text-caption rounded-full bg-neutral-100 px-2.5 py-0.5 font-semibold text-neutral-600 border border-neutral-200">
+              <span className="text-caption rounded-full border border-neutral-200 bg-neutral-100 px-2.5 py-0.5 font-semibold text-neutral-600">
                 Ended
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 text-caption rounded-full bg-success-bg px-2.5 py-0.5 font-bold text-success border border-success-border">
-                <span className="size-1.5 rounded-full bg-success animate-pulse" />
+              <span className="text-caption bg-success-bg text-success border-success-border inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-bold">
+                <span className="bg-success size-1.5 animate-pulse rounded-full" />
                 Active
               </span>
             )}
           </div>
         </div>
 
-        <h3 className="text-h3 font-bold text-neutral-900 group-hover:text-primary-800 transition-colors leading-snug">
+        <h3 className="text-h3 group-hover:text-primary-800 leading-snug font-bold text-neutral-900 transition-colors">
           {announcement.title}
         </h3>
 
-        <p className={cn("text-body text-neutral-600 leading-relaxed", clamp && "line-clamp-3")}>
+        <p
+          className={cn(
+            "text-body leading-relaxed text-neutral-600",
+            clamp && "line-clamp-3",
+          )}
+        >
           {announcement.body}
         </p>
 
         {announcement.instruction ? (
-          <div className="rounded-xl border border-primary-100 bg-primary-50/60 p-3.5 shadow-sm">
-            <p className="text-overline text-primary-800 font-bold mb-1 tracking-wider">What to do</p>
-            <p className="text-body-sm font-medium text-neutral-800 leading-normal">{announcement.instruction}</p>
+          <div className="border-primary-100 bg-primary-50/60 rounded-xl border p-3.5 shadow-sm">
+            <p className="text-overline text-primary-800 mb-1 font-bold tracking-wider">
+              What to do
+            </p>
+            <p className="text-body-sm leading-normal font-medium text-neutral-800">
+              {announcement.instruction}
+            </p>
           </div>
         ) : null}
 
-        <div className="mt-auto flex flex-col gap-1.5 pt-3 border-t border-neutral-100">
-          <span className="text-caption inline-flex items-center gap-1.5 text-neutral-500 font-medium">
-            <MapPin aria-hidden className="size-3.5 text-primary-600" />
+        <div className="mt-auto flex flex-col gap-1.5 border-t border-neutral-100 pt-3">
+          <span className="text-caption inline-flex items-center gap-1.5 font-medium text-neutral-500">
+            <MapPin aria-hidden className="text-primary-600 size-3.5" />
             {announcement.area_names.length > 0
               ? announcement.area_names.join(", ")
               : "Barangay-wide"}
           </span>
-          <span className="text-caption inline-flex items-center gap-1.5 text-neutral-500 font-medium">
-            <CalendarClock aria-hidden className="size-3.5 text-primary-600" />
-            <time dateTime={announcement.published_at}>
-              {formatPhtDateTime(announcement.published_at)}
-            </time>
+          <span className="text-caption inline-flex items-center gap-1.5 font-medium text-neutral-500">
+            <CalendarClock aria-hidden className="text-primary-600 size-3.5" />
+            {/* published_at is nullable on the shared type (draft state), but the
+                public endpoint this card is always fed from filters those out. */}
+            {announcement.published_at ? (
+              <time dateTime={announcement.published_at}>
+                {formatPhtDateTime(announcement.published_at)}
+              </time>
+            ) : null}
             {" · "}
             {announcement.issued_by_name}
           </span>

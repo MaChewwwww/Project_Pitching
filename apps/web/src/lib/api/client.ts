@@ -39,6 +39,61 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+/**
+ * On a 401, exchange the httpOnly refresh cookie for a new access token and
+ * retry the request once (architecture.md Section 7.1, FR-SYS-003). A second
+ * 401 means the session is genuinely gone — `onSessionExpired` (wired by
+ * `lib/auth/auth-context.tsx`) clears local state and sends the user to
+ * `/login` rather than looping.
+ */
+let onSessionExpired: (() => void) | null = null;
+export function setSessionExpiredHandler(handler: (() => void) | null): void {
+  onSessionExpired = handler;
+}
+
+let refreshInFlight: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  if (!refreshInFlight) {
+    refreshInFlight = api
+      .post<{ access_token: string }>("/auth/refresh")
+      .then((res) => res.data.access_token)
+      .catch(() => null)
+      .finally(() => {
+        refreshInFlight = null;
+      });
+  }
+  return refreshInFlight;
+}
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const original = error.config as
+      (typeof error.config & { _retried?: boolean }) | undefined;
+    const isAuthRoute = original?.url?.includes("/auth/");
+
+    if (
+      error.response?.status === 401 &&
+      original &&
+      !original._retried &&
+      !isAuthRoute
+    ) {
+      original._retried = true;
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        setAccessToken(newToken);
+        original.headers = original.headers ?? {};
+        original.headers.Authorization = `Bearer ${newToken}`;
+        return api.request(original);
+      }
+      onSessionExpired?.();
+    }
+
+    return Promise.reject(error);
+  },
+);
+
 /** The RFC 7807-shaped envelope every API error uses (architecture.md 6.1). */
 export interface ProblemDetail {
   type: string;

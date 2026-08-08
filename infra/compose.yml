@@ -3,6 +3,13 @@
 # the VPS dies (architecture.md Section 13, T-3, NFR-MNT-007).
 #
 # Run through the Makefile:  make dev  (hot reload)  /  make up  (detached)
+#
+# Two isolated profiles run from this one file — staging (day-to-day) and demo
+# (curated, for the pitch) — via `make dev ENV=staging` / `make dev ENV=demo`
+# (architecture.md Section 13.1). The Makefile passes `-p sagip-<env>`, which
+# overrides the `name:` below and namespaces volumes/networks/containers per
+# profile, so both can run at once without colliding. `name:` here is only the
+# fallback for anyone running `docker compose` directly, bypassing the Makefile.
 
 name: barangay-platform
 
@@ -63,7 +70,10 @@ services:
   # --- scheduled jobs -------------------------------------------------------
   cron:
     build:
-      context: ../services/cron
+      # Repo root: the Dockerfile copies apps/api/src/integrations/ in alongside
+      # services/cron itself (architecture.md Section 8.1).
+      context: ..
+      dockerfile: services/cron/Dockerfile
     restart: unless-stopped
     depends_on:
       db:
@@ -97,6 +107,9 @@ services:
       - api
     environment:
       NODE_ENV: production
+      # Server Components run inside this container and cannot reach the proxy's
+      # published port — they go straight to `api` over the Compose network.
+      API_INTERNAL_BASE_URL: ${API_INTERNAL_BASE_URL:-http://api:8000/api/v1}
 
   # --- proxy ----------------------------------------------------------------
   proxy:

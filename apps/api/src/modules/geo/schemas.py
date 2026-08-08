@@ -3,3 +3,106 @@
 These define the API contract. Changing one changes `packages/api-types` —
 run `make types` and commit the diff in the same PR (architecture.md 12.4).
 """
+
+from __future__ import annotations
+
+import uuid
+
+from pydantic import BaseModel, Field
+
+FACILITY_TYPES = (
+    "evacuation_center",
+    "hospital",
+    "clinic",
+    "barangay_hall",
+    "police",
+    "fire",
+    "rescue_station",
+)
+HOTLINE_TYPES = ("barangay", "police", "fire", "ambulance", "hospital", "rescue", "mdrrmo")
+
+
+class GeoJsonPoint(BaseModel):
+    type: str = "Point"
+    coordinates: tuple[float, float]  # [longitude, latitude]
+
+
+# --- public -----------------------------------------------------------------
+
+
+class PublicHotline(BaseModel):
+    id: uuid.UUID
+    label: str
+    number: str
+    type: str
+    sort_order: int
+
+
+class PublicFacility(BaseModel):
+    id: uuid.UUID
+    name: str
+    type: str
+    address: str | None
+    contact_number: str | None
+    location: GeoJsonPoint
+    area_id: uuid.UUID | None
+    area_name: str | None
+
+
+class PublicArea(BaseModel):
+    id: uuid.UUID
+    name: str
+    code: str | None
+    flood_exposure: str | None
+    has_boundary: bool  # derived — geom IS NOT NULL, pending BRD OI-3
+
+
+# --- admin --------------------------------------------------------------------
+
+
+class HotlineIn(BaseModel):
+    label: str
+    number: str
+    type: str
+    sort_order: int = 0
+    is_active: bool = True
+
+
+class HotlineOut(PublicHotline):
+    is_active: bool
+
+
+class FacilityIn(BaseModel):
+    name: str
+    type: str
+    address: str | None = None
+    contact_number: str | None = None
+    longitude: float = Field(..., ge=-180, le=180)
+    latitude: float = Field(..., ge=-90, le=90)
+    area_id: uuid.UUID | None = None
+    is_active: bool = True
+
+
+class FacilityOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    type: str
+    address: str | None
+    contact_number: str | None
+    location: GeoJsonPoint
+    area_id: uuid.UUID | None
+    is_active: bool
+
+
+class AreaPatch(BaseModel):
+    name: str | None = None
+    code: str | None = None
+    flood_exposure: str | None = None
+
+
+class AreaOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    code: str | None
+    flood_exposure: str | None
+    has_boundary: bool

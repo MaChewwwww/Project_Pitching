@@ -19,7 +19,11 @@ services:
       - ../apps/api/tests:/app/tests
       - uploads:/uploads
     environment:
-      ENVIRONMENT: development
+      # Was hardcoded to "development" — now respects the profile's own value
+      # (staging|demo, architecture.md Section 13.1) so `/health` and logs
+      # correctly identify which stack a request landed on, still defaulting
+      # to "development" for anyone running without a named profile's .env.
+      ENVIRONMENT: ${ENVIRONMENT:-development}
       LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
     ports:
       # Direct access, bypassing the proxy — handy when debugging routing.
@@ -28,6 +32,10 @@ services:
   cron:
     volumes:
       - ../services/cron:/app
+      # Bind-mounting the whole service root above would otherwise shadow the
+      # integrations/ copy the Dockerfile placed at /app/integrations — mount it
+      # separately so editing an adapter in apps/api hot-reloads here too.
+      - ../apps/api/src/integrations:/app/integrations
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
 
@@ -44,6 +52,7 @@ services:
     environment:
       NODE_ENV: development
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080/api/v1}
+      API_INTERNAL_BASE_URL: ${API_INTERNAL_BASE_URL:-http://api:8000/api/v1}
       WATCHPACK_POLLING: "true" # bind-mount file events do not always propagate
     ports:
       - "${WEB_PORT:-3000}:3000"

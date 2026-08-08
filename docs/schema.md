@@ -199,7 +199,7 @@ Single self-referencing table rather than four — the hierarchy is uniform and 
 | `id` | UUID | PK | |
 | `name` | TEXT | UNIQUE NOT NULL | "Area 1", "Area 2", … |
 | `code` | TEXT | UNIQUE | Short code for references |
-| `geom` | GEOMETRY(MultiPolygon, 4326) | NOT NULL | Boundary (BRD OI-3) |
+| `geom` | GEOMETRY(MultiPolygon, 4326) | **NULLABLE** | Boundary (BRD OI-3) |
 | `centroid` | GEOMETRY(Point, 4326) | | Generated; used for map labels |
 | `flood_exposure` | TEXT | CHECK: `low` · `medium` · `high` | Precomputed from hazard overlap |
 
@@ -208,6 +208,14 @@ CREATE INDEX idx_area_geom ON area USING GIST(geom);
 ```
 
 > **Boundaries are approximations for planning** (BR-2.8) — this table is not cadastral data and the UI says so.
+
+> **`geom` is nullable, deliberately, and only until BRD OI-3 resolves.** The original design had
+> it `NOT NULL`, which made it impossible to seed a single area row — and areas are the FK target
+> for `household`, `facility`, `activity` and `announcement_area` — until the barangay supplies
+> boundary polygons that do not exist yet. A null `geom` means "boundary not yet supplied", never
+> "no such area". Every consumer that reads `geom` (map rendering, `ST_Contains` area assignment)
+> must treat null as "nothing to draw / nothing to test", not as an error. Tighten back to
+> `NOT NULL` once OI-3 lands and every row has a polygon.
 
 ### `facility` (FR-SYS-015)
 
@@ -874,6 +882,15 @@ Loaded by migration, not at runtime (NFR-DAT-007).
 | S-OI-1 | **Nutrition indicator columns** — which fields graduate from `indicators JSONB` to real columns, and the final `status` CHECK set | BRD OI-2 | Nutrition lead |
 | S-OI-2 | **Area boundary geometry** — nothing spatial can be seeded without it | BRD OI-3 | PubAd lead |
 | S-OI-3 | **Alert threshold values** for `config` | BRD OI-4 | PubAd lead |
+
+> **Interim values seeded, not left null.** `config.alert.threshold_level_{1,2,3}_m` are seeded
+> with the PAGASA FFWS Montalban gauge's own published `alertwl`/`alarmwl`/`criticalwl` values
+> (22.40 / 23.00 / 23.60 m — confirmed live at `GET /water/map_list.do`, `tech_stack.md` §7).
+> These are the gauge operator's own numbers, not an invented guess, and the `description`
+> column says so explicitly: *"PAGASA Montalban gauge published value — pending MDRRMO
+> confirmation (BRD OI-4)"*. Admin-editable via `PUT /admin/config/{key}` the moment MDRRMO
+> supplies a locally-confirmed figure. OI-4 is not resolved by this — it stays open — but the
+> platform no longer runs on a blank threshold while it waits.
 | S-OI-4 | **Barangay total households** for `config` | BRD OI-12 | PubAd lead |
 | S-OI-5 | Whether `vulnerability_assessment` scores are stored or recomputed on read. Stored is the default — history matters more than the space | — | IT lead |
 | S-OI-6 | Whether `evac_checkin.person_name` should be dropped in favour of always creating an `unregistered_person` row | FR-EVC-005 | IT lead |

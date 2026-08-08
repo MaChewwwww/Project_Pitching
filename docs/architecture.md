@@ -351,12 +351,15 @@ GET  /public/guides
 GET  /public/guides/{slug}              FR-PUB-005 — "each card opens the full guide"
 GET  /public/faqs                       FR-PUB-011, FR-PRP-005
 GET  /public/flood-events               FR-WX-013 — flood history, publicly viewable
+GET  /public/announcements/active       FR-PUB-017 — the takeover banner, polled short-cycle
+GET  /public/areas                      FR-SYS-013 — names/codes for public area filters, no geom
 ```
 
 > The last three were missing from this list while the requirements that need them
 > were already marked mandatory. `/public/guides/{slug}` is the only detail route
 > the public site needs — everything else is a list, because the landing page is
-> one document rather than a set of drill-downs.
+> one document rather than a set of drill-downs. `/public/announcements/active` and
+> `/public/areas` were added for the same reason during the FR-PUB-013 close-out.
 >
 > Note also that `/public/weather/current` breaks the plural-noun convention above.
 > Left as-is because it reads better than `/public/weather-readings?latest=true`,
@@ -399,7 +402,20 @@ POST  /admin/evacuation-centers/{id}/checkins
 PATCH /admin/donations/{id}/status
 GET   /admin/analytics/*
 GET   /admin/audit-log
+GET   /admin/config
 PUT   /admin/config/{key}
+
+# content CRUD — the barangay information layer (FR-PUB-013 close-out)
+/admin/announcements        POST, GET, PATCH, DELETE (deactivate — FR-ALT-011)
+/admin/activities           POST, GET, PATCH, DELETE
+/admin/guides                POST, GET, PATCH, DELETE
+/admin/faqs                  POST, GET, PATCH, DELETE
+/admin/hotlines               POST, GET, PATCH, DELETE
+/admin/facilities            POST, GET, PATCH, DELETE
+/admin/donation-drives        POST, GET, PATCH        (+ nested drive_need)
+/admin/flood-events            POST, GET, PATCH, DELETE
+/admin/areas                    GET, PATCH             (creation blocked on BRD OI-3)
+GET   /admin/alert-prompts      threshold breaches awaiting a decision (FR-WX-009)
 ```
 
 ### 6.4 Two endpoints that are architecturally special
@@ -506,6 +522,14 @@ class DataSource(Protocol):
 ```
 
 Three implementations — `OpenMeteoSource`, `PagasaSource`, `ManualSource` — so a broken PAGASA parser is one file, not a refactor (T-1, NFR-MNT-009).
+
+> **The contract is authored in `apps/api/src/integrations/` and copied into the `cron` image
+> at build time**, not imported across a container boundary — `services/cron` is a separate
+> Docker build context and cannot `import src...` from `apps/api`. `infra/compose.yml` builds
+> `cron` from the repo root and its Dockerfile copies `apps/api/src/integrations/` to
+> `/app/integrations/`; the package uses relative imports (`from .base import Reading`) so the
+> same files resolve as `src.integrations` from the API and `integrations` from cron. Editing an
+> adapter means editing the one file in `apps/api`; nothing is hand-duplicated.
 
 ### 8.2 Failure behaviour, in order
 
@@ -815,35 +839,73 @@ docs(frs):           …   docs/frs_nfrs.md
 
 ### 13.1 Environments
 
-| Environment | Runs on | Data | Secure context |
-|---|---|---|---|
-| Local dev | Laptop, Compose | Seeded synthetic | Yes — `localhost` is exempt |
-| Demo | Laptop, Compose | Seeded + scripted flood scenario | Yes |
-| VPS | Single host, same Compose | Seeded synthetic | Only if sslip.io is enabled |
+Two named **profiles**, each its own Compose project from the same `infra/compose.yml` —
+separate database, volumes, network, and host ports — so they can run on the same machine
+at once without colliding, and testing a feature in one can never corrupt the other:
 
-**One Compose file, environment-driven differences.** No separate production stack — that is what makes "demo from a laptop" a viable fallback if the VPS dies (T-3).
+| Profile | Purpose | Runs on | Data | Ports (proxy/web/api/db) |
+|---|---|---|---|---|
+| **staging** | Day-to-day development and feature testing. Safe to break. | Laptop, Compose | Seeded synthetic | 8080 / 3000 / 8000 / 5433 |
+| **demo** | Curated, isolated, for the pitch. Reseed fresh before presenting. | Laptop or VPS, same Compose | Seeded synthetic | 8090 / 3010 / 8010 / 5443 |
+
+```bash
+make dev                 # staging — the default profile
+make dev ENV=demo        # demo — isolated, on different ports, can run alongside staging
+
+make clean ENV=demo      # wipe only the demo database and start it fresh before presenting
+```
+
+`ENV` selects `.env.$(ENV)` and passes `-p sagip-$(ENV)` to `docker compose`, which is what
+namespaces the volumes/network/containers per profile (`Makefile`). Every Make target —
+`migrate`, `seed`, `logs`, `shell-db`, `backup`, `restore` — is `ENV`-aware the same way.
+
+`.env.staging.example` and `.env.demo.example` are the committed templates; `.env.staging` and
+`.env.demo` are the real, gitignored files each profile actually runs from (NFR-SEC-010). A
+bare `.env.example` / `.env` pair still exists too, for anyone running `docker compose` directly
+without the Makefile's profile mechanism — it behaves exactly like the staging profile.
+
+**One Compose file, environment-driven differences, either way.** No separate production
+stack — that is what makes "demo from a laptop" a viable fallback if the VPS dies (T-3). A VPS
+deployment just runs the `demo` profile's `.env` on the server.
 
 ### 13.2 Configuration
 
-All configuration is environment variables, loaded through `pydantic-settings`. `.env.example` is committed; `.env` never is (NFR-SEC-010).
+All configuration is environment variables, loaded through `pydantic-settings`.
 
 ```
-DATABASE_URL, JWT_SECRET, ACCESS_TOKEN_MINUTES, REFRESH_TOKEN_DAYS,
+ENVIRONMENT, DATABASE_URL, JWT_SECRET, ACCESS_TOKEN_MINUTES, REFRESH_TOKEN_DAYS,
 COOKIE_SECURE, CORS_ORIGINS, OPEN_METEO_LAT, OPEN_METEO_LON,
 PAGASA_STATION, SCRAPE_INTERVAL_MINUTES, STALE_THRESHOLD_MINUTES,
-UPLOAD_DIR, MAX_UPLOAD_MB, LOG_LEVEL, DEMO_MODE
+UPLOAD_DIR, MAX_UPLOAD_MB, LOG_LEVEL, DEMO_MODE,
+PROXY_PORT, WEB_PORT, API_PORT, DB_PORT
 ```
 
-`DEMO_MODE=true` switches the readings source to a scripted timeline (FR-WX-016) — the pitch runs on data the team controls, and the flag is the only difference.
+`ENVIRONMENT` is a free-form label (`staging` / `demo` / `development`) surfaced on `/health`
+and in structured logs — it does not gate any code path. `PROXY_PORT`/`WEB_PORT`/`API_PORT`/
+`DB_PORT` are what actually keep the two profiles from colliding on one host (Section 13.1).
+
+`DEMO_MODE=true` would switch the readings source to a scripted timeline (FR-WX-016) — **not
+implemented**. The decision taken instead: cron always fetches live (`tech_stack.md` Section 7
+decision log), and the admin console's **Simulate typhoon** action (`/admin/readings`) gives a
+presenter an on-demand, real river-level sequence to trigger during the pitch without depending
+on an actual flood or a live PAGASA gauge reporting at that moment.
 
 ### 13.3 Startup order
 
 ```
-db → (healthcheck) → api (runs alembic upgrade head) → web → proxy
+db → (healthcheck) → api (alembic upgrade head, then seed) → web → proxy
                   └→ cron
 ```
 
 Migrations run on API start, not in a separate step. One less thing to forget.
+
+**Seeding runs immediately after migration, on every container start** — not a
+separate manual step. `src/seed.py` checks each table's row count before writing
+and skips anything already populated (`schema.md` Section 15 lists what gets
+seeded), so a restart after the first is a no-op, and `make clean && make dev`
+still produces a fully-seeded demo with no extra command. `make seed` still
+exists for an explicit manual re-run — e.g. after seeding was interrupted
+mid-way, or after adding a new seed section that predates a running database.
 
 ### 13.4 Backup
 

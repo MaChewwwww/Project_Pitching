@@ -71,8 +71,10 @@ seeds the `config` defaults this way. Open items are inserted as SQL `null` rath
 a wrong alert threshold is worse than an obviously missing one, and the admin UI can render
 "not set".
 
-Demo data is different. It goes through `make seed` (`src/seed.py`), is explicitly marked
-synthetic, and never loads automatically.
+Demo data is different. It goes through `src/seed.py`, is explicitly marked synthetic, and
+**does load automatically** — right after migration, on every API container start
+(`architecture.md` Section 13.3). Each section checks its own table's row count first, so this
+is a no-op after the first run. `make seed` is only there for an explicit manual re-run.
 
 ## When a migration is already merged
 

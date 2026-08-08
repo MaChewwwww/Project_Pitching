@@ -1,4 +1,10 @@
 # syntax=docker/dockerfile:1
+#
+# Build context is the **repository root**, not services/cron — see
+# architecture.md Section 8.1. The external-data adapter contract
+# (`apps/api/src/integrations/`) is authored once in `apps/api` and copied into
+# this image as `integrations/`, so a fixed PAGASA parser is a change to one file
+# that both containers end up running, never a hand-duplicated second copy.
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -16,10 +22,11 @@ COPY --from=ghcr.io/astral-sh/uv:0.8.2 /uv /usr/local/bin/uv
 
 WORKDIR /app
 
-COPY pyproject.toml ./
+COPY services/cron/pyproject.toml ./
 RUN uv pip install --system --no-cache -r pyproject.toml
 
-COPY . .
+COPY services/cron/. .
+COPY apps/api/src/integrations/ ./integrations/
 
 # No EXPOSE, no ports. This container has no HTTP surface by design.
 CMD ["python", "main.py"]

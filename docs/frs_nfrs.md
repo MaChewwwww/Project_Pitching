@@ -125,21 +125,21 @@ A requirement is `✅` only when all of the following hold:
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
 | FR-SYS-001 | Account registration for a head of household | Email + password; unique email enforced; password policy applied; account created in `pending` state | BR-1.1 | M | ☐ | — |
-| FR-SYS-002 | Login and logout | Valid credentials return an access token + refresh cookie; logout invalidates the refresh token | Tech Stack 5 | M | ☐ | — |
-| FR-SYS-003 | Session refresh | Access token expires ≤15 min; refresh via httpOnly cookie without re-login | Tech Stack 5 | M | ☐ | — |
+| FR-SYS-002 | Login and logout | Valid credentials return an access token + refresh cookie; logout invalidates the refresh token | Tech Stack 5 | M | ◐ | — |
+| FR-SYS-003 | Session refresh | Access token expires ≤15 min; refresh via httpOnly cookie without re-login | Tech Stack 5 | M | ◐ | — |
 | FR-SYS-004 | Password reset | User can request a reset; admin can also initiate one for a resident | Tech Stack 5 | S | ☐ | — |
-| FR-SYS-005 | Six roles enforced | `public`, `head`, `bhw`, `admin`, `sk`, `superadmin`; role carried as a token claim | BRD 5.1 | M | ☐ | — |
-| FR-SYS-006 | Server-side authorization on every endpoint | Every protected route checks role; UI hiding alone fails review | BRD 5.1 | M | ☐ | — |
+| FR-SYS-005 | Six roles enforced | `public`, `head`, `bhw`, `admin`, `sk`, `superadmin`; role carried as a token claim | BRD 5.1 | M | ◐ | — |
+| FR-SYS-006 | Server-side authorization on every endpoint | Every protected route checks role; UI hiding alone fails review | BRD 5.1 | M | ◐ | — |
 | FR-SYS-007 | BHW area scoping | A BHW can read/write only households in their assigned areas; cross-area access returns 403 | BR-1.44 | M | ☐ | — |
-| FR-SYS-008 | Audit log of state-changing actions | Actor, action, target, timestamp recorded and queryable by admin | BR-1.45, BR-4.6 | M | ☐ | — |
+| FR-SYS-008 | Audit log of state-changing actions | Actor, action, target, timestamp recorded and queryable by admin | BR-1.45, BR-4.6 | M | ◐ | — |
 | FR-SYS-009 | Admin can manage users | List, search, filter, view, activate/deactivate, change role | BRD 5.1 | M | ☐ | — |
-| FR-SYS-010 | Configuration store | Admin-editable settings: barangay totals, alert thresholds, hotlines, facility list | BR-3.3, BR-10.1a | M | ☐ | — |
+| FR-SYS-010 | Configuration store | Admin-editable settings: barangay totals, alert thresholds, hotlines, facility list | BR-3.3, BR-10.1a | M | ◐ | — |
 | FR-SYS-011 | In-app notification centre | Notifications listed, unread count shown, mark-as-read | BR-1.18, BR-8.3 | S | ☐ | — |
 | FR-SYS-012 | Reference data: PSGC | PSGC hierarchy loaded at migration; cascading region→province→city→barangay select | BR-1.3 | M | ☐ | — |
-| FR-SYS-013 | Reference data: barangay areas | Areas/zones seeded with names and boundary polygons; used across REG, MAP, ANL | BR-1.3, OI-3 | M | ☐ | — |
-| FR-SYS-014 | Emergency hotline directory | Admin CRUD; surfaced in PUB, MAP, EVC; one-tap `tel:` links | BR-0.7 | M | ☐ | — |
-| FR-SYS-015 | Barangay facility registry | Admin CRUD with geo-pin: evacuation centres, hospitals, clinics, barangay hall, police, fire, rescue stations | BR-2.4, BR-2.5 | M | ☐ | — |
-| FR-SYS-016 | Rate limiting on sensitive endpoints | Login and rescue-request endpoints throttled per IP | Tech Stack 5 | S | ☐ | — |
+| FR-SYS-013 | Reference data: barangay areas | Areas/zones seeded with names and boundary polygons; used across REG, MAP, ANL | BR-1.3, OI-3 | M | ◐ | — |
+| FR-SYS-014 | Emergency hotline directory | Admin CRUD; surfaced in PUB, MAP, EVC; one-tap `tel:` links | BR-0.7 | M | ◐ | — |
+| FR-SYS-015 | Barangay facility registry | Admin CRUD with geo-pin: evacuation centres, hospitals, clinics, barangay hall, police, fire, rescue stations | BR-2.4, BR-2.5 | M | ◐ | — |
+| FR-SYS-016 | Rate limiting on sensitive endpoints | Login and rescue-request endpoints throttled per IP | Tech Stack 5 | S | ◐ | — |
 | FR-SYS-017 | Consent capture at registration | Consent text version recorded with timestamp, covering all members | BR-1.41 | M | ☐ | — |
 | FR-SYS-018 | Data export / deletion request handling | Admin can export or delete a household record on request | BR-1.42, BR-1.43 | S | ☐ | — |
 
@@ -161,26 +161,27 @@ A requirement is `✅` only when all of the following hold:
 | FR-PUB-010 | Donation drives section | Active drives, needs, progress, donation form — no account | BR-0.10 | S | ◐ | — |
 | FR-PUB-011 | FAQs | Published, maintainable, accordion presentation | BR-0.11 | S | ◐ | — |
 | FR-PUB-012 | Footer | Barangay info, contacts, socials, hotline, copyright | BR-0.12 | M | ◐ | — |
-| FR-PUB-013 | Live content, single source | Every dynamic section reads from its module; no duplicated content store | BR-0.13 | M | ☐ | — |
+| FR-PUB-013 | Live content, single source | Every dynamic section reads from its module; no duplicated content store | BR-0.13 | M | ◐ | — |
 | FR-PUB-014 | No personal data on public pages | Only area-level aggregates rendered; verified by review | BR-0.14, BR-1.52 | M | ◐ | — |
 | FR-PUB-015 | Persistent hotline access | Hotline action reachable without scrolling on all viewports | BR-0.15 | M | ◐ | — |
 | FR-PUB-016 | Section-level failure isolation | A failed weather or map fetch degrades that section only; hotlines always render | BR-0.17 | M | ◐ | — |
 | FR-PUB-017 | Emergency alert takeover | Active alert renders above all content, sticky, non-dismissible while active | BR-0.18 | M | ◐ | — |
 | FR-PUB-018 | Empty sections hidden | Sections with no content are not rendered as empty shells | BR-0.20 | S | ◐ | — |
 
-> **Why these are `◐` and not `✅`.** The landing page and the four information
-> routes are built, responsive at 360/768/1440, and verified — but every section
-> reads a typed fixture rather than its module. That makes **FR-PUB-013 (`☐`)
-> definitionally unmet**, and since the other seventeen are *demonstrated* against
-> fixtures rather than against real data, none of them can honestly claim the
-> Definition of Done either. Two more DoD items are also outstanding across the
-> whole set: peer review (item 6), and the loading states that only become
-> meaningful once the fetches are real (item 3).
+> **FR-PUB-013 is closed.** Every section listed above reads through
+> `apps/web/src/lib/api/public.ts`, which calls the real API (Zod-parsed against
+> `public-schemas.ts`) instead of a fixture — `grep -rn "TODO(FR-PUB-013)" src`
+> now returns nothing. `lib/fixtures/` was deleted except `hotlines.ts`, kept
+> deliberately as the one hard-coded fallback FR-PUB-016/NFR-AVL-004 require.
 >
-> The fixtures are shaped to the exact DTOs the API will return — envelopes,
-> field names, and derived fields included — so closing these is a change to
-> `apps/web/src/lib/api/public.ts` alone. `grep -rn "TODO(FR-PUB-013)"` lists
-> every call site.
+> **Why the other seventeen are still `◐` and not `✅`.** They are demonstrated
+> against real, seeded data end-to-end — including a live create-in-the-admin-
+> console → audit-log → ISR-revalidate → public-page loop, and a kill-the-API
+> test proving section-level failure isolation (FR-PUB-016) actually holds — but
+> two Definition of Done items remain open across the whole set: peer review
+> (item 6), and per-section loading states (item 3), which the current
+> Server-Component/ISR rendering model doesn't surface the way a client-fetched
+> spinner would. Neither is a fixture problem anymore; both are follow-up work.
 >
 > The **PR column is deliberately empty**: this work is committed locally and has
 > not been pushed, so there is no PR to reference yet.
@@ -259,8 +260,8 @@ A requirement is `✅` only when all of the following hold:
 
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
-| FR-REG-060 | Registered counts derived | Household and member counts computed from the registry | BR-1.39 | M | ☐ | — |
-| FR-REG-061 | Barangay-wide totals configured | Admin-entered figures, stored separately, never conflated with registered counts | BR-1.40 | M | ☐ | — |
+| FR-REG-060 | Registered counts derived | Household and member counts computed from the registry | BR-1.39 | M | ◐ | — |
+| FR-REG-061 | Barangay-wide totals configured | Admin-entered figures, stored separately, never conflated with registered counts | BR-1.40 | M | ◐ | — |
 
 ---
 
@@ -289,21 +290,21 @@ A requirement is `✅` only when all of the following hold:
 
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
-| FR-WX-001 | Current conditions | Temperature, rainfall, precipitation outlook for the barangay | BR-3.1 | M | ☐ | — |
-| FR-WX-002 | Short-term forecast | Hourly and daily forecast displayed | BR-3.1 | M | ☐ | — |
-| FR-WX-003 | Open-Meteo integration | Scheduled fetch, cached; never called per page view | Tech Stack 7 | M | ☐ | — |
-| FR-WX-004 | River level display | Current reading shown with unit and station name | BR-3.2 | M | ☐ | — |
-| FR-WX-005 | Three-tier alert mapping | Reading mapped to Normal / 1 Prepare / 2 Evacuate / 3 Forced Evacuation | BR-3.2 | M | ☐ | — |
-| FR-WX-006 | Configurable thresholds | Admin edits the metre values for each tier | BR-3.3 | M | ☐ | — |
-| FR-WX-007 | Manual river level entry | Admin can enter the current reading directly; used when automated retrieval is unavailable | Tech Stack 7 | M | ☐ | — |
-| FR-WX-008 | PAGASA retrieval adapter | Isolated behind one interface; failure does not break the module | Tech Stack 7 | S | ☐ | — |
-| FR-WX-009 | Threshold breach prompts BDRRMC | Crossing a tier creates an actionable prompt. **Never auto-publishes a public alert** | BR-3.4 | M | ☐ | — |
-| FR-WX-010 | Provenance and timestamp on every reading | Source and time shown; no bare numbers | BR-3.8 | M | ☐ | — |
-| FR-WX-011 | Stale data marked | Readings older than threshold visibly flagged as stale | BR-3.8 | M | ☐ | — |
-| FR-WX-012 | Last-known-good retention | Previous reading shown with its age when a fetch fails; never silently blank | Tech Stack 7 | M | ☐ | — |
-| FR-WX-013 | Flood event history | Date, level reached, areas affected, households displaced | BR-3.5 | S | ☐ | — |
+| FR-WX-001 | Current conditions | Temperature, rainfall, precipitation outlook for the barangay | BR-3.1 | M | ◐ | — |
+| FR-WX-002 | Short-term forecast | Hourly and daily forecast displayed | BR-3.1 | M | ◐ | — |
+| FR-WX-003 | Open-Meteo integration | Scheduled fetch, cached; never called per page view | Tech Stack 7 | M | ◐ | — |
+| FR-WX-004 | River level display | Current reading shown with unit and station name | BR-3.2 | M | ◐ | — |
+| FR-WX-005 | Three-tier alert mapping | Reading mapped to Normal / 1 Prepare / 2 Evacuate / 3 Forced Evacuation | BR-3.2 | M | ◐ | — |
+| FR-WX-006 | Configurable thresholds | Admin edits the metre values for each tier | BR-3.3 | M | ◐ | — |
+| FR-WX-007 | Manual river level entry | Admin can enter the current reading directly; used when automated retrieval is unavailable | Tech Stack 7 | M | ◐ | — |
+| FR-WX-008 | PAGASA retrieval adapter | Isolated behind one interface; failure does not break the module | Tech Stack 7 | S | ◐ | — |
+| FR-WX-009 | Threshold breach prompts BDRRMC | Crossing a tier creates an actionable prompt. **Never auto-publishes a public alert** | BR-3.4 | M | ◐ | — |
+| FR-WX-010 | Provenance and timestamp on every reading | Source and time shown; no bare numbers | BR-3.8 | M | ◐ | — |
+| FR-WX-011 | Stale data marked | Readings older than threshold visibly flagged as stale | BR-3.8 | M | ◐ | — |
+| FR-WX-012 | Last-known-good retention | Previous reading shown with its age when a fetch fails; never silently blank | Tech Stack 7 | M | ◐ | — |
+| FR-WX-013 | Flood event history | Date, level reached, areas affected, households displaced | BR-3.5 | S | ◐ | — |
 | FR-WX-014 | Forecast-based advance warning | Predicted threshold breach surfaced where data supports it | BR-3.6 | S | ☐ | — |
-| FR-WX-015 | Heat index & typhoon advisories | Surfaced on portal and public site | BR-3.7 | C | ☐ | — |
+| FR-WX-015 | Heat index & typhoon advisories | Surfaced on portal and public site | BR-3.7 | C | ◐ | — |
 | FR-WX-016 | Demo/simulation mode | Seeded scenario can drive readings on a scripted timeline for the pitch | Tech Stack 7 | S | ☐ | — |
 
 ---
@@ -312,17 +313,17 @@ A requirement is `✅` only when all of the following hold:
 
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
-| FR-ALT-001 | Publish announcement | Title, body, type, effective period; admin and SK officer | BR-4.1 | M | ☐ | — |
-| FR-ALT-002 | Announcement types | Emergency notice, class suspension, road closure, water/power interruption, general | BR-4.1 | M | ☐ | — |
-| FR-ALT-003 | Area targeting | Target specific areas or the whole barangay | BR-4.2 | M | ☐ | — |
-| FR-ALT-004 | Emergency alerts visually distinct | Danger palette, separate presentation from routine announcements | BR-4.3 | M | ☐ | — |
-| FR-ALT-005 | Actionable instruction required | Alert cannot be published without an instruction field | BR-4.4 | M | ☐ | — |
-| FR-ALT-006 | Alert type taxonomy | Flood, earthquake, typhoon, heavy rainfall, heat index, evacuation | BR-4.7 | M | ☐ | — |
-| FR-ALT-007 | Issuer attribution | Publishing officer and timestamp recorded and displayed | BR-4.6 | M | ☐ | — |
-| FR-ALT-008 | In-platform & website delivery | Alerts appear in portal and on the public site | BR-4.8 | M | ☐ | — |
-| FR-ALT-009 | Alert history | Retained and publicly viewable | BR-4.5 | S | ☐ | — |
-| FR-ALT-010 | Channel-extensible design | Delivery abstracted so a channel can be added without redesign | BR-4.9 | S | ☐ | — |
-| FR-ALT-011 | Deactivate an alert | Admin ends an active alert; takeover banner clears | BR-4.3 | M | ☐ | — |
+| FR-ALT-001 | Publish announcement | Title, body, type, effective period; admin and SK officer | BR-4.1 | M | ◐ | — |
+| FR-ALT-002 | Announcement types | Emergency notice, class suspension, road closure, water/power interruption, general | BR-4.1 | M | ◐ | — |
+| FR-ALT-003 | Area targeting | Target specific areas or the whole barangay | BR-4.2 | M | ◐ | — |
+| FR-ALT-004 | Emergency alerts visually distinct | Danger palette, separate presentation from routine announcements | BR-4.3 | M | ◐ | — |
+| FR-ALT-005 | Actionable instruction required | Alert cannot be published without an instruction field | BR-4.4 | M | ◐ | — |
+| FR-ALT-006 | Alert type taxonomy | Flood, earthquake, typhoon, heavy rainfall, heat index, evacuation | BR-4.7 | M | ◐ | — |
+| FR-ALT-007 | Issuer attribution | Publishing officer and timestamp recorded and displayed | BR-4.6 | M | ◐ | — |
+| FR-ALT-008 | In-platform & website delivery | Alerts appear in portal and on the public site | BR-4.8 | M | ◐ | — |
+| FR-ALT-009 | Alert history | Retained and publicly viewable | BR-4.5 | S | ◐ | — |
+| FR-ALT-010 | Channel-extensible design | Delivery abstracted so a channel can be added without redesign | BR-4.9 | S | ◐ | — |
+| FR-ALT-011 | Deactivate an alert | Admin ends an active alert; takeover banner clears | BR-4.3 | M | ◐ | — |
 | FR-ALT-012 | Siren simulation, trigger & audio playback | Triggering a siren pin emits expanding radial soundwave ripples/vibrations on the map pin AND synthesizes/plays a siren audio alarm on the machine via Web Audio API | BR-3.4, BR-4.11 | S | ☐ | — |
 
 ---
@@ -355,9 +356,9 @@ A requirement is `✅` only when all of the following hold:
 
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
-| FR-EVC-001 | Centre registry | Name, address, capacity, contact person; admin CRUD | BR-6.1 | M | ☐ | — |
+| FR-EVC-001 | Centre registry | Name, address, capacity, contact person; admin CRUD | BR-6.1 | M | ◐ | — |
 | FR-EVC-002 | Occupancy tracking | Current occupancy recorded and shown against capacity | BR-6.2 | M | ☐ | — |
-| FR-EVC-003 | Map presence and directions | Centres pinned; directions available publicly | BR-6.3 | M | ☐ | — |
+| FR-EVC-003 | Map presence and directions | Centres pinned; directions available publicly | BR-6.3 | M | ◐ | — |
 | FR-EVC-004 | Check in a registered resident | Linked to their member record; feeds FR-SAF-011 | BR-6.6 | S | ☐ | — |
 | FR-EVC-005 | Check in an unregistered evacuee | By name only; counts toward occupancy | BR-6.7 | M | ☐ | — |
 | FR-EVC-006 | Supply levels | Food, water, medicine stock recorded per centre | BR-6.4 | S | ☐ | — |
@@ -370,15 +371,15 @@ A requirement is `✅` only when all of the following hold:
 
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
-| FR-DON-001 | Create a donation drive | Event, items needed, quantity target, description | BR-7.1 | M | ☐ | — |
+| FR-DON-001 | Create a donation drive | Event, items needed, quantity target, description | BR-7.1 | M | ◐ | — |
 | FR-DON-002 | Public donation form, no account | Item, quantity, donor name, optional contact | BR-7.2, BR-7.2a | M | ☐ | — |
 | FR-DON-003 | Reference number issued | Unique reference returned on submission | BR-7.2b | S | ☐ | — |
-| FR-DON-004 | Public progress display | Progress against target shown on the drive | BR-7.3 | M | ☐ | — |
-| FR-DON-005 | Donation status lifecycle | `Submitted` → `Received` / `Partially received` / `Not fulfilled` | BR-7.4 | M | ☐ | — |
-| FR-DON-006 | Status change attribution | Officer and timestamp recorded per change | BR-7.4a | M | ☐ | — |
-| FR-DON-007 | Walk-in donations | Admin records donations never submitted online | BR-7.4b | S | ☐ | — |
+| FR-DON-004 | Public progress display | Progress against target shown on the drive | BR-7.3 | M | ◐ | — |
+| FR-DON-005 | Donation status lifecycle | `Submitted` → `Received` / `Partially received` / `Not fulfilled` | BR-7.4 | M | ◐ | — |
+| FR-DON-006 | Status change attribution | Officer and timestamp recorded per change | BR-7.4a | M | ◐ | — |
+| FR-DON-007 | Walk-in donations | Admin records donations never submitted online | BR-7.4b | S | ◐ | — |
 | FR-DON-008 | Donor status lookup | Donor checks status by reference number, no account | BR-7.4c | C | ☐ | — |
-| FR-DON-009 | Close a drive | Admin closes when target met or event passed | BR-7.5 | S | ☐ | — |
+| FR-DON-009 | Close a drive | Admin closes when target met or event passed | BR-7.5 | S | ◐ | — |
 | FR-DON-010 | No money handled | No payment fields or processing; monetary donations directed to official channels with a notice | BR-7.7 | M | ☐ | — |
 | FR-DON-011 | Publish distribution schedules | When and where residents can claim | BR-7.6 | S | ☐ | — |
 | FR-DON-012 | Record assistance per household | What was provided or scheduled, and whether claimed | BR-7.6a | S | ☐ | — |
@@ -391,9 +392,9 @@ A requirement is `✅` only when all of the following hold:
 
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
-| FR-ACT-001 | Create an activity | Title, type, date, venue, description; admin and SK officer | BR-8.1 | M | ☐ | — |
-| FR-ACT-002 | Activity types | Drill, seminar, first aid training, clean-up, tree planting, NGO programme | BR-8.1 | M | ☐ | — |
-| FR-ACT-003 | Public and portal listing | Upcoming activities on both surfaces | BR-8.2 | M | ☐ | — |
+| FR-ACT-001 | Create an activity | Title, type, date, venue, description; admin and SK officer | BR-8.1 | M | ◐ | — |
+| FR-ACT-002 | Activity types | Drill, seminar, first aid training, clean-up, tree planting, NGO programme | BR-8.1 | M | ◐ | — |
+| FR-ACT-003 | Public and portal listing | Upcoming activities on both surfaces | BR-8.2 | M | ◐ | — |
 | FR-ACT-004 | Attendance intent | Resident indicates they will attend | BR-8.3 | S | ☐ | — |
 | FR-ACT-005 | Event reminders | In-app reminder before the event | BR-8.3 | S | ☐ | — |
 | FR-ACT-006 | Volunteer registration | Resident registers as volunteer with skills inventory | BR-8.4 | S | ☐ | — |
@@ -407,13 +408,13 @@ A requirement is `✅` only when all of the following hold:
 
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
-| FR-PRP-001 | Hazard guides | Before/during/after for flood, earthquake, typhoon, fire, landslide | BR-9.1 | M | ☐ | — |
+| FR-PRP-001 | Hazard guides | Before/during/after for flood, earthquake, typhoon, fire, landslide | BR-9.1 | M | ◐ | — |
 | FR-PRP-002 | Go-bag checklist | Interactive tick-off; state persisted per household | BR-9.2 | M | ☐ | — |
-| FR-PRP-003 | Emergency food guide | Shelf-stable options, safe water, storage, emergency cooking | BR-9.3 | M | ☐ | — |
-| FR-PRP-004 | Localized San Jose Go Bag | Reflects local conditions, not generic national advice | BR-9.4 | S | ☐ | — |
-| FR-PRP-005 | FAQs | Published and maintainable via admin | BR-9.5 | S | ☐ | — |
+| FR-PRP-003 | Emergency food guide | Shelf-stable options, safe water, storage, emergency cooking | BR-9.3 | M | ◐ | — |
+| FR-PRP-004 | Localized San Jose Go Bag | Reflects local conditions, not generic national advice | BR-9.4 | S | ◐ | — |
+| FR-PRP-005 | FAQs | Published and maintainable via admin | BR-9.5 | S | ◐ | — |
 | FR-PRP-006 | Family emergency plan | Household drafts and saves a plan | BR-9.6 | C | ☐ | — |
-| FR-PRP-007 | Source attribution and dating | Every guide cites NDRRMC/DOH/PRC/NNC and shows last-reviewed date | BR-9.8 | M | ☐ | — |
+| FR-PRP-007 | Source attribution and dating | Every guide cites NDRRMC/DOH/PRC/NNC and shows last-reviewed date | BR-9.8 | M | ◐ | — |
 | FR-PRP-008 | Go-bag status feeds vulnerability | Completion contributes to capacity factors | BR-1.47 | S | ☐ | — |
 | FR-PRP-009 | Content in Filipino | Primary content Filipino, English secondary | BR-9.7 | S | ☐ | — |
 
@@ -424,8 +425,8 @@ A requirement is `✅` only when all of the following hold:
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
 | FR-ANL-001 | Operations dashboard | Registered households/members, high-risk and flood-prone counts, affected families, active emergencies, open rescues | BR-10.1 | M | ☐ | — |
-| FR-ANL-002 | Configured totals as denominator | Barangay-wide figures admin-set and stored separately | BR-10.1a | M | ☐ | — |
-| FR-ANL-003 | Coverage always visible | Registered counts always presented against the configured total | BR-10.1b | M | ☐ | — |
+| FR-ANL-002 | Configured totals as denominator | Barangay-wide figures admin-set and stored separately | BR-10.1a | M | ◐ | — |
+| FR-ANL-003 | Coverage always visible | Registered counts always presented against the configured total | BR-10.1b | M | ◐ | — |
 | FR-ANL-004 | Nutrition summary by area | Ranked to show which areas need intervention first | BR-10.2 | M | ☐ | — |
 | FR-ANL-005 | Affected families per event | Tracked and reportable | BR-10.3 | M | ☐ | — |
 | FR-ANL-006 | Donation drive reporting | Needed vs submitted vs received per drive | BR-10.4 | S | ☐ | — |
@@ -458,9 +459,9 @@ A requirement is `✅` only when all of the following hold:
 | ID | Requirement | Target | Status |
 |---|---|---|---|
 | NFR-AVL-001 | Platform availability during normal operation | ≥ 99% monthly | ☐ |
-| NFR-AVL-002 | Upstream data source failure does not break a page | Section-level degradation only | ☐ |
-| NFR-AVL-003 | Last-known-good values served when a fetch fails, with visible age | Always | ☐ |
-| NFR-AVL-004 | Hotlines and emergency contacts render even when all dynamic sections fail | Always | ☐ |
+| NFR-AVL-002 | Upstream data source failure does not break a page | Section-level degradation only | ◐ |
+| NFR-AVL-003 | Last-known-good values served when a fetch fails, with visible age | Always | ◐ |
+| NFR-AVL-004 | Hotlines and emergency contacts render even when all dynamic sections fail | Always | ◐ |
 | NFR-AVL-005 | Database backup frequency | Daily `pg_dump`, stored off-box | ☐ |
 | NFR-AVL-006 | Restore from backup verified | Tested at least once before the pitch | ☐ |
 | NFR-AVL-007 | Local Docker Compose stack can run the full demo if the VPS is unavailable | Verified | ☐ |
@@ -541,8 +542,8 @@ A requirement is `✅` only when all of the following hold:
 > The `◐` rows are partial by design:
 >
 > - **NFR-MNT-008** — the README exists and the stack comes up from a clean clone, but nobody has actually timed a teammate doing it. That is the acceptance criterion, so it stays `◐` until someone does.
-> - **NFR-MNT-009** — the `DataSource` protocol and the three adapter modules exist; the adapters themselves are stubs. The interface is what this NFR asks for, but calling it done before anything implements it would be a lie.
-> - **NFR-OBS-002** — the `@job` decorator logs start, outcome, and duration for every job, so the requirement is structurally met. The six jobs are stubs, so there are no real outcomes to log yet.
+> - **NFR-MNT-009** — `OpenMeteoSource` and `PagasaSource` are real now: both fetch live, and `PagasaSource` carries a bundled TLS intermediate certificate because the FFWS server doesn't send one itself (`tech_stack.md` Section 7). `ManualSource` is deliberately a pass-through — nothing ever calls its `fetch()`, since manual entry is a write triggered by `POST /admin/readings`, not a scheduled pull. Stays `◐` on peer review alone.
+> - **NFR-OBS-002** — three of the six jobs (`fetch_weather`, `fetch_river_level`, `evaluate_thresholds`) are real and verified against live sources; `flag_stale_records`, `send_activity_reminders`, and `backup_database` remain stubs. The `@job` decorator's start/outcome/duration logging already covers all six structurally — the gap is job bodies, not observability.
 
 ### 15.8 Observability — `OBS`
 
@@ -550,7 +551,7 @@ A requirement is `✅` only when all of the following hold:
 |---|---|---|---|
 | NFR-OBS-001 | Structured application logs with request IDs | JSON output | 👁 |
 | NFR-OBS-002 | Scheduled job outcomes logged — success, failure, duration | Every run | ◐ |
-| NFR-OBS-003 | Upstream fetch failures logged with source and reason | Every failure | ☐ |
+| NFR-OBS-003 | Upstream fetch failures logged with source and reason | Every failure | ◐ |
 | NFR-OBS-004 | Health check endpoint | `/health` returning app and DB status | 👁 |
 | NFR-OBS-005 | Audit log queryable by admin | Filter by actor, action, date | ☐ |
 
@@ -647,3 +648,4 @@ Requirements that cannot start until an open item is resolved.
 | Date | Version | Change | By |
 |---|---|---|---|
 | Aug 2026 | 0.1 | Initial derivation from BRD v0.3, tech_stack v0.1, design v0.2 | — |
+| Aug 2026 | 0.1 | FR-PUB-013 closed — the public site reads live data end to end. 55 further FR/NFR rows moved `☐`→`◐` across SYS, ALT, ACT, PRP, EVC, DON, WX, ANL, REG, and MNT/OBS/AVL, reflecting real backend modules, a working admin console, live PAGASA/Open-Meteo ingestion, and a verified failure-isolation test — not yet `✅` anywhere, since Definition of Done item 6 (peer review) hasn't happened. Registry UI, safety/rescue, evacuation check-ins, and the hazard map (`MAP`) remain untouched. See `AGENTS.md` Section 2 — no PR yet, this is uncommitted. | — |
