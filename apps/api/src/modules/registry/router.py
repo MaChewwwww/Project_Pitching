@@ -7,6 +7,8 @@ Authorization is applied here as a router dependency, from `core/deps.py`.
 
 from __future__ import annotations
 
+import uuid
+
 from fastapi import APIRouter, Depends
 
 from src.core.deps import CurrentUser, require_role
@@ -14,6 +16,7 @@ from src.core.pagination import Page
 from src.db.session import DbSessionDep
 from src.modules.registry import service
 from src.modules.registry.schemas import (
+    DuplicateCandidate,
     HouseholdCreateBhw,
     HouseholdCreateResponse,
     HouseholdCreateSelf,
@@ -76,6 +79,17 @@ async def admin_create_household(
     body: HouseholdCreateBhw, session: DbSessionDep, user: CurrentUser
 ) -> HouseholdCreateResponse:
     return await service.create_household_bhw(session, user=user, body=body)
+
+
+@admin_router.get(
+    "/{household_id}/duplicates",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Households that might be the same as this one (FR-REG-010)",
+)
+async def admin_household_duplicates(
+    household_id: uuid.UUID, session: DbSessionDep
+) -> list[DuplicateCandidate]:
+    return await service.get_duplicate_candidates_for(session, household_id)
 
 
 @admin_router.post(

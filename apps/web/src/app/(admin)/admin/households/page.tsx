@@ -26,7 +26,7 @@ import { Label } from "@/components/ui/label";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useRequireRole } from "@/lib/auth/use-require-role";
-import type { HouseholdOut } from "@/lib/api/registry-types";
+import type { DuplicateCandidate, HouseholdOut } from "@/lib/api/registry-types";
 
 /**
  * FR-REG-010 — a minimal registry list, built around the two things this pass
@@ -64,9 +64,17 @@ export default function AdminHouseholdsPage() {
     },
   });
 
-  const flaggedCandidates = (data?.items ?? []).filter(
-    (h) => h.has_possible_duplicate && h.id !== mergeTarget?.id,
-  );
+  // Fetched fresh per household, not filtered from the list snapshot — the
+  // list's `has_possible_duplicate` only says "this row is flagged", not
+  // which other household(s) it's actually correlated with.
+  const { data: candidates, isLoading: candidatesLoading } = useQuery({
+    queryKey: ["admin", "households", mergeTarget?.id, "duplicates"],
+    queryFn: () =>
+      api
+        .get<DuplicateCandidate[]>(`/admin/households/${mergeTarget!.id}/duplicates`)
+        .then((r) => r.data),
+    enabled: !!mergeTarget,
+  });
 
   const columns: ResourceColumn<HouseholdOut>[] = [
     { key: "reference_no", header: "Reference" },
@@ -148,26 +156,36 @@ export default function AdminHouseholdsPage() {
                   the duplicate record is retired — this cannot be undone.
                 </p>
                 <div className="flex flex-col gap-2">
-                  {flaggedCandidates.length === 0 ? (
+                  {candidatesLoading ? (
+                    <p className="text-body-sm text-neutral-500">Checking for matches…</p>
+                  ) : !candidates || candidates.length === 0 ? (
                     <p className="text-body-sm text-neutral-500">
-                      No other flagged households to merge with.
+                      No specific match found for this household anymore — it may have
+                      already been merged or edited. Try refreshing the list.
                     </p>
                   ) : (
-                    flaggedCandidates.map((candidate) => (
+                    candidates.map((candidate) => (
                       <Button
-                        key={candidate.id}
+                        key={candidate.household_id}
                         type="button"
                         variant="outline"
-                        className="justify-start"
+                        className="h-auto flex-col items-start py-2"
                         disabled={mergeMutation.isPending}
                         onClick={() =>
                           mergeMutation.mutate({
                             kept_household_id: row.id,
-                            merged_household_id: candidate.id,
+                            merged_household_id: candidate.household_id,
                           })
                         }
                       >
-                        {candidate.head_name} · {candidate.reference_no}
+                        <span>
+                          {candidate.head_name} · {candidate.reference_no}
+                        </span>
+                        <span className="text-caption text-neutral-500">
+                          {candidate.match_reason === "name_similarity"
+                            ? "Similar head name"
+                            : "Shared member name + birth date"}
+                        </span>
                       </Button>
                     ))
                   )}

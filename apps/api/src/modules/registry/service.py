@@ -292,6 +292,20 @@ async def find_duplicate_candidates(
     return list(candidates.values())
 
 
+async def get_duplicate_candidates_for(
+    session: AsyncSession, household_id: uuid.UUID
+) -> list[DuplicateCandidate]:
+    """The admin merge dialog's actual candidate list — the specific
+    households `find_duplicate_candidates` correlates to this one, not every
+    flagged household platform-wide. Computed fresh on open rather than
+    reusing the list view's `has_possible_duplicate` snapshot, so a household
+    merged away moments earlier can't still appear as a candidate."""
+    household = await session.get(Household, household_id)
+    if household is None:
+        raise NotFoundError("Household not found.")
+    return await find_duplicate_candidates(session, household)
+
+
 def _has_duplicate_subquery(household_id_col, area_id_col, head_name_col):
     """A correlated EXISTS for the list view's badge column. Name-similarity
     only (not the member-level check `find_duplicate_candidates` also does) —

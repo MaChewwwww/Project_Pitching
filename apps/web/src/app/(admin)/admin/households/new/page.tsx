@@ -71,6 +71,9 @@ const bhwFormSchema = z.object({
   head_is_lactating: z.boolean(),
   head_has_chronic_condition: z.boolean(),
   head_is_bedridden: z.boolean(),
+  // Part of the form (not separate useState) specifically so the draft hook's
+  // `form.watch()` covers it — a dropped pin used to be lost on draft resume.
+  location: z.object({ lat: z.number(), lng: z.number() }).nullable(),
   members: z.array(memberSchema),
 });
 
@@ -89,6 +92,7 @@ const emptyValues: BhwFormValues = {
   head_is_lactating: false,
   head_has_chronic_condition: false,
   head_is_bedridden: false,
+  location: null,
   members: [],
 };
 
@@ -102,7 +106,6 @@ export default function NewHouseholdPage() {
   useRequireRole("admin", "bhw");
   const { user } = useAuth();
   const router = useRouter();
-  const [location, setLocation] = React.useState<{ lat: number; lng: number } | null>(null);
   const [serverError, setServerError] = React.useState<string | null>(null);
 
   const { data: allAreas } = useQuery({
@@ -153,8 +156,8 @@ export default function NewHouseholdPage() {
       is_unreachable_by_phone: values.is_unreachable_by_phone,
       area_id: values.area_id,
       street_address: values.street_address || null,
-      latitude: location?.lat ?? null,
-      longitude: location?.lng ?? null,
+      latitude: values.location?.lat ?? null,
+      longitude: values.location?.lng ?? null,
       head_member: {
         full_name: values.head_name,
         birth_date: values.head_birth_date || null,
@@ -290,7 +293,13 @@ export default function NewHouseholdPage() {
 
             <div className="flex flex-col gap-1.5">
               <Label>Location (optional)</Label>
-              <LocationPicker value={location} onChange={setLocation} />
+              <Controller
+                control={control}
+                name="location"
+                render={({ field }) => (
+                  <LocationPicker value={field.value} onChange={field.onChange} />
+                )}
+              />
             </div>
 
             <h2 className="text-h4 mt-2 text-neutral-900">Head&apos;s profile</h2>
@@ -356,14 +365,7 @@ export default function NewHouseholdPage() {
             <HouseholdMemberRepeater control={control} />
 
             <div className="mt-2 flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  reset(emptyValues);
-                  setLocation(null);
-                }}
-              >
+              <Button type="button" variant="outline" onClick={() => reset(emptyValues)}>
                 Clear
               </Button>
               <Button type="submit" disabled={isSubmitting}>
