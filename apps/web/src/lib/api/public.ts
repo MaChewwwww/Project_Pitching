@@ -25,6 +25,7 @@ import type {
   Page,
   PublicActivity,
   PublicAnnouncement,
+  PublicArea,
   PublicBarangayStats,
   PublicDonationDrive,
   PublicEvacCenter,
@@ -41,6 +42,7 @@ import {
   publicActivityPageSchema,
   publicAnnouncementPageSchema,
   publicAnnouncementSchema,
+  publicAreaSchema,
   publicBarangayStatsSchema,
   publicDonationDrivePageSchema,
   publicEvacCenterPageSchema,
@@ -267,6 +269,18 @@ export async function getFaqs(): Promise<PublicFaq[]> {
     return await serverGet("/public/faqs", z.array(publicFaqSchema));
   } catch (error) {
     logDegraded("/public/faqs", error);
+    return [];
+  }
+}
+
+/** `GET /public/areas`. Server-component seam only — see `LocationPicker`'s
+ * consumers for why client components (onboarding, the BHW form) call the
+ * endpoint directly with `api.get` instead. */
+export async function getAreas(): Promise<PublicArea[]> {
+  try {
+    return await serverGet("/public/areas", z.array(publicAreaSchema));
+  } catch (error) {
+    logDegraded("/public/areas", error);
     return [];
   }
 }

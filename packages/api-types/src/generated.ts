@@ -67,6 +67,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a resident account */
+        post: operations["register_route_api_v1_auth_register_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/refresh": {
         parameters: {
             query?: never;
@@ -367,6 +384,24 @@ export interface paths {
         get: operations["public_area_stats_api_v1_public_area_stats_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/household": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The caller's own household, if onboarded */
+        get: operations["get_my_household_api_v1_me_household_get"];
+        put?: never;
+        /** Complete onboarding — creates the household (FR-REG-001) */
+        post: operations["create_my_household_api_v1_me_household_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -777,6 +812,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/readings/simulate-typhoon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Demo tool: write a rising river-level sequence and alert prompts on demand */
+        post: operations["admin_simulate_typhoon_api_v1_admin_readings_simulate_typhoon_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/flood-events": {
         parameters: {
             query?: never;
@@ -840,6 +892,41 @@ export interface paths {
         /** Edit a setting */
         put: operations["admin_set_config_api_v1_admin_config__key__put"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/households": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List households, area-scoped for a BHW */
+        get: operations["admin_list_households_api_v1_admin_households_get"];
+        put?: never;
+        /** BHW-assisted registration — one visit, no account attached (FR-REG-002) */
+        post: operations["admin_create_household_api_v1_admin_households_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/households/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Merge a flagged duplicate into another household (FR-REG-010) */
+        post: operations["admin_merge_households_api_v1_admin_households_merge_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1080,6 +1167,28 @@ export interface components {
              */
             sort_order: number;
         };
+        /** DuplicateCandidate */
+        DuplicateCandidate: {
+            /**
+             * Household Id
+             * Format: uuid
+             */
+            household_id: string;
+            /** Reference No */
+            reference_no: string;
+            /** Head Name */
+            head_name: string;
+            /**
+             * Area Id
+             * Format: uuid
+             */
+            area_id: string;
+            /**
+             * Match Reason
+             * @enum {string}
+             */
+            match_reason: "name_similarity" | "member_match";
+        };
         /** EvacCenterIn */
         EvacCenterIn: {
             /**
@@ -1251,6 +1360,47 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /**
+         * HeadMemberIn
+         * @description The self-registering head's own profile at onboarding — no `full_name` or
+         *     `relationship_to_head`: those come from the account (name) or are moot
+         *     (head has no relationship to themself). `is_child`/`is_senior` are derived
+         *     server-side from `birth_date`, not asked — an adult signing up for their own
+         *     account always knows it, unlike a BHW profiling someone else.
+         */
+        HeadMemberIn: {
+            /** Birth Date */
+            birth_date?: string | null;
+            /** Sex */
+            sex?: ("male" | "female") | null;
+            /**
+             * Is Pwd
+             * @default false
+             */
+            is_pwd: boolean;
+            /**
+             * Is Pregnant
+             * @default false
+             */
+            is_pregnant: boolean;
+            /**
+             * Is Lactating
+             * @default false
+             */
+            is_lactating: boolean;
+            /**
+             * Has Chronic Condition
+             * @default false
+             */
+            has_chronic_condition: boolean;
+            /** Chronic Condition Note */
+            chronic_condition_note?: string | null;
+            /**
+             * Is Bedridden
+             * @default false
+             */
+            is_bedridden: boolean;
+        };
         /** HotlineIn */
         HotlineIn: {
             /** Label */
@@ -1287,6 +1437,141 @@ export interface components {
             sort_order: number;
             /** Is Active */
             is_active: boolean;
+        };
+        /**
+         * HouseholdCreateBhw
+         * @description FR-REG-002/004/024, one-shot admin-console form.
+         */
+        HouseholdCreateBhw: {
+            /** Head Name */
+            head_name: string;
+            /** Contact Number */
+            contact_number?: string | null;
+            /**
+             * Is Unreachable By Phone
+             * @default false
+             */
+            is_unreachable_by_phone: boolean;
+            /**
+             * Area Id
+             * Format: uuid
+             */
+            area_id: string;
+            /** Street Address */
+            street_address?: string | null;
+            /** Latitude */
+            latitude?: number | null;
+            /** Longitude */
+            longitude?: number | null;
+            head_member: components["schemas"]["MemberIn"];
+            /**
+             * Members
+             * @default []
+             */
+            members: components["schemas"]["MemberIn"][];
+        };
+        /** HouseholdCreateResponse */
+        HouseholdCreateResponse: {
+            household: components["schemas"]["HouseholdOut"];
+            /** Members */
+            members: components["schemas"]["MemberOut"][];
+            /**
+             * Duplicate Candidates
+             * @default []
+             */
+            duplicate_candidates: components["schemas"]["DuplicateCandidate"][];
+        };
+        /**
+         * HouseholdCreateSelf
+         * @description FR-REG-001, onboarding step. `head_name` is not asked here — it comes
+         *     from the account created at `/auth/register`. `contact_number` **is**
+         *     asked here (FR-REG-005): required unless `is_unreachable_by_phone` is set.
+         */
+        HouseholdCreateSelf: {
+            /** Street Address */
+            street_address?: string | null;
+            /**
+             * Area Id
+             * Format: uuid
+             */
+            area_id: string;
+            /** Latitude */
+            latitude?: number | null;
+            /** Longitude */
+            longitude?: number | null;
+            /**
+             * Is Unreachable By Phone
+             * @default false
+             */
+            is_unreachable_by_phone: boolean;
+            /** Contact Number */
+            contact_number?: string | null;
+            head_member: components["schemas"]["HeadMemberIn"];
+        };
+        /** HouseholdMergeRequest */
+        HouseholdMergeRequest: {
+            /**
+             * Kept Household Id
+             * Format: uuid
+             */
+            kept_household_id: string;
+            /**
+             * Merged Household Id
+             * Format: uuid
+             */
+            merged_household_id: string;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** HouseholdOut */
+        HouseholdOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reference No */
+            reference_no: string;
+            /** Head Name */
+            head_name: string;
+            /** Head User Id */
+            head_user_id: string | null;
+            /** Contact Number */
+            contact_number: string | null;
+            /** Is Unreachable By Phone */
+            is_unreachable_by_phone: boolean;
+            /**
+             * Area Id
+             * Format: uuid
+             */
+            area_id: string;
+            /** Area Name */
+            area_name?: string | null;
+            /** Street Address */
+            street_address: string | null;
+            location: components["schemas"]["GeoJsonPoint"] | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "self" | "bhw";
+            /** Verified At */
+            verified_at: string | null;
+            /**
+             * Has Possible Duplicate
+             * @default false
+             */
+            has_possible_duplicate: boolean;
+            /**
+             * Member Count
+             * @default 0
+             */
+            member_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -1332,6 +1617,105 @@ export interface components {
              * @default []
              */
             assigned_area_ids: string[];
+        };
+        /**
+         * MemberIn
+         * @description One household member, used both for the BHW repeater and (as a single
+         *     instance) the self-registration head's own profile.
+         */
+        MemberIn: {
+            /** Full Name */
+            full_name: string;
+            /** Birth Date */
+            birth_date?: string | null;
+            /** Sex */
+            sex?: ("male" | "female") | null;
+            /** Relationship To Head */
+            relationship_to_head?: string | null;
+            /**
+             * Is Child
+             * @default false
+             */
+            is_child: boolean;
+            /**
+             * Is Senior
+             * @default false
+             */
+            is_senior: boolean;
+            /**
+             * Is Pwd
+             * @default false
+             */
+            is_pwd: boolean;
+            /**
+             * Is Pregnant
+             * @default false
+             */
+            is_pregnant: boolean;
+            /**
+             * Is Lactating
+             * @default false
+             */
+            is_lactating: boolean;
+            /**
+             * Has Chronic Condition
+             * @default false
+             */
+            has_chronic_condition: boolean;
+            /** Chronic Condition Note */
+            chronic_condition_note?: string | null;
+            /**
+             * Is Bedridden
+             * @default false
+             */
+            is_bedridden: boolean;
+        };
+        /** MemberOut */
+        MemberOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Full Name */
+            full_name: string;
+            /** Birth Date */
+            birth_date: string | null;
+            /** Sex */
+            sex: string | null;
+            /** Relationship To Head */
+            relationship_to_head: string | null;
+            /** Is Head */
+            is_head: boolean;
+            /** Is Child */
+            is_child: boolean;
+            /** Is Senior */
+            is_senior: boolean;
+            /** Is Pwd */
+            is_pwd: boolean;
+            /** Is Pregnant */
+            is_pregnant: boolean;
+            /** Is Lactating */
+            is_lactating: boolean;
+            /** Has Chronic Condition */
+            has_chronic_condition: boolean;
+            /** Chronic Condition Note */
+            chronic_condition_note: string | null;
+            /** Is Bedridden */
+            is_bedridden: boolean;
+        };
+        /** Page[HouseholdOut] */
+        Page_HouseholdOut_: {
+            /** Items */
+            items: components["schemas"]["HouseholdOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
         };
         /** Page[PublicActivity] */
         Page_PublicActivity_: {
@@ -1877,6 +2261,25 @@ export interface components {
             /** Forecast */
             forecast: components["schemas"]["PublicForecastPoint"][];
         };
+        /**
+         * RegisterRequest
+         * @description FR-SYS-001 — a resident creating their own account. Deliberately minimal:
+         *     the household itself, including its contact number, is captured later at
+         *     onboarding (`POST /me/household`), not here — FR-REG-005 requires a
+         *     contact number unless the household is flagged unreachable by phone, and
+         *     that flag doesn't exist yet at account-creation time.
+         */
+        RegisterRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Password */
+            password: string;
+            /** Full Name */
+            full_name: string;
+        };
         /** RiverThresholds */
         RiverThresholds: {
             /** Level 1 M */
@@ -1885,6 +2288,23 @@ export interface components {
             level_2_m: number | null;
             /** Level 3 M */
             level_3_m: number | null;
+        };
+        /**
+         * SimulateTyphoonResult
+         * @description A demo tool, not a requirement of its own — see tech_stack.md Section 7's
+         *     follow-up note on FR-WX-016. Writes a real, rising sequence of manual
+         *     readings and returns what it created so the console can summarise it.
+         */
+        SimulateTyphoonResult: {
+            /** Readings */
+            readings: components["schemas"]["PublicReading"][];
+            /** Alert Prompts Created */
+            alert_prompts_created: number;
+            /**
+             * Highest Alert Level
+             * @enum {integer}
+             */
+            highest_alert_level: 0 | 1 | 2 | 3;
         };
         /** ValidationError */
         ValidationError: {
@@ -1962,6 +2382,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessTokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_route_api_v1_auth_register_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterRequest"];
             };
         };
         responses: {
@@ -2462,6 +2915,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicBarangayStats"];
+                };
+            };
+        };
+    };
+    get_my_household_api_v1_me_household_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdOut"] | null;
+                };
+            };
+        };
+    };
+    create_my_household_api_v1_me_household_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdCreateSelf"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdCreateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -3559,6 +4065,26 @@ export interface operations {
             };
         };
     };
+    admin_simulate_typhoon_api_v1_admin_readings_simulate_typhoon_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulateTyphoonResult"];
+                };
+            };
+        };
+    };
     admin_list_flood_events_api_v1_admin_flood_events_get: {
         parameters: {
             query?: never;
@@ -3693,6 +4219,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConfigEntryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_households_api_v1_admin_households_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                flagged?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_HouseholdOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_create_household_api_v1_admin_households_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdCreateBhw"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdCreateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_merge_households_api_v1_admin_households_merge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdMergeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdOut"];
                 };
             };
             /** @description Validation Error */

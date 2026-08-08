@@ -19,6 +19,7 @@ import {
   Phone,
   Settings,
   ShieldAlert,
+  Users,
 } from "lucide-react";
 
 import { LogoLockup } from "@/components/common/logo";
@@ -43,6 +44,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: Home },
+  { href: "/admin/households", label: "Households", icon: Users },
   { href: "/admin/announcements", label: "Announcements & Alerts", icon: Megaphone },
   { href: "/admin/alert-prompts", label: "Alert Prompts", icon: ShieldAlert },
   { href: "/admin/readings", label: "River & Weather Readings", icon: Droplets },

@@ -368,8 +368,11 @@ GET  /public/areas                      FR-SYS-013 — names/codes for public ar
 **Resident**
 
 ```
-GET   /me/household
-PATCH /me/household
+GET   /me/household                 implemented — null drives the onboarding redirect
+POST  /me/household                 implemented — FR-REG-001's onboarding step, creates the
+                                     household + head member row (registration itself is
+                                     POST /auth/register, which only creates the account)
+PATCH /me/household                 planned — editing (FR-REG-009) is out of scope so far
 POST  /me/household/members
 PATCH /me/household/members/{id}
 GET   /me/feedback
@@ -379,15 +382,20 @@ GET   /me/go-bag
 PUT   /me/go-bag
 ```
 
+> `/me` had zero routes mounted until the two marked "implemented" above —
+> this tier's first real occupants. Everything else in this list remains the
+> original planned surface, unbuilt.
+
 **Admin**
 
 ```
-GET   /admin/households              paginated, filterable, area-scoped for BHW
-POST  /admin/households              assisted registration
-GET   /admin/households/{id}
+GET   /admin/households              implemented — paginated, area-scoped for BHW, ?flagged=
+POST  /admin/households              implemented — assisted registration (FR-REG-002)
+GET   /admin/households/{id}         not built — the list view's row data has been enough so far
 POST  /admin/households/{id}/vulnerability-override
-GET   /admin/households/duplicates
-POST  /admin/households/merge
+GET   /admin/households/duplicates   folded into GET /admin/households?flagged=true instead
+                                     of a separate endpoint — same data, one fewer route
+POST  /admin/households/merge        implemented (FR-REG-010)
 POST  /admin/members/{id}/feedback
 GET   /admin/rescue-requests         queue with triage ordering
 PATCH /admin/rescue-requests/{id}

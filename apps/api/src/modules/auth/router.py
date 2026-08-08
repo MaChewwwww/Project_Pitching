@@ -14,7 +14,7 @@ from src.core.deps import CurrentUser
 from src.core.rate_limit import limiter
 from src.db.session import DbSessionDep
 from src.modules.auth import service
-from src.modules.auth.schemas import AccessTokenResponse, LoginRequest, MeResponse
+from src.modules.auth.schemas import AccessTokenResponse, LoginRequest, MeResponse, RegisterRequest
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -47,6 +47,28 @@ async def login_route(
         session,
         email=body.email,
         password=body.password,
+        user_agent=request.headers.get("user-agent"),
+        ip=request.client.host if request.client else None,
+    )
+    _set_refresh_cookie(response, refresh_plaintext, settings.refresh_token_days * 24 * 3600)
+    return AccessTokenResponse(
+        access_token=access_token, expires_in_minutes=settings.access_token_minutes
+    )
+
+
+@router.post("/register", summary="Create a resident account")
+@limiter.limit("5/minute")  # tighter than /login — signup spam, not just typos
+async def register_route(
+    request: Request,
+    response: Response,
+    body: RegisterRequest,
+    session: DbSessionDep,
+) -> AccessTokenResponse:
+    access_token, refresh_plaintext, refresh_expires_at, _user = await service.register(
+        session,
+        email=body.email,
+        password=body.password,
+        full_name=body.full_name,
         user_agent=request.headers.get("user-agent"),
         ip=request.client.host if request.client else None,
     )

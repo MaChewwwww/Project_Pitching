@@ -35,11 +35,18 @@ export interface SessionUser {
   assigned_area_ids: string[];
 }
 
+export interface RegisterInput {
+  email: string;
+  password: string;
+  full_name: string;
+}
+
 interface AuthContextValue {
   user: SessionUser | null;
   /** True while the initial `GET /auth/me` (session restore) is in flight. */
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (values: RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -99,6 +106,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const register = React.useCallback(async (values: RegisterInput) => {
+    try {
+      const res = await api.post<{ access_token: string }>("/auth/register", values);
+      setAccessToken(res.data.access_token);
+      const me = await api.get<SessionUser>("/auth/me");
+      setUser(me.data);
+    } catch (error) {
+      throw toDisplayError(error);
+    }
+  }, []);
+
   const logout = React.useCallback(async () => {
     try {
       await api.post("/auth/logout");
@@ -110,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

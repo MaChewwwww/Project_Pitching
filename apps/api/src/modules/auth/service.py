@@ -23,6 +23,7 @@ from src.core.security import (
     verify_password,
 )
 from src.modules.auth.models import RefreshToken
+from src.modules.users import service as users_service
 from src.modules.users.models import User, UserArea
 
 
@@ -97,6 +98,60 @@ async def login(
     await session.commit()
 
     return access_token, refresh_plaintext, refresh_expires_at, user, area_ids
+
+
+async def register(
+    session: AsyncSession,
+    *,
+    email: str,
+    password: str,
+    full_name: str,
+    user_agent: str | None,
+    ip: str | None,
+) -> tuple[str, str, datetime, User]:
+    """FR-SYS-001 — a resident creating their own account.
+
+    Deliberately mirrors `login()`'s shape: create the row, issue tokens, audit,
+    one commit. Role is always `"head"` and status is always `"active"` — no
+    email-verification flow exists, and `login()` hard-rejects anything but
+    `"active"`, so `"pending"` (the model's default) would leave a freshly
+    registered resident unable to sign in. No `contact_number` here — that's
+    captured (and required unless flagged unreachable) at onboarding instead.
+    """
+    user = await users_service.create_user(
+        session,
+        email=email,
+        password=password,
+        full_name=full_name,
+        contact_number=None,
+        role="head",
+        status="active",
+    )
+
+    access_token = create_access_token(subject=user.id, role="head")
+    refresh_plaintext, refresh_hash, refresh_expires_at = create_refresh_token()
+
+    session.add(
+        RefreshToken(
+            user_id=user.id,
+            token_hash=refresh_hash,
+            expires_at=refresh_expires_at,
+            user_agent=user_agent,
+            ip=ip,
+        )
+    )
+
+    await write_audit(
+        session,
+        actor_user_id=user.id,
+        action="auth.register",
+        entity_type="user",
+        entity_id=user.id,
+        ip=ip,
+    )
+    await session.commit()
+
+    return access_token, refresh_plaintext, refresh_expires_at, user
 
 
 async def refresh(session: AsyncSession, *, refresh_plaintext: str) -> tuple[str, User]:

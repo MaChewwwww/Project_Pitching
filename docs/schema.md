@@ -443,6 +443,16 @@ ALTER TABLE feedback ADD CONSTRAINT chk_drafted_requires_review
 
 `id`, `kept_household_id`, `merged_household_id`, `merged_by_user_id`, `merged_at`, `notes`.
 
+> **Implemented (Aug 2026).** Migration `0007_registry_dup_merge` — this table
+> didn't exist until then; `household.merged_into_id` was the only column
+> that did, with nowhere to record the merge event itself. `registry/service.py`'s
+> `merge_households` demotes the losing household's head member
+> (`is_head=false`) before re-parenting its members, since `idx_member_one_head`
+> allows only one `is_head=true` row per household. The same migration adds the
+> `pg_trgm`-backed GIN trigram index on `household.head_name` this table's
+> duplicate-detection use case depends on, plus `household_reference_no_seq`
+> for FR-REG-006.
+
 ---
 
 ## 6. Weather, River & Alerts

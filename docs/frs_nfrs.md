@@ -124,13 +124,13 @@ A requirement is `✅` only when all of the following hold:
 
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
-| FR-SYS-001 | Account registration for a head of household | Email + password; unique email enforced; password policy applied; account created in `pending` state | BR-1.1 | M | ☐ | — |
+| FR-SYS-001 | Account registration for a head of household | Email + password; unique email enforced (409 on conflict); password ≥8 chars; account created **`active` immediately** — no email-verification flow exists, so `pending` (this row's original acceptance text) would leave the account unable to log in | BR-1.1 | M | ◐ | — |
 | FR-SYS-002 | Login and logout | Valid credentials return an access token + refresh cookie; logout invalidates the refresh token | Tech Stack 5 | M | ◐ | — |
 | FR-SYS-003 | Session refresh | Access token expires ≤15 min; refresh via httpOnly cookie without re-login | Tech Stack 5 | M | ◐ | — |
 | FR-SYS-004 | Password reset | User can request a reset; admin can also initiate one for a resident | Tech Stack 5 | S | ☐ | — |
 | FR-SYS-005 | Six roles enforced | `public`, `head`, `bhw`, `admin`, `sk`, `superadmin`; role carried as a token claim | BRD 5.1 | M | ◐ | — |
 | FR-SYS-006 | Server-side authorization on every endpoint | Every protected route checks role; UI hiding alone fails review | BRD 5.1 | M | ◐ | — |
-| FR-SYS-007 | BHW area scoping | A BHW can read/write only households in their assigned areas; cross-area access returns 403 | BR-1.44 | M | ☐ | — |
+| FR-SYS-007 | BHW area scoping | A BHW can read/write only households in their assigned areas; cross-area access returns 403 | BR-1.44 | M | ◐ | — |
 | FR-SYS-008 | Audit log of state-changing actions | Actor, action, target, timestamp recorded and queryable by admin | BR-1.45, BR-4.6 | M | ◐ | — |
 | FR-SYS-009 | Admin can manage users | List, search, filter, view, activate/deactivate, change role | BRD 5.1 | M | ☐ | — |
 | FR-SYS-010 | Configuration store | Admin-editable settings: barangay totals, alert thresholds, hotlines, facility list | BR-3.3, BR-10.1a | M | ◐ | — |
@@ -194,30 +194,73 @@ A requirement is `✅` only when all of the following hold:
 
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
-| FR-REG-001 | Self-registration as head of household | Creates household record + head's own member profile in one flow | BR-1.1 | M | ☐ | — |
-| FR-REG-002 | BHW-assisted registration | BHW creates a household and all members without any account being attached | BR-1.2, BR-1.20 | M | ☐ | — |
-| FR-REG-003 | Address capture via PSGC + area | PSGC cascading select plus barangay area assignment; area required | BR-1.3 | M | ☐ | — |
-| FR-REG-004 | Household core fields | One address, one area, one named head, contact number optional | BR-1.4 | M | ☐ | — |
-| FR-REG-005 | No-phone households accepted | Registration completes without a contact number; record flagged `unreachable_by_phone` | BR-1.4a | M | ☐ | — |
-| FR-REG-006 | Household reference number | Generated at creation, unique, displayed on the record | BR-1.20a | M | ☐ | — |
-| FR-REG-007 | Creator attribution | Barangay-created records store creating BHW and timestamp | BR-1.20b | M | ☐ | — |
-| FR-REG-008 | Household geotag | Draggable map pin sets coordinates; GPS button only when `isSecureContext` | BR-1.7 | S | ☐ | — |
+| FR-REG-001 | Self-registration as head of household | Creates household record + head's own member profile in one flow | BR-1.1 | M | ◐ | — |
+| FR-REG-002 | BHW-assisted registration | BHW creates a household and all members without any account being attached | BR-1.2, BR-1.20 | M | ◐ | — |
+| FR-REG-003 | Address capture via PSGC + area | PSGC cascading select plus barangay area assignment; area required | BR-1.3 | M | ◐ | — |
+| FR-REG-004 | Household core fields | One address, one area, one named head, contact number optional | BR-1.4 | M | ◐ | — |
+| FR-REG-005 | No-phone households accepted | Registration completes without a contact number; record flagged `unreachable_by_phone` | BR-1.4a | M | ◐ | — |
+| FR-REG-006 | Household reference number | Generated at creation, unique, displayed on the record | BR-1.20a | M | ◐ | — |
+| FR-REG-007 | Creator attribution | Barangay-created records store creating BHW and timestamp | BR-1.20b | M | ◐ | — |
+| FR-REG-008 | Household geotag | Draggable map pin sets coordinates; GPS button only when `isSecureContext` | BR-1.7 | S | ◐ | — |
 | FR-REG-009 | Head can edit household and members | All edits versioned and auditable | BR-1.8 | S | ☐ | — |
-| FR-REG-010 | Duplicate detection and merge | Likely duplicates flagged on name + birthdate + area; admin can merge, preserving history | BR-1.9 | M | ☐ | — |
+| FR-REG-010 | Duplicate detection and merge | Likely duplicates flagged on name + birthdate + area; admin can merge, preserving history | BR-1.9 | M | ◐ | — |
 | FR-REG-011 | Verification flag | Admin marks a household verified; unverified records still count and still receive alerts | BR-1.10 | S | ☐ | — |
-| FR-REG-012 | Registration draft persistence | Form state saved locally as typed; resume prompt on return; never cleared on failed submit | Design 9.6 | S | ☐ | — |
+| FR-REG-012 | Registration draft persistence | Form state saved locally as typed; resume prompt on return; never cleared on failed submit | Design 9.6 | S | ◐ | — |
 
 ### 5.2 Household members
 
 | ID | Requirement | Acceptance criteria | Src | Pri | Status | PR |
 |---|---|---|---|---|---|---|
-| FR-REG-020 | Add member profiles | Head or BHW adds unlimited members to a household | BR-1.31 | M | ☐ | — |
-| FR-REG-021 | Vulnerable-group flags | Per member: child, senior, PWD, pregnant/lactating, chronic condition on regular medication, **bedridden/mobility-limited** | BR-1.32 | M | ☐ | — |
-| FR-REG-022 | Members hold no account | Member records have no credentials; access is via the head's account only | BR-1.33 | M | ☐ | — |
-| FR-REG-023 | Relationship to head recorded | Selectable relationship per member | BR-1.34 | S | ☐ | — |
-| FR-REG-024 | All members in one visit | BHW flow captures every member in a single session without re-entry | BR-1.36 | M | ☐ | — |
-| FR-REG-025 | Member repeater UX | One member per collapsible card, one open at a time, "Member N of M" progress, sticky save | Design 9.5 | M | ☐ | — |
+| FR-REG-020 | Add member profiles | Head or BHW adds unlimited members to a household | BR-1.31 | M | ◐ | — |
+| FR-REG-021 | Vulnerable-group flags | Per member: child, senior, PWD, pregnant/lactating, chronic condition on regular medication, **bedridden/mobility-limited** | BR-1.32 | M | ◐ | — |
+| FR-REG-022 | Members hold no account | Member records have no credentials; access is via the head's account only | BR-1.33 | M | ◐ | — |
+| FR-REG-023 | Relationship to head recorded | Selectable relationship per member | BR-1.34 | S | ◐ | — |
+| FR-REG-024 | All members in one visit | BHW flow captures every member in a single session without re-entry | BR-1.36 | M | ◐ | — |
+| FR-REG-025 | Member repeater UX | One member per collapsible card, one open at a time, "Member N of M" progress, sticky save | Design 9.5 | M | ◐ | — |
 | FR-REG-026 | Split an adult member out | Adult member becomes head of a new household, retaining nutrition history | BR-1.37 | C | ☐ | — |
+
+> **Registration and members are real and verified end-to-end** (self-registration
+> at `/register` → `/portal/onboarding`; BHW-assisted at `/admin/households/new`;
+> `POST /admin/households/merge`) — not yet `✅` per Definition of Done item 6
+> (peer review), same convention as the rest of this document. Specifics:
+>
+> - **FR-REG-001 is split across two requests, not one.** `/auth/register`
+>   creates only the account; the `household`/`member` rows are created at
+>   `/me/household` (onboarding), once `area_id` — a `NOT NULL` column — is
+>   known. This was a deliberate scope decision (basic details at sign-up,
+>   address/area/pin afterward), but it means a resident who registers and
+>   never completes onboarding has an account with no household — acceptable
+>   for now, revisit if abandonment turns out to matter.
+> - **FR-REG-003's PSGC half is not built.** Address capture is free-text
+>   street address + an Area select (the barangay's own six zones, already
+>   seeded) only. The national PSGC cascading hierarchy (`FR-SYS-012`, ~42,000
+>   rows, vendored not runtime) remains unbuilt; `household.psgc_barangay_code`
+>   stays `NULL` on every new record.
+> - **FR-REG-010's duplicate detection is a calibrated heuristic, not the full
+>   spec.** `similarity(head_name) > 0.5` (pg_trgm; raised from an initial 0.4
+>   after it flagged ~75% of the 200 seeded households — common Filipino
+>   surnames collide heavily on trigram similarity) plus an exact
+>   `(full_name, birth_date)` match against any of the household's own
+>   members. No admin-configurable threshold. Never blocks creation — flags
+>   only, per BR-1.9 ("the only defence" now that account-claiming is out of
+>   scope, BRD D-11) — surfaced as a list badge and a creation-time toast.
+>   Merge is real: re-parents members, demotes the losing household's head
+>   (`is_head=false`) before re-parenting so `idx_member_one_head` never trips,
+>   soft-deletes the loser, records a `household_merge` row. One accepted gap:
+>   the demoted former head keeps whatever `relationship_to_head` it had
+>   before the merge (e.g. still "Head") — there is no edit UI (FR-REG-009) to
+>   correct it yet.
+> - **FR-REG-011 (verification flag) was not built.** `HouseholdOut` carries
+>   `verified_at` and the resident dashboard renders an "unverified" notice,
+>   but no endpoint or admin action sets it — stays `☐`, not `◐`.
+> - **FR-REG-020 is BHW-complete, self-registration-partial.** A BHW adds
+>   unlimited members via the repeater in one visit. A self-registered head
+>   can only create their own member row at onboarding — adding more members
+>   later requires editing (FR-REG-009), which is out of scope this pass.
+> - **FR-REG-008's map (`components/features/registry/location-picker.tsx`)
+>   is the first real Leaflet integration in this codebase** — `leaflet`/
+>   `react-leaflet` were installed but unused; `/hazard-map` remains an
+>   explicitly non-interactive placeholder, untouched by this work.
 
 ### 5.3 Nutrition & health data
 
@@ -649,3 +692,4 @@ Requirements that cannot start until an open item is resolved.
 |---|---|---|---|
 | Aug 2026 | 0.1 | Initial derivation from BRD v0.3, tech_stack v0.1, design v0.2 | — |
 | Aug 2026 | 0.1 | FR-PUB-013 closed — the public site reads live data end to end. 55 further FR/NFR rows moved `☐`→`◐` across SYS, ALT, ACT, PRP, EVC, DON, WX, ANL, REG, and MNT/OBS/AVL, reflecting real backend modules, a working admin console, live PAGASA/Open-Meteo ingestion, and a verified failure-isolation test — not yet `✅` anywhere, since Definition of Done item 6 (peer review) hasn't happened. Registry UI, safety/rescue, evacuation check-ins, and the hazard map (`MAP`) remain untouched. See `AGENTS.md` Section 2 — no PR yet, this is uncommitted. | — |
+| Aug 2026 | 0.1 | Self- and BHW-assisted household registration built: `/register` + `/portal/onboarding`, `/admin/households/new` + `/admin/households` (list, "Flagged only" filter, merge), minimal duplicate detection (FR-REG-010), the first real Leaflet map (FR-REG-008), and BHW-form draft persistence (FR-REG-012). 19 REG rows and FR-SYS-001/007 moved `☐`→`◐` — see the note under Section 5.2 for exactly what's real versus deferred (PSGC, verification, post-onboarding member editing). No PR yet, uncommitted. | — |

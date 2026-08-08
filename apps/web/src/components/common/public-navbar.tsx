@@ -40,7 +40,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { Button } from "./button";
 import { LanguageToggle } from "./language-toggle";
 import { LogoLockup } from "./logo";
-import { AUTH_HREF, NAV_GROUPS, type NavItem } from "@/lib/content/site";
+import { LOGIN_HREF, REGISTER_HREF, NAV_GROUPS, type NavItem } from "@/lib/content/site";
 import { toTelHref } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { PublicHotline } from "@/lib/api/public-types";
@@ -61,9 +61,9 @@ import type { PublicHotline } from "@/lib/api/public-types";
  * visible outside the menu** (Section 9.3). Burying either behind a hamburger
  * during an emergency is the failure this rule exists to prevent.
  *
- * Login and Register both point at the registration FAQ: accounts arrive with the
- * registry module, and the FAQ explains how to register in person today. A stub
- * sign-in page would be scope creep; a dead link would look broken.
+ * Login and Register both go to real pages now — the shared `/login` and the
+ * minimal `/register` (account basics only; the household itself is completed
+ * afterwards at `/portal/onboarding`).
  *
  * Two things about the Radix primitive are load-bearing here:
  *
@@ -250,7 +250,7 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
           ) : null}
 
           <Button asChild pill size="md" className="hidden sm:inline-flex">
-            <Link href={AUTH_HREF}>
+            <Link href={LOGIN_HREF}>
               <LogIn aria-hidden className="size-4" />
               Login
             </Link>
@@ -263,7 +263,7 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
             size="md"
             className="hidden lg:inline-flex"
           >
-            <Link href={AUTH_HREF}>
+            <Link href={REGISTER_HREF}>
               <UserPlus aria-hidden className="size-4" />
               Register
             </Link>
@@ -306,13 +306,13 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
                 <div className="mt-auto flex flex-col gap-2 border-t border-neutral-200 p-4">
                   <LanguageToggle fullWidth className="w-full sm:hidden" />
                   <Button asChild pill size="lg" className="w-full sm:hidden">
-                    <Link href={AUTH_HREF} onClick={() => setOpen(false)}>
+                    <Link href={LOGIN_HREF} onClick={() => setOpen(false)}>
                       <LogIn aria-hidden className="size-4" />
                       Login
                     </Link>
                   </Button>
                   <Button asChild variant="outline" pill size="lg" className="w-full">
-                    <Link href={AUTH_HREF} onClick={() => setOpen(false)}>
+                    <Link href={REGISTER_HREF} onClick={() => setOpen(false)}>
                       <UserPlus aria-hidden className="size-4" />
                       Register
                     </Link>

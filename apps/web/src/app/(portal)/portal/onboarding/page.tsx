@@ -1,0 +1,304 @@
+"use client";
+
+import * as React from "react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
+import { toast } from "sonner";
+
+import { Button } from "@/components/common/button";
+import { Card, CardContent } from "@/components/common/card";
+import { PageHeader } from "@/components/common/page-header";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { api, toDisplayError } from "@/lib/api/client";
+import type { PublicArea } from "@/lib/api/public-types";
+import type { HouseholdCreateResponse, HouseholdCreateSelf } from "@/lib/api/registry-types";
+import type { LatLng } from "@/components/features/registry/location-picker";
+
+const LocationPicker = dynamic(
+  () => import("@/components/features/registry/location-picker"),
+  { ssr: false, loading: () => <div className="h-72 w-full rounded-lg bg-neutral-100" /> },
+);
+
+/**
+ * FR-REG-001's second half — completes the household `/register` deliberately
+ * left out. Creates the `household` + head `member` row via `POST
+ * /me/household`; `PortalGate` is what routed the resident here.
+ */
+
+const onboardingSchema = z
+  .object({
+    street_address: z.string().optional(),
+    area_id: z.string().min(1, "Select your area"),
+    contact_number: z.string().optional(),
+    is_unreachable_by_phone: z.boolean(),
+    birth_date: z.string().optional(),
+    sex: z.enum(["male", "female"]).optional(),
+    is_pwd: z.boolean(),
+    is_pregnant: z.boolean(),
+    is_lactating: z.boolean(),
+    has_chronic_condition: z.boolean(),
+    chronic_condition_note: z.string().optional(),
+    is_bedridden: z.boolean(),
+  })
+  .superRefine((values, ctx) => {
+    // FR-REG-005 — required unless the household is flagged unreachable by
+    // phone; that checkbox is the only way around it, not a blank field.
+    if (!values.is_unreachable_by_phone && !values.contact_number) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Enter a contact number, or check “I don't have a reliable phone number”",
+        path: ["contact_number"],
+      });
+    }
+  });
+
+type OnboardingFormValues = z.infer<typeof onboardingSchema>;
+
+const emptyValues: OnboardingFormValues = {
+  street_address: "",
+  area_id: "",
+  contact_number: "",
+  is_unreachable_by_phone: false,
+  birth_date: "",
+  sex: undefined,
+  is_pwd: false,
+  is_pregnant: false,
+  is_lactating: false,
+  has_chronic_condition: false,
+  chronic_condition_note: "",
+  is_bedridden: false,
+};
+
+export default function OnboardingPage() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [location, setLocation] = React.useState<LatLng | null>(null);
+  const [serverError, setServerError] = React.useState<string | null>(null);
+
+  const { data: areas } = useQuery({
+    queryKey: ["public", "areas"],
+    queryFn: () => api.get<PublicArea[]>("/public/areas").then((r) => r.data),
+  });
+
+  const {
+    control,
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<OnboardingFormValues>({
+    resolver: zodResolver(onboardingSchema),
+    defaultValues: emptyValues,
+  });
+
+  const hasChronicCondition = watch("has_chronic_condition");
+
+  const submitMutation = useMutation({
+    mutationFn: (body: HouseholdCreateSelf) =>
+      api.post<HouseholdCreateResponse>("/me/household", body).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["me", "household"] });
+      toast.success("Household registered");
+      router.push("/portal");
+    },
+    onError: (error) => {
+      setServerError(toDisplayError(error).detail);
+    },
+  });
+
+  async function onSubmit(values: OnboardingFormValues) {
+    setServerError(null);
+    await submitMutation.mutateAsync({
+      street_address: values.street_address || null,
+      area_id: values.area_id,
+      latitude: location?.lat ?? null,
+      longitude: location?.lng ?? null,
+      contact_number: values.contact_number || null,
+      is_unreachable_by_phone: values.is_unreachable_by_phone,
+      head_member: {
+        birth_date: values.birth_date || null,
+        sex: values.sex ?? null,
+        is_pwd: values.is_pwd,
+        is_pregnant: values.is_pregnant,
+        is_lactating: values.is_lactating,
+        has_chronic_condition: values.has_chronic_condition,
+        chronic_condition_note: values.chronic_condition_note || null,
+        is_bedridden: values.is_bedridden,
+      },
+    });
+  }
+
+  return (
+    <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8">
+      <PageHeader
+        title="Complete your"
+        titleAccent="registration"
+        description="Just your address and area — this only takes a minute."
+      />
+
+      <Card>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
+            {serverError ? (
+              <p role="alert" className="border-danger-border bg-danger-bg text-danger rounded-md border p-3 text-sm">
+                {serverError}
+              </p>
+            ) : null}
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="street_address">Street address</Label>
+              <Input id="street_address" type="text" {...register("street_address")} />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="area_id">Area</Label>
+              <Controller
+                control={control}
+                name="area_id"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="area_id" className="w-full">
+                      <SelectValue placeholder="Select your area" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(areas ?? []).map((area) => (
+                        <SelectItem key={area.id} value={area.id}>
+                          {area.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.area_id ? (
+                <p className="text-danger text-xs">{errors.area_id.message}</p>
+              ) : null}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label>Your location</Label>
+              <LocationPicker value={location} onChange={setLocation} />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="contact_number">Contact number</Label>
+              <Input
+                id="contact_number"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                aria-invalid={!!errors.contact_number}
+                aria-describedby={errors.contact_number ? "contact_number-error" : undefined}
+                {...register("contact_number")}
+              />
+              {errors.contact_number ? (
+                <p id="contact_number-error" className="text-danger text-xs">
+                  {errors.contact_number.message}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Controller
+                control={control}
+                name="is_unreachable_by_phone"
+                render={({ field }) => (
+                  <Checkbox
+                    id="is_unreachable_by_phone"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
+              <Label htmlFor="is_unreachable_by_phone" className="font-normal">
+                I don&apos;t have a reliable phone number
+              </Label>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="birth_date">Your birth date</Label>
+                <Input id="birth_date" type="date" {...register("birth_date")} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="sex">Sex</Label>
+                <Controller
+                  control={control}
+                  name="sex"
+                  render={({ field }) => (
+                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                      <SelectTrigger id="sex" className="w-full">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            </div>
+
+            <fieldset className="flex flex-col gap-2">
+              <legend className="text-body-sm mb-1 font-semibold text-neutral-700">
+                Does any of this apply to you?
+              </legend>
+              {(
+                [
+                  ["is_pwd", "Person with disability"],
+                  ["is_pregnant", "Pregnant"],
+                  ["is_lactating", "Lactating"],
+                  ["has_chronic_condition", "Chronic condition on regular medication"],
+                  ["is_bedridden", "Bedridden or mobility-limited"],
+                ] as const
+              ).map(([name, label]) => (
+                <div key={name} className="flex items-center gap-2">
+                  <Controller
+                    control={control}
+                    name={name}
+                    render={({ field }) => (
+                      <Checkbox
+                        id={name}
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    )}
+                  />
+                  <Label htmlFor={name} className="font-normal">
+                    {label}
+                  </Label>
+                </div>
+              ))}
+            </fieldset>
+
+            {hasChronicCondition ? (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="chronic_condition_note">Condition (optional)</Label>
+                <Textarea id="chronic_condition_note" {...register("chronic_condition_note")} />
+              </div>
+            ) : null}
+
+            <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">
+              {isSubmitting ? "Saving…" : "Finish registration"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

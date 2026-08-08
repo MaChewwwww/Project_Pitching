@@ -123,6 +123,16 @@ export const publicHotlineSchema = z.object({
   sort_order: z.number(),
 });
 
+/* --- areas ------------------------------------------------------------------ */
+
+export const publicAreaSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  code: z.string().nullable(),
+  flood_exposure: z.enum(["low", "medium", "high"]).nullable(),
+  has_boundary: z.boolean(),
+});
+
 /* --- facilities ------------------------------------------------------------------ */
 
 export const publicFacilitySchema = z.object({

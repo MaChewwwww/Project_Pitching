@@ -138,14 +138,21 @@ export const UTILITY_BAR = {
 } as const;
 
 /**
- * Where the Login and Register buttons point.
- *
- * Accounts do not exist yet — the `(auth)` routes ship with the registry module
- * (M1). Both therefore point at the registration FAQ, which explains how to
- * register in person today. A stub sign-in page would be scope creep, and a
- * dead link would just look broken.
+ * Where the navbar's Login button points. Serves both barangay staff and
+ * self-registered residents (`head` role) — one sign-in page for everyone.
  */
-export const AUTH_HREF = "/help#registration";
+export const LOGIN_HREF = "/login";
+
+/**
+ * Where the Register button and footer's "Register your household" link
+ * point.
+ *
+ * Real now (FR-REG-001) — `/register` collects account basics; the household
+ * itself (address, area, map pin) is completed afterwards at
+ * `/portal/onboarding`. BHW-assisted registration (no account, done in one
+ * visit) is a separate admin-console flow, not reachable from here.
+ */
+export const REGISTER_HREF = "/register";
 
 export const HERO = {
   eyebrow: APP_TAGLINE,
@@ -180,7 +187,7 @@ const FOOTER_EXTRAS: Record<string, NavItem[]> = {
     { label: "San Jose Go Bag", href: "/guides/san-jose-go-bag" },
   ],
   "Stay informed": [{ label: "About the platform", href: "/about" }],
-  "Get involved": [{ label: "Register your household", href: AUTH_HREF }],
+  "Get involved": [{ label: "Register your household", href: REGISTER_HREF }],
 };
 
 export const FOOTER_GROUPS: NavGroup[] = NAV_GROUPS.map((group) => ({

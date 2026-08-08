@@ -224,6 +224,15 @@ async def list_areas(session: AsyncSession) -> list[Area]:
     return list((await session.execute(select(Area).order_by(Area.name))).scalars().all())
 
 
+async def get_area_or_404(session: AsyncSession, area_id: uuid.UUID) -> Area:
+    """For other modules (e.g. registry) that need to validate an `area_id` they
+    were handed — a service function, not `geo.models`, per AGENTS.md Section 5."""
+    area = await session.get(Area, area_id)
+    if area is None:
+        raise NotFoundError("No such area.")
+    return area
+
+
 def area_to_public(area: Area) -> PublicArea:
     return PublicArea(
         id=area.id,

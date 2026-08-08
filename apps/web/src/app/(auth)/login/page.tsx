@@ -1,12 +1,14 @@
+import Link from "next/link";
+
 import { LogoLockup } from "@/components/common/logo";
 import { LoginForm } from "@/components/features/auth/login-form";
 
 /**
- * Staff login (FR-SYS-002). Standalone — no public shell
- * (`apps/web/src/app/(auth)/README.md`).
+ * Login for both barangay staff and self-registered residents (`head` role) —
+ * FR-SYS-002. Standalone — no public shell (`apps/web/src/app/(auth)/README.md`).
  *
- * There is no self-registration path here: FR-SYS-001 (resident self-registration)
- * is out of scope for this pass. Accounts are seeded or barangay-created.
+ * FR-SYS-001 (resident self-registration) now has a real `/register` flow;
+ * this page's copy used to say otherwise.
  */
 export default function LoginPage() {
   return (
@@ -15,15 +17,21 @@ export default function LoginPage() {
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <LogoLockup size={40} />
           <div>
-            <h1 className="text-h2 text-neutral-900">Barangay staff sign in</h1>
+            <h1 className="text-h2 text-neutral-900">Sign in</h1>
             <p className="text-body-sm mt-1 text-neutral-600">
-              For admins, BHWs, and SK officers. Residents do not need an account to use
-              this site.
+              For admins, BHWs, SK officers, and residents with a household account.
             </p>
           </div>
         </div>
 
         <LoginForm />
+
+        <p className="text-body-sm mt-6 text-center text-neutral-600">
+          Registering a household?{" "}
+          <Link href="/register" className="text-primary-700 font-semibold hover:underline">
+            Create an account
+          </Link>
+        </p>
       </div>
     </div>
   );

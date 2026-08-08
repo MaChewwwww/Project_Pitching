@@ -40,6 +40,8 @@ from src.modules.geo.router import admin_router as geo_admin_router
 from src.modules.geo.router import public_router as geo_public_router
 from src.modules.preparedness.router import admin_router as preparedness_admin_router
 from src.modules.preparedness.router import public_router as preparedness_public_router
+from src.modules.registry.router import admin_router as registry_admin_router
+from src.modules.registry.router import me_router as registry_me_router
 from src.modules.weather.router import admin_router as weather_admin_router
 from src.modules.weather.router import public_router as weather_public_router
 
@@ -151,6 +153,9 @@ admin_router.include_router(evacuation_admin_router)
 admin_router.include_router(donations_admin_router)
 admin_router.include_router(weather_admin_router)
 admin_router.include_router(config_admin_router)
+admin_router.include_router(registry_admin_router)
+
+me_router.include_router(registry_me_router)
 
 api_v1.include_router(health_router)
 api_v1.include_router(auth_router)

@@ -171,6 +171,19 @@ export interface PublicHotline {
 }
 
 /* ---------------------------------------------------------------------------
+   Areas — `area` (FR-SYS-013). No PII — names only, used for registration's
+   area picker as well as the public area-stats breakdown.
+   --------------------------------------------------------------------------- */
+
+export interface PublicArea {
+  id: string;
+  name: string;
+  code: string | null;
+  flood_exposure: "low" | "medium" | "high" | null;
+  has_boundary: boolean;
+}
+
+/* ---------------------------------------------------------------------------
    Facilities — `facility` (FR-SYS-015, FR-MAP-005)
    --------------------------------------------------------------------------- */
 

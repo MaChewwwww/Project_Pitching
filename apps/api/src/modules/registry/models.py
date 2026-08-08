@@ -6,11 +6,11 @@ requirement needs is a doc gap to flag, not something to freelance around.
 Register every new models module in `src/db/models_registry.py`, or Alembic
 autogenerate will emit a migration that drops its table.
 
-**Scope note.** Only `household` and `member` land in this pass — enough for real
-`registered_households` / `registered_members` counts on the public site
-(FR-ANL-002/003). Nutrition, vulnerability, feedback, and every registry *screen*
-are out of scope here; see AGENTS.md excluded-features list and the plan this
-migration was written against.
+**Scope note.** `household`, `member`, and `household_merge` (FR-REG-010, added in
+0007) land here — self- and BHW-assisted registration plus minimal duplicate
+detection/merge. Nutrition, vulnerability *assessment* (as opposed to the flat
+per-member flags already on `member`), and feedback remain out of scope; see
+AGENTS.md excluded-features list.
 """
 
 from __future__ import annotations
@@ -121,4 +121,30 @@ class Member(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
             unique=True,
             postgresql_where=text("is_head AND deleted_at IS NULL"),
         ),
+    )
+
+
+class HouseholdMerge(UUIDPrimaryKeyMixin, Base):
+    """Duplicate resolution record (FR-REG-010). Append-only — own `merged_at`
+    rather than `TimestampMixin`, since a merge is never updated after the fact."""
+
+    __tablename__ = "household_merge"
+
+    kept_household_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("household.id", ondelete="CASCADE"), nullable=False
+    )
+    merged_household_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("household.id", ondelete="CASCADE"), nullable=False
+    )
+    merged_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("user.id", ondelete="SET NULL"), nullable=True
+    )
+    merged_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("now()")
+    )
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    __table_args__ = (
+        CheckConstraint("kept_household_id != merged_household_id", name="kept_ne_merged"),
+        Index("idx_household_merge_merged", "merged_household_id"),
     )
