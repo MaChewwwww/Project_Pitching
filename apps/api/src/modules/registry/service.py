@@ -345,6 +345,12 @@ async def create_household_self(
         location=location,
         source="self",
         created_by_user_id=user.id,
+        # FR-REG-011 — no separate manual-review step: a resident completing
+        # their own onboarding (behind a login) is the verification. Product
+        # decision, not the literal acceptance text ("admin marks verified")
+        # — see frs_nfrs.md 5.2's note.
+        verified_at=datetime.now(UTC),
+        verified_by_user_id=user.id,
     )
     session.add(household)
     await session.flush()
@@ -409,6 +415,11 @@ async def create_household_bhw(
         location=location,
         source="bhw",
         created_by_user_id=user.id,
+        # FR-REG-011 — a BHW who visited and entered the household in person is
+        # the verification; no separate admin review step. Same product
+        # decision as create_household_self, see frs_nfrs.md 5.2's note.
+        verified_at=datetime.now(UTC),
+        verified_by_user_id=user.id,
     )
     session.add(household)
     await session.flush()

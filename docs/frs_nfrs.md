@@ -204,7 +204,7 @@ A requirement is `✅` only when all of the following hold:
 | FR-REG-008 | Household geotag | Draggable map pin sets coordinates; GPS button only when `isSecureContext` | BR-1.7 | S | ◐ | — |
 | FR-REG-009 | Head can edit household and members | All edits versioned and auditable | BR-1.8 | S | ☐ | — |
 | FR-REG-010 | Duplicate detection and merge | Likely duplicates flagged on name + birthdate + area; admin can merge, preserving history | BR-1.9 | M | ◐ | — |
-| FR-REG-011 | Verification flag | Admin marks a household verified; unverified records still count and still receive alerts | BR-1.10 | S | ☐ | — |
+| FR-REG-011 | Verification flag | Admin marks a household verified; unverified records still count and still receive alerts | BR-1.10 | S | ◐ | — |
 | FR-REG-012 | Registration draft persistence | Form state saved locally as typed; resume prompt on return; never cleared on failed submit | Design 9.6 | S | ◐ | — |
 
 ### 5.2 Household members
@@ -250,9 +250,18 @@ A requirement is `✅` only when all of the following hold:
 >   the demoted former head keeps whatever `relationship_to_head` it had
 >   before the merge (e.g. still "Head") — there is no edit UI (FR-REG-009) to
 >   correct it yet.
-> - **FR-REG-011 (verification flag) was not built.** `HouseholdOut` carries
->   `verified_at` and the resident dashboard renders an "unverified" notice,
->   but no endpoint or admin action sets it — stays `☐`, not `◐`.
+> - **FR-REG-011 is automatic, not a manual admin action.** The literal
+>   acceptance text ("admin marks a household verified") isn't what's built —
+>   a deliberate product decision instead treats the entry point itself as the
+>   verification: a BHW who visited and entered the household in person, or a
+>   resident who completed their own onboarding behind a login, both set
+>   `verified_at`/`verified_by_user_id` at creation time. There is no
+>   unverified state to review and no endpoint or button to set one — every
+>   household created through either flow is verified immediately. The
+>   trade-off: a self-registered head who lies about their own household is
+>   just as "verified" as a genuine one; there is no independent check. The
+>   ~200 `HH-SEED-*` rows predate this and remain unverified (`verified_at`
+>   is `NULL`), since they were never touched by either creation path.
 > - **FR-REG-020 is BHW-complete, self-registration-partial.** A BHW adds
 >   unlimited members via the repeater in one visit. A self-registered head
 >   can only create their own member row at onboarding — adding more members
@@ -692,4 +701,5 @@ Requirements that cannot start until an open item is resolved.
 |---|---|---|---|
 | Aug 2026 | 0.1 | Initial derivation from BRD v0.3, tech_stack v0.1, design v0.2 | — |
 | Aug 2026 | 0.1 | FR-PUB-013 closed — the public site reads live data end to end. 55 further FR/NFR rows moved `☐`→`◐` across SYS, ALT, ACT, PRP, EVC, DON, WX, ANL, REG, and MNT/OBS/AVL, reflecting real backend modules, a working admin console, live PAGASA/Open-Meteo ingestion, and a verified failure-isolation test — not yet `✅` anywhere, since Definition of Done item 6 (peer review) hasn't happened. Registry UI, safety/rescue, evacuation check-ins, and the hazard map (`MAP`) remain untouched. See `AGENTS.md` Section 2 — no PR yet, this is uncommitted. | — |
-| Aug 2026 | 0.1 | Self- and BHW-assisted household registration built: `/register` + `/portal/onboarding`, `/admin/households/new` + `/admin/households` (list, "Flagged only" filter, merge), minimal duplicate detection (FR-REG-010), the first real Leaflet map (FR-REG-008), and BHW-form draft persistence (FR-REG-012). 19 REG rows and FR-SYS-001/007 moved `☐`→`◐` — see the note under Section 5.2 for exactly what's real versus deferred (PSGC, verification, post-onboarding member editing). No PR yet, uncommitted. | — |
+| Aug 2026 | 0.1 | Self- and BHW-assisted household registration built: `/register` + `/portal/onboarding`, `/admin/households/new` + `/admin/households` (list, "Flagged only" filter, merge), minimal duplicate detection (FR-REG-010), the first real Leaflet map (FR-REG-008), and BHW-form draft persistence (FR-REG-012). 19 REG rows and FR-SYS-001/007 moved `☐`→`◐` — see the note under Section 5.2 for exactly what's real versus deferred (PSGC, verification, post-onboarding member editing). Committed `deb8418`. | — |
+| Aug 2026 | 0.1 | `contact_number` moved from `/auth/register` to onboarding, required unless `is_unreachable_by_phone` (FR-REG-005). `FR-REG-011` (verification) implemented as an automatic product decision rather than the literal "admin marks verified" text — both creation paths set `verified_at`/`verified_by_user_id` immediately, no review step exists; `☐`→`◐`. See the Section 5.2 note for the trade-off this accepts. | — |
