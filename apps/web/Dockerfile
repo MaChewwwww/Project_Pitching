@@ -12,7 +12,7 @@ COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/
 COPY packages/api-types/package.json packages/api-types/
 
-RUN npm ci
+RUN npm ci && mkdir -p /repo/apps/web/node_modules
 
 # --- builder -----------------------------------------------------------------
 FROM node:22-alpine AS builder
@@ -24,10 +24,11 @@ COPY --from=deps /repo/node_modules ./node_modules
 COPY package.json package-lock.json ./
 COPY packages ./packages
 COPY apps/web ./apps/web
+COPY --from=deps /repo/apps/web/node_modules ./apps/web/node_modules
 
 # NEXT_PUBLIC_* is inlined at build time, so it has to be present here and not
 # only at run time.
-ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
+ARG NEXT_PUBLIC_API_BASE_URL=/api/v1
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 
 RUN npm run build --workspace=apps/web
@@ -62,6 +63,7 @@ ENV NEXT_TELEMETRY_DISABLED=1 \
     HOSTNAME=0.0.0.0
 
 COPY --from=deps /repo/node_modules ./node_modules
+COPY --from=deps /repo/apps/web/node_modules ./apps/web/node_modules
 COPY package.json package-lock.json ./
 
 EXPOSE 3000

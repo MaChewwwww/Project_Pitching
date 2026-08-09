@@ -8,6 +8,8 @@ import { PageHeader } from "@/components/common/page-header";
 import { GuideArticle } from "@/components/features/preparedness/guide-article";
 import { getGuide, getGuides } from "@/lib/api/public";
 
+export const dynamic = "force-dynamic";
+
 /**
  * A single preparedness guide.
  *

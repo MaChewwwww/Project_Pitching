@@ -13,6 +13,15 @@ A prototype for an SK Project Pitching competition, built by a 5-person interdis
 student team (PolSci, PubAd, Nutrition & Dietetics, IT). Optimize for a working, coherent
 demo on a fixed deadline — not for production hardening.
 
+### Staging Environment & VPS Info
+- **VPS Public IP**: `57.155.90.155`
+- **Primary HTTPS Domain**: `https://57-155-90-155.sslip.io`
+- **HTTP Staging URL**: `http://57.155.90.155:8080` or `http://57.155.90.155`
+- **SSH Target**: `ssh -i C:\Users\MaChew\.ssh\bgh_azure_ed25519 deploy@57.155.90.155`
+- **Server Deployment Path**: `/opt/bgh/Project_Pitching`
+- **Compose Project Name**: `sagip-staging` (`--env-file .env.staging -f infra/compose.yml`)
+- See `.agents/skills/staging-maintenance/SKILL.md` for complete maintenance runbooks.
+
 ## 1. Read order
 
 Before implementing anything, read in this order:
@@ -93,8 +102,11 @@ where is Section 6.
 - **Routers never touch the database.** Router → service → ORM. See `architecture.md`
   Section 4 for the full module convention (`router.py` / `schemas.py` / `service.py` /
   `models.py`) and the "rules that keep this from rotting."
-- **A service never imports another module's `models.py`.** Cross-module access goes through
-  the owning service, not a direct query.
+- **A service may import another module's model classes for read-only joins** (e.g.
+  `registry/service.py` importing `geo.models.Area`, `evacuation/service.py` importing
+  `geo.models.Facility`, `safety/service.py` importing `registry.models.Household`/`Member`) —
+  but it never calls another module's *business logic* that way. A cross-module write, or
+  anything beyond a plain join condition, goes through the owning service instead.
 - **`domain/` stays pure.** No I/O, no ORM, no framework imports in `vulnerability.py` or
   `alert_levels.py` — that's what makes them unit-testable.
 - **No request path calls an external service directly.** Weather, PAGASA, and any other

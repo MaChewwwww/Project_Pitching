@@ -12,9 +12,5 @@ import { PortalGate } from "@/components/features/registry/portal-gate";
  * feed, editing) is future work.
  */
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <AuthProvider>
-      <PortalGate>{children}</PortalGate>
-    </AuthProvider>
-  );
+  return <PortalGate>{children}</PortalGate>;
 }

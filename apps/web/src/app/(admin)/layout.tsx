@@ -8,9 +8,5 @@ import { AdminGate } from "@/components/features/admin/admin-gate";
  * (`apps/web/src/app/(admin)/README.md`, architecture.md A-12).
  */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <AuthProvider>
-      <AdminGate>{children}</AdminGate>
-    </AuthProvider>
-  );
+  return <AdminGate>{children}</AdminGate>;
 }

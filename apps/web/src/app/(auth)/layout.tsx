@@ -9,5 +9,5 @@ import { AuthProvider } from "@/lib/auth/auth-context";
  * groups, two mount points, one provider component.
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
-  return <AuthProvider>{children}</AuthProvider>;
+  return children;
 }

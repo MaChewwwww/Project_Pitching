@@ -119,7 +119,9 @@ services:
       - web
       - api
     ports:
-      # 80 is usually occupied on Windows, so the host port is configurable.
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
       - "${PROXY_PORT:-8080}:80"
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro

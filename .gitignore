@@ -34,9 +34,8 @@ infra/backups/*.dump
 
 # --- Secrets & local env ---
 .env
-.env.local
-.env.staging
-.env.demo
+.env.*
+!.env*.example
 *.pem
 
 # --- Editor / OS ---
