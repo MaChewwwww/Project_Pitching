@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { Route } from "next";
+import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
   AlertTriangle,
@@ -10,16 +11,22 @@ import {
   Droplets,
   Gift,
   HelpCircle,
+  LifeBuoy,
   MapPin,
   Megaphone,
   Phone,
   Settings,
   ShieldAlert,
+  ShieldCheck,
+  Siren,
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/common/card";
 import { PageHeader } from "@/components/common/page-header";
+import { api } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
+import type { PublicEmergencyEvent } from "@/lib/api/public-types";
+import type { AccountedForOut } from "@/lib/api/safety-types";
 
 /** The console landing screen — quick links to every resource this pass covers. */
 
@@ -107,7 +114,84 @@ const TILES: {
     description: "Thresholds and barangay totals",
     icon: Settings,
   },
+  {
+    href: "/admin/emergency-events",
+    label: "Emergency Events",
+    description: "Declare or end the active event (FR-SAF-018/019)",
+    icon: Siren,
+  },
+  {
+    href: "/admin/safety",
+    label: "Accounted For",
+    description: "Registered vs. unaccounted, by area (FR-SAF-011)",
+    icon: ShieldCheck,
+  },
+  {
+    href: "/admin/rescue-requests",
+    label: "Rescue Queue",
+    description: "Requests for help, triaged by urgency (FR-SAF-010)",
+    icon: LifeBuoy,
+  },
 ];
+
+/**
+ * S6 — live tiles for whatever is actually happening right now, rather than
+ * every number being a click away. `accounted-for` is only fetched when an
+ * event is active — the endpoint itself 409s otherwise (`require_active_event`),
+ * and there is nothing to show the officer in that state anyway.
+ */
+function LiveSummary() {
+  const { data: activeEvent } = useQuery({
+    queryKey: ["public", "emergency-events", "active"],
+    queryFn: () =>
+      api.get<PublicEmergencyEvent | null>("/public/emergency-events/active").then((r) => r.data),
+    refetchInterval: 15_000,
+  });
+
+  const { data: openRescue } = useQuery({
+    queryKey: ["admin", "rescue-requests", "open-count"],
+    queryFn: () =>
+      api.get<{ count: number }>("/admin/rescue-requests/open-count").then((r) => r.data.count),
+    refetchInterval: 15_000,
+  });
+
+  const { data: accountedFor } = useQuery({
+    queryKey: ["admin", "accounted-for", "dashboard-tile"],
+    queryFn: () => api.get<AccountedForOut>("/admin/accounted-for").then((r) => r.data),
+    enabled: !!activeEvent,
+    refetchInterval: 15_000,
+  });
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-3">
+      <Card radius="lg">
+        <CardContent className="flex flex-col gap-1">
+          <Siren aria-hidden className="text-primary-600 size-5" />
+          <span className="text-h3 font-bold text-neutral-900">
+            {activeEvent ? activeEvent.name : "None"}
+          </span>
+          <span className="text-caption text-neutral-500">Active event</span>
+        </CardContent>
+      </Card>
+      <Card radius="lg">
+        <CardContent className="flex flex-col gap-1">
+          <ShieldCheck aria-hidden className="text-neutral-500 size-5" />
+          <span className="text-h3 font-bold text-neutral-900">
+            {accountedFor ? accountedFor.registered_total.unaccounted : "—"}
+          </span>
+          <span className="text-caption text-neutral-500">Unaccounted</span>
+        </CardContent>
+      </Card>
+      <Card radius="lg">
+        <CardContent className="flex flex-col gap-1">
+          <LifeBuoy aria-hidden className="text-danger size-5" />
+          <span className="text-h3 font-bold text-neutral-900">{openRescue ?? "—"}</span>
+          <span className="text-caption text-neutral-500">Open rescue requests</span>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
@@ -120,6 +204,8 @@ export default function AdminDashboardPage() {
         titleAccent="admin console"
         description="Manage the content the public site reads live — announcements, weather, facilities, and more."
       />
+
+      <LiveSummary />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {TILES.map((tile) => (

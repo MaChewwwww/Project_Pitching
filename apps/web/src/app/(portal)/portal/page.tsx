@@ -1,8 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { Camera, ShieldCheck } from "lucide-react";
 
 import { Badge } from "@/components/common/badge";
+import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
 import { PageHeader } from "@/components/common/page-header";
 import { api } from "@/lib/api/client";
@@ -10,10 +13,11 @@ import { useAuth } from "@/lib/auth/auth-context";
 import type { HouseholdOut } from "@/lib/api/registry-types";
 
 /**
- * Read-only resident dashboard. `PortalGate` guarantees a household exists by
- * the time this renders. Deliberately minimal — no editing (FR-REG-009),
- * no safety check-in or alerts feed (FR-SAF-*): those remain the
- * `(portal)/README.md`'s future scope, not this pass's.
+ * Read-only resident dashboard, plus a link into safety check-in (FR-SAF-001
+ * added it this pass — this docstring previously said that was out of
+ * scope). `PortalGate` guarantees a household exists by the time this
+ * renders. Still deliberately minimal beyond that: no editing (FR-REG-009),
+ * no alerts feed here.
  */
 export default function PortalDashboardPage() {
   const { user } = useAuth();
@@ -72,12 +76,27 @@ export default function PortalDashboardPage() {
 
           {!household.verified_at ? (
             <p className="text-body-sm text-neutral-500">
-              Your household hasn&apos;t been verified by the barangay yet — this doesn&apos;t affect
-              alerts or assistance, verification is just a confidence check.
+              Your household hasn&apos;t been verified by the barangay yet — this
+              doesn&apos;t affect alerts or assistance, verification is just a confidence
+              check.
             </p>
           ) : null}
         </CardContent>
       </Card>
+
+      <Button asChild variant="outline">
+        <Link href="/portal/safety">
+          <ShieldCheck aria-hidden className="size-4" />
+          Safety check-in
+        </Link>
+      </Button>
+
+      <Button asChild variant="outline">
+        <Link href="/portal/report">
+          <Camera aria-hidden className="size-4" />
+          Report an incident
+        </Link>
+      </Button>
     </div>
   );
 }

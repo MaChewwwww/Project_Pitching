@@ -40,6 +40,7 @@ from src.modules.evacuation.models import EmergencyEvent, EvacCenter
 from src.modules.geo.models import Area, Facility, Hotline
 from src.modules.preparedness.models import Faq, Guide
 from src.modules.registry.models import Household, Member
+from src.modules.safety.models import RescueRequest, UnregisteredPerson
 from src.modules.users.models import User, UserArea
 from src.modules.weather.models import FloodEvent, FloodEventArea, Forecast, Reading
 
@@ -1034,6 +1035,93 @@ async def seed_households(session, areas: dict[str, Area]) -> None:
     log.info("seeded synthetic households", extra={"count": total})
 
 
+# --- safety (S6 demo wiring) -----------------------------------------------------
+# Against a second, *inactive* event, deliberately — the queue and the
+# unregistered-persons list read non-empty the moment an officer declares an
+# event, rather than the demo's first click landing on an empty screen.
+
+
+async def seed_safety(session, users: dict[str, User]) -> None:
+    if await _table_has_rows(session, RescueRequest):
+        return
+
+    event = EmergencyEvent(
+        name="2025 Habagat Flooding — Prior Event",
+        type="flood",
+        started_at=_now() - timedelta(days=45),
+        ended_at=_now() - timedelta(days=42),
+        is_active=False,
+        declared_by_user_id=users["Barangay Disaster Risk Reduction and Management Committee"].id,
+    )
+    session.add(event)
+    await session.flush()
+
+    bedridden_household = (
+        await session.execute(
+            select(Household)
+            .join(Member, Member.household_id == Household.id)
+            .where(Member.is_bedridden.is_(True), Household.contact_number.is_not(None))
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+    session.add_all(
+        [
+            UnregisteredPerson(
+                event_id=event.id,
+                full_name="Rosario Manalastas",
+                contact_number="09171234567",
+                location=func.ST_SetSRID(func.ST_MakePoint(121.1339, 14.7318), 4326),
+                recorded_by_user_id=users["BHW Demo"].id,
+            ),
+            UnregisteredPerson(
+                event_id=event.id,
+                full_name="Boy Santos (no phone)",
+                location_note="Sari-sari store beside the chapel, Purok 3",
+                recorded_by_user_id=users["BHW Demo"].id,
+            ),
+        ]
+    )
+
+    rescue_requests = [
+        RescueRequest(
+            event_id=event.id,
+            requester_name="Neighbor calling for the Reyes household",
+            contact_number=bedridden_household.contact_number if bedridden_household else None,
+            description=(
+                "Calling on behalf of a neighbor with a bedridden family member — "
+                "water is rising past their gate and they cannot carry him out alone."
+            ),
+            people_count=4,
+            location=func.ST_SetSRID(func.ST_MakePoint(121.1305, 14.7295), 4326),
+        ),
+        RescueRequest(
+            event_id=event.id,
+            requester_name="Anonymous caller",
+            description="Family stranded on their roof, no landmark given over the phone.",
+            location_note="Near the old basketball court along the riverbank",
+            people_count=3,
+        ),
+        RescueRequest(
+            event_id=event.id,
+            requester_name="Household head, registered resident",
+            contact_number="09201234567",
+            description="Water is knee-deep and still rising; requesting boat rescue.",
+            people_count=5,
+            location=func.ST_SetSRID(func.ST_MakePoint(121.1322, 14.7331), 4326),
+        ),
+    ]
+    session.add_all(rescue_requests)
+    log.info(
+        "seeded safety demo data",
+        extra={
+            "unregistered": 2,
+            "rescue_requests": 3,
+            "matched_bedridden": bedridden_household is not None,
+        },
+    )
+
+
 async def seed() -> None:
     async with SessionLocal() as session:
         areas = await seed_areas(session)
@@ -1071,6 +1159,9 @@ async def seed() -> None:
         await session.commit()
 
         await seed_households(session, areas)
+        await session.commit()
+
+        await seed_safety(session, users)
         await session.commit()
 
     await engine.dispose()

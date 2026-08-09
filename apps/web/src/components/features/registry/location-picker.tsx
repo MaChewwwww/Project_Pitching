@@ -3,10 +3,11 @@
 import * as React from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import { LocateFixed } from "lucide-react";
 
 import { Button } from "@/components/common/button";
+import { useGeolocation } from "@/hooks/use-geolocation";
 import { BARANGAY_CENTER } from "@/lib/brand";
 
 /**
@@ -46,6 +47,10 @@ export interface LocationPickerProps {
   value: LatLng | null;
   onChange: (value: LatLng) => void;
   className?: string;
+  /** Overrides the helper caption under the map — the default assumes a
+   * household pin, which reads wrong on non-registration callers (e.g. the
+   * public rescue form). */
+  caption?: string;
 }
 
 function ClickToPlace({ onChange }: { onChange: (value: LatLng) => void }) {
@@ -57,23 +62,37 @@ function ClickToPlace({ onChange }: { onChange: (value: LatLng) => void }) {
   return null;
 }
 
-export default function LocationPicker({ value, onChange, className }: LocationPickerProps) {
+/**
+ * Moves the viewport to a fresh GPS fix. Dragging or tapping the map must
+ * never trigger this — the user is already looking at the right place — so
+ * it watches the geolocation hook's own `fix` object, not `value`.
+ */
+function FlyToFix({ fix }: { fix: { lat: number; lng: number } | null }) {
+  const map = useMap();
+  React.useEffect(() => {
+    if (fix) map.flyTo(fix, 16);
+    // `map` is stable for the container's lifetime; only a new fix matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fix]);
+  return null;
+}
+
+export default function LocationPicker({
+  value,
+  onChange,
+  className,
+  caption = "Drag the pin, or tap the map, to mark your household's location.",
+}: LocationPickerProps) {
   const center = value ?? { lat: BARANGAY_CENTER.lat, lng: BARANGAY_CENTER.lon };
   const markerRef = React.useRef<L.Marker>(null);
-  // Always client-only (dynamically imported with `ssr: false`), so `window`
-  // is safe to read synchronously — no hydration mismatch to guard against.
-  const [isSecure] = React.useState(() => window.isSecureContext);
+  const geo = useGeolocation();
 
-  function useMyLocation() {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        onChange({ lat: position.coords.latitude, lng: position.coords.longitude });
-      },
-      () => {
-        // Silently ignore — the user can still drag the pin manually.
-      },
-    );
-  }
+  React.useEffect(() => {
+    if (geo.fix) onChange({ lat: geo.fix.lat, lng: geo.fix.lng });
+    // `onChange` is a stable RHF `field.onChange` at every call site — same
+    // rationale as `use-registration-draft.ts`'s `form` dependency omission.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [geo.fix]);
 
   return (
     <div className={className}>
@@ -89,6 +108,7 @@ export default function LocationPicker({ value, onChange, className }: LocationP
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <ClickToPlace onChange={onChange} />
+          <FlyToFix fix={geo.fix} />
           <Marker
             ref={markerRef}
             position={center}
@@ -105,22 +125,34 @@ export default function LocationPicker({ value, onChange, className }: LocationP
         </MapContainer>
       </div>
 
-      {isSecure ? (
+      {geo.isSecureContext && geo.isSupported ? (
         <Button
           type="button"
           variant="outline"
           size="sm"
           className="mt-2"
-          onClick={useMyLocation}
+          disabled={geo.status === "locating"}
+          onClick={geo.locate}
         >
           <LocateFixed aria-hidden className="size-3.5" />
-          Use my current location
+          {geo.status === "locating" ? "Locating…" : "Use my current location"}
         </Button>
+      ) : (
+        <p className="text-caption mt-2 text-neutral-500">
+          {geo.isSecureContext
+            ? "This browser can't get your location — drag the pin instead."
+            : "Location access needs a secure (https) connection — drag the pin instead."}
+        </p>
+      )}
+
+      {geo.errorMessage ? (
+        <p className="text-caption text-danger mt-1">{geo.errorMessage}</p>
+      ) : null}
+      {geo.accuracyNote ? (
+        <p className="text-caption mt-1 text-neutral-500">{geo.accuracyNote}</p>
       ) : null}
 
-      <p className="text-caption mt-1 text-neutral-500">
-        Drag the pin, or tap the map, to mark your household&apos;s location.
-      </p>
+      <p className="text-caption mt-1 text-neutral-500">{caption}</p>
     </div>
   );
 }

@@ -485,6 +485,27 @@ async def create_household_bhw(
 # --- read: self and admin -------------------------------------------------------
 
 
+async def get_household_or_404(session: AsyncSession, household_id: uuid.UUID) -> Household:
+    """For other modules (safety) that need the ORM row itself, not the DTO —
+    `get_household_for_user` below returns `HouseholdOut | None`, which loses
+    the columns a join needs. Same precedent as `geo.get_area_or_404`."""
+    household = await session.get(Household, household_id)
+    if household is None or household.deleted_at is not None:
+        raise NotFoundError("Household not found.")
+    return household
+
+
+async def household_for_user_id(session: AsyncSession, user_id: uuid.UUID) -> Household | None:
+    """The `head`'s own household row, or `None` if they haven't onboarded yet.
+    Exposed for safety's `/me/safety-status` — same reasoning as
+    `get_household_or_404` above."""
+    return await session.scalar(
+        select(Household).where(
+            Household.head_user_id == user_id, Household.deleted_at.is_(None)
+        )
+    )
+
+
 async def get_household_for_user(session: AsyncSession, user_id: uuid.UUID) -> HouseholdOut | None:
     """`GET /me/household` — `None` drives the onboarding redirect."""
     row = (

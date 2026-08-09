@@ -14,6 +14,7 @@ import {
   HandHeart,
   House,
   Info,
+  LifeBuoy,
   LogIn,
   Map,
   Megaphone,
@@ -95,6 +96,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   CircleHelp,
   House,
   Info,
+  LifeBuoy,
 };
 
 export interface PublicNavbarProps {

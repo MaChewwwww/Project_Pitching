@@ -35,10 +35,25 @@ def point_to_geojson(location) -> GeoJsonPoint | None:
     if isinstance(location, str):
         data = json.loads(location)
         return GeoJsonPoint(coordinates=tuple(data["coordinates"]))
-    from geoalchemy2.shape import to_shape
+    try:
+        from geoalchemy2.shape import to_shape
 
-    shape = to_shape(location)
-    return GeoJsonPoint(coordinates=(shape.x, shape.y))
+        shape = to_shape(location)
+        return GeoJsonPoint(coordinates=(shape.x, shape.y))
+    except (ImportError, Exception):
+        raw = getattr(location, "data", location)
+        if isinstance(raw, str):
+            raw = bytes.fromhex(raw)
+        if isinstance(raw, (bytes, bytearray)) and len(raw) >= 21:
+            import struct
+
+            bo = "<" if raw[0] == 1 else ">"
+            gt = struct.unpack(f"{bo}I", raw[1:5])[0]
+            off = 5 + (4 if (gt & 0x20000000) else 0)
+            x, y = struct.unpack(f"{bo}dd", raw[off : off + 16])
+            return GeoJsonPoint(coordinates=(x, y))
+        raise
+
 
 
 # --- hotlines (FR-SYS-014) ----------------------------------------------------

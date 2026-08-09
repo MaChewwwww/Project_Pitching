@@ -29,7 +29,7 @@ def _set_refresh_cookie(response: Response, plaintext: str, max_age_seconds: int
         secure=settings.cookie_secure,
         samesite="lax",
         max_age=max_age_seconds,
-        path=f"{settings.api_v1_prefix}/auth",
+        path="/",
     )
 
 
@@ -103,7 +103,7 @@ async def logout_route(
 ) -> dict[str, bool]:
     if refresh_token:
         await service.logout(session, refresh_plaintext=refresh_token, actor_user_id=None)
-    response.delete_cookie(REFRESH_COOKIE_NAME, path=f"{settings.api_v1_prefix}/auth")
+    response.delete_cookie(REFRESH_COOKIE_NAME, path="/")
     return {"ok": True}
 
 

@@ -88,6 +88,12 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: "BookOpen",
         description: "What to do before, during and after",
       },
+      {
+        label: "Ask for rescue",
+        href: "/rescue",
+        icon: "LifeBuoy",
+        description: "No account needed — name, location, and what's happening",
+      },
     ],
   },
   {

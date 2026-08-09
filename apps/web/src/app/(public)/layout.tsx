@@ -1,5 +1,10 @@
 import { PublicShell } from "@/components/common/public-shell";
-import { getActiveAlert, getHotlines, getPrimaryHotline } from "@/lib/api/public";
+import {
+  getActiveAlert,
+  getActiveEmergencyEvent,
+  getHotlines,
+  getPrimaryHotline,
+} from "@/lib/api/public";
 
 /**
  * The public route group's shell.
@@ -19,8 +24,9 @@ import { getActiveAlert, getHotlines, getPrimaryHotline } from "@/lib/api/public
 export const revalidate = 60;
 
 export default async function PublicLayout({ children }: LayoutProps<"/">) {
-  const [activeAlert, hotlines, primaryHotline] = await Promise.all([
+  const [activeAlert, emergencyEvent, hotlines, primaryHotline] = await Promise.all([
     getActiveAlert(),
+    getActiveEmergencyEvent(),
     getHotlines(),
     getPrimaryHotline(),
   ]);
@@ -28,6 +34,7 @@ export default async function PublicLayout({ children }: LayoutProps<"/">) {
   return (
     <PublicShell
       activeAlert={activeAlert}
+      emergencyEvent={emergencyEvent}
       hotlines={hotlines}
       primaryHotline={primaryHotline}
     >

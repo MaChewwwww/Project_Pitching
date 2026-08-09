@@ -15,10 +15,17 @@ export function useRegistrationDraft<TFieldValues extends FieldValues>(
   draftKey: string,
   form: UseFormReturn<TFieldValues>,
 ) {
-  // Lazy initializer, not an effect — this hook is only ever used from
-  // "use client" pages, so `localStorage` is always available synchronously.
+  // Lazy initializer, not an effect. Every consumer so far has been a
+  // "use client" *page*, itself the outermost server-rendered boundary
+  // (portal onboarding, the BHW form) — but a "use client" *component*
+  // rendered from a Server Component page (the public rescue form) still
+  // gets one SSR pass first, where `window`/`localStorage` do not exist.
+  // The guard costs nothing on a real client mount and avoids a crash on
+  // that first pass; hydration re-runs this initializer for real once the
+  // browser takes over, at the cost of a one-frame "no draft" flash if one
+  // actually exists — acceptable for a resume-prompt banner.
   const [hasDraft, setHasDraft] = React.useState(
-    () => localStorage.getItem(draftKey) !== null,
+    () => typeof window !== "undefined" && localStorage.getItem(draftKey) !== null,
   );
 
   React.useEffect(() => {

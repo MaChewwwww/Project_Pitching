@@ -13,28 +13,60 @@ import {
 } from "@/components/ui/dialog";
 import { HotlineList } from "./hotline-list";
 import { cn } from "@/lib/utils";
-import type { PublicAnnouncement, PublicHotline } from "@/lib/api/public-types";
+import type {
+  PublicAnnouncement,
+  PublicEmergencyEvent,
+  PublicHotline,
+} from "@/lib/api/public-types";
 
 export interface EmergencyAlertBannerProps {
   alert: PublicAnnouncement | null;
+  /**
+   * A declared `emergency_event` (FR-SAF-018) with no matching announcement —
+   * e.g. an admin declared the event but hasn't published an alert yet, or the
+   * alert has since expired while the event is still active. Falls back to a
+   * generic evacuation banner rather than showing nothing (NFR-AVL-004).
+   */
+  emergencyEvent?: PublicEmergencyEvent | null;
   primaryHotline?: PublicHotline;
   hotlines?: PublicHotline[];
 }
 
-export function EmergencyAlertBanner({ alert, primaryHotline, hotlines }: EmergencyAlertBannerProps) {
-  if (!alert || !alert.is_active) return null;
+export function EmergencyAlertBanner({
+  alert,
+  emergencyEvent,
+  primaryHotline,
+  hotlines,
+}: EmergencyAlertBannerProps) {
+  const activeAlert = alert && alert.is_active ? alert : null;
+  if (!activeAlert && !emergencyEvent) return null;
 
   // Level 2 and 3 mean "move now"; level 1 is a preparation notice. The palette
   // separates them so a Prepare notice does not read as an evacuation order.
-  const urgent = (alert.alert_level ?? 0) >= 2 || alert.severity === "emergency";
-  const levelText =
-    alert.alert_level != null ? `Level ${alert.alert_level}` : "Emergency";
+  // An active event with no announcement is always urgent — a declared
+  // emergency with no advisory yet is not a "prepare" state.
+  const urgent = activeAlert
+    ? (activeAlert.alert_level ?? 0) >= 2 || activeAlert.severity === "emergency"
+    : true;
+  const levelText = activeAlert
+    ? activeAlert.alert_level != null
+      ? `Level ${activeAlert.alert_level}`
+      : "Emergency"
+    : "Active";
+
+  const title = activeAlert ? activeAlert.title : `${emergencyEvent!.type} emergency declared`;
+  const instruction = activeAlert
+    ? activeAlert.instruction
+    : "An emergency has been declared for the barangay. Follow official instructions and monitor this site for updates.";
 
   // Areas plus the issuing officer (FR-ALT-007). One string, rendered in one of
-  // two places depending on width.
-  const meta = `${
-    alert.area_names.length > 0 ? alert.area_names.join(", ") : "Barangay-wide"
-  } · ${alert.issued_by_name}`;
+  // two places depending on width. The event has neither, so it falls back to
+  // its start time instead.
+  const meta = activeAlert
+    ? `${
+        activeAlert.area_names.length > 0 ? activeAlert.area_names.join(", ") : "Barangay-wide"
+      } · ${activeAlert.issued_by_name}`
+    : `Barangay-wide · Declared ${new Date(emergencyEvent!.started_at).toLocaleString()}`;
 
   const availableHotlines = hotlines && hotlines.length > 0
     ? hotlines
@@ -72,8 +104,8 @@ export function EmergencyAlertBanner({ alert, primaryHotline, hotlines }: Emerge
 
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-h4 font-bold tracking-tight min-w-0 truncate">{alert.title}</span>
-              {!/level/i.test(alert.title) ? (
+              <span className="text-h4 font-bold tracking-tight min-w-0 truncate">{title}</span>
+              {!/level/i.test(title) ? (
                 <span
                   className={cn(
                     "text-overline shrink-0 rounded-md px-2 py-0.5 font-bold tracking-wider uppercase border",
@@ -93,14 +125,14 @@ export function EmergencyAlertBanner({ alert, primaryHotline, hotlines }: Emerge
               </span>
             </div>
 
-            {alert.instruction ? (
+            {instruction ? (
               <p
                 className={cn(
                   "text-body-sm font-medium line-clamp-1 leading-snug",
                   urgent ? "text-white/90" : "text-neutral-700",
                 )}
               >
-                {alert.instruction}
+                {instruction}
               </p>
             ) : null}
           </div>

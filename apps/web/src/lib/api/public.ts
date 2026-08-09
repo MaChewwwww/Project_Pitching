@@ -28,6 +28,7 @@ import type {
   PublicArea,
   PublicBarangayStats,
   PublicDonationDrive,
+  PublicEmergencyEvent,
   PublicEvacCenter,
   PublicFacility,
   PublicFaq,
@@ -45,6 +46,7 @@ import {
   publicAreaSchema,
   publicBarangayStatsSchema,
   publicDonationDrivePageSchema,
+  publicEmergencyEventSchema,
   publicEvacCenterPageSchema,
   publicFacilitySchema,
   publicFaqSchema,
@@ -105,6 +107,28 @@ export async function getActiveAlert(): Promise<PublicAnnouncement | null> {
     );
   } catch (error) {
     logDegraded("/public/announcements/active", error);
+    return null;
+  }
+}
+
+/**
+ * The currently declared emergency, or null when none is active (FR-SAF-018).
+ *
+ * `GET /public/emergency-events/active`
+ *
+ * Not polled short-cycle like `getActiveAlert()` — an event is declared by an
+ * admin action, not a threshold crossing, so the pages that need it (the
+ * portal safety check-in, the rescue form) read it once per load rather than
+ * banner-polling for it.
+ */
+export async function getActiveEmergencyEvent(): Promise<PublicEmergencyEvent | null> {
+  try {
+    return await serverGet(
+      "/public/emergency-events/active",
+      publicEmergencyEventSchema.nullable(),
+    );
+  } catch (error) {
+    logDegraded("/public/emergency-events/active", error);
     return null;
   }
 }

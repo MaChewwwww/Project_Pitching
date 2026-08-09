@@ -63,6 +63,14 @@ export const publicAnnouncementSchema = z.object({
 });
 export const publicAnnouncementPageSchema = page(publicAnnouncementSchema);
 
+/* --- emergency events (FR-SAF-018) -------------------------------------------- */
+
+export const publicEmergencyEventSchema = z.object({
+  name: z.string(),
+  type: z.enum(["flood", "earthquake", "typhoon", "fire", "other"]),
+  started_at: z.string(),
+});
+
 /* --- guides ------------------------------------------------------------------ */
 
 export const publicGuideSummarySchema = z.object({

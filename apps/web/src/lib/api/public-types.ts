@@ -106,6 +106,19 @@ export interface PublicAnnouncement {
   is_active: boolean;
 }
 
+export type EmergencyEventType = "flood" | "earthquake" | "typhoon" | "fire" | "other";
+
+/**
+ * The currently declared emergency, scoping every safety check-in and rescue
+ * request (FR-SAF-018). No `declared_by_*` — that is barangay-staff
+ * information, not public.
+ */
+export interface PublicEmergencyEvent {
+  name: string;
+  type: EmergencyEventType;
+  started_at: string;
+}
+
 /* ---------------------------------------------------------------------------
    Preparedness guides — `guide` (FR-PRP-001/003/004/007, FR-PUB-005)
 

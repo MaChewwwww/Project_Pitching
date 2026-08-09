@@ -14,10 +14,17 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.audit import write_audit
-from src.core.errors import NotFoundError
-from src.core.pagination import Page, page_meta
+from src.core.deps import AuthenticatedUser
+from src.core.errors import ConflictError, NotFoundError
+from src.core.pagination import Page, page_meta, paginate
 from src.modules.evacuation.models import EmergencyEvent, EvacCenter
-from src.modules.evacuation.schemas import EvacCenterIn, PublicEvacCenter
+from src.modules.evacuation.schemas import (
+    EmergencyEventDeclare,
+    EmergencyEventOut,
+    EvacCenterIn,
+    PublicEmergencyEvent,
+    PublicEvacCenter,
+)
 from src.modules.geo.models import Area, Facility
 from src.modules.geo.service import point_to_geojson
 
@@ -110,6 +117,141 @@ async def get_event_names(
         )
     ).all()
     return {row[0]: row[1] for row in rows}
+
+
+async def event_out(session: AsyncSession, event: EmergencyEvent) -> EmergencyEventOut:
+    declared_by_name = None
+    if event.declared_by_user_id is not None:
+        # join-only, same precedent as the Area/Facility imports above
+        from src.modules.users.models import User
+
+        declared_by_name = await session.scalar(
+            select(User.full_name).where(User.id == event.declared_by_user_id)
+        )
+    return EmergencyEventOut(
+        id=event.id,
+        name=event.name,
+        type=event.type,
+        started_at=event.started_at,
+        ended_at=event.ended_at,
+        is_active=event.is_active,
+        declared_by_user_id=event.declared_by_user_id,
+        declared_by_name=declared_by_name,
+    )
+
+
+async def get_active_event(session: AsyncSession) -> EmergencyEvent | None:
+    return await session.scalar(select(EmergencyEvent).where(EmergencyEvent.is_active.is_(True)))
+
+
+async def get_event_or_404(session: AsyncSession, event_id: uuid.UUID) -> EmergencyEvent:
+    """For callers (safety's accounted-for summary) that need a specific —
+    possibly no-longer-active — event, not necessarily the current one. Same
+    precedent as `geo.get_area_or_404`."""
+    event = await session.get(EmergencyEvent, event_id)
+    if event is None:
+        raise NotFoundError("Emergency event not found.")
+    return event
+
+
+async def require_active_event(session: AsyncSession) -> EmergencyEvent:
+    """The cross-module entry point every safety write depends on — matching the
+    `get_event_names` (donations) and `geo.get_area_or_404` (registry) precedents."""
+    event = await get_active_event(session)
+    if event is None:
+        raise ConflictError("There is no active emergency event.")
+    return event
+
+
+async def list_events(
+    session: AsyncSession, *, page: int = 1, size: int = 20
+) -> Page[EmergencyEventOut]:
+    stmt = select(EmergencyEvent).order_by(EmergencyEvent.started_at.desc())
+    rows, total = await paginate(session, stmt, page=page, size=size)
+    items = [await event_out(session, row) for row in rows]
+    return Page[EmergencyEventOut](items=items, **page_meta(total, page, size))
+
+
+async def declare_event(
+    session: AsyncSession,
+    *,
+    body: EmergencyEventDeclare,
+    actor: AuthenticatedUser,
+    ip: str | None,
+) -> EmergencyEvent:
+    """`idx_one_active_event` is a non-deferrable partial unique index — closing the
+    previous event and inserting the new one must be ordered with a flush between
+    them, or the insert races the still-live row and the database rejects it
+    (the same `is_head` demotion-before-reparenting lesson from the registry merge).
+    """
+    active = await get_active_event(session)
+    if active is not None:
+        if not body.supersede_active:
+            raise ConflictError(
+                "An emergency event is already active. End it before declaring a new one."
+            )
+        active.is_active = False
+        active.ended_at = datetime.now(UTC)
+        await write_audit(
+            session,
+            actor_user_id=actor.id,
+            action="emergency_event.superseded",
+            entity_type="emergency_event",
+            entity_id=active.id,
+            changes={"name": active.name},
+            ip=ip,
+        )
+        await session.flush()  # hazard #3 — must land before the new row is inserted
+
+    event = EmergencyEvent(
+        name=body.name,
+        type=body.type,
+        started_at=body.started_at or datetime.now(UTC),
+        is_active=True,
+        declared_by_user_id=actor.id,
+    )
+    session.add(event)
+    await session.flush()
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="emergency_event.declare",
+        entity_type="emergency_event",
+        entity_id=event.id,
+        changes={"name": event.name, "type": event.type},
+        ip=ip,
+    )
+    await session.commit()
+    return event
+
+
+async def end_event(
+    session: AsyncSession, event_id: uuid.UUID, *, actor: AuthenticatedUser, ip: str | None
+) -> EmergencyEvent:
+    event = await session.get(EmergencyEvent, event_id)
+    if event is None:
+        raise NotFoundError("Emergency event not found.")
+    if not event.is_active:
+        raise ConflictError("This emergency event has already ended.")
+    event.is_active = False
+    event.ended_at = datetime.now(UTC)
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="emergency_event.end",
+        entity_type="emergency_event",
+        entity_id=event.id,
+        ip=ip,
+    )
+    await session.commit()
+    return event
+
+
+async def get_public_active_event(session: AsyncSession) -> PublicEmergencyEvent | None:
+    event = await get_active_event(session)
+    if event is None:
+        return None
+    return PublicEmergencyEvent(name=event.name, type=event.type, started_at=event.started_at)
 
 
 async def create_evac_center(

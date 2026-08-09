@@ -343,7 +343,8 @@ GET  /public/hazard-layers/{period}     GeoJSON, heavily cached
 GET  /public/area-stats                 area-level aggregates only
 GET  /public/donation-drives
 POST /public/donations                  FR-DON-002 — no account
-POST /public/rescue-requests            FR-SAF-009 — no account, rate limited
+POST /public/rescue-requests            implemented — FR-SAF-009, no account, rate limited
+GET  /public/emergency-events/active    implemented — active emergency event or null
 GET  /public/activities
 GET  /public/guides
 GET  /public/guides/{slug}              FR-PUB-005 — "each card opens the full guide"
@@ -353,11 +354,12 @@ GET  /public/announcements/active       FR-PUB-017 — the takeover banner, poll
 GET  /public/areas                      FR-SYS-013 — names/codes for public area filters, no geom
 ```
 
-> The last three were missing from this list while the requirements that need them
+> The last four were missing from this list while the requirements that need them
 > were already marked mandatory. `/public/guides/{slug}` is the only detail route
 > the public site needs — everything else is a list, because the landing page is
 > one document rather than a set of drill-downs. `/public/announcements/active` and
-> `/public/areas` were added for the same reason during the FR-PUB-013 close-out.
+> `/public/areas` were added for the same reason during the FR-PUB-013 close-out;
+> `/public/emergency-events/active` was added during the SAF build (FR-SAF-018/019).
 >
 > Note also that `/public/weather/current` breaks the plural-noun convention above.
 > Left as-is because it reads better than `/public/weather-readings?latest=true`,
@@ -373,15 +375,15 @@ POST  /me/household                 implemented — FR-REG-001's onboarding step
 PATCH /me/household                 planned — editing (FR-REG-009) is out of scope so far
 POST  /me/household/members
 PATCH /me/household/members/{id}
-POST  /me/safety-status            per member or whole household
+POST  /me/safety-status            implemented — per member or whole household (FR-SAF-001..007)
+POST  /me/incident-reports          implemented — photo upload + report details (FR-SAF-015)
 GET   /me/assistance
 GET   /me/go-bag
 PUT   /me/go-bag
 ```
 
-> `/me` had zero routes mounted until the two marked "implemented" above —
-> this tier's first real occupants. Everything else in this list remains the
-> original planned surface, unbuilt.
+> `/me` now has safety check-in and incident reporting mounted alongside the initial
+> household routes.
 
 **Admin**
 
@@ -393,10 +395,19 @@ POST  /admin/households/{id}/vulnerability-override
 GET   /admin/households/duplicates   folded into GET /admin/households?flagged=true instead
                                      of a separate endpoint — same data, one fewer route
 POST  /admin/households/merge        implemented (FR-REG-010)
-GET   /admin/rescue-requests         queue with triage ordering
-PATCH /admin/rescue-requests/{id}
-POST  /admin/safety-status           on behalf of a resident, incl. unregistered
-GET   /admin/accounted-for           live counts by area
+GET   /admin/emergency-events        implemented — list events (FR-SAF-018/019)
+POST  /admin/emergency-events        implemented — declare an event
+POST  /admin/emergency-events/{id}/end implemented — end active event
+GET   /admin/rescue-requests         implemented — queue with triage ordering (FR-SAF-010)
+GET   /admin/rescue-requests/open-count implemented — tile count
+PATCH /admin/rescue-requests/{id}    implemented — update status / manual priority
+POST  /admin/safety-status           implemented — on behalf of a resident (FR-SAF-004)
+GET   /admin/accounted-for           implemented — live counts by area (FR-SAF-011)
+GET   /admin/unregistered-persons    implemented — list unregistered (FR-SAF-012)
+POST  /admin/unregistered-persons    implemented — record unregistered person
+PATCH /admin/unregistered-persons/{id} implemented — update status
+GET   /admin/incident-reports        implemented — list incident reports (FR-SAF-016)
+PATCH /admin/incident-reports/{id}   implemented — verify or dismiss report
 POST  /admin/alerts
 DELETE /admin/alerts/{id}
 GET   /admin/alert-prompts           threshold breaches awaiting a decision

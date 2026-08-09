@@ -602,16 +602,16 @@ Scopes safety statuses, rescue requests, incident reports, and donation drives s
 CREATE UNIQUE INDEX idx_one_active_event ON emergency_event((true)) WHERE is_active;
 ```
 
-### `safety_status` (FR-SAF-001 … 007)
+### `safety_status` (FR-SAF-001 … 007) — **implemented, migration `0008_safety_core`**
 
 | Column | Type | Constraints | Notes |
 |---|---|---|---|
 | `id` | UUID | PK | |
-| `event_id` | UUID | NOT NULL FK → `emergency_event` | |
+| `event_id` | UUID | NOT NULL FK → `emergency_event` ON DELETE CASCADE | |
 | `member_id` | UUID | FK → `member` ON DELETE CASCADE | Null for unregistered persons |
-| `unregistered_person_id` | UUID | FK → `unregistered_person` | Null for registered members |
+| `unregistered_person_id` | UUID | FK → `unregistered_person` ON DELETE CASCADE | Null for registered members |
 | `status` | TEXT | NOT NULL CHECK | `safe` · `needs_rescue` · `unaccounted` |
-| `set_by_user_id` | UUID | FK → `user` | Null if self-set by the head |
+| `set_by_user_id` | UUID | FK → `user` ON DELETE SET NULL | **Always the actor** — see deviation note below |
 | `set_method` | TEXT | NOT NULL CHECK | `self` · `assisted` · `household_bulk` |
 | `set_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
 | `superseded_at` | TIMESTAMPTZ | | Corrections insert a new row (FR-SAF-006) |
@@ -621,52 +621,72 @@ CREATE INDEX idx_safety_event_current ON safety_status(event_id, status) WHERE s
 
 ALTER TABLE safety_status ADD CONSTRAINT chk_subject_exactly_one
   CHECK (num_nonnulls(member_id, unregistered_person_id) = 1);
+
+-- Actual enforcement of "at most one current row per subject" — the prose
+-- rule above was never mechanically enforced until these landed. Without
+-- them two concurrent "safe" writes for one member both succeed and the
+-- accounted-for dashboard double-counts.
+CREATE UNIQUE INDEX uq_safety_current_member ON safety_status(event_id, member_id)
+  WHERE superseded_at IS NULL AND member_id IS NOT NULL;
+CREATE UNIQUE INDEX uq_safety_current_unreg ON safety_status(event_id, unregistered_person_id)
+  WHERE superseded_at IS NULL AND unregistered_person_id IS NOT NULL;
 ```
 
 > **`set_method` is what makes FR-SAF-005 possible.** The dashboard distinguishes individually confirmed statuses from those swept in by a household bulk action, so the BDRRMC can see how much confidence a "safe" count actually carries. Without this column the distinction cannot be made after the fact.
 
-### `unregistered_person` (FR-SAF-012, FR-EVC-005)
+> **Deviation, documented (FR-REG-011 precedent): `set_by_user_id` is always the actor, never null.** This note used to say "null if self-set by the head" — that describes when null is *permitted*, but FR-SAF-007 requires recording *who* set a status, and nulling it on self-set entries loses exactly that. `set_method` already carries the self/assisted/bulk distinction, so nothing is lost by also recording the actor.
+
+### `unregistered_person` (FR-SAF-012, FR-EVC-005) — **implemented, migration `0008_safety_core`**
 
 | Column | Type | Constraints | Notes |
 |---|---|---|---|
 | `id` | UUID | PK | |
-| `event_id` | UUID | NOT NULL FK → `emergency_event` | |
+| `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | Not in the original design — recording *when* is otherwise unrecoverable |
+| `updated_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
+| `event_id` | UUID | NOT NULL FK → `emergency_event` ON DELETE CASCADE | |
 | `full_name` | TEXT | NOT NULL | **Name and location is enough** |
 | `contact_number` | TEXT | | |
 | `location` | GEOMETRY(Point, 4326) | | |
 | `location_note` | TEXT | | Free text — "near Wawa bridge" |
-| `recorded_by_user_id` | UUID | FK → `user` | |
-| `converted_household_id` | UUID | FK → `household` | FR-SAF-014 |
+| `recorded_by_user_id` | UUID | FK → `user` ON DELETE SET NULL | |
+| `converted_household_id` | UUID | FK → `household` ON DELETE SET NULL | FR-SAF-014 — conversion itself is cut, Aug 2026 (see below) |
+
+Indexes: `idx_unregistered_event(event_id)`, `idx_unregistered_location` GiST.
 
 > Counted separately from registered residents so coverage figures stay honest (FR-SAF-013).
 
-### `rescue_request` (FR-SAF-008 … 010)
+### `rescue_request` (FR-SAF-008 … 010) — **implemented, migration `0008_safety_core`**
 
 | Column | Type | Constraints | Notes |
 |---|---|---|---|
 | `id` | UUID | PK | |
-| `event_id` | UUID | FK → `emergency_event` | Nullable — a request may precede a declared event |
-| `household_id` | UUID | FK → `household` | **Nullable — anonymous requests** |
+| `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | Not in the original design — `idx_rescue_open` referenced this column without it ever being listed here; fixed alongside the migration |
+| `updated_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | The queue mutates on triage, so this is tracked like `TimestampMixin` elsewhere |
+| `event_id` | UUID | FK → `emergency_event` ON DELETE SET NULL | Nullable — a request may precede a declared event |
+| `household_id` | UUID | FK → `household` ON DELETE SET NULL | **Nullable — anonymous requests** |
 | `requester_name` | TEXT | NOT NULL | |
 | `contact_number` | TEXT | | |
 | `location` | GEOMETRY(Point, 4326) | | |
 | `location_note` | TEXT | | |
 | `description` | TEXT | NOT NULL | |
-| `people_count` | SMALLINT | | |
+| `people_count` | INTEGER | | |
 | `status` | TEXT | NOT NULL DEFAULT `'pending'` CHECK | `pending` · `verified` · `dispatched` · `resolved` · `dismissed` |
-| `priority` | SMALLINT | | Computed at triage |
-| `vulnerability_level` | TEXT | | Snapshot, where the requester is registered |
-| `assigned_to_user_id` | UUID | FK → `user` | |
+| `priority` | INTEGER | | Computed at triage (`FR-SAF-010`, not yet built) |
+| `vulnerability_level` | TEXT | | Left NULL by design — see the FR-SAF-010 deviation note in `frs_nfrs.md` §9; a made-up level would poison this column once BRD OI-18 lands |
+| `assigned_to_user_id` | UUID | FK → `user` ON DELETE SET NULL | |
 | `resolved_at` | TIMESTAMPTZ | | |
 | `resolution_note` | TEXT | | |
-| `source_ip` | INET | | Abuse investigation only |
+| `source_ip` | INET | | Abuse investigation only — never in a response DTO |
 
 ```sql
-CREATE INDEX idx_rescue_open ON rescue_request(status, priority DESC, created_at)
+CREATE INDEX idx_rescue_open ON rescue_request(status, priority, created_at)
   WHERE status IN ('pending','verified','dispatched');
+CREATE INDEX idx_rescue_location ON rescue_request USING GIST(location);
 ```
 
 > **`household_id` is nullable and that is FR-SAF-009.** Nobody registers during an emergency to ask for help. Anonymous requests are triaged on the reported situation alone and are **not** ranked below registered ones by default (FR-SAF-010).
+
+> **Known follow-up for the FR-SAF-010 phase:** the migrated index above orders by plain `priority`, not `priority DESC`. The triage design ("higher number = more urgent") needs `priority DESC` to actually benefit from this index — confirm and fix (a new migration, not an edit to `0008`) when that phase lands.
 
 ### `incident_report` (FR-SAF-015, 016)
 

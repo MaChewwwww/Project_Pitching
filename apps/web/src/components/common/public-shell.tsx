@@ -4,7 +4,11 @@ import { EmergencyAlertBanner } from "./emergency-alert-banner";
 import { Footer } from "./footer";
 import { PublicNavbar } from "./public-navbar";
 import { TopUtilityBar } from "./top-utility-bar";
-import type { PublicAnnouncement, PublicHotline } from "@/lib/api/public-types";
+import type {
+  PublicAnnouncement,
+  PublicEmergencyEvent,
+  PublicHotline,
+} from "@/lib/api/public-types";
 
 /**
  * The frame around every public page (design.md Section 7.2).
@@ -27,6 +31,7 @@ import type { PublicAnnouncement, PublicHotline } from "@/lib/api/public-types";
 export interface PublicShellProps {
   children: React.ReactNode;
   activeAlert: PublicAnnouncement | null;
+  emergencyEvent?: PublicEmergencyEvent | null;
   hotlines: PublicHotline[];
   primaryHotline: PublicHotline;
 }
@@ -34,6 +39,7 @@ export interface PublicShellProps {
 export function PublicShell({
   children,
   activeAlert,
+  emergencyEvent,
   hotlines,
   primaryHotline,
 }: PublicShellProps) {
@@ -42,7 +48,12 @@ export function PublicShell({
       <TopUtilityBar primaryHotline={primaryHotline} />
 
       <div className="sticky top-0 z-50">
-        <EmergencyAlertBanner alert={activeAlert} primaryHotline={primaryHotline} hotlines={hotlines} />
+        <EmergencyAlertBanner
+          alert={activeAlert}
+          emergencyEvent={emergencyEvent}
+          primaryHotline={primaryHotline}
+          hotlines={hotlines}
+        />
         <PublicNavbar primaryHotline={primaryHotline} />
       </div>
 
