@@ -28,9 +28,8 @@ export async function AnnouncementsSection() {
     <Section id="announcements">
       <SectionHeader
         icon={Megaphone}
-        eyebrow="Latest from the barangay"
         title="Announcements &"
-        titleAccent="advisories"
+        titleAccent="Advisories"
         description="Weather advisories, class suspensions, road closures and emergency notices — posted by the barangay office."
         action={
           <Button asChild variant="outline" pill size="md" className="max-sm:w-full">

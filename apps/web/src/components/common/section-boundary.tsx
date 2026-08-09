@@ -59,12 +59,7 @@ export class SectionBoundary extends React.Component<
 
   render() {
     if (this.state.error) {
-      return (
-        <ErrorState
-          sectionName={this.props.sectionName}
-          onRetry={this.retry}
-        />
-      );
+      return <ErrorState sectionName={this.props.sectionName} onRetry={this.retry} />;
     }
     return this.props.children;
   }

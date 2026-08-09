@@ -197,6 +197,39 @@ export interface PublicArea {
 }
 
 /* ---------------------------------------------------------------------------
+   Area boundaries — GeoJSON FeatureCollection (FR-MAP-001)
+
+   Separate from PublicArea: that endpoint returns names and stats; this one
+   returns the polygon geometries the Leaflet map needs. The geometry is
+   typed loosely (unknown) because the map passes it straight to react-leaflet
+   without inspecting the coordinate rings.
+   --------------------------------------------------------------------------- */
+
+export interface AreaBoundaryProperties {
+  area_id: string;
+  name: string;
+  code: string | null;
+  flood_exposure: "low" | "medium" | "high" | null;
+  boundary_source: "official" | "approximate" | null;
+}
+
+export interface AreaBoundaryFeature {
+  type: "Feature";
+  properties: AreaBoundaryProperties;
+  /** GeoJSON MultiPolygon geometry — passed through verbatim from PostGIS. */
+  geometry: unknown;
+}
+
+/**
+ * GeoJSON FeatureCollection of area boundary polygons.
+ * An empty `features` array is valid — degrades the area layer, not the whole map.
+ */
+export interface AreaBoundaryCollection {
+  type: "FeatureCollection";
+  features: AreaBoundaryFeature[];
+}
+
+/* ---------------------------------------------------------------------------
    Facilities — `facility` (FR-SYS-015, FR-MAP-005)
    --------------------------------------------------------------------------- */
 

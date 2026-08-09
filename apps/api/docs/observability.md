@@ -8,9 +8,17 @@ reinvent them.
 Structured JSON, one line per event, with a **request ID on every line** (NFR-OBS-001).
 
 ```json
-{"ts":"2026-08-07T08:55:26.835Z","level":"INFO","logger":"api.request",
- "message":"request","request_id":"1bf0ec41…","method":"GET","path":"/health",
- "status":200,"duration_ms":24.1}
+{
+  "ts": "2026-08-07T08:55:26.835Z",
+  "level": "INFO",
+  "logger": "api.request",
+  "message": "request",
+  "request_id": "1bf0ec41…",
+  "method": "GET",
+  "path": "/health",
+  "status": 200,
+  "duration_ms": 24.1
+}
 ```
 
 The ID is generated per request — or taken from an inbound `X-Request-ID` — held in a context
@@ -32,19 +40,25 @@ log.info("household verified", extra={"household_id": str(h.id), "area_id": str(
 One handler, one shape (`architecture.md` Section 6.1):
 
 ```json
-{"type":"/errors/not-found","title":"Resource not found","status":404,
- "detail":"…","errors":[],"request_id":"de4bacaa…"}
+{
+  "type": "/errors/not-found",
+  "title": "Resource not found",
+  "status": 404,
+  "detail": "…",
+  "errors": [],
+  "request_id": "de4bacaa…"
+}
 ```
 
 Raise from a service; never catch in a router.
 
-| Raise | Gives |
-|---|---|
-| `NotFoundError` | 404 |
-| `PermissionDeniedError` | 403 |
-| `ConflictError` | 409 |
-| `AppError` | 400 |
-| Anything else | 500 with a generic message |
+| Raise                   | Gives                      |
+| ----------------------- | -------------------------- |
+| `NotFoundError`         | 404                        |
+| `PermissionDeniedError` | 403                        |
+| `ConflictError`         | 409                        |
+| `AppError`              | 400                        |
+| Anything else           | 500 with a generic message |
 
 **An unhandled exception logs the traceback and returns nothing about it.** The 500 body says
 "something went wrong" and carries the request ID; the detail is in the logs. Leaking a stack
@@ -73,7 +87,12 @@ Action names read `entity.verb`: `household.create`, `alert.publish`, `vulnerabi
 browser coming through the proxy take different paths.
 
 ```json
-{"status":"ok","database":"ok","environment":"development","demo_mode":"false"}
+{
+  "status": "ok",
+  "database": "ok",
+  "environment": "development",
+  "demo_mode": "false"
+}
 ```
 
 **It reports, it never raises.** A dead database returns `"database":"unavailable"` with HTTP

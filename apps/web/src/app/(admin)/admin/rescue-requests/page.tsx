@@ -38,7 +38,9 @@ const STATUS_FILTERS: Array<{ value: RescueRequestStatus | "all"; label: string 
 export default function AdminRescueRequestsPage() {
   useRequireRole("admin", "bhw");
 
-  const [statusFilter, setStatusFilter] = React.useState<RescueRequestStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = React.useState<RescueRequestStatus | "all">(
+    "all",
+  );
   const [triageTarget, setTriageTarget] = React.useState<RescueRequestOut | null>(null);
 
   const { data, isLoading } = useQuery({
@@ -46,7 +48,10 @@ export default function AdminRescueRequestsPage() {
     queryFn: () =>
       api
         .get<Page<RescueRequestOut>>("/admin/rescue-requests", {
-          params: { size: 50, ...(statusFilter !== "all" ? { status: statusFilter } : {}) },
+          params: {
+            size: 50,
+            ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+          },
         })
         .then((r) => r.data),
     refetchInterval: 15_000,

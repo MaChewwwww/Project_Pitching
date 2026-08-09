@@ -41,8 +41,8 @@ export function Hero3DTitleCanvas({ className }: { className?: string }) {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className={cn(
-        "group relative py-1 select-none cursor-pointer [perspective:1000px]",
-        className
+        "group relative cursor-pointer py-1 select-none [perspective:1000px]",
+        className,
       )}
     >
       {/* Hidden Accessible H1 for SEO */}
@@ -52,7 +52,7 @@ export function Hero3DTitleCanvas({ className }: { className?: string }) {
 
       {/* 3D Main Scene Container with Liquid Floating Wave */}
       <div
-        className="relative transition-transform duration-500 ease-out [transform-style:preserve-3d] animate-[water-surface-float_5s_ease-in-out_infinite]"
+        className="relative animate-[water-surface-float_5s_ease-in-out_infinite] transition-transform duration-500 ease-out [transform-style:preserve-3d]"
         style={{
           transform: `rotateX(${rotX}deg) rotateY(${rotY}deg)`,
         }}
@@ -60,7 +60,7 @@ export function Hero3DTitleCanvas({ className }: { className?: string }) {
         {/* Line 1: "Ready Before" - Deep Charcoal Typography */}
         <div
           aria-hidden
-          className="text-4xl sm:text-5xl lg:text-[42px] xl:text-[52px] 2xl:text-6xl font-extrabold tracking-tight leading-[1.1] text-neutral-900 drop-shadow-[0_4px_12px_rgba(15,23,42,0.08)]"
+          className="text-4xl leading-[1.1] font-extrabold tracking-tight text-neutral-900 drop-shadow-[0_4px_12px_rgba(15,23,42,0.08)] sm:text-5xl lg:text-[42px] xl:text-[52px] 2xl:text-6xl"
         >
           {line1Text}
         </div>
@@ -68,20 +68,23 @@ export function Hero3DTitleCanvas({ className }: { className?: string }) {
         {/* Line 2: "the Water Rises" - Brand Primary Green with Darker Ocean Blue Current */}
         <div
           aria-hidden
-          className="relative mt-1 text-4xl sm:text-5xl lg:text-[42px] xl:text-[52px] 2xl:text-6xl font-extrabold tracking-tight leading-[1.1] text-primary-600 drop-shadow-[0_6px_16px_rgba(22,128,61,0.18)]"
+          className="text-primary-600 relative mt-1 text-4xl leading-[1.1] font-extrabold tracking-tight drop-shadow-[0_6px_16px_rgba(22,128,61,0.18)] sm:text-5xl lg:text-[42px] xl:text-[52px] 2xl:text-6xl"
         >
-          <span className="relative inline-block whitespace-nowrap bg-gradient-to-r from-primary-800 via-primary-600 via-teal-600 to-primary-700 bg-clip-text text-transparent bg-[length:300%_100%] animate-[liquid-river-flow_6s_linear_infinite]">
+          <span className="from-primary-800 via-primary-600 to-primary-700 relative inline-block animate-[liquid-river-flow_6s_linear_infinite] bg-gradient-to-r via-teal-600 bg-[length:300%_100%] bg-clip-text whitespace-nowrap text-transparent">
             {line2Text}
-            
+
             {/* Liquid Surface Water Current Reflection Flare */}
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/45 to-transparent bg-[length:200%_100%] animate-[light-sweep_4s_ease-in-out_infinite] mix-blend-overlay"
+              className="pointer-events-none absolute inset-0 animate-[light-sweep_4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/45 to-transparent bg-[length:200%_100%] mix-blend-overlay"
             />
           </span>
 
           {/* DUAL-LAYER SVG WATER WAVE UNDERLINE (Green Front Wave + Darker Ocean Blue Back Crest) */}
-          <div aria-hidden className="relative -mt-1 sm:-mt-2 h-4 sm:h-5.5 w-full max-w-lg overflow-hidden max-lg:mx-auto">
+          <div
+            aria-hidden
+            className="relative -mt-1 h-4 w-full max-w-lg overflow-hidden max-lg:mx-auto sm:-mt-2 sm:h-5.5"
+          >
             {/* Wave Layer 1 (Front Primary Green Wave) */}
             <svg
               viewBox="0 0 1200 40"
@@ -109,7 +112,13 @@ export function Hero3DTitleCanvas({ className }: { className?: string }) {
               className="absolute inset-0 h-full w-[200%] animate-[wave-flow_8s_linear_infinite_reverse] opacity-75 mix-blend-screen"
             >
               <defs>
-                <linearGradient id="wave-grad-secondary" x1="0%" y1="0%" x2="100%" y2="0%">
+                <linearGradient
+                  id="wave-grad-secondary"
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="0%"
+                >
                   <stop offset="0%" stopColor="#0284c7" />
                   <stop offset="50%" stopColor="#0d9488" />
                   <stop offset="100%" stopColor="#15803d" />

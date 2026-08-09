@@ -26,8 +26,8 @@ PY          := python
 
 .DEFAULT_GOAL := help
 .PHONY: help env dev up down restart logs ps migrate revision seed shell-api shell-db \
-        test test-api test-web lint lint-api lint-web format types shadcn hazard \
-        backup restore clean
+        test test-api test-web lint lint-api lint-web format types shadcn \
+        hazard hazard-derive hazard-web backup restore clean
 
 help:  ## show this help
 	@$(PY) tools/make_help.py
@@ -110,9 +110,13 @@ types:  ## regenerate the API client types from OpenAPI
 shadcn:  ## (re)install every shadcn primitive listed in design.md Section 7.1
 	@$(PY) tools/install_shadcn.py
 
-hazard:  ## rebuild dataset/derived/ from dataset/raw/, then copy into the web app
+hazard: hazard-derive hazard-web  ## regenerate hazard data from dataset/raw/, then stage it for the web app
+
+hazard-derive:  ## rebuild dataset/derived/ from dataset/raw/ — needs geopandas and the gitignored shapefiles
 	$(PY) tools/prepare_hazard.py
-	@$(PY) -c "import glob,os,shutil; d='apps/web/public/data'; os.makedirs(d,exist_ok=True); [shutil.copy(f,d) for f in glob.glob('dataset/derived/*.geojson')]; print('copied to '+d)"
+
+hazard-web:  ## stage dataset/derived/*.geojson into apps/web/public/data/ — stdlib only, works on any clone
+	@$(PY) tools/stage_hazard_web.py
 
 # --- operations ---------------------------------------------------------------
 

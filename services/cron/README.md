@@ -10,7 +10,7 @@ No HTTP surface, no ports, exactly one replica.
 An in-process scheduler inside the API breaks the moment you run more than one Gunicorn worker:
 every worker fires every job. Duplicate scrapes, duplicate alert prompts, duplicate reminders.
 
-A dedicated single-replica container makes that impossible *by construction* rather than by
+A dedicated single-replica container makes that impossible _by construction_ rather than by
 convention (`architecture.md` A-4). It costs nothing.
 
 ## Run it

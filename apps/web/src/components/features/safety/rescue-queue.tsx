@@ -51,7 +51,9 @@ export function RescueQueue({
                 {/* Neutral, never a demotion — BR-5.9 requires an anonymous
                     request to never read as lower-priority than a registered
                     one, and that includes the visual language. */}
-                {!request.is_registered ? <Badge tone="neutral">Unregistered</Badge> : null}
+                {!request.is_registered ? (
+                  <Badge tone="neutral">Unregistered</Badge>
+                ) : null}
                 {request.priority_is_manual ? (
                   <Badge tone="neutral" outline>
                     Manual priority
@@ -76,7 +78,9 @@ export function RescueQueue({
             <p className="text-body-sm text-neutral-700">{request.description}</p>
 
             {request.people_count ? (
-              <p className="text-caption text-neutral-500">{request.people_count} people</p>
+              <p className="text-caption text-neutral-500">
+                {request.people_count} people
+              </p>
             ) : null}
 
             {request.location_note ? (
@@ -106,7 +110,9 @@ export function RescueQueue({
             ) : null}
 
             {request.resolution_note ? (
-              <p className="text-caption text-neutral-500">Note: {request.resolution_note}</p>
+              <p className="text-caption text-neutral-500">
+                Note: {request.resolution_note}
+              </p>
             ) : null}
 
             <Button

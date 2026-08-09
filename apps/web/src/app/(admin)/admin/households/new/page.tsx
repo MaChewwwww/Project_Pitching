@@ -28,11 +28,17 @@ import { api, toDisplayError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import { useRegistrationDraft } from "@/lib/hooks/use-registration-draft";
-import type { HouseholdCreateBhw, HouseholdCreateResponse } from "@/lib/api/registry-types";
+import type {
+  HouseholdCreateBhw,
+  HouseholdCreateResponse,
+} from "@/lib/api/registry-types";
 
 const LocationPicker = dynamic(
   () => import("@/components/features/registry/location-picker"),
-  { ssr: false, loading: () => <div className="h-72 w-full rounded-lg bg-neutral-100" /> },
+  {
+    ssr: false,
+    loading: () => <div className="h-72 w-full rounded-lg bg-neutral-100" />,
+  },
 );
 
 interface Area {
@@ -124,9 +130,18 @@ export default function NewHouseholdPage() {
     resolver: zodResolver(bhwFormSchema as never),
     defaultValues: emptyValues,
   });
-  const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = form;
+  const {
+    control,
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = form;
 
-  const { hasDraft, resume, discard, clearOnSuccess } = useRegistrationDraft(DRAFT_KEY, form);
+  const { hasDraft, resume, discard, clearOnSuccess } = useRegistrationDraft(
+    DRAFT_KEY,
+    form,
+  );
 
   const submitMutation = useMutation({
     mutationFn: (body: HouseholdCreateBhw) =>
@@ -217,7 +232,11 @@ export default function NewHouseholdPage() {
 
       <Card className="max-w-2xl">
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+            className="flex flex-col gap-5"
+          >
             {serverError ? (
               <div
                 role="alert"
@@ -232,7 +251,11 @@ export default function NewHouseholdPage() {
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="head_name">Head of household — full name</Label>
-              <Input id="head_name" aria-invalid={!!errors.head_name} {...register("head_name")} />
+              <Input
+                id="head_name"
+                aria-invalid={!!errors.head_name}
+                {...register("head_name")}
+              />
               {errors.head_name ? (
                 <p className="text-danger text-xs">{errors.head_name.message}</p>
               ) : null}
@@ -286,9 +309,34 @@ export default function NewHouseholdPage() {
               </Label>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="street_address">Street address</Label>
-              <Input id="street_address" {...register("street_address")} />
+            {/* ── PSGC address hierarchy — pre-filled, read-only ── */}
+            <div className="flex flex-col gap-3">
+              <p className="text-body-sm font-semibold text-neutral-700">Address</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="psgc_region" className="text-xs text-neutral-500">Region</Label>
+                  <Input id="psgc_region" value="Region IV-A (CALABARZON)" readOnly tabIndex={-1} className="cursor-default select-none bg-neutral-50 text-neutral-500" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="psgc_province" className="text-xs text-neutral-500">Province</Label>
+                  <Input id="psgc_province" value="Rizal" readOnly tabIndex={-1} className="cursor-default select-none bg-neutral-50 text-neutral-500" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="psgc_city" className="text-xs text-neutral-500">City / Municipality</Label>
+                  <Input id="psgc_city" value="Rodriguez (Montalban)" readOnly tabIndex={-1} className="cursor-default select-none bg-neutral-50 text-neutral-500" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="psgc_barangay" className="text-xs text-neutral-500">Barangay</Label>
+                  <Input id="psgc_barangay" value="San Jose" readOnly tabIndex={-1} className="cursor-default select-none bg-neutral-50 text-neutral-500" />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="street_address">
+                  House no. / Street / Purok{" "}
+                  <span className="text-neutral-400 font-normal">(optional)</span>
+                </Label>
+                <Input id="street_address" {...register("street_address")} placeholder="e.g. 12 Sampaguita St., Purok 3" />
+              </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -307,7 +355,11 @@ export default function NewHouseholdPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="head_birth_date">Birth date</Label>
-                <Input id="head_birth_date" type="date" {...register("head_birth_date")} />
+                <Input
+                  id="head_birth_date"
+                  type="date"
+                  {...register("head_birth_date")}
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="head_sex">Sex</Label>

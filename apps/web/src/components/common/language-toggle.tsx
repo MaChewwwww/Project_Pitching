@@ -42,10 +42,10 @@ export function LanguageToggle({
       aria-label="Content language"
       className={cn(
         "inline-flex items-center rounded-full border transition-colors",
-        fullWidth ? "flex w-full p-1" : "h-10 p-1 gap-1",
+        fullWidth ? "flex w-full p-1" : "h-10 gap-1 p-1",
         onDark
-          ? "bg-white/10 border-white/15"
-          : "bg-neutral-100/90 border-neutral-200/80",
+          ? "border-white/15 bg-white/10"
+          : "border-neutral-200/80 bg-neutral-100/90",
         className,
       )}
     >
@@ -59,15 +59,15 @@ export function LanguageToggle({
             aria-label={`Show content in ${option.full}`}
             onClick={() => setLang(option.value)}
             className={cn(
-              "rounded-full font-bold transition-all duration-200 cursor-pointer flex items-center justify-center text-center",
+              "flex cursor-pointer items-center justify-center rounded-full text-center font-bold transition-all duration-200",
               fullWidth
-                ? "flex-1 px-3 py-2 text-caption"
-                : "h-8 px-3.5 text-[13px] font-bold leading-none",
+                ? "text-caption flex-1 px-3 py-2"
+                : "h-8 px-3.5 text-[13px] leading-none font-bold",
               "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
               active
                 ? onDark
-                  ? "bg-white text-primary-950 shadow-xs"
-                  : "bg-primary-600 text-white shadow-sm shadow-primary-600/30"
+                  ? "text-primary-950 bg-white shadow-xs"
+                  : "bg-primary-600 shadow-primary-600/30 text-white shadow-sm"
                 : onDark
                   ? "text-primary-100/80 hover:text-white"
                   : "text-neutral-500 hover:text-neutral-800",

@@ -5,12 +5,12 @@
 Four, and the parentheses mean they do not appear in the URL — they exist to give each surface
 its own layout and its own guard.
 
-| Group      | Surface                                           | Guard                                     |
-| ---------- | ------------------------------------------------- | ----------------------------------------- |
+| Group      | Surface                                                                                                                                                   | Guard                                     |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | `(public)` | Landing (`/`), announcements, weather & river level, evacuation centres, hazard map, preparedness guides, activities, donation drives, help & FAQs, about | None                                      |
-| `(auth)`   | Login, register, password reset                   | None — but redirects if already signed in |
-| `(portal)` | Resident's own household, safety check-in, go-bag | Signed in                                 |
-| `(admin)`  | Barangay console                                  | Signed in **and** role-checked            |
+| `(auth)`   | Login, register, password reset                                                                                                                           | None — but redirects if already signed in |
+| `(portal)` | Resident's own household, safety check-in, go-bag                                                                                                         | Signed in                                 |
+| `(admin)`  | Barangay console                                                                                                                                          | Signed in **and** role-checked            |
 
 > The guards here are **convenience, not security**. Every one of them is re-checked
 > server-side by the API (FR-SYS-006). A guard that only exists in the browser is a guard an

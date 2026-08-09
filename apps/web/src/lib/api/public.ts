@@ -25,6 +25,7 @@ import type {
   Page,
   PublicActivity,
   PublicAnnouncement,
+  AreaBoundaryCollection,
   PublicArea,
   PublicBarangayStats,
   PublicDonationDrive,
@@ -344,5 +345,76 @@ export async function getFloodEvents(options?: {
   } catch (error) {
     logDegraded("/public/flood-events", error);
     return emptyPage(page, size);
+  }
+}
+
+/* --- map geometry --------------------------------------------------------- */
+
+/**
+ * `GET /public/area-boundaries`
+ *
+ * Returns area polygon geometry for the Leaflet map. An empty feature list is
+ * valid (boundaries not yet loaded) — the map degrades the area layer silently,
+ * same as the hazard layer 404 handling (FR-PUB-016, NFR-AVL-002).
+ */
+export async function getAreaBoundaries(): Promise<AreaBoundaryCollection> {
+  try {
+    const data = await serverGet("/public/area-boundaries", z.object({
+      type: z.literal("FeatureCollection"),
+      features: z.array(z.object({
+        type: z.literal("Feature"),
+        properties: z.object({
+          area_id: z.string(),
+          name: z.string(),
+          code: z.string().nullable(),
+          flood_exposure: z.enum(["low", "medium", "high"]).nullable(),
+          boundary_source: z.enum(["official", "approximate"]).nullable(),
+        }),
+        geometry: z.unknown(),
+      })),
+    }));
+    return data as AreaBoundaryCollection;
+  } catch (error) {
+    logDegraded("/public/area-boundaries", error);
+    return { type: "FeatureCollection", features: [] };
+  }
+}
+
+/**
+ * `GET /public/sirens`
+ *
+ * Returns siren unit locations and statuses for the map layer. Degrades to an
+ * empty list if the endpoint is unavailable — the siren layer is opt-in and
+ * simulation-only (FR-MAP-014), so an absence is not an error for users.
+ */
+export async function getSirens(): Promise<
+  Array<{
+    id: string;
+    name: string;
+    status: "idle" | "sounding";
+    location: { type: string; coordinates: [number, number] };
+    area_id: string | null;
+  }>
+> {
+  try {
+    const data = await serverGet(
+      "/public/sirens",
+      z.array(
+        z.object({
+          id: z.string(),
+          name: z.string(),
+          status: z.enum(["idle", "sounding"]),
+          location: z.object({
+            type: z.string(),
+            coordinates: z.tuple([z.number(), z.number()]),
+          }),
+          area_id: z.string().nullable(),
+        }),
+      ),
+    );
+    return data;
+  } catch (error) {
+    logDegraded("/public/sirens", error);
+    return [];
   }
 }

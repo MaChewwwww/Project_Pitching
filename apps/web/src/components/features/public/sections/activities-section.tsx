@@ -19,9 +19,8 @@ export async function ActivitiesSection() {
     <Section id="activities" tone="tint">
       <SectionHeader
         icon={CalendarDays}
-        eyebrow="What's on"
-        title="Upcoming"
-        titleAccent="activities"
+        title="Current"
+        titleAccent="Activities"
         description="Drills, training and community programs. Open to all residents unless stated otherwise."
         action={
           <Button asChild variant="outline" pill size="md" className="max-sm:w-full">

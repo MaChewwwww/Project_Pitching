@@ -14,6 +14,7 @@ student team (PolSci, PubAd, Nutrition & Dietetics, IT). Optimize for a working,
 demo on a fixed deadline — not for production hardening.
 
 ### Staging Environment & VPS Info
+
 - **VPS Public IP**: `57.155.90.155`
 - **Primary HTTPS Domain**: `https://57-155-90-155.sslip.io`
 - **HTTP Staging URL**: `http://57.155.90.155:8080` or `http://57.155.90.155`
@@ -21,6 +22,14 @@ demo on a fixed deadline — not for production hardening.
 - **Server Deployment Path**: `/opt/bgh/Project_Pitching`
 - **Compose Project Name**: `sagip-staging` (`--env-file .env.staging -f infra/compose.yml`)
 - See `.agents/skills/staging-maintenance/SKILL.md` for complete maintenance runbooks.
+
+### Local machine is the default target
+
+**Unless the user explicitly mentions the server, staging, the VPS, or invokes the
+`staging-maintenance` skill — assume all Docker and compose operations run on the local
+machine.** Do not SSH, push to the server remote, or touch any VPS resource as a side-effect
+of a routine "rebuild", "restart", or "run" request. The local stack uses the same
+`infra/compose.yml` with `--env-file .env.staging` and project name `sagip-staging`.
 
 ## 1. Read order
 
@@ -40,7 +49,7 @@ Before implementing anything, read in this order:
 6. [`docs/business-requirements.md`](./docs/business-requirements.md) — only if you need the
    business rationale behind a requirement. Not needed for routine implementation.
 
-Then, once you know *which* directory you are working in, read that unit's `README.md` and its
+Then, once you know _which_ directory you are working in, read that unit's `README.md` and its
 local `docs/` — [`apps/api`](./apps/api/README.md), [`apps/web`](./apps/web/README.md),
 [`services/cron`](./services/cron/README.md), [`infra`](./infra/README.md). Those cover how the
 code is actually organised and the traps specific to it. Section 6 explains the split.
@@ -95,7 +104,13 @@ Every top-level unit above carries its own `README.md`, and the four with real c
 where is Section 6.
 
 `Makefile` is the single entry point (`make dev`, `make test`, `make lint`, `make types`,
-`make hazard`). Prefer it over ad-hoc commands so what you run matches what CI runs.
+`make hazard-web`). Prefer it over ad-hoc commands so what you run matches what CI runs.
+
+> **On a fresh clone or a fresh environment, run `make hazard-web` before loading
+> `/hazard-map`.** `apps/web/public/data/*.geojson` is gitignored, so the flood layer is
+> genuinely absent until you stage it. The map degrades rather than blanking, but it will
+> look broken to you. `make hazard-derive` is the other half and needs GeoPandas — you
+> almost never want it.
 
 ## 5. Hard rules — do not violate
 
@@ -105,7 +120,7 @@ where is Section 6.
 - **A service may import another module's model classes for read-only joins** (e.g.
   `registry/service.py` importing `geo.models.Area`, `evacuation/service.py` importing
   `geo.models.Facility`, `safety/service.py` importing `registry.models.Household`/`Member`) —
-  but it never calls another module's *business logic* that way. A cross-module write, or
+  but it never calls another module's _business logic_ that way. A cross-module write, or
   anything beyond a plain join condition, goes through the owning service instead.
 - **`domain/` stays pure.** No I/O, no ORM, no framework imports in `vulnerability.py` or
   `alert_levels.py` — that's what makes them unit-testable.
@@ -113,16 +128,20 @@ where is Section 6.
   upstream data are fetched by `services/cron` and read from the database. If you're adding a
   feature that needs live external data on a request path, that's an architecture violation —
   raise it, don't route around it.
-- **Alerts are always human-issued.** A threshold breach creates a *prompt* for an officer to
+- **Alerts are always human-issued.** A threshold breach creates a _prompt_ for an officer to
   review, never an auto-published alert. Don't "simplify" this by auto-publishing, even for
   demo convenience.
 - **`dataset/derived/*.geojson` is the single source of truth for hazard data**, not
-  `apps/web/public/data/`. Never hand-edit the copy in `public/data/` — regenerate via
-  `make hazard`. Never commit anything under `dataset/raw/`.
+  `apps/web/public/data/`. Never hand-edit the copy in `public/data/` — stage it via
+  `make hazard-web`, regenerate the source via `make hazard-derive`. Never commit anything
+  under `dataset/raw/`.
+- **Map colours come from `apps/web/src/lib/map.ts`, never from the GeoJSON.** The committed
+  hazard data carries a `fill_color` property; reading it would put the palette in two places
+  with no way to tell which one a wrong colour came from. Layers ignore it.
 - **`packages/api-types/src/generated.ts` is never hand-edited.** Regenerate via `make types`
   after any API schema change, and commit the diff in the same PR.
 - **Don't reintroduce out-of-scope features.** The following were explicitly cut and should
-  not be added back without the user asking: SMS notifications, siren/IoT alert units,
+  not be added back without the user asking: SMS notifications, physical siren/IoT hardware integration (the siren pin UI and manual trigger are in scope; real hardware is not),
   post-registration profile claiming, safe routes/blocked roads on the map, donation
   inventory/allocation/distribution tracking, native mobile apps, payment processing, any
   barangay other than San Jose, full offline sync. Full list with rationale: `frs_nfrs.md`
@@ -140,13 +159,13 @@ where is Section 6.
 
 Docs are two-tier. The tiers answer different questions and change for different reasons.
 
-| | Root `docs/` | Local `<unit>/docs/` |
-|---|---|---|
-| Answers | **What** we are building and **why** | **How** this codebase does it |
-| Owns | FR/NFR IDs, the physical schema, the design system, technology choices, system architecture | Module conventions, workflows, local gotchas, the commands you actually type |
-| Audience | The whole team, including non-IT members | Whoever is editing that directory |
-| Changes when | The product or the contract changes | The code changes |
-| Examples | "Households carry a `reference_no` (FR-REG-006)" · "`primary-600` is `#1F8049`" | "Register every `models.py` in `models_registry.py` or autogenerate drops the table" |
+|              | Root `docs/`                                                                                | Local `<unit>/docs/`                                                                 |
+| ------------ | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Answers      | **What** we are building and **why**                                                        | **How** this codebase does it                                                        |
+| Owns         | FR/NFR IDs, the physical schema, the design system, technology choices, system architecture | Module conventions, workflows, local gotchas, the commands you actually type         |
+| Audience     | The whole team, including non-IT members                                                    | Whoever is editing that directory                                                    |
+| Changes when | The product or the contract changes                                                         | The code changes                                                                     |
+| Examples     | "Households carry a `reference_no` (FR-REG-006)" · "`primary-600` is `#1F8049`"             | "Register every `models.py` in `models_registry.py` or autogenerate drops the table" |
 
 ### The rule that keeps them from drifting
 
@@ -165,17 +184,17 @@ palette changes, exactly one file changes.
 Update docs **in the same PR** as the code. A doc updated in a follow-up PR is a doc that is
 wrong for as long as the follow-up takes, and follow-ups slip.
 
-| You did this | Update |
-|---|---|
-| Implemented an FR | `frs_nfrs.md` Status/PR columns (already required by Section 2) |
-| Added or changed a table or column | `docs/schema.md`, then `apps/api/docs/migrations.md` only if the *workflow* changed |
-| Added an API module or endpoint | `docs/architecture.md` Section 6 if the contract changed; `apps/api/docs/modules.md` if the convention did |
-| Added a `components/common/` composite | `apps/web/docs/components.md` — and `docs/design.md` Section 7.2 only if it is a new entry in the inventory |
-| Added or changed a scheduled job | `docs/architecture.md` Section 9 (the cadence table) and `services/cron/docs/jobs.md` |
-| Changed how the stack is built, run, or deployed | `infra/docs/` and the affected `README.md` |
-| Added a dependency | `docs/tech_stack.md`, with the rationale — before you use it (Section 5) |
-| Discovered a gotcha that cost you an hour | The local `docs/` of the unit it bit you in. This is the highest-value thing in this table |
-| Changed a decision that a doc explains | Fix the explanation, not just the fact. A stale *why* is worse than a missing one |
+| You did this                                     | Update                                                                                                      |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Implemented an FR                                | `frs_nfrs.md` Status/PR columns (already required by Section 2)                                             |
+| Added or changed a table or column               | `docs/schema.md`, then `apps/api/docs/migrations.md` only if the _workflow_ changed                         |
+| Added an API module or endpoint                  | `docs/architecture.md` Section 6 if the contract changed; `apps/api/docs/modules.md` if the convention did  |
+| Added a `components/common/` composite           | `apps/web/docs/components.md` — and `docs/design.md` Section 7.2 only if it is a new entry in the inventory |
+| Added or changed a scheduled job                 | `docs/architecture.md` Section 9 (the cadence table) and `services/cron/docs/jobs.md`                       |
+| Changed how the stack is built, run, or deployed | `infra/docs/` and the affected `README.md`                                                                  |
+| Added a dependency                               | `docs/tech_stack.md`, with the rationale — before you use it (Section 5)                                    |
+| Discovered a gotcha that cost you an hour        | The local `docs/` of the unit it bit you in. This is the highest-value thing in this table                  |
+| Changed a decision that a doc explains           | Fix the explanation, not just the fact. A stale _why_ is worse than a missing one                           |
 
 ### Writing them
 

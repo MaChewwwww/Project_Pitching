@@ -9,10 +9,6 @@
  * The animation itself lives in `globals.css` so it shares the same
  * `prefers-reduced-motion` gate and `@keyframes` naming convention as `reveal-in`.
  */
-export default function PublicTemplate({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function PublicTemplate({ children }: { children: React.ReactNode }) {
   return <div className="page-enter">{children}</div>;
 }

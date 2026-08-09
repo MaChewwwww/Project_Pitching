@@ -74,9 +74,9 @@ export function HotlineList({
           <li key={hotline.id}>
             <div
               className={cn(
-                "group flex min-h-14 items-center justify-between gap-3.5 rounded-xl border px-3.5 py-2.5 transition-all duration-200 shadow-sm-card",
+                "group shadow-sm-card flex min-h-14 items-center justify-between gap-3.5 rounded-xl border px-3.5 py-2.5 transition-all duration-200",
                 onDark
-                  ? "border-white/10 bg-white/5 hover:bg-white/15 hover:border-white/20"
+                  ? "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/15"
                   : "hover:border-primary-400 hover:bg-primary-50/60 hover:shadow-md-card border-neutral-200/90 bg-white",
               )}
             >
@@ -84,7 +84,7 @@ export function HotlineList({
               <button
                 type="button"
                 onClick={() => handleCopy(hotline.id, hotline.number)}
-                className="flex flex-1 items-center gap-3.5 text-left focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none rounded-lg p-1 -m-1 cursor-pointer"
+                className="focus-visible:ring-ring -m-1 flex flex-1 cursor-pointer items-center gap-3.5 rounded-lg p-1 text-left focus-visible:ring-2 focus-visible:outline-none"
                 title="Click to copy phone number"
               >
                 <span
@@ -118,29 +118,27 @@ export function HotlineList({
               </button>
 
               {/* Action Buttons: Copy Indicator & Direct Call Option */}
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex shrink-0 items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => handleCopy(hotline.id, hotline.number)}
+                  title={isCopied ? "Copied to clipboard!" : `Copy ${hotline.number}`}
+                  aria-label={
+                    isCopied ? "Copied to clipboard" : `Copy phone number ${hotline.number}`
+                  }
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-caption font-semibold transition-all duration-200 cursor-pointer",
+                    "grid size-8 shrink-0 cursor-pointer place-items-center rounded-lg transition-colors",
                     isCopied
-                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                      ? "border border-emerald-300 bg-emerald-100 text-emerald-800"
                       : onDark
-                        ? "bg-white/10 text-white hover:bg-white/20"
-                        : "bg-neutral-100 text-neutral-700 hover:bg-primary-100 hover:text-primary-800 border border-neutral-200/80",
+                        ? "hover:bg-primary-500 bg-white/10 text-white"
+                        : "hover:bg-primary-600 border border-neutral-200/80 bg-neutral-100 text-neutral-600 hover:text-white",
                   )}
                 >
                   {isCopied ? (
-                    <>
-                      <Check className="size-3.5 text-emerald-700" strokeWidth={2.5} />
-                      <span>Copied!</span>
-                    </>
+                    <Check className="size-3.5 text-emerald-700" strokeWidth={2.5} />
                   ) : (
-                    <>
-                      <Copy className="size-3.5 text-neutral-500 group-hover:text-primary-700" strokeWidth={2} />
-                      <span>Copy</span>
-                    </>
+                    <Copy className="size-3.5" strokeWidth={2} />
                   )}
                 </button>
 
@@ -151,8 +149,8 @@ export function HotlineList({
                   className={cn(
                     "grid size-8 shrink-0 place-items-center rounded-lg transition-colors",
                     onDark
-                      ? "bg-white/10 text-white hover:bg-primary-500"
-                      : "bg-neutral-100 text-neutral-600 hover:bg-primary-600 hover:text-white border border-neutral-200/80",
+                      ? "hover:bg-primary-500 bg-white/10 text-white"
+                      : "hover:bg-primary-600 border border-neutral-200/80 bg-neutral-100 text-neutral-600 hover:text-white",
                   )}
                 >
                   <Phone aria-hidden className="size-3.5" strokeWidth={2} />

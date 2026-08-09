@@ -18,31 +18,26 @@ export async function PreparednessSection() {
   return (
     <Section id="preparedness">
       <SectionHeader
-        align="center"
-        rule
         icon={BookOpen}
-        eyebrow="Preparedness"
-        title="Know what to do"
-        titleAccent="before it happens"
+        title="Preparedness"
+        titleAccent="Guidelines"
         description="Short, practical guides for the hazards San Jose actually faces — written for this barangay, not adapted from national leaflets."
-        className="mx-auto max-w-3xl"
+        action={
+          <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
+            <Link href="/guides">
+              View all
+              <ArrowRight aria-hidden className="size-4" />
+            </Link>
+          </Button>
+        }
       />
 
-      <div className="mt-8 grid gap-4 md:mt-10 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
+      <div className="mt-8 grid gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
         {guides.slice(0, 3).map((guide, i) => (
           <Reveal key={guide.id} delay={(i % 3) as 0 | 1 | 2}>
             <GuideCard guide={guide} />
           </Reveal>
         ))}
-      </div>
-
-      <div className="mt-8 flex justify-center">
-        <Button asChild variant="outline" pill size="lg" className="max-sm:w-full">
-          <Link href="/guides">
-            All preparedness guides
-            <ArrowRight aria-hidden className="size-4" />
-          </Link>
-        </Button>
       </div>
     </Section>
   );

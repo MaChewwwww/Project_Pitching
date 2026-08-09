@@ -2,7 +2,8 @@
 
 import * as React from "react";
 
-export type GeolocationStatus = "idle" | "locating" | "denied" | "unavailable" | "timeout" | "ok";
+export type GeolocationStatus =
+  "idle" | "locating" | "denied" | "unavailable" | "timeout" | "ok";
 
 export interface GeolocationFix {
   lat: number;
@@ -77,5 +78,13 @@ export function useGeolocation() {
       ? `Accurate to about ${Math.round(fix.accuracyM)} m — drag the pin if this looks off.`
       : null;
 
-  return { isSecureContext, isSupported, status, fix, errorMessage, accuracyNote, locate };
+  return {
+    isSecureContext,
+    isSupported,
+    status,
+    fix,
+    errorMessage,
+    accuracyNote,
+    locate,
+  };
 }

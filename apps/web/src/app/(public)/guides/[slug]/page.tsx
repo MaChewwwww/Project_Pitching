@@ -50,7 +50,7 @@ export default async function GuidePage({ params }: PageProps<"/guides/[slug]">)
         title={guide.title_en}
         breadcrumb={[
           { label: "Home", href: "/" },
-          { label: "Preparedness guides", href: "/guides" },
+          { label: "Preparedness guidelines", href: "/guides" },
           { label: guide.title_en },
         ]}
       />

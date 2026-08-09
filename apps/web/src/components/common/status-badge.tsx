@@ -30,11 +30,7 @@ import { Badge, type BadgeTone } from "./badge";
 export type SafetyStatusValue = "safe" | "needs_rescue" | "unaccounted";
 export type SafetySetMethod = "self" | "assisted" | "household_bulk" | null;
 export type RescueRequestStatusValue =
-  | "pending"
-  | "verified"
-  | "dispatched"
-  | "resolved"
-  | "dismissed";
+  "pending" | "verified" | "dispatched" | "resolved" | "dismissed";
 
 export type StatusBadgeProps =
   | { kind: "alert"; level: 0 | 1 | 2 | 3 }

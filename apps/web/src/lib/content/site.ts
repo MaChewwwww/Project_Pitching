@@ -60,7 +60,7 @@ export const NAV_GROUPS: NavGroup[] = [
         description: "Back to the landing page",
       },
       {
-        label: "Platform details",
+        label: "Platform Details",
         href: "/about",
         icon: "Info",
         description: "What this platform is and who built it",
@@ -68,39 +68,16 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    title: "Prepare",
+    title: "Stay Informed",
     items: [
       {
-        label: "Hazard map",
+        label: "Hazard Map & Evacuation Centers",
         href: "/hazard-map",
         icon: "Map",
-        description: "Flood-prone areas and barangay facilities",
+        description: "Flood-prone areas and evacuation centers",
       },
       {
-        label: "Evacuation centres",
-        href: "/evacuation-centers",
-        icon: "Building2",
-        description: "Where to go, capacity and occupancy",
-      },
-      {
-        label: "Preparedness guides",
-        href: "/guides",
-        icon: "BookOpen",
-        description: "What to do before, during and after",
-      },
-      {
-        label: "Ask for rescue",
-        href: "/rescue",
-        icon: "LifeBuoy",
-        description: "No account needed — name, location, and what's happening",
-      },
-    ],
-  },
-  {
-    title: "Stay informed",
-    items: [
-      {
-        label: "Weather & river level",
+        label: "Weather & River Level",
         href: "/weather",
         icon: "CloudRain",
         description: "Current readings, forecast and flood history",
@@ -120,10 +97,33 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    title: "Get involved",
+    title: "Prepare",
     items: [
       {
-        label: "Donation drives",
+        label: "Barangay Facilities",
+        href: "/evacuation-centers",
+        icon: "Building2",
+        description: "Centers, health clinics, and emergency stations",
+      },
+      {
+        label: "Preparedness Guidelines",
+        href: "/guides",
+        icon: "BookOpen",
+        description: "What to do before, during and after",
+      },
+      {
+        label: "Ask for Rescue",
+        href: "/rescue",
+        icon: "LifeBuoy",
+        description: "No account needed — name, location, and what's happening",
+      },
+    ],
+  },
+  {
+    title: "Get Involved",
+    items: [
+      {
+        label: "Donation Drives",
         href: "/donation-drives",
         icon: "HandHeart",
         description: "What the barangay is collecting right now",
@@ -173,11 +173,11 @@ export const HERO = {
   titleLine2: "the Water Rises",
   lead: `Flood readiness, evacuation guidance, and community health information for ${BARANGAY} — updated by the barangay, reachable on any phone.`,
   primaryCta: { label: "See the hazard map", href: "/hazard-map" },
-  secondaryCta: { label: "Preparedness guides", href: "/guides" },
+  secondaryCta: { label: "Preparedness guidelines", href: "/guides" },
   /** The two quick links over the hero visual. */
   quickLinks: [
     { label: "Flood Hazard Map", href: "/hazard-map", icon: "map" },
-    { label: "Evacuation Centres", href: "/evacuation-centers", icon: "shelter" },
+    { label: "Barangay Facilities", href: "/evacuation-centers", icon: "shelter" },
   ],
 } as const;
 
@@ -189,11 +189,9 @@ export const HERO = {
  * slot, and the register link duplicates a navbar button rather than a nav item.
  */
 const FOOTER_EXTRAS: Record<string, NavItem[]> = {
-  Prepare: [
-    { label: "San Jose Go Bag", href: "/guides/san-jose-go-bag" },
-  ],
-  "Stay informed": [{ label: "About the platform", href: "/about" }],
-  "Get involved": [{ label: "Register your household", href: REGISTER_HREF }],
+  Prepare: [{ label: "San Jose Go Bag", href: "/guides/san-jose-go-bag" }],
+  "Stay Informed": [{ label: "About the Platform", href: "/about" }],
+  "Get Involved": [{ label: "Register Your Household", href: REGISTER_HREF }],
 };
 
 export const FOOTER_GROUPS: NavGroup[] = NAV_GROUPS.map((group) => ({

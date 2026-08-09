@@ -26,13 +26,13 @@ export function HeroRainOverlay() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 overflow-hidden select-none z-0"
+      className="pointer-events-none absolute inset-0 z-0 overflow-hidden select-none"
     >
       {/* Dynamic Concentric Water Ripple Nodes (Pure Brand Green) */}
       {ripples.map((r, idx) => (
         <div
           key={idx}
-          className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+          className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
           style={{
             left: r.left,
             top: r.top,
@@ -42,7 +42,7 @@ export function HeroRainOverlay() {
         >
           {/* Outer Primary Wave Ring */}
           <div
-            className="absolute inset-0 rounded-full border border-primary-500/50 shadow-[0_0_14px_rgba(31,128,73,0.35)] water-ripple-ring"
+            className="border-primary-500/50 water-ripple-ring absolute inset-0 rounded-full border shadow-[0_0_14px_rgba(31,128,73,0.35)]"
             style={{
               animationDuration: r.duration,
               animationDelay: r.delay,
@@ -51,7 +51,7 @@ export function HeroRainOverlay() {
 
           {/* Inner Secondary Wave Crest Ring */}
           <div
-            className="absolute inset-4 rounded-full border border-emerald-400/40 water-ripple-ring"
+            className="water-ripple-ring absolute inset-4 rounded-full border border-emerald-400/40"
             style={{
               animationDuration: r.duration,
               animationDelay: `calc(${r.delay} + 0.4s)`,

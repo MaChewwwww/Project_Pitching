@@ -1,18 +1,18 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { z } from "zod";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/common/page-header";
-import { Button } from "@/components/common/button";
-import type { AdminField } from "@/components/features/admin/admin-form";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
-import { ResourceFormDialog } from "@/components/features/admin/resource-form-dialog";
 import {
   ResourceTable,
   type ResourceColumn,
 } from "@/components/features/admin/resource-table";
+import {
+  FacilityFormDialog,
+  type FacilityFormValues,
+} from "@/components/features/map/facility-form";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 
@@ -33,28 +33,6 @@ interface Area {
   name: string;
 }
 
-const facilityTypes = [
-  "evacuation_center",
-  "hospital",
-  "clinic",
-  "barangay_hall",
-  "police",
-  "fire",
-  "rescue_station",
-] as const;
-
-const facilitySchema = z.object({
-  name: z.string().min(1, "Required"),
-  type: z.enum(facilityTypes),
-  address: z.string().optional().nullable(),
-  contact_number: z.string().optional().nullable(),
-  longitude: z.coerce.number().min(-180).max(180),
-  latitude: z.coerce.number().min(-90).max(90),
-  area_id: z.string().min(1, "Required"),
-  is_active: z.boolean().default(true),
-});
-type FacilityFormValues = z.infer<typeof facilitySchema>;
-
 export default function AdminFacilitiesPage() {
   useRequireRole("admin");
   const queryClient = useQueryClient();
@@ -63,47 +41,10 @@ export default function AdminFacilitiesPage() {
     queryKey: ["admin", "facilities"],
     queryFn: () => api.get<Facility[]>("/admin/facilities").then((r) => r.data),
   });
-  const { data: areas } = useQuery({
+  const { data: areas = [] } = useQuery({
     queryKey: ["admin", "areas"],
     queryFn: () => api.get<Area[]>("/admin/areas").then((r) => r.data),
   });
-
-  const fields: AdminField[] = [
-    { name: "name", label: "Name", type: "text" },
-    {
-      name: "type",
-      label: "Type",
-      type: "select",
-      options: facilityTypes.map((t) => ({ value: t, label: t.replace(/_/g, " ") })),
-    },
-    { name: "address", label: "Address", type: "text" },
-    { name: "contact_number", label: "Contact number", type: "text" },
-    {
-      name: "longitude",
-      label: "Longitude",
-      type: "number",
-      description: "e.g. 121.135",
-    },
-    { name: "latitude", label: "Latitude", type: "number", description: "e.g. 14.735" },
-    {
-      name: "area_id",
-      label: "Area",
-      type: "select",
-      options: (areas ?? []).map((a) => ({ value: a.id, label: a.name })),
-    },
-    { name: "is_active", label: "Active", type: "checkbox" },
-  ];
-
-  const emptyValues: FacilityFormValues = {
-    name: "",
-    type: "evacuation_center",
-    address: "",
-    contact_number: "",
-    longitude: 121.135,
-    latitude: 14.735,
-    area_id: "",
-    is_active: true,
-  };
 
   const createMutation = useMutation({
     mutationFn: (values: FacilityFormValues) => api.post("/admin/facilities", values),
@@ -123,6 +64,9 @@ export default function AdminFacilitiesPage() {
       toast.success("Facility updated");
       queryClient.invalidateQueries({ queryKey: ["admin", "facilities"] });
     },
+    onError: (error) => {
+      throw toDisplayError(error);
+    },
   });
 
   const deleteMutation = useMutation({
@@ -134,7 +78,18 @@ export default function AdminFacilitiesPage() {
     onError: () => toast.error("Could not remove facility"),
   });
 
-  const areaName = (id: string | null) => areas?.find((a) => a.id === id)?.name ?? "—";
+  const areaName = (id: string | null) => areas.find((a) => a.id === id)?.name ?? "—";
+
+  const emptyValues: FacilityFormValues = {
+    name: "",
+    type: "evacuation_center",
+    address: "",
+    contact_number: "",
+    longitude: 121.135,
+    latitude: 14.735,
+    area_id: null,
+    is_active: true,
+  };
 
   const columns: ResourceColumn<Facility>[] = [
     { key: "name", header: "Name" },
@@ -153,13 +108,12 @@ export default function AdminFacilitiesPage() {
       <PageHeader
         title="Barangay"
         titleAccent="facilities"
-        description="Evacuation centres, clinics, hospitals, and other facilities shown on the public map."
+        description="Evacuation centers, clinics, hospitals, and other facilities shown on the public map."
         action={
-          <ResourceFormDialog
+          <FacilityFormDialog
             title="Add facility"
-            fields={fields}
-            schema={facilitySchema}
             defaultValues={emptyValues}
+            areas={areas}
             onSubmit={async (values) => {
               await createMutation.mutateAsync(values);
             }}
@@ -177,27 +131,29 @@ export default function AdminFacilitiesPage() {
         getRowKey={(row) => row.id}
         rowActions={(row) => (
           <>
-            <ResourceFormDialog
+            <FacilityFormDialog
               title="Edit facility"
-              fields={fields}
-              schema={facilitySchema}
               defaultValues={{
                 name: row.name,
-                type: row.type as (typeof facilityTypes)[number],
+                type: row.type as FacilityFormValues["type"],
                 address: row.address ?? "",
                 contact_number: row.contact_number ?? "",
                 longitude: row.location.coordinates[0],
                 latitude: row.location.coordinates[1],
-                area_id: row.area_id ?? "",
+                area_id: row.area_id ?? null,
                 is_active: row.is_active,
               }}
+              areas={areas}
               onSubmit={async (values) => {
                 await updateMutation.mutateAsync({ id: row.id, values });
               }}
               trigger={
-                <Button variant="outline" size="sm">
+                <button
+                  type="button"
+                  className="inline-flex items-center rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 shadow-sm hover:bg-neutral-50"
+                >
                   Edit
-                </Button>
+                </button>
               }
             />
             <ConfirmDeleteButton

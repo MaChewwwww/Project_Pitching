@@ -15,6 +15,7 @@ from src.core.deps import CurrentUser, require_role
 from src.db.session import DbSessionDep
 from src.modules.geo import service
 from src.modules.geo.schemas import (
+    AreaBoundaryCollection,
     AreaOut,
     AreaPatch,
     FacilityIn,
@@ -24,6 +25,9 @@ from src.modules.geo.schemas import (
     PublicArea,
     PublicFacility,
     PublicHotline,
+    PublicSiren,
+    SirenIn,
+    SirenOut,
 )
 
 public_router = APIRouter(tags=["geo"])
@@ -51,6 +55,26 @@ async def public_facilities(session: DbSessionDep, type: str | None = None) -> l
 async def public_areas(session: DbSessionDep) -> list[PublicArea]:
     areas = await service.list_areas(session)
     return [service.area_to_public(a) for a in areas]
+
+
+@public_router.get(
+    "/area-boundaries",
+    summary="Area boundary polygons as GeoJSON FeatureCollection (FR-MAP-001)",
+)
+async def public_area_boundaries(session: DbSessionDep) -> AreaBoundaryCollection:
+    """Separate from /public/areas — that returns names/stats; this returns geometry.
+
+    An empty feature list is valid: boundaries may not yet be loaded. The
+    frontend map degrades gracefully on an empty collection (same principle
+    as the hazard layer 404 handling).
+    """
+    return await service.list_area_boundaries(session)
+
+
+@public_router.get("/sirens", summary="Siren units with status (FR-MAP-014)")
+async def public_sirens(session: DbSessionDep) -> list[PublicSiren]:
+    rows = await service.list_sirens(session)
+    return [service.siren_to_public(siren, coords) for siren, coords in rows]
 
 
 # --- admin ----------------------------------------------------------------------
@@ -187,3 +211,59 @@ async def admin_update_area(
 ) -> AreaOut:
     area = await service.update_area(session, area_id, body, actor_id=user.id)
     return service.area_to_out(area)
+
+
+@admin_router.get(
+    "/sirens",
+    dependencies=[Depends(require_role("admin", "bhw", "sk"))],
+    summary="List sirens (admin)",
+)
+async def admin_list_sirens(session: DbSessionDep) -> list[SirenOut]:
+    rows = await service.list_sirens(session)
+    return [service.siren_to_out(siren, coords) for siren, coords in rows]
+
+
+@admin_router.post(
+    "/sirens", dependencies=[Depends(require_role("admin"))], summary="Add a siren"
+)
+async def admin_create_siren(
+    body: SirenIn, session: DbSessionDep, user: CurrentUser
+) -> SirenOut:
+    siren, coords = await service.create_siren(session, body, actor_id=user.id)
+    return service.siren_to_out(siren, coords)
+
+
+@admin_router.patch(
+    "/sirens/{siren_id}",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Update a siren",
+)
+async def admin_update_siren(
+    siren_id: uuid.UUID, body: SirenIn, session: DbSessionDep, user: CurrentUser
+) -> SirenOut:
+    siren, coords = await service.update_siren(session, siren_id, body, actor_id=user.id)
+    return service.siren_to_out(siren, coords)
+
+
+@admin_router.post(
+    "/sirens/{siren_id}/trigger",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Trigger/toggle siren status (simulation)",
+)
+async def admin_trigger_siren(
+    siren_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> SirenOut:
+    siren, coords = await service.trigger_siren(session, siren_id, actor_id=user.id)
+    return service.siren_to_out(siren, coords)
+
+
+@admin_router.delete(
+    "/sirens/{siren_id}",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Remove a siren",
+)
+async def admin_delete_siren(
+    siren_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> dict[str, bool]:
+    await service.delete_siren(session, siren_id, actor_id=user.id)
+    return {"ok": True}

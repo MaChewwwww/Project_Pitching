@@ -34,5 +34,5 @@ TypeScript types are erased at runtime. A backend change that somehow slips past
 render as `undefined` on a dashboard.
 
 So responses are also **Zod-parsed at runtime** in `apps/web/src/lib/api/`. Together, drift
-surfaces as a type error at build time *and* a clear runtime error — never as a silently missing
+surfaces as a type error at build time _and_ a clear runtime error — never as a silently missing
 value (`architecture.md` AR-7).

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, CircleHelp } from "lucide-react";
 
 import { Button } from "@/components/common/button";
+import { Reveal } from "@/components/common/reveal";
 import { SectionHeader } from "@/components/common/section-header";
 import { FaqAccordion } from "@/components/features/preparedness/faq-accordion";
 import { Section } from "./section";
@@ -17,12 +18,11 @@ export async function FaqSection() {
   return (
     <Section id="faqs" tone="tint">
       <div className="grid gap-8 lg:grid-cols-[1fr_1.6fr] lg:gap-12">
-        <div className="flex flex-col gap-6">
+        <Reveal className="flex flex-col gap-6">
           <SectionHeader
             icon={CircleHelp}
-            eyebrow="Questions"
-            title="Frequently asked"
-            titleAccent="questions"
+            title="Frequently Asked"
+            titleAccent="Questions"
             description="How to register, where to go, and what the alert levels mean."
           />
           <Button
@@ -37,9 +37,11 @@ export async function FaqSection() {
               <ArrowRight aria-hidden className="size-4" />
             </Link>
           </Button>
-        </div>
+        </Reveal>
 
-        <FaqAccordion faqs={faqs.slice(0, 5)} />
+        <Reveal delay={1}>
+          <FaqAccordion faqs={faqs.slice(0, 5)} />
+        </Reveal>
       </div>
     </Section>
   );

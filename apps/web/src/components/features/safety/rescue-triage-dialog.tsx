@@ -144,7 +144,8 @@ export function RescueTriageDialog({
 
           {request.assigned_to_name ? (
             <p className="text-body-sm text-neutral-600">
-              Assigned to <span className="font-semibold">{request.assigned_to_name}</span>
+              Assigned to{" "}
+              <span className="font-semibold">{request.assigned_to_name}</span>
             </p>
           ) : (
             <Button

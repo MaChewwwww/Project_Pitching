@@ -106,3 +106,59 @@ class AreaOut(BaseModel):
     code: str | None
     flood_exposure: str | None
     has_boundary: bool
+    boundary_source: str | None
+
+
+# --- area boundary GeoJSON (FR-MAP-001) ---------------------------------------
+
+
+class AreaBoundaryProperties(BaseModel):
+    """Non-spatial properties attached to each area boundary feature."""
+
+    area_id: uuid.UUID
+    name: str
+    code: str | None
+    flood_exposure: str | None
+    boundary_source: str | None
+
+
+class AreaBoundaryFeature(BaseModel):
+    type: str = "Feature"
+    properties: AreaBoundaryProperties
+    geometry: object  # raw GeoJSON geometry dict — passed through from ST_AsGeoJSON
+
+
+class AreaBoundaryCollection(BaseModel):
+    """GeoJSON FeatureCollection of area boundary polygons.
+
+    A 404/empty geometry is not an error — the map degrades gracefully if
+    boundaries have not been loaded yet (same principle as the hazard layer).
+    """
+
+    type: str = "FeatureCollection"
+    features: list[AreaBoundaryFeature]
+
+
+# --- sirens (FR-MAP-014) ------------------------------------------------------
+
+
+class PublicSiren(BaseModel):
+    id: uuid.UUID
+    name: str
+    status: str
+    location: GeoJsonPoint
+    area_id: uuid.UUID | None
+
+
+class SirenIn(BaseModel):
+    name: str
+    longitude: float = Field(..., ge=-180, le=180)
+    latitude: float = Field(..., ge=-90, le=90)
+    area_id: uuid.UUID | None = None
+    status: str = "idle"
+
+
+class SirenOut(PublicSiren):
+    pass
+
+

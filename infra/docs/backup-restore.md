@@ -12,8 +12,7 @@ the evening before the pitch.
 make backup
 ```
 
-Writes `infra/backups/appdb_<UTC timestamp>.dump` (custom format, compressed) and keeps the last
-14. On Windows this needs `bash`, which Git for Windows provides.
+Writes `infra/backups/appdb_<UTC timestamp>.dump` (custom format, compressed) and keeps the last 14. On Windows this needs `bash`, which Git for Windows provides.
 
 **Then copy it off the machine.** A dump sitting on the same disk as the database it came from
 is not a backup — it is a second copy of the thing that is about to fail. Anywhere else works:
@@ -64,13 +63,13 @@ NFR-AVL-006 asks for.
 
 ## What a dump does and does not contain
 
-| | In the dump? |
-|---|---|
-| Every table, row, index, constraint | Yes |
-| PostGIS geometry — areas, household pins, hazard polygons | Yes |
-| Alembic version | Yes, so a restore lands on a known migration |
-| **Uploaded incident photos** | **No** — they live on the `uploads` volume |
-| `.env` | No |
+|                                                           | In the dump?                                 |
+| --------------------------------------------------------- | -------------------------------------------- |
+| Every table, row, index, constraint                       | Yes                                          |
+| PostGIS geometry — areas, household pins, hazard polygons | Yes                                          |
+| Alembic version                                           | Yes, so a restore lands on a known migration |
+| **Uploaded incident photos**                              | **No** — they live on the `uploads` volume   |
+| `.env`                                                    | No                                           |
 
 **Uploads are not covered.** Photos live on a Docker volume, not in Postgres, so a full recovery
 needs both. To include them:

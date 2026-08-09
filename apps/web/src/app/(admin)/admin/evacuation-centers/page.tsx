@@ -87,7 +87,7 @@ export default function AdminEvacCentersPage() {
     mutationFn: (values: EvacCenterFormValues) =>
       api.post("/admin/evacuation-centers", values),
     onSuccess: () => {
-      toast.success("Evacuation centre registered");
+      toast.success("Evacuation center registered");
       queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
     },
     onError: (error) => {
@@ -99,7 +99,7 @@ export default function AdminEvacCentersPage() {
     mutationFn: ({ id, values }: { id: string; values: EvacCenterFormValues }) =>
       api.patch(`/admin/evacuation-centers/${id}`, values),
     onSuccess: () => {
-      toast.success("Evacuation centre updated");
+      toast.success("Evacuation center updated");
       queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
     },
   });
@@ -118,11 +118,11 @@ export default function AdminEvacCentersPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Evacuation"
-        titleAccent="centres"
+        titleAccent="centers"
         description="Capacity and open/closed status shown on the public site."
         action={
           <ResourceFormDialog
-            title="Register an evacuation centre"
+            title="Register an evacuation center"
             fields={fields}
             schema={evacCenterSchema}
             defaultValues={emptyValues}
@@ -139,12 +139,12 @@ export default function AdminEvacCentersPage() {
         isLoading={isLoading}
         isError={isError}
         onRetry={() => refetch()}
-        emptyTitle="No evacuation centres yet"
+        emptyTitle="No evacuation centers yet"
         emptyDescription='Add a facility of type "evacuation_center" first, then register it here.'
         getRowKey={(row) => row.id}
         rowActions={(row) => (
           <ResourceFormDialog
-            title="Edit evacuation centre"
+            title="Edit evacuation center"
             fields={fields}
             schema={evacCenterSchema}
             defaultValues={{

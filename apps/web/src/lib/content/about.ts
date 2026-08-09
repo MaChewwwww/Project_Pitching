@@ -64,7 +64,7 @@ export const SDG_ENTRIES: SdgEntry[] = [
  */
 export const WHY_PREPAREDNESS: string[] = [
   "River level and rainfall, timestamped and attributed to their source",
-  "Evacuation centres with live capacity, not a printed list from last year",
+  "Evacuation centers with live capacity, not a printed list from last year",
   "Alerts issued by a barangay officer — never generated automatically",
   "Flood hazard mapped from Project NOAH survey data, not from memory",
 ];

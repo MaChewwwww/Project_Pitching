@@ -26,6 +26,14 @@ COPY packages ./packages
 COPY apps/web ./apps/web
 COPY --from=deps /repo/apps/web/node_modules ./apps/web/node_modules
 
+# The hazard GeoJSON, staged the same way `make hazard-web` does it. Copied from
+# dataset/derived/ rather than relied on inside apps/web/public/, because
+# public/data/*.geojson is gitignored (one artifact, one home — architecture.md
+# Section 12.5) and so is absent from a clean build context. The runner stage
+# below copies apps/web/public wholesale, so doing it here is enough.
+COPY dataset/derived ./dataset/derived
+RUN mkdir -p apps/web/public/data && cp dataset/derived/*.geojson apps/web/public/data/
+
 # NEXT_PUBLIC_* is inlined at build time, so it has to be present here and not
 # only at run time.
 ARG NEXT_PUBLIC_API_BASE_URL=/api/v1

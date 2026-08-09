@@ -14,12 +14,12 @@ donations, activities, preparedness, and analytics for **Barangay San Jose, Rodr
 
 ### 1. Install the prerequisites
 
-| Tool | Version | Notes |
-|---|---|---|
-| **Docker Desktop** | 24+ | Must be *running* before `make dev`. This is the only hard requirement — the API, database, and jobs never need to be installed on your machine |
-| **Node.js** | 20+ | For `npm install` and the shadcn CLI |
-| **GNU Make** | 4+ | The entry point for everything |
-| **Python** | 3.12+ | Only for the scripts in `tools/`, not for running the app |
+| Tool               | Version | Notes                                                                                                                                           |
+| ------------------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Docker Desktop** | 24+     | Must be _running_ before `make dev`. This is the only hard requirement — the API, database, and jobs never need to be installed on your machine |
+| **Node.js**        | 20+     | For `npm install` and the shadcn CLI                                                                                                            |
+| **GNU Make**       | 4+      | The entry point for everything                                                                                                                  |
+| **Python**         | 3.12+   | Only for the scripts in `tools/`, not for running the app                                                                                       |
 
 **Windows** — Make is not bundled. Install it once, then **open a new terminal** so the PATH
 change takes effect:
@@ -49,11 +49,11 @@ testing a feature never risks corrupting the curated data you're about to presen
 
 ### 3. Check it worked
 
-| URL | Should show |
-|---|---|
-| <http://localhost:8080> | The web app |
+| URL                                   | Should show                       |
+| ------------------------------------- | --------------------------------- |
+| <http://localhost:8080>               | The web app                       |
 | <http://localhost:8080/api/v1/health> | `{"status":"ok","database":"ok"}` |
-| <http://localhost:8080/api/docs> | Interactive OpenAPI docs |
+| <http://localhost:8080/api/docs>      | Interactive OpenAPI docs          |
 
 > **Why port 8080 and not 80?** Port 80 is occupied on most Windows machines. Change
 > `PROXY_PORT` in `.env.staging` if you want something else.
@@ -67,19 +67,20 @@ use, or a stale volume — `make clean` wipes the database and lets you start ov
 
 `make` on its own lists everything. The ones that matter day to day:
 
-| Command | What it does |
-|---|---|
-| `make dev` | Start the whole stack with hot reload |
-| `make down` | Stop it, keeping your data |
-| `make clean` | Stop it and **delete the database** |
-| `make logs` | Tail logs from every container |
-| `make migrate` | Apply pending database migrations |
-| `make revision m="add household"` | Generate a new migration from model changes |
-| `make lint` | ruff + ESLint, same as CI |
-| `make test` | pytest + web tests, same as CI |
-| `make types` | Regenerate `packages/api-types` from the API's OpenAPI schema |
-| `make shadcn` | Reinstall all shadcn/ui primitives |
-| `make hazard` | Rebuild the flood GeoJSON from the source shapefile |
+| Command                           | What it does                                                                                            |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `make dev`                        | Start the whole stack with hot reload                                                                   |
+| `make down`                       | Stop it, keeping your data                                                                              |
+| `make clean`                      | Stop it and **delete the database**                                                                     |
+| `make logs`                       | Tail logs from every container                                                                          |
+| `make migrate`                    | Apply pending database migrations                                                                       |
+| `make revision m="add household"` | Generate a new migration from model changes                                                             |
+| `make lint`                       | ruff + ESLint, same as CI                                                                               |
+| `make test`                       | pytest + web tests, same as CI                                                                          |
+| `make types`                      | Regenerate `packages/api-types` from the API's OpenAPI schema                                           |
+| `make shadcn`                     | Reinstall all shadcn/ui primitives                                                                      |
+| `make hazard-web`                 | Stage the committed flood GeoJSON into `apps/web/public/data/`. Stdlib only — run once on a fresh clone |
+| `make hazard-derive`              | Rebuild the flood GeoJSON from the source shapefile. Needs GeoPandas; rarely run                        |
 
 **Use these rather than raw `docker compose` commands.** They are what CI runs, so if it passes
 locally it passes there.
@@ -106,14 +107,14 @@ VPS — same Compose file, different `.env` (NFR-MNT-007).
 **Every directory above has its own `README.md`**, and the four with real code also have a local
 `docs/`. Start there when you are working inside one:
 
-| | README | Local docs |
-|---|---|---|
-| Backend | [`apps/api`](apps/api/README.md) | [modules](apps/api/docs/modules.md) · [migrations](apps/api/docs/migrations.md) · [auth](apps/api/docs/auth.md) · [observability](apps/api/docs/observability.md) |
-| Frontend | [`apps/web`](apps/web/README.md) | [structure](apps/web/docs/structure.md) · [components](apps/web/docs/components.md) · [data & state](apps/web/docs/data-and-state.md) |
-| Jobs | [`services/cron`](services/cron/README.md) | [jobs](services/cron/docs/jobs.md) |
-| Stack | [`infra`](infra/README.md) | [deployment](infra/docs/deployment.md) · [backup & restore](infra/docs/backup-restore.md) |
-| Contract | [`packages/api-types`](packages/api-types/README.md) | — |
-| Scripts | [`tools`](tools/README.md) | — |
+|          | README                                               | Local docs                                                                                                                                                        |
+| -------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend  | [`apps/api`](apps/api/README.md)                     | [modules](apps/api/docs/modules.md) · [migrations](apps/api/docs/migrations.md) · [auth](apps/api/docs/auth.md) · [observability](apps/api/docs/observability.md) |
+| Frontend | [`apps/web`](apps/web/README.md)                     | [structure](apps/web/docs/structure.md) · [components](apps/web/docs/components.md) · [data & state](apps/web/docs/data-and-state.md)                             |
+| Jobs     | [`services/cron`](services/cron/README.md)           | [jobs](services/cron/docs/jobs.md)                                                                                                                                |
+| Stack    | [`infra`](infra/README.md)                           | [deployment](infra/docs/deployment.md) · [backup & restore](infra/docs/backup-restore.md)                                                                         |
+| Contract | [`packages/api-types`](packages/api-types/README.md) | —                                                                                                                                                                 |
+| Scripts  | [`tools`](tools/README.md)                           | —                                                                                                                                                                 |
 
 ---
 
@@ -136,19 +137,19 @@ The short version:
    PR is wrong for as long as the follow-up takes, and follow-ups slip.
 
 A requirement is not done until it meets the eight-point Definition of Done in `AGENTS.md` §3 —
-including *works at 360px*, *loading/empty/error states exist*, and *authorization enforced
-server-side*.
+including _works at 360px_, _loading/empty/error states exist_, and _authorization enforced
+server-side_.
 
 ### The docs, in reading order
 
-| Document | Answers |
-|---|---|
-| [`frs_nfrs.md`](./docs/frs_nfrs.md) | **What** to build, with IDs and acceptance criteria |
-| [`architecture.md`](./docs/architecture.md) | **How** it is structured — modules, API, deployment |
-| [`schema.md`](./docs/schema.md) | The physical database — every table and column |
-| [`design.md`](./docs/design.md) | **How it looks** — colours, type, components, responsive rules |
-| [`tech_stack.md`](./docs/tech_stack.md) | **Which tools**, and what was deliberately rejected |
-| [`business-requirements.md`](./docs/business-requirements.md) | **Why**, if you need the rationale |
+| Document                                                      | Answers                                                        |
+| ------------------------------------------------------------- | -------------------------------------------------------------- |
+| [`frs_nfrs.md`](./docs/frs_nfrs.md)                           | **What** to build, with IDs and acceptance criteria            |
+| [`architecture.md`](./docs/architecture.md)                   | **How** it is structured — modules, API, deployment            |
+| [`schema.md`](./docs/schema.md)                               | The physical database — every table and column                 |
+| [`design.md`](./docs/design.md)                               | **How it looks** — colours, type, components, responsive rules |
+| [`tech_stack.md`](./docs/tech_stack.md)                       | **Which tools**, and what was deliberately rejected            |
+| [`business-requirements.md`](./docs/business-requirements.md) | **Why**, if you need the rationale                             |
 
 ---
 
@@ -161,7 +162,8 @@ server-side*.
   leave the demo data in a broken state before the pitch.
 - **No manual SQL.** Every schema change is an Alembic migration (NFR-MNT-004).
 - **Never edit `apps/web/public/data/*.geojson`.** It is a copy. The source of truth is
-  `dataset/derived/`; regenerate with `make hazard`.
+  `dataset/derived/`; stage it with `make hazard-web`, regenerate it with `make hazard-derive`.
+  A fresh clone has no copy until `hazard-web` runs — the map degrades rather than blanking.
 - **Never hand-edit `packages/api-types/src/generated.ts`.** Run `make types` and commit the
   diff — CI fails if it's stale.
 - **Geolocation and camera do not work over plain HTTP.** That is a browser rule, not a bug.

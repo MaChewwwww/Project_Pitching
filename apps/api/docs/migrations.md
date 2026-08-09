@@ -41,14 +41,14 @@ other reason.
 
 ## Things autogenerate gets wrong here
 
-| Situation | What happens | Do this |
-|---|---|---|
-| **PostGIS internal tables** | `spatial_ref_sys` and friends look like unknown tables | Already filtered by `include_object` in `alembic/env.py`. Leave it alone |
-| **Partial indexes** | `postgresql_where` is often not detected as a change | Write the index by hand in the migration |
-| **`DESC` in an index** | Not expressible through `op.create_index` | Use `op.execute("CREATE INDEX ... (col DESC)")`, as `0001_foundation` does for `audit_log` |
-| **CHECK constraints** | Detected inconsistently | Declare them in `__table_args__` **and** verify they appear in the migration |
-| **Extensions** | Never detected | `op.execute("CREATE EXTENSION IF NOT EXISTS ...")`, first migration only |
-| **Type changes** | `compare_type=True` is on, but Postgres will still refuse some in-place changes | Check the generated SQL against a copy of real data |
+| Situation                   | What happens                                                                    | Do this                                                                                    |
+| --------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| **PostGIS internal tables** | `spatial_ref_sys` and friends look like unknown tables                          | Already filtered by `include_object` in `alembic/env.py`. Leave it alone                   |
+| **Partial indexes**         | `postgresql_where` is often not detected as a change                            | Write the index by hand in the migration                                                   |
+| **`DESC` in an index**      | Not expressible through `op.create_index`                                       | Use `op.execute("CREATE INDEX ... (col DESC)")`, as `0001_foundation` does for `audit_log` |
+| **CHECK constraints**       | Detected inconsistently                                                         | Declare them in `__table_args__` **and** verify they appear in the migration               |
+| **Extensions**              | Never detected                                                                  | `op.execute("CREATE EXTENSION IF NOT EXISTS ...")`, first migration only                   |
+| **Type changes**            | `compare_type=True` is on, but Postgres will still refuse some in-place changes | Check the generated SQL against a copy of real data                                        |
 
 ## Conventions
 

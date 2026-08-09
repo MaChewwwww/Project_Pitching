@@ -24,11 +24,11 @@ baseline (`tech_stack.md` Section 9).
 
 ## What is stored
 
-| Value | Stored as |
-|---|---|
-| Password | argon2 hash. Never bcrypt-by-hand, never SHA-anything (NFR-SEC-001) |
-| Refresh token | SHA-256 of the token. **The plaintext exists only in the cookie** |
-| Access token | Not stored at all — it is verified by signature |
+| Value         | Stored as                                                           |
+| ------------- | ------------------------------------------------------------------- |
+| Password      | argon2 hash. Never bcrypt-by-hand, never SHA-anything (NFR-SEC-001) |
+| Refresh token | SHA-256 of the token. **The plaintext exists only in the cookie**   |
+| Access token  | Not stored at all — it is verified by signature                     |
 
 Refresh tokens are hashed with SHA-256 rather than argon2 deliberately: it is a 384-bit random
 value, not a human-chosen password, so there is nothing to brute-force, and rotation happens
@@ -66,7 +66,7 @@ effect immediately instead of at the next refresh.
 
 ## Roles
 
-BRD 5.1 names six; five are stored. `public` is the *absence* of a user, so it is never a value
+BRD 5.1 names six; five are stored. `public` is the _absence_ of a user, so it is never a value
 in the database or a claim in a token.
 
 ```

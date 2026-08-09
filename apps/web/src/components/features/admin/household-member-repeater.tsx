@@ -1,7 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { Controller, useFieldArray, type Control, type FieldValues } from "react-hook-form";
+import {
+  Controller,
+  useFieldArray,
+  type Control,
+  type FieldValues,
+} from "react-hook-form";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/common/button";
@@ -140,7 +145,8 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
 
             <fieldset className="flex flex-wrap gap-x-4 gap-y-2">
               <legend className="text-caption mb-1 w-full text-neutral-500">
-                Vulnerability flags — tick what&apos;s known; exact birth date is not required
+                Vulnerability flags — tick what&apos;s known; exact birth date is not
+                required
               </legend>
               {VULNERABILITY_FLAGS.map(([name, label]) => (
                 <div key={name} className="flex items-center gap-2">

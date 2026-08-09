@@ -15,8 +15,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.audit import write_audit
 from src.core.errors import NotFoundError
-from src.modules.geo.models import Area, Facility, Hotline
+from src.modules.geo.models import Area, Facility, Hotline, Siren
 from src.modules.geo.schemas import (
+    AreaBoundaryCollection,
+    AreaBoundaryFeature,
+    AreaBoundaryProperties,
     AreaOut,
     AreaPatch,
     FacilityIn,
@@ -25,6 +28,9 @@ from src.modules.geo.schemas import (
     HotlineIn,
     PublicArea,
     PublicFacility,
+    PublicSiren,
+    SirenIn,
+    SirenOut,
 )
 
 
@@ -146,15 +152,74 @@ async def list_facilities(
     ]
 
 
+async def area_for_point(
+    session: AsyncSession, lat: float, lon: float
+) -> Area | None:
+    """Return the area whose boundary polygon contains (lon, lat), or None.
+
+    PostGIS query #1 — finally live once 0011_area_boundaries populates geom.
+    Returns None gracefully if no polygon covers the point (e.g. before the
+    migration runs, or for a point outside every area boundary).
+    """
+    result = await session.execute(
+        select(Area).where(
+            func.ST_Contains(
+                Area.geom,
+                func.ST_SetSRID(func.ST_MakePoint(lon, lat), 4326),
+            )
+        )
+    )
+    return result.scalars().first()
+
+
+async def list_area_boundaries(session: AsyncSession) -> AreaBoundaryCollection:
+    """Return all areas that have a boundary polygon as a GeoJSON FeatureCollection.
+
+    Separate from `list_areas` — that endpoint returns names/stats with no
+    geometry. The map needs the actual polygons; non-map callers don't.
+    An empty list is valid: the map degrades gracefully, same as the hazard
+    layer (FR-PUB-016, NFR-AVL-002).
+    """
+    rows = await session.execute(
+        select(
+            Area,
+            func.ST_AsGeoJSON(Area.geom).label("geojson"),
+        ).where(Area.geom.is_not(None))
+    )
+    features: list[AreaBoundaryFeature] = []
+    for area, geojson_str in rows.all():
+        if geojson_str is None:
+            continue
+        features.append(
+            AreaBoundaryFeature(
+                properties=AreaBoundaryProperties(
+                    area_id=area.id,
+                    name=area.name,
+                    code=area.code,
+                    flood_exposure=area.flood_exposure,
+                    boundary_source=area.boundary_source,
+                ),
+                geometry=json.loads(geojson_str),
+            )
+        )
+    return AreaBoundaryCollection(features=features)
+
+
 async def create_facility(
     session: AsyncSession, data: FacilityIn, *, actor_id: uuid.UUID
 ) -> Facility:
+    # Derive area_id from point if not supplied — never guess a nearest area.
+    area_id = data.area_id
+    if area_id is None:
+        matched = await area_for_point(session, data.latitude, data.longitude)
+        area_id = matched.id if matched is not None else None
+
     facility = Facility(
         name=data.name,
         type=data.type,
         address=data.address,
         contact_number=data.contact_number,
-        area_id=data.area_id,
+        area_id=area_id,
         is_active=data.is_active,
         location=func.ST_SetSRID(func.ST_MakePoint(data.longitude, data.latitude), 4326),
     )
@@ -178,11 +243,17 @@ async def update_facility(
     facility = await session.get(Facility, facility_id)
     if facility is None:
         raise NotFoundError("Facility not found.")
+    # Derive area_id from point if not supplied.
+    area_id = data.area_id
+    if area_id is None:
+        matched = await area_for_point(session, data.latitude, data.longitude)
+        area_id = matched.id if matched is not None else None
+
     facility.name = data.name
     facility.type = data.type
     facility.address = data.address
     facility.contact_number = data.contact_number
-    facility.area_id = data.area_id
+    facility.area_id = area_id
     facility.is_active = data.is_active
     facility.location = func.ST_SetSRID(func.ST_MakePoint(data.longitude, data.latitude), 4326)
     await write_audit(
@@ -265,6 +336,7 @@ def area_to_out(area: Area) -> AreaOut:
         code=area.code,
         flood_exposure=area.flood_exposure,
         has_boundary=area.geom is not None,
+        boundary_source=area.boundary_source,
     )
 
 
@@ -281,3 +353,132 @@ async def update_area(
     )
     await session.commit()
     return area
+
+
+# --- sirens (FR-MAP-014) ------------------------------------------------------
+
+
+async def list_sirens(session: AsyncSession) -> list[tuple[Siren, tuple[float, float]]]:
+    rows = await session.execute(
+        select(
+            Siren,
+            func.ST_X(Siren.location).label("lon"),
+            func.ST_Y(Siren.location).label("lat"),
+        ).order_by(Siren.name)
+    )
+    return [(siren, (lon, lat)) for siren, lon, lat in rows.all()]
+
+
+async def create_siren(
+    session: AsyncSession, data: SirenIn, *, actor_id: uuid.UUID
+) -> tuple[Siren, tuple[float, float]]:
+    area_id = data.area_id
+    if area_id is None:
+        matched = await area_for_point(session, data.latitude, data.longitude)
+        area_id = matched.id if matched is not None else None
+
+    siren = Siren(
+        name=data.name,
+        status=data.status,
+        area_id=area_id,
+        location=func.ST_SetSRID(func.ST_MakePoint(data.longitude, data.latitude), 4326),
+    )
+    session.add(siren)
+    await session.commit()
+    await session.refresh(siren)
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="siren.create",
+        entity_type="siren",
+        entity_id=siren.id,
+    )
+    return siren, (data.longitude, data.latitude)
+
+
+async def update_siren(
+    session: AsyncSession, siren_id: uuid.UUID, data: SirenIn, *, actor_id: uuid.UUID
+) -> tuple[Siren, tuple[float, float]]:
+    siren = await session.get(Siren, siren_id)
+    if siren is None:
+        raise NotFoundError("Siren not found.")
+    area_id = data.area_id
+    if area_id is None:
+        matched = await area_for_point(session, data.latitude, data.longitude)
+        area_id = matched.id if matched is not None else None
+
+    siren.name = data.name
+    siren.status = data.status
+    siren.area_id = area_id
+    siren.location = func.ST_SetSRID(func.ST_MakePoint(data.longitude, data.latitude), 4326)
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="siren.update",
+        entity_type="siren",
+        entity_id=siren.id,
+    )
+    await session.commit()
+    return siren, (data.longitude, data.latitude)
+
+
+async def trigger_siren(
+    session: AsyncSession, siren_id: uuid.UUID, *, actor_id: uuid.UUID
+) -> tuple[Siren, tuple[float, float]]:
+    siren = await session.get(Siren, siren_id)
+    if siren is None:
+        raise NotFoundError("Siren not found.")
+    siren.status = "sounding" if siren.status == "idle" else "idle"
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="siren.trigger",
+        entity_type="siren",
+        entity_id=siren.id,
+        changes={"status": siren.status},
+    )
+    await session.commit()
+
+    row = await session.execute(
+        select(
+            func.ST_X(Siren.location).label("lon"),
+            func.ST_Y(Siren.location).label("lat"),
+        ).where(Siren.id == siren.id)
+    )
+    lon, lat = row.one()
+    return siren, (lon, lat)
+
+
+async def delete_siren(session: AsyncSession, siren_id: uuid.UUID, *, actor_id: uuid.UUID) -> None:
+    siren = await session.get(Siren, siren_id)
+    if siren is None:
+        raise NotFoundError("Siren not found.")
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="siren.delete",
+        entity_type="siren",
+        entity_id=siren.id,
+    )
+    await session.delete(siren)
+    await session.commit()
+
+
+def siren_to_public(siren: Siren, coords: tuple[float, float]) -> PublicSiren:
+    return PublicSiren(
+        id=siren.id,
+        name=siren.name,
+        status=siren.status,
+        location=GeoJsonPoint(type="Point", coordinates=coords),
+        area_id=siren.area_id,
+    )
+
+
+def siren_to_out(siren: Siren, coords: tuple[float, float]) -> SirenOut:
+    return SirenOut(
+        id=siren.id,
+        name=siren.name,
+        status=siren.status,
+        location=GeoJsonPoint(type="Point", coordinates=coords),
+        area_id=siren.area_id,
+    )

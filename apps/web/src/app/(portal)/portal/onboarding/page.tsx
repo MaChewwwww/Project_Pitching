@@ -25,12 +25,18 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { api, toDisplayError } from "@/lib/api/client";
 import type { PublicArea } from "@/lib/api/public-types";
-import type { HouseholdCreateResponse, HouseholdCreateSelf } from "@/lib/api/registry-types";
+import type {
+  HouseholdCreateResponse,
+  HouseholdCreateSelf,
+} from "@/lib/api/registry-types";
 import type { LatLng } from "@/components/features/registry/location-picker";
 
 const LocationPicker = dynamic(
   () => import("@/components/features/registry/location-picker"),
-  { ssr: false, loading: () => <div className="h-72 w-full rounded-lg bg-neutral-100" /> },
+  {
+    ssr: false,
+    loading: () => <div className="h-72 w-full rounded-lg bg-neutral-100" />,
+  },
 );
 
 /**
@@ -60,7 +66,8 @@ const onboardingSchema = z
     if (!values.is_unreachable_by_phone && !values.contact_number) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Enter a contact number, or check “I don't have a reliable phone number”",
+        message:
+          "Enter a contact number, or check “I don't have a reliable phone number”",
         path: ["contact_number"],
       });
     }
@@ -152,16 +159,82 @@ export default function OnboardingPage() {
 
       <Card>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+            className="flex flex-col gap-5"
+          >
             {serverError ? (
-              <p role="alert" className="border-danger-border bg-danger-bg text-danger rounded-md border p-3 text-sm">
+              <p
+                role="alert"
+                className="border-danger-border bg-danger-bg text-danger rounded-md border p-3 text-sm"
+              >
                 {serverError}
               </p>
             ) : null}
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="street_address">Street address</Label>
-              <Input id="street_address" type="text" {...register("street_address")} />
+            {/* ── PSGC address hierarchy — pre-filled, read-only ── */}
+            <div className="flex flex-col gap-3">
+              <p className="text-body-sm font-semibold text-neutral-700">
+                Address
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="psgc_region" className="text-xs text-neutral-500">
+                    Region
+                  </Label>
+                  <Input
+                    id="psgc_region"
+                    value="Region IV-A (CALABARZON)"
+                    readOnly
+                    tabIndex={-1}
+                    className="cursor-default select-none bg-neutral-50 text-neutral-500"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="psgc_province" className="text-xs text-neutral-500">
+                    Province
+                  </Label>
+                  <Input
+                    id="psgc_province"
+                    value="Rizal"
+                    readOnly
+                    tabIndex={-1}
+                    className="cursor-default select-none bg-neutral-50 text-neutral-500"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="psgc_city" className="text-xs text-neutral-500">
+                    City / Municipality
+                  </Label>
+                  <Input
+                    id="psgc_city"
+                    value="Rodriguez (Montalban)"
+                    readOnly
+                    tabIndex={-1}
+                    className="cursor-default select-none bg-neutral-50 text-neutral-500"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="psgc_barangay" className="text-xs text-neutral-500">
+                    Barangay
+                  </Label>
+                  <Input
+                    id="psgc_barangay"
+                    value="San Jose"
+                    readOnly
+                    tabIndex={-1}
+                    className="cursor-default select-none bg-neutral-50 text-neutral-500"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="street_address">
+                  House no. / Street / Purok{" "}
+                  <span className="text-neutral-400 font-normal">(optional)</span>
+                </Label>
+                <Input id="street_address" type="text" {...register("street_address")} placeholder="e.g. 12 Sampaguita St., Purok 3" />
+              </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -202,7 +275,9 @@ export default function OnboardingPage() {
                 inputMode="tel"
                 autoComplete="tel"
                 aria-invalid={!!errors.contact_number}
-                aria-describedby={errors.contact_number ? "contact_number-error" : undefined}
+                aria-describedby={
+                  errors.contact_number ? "contact_number-error" : undefined
+                }
                 {...register("contact_number")}
               />
               {errors.contact_number ? (
@@ -289,7 +364,10 @@ export default function OnboardingPage() {
             {hasChronicCondition ? (
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="chronic_condition_note">Condition (optional)</Label>
-                <Textarea id="chronic_condition_note" {...register("chronic_condition_note")} />
+                <Textarea
+                  id="chronic_condition_note"
+                  {...register("chronic_condition_note")}
+                />
               </div>
             ) : null}
 

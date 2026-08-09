@@ -90,7 +90,9 @@ function ReviewDialog({
             type="button"
             variant="outline"
             disabled={mutation.isPending || !dismissalReason}
-            onClick={() => mutation.mutate({ status: "dismissed", dismissal_reason: dismissalReason })}
+            onClick={() =>
+              mutation.mutate({ status: "dismissed", dismissal_reason: dismissalReason })
+            }
           >
             Dismiss
           </Button>
@@ -144,7 +146,11 @@ export function IncidentReviewTable({
           <ImageOff aria-hidden className="size-4 text-neutral-400" />
         ),
     },
-    { key: "location_note", header: "Location", render: (row) => row.location_note ?? "—" },
+    {
+      key: "location_note",
+      header: "Location",
+      render: (row) => row.location_note ?? "—",
+    },
     {
       key: "status",
       header: "Status",
@@ -154,7 +160,11 @@ export function IncidentReviewTable({
       // near-identical badge case.
       render: (row) => <StatusBadge kind="rescue" status={row.status} />,
     },
-    { key: "reported_by_name", header: "Reported by", render: (row) => row.reported_by_name ?? "—" },
+    {
+      key: "reported_by_name",
+      header: "Reported by",
+      render: (row) => row.reported_by_name ?? "—",
+    },
   ];
 
   return (
@@ -170,7 +180,12 @@ export function IncidentReviewTable({
         getRowKey={(row) => row.id}
         rowActions={(row) =>
           row.status === "pending" ? (
-            <Button type="button" size="sm" variant="outline" onClick={() => setReviewing(row)}>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setReviewing(row)}
+            >
               Review
             </Button>
           ) : null

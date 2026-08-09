@@ -77,17 +77,17 @@ export function LogoLockup({
         <span className="flex flex-col leading-none">
           <span
             className={cn(
-              "font-display text-[18px] font-black tracking-tight bg-clip-text text-transparent",
+              "font-display bg-clip-text text-[18px] font-black tracking-tight text-transparent",
               onDark
-                ? "bg-gradient-to-r from-white via-primary-100 to-emerald-300"
-                : "bg-gradient-to-r from-primary-900 via-primary-600 to-emerald-600",
+                ? "via-primary-100 bg-gradient-to-r from-white to-emerald-300"
+                : "from-primary-900 via-primary-600 bg-gradient-to-r to-emerald-600",
             )}
           >
             {APP_NAME}
           </span>
           <span
             className={cn(
-              "text-[13.5px] leading-tight mt-0.5 font-semibold tracking-tight",
+              "mt-0.5 text-[13.5px] leading-tight font-semibold tracking-tight",
               onDark ? "text-neutral-300" : "text-neutral-600",
             )}
           >

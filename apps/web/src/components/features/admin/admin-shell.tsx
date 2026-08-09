@@ -67,7 +67,11 @@ const CATEGORIES: NavCategory[] = [
       { href: "/admin/emergency-events", label: "Emergency Events", icon: Siren },
       { href: "/admin/safety", label: "Accounted For", icon: ShieldCheck },
       { href: "/admin/rescue-requests", label: "Rescue Queue", icon: LifeBuoy },
-      { href: "/admin/unregistered-persons", label: "Unregistered Persons", icon: UserPlus },
+      {
+        href: "/admin/unregistered-persons",
+        label: "Unregistered Persons",
+        icon: UserPlus,
+      },
       { href: "/admin/incident-reports", label: "Incident Reports", icon: Camera },
     ],
   },
@@ -87,8 +91,9 @@ const CATEGORIES: NavCategory[] = [
     title: "Operations & Facilities",
     icon: Building2,
     items: [
-      { href: "/admin/evacuation-centers", label: "Evacuation Centres", icon: MapPin },
+      { href: "/admin/evacuation-centers", label: "Evacuation Centers", icon: MapPin },
       { href: "/admin/facilities", label: "Barangay Facilities", icon: Building2 },
+      { href: "/admin/sirens", label: "Siren Units", icon: Siren },
       { href: "/admin/donation-drives", label: "Donation Drives", icon: Gift },
       { href: "/admin/hotlines", label: "Hotlines Directory", icon: Phone },
     ],
@@ -99,7 +104,7 @@ const CATEGORIES: NavCategory[] = [
     icon: BookOpen,
     items: [
       { href: "/admin/activities", label: "Activities & Programs", icon: Activity },
-      { href: "/admin/guides", label: "Preparedness Guides", icon: BookOpen },
+      { href: "/admin/guides", label: "Preparedness Guidelines", icon: BookOpen },
       { href: "/admin/faqs", label: "Frequently Asked Questions", icon: HelpCircle },
     ],
   },

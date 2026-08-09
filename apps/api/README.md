@@ -16,15 +16,15 @@ The API is then at <http://localhost:8080/api/v1> through the proxy, or
 
 You do not need Python installed. Everything runs in the container, including the tests.
 
-| Command | What it does |
-|---|---|
-| `make migrate` | Apply pending migrations |
-| `make revision m="add household"` | Generate a migration from model changes |
-| `make test-api` | pytest |
-| `make lint-api` | ruff |
-| `make shell-api` | Shell inside the container |
-| `make shell-db` | psql |
-| `make types` | Regenerate `packages/api-types` from the OpenAPI schema |
+| Command                           | What it does                                            |
+| --------------------------------- | ------------------------------------------------------- |
+| `make migrate`                    | Apply pending migrations                                |
+| `make revision m="add household"` | Generate a migration from model changes                 |
+| `make test-api`                   | pytest                                                  |
+| `make lint-api`                   | ruff                                                    |
+| `make shell-api`                  | Shell inside the container                              |
+| `make shell-db`                   | psql                                                    |
+| `make types`                      | Regenerate `packages/api-types` from the OpenAPI schema |
 
 ## Layout
 
@@ -50,19 +50,19 @@ not do is in [`docs/modules.md`](./docs/modules.md) — read it before adding on
 3. **`domain/` stays pure.** That is what makes it unit-testable (NFR-MNT-005).
 4. **No request path calls an external service.** The scheduler fetches; the API reads.
 5. **Every new `models.py` goes into `src/db/models_registry.py`** — otherwise Alembic
-   autogenerate emits a migration that *drops your table*.
+   autogenerate emits a migration that _drops your table_.
 6. **No manual DDL, ever.** Alembic only (NFR-MNT-004).
 
 Full list with rationale: [`AGENTS.md`](../../AGENTS.md) Section 5.
 
 ## Docs
 
-| Document | Covers |
-|---|---|
-| [`docs/modules.md`](./docs/modules.md) | The four-file convention, module boundaries, adding a module |
-| [`docs/migrations.md`](./docs/migrations.md) | Alembic workflow and the traps specific to PostGIS |
-| [`docs/auth.md`](./docs/auth.md) | Token flow, roles, area scoping — the highest-risk area (AR-6) |
-| [`docs/observability.md`](./docs/observability.md) | Log shape, error envelope, audit log, `/health` |
+| Document                                           | Covers                                                         |
+| -------------------------------------------------- | -------------------------------------------------------------- |
+| [`docs/modules.md`](./docs/modules.md)             | The four-file convention, module boundaries, adding a module   |
+| [`docs/migrations.md`](./docs/migrations.md)       | Alembic workflow and the traps specific to PostGIS             |
+| [`docs/auth.md`](./docs/auth.md)                   | Token flow, roles, area scoping — the highest-risk area (AR-6) |
+| [`docs/observability.md`](./docs/observability.md) | Log shape, error envelope, audit log, `/health`                |
 
-*What* to build is in [`docs/frs_nfrs.md`](../../docs/frs_nfrs.md). The database columns are in
+_What_ to build is in [`docs/frs_nfrs.md`](../../docs/frs_nfrs.md). The database columns are in
 [`docs/schema.md`](../../docs/schema.md). Neither is restated here.

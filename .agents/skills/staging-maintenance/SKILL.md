@@ -7,18 +7,18 @@ description: Perform deployment, maintenance, container rebuilds, database opera
 
 ## Environment Overview & Access
 
-| Property | Value |
-|---|---|
-| **Staging VPS Public IP** | `57.155.90.155` |
-| **Primary HTTPS URL** | `https://57-155-90-155.sslip.io` |
-| **HTTP Staging URL** | `http://57.155.90.155:8080` or `http://57.155.90.155` |
-| **SSH User & Host** | `deploy@57.155.90.155` |
-| **SSH Key Path** | `C:\Users\MaChew\.ssh\bgh_azure_ed25519` |
-| **Admin PEM Key Path** | `C:\Users\MaChew\.ssh\bgh_deployment_admin.pem` |
-| **Server Repository Path** | `/opt/bgh/Project_Pitching` |
-| **Compose Project Name** | `sagip-staging` |
-| **Compose File** | `infra/compose.yml` |
-| **Env File** | `.env.staging` |
+| Property                   | Value                                                 |
+| -------------------------- | ----------------------------------------------------- |
+| **Staging VPS Public IP**  | `57.155.90.155`                                       |
+| **Primary HTTPS URL**      | `https://57-155-90-155.sslip.io`                      |
+| **HTTP Staging URL**       | `http://57.155.90.155:8080` or `http://57.155.90.155` |
+| **SSH User & Host**        | `deploy@57.155.90.155`                                |
+| **SSH Key Path**           | `C:\Users\MaChew\.ssh\bgh_azure_ed25519`              |
+| **Admin PEM Key Path**     | `C:\Users\MaChew\.ssh\bgh_deployment_admin.pem`       |
+| **Server Repository Path** | `/opt/bgh/Project_Pitching`                           |
+| **Compose Project Name**   | `sagip-staging`                                       |
+| **Compose File**           | `infra/compose.yml`                                   |
+| **Env File**               | `.env.staging`                                        |
 
 ## Devops Credentials (.env.devops)
 
@@ -56,6 +56,7 @@ ssh -o BatchMode=yes -i C:\Users\MaChew\.ssh\bgh_azure_ed25519 deploy@57.155.90.
 ```
 
 For root-level host administration via admin PEM key:
+
 ```powershell
 ssh -i C:\Users\MaChew\.ssh\bgh_deployment_admin.pem azureuser@57.155.90.155 "sudo systemctl status docker"
 ```
@@ -67,18 +68,22 @@ ssh -i C:\Users\MaChew\.ssh\bgh_deployment_admin.pem azureuser@57.155.90.155 "su
 To push local code changes to the staging server and rebuild containers:
 
 ### 1. Push Code to Server Remote
+
 ```powershell
 $env:GIT_SSH_COMMAND="ssh -i C:/Users/MaChew/.ssh/bgh_azure_ed25519"
 git push ssh://deploy@57.155.90.155/opt/bgh/Project_Pitching main
 ```
 
 ### 2. Rebuild Container Services
+
 To rebuild and restart specific services (e.g. `web` and `api`):
+
 ```powershell
 ssh -o BatchMode=yes -i C:\Users\MaChew\.ssh\bgh_azure_ed25519 deploy@57.155.90.155 "cd /opt/bgh/Project_Pitching && docker compose -p sagip-staging --env-file .env.staging -f infra/compose.yml up -d --build api web"
 ```
 
 To rebuild the entire stack:
+
 ```powershell
 ssh -o BatchMode=yes -i C:\Users\MaChew\.ssh\bgh_azure_ed25519 deploy@57.155.90.155 "cd /opt/bgh/Project_Pitching && docker compose -p sagip-staging --env-file .env.staging -f infra/compose.yml up -d --build"
 ```
@@ -87,29 +92,32 @@ ssh -o BatchMode=yes -i C:\Users\MaChew\.ssh\bgh_azure_ed25519 deploy@57.155.90.
 
 ## Service Architecture & Port Mapping
 
-| Service | Container Name | Internal Port | External Port | Function |
-|---|---|---|---|---|
-| **proxy** | `sagip-staging-proxy-1` | 80, 443 | 80, 443, 8080 | Caddy 2 reverse proxy with Let's Encrypt SSL |
-| **web** | `sagip-staging-web-1` | 3000 | - | Next.js App Router frontend |
-| **api** | `sagip-staging-api-1` | 8000 | - | FastAPI backend (SQLAlchemy 2.0, Alembic) |
-| **db** | `sagip-staging-db-1` | 5432 | 5433 | PostGIS 16-3.4 database |
-| **cron** | `sagip-staging-cron-1` | - | - | Background weather & river level scheduler |
+| Service   | Container Name          | Internal Port | External Port | Function                                     |
+| --------- | ----------------------- | ------------- | ------------- | -------------------------------------------- |
+| **proxy** | `sagip-staging-proxy-1` | 80, 443       | 80, 443, 8080 | Caddy 2 reverse proxy with Let's Encrypt SSL |
+| **web**   | `sagip-staging-web-1`   | 3000          | -             | Next.js App Router frontend                  |
+| **api**   | `sagip-staging-api-1`   | 8000          | -             | FastAPI backend (SQLAlchemy 2.0, Alembic)    |
+| **db**    | `sagip-staging-db-1`    | 5432          | 5433          | PostGIS 16-3.4 database                      |
+| **cron**  | `sagip-staging-cron-1`  | -             | -             | Background weather & river level scheduler   |
 
 ---
 
 ## Log Inspection & Troubleshooting
 
 Check container status:
+
 ```powershell
 ssh -i C:\Users\MaChew\.ssh\bgh_azure_ed25519 deploy@57.155.90.155 "cd /opt/bgh/Project_Pitching && docker compose -p sagip-staging --env-file .env.staging -f infra/compose.yml ps"
 ```
 
 View Caddy SSL / Proxy logs:
+
 ```powershell
 ssh -i C:\Users\MaChew\.ssh\bgh_azure_ed25519 deploy@57.155.90.155 "cd /opt/bgh/Project_Pitching && docker compose -p sagip-staging --env-file .env.staging -f infra/compose.yml logs proxy --tail=50"
 ```
 
 View API backend logs:
+
 ```powershell
 ssh -i C:\Users\MaChew\.ssh\bgh_azure_ed25519 deploy@57.155.90.155 "cd /opt/bgh/Project_Pitching && docker compose -p sagip-staging --env-file .env.staging -f infra/compose.yml logs api --tail=50"
 ```

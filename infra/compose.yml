@@ -30,7 +30,11 @@ services:
       - ./backups:/backups
     healthcheck:
       # Nothing else starts until this passes (architecture.md Section 13.3).
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-appdb}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-appdb}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 20

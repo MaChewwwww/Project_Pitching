@@ -56,8 +56,8 @@ export function BarangayIsometric({ className }: { className?: string }) {
       <desc id="iso-desc">
         An isometric illustration of the barangay. Houses nearest the river stand on
         ground tinted red for high flood hazard, the middle of the barangay on orange for
-        medium, and the higher ground on yellow for low. The barangay hall flies a flag and
-        the evacuation centre is marked with a pulsing beacon.
+        medium, and the higher ground on yellow for low. The barangay hall flies a flag
+        and the evacuation centre is marked with a pulsing beacon.
       </desc>
 
       <defs>
@@ -66,8 +66,16 @@ export function BarangayIsometric({ className }: { className?: string }) {
           <stop offset="100%" className="[stop-color:var(--color-primary-600)]" />
         </linearGradient>
         <radialGradient id="iso-glow" cx="50%" cy="45%" r="55%">
-          <stop offset="0%" className="[stop-color:var(--color-primary-400)]" stopOpacity="0.35" />
-          <stop offset="100%" className="[stop-color:var(--color-primary-400)]" stopOpacity="0" />
+          <stop
+            offset="0%"
+            className="[stop-color:var(--color-primary-400)]"
+            stopOpacity="0.35"
+          />
+          <stop
+            offset="100%"
+            className="[stop-color:var(--color-primary-400)]"
+            stopOpacity="0"
+          />
         </radialGradient>
         {/* Clips the rain to the sky area so streaks do not cross the buildings. */}
         <clipPath id="iso-sky">
@@ -192,8 +200,16 @@ export function BarangayIsometric({ className }: { className?: string }) {
 
       {/* ---- houses on high-hazard ground ---------------------------------- */}
       {[
-        { b: "M330 400 330 368 362 353 362 385Z", r: "M362 385 362 353 394 368 394 400Z", t: "M330 368 362 353 394 368 362 383Z" },
-        { b: "M398 372 398 342 428 328 428 358Z", r: "M428 358 428 328 458 342 458 372Z", t: "M398 342 428 328 458 342 428 356Z" },
+        {
+          b: "M330 400 330 368 362 353 362 385Z",
+          r: "M362 385 362 353 394 368 394 400Z",
+          t: "M330 368 362 353 394 368 362 383Z",
+        },
+        {
+          b: "M398 372 398 342 428 328 428 358Z",
+          r: "M428 358 428 328 458 342 458 372Z",
+          t: "M398 342 428 328 458 342 428 356Z",
+        },
       ].map((house) => (
         <g key={house.b}>
           <path d={house.b} className="fill-primary-700" />
@@ -204,8 +220,16 @@ export function BarangayIsometric({ className }: { className?: string }) {
 
       {/* ---- houses on medium-hazard ground -------------------------------- */}
       {[
-        { b: "M186 372 186 344 214 331 214 359Z", r: "M214 359 214 331 242 344 242 372Z", t: "M186 344 214 331 242 344 214 357Z" },
-        { b: "M252 350 252 322 280 309 280 337Z", r: "M280 337 280 309 308 322 308 350Z", t: "M252 322 280 309 308 322 280 335Z" },
+        {
+          b: "M186 372 186 344 214 331 214 359Z",
+          r: "M214 359 214 331 242 344 242 372Z",
+          t: "M186 344 214 331 242 344 214 357Z",
+        },
+        {
+          b: "M252 350 252 322 280 309 280 337Z",
+          r: "M280 337 280 309 308 322 308 350Z",
+          t: "M252 322 280 309 308 322 280 335Z",
+        },
       ].map((house) => (
         <g key={house.b}>
           <path d={house.b} className="fill-primary-600" />
@@ -216,8 +240,16 @@ export function BarangayIsometric({ className }: { className?: string }) {
 
       {/* ---- houses on high ground ------------------------------------------ */}
       {[
-        { b: "M392 232 392 206 418 194 418 220Z", r: "M418 220 418 194 444 206 444 232Z", t: "M392 206 418 194 444 206 418 218Z" },
-        { b: "M452 204 452 178 478 166 478 192Z", r: "M478 192 478 166 504 178 504 204Z", t: "M452 178 478 166 504 178 478 190Z" },
+        {
+          b: "M392 232 392 206 418 194 418 220Z",
+          r: "M418 220 418 194 444 206 444 232Z",
+          t: "M392 206 418 194 444 206 418 218Z",
+        },
+        {
+          b: "M452 204 452 178 478 166 478 192Z",
+          r: "M478 192 478 166 504 178 504 204Z",
+          t: "M452 178 478 166 504 178 478 190Z",
+        },
       ].map((house) => (
         <g key={house.b}>
           <path d={house.b} className="fill-primary-500" />
@@ -268,7 +300,10 @@ export function BarangayIsometricCompact({ className }: { className?: string }) 
       <title id="iso-c-title">Barangay San Jose beside the river</title>
 
       <path d="M320 330 520 226 340 140 140 244Z" className="fill-primary-700/30" />
-      <path d="M520 226 620 174 620 220 396 338 320 330Z" className="fill-primary-400/70" />
+      <path
+        d="M520 226 620 174 620 220 396 338 320 330Z"
+        className="fill-primary-400/70"
+      />
 
       <path d="M266 200 266 140 318 114 318 174Z" className="fill-primary-700" />
       <path d="M318 174 318 114 370 140 370 200Z" className="fill-primary-800" />

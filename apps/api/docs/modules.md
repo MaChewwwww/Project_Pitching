@@ -9,12 +9,12 @@ need service boundaries — they need to not trip over each other
 
 Every module in `src/modules/` has the same four, and they do not swap jobs:
 
-| File | Does | Must not |
-|---|---|---|
-| `router.py` | Declares HTTP routes, applies auth dependencies, calls a service, returns its result | Touch the database. Contain business logic. Decide authorization itself |
-| `schemas.py` | Pydantic request/response models — the API contract | Contain ORM models |
-| `service.py` | Business logic, transaction boundaries, audit writes | Import another module's `models.py` |
-| `models.py` | SQLAlchemy ORM | Invent columns not in `schema.md` |
+| File         | Does                                                                                 | Must not                                                                |
+| ------------ | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| `router.py`  | Declares HTTP routes, applies auth dependencies, calls a service, returns its result | Touch the database. Contain business logic. Decide authorization itself |
+| `schemas.py` | Pydantic request/response models — the API contract                                  | Contain ORM models                                                      |
+| `service.py` | Business logic, transaction boundaries, audit writes                                 | Import another module's `models.py`                                     |
+| `models.py`  | SQLAlchemy ORM                                                                       | Invent columns not in `schema.md`                                       |
 
 A fifth file is fine when a module grows (`selectors.py`, `permissions.py`). Four is the floor,
 not the ceiling.
@@ -31,14 +31,14 @@ that reached in. Going through `registry`'s service means it is found in one.
 
 ## Where things go when it is not obvious
 
-| Logic | Home | Why |
-|---|---|---|
-| Scoring a household's vulnerability | `domain/vulnerability.py` | Pure, heavily tested, no I/O (NFR-MNT-005) |
-| Loading the household to score | `modules/registry/service.py` | Needs a session |
-| Deciding whether this user may score it | `core/deps.py` | Authorization lives in one place |
-| Formatting the score for a response | `modules/registry/schemas.py` | Contract, not logic |
-| Fetching a river level from PAGASA | `services/cron` | **Never** in a request path (D-3) |
-| Parsing PAGASA's HTML | `integrations/pagasa.py` | One file to fix when the markup changes |
+| Logic                                   | Home                          | Why                                        |
+| --------------------------------------- | ----------------------------- | ------------------------------------------ |
+| Scoring a household's vulnerability     | `domain/vulnerability.py`     | Pure, heavily tested, no I/O (NFR-MNT-005) |
+| Loading the household to score          | `modules/registry/service.py` | Needs a session                            |
+| Deciding whether this user may score it | `core/deps.py`                | Authorization lives in one place           |
+| Formatting the score for a response     | `modules/registry/schemas.py` | Contract, not logic                        |
+| Fetching a river level from PAGASA      | `services/cron`               | **Never** in a request path (D-3)          |
+| Parsing PAGASA's HTML                   | `integrations/pagasa.py`      | One file to fix when the markup changes    |
 
 If it needs a database session it is not `domain/`. If it makes an outbound HTTP call it is not
 in `apps/api` at all.
@@ -64,7 +64,7 @@ in `apps/api` at all.
 /api/v1/admin/*     admin, BHW, SK — role-checked per route
 ```
 
-Routes are grouped by *who may call them*, not by resource. A resource that is readable publicly
+Routes are grouped by _who may call them_, not by resource. A resource that is readable publicly
 and writable by an admin appears in both tiers, with **different response schemas**. That is the
 point: the public serializer physically cannot return a contact number, because it has no field
 for one.

@@ -68,7 +68,7 @@ const TILES: {
   },
   {
     href: "/admin/guides",
-    label: "Preparedness Guides",
+    label: "Preparedness Guidelines",
     description: "Hazard guides shown on the public site",
     icon: BookOpen,
   },
@@ -87,12 +87,12 @@ const TILES: {
   {
     href: "/admin/facilities",
     label: "Facilities",
-    description: "Evacuation centres, clinics, and more",
+    description: "Evacuation centers, clinics, and more",
     icon: Building2,
   },
   {
     href: "/admin/evacuation-centers",
-    label: "Evacuation Centres",
+    label: "Evacuation Centers",
     description: "Capacity and open/closed status",
     icon: MapPin,
   },
@@ -144,14 +144,18 @@ function LiveSummary() {
   const { data: activeEvent } = useQuery({
     queryKey: ["public", "emergency-events", "active"],
     queryFn: () =>
-      api.get<PublicEmergencyEvent | null>("/public/emergency-events/active").then((r) => r.data),
+      api
+        .get<PublicEmergencyEvent | null>("/public/emergency-events/active")
+        .then((r) => r.data),
     refetchInterval: 15_000,
   });
 
   const { data: openRescue } = useQuery({
     queryKey: ["admin", "rescue-requests", "open-count"],
     queryFn: () =>
-      api.get<{ count: number }>("/admin/rescue-requests/open-count").then((r) => r.data.count),
+      api
+        .get<{ count: number }>("/admin/rescue-requests/open-count")
+        .then((r) => r.data.count),
     refetchInterval: 15_000,
   });
 
@@ -175,7 +179,7 @@ function LiveSummary() {
       </Card>
       <Card radius="lg">
         <CardContent className="flex flex-col gap-1">
-          <ShieldCheck aria-hidden className="text-neutral-500 size-5" />
+          <ShieldCheck aria-hidden className="size-5 text-neutral-500" />
           <span className="text-h3 font-bold text-neutral-900">
             {accountedFor ? accountedFor.registered_total.unaccounted : "—"}
           </span>

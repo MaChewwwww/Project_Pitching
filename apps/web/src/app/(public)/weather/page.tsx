@@ -139,10 +139,7 @@ export default async function WeatherPage() {
           )}
         </section>
 
-        <Attribution
-          sources={["weather", "river"]}
-          disclaimer="warning-authority"
-        />
+        <Attribution sources={["weather", "river"]} disclaimer="warning-authority" />
       </div>
     </>
   );

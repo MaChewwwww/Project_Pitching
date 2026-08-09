@@ -2,32 +2,39 @@
 
 ## The six
 
-| Job | Cadence | Writes | Requirement |
-|---|---|---|---|
-| `fetch_weather` | every 20 min | `reading` | FR-WX-003 |
-| `fetch_river_level` | every 15 min | `reading` | FR-WX-008 |
-| `evaluate_thresholds` | after each river fetch | `alert_prompt` | FR-WX-009 |
-| `flag_stale_records` | daily 02:00 | `household.stale_at` | R-2 |
-| `send_activity_reminders` | daily 08:00 | `notification` | FR-ACT-005 |
-| `backup_database` | daily 03:00 | off-box dump | NFR-AVL-005 |
+| Job                       | Cadence                | Writes               | Requirement |
+| ------------------------- | ---------------------- | -------------------- | ----------- |
+| `fetch_weather`           | every 20 min           | `reading`            | FR-WX-003   |
+| `fetch_river_level`       | every 15 min           | `reading`            | FR-WX-008   |
+| `evaluate_thresholds`     | after each river fetch | `alert_prompt`       | FR-WX-009   |
+| `flag_stale_records`      | daily 02:00            | `household.stale_at` | R-2         |
+| `send_activity_reminders` | daily 08:00            | `notification`       | FR-ACT-005  |
+| `backup_database`         | daily 03:00            | off-box dump         | NFR-AVL-005 |
 
 Daily jobs are scheduled in **PHT**, because "02:00" means 02:00 in the barangay. Everything is
-still *stored* in UTC (NFR-DAT-003).
+still _stored_ in UTC (NFR-DAT-003).
 
 > All six are currently stubs that log and return. The scheduling, logging, and failure
 > isolation around them is real; the bodies land with their FRs.
 
 ## Discipline every job follows
 
-**1. Idempotent.** A double run must be harmless. The scheduler *will* double-run eventually —
+**1. Idempotent.** A double run must be harmless. The scheduler _will_ double-run eventually —
 a container restart, a clock adjustment, a redeploy. Design for it rather than hoping.
 
 **2. Logged.** Start, outcome, and duration on every run (NFR-OBS-002). The `@job` decorator in
 `runner.py` does this, so no job has to remember:
 
 ```json
-{"ts":"…","level":"INFO","logger":"cron.fetch_weather","message":"job finished",
- "job":"fetch_weather","outcome":"success","duration_ms":412.7}
+{
+  "ts": "…",
+  "level": "INFO",
+  "logger": "cron.fetch_weather",
+  "message": "job finished",
+  "job": "fetch_weather",
+  "outcome": "success",
+  "duration_ms": 412.7
+}
 ```
 
 **3. Isolated.** `@job` catches and logs any exception rather than letting it escape. One broken

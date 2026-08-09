@@ -90,7 +90,9 @@ export function RiverLevelPanel({
           >
             {reading.value}
           </span>
-          <span className={cn("text-h3", onDark ? "text-primary-200" : "text-neutral-500")}>
+          <span
+            className={cn("text-h3", onDark ? "text-primary-200" : "text-neutral-500")}
+          >
             {reading.unit}
           </span>
         </div>
@@ -98,7 +100,7 @@ export function RiverLevelPanel({
         {usingFallback ? (
           <p
             className={cn(
-              "text-caption rounded-md border border-warning-border bg-warning-bg/60 p-2",
+              "text-caption border-warning-border bg-warning-bg/60 rounded-md border p-2",
               onDark ? "text-neutral-800" : "text-neutral-700",
             )}
           >
@@ -126,11 +128,7 @@ export function RiverLevelPanel({
             staleAfterMinutes={reading.stale_after_minutes}
             onDark={onDark}
           />
-          <Attribution
-            onDark={onDark}
-            disclaimer="warning-authority"
-            short={compact}
-          />
+          <Attribution onDark={onDark} disclaimer="warning-authority" short={compact} />
         </div>
       </CardContent>
     </Card>

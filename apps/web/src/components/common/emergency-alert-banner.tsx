@@ -54,7 +54,9 @@ export function EmergencyAlertBanner({
       : "Emergency"
     : "Active";
 
-  const title = activeAlert ? activeAlert.title : `${emergencyEvent!.type} emergency declared`;
+  const title = activeAlert
+    ? activeAlert.title
+    : `${emergencyEvent!.type} emergency declared`;
   const instruction = activeAlert
     ? activeAlert.instruction
     : "An emergency has been declared for the barangay. Follow official instructions and monitor this site for updates.";
@@ -64,15 +66,14 @@ export function EmergencyAlertBanner({
   // its start time instead.
   const meta = activeAlert
     ? `${
-        activeAlert.area_names.length > 0 ? activeAlert.area_names.join(", ") : "Barangay-wide"
+        activeAlert.area_names.length > 0
+          ? activeAlert.area_names.join(", ")
+          : "Barangay-wide"
       } · ${activeAlert.issued_by_name}`
     : `Barangay-wide · Declared ${new Date(emergencyEvent!.started_at).toLocaleString()}`;
 
-  const availableHotlines = hotlines && hotlines.length > 0
-    ? hotlines
-    : primaryHotline
-      ? [primaryHotline]
-      : [];
+  const availableHotlines =
+    hotlines && hotlines.length > 0 ? hotlines : primaryHotline ? [primaryHotline] : [];
 
   return (
     <div
@@ -80,10 +81,10 @@ export function EmergencyAlertBanner({
       aria-live="assertive"
       aria-atomic="true"
       className={cn(
-        "border-b transition-colors shadow-sm",
+        "border-b shadow-sm transition-colors",
         urgent
-          ? "border-danger-hover bg-gradient-to-r from-danger via-red-600 to-danger text-white"
-          : "border-warning/30 bg-gradient-to-r from-warning-bg via-amber-500/10 to-warning-bg text-neutral-900",
+          ? "border-danger-hover from-danger to-danger bg-gradient-to-r via-red-600 text-white"
+          : "border-warning/30 from-warning-bg to-warning-bg bg-gradient-to-r via-amber-500/10 text-neutral-900",
       )}
     >
       <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-6">
@@ -91,7 +92,7 @@ export function EmergencyAlertBanner({
         <div className="flex min-w-0 flex-1 items-center gap-3.5">
           <span
             className={cn(
-              "grid size-10 shrink-0 place-items-center rounded-xl backdrop-blur-md shadow-xs",
+              "grid size-10 shrink-0 place-items-center rounded-xl shadow-xs backdrop-blur-md",
               urgent ? "bg-white/20 text-white" : "bg-warning/20 text-warning-hover",
             )}
           >
@@ -104,12 +105,16 @@ export function EmergencyAlertBanner({
 
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-h4 font-bold tracking-tight min-w-0 truncate">{title}</span>
+              <span className="text-h4 min-w-0 truncate font-bold tracking-tight">
+                {title}
+              </span>
               {!/level/i.test(title) ? (
                 <span
                   className={cn(
-                    "text-overline shrink-0 rounded-md px-2 py-0.5 font-bold tracking-wider uppercase border",
-                    urgent ? "bg-white/25 text-white border-white/20" : "bg-warning text-white border-warning-hover",
+                    "text-overline shrink-0 rounded-md border px-2 py-0.5 font-bold tracking-wider uppercase",
+                    urgent
+                      ? "border-white/20 bg-white/25 text-white"
+                      : "bg-warning border-warning-hover text-white",
                   )}
                 >
                   {levelText}
@@ -128,7 +133,7 @@ export function EmergencyAlertBanner({
             {instruction ? (
               <p
                 className={cn(
-                  "text-body-sm font-medium line-clamp-1 leading-snug",
+                  "text-body-sm line-clamp-1 leading-snug font-medium",
                   urgent ? "text-white/90" : "text-neutral-700",
                 )}
               >
@@ -146,27 +151,28 @@ export function EmergencyAlertBanner({
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-5 cursor-pointer sm:w-auto",
-                    "text-label font-bold transition-all duration-200 focus-visible:ring-3 focus-visible:outline-none hover:scale-105 shadow-sm-card",
+                    "inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 sm:w-auto",
+                    "text-label shadow-sm-card font-bold transition-all duration-200 hover:scale-105 focus-visible:ring-3 focus-visible:outline-none",
                     urgent
-                      ? "bg-white text-danger hover:bg-white/95 focus-visible:ring-white/50"
-                      : "bg-danger text-white hover:bg-danger-hover focus-visible:ring-danger/40",
+                      ? "text-danger bg-white hover:bg-white/95 focus-visible:ring-white/50"
+                      : "bg-danger hover:bg-danger-hover focus-visible:ring-danger/40 text-white",
                   )}
                 >
                   <Phone aria-hidden className="size-4" strokeWidth={2.5} />
                   <span>Emergency Hotlines</span>
                 </button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-neutral-200/90 p-6 shadow-2xl bg-white">
+              <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-2xl sm:max-w-lg">
                 <DialogHeader className="space-y-2 pb-2">
-                  <DialogTitle className="flex items-center gap-3 text-h3 font-bold text-neutral-900">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-danger-bg to-red-100 border border-danger/20 text-danger shadow-xs">
+                  <DialogTitle className="text-h3 flex items-center gap-3 font-bold text-neutral-900">
+                    <span className="from-danger-bg border-danger/20 text-danger grid size-10 shrink-0 place-items-center rounded-2xl border bg-gradient-to-br to-red-100 shadow-xs">
                       <Phone className="size-5" strokeWidth={2.5} />
                     </span>
                     Emergency Hotlines
                   </DialogTitle>
-                  <DialogDescription className="text-body-sm text-neutral-600 leading-relaxed">
-                    Call directly or click to copy emergency contact numbers for Barangay San Jose.
+                  <DialogDescription className="text-body-sm leading-relaxed text-neutral-600">
+                    Call directly or click to copy emergency contact numbers for Barangay
+                    San Jose.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="pt-2">

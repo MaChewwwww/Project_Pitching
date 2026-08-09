@@ -7,7 +7,11 @@
  * public page.
  */
 
-import type { EmergencyEventType, GeoJsonPoint, PublicEmergencyEvent } from "./public-types";
+import type {
+  EmergencyEventType,
+  GeoJsonPoint,
+  PublicEmergencyEvent,
+} from "./public-types";
 
 export interface EmergencyEventDeclare {
   name: string;
@@ -123,7 +127,8 @@ export interface RescueRequestAck {
 
 /* --- rescue queue + triage (FR-SAF-010) ------------------------------------ */
 
-export type RescueRequestStatus = "pending" | "verified" | "dispatched" | "resolved" | "dismissed";
+export type RescueRequestStatus =
+  "pending" | "verified" | "dispatched" | "resolved" | "dismissed";
 
 export interface RescueRequestOut {
   id: string;

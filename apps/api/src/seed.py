@@ -75,9 +75,20 @@ async def seed_areas(session) -> dict[str, Area]:
         rows = (await session.execute(select(Area))).scalars().all()
         return {a.name: a for a in rows}
 
+    from src.seed_data.area_boundaries import AREA_BOUNDARIES
+    bounds_map = {name: (src, wkt) for name, code, src, wkt in AREA_BOUNDARIES}
+
     areas = {}
     for name, code, exposure in AREA_DEFS:
-        area = Area(name=name, code=code, flood_exposure=exposure)  # geom null — BRD OI-3
+        src, wkt = bounds_map.get(name, ("approximate", None))
+        area = Area(
+            name=name,
+            code=code,
+            flood_exposure=exposure,
+            boundary_source=src if wkt else None,
+            geom=func.ST_GeomFromText(wkt, 4326) if wkt else None,
+            centroid=func.ST_PointOnSurface(func.ST_GeomFromText(wkt, 4326)) if wkt else None,
+        )
         session.add(area)
         areas[name] = area
     await session.flush()

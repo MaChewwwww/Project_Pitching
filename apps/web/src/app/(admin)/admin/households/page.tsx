@@ -94,7 +94,9 @@ export default function AdminHouseholdsPage() {
       key: "flag",
       header: "",
       render: (row) =>
-        row.has_possible_duplicate ? <Badge tone="warning">Possible duplicate</Badge> : null,
+        row.has_possible_duplicate ? (
+          <Badge tone="warning">Possible duplicate</Badge>
+        ) : null,
     },
   ];
 
@@ -133,7 +135,9 @@ export default function AdminHouseholdsPage() {
         isLoading={isLoading}
         isError={isError}
         onRetry={() => refetch()}
-        emptyTitle={flaggedOnly ? "No flagged duplicates" : "No households registered yet"}
+        emptyTitle={
+          flaggedOnly ? "No flagged duplicates" : "No households registered yet"
+        }
         getRowKey={(row) => row.id}
         rowActions={(row) =>
           row.has_possible_duplicate && authUser?.role === "admin" ? (
@@ -152,8 +156,8 @@ export default function AdminHouseholdsPage() {
                   <DialogTitle>Merge into {row.head_name}</DialogTitle>
                 </DialogHeader>
                 <p className="text-body-sm text-neutral-600">
-                  Pick the duplicate record to fold into this one. Its members move here and
-                  the duplicate record is retired — this cannot be undone.
+                  Pick the duplicate record to fold into this one. Its members move here
+                  and the duplicate record is retired — this cannot be undone.
                 </p>
                 <div className="flex flex-col gap-2">
                   {candidatesLoading ? (

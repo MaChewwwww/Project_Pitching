@@ -17,7 +17,8 @@ export default function RegisterPage() {
           <div>
             <h1 className="text-h2 text-neutral-900">Create your account</h1>
             <p className="text-body-sm mt-1 text-neutral-600">
-              For residents registering a household. You&apos;ll add your address and area next.
+              For residents registering a household. You&apos;ll add your address and area
+              next.
             </p>
           </div>
         </div>

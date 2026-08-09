@@ -14,6 +14,41 @@
 staleness bugs get created (`architecture.md` Section 10.3). If you are about to put API data in
 a store, you probably want a query key instead.
 
+There are exactly two Zustand stores, and both hold booleans and enums only:
+`lib/i18n/language-store.ts` (which language column renders) and `lib/map-layer-store.ts`
+(which map layers are visible, which indicator shades the areas). The map's GeoJSON,
+facility list, and area stats are server data and stay in Query or props.
+
+## Map modules
+
+Four files, and the split matters because Leaflet is unusually easy to get wrong twice.
+
+| File                     | Holds                                                                        |
+| ------------------------ | ---------------------------------------------------------------------------- |
+| `lib/map.ts`             | Viewport, bounds, tile URL, **every map colour**, layer keys                 |
+| `lib/leaflet-setup.ts`   | The default-icon fixup. Import for the side effect, once per marker consumer |
+| `lib/map-layer-store.ts` | Layer visibility + area shading (Zustand)                                    |
+| `lib/hazard-geojson.ts`  | Loads the staged GeoJSON, degrades on 404                                    |
+
+Three rules that each cost real time to learn:
+
+- **Never read a colour from the GeoJSON.** The committed hazard data carries `fill_color`
+  (`tools/prepare_hazard.py` writes it), so it is tempting. Doing so puts the palette in the
+  data file _and_ `globals.css`, and a wrong colour becomes unattributable. `lib/map.ts` wins;
+  the values there are the tokens from `design.md` Section 3.4.
+- **`BARANGAY_CENTER` in `lib/brand.ts` is `{ lat, lon }`. Leaflet wants `lng`.** Use
+  `BARANGAY_VIEW` from `lib/map.ts`, which does the conversion once, rather than converting
+  again at each call site.
+- **A missing hazard layer is not an error.** `public/data/*.geojson` is gitignored, so any
+  fresh environment 404s until `make hazard-web` runs. `useHazardGeoJson` returns
+  `status: "unavailable"` and the map renders without the flood polygons. Never throw — the
+  client boundary would take the whole page down, which is exactly what the server-side
+  fallbacks in `lib/api/public.ts` exist to prevent.
+
+Every Leaflet component is `dynamic(..., { ssr: false })` — `react-leaflet` touches `window` at
+module load. And after editing anything under `public/` or a module-scope side effect like
+`leaflet-setup.ts`, **restart the `web` container**: Turbopack on Windows bind mounts misses both.
+
 ## The API client
 
 One configured axios instance, `src/lib/api/client.ts`, used by client components and the

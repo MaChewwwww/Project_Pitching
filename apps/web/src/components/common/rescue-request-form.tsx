@@ -20,7 +20,10 @@ import type { LatLng } from "@/components/features/registry/location-picker";
 
 const LocationPicker = dynamic(
   () => import("@/components/features/registry/location-picker"),
-  { ssr: false, loading: () => <div className="h-72 w-full rounded-lg bg-neutral-100" /> },
+  {
+    ssr: false,
+    loading: () => <div className="h-72 w-full rounded-lg bg-neutral-100" />,
+  },
 );
 
 const DRAFT_KEY = "rescue-draft";
@@ -53,7 +56,8 @@ const rescueRequestSchema = z
     if (!values.location && !values.location_note) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Give a map pin or describe where you are — rescuers need somewhere to go.",
+        message:
+          "Give a map pin or describe where you are — rescuers need somewhere to go.",
         path: ["location_note"],
       });
     }
@@ -85,7 +89,10 @@ export function RescueRequestForm() {
     formState: { errors, isSubmitting },
   } = form;
 
-  const { hasDraft, resume, discard, clearOnSuccess } = useRegistrationDraft(DRAFT_KEY, form);
+  const { hasDraft, resume, discard, clearOnSuccess } = useRegistrationDraft(
+    DRAFT_KEY,
+    form,
+  );
 
   async function onSubmit(values: RescueRequestFormValues) {
     setServerError(null);
@@ -99,7 +106,10 @@ export function RescueRequestForm() {
       people_count: values.people_count ? Number(values.people_count) : null,
     };
     try {
-      const response = await api.post<RescueRequestAck>("/public/rescue-requests", payload);
+      const response = await api.post<RescueRequestAck>(
+        "/public/rescue-requests",
+        payload,
+      );
       clearOnSuccess();
       setAck(response.data);
     } catch (error) {
@@ -123,7 +133,8 @@ export function RescueRequestForm() {
             <p className="text-h4 text-success">Request received</p>
           </div>
           <p className="text-body-sm text-neutral-700">
-            Reference <span className="font-mono font-semibold">{ack.id.slice(0, 8)}</span> —
+            Reference{" "}
+            <span className="font-mono font-semibold">{ack.id.slice(0, 8)}</span> —
             received {new Date(ack.received_at).toLocaleTimeString()}.
           </p>
           <Attribution disclaimer="no-rescue-promise" />
@@ -140,7 +151,9 @@ export function RescueRequestForm() {
     >
       {hasDraft ? (
         <div className="border-primary-200 bg-primary-50 flex items-center justify-between gap-3 rounded-lg border p-3">
-          <p className="text-body-sm text-primary-800">Unfinished request saved on this device.</p>
+          <p className="text-body-sm text-primary-800">
+            Unfinished request saved on this device.
+          </p>
           <div className="flex gap-2">
             <Button type="button" size="sm" onClick={resume}>
               Resume
@@ -222,7 +235,12 @@ export function RescueRequestForm() {
 
       {serverError ? <p className="text-danger text-body-sm">{serverError}</p> : null}
 
-      <Button type="submit" variant="emergency" disabled={isSubmitting} className="mt-2 w-full">
+      <Button
+        type="submit"
+        variant="emergency"
+        disabled={isSubmitting}
+        className="mt-2 w-full"
+      >
         <LifeBuoy aria-hidden className="size-4" />
         {isSubmitting ? "Sending…" : serverError ? "Try again" : "Send request"}
       </Button>

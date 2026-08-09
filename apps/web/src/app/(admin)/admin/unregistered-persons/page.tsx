@@ -53,13 +53,21 @@ export default function AdminUnregisteredPersonsPage() {
         <StatusBadge kind="safety" status={row.status} setMethod="assisted" />
       ),
     },
-    { key: "contact_number", header: "Contact", render: (row) => row.contact_number ?? "—" },
+    {
+      key: "contact_number",
+      header: "Contact",
+      render: (row) => row.contact_number ?? "—",
+    },
     {
       key: "location_note",
       header: "Location",
       render: (row) => row.location_note ?? (row.location ? "Pinned on map" : "—"),
     },
-    { key: "recorded_by_name", header: "Recorded by", render: (row) => row.recorded_by_name ?? "—" },
+    {
+      key: "recorded_by_name",
+      header: "Recorded by",
+      render: (row) => row.recorded_by_name ?? "—",
+    },
   ];
 
   return (

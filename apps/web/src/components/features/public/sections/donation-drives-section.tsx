@@ -26,9 +26,8 @@ export async function DonationDrivesSection() {
       <Reveal>
         <SectionHeader
           icon={HandHeart}
-          eyebrow="How to help"
           title="Donation"
-          titleAccent="drives"
+          titleAccent="Drive"
           description="What the barangay is collecting right now, and how much has actually arrived. No account needed to donate."
           action={
             <Button asChild variant="outline" pill size="md" className="max-sm:w-full">

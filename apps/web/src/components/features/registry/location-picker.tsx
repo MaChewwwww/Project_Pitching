@@ -1,18 +1,19 @@
 "use client";
 
 import * as React from "react";
-import L from "leaflet";
+import type L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import { LocateFixed } from "lucide-react";
 
 import { Button } from "@/components/common/button";
 import { useGeolocation } from "@/hooks/use-geolocation";
-import { BARANGAY_CENTER } from "@/lib/brand";
+import { BARANGAY_VIEW, OSM_TILE_ATTRIBUTION, OSM_TILE_URL } from "@/lib/map";
+// Default-icon fixup, shared with the hazard map. Import for the side effect.
+import "@/lib/leaflet-setup";
 
 /**
- * FR-REG-008 — a draggable map pin, the first real Leaflet integration in this
- * codebase (`/hazard-map` today is an explicitly non-interactive placeholder).
+ * FR-REG-008/FR-MAP-013 — a draggable map pin.
  *
  * Always dynamically imported with `ssr: false` by callers — `react-leaflet`
  * touches `window` at module load and is not SSR-safe:
@@ -22,21 +23,6 @@ import { BARANGAY_CENTER } from "@/lib/brand";
  *     { ssr: false },
  *   );
  */
-
-// Bundler asset URLs break Leaflet's own icon-path lookup unless fixed up
-// front — the well-known "marker icon missing" bug with every bundler, and
-// one that behaves differently between webpack and Turbopack: importing the
-// PNGs directly from `leaflet/dist/images` built fine but produced icons
-// with no resolvable `iconUrl` at runtime under Turbopack (confirmed live —
-// "iconUrl not set in Icon options"). Pointing at the same version's CDN
-// copy sidesteps the bundler entirely; the OSM tiles below are already an
-// external fetch, so this adds no new category of dependency.
-delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
 
 export interface LatLng {
   lat: number;
@@ -83,7 +69,7 @@ export default function LocationPicker({
   className,
   caption = "Drag the pin, or tap the map, to mark your household's location.",
 }: LocationPickerProps) {
-  const center = value ?? { lat: BARANGAY_CENTER.lat, lng: BARANGAY_CENTER.lon };
+  const center = value ?? { lat: BARANGAY_VIEW.center[0], lng: BARANGAY_VIEW.center[1] };
   const markerRef = React.useRef<L.Marker>(null);
   const geo = useGeolocation();
 
@@ -99,14 +85,11 @@ export default function LocationPicker({
       <div className="relative h-72 w-full overflow-hidden rounded-lg border border-neutral-200">
         <MapContainer
           center={center}
-          zoom={value ? 16 : 14}
+          zoom={value ? 16 : BARANGAY_VIEW.zoom}
           className="h-full w-full"
           scrollWheelZoom={false}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          <TileLayer attribution={OSM_TILE_ATTRIBUTION} url={OSM_TILE_URL} />
           <ClickToPlace onChange={onChange} />
           <FlyToFix fix={geo.fix} />
           <Marker

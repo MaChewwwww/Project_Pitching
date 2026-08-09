@@ -58,7 +58,11 @@ export default async function ActivitiesPage() {
             <p className="text-overline mb-4 text-neutral-500">Already happened</p>
             <div className="grid gap-4 md:grid-cols-2 md:gap-6">
               {past.map((activity) => (
-                <ActivityCard key={activity.id} activity={activity} className="opacity-70" />
+                <ActivityCard
+                  key={activity.id}
+                  activity={activity}
+                  className="opacity-70"
+                />
               ))}
             </div>
           </div>

@@ -1,10 +1,9 @@
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, CircleCheck, Info } from "lucide-react";
+import { ArrowRight, CircleCheck } from "lucide-react";
 
 import { Button } from "@/components/common/button";
 import { Reveal } from "@/components/common/reveal";
-import { SectionHeader } from "@/components/common/section-header";
 import { HISTORY_BADGE, WHAT_IT_IS, WHY_PREPAREDNESS } from "@/lib/content/about";
 import { Section } from "./section";
 
@@ -26,13 +25,18 @@ export function AboutBandSection() {
       <div className="grid items-center gap-8 lg:grid-cols-[1.4fr_1fr] lg:gap-12">
         <div className="flex flex-col gap-6">
           <Reveal>
-            <SectionHeader
-              icon={Info}
-              eyebrow="About the platform"
-              title="Built for"
-              titleAccent="Barangay San Jose"
-              description={WHAT_IT_IS.split("\n\n")[0]}
-            />
+            <div className="flex flex-col gap-3.5">
+              <h2 className="text-3xl font-extrabold tracking-tight text-neutral-900 sm:text-4xl">
+                About the{" "}
+                <span className="relative inline-block bg-gradient-to-r from-primary-600 via-primary-700 to-emerald-600 bg-clip-text text-transparent">
+                  SAGIP Platform
+                  <span aria-hidden className="absolute -bottom-1 left-0 h-[3px] w-full rounded-full bg-primary-500/30" />
+                </span>
+              </h2>
+              <p className="text-body-lg leading-relaxed text-neutral-600">
+                {WHAT_IT_IS.split("\n\n")[0]}
+              </p>
+            </div>
           </Reveal>
 
           <ul className="grid gap-3 sm:grid-cols-2">
@@ -48,7 +52,13 @@ export function AboutBandSection() {
             ))}
           </ul>
 
-          <Button asChild variant="outline" pill size="lg" className="self-start max-sm:w-full">
+          <Button
+            asChild
+            variant="outline"
+            pill
+            size="lg"
+            className="self-start max-sm:w-full"
+          >
             <Link href="/about">
               About the platform &amp; our goals
               <ArrowRight aria-hidden className="size-4" />

@@ -35,7 +35,7 @@ export default function PublicNotFound() {
               <Link href="/">Back to home</Link>
             </Button>
             <Button asChild variant="outline" pill size="lg">
-              <Link href="/guides">Preparedness guides</Link>
+              <Link href="/guides">Preparedness guidelines</Link>
             </Button>
           </div>
         }

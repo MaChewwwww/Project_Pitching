@@ -1,21 +1,15 @@
+"use client";
+
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
 /**
- * Fades a section in as it scrolls into view (design.md Section 8 — "scroll
- * reveals" are the public site's motion vocabulary, where the admin console gets
- * none).
+ * Fades a section or card in as it scrolls into view (design.md Section 8).
  *
- * Implemented as a CSS scroll-driven animation (`.reveal` in `globals.css`), so
- * there is no IntersectionObserver, no scroll listener, and no JavaScript — which
- * matters on the one page with a hard bundle budget (NFR-PERF-006). The browser
- * runs it off the main thread.
- *
- * Two safety properties come from doing it in CSS. Where `animation-timeline` is
- * unsupported the starting opacity is never applied, so content cannot get stuck
- * invisible; and the `prefers-reduced-motion` guard is in the same rule, so
- * reduced motion means genuinely no motion rather than a shortened animation.
+ * Uses a lightweight IntersectionObserver that triggers ONCE per session frame
+ * when scrolling down, keeping content permanently visible afterwards until
+ * page refresh.
  */
 
 export interface RevealProps extends React.ComponentProps<"div"> {
@@ -23,13 +17,74 @@ export interface RevealProps extends React.ComponentProps<"div"> {
   delay?: 0 | 1 | 2 | 3;
 }
 
-const DELAY = [
-  "",
-  "[animation-delay:60ms]",
-  "[animation-delay:120ms]",
-  "[animation-delay:180ms]",
-];
+const DELAY_MS = [0, 200, 400, 600] as const;
 
-export function Reveal({ className, delay = 0, ...props }: RevealProps) {
-  return <div className={cn("reveal", DELAY[delay], className)} {...props} />;
+export function Reveal({
+  className,
+  delay = 0,
+  children,
+  style,
+  ...props
+}: RevealProps) {
+  const [isRevealed, setIsRevealed] = React.useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    // Respect user prefers-reduced-motion
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      requestAnimationFrame(() => setIsRevealed(true));
+      return;
+    }
+
+    const element = ref.current;
+    if (!element) return;
+
+    // Check if element is already inside the viewport on initial render
+    const rect = element.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      requestAnimationFrame(() => setIsRevealed(true));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsRevealed(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      {
+        threshold: 0.05,
+        rootMargin: "0px 0px -30px 0px",
+      },
+    );
+
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  const delayMs = DELAY_MS[delay] || 0;
+
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "transition-all duration-[1800ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
+        className,
+      )}
+      style={{
+        opacity: isRevealed ? 1 : 0,
+        transform: isRevealed ? "none" : "translateY(22px)",
+        transitionDelay: `${delayMs}ms`,
+        willChange: "opacity, transform",
+        ...style,
+      }}
+      {...props}
+    >
+      {children}
+    </div>
+  );
 }

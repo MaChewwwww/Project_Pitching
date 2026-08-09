@@ -4,7 +4,7 @@
 **Companion to:** `business-requirements.md`
 **Version:** 0.1 (Draft) · **Date:** August 2026
 
-> **Scope note.** This document lists *what tools we use and why*. How the system is structured — services, data model, API design, deployment topology — belongs in `architecture.md`.
+> **Scope note.** This document lists _what tools we use and why_. How the system is structured — services, data model, API design, deployment topology — belongs in `architecture.md`.
 
 > **Version numbers.** Where versions appear they indicate the major line, not a pin. Confirm the current stable release at install time.
 
@@ -12,23 +12,23 @@
 
 ## 1. Decisions at a Glance
 
-| Layer | Choice |
-|---|---|
-| Frontend | Next.js (App Router) + TypeScript |
-| Styling | Tailwind CSS + shadcn/ui |
-| Backend | FastAPI (Python 3.12+) |
-| Database | PostgreSQL + **PostGIS** |
-| Auth | Custom JWT issued by FastAPI |
-| 2D / hazard map | Leaflet + OpenStreetMap |
-| 3D showpiece map | Three.js via React Three Fiber |
-| Containerization | Docker + Docker Compose |
-| Deployment | Single VPS (public IP, no domain); identical Compose stack runs locally |
-| Reverse proxy | Caddy — plain HTTP. Optional one-line switch to HTTPS via sslip.io (Section 9) |
+| Layer                    | Choice                                                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Frontend                 | Next.js (App Router) + TypeScript                                                                              |
+| Styling                  | Tailwind CSS + shadcn/ui                                                                                       |
+| Backend                  | FastAPI (Python 3.12+)                                                                                         |
+| Database                 | PostgreSQL + **PostGIS**                                                                                       |
+| Auth                     | Custom JWT issued by FastAPI                                                                                   |
+| 2D / hazard map          | Leaflet + OpenStreetMap                                                                                        |
+| 3D showpiece map         | Three.js via React Three Fiber                                                                                 |
+| Containerization         | Docker + Docker Compose                                                                                        |
+| Deployment               | Single VPS (public IP, no domain); identical Compose stack runs locally                                        |
+| Reverse proxy            | Caddy — plain HTTP. Optional one-line switch to HTTPS via sslip.io (Section 9)                                 |
 | Location & photo capture | Manual by default — draggable map pin, gallery upload. GPS and camera are progressive enhancements (Section 9) |
-| Scheduled jobs | Dedicated cron container |
-| Weather data | Open-Meteo |
-| Hazard overlay | Project NOAH — pre-clipped to San Jose, served as a static file |
-| River level | PAGASA FFWS scraper **with manual fallback** |
+| Scheduled jobs           | Dedicated cron container                                                                                       |
+| Weather data             | Open-Meteo                                                                                                     |
+| Hazard overlay           | Project NOAH — pre-clipped to San Jose, served as a static file                                                |
+| River level              | PAGASA FFWS scraper **with manual fallback**                                                                   |
 
 ---
 
@@ -36,66 +36,66 @@
 
 ### Core
 
-| Tool | Purpose | Notes |
-|---|---|---|
-| **Next.js** (App Router) | Framework | Server Components for the public site, client components for the maps and dashboards |
-| **TypeScript** | Type safety | Non-negotiable on a team where several members are new to the codebase — the compiler catches what code review will not |
-| **Tailwind CSS** | Styling | |
-| **shadcn/ui** | Component library | Components are copied into your repo, not installed as a dependency. Install the full set up front as planned — unused ones cost nothing at runtime |
+| Tool                     | Purpose           | Notes                                                                                                                                               |
+| ------------------------ | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Next.js** (App Router) | Framework         | Server Components for the public site, client components for the maps and dashboards                                                                |
+| **TypeScript**           | Type safety       | Non-negotiable on a team where several members are new to the codebase — the compiler catches what code review will not                             |
+| **Tailwind CSS**         | Styling           |                                                                                                                                                     |
+| **shadcn/ui**            | Component library | Components are copied into your repo, not installed as a dependency. Install the full set up front as planned — unused ones cost nothing at runtime |
 
 ### Data & forms
 
-| Tool | Purpose | Notes |
-|---|---|---|
-| **TanStack Query** | Server state | Handles caching, refetching, and loading/error states. **Add this even though you planned on plain axios** — the alternative is hand-rolling the same logic across ~15 screens |
-| **axios** | HTTP client | Sits underneath TanStack Query. One configured instance with the JWT interceptor |
-| **React Hook Form** + **Zod** | Forms and validation | The registration form (M1) has many conditional fields per member; this pairing keeps it manageable |
-| **Zod** | Schema validation | Also used to parse API responses so a backend change surfaces as a clear error rather than `undefined` |
+| Tool                          | Purpose              | Notes                                                                                                                                                                          |
+| ----------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **TanStack Query**            | Server state         | Handles caching, refetching, and loading/error states. **Add this even though you planned on plain axios** — the alternative is hand-rolling the same logic across ~15 screens |
+| **axios**                     | HTTP client          | Sits underneath TanStack Query. One configured instance with the JWT interceptor                                                                                               |
+| **React Hook Form** + **Zod** | Forms and validation | The registration form (M1) has many conditional fields per member; this pairing keeps it manageable                                                                            |
+| **Zod**                       | Schema validation    | Also used to parse API responses so a backend change surfaces as a clear error rather than `undefined`                                                                         |
 
 ### UI support
 
-| Tool | Purpose |
-|---|---|
-| **Recharts** | Analytics charts (M10) |
-| **lucide-react** | Icons (ships with shadcn/ui) |
-| **date-fns** | Date formatting and relative times ("updated 2 hours ago" — needed for BR-3.8 data staleness) |
-| **next-intl** | Filipino/English content (BR-0.19) |
-| **Zustand** | Small amount of global client state — active emergency banner, map layer toggles. Skip if React Context suffices |
+| Tool             | Purpose                                                                                                          |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **Recharts**     | Analytics charts (M10)                                                                                           |
+| **lucide-react** | Icons (ships with shadcn/ui)                                                                                     |
+| **date-fns**     | Date formatting and relative times ("updated 2 hours ago" — needed for BR-3.8 data staleness)                    |
+| **next-intl**    | Filipino/English content (BR-0.19)                                                                               |
+| **Zustand**      | Small amount of global client state — active emergency banner, map layer toggles. Skip if React Context suffices |
 
 ### Mapping — two libraries, two jobs
 
-| Tool | Purpose | Notes |
-|---|---|---|
-| **Leaflet** + **react-leaflet** | Hazard and facility map (M2, BR-0.9) | Small, stable, easy. Renders GeoJSON polygons and pins with almost no setup |
-| **OpenStreetMap** tiles | Basemap | Free. **Attribution is required, and OSM's tile policy discourages heavy traffic** — fine at prototype scale. If usage grows, switch to Carto or Stadia free tiers, which is a one-line URL change |
-| **Three.js** + **React Three Fiber** + **drei** | Stylized 3D San Jose (M2 showpiece) | Use React Three Fiber rather than raw Three.js — declarative React components instead of imperative scene management, and `drei` supplies camera controls and lighting helpers you would otherwise write yourself |
+| Tool                                            | Purpose                              | Notes                                                                                                                                                                                                             |
+| ----------------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Leaflet** + **react-leaflet**                 | Hazard and facility map (M2, BR-0.9) | Small, stable, easy. Renders GeoJSON polygons and pins with almost no setup                                                                                                                                       |
+| **OpenStreetMap** tiles                         | Basemap                              | Free. **Attribution is required, and OSM's tile policy discourages heavy traffic** — fine at prototype scale. If usage grows, switch to Carto or Stadia free tiers, which is a one-line URL change                |
+| **Three.js** + **React Three Fiber** + **drei** | Stylized 3D San Jose (M2 showpiece)  | Use React Three Fiber rather than raw Three.js — declarative React components instead of imperative scene management, and `drei` supplies camera controls and lighting helpers you would otherwise write yourself |
 
-> **Why two maps and not one.** They answer different questions. Leaflet answers *"where is the nearest evacuation center and is my street in a flood zone?"* — it needs real coordinates, a real basemap, and correct geometry. Three.js answers *"which part of the barangay needs help most?"* — it needs visual impact and does not need geographic precision (BR-2.8 already states boundaries are approximate). Forcing one library to do both means either an ugly showpiece or a hand-built mapping engine.
+> **Why two maps and not one.** They answer different questions. Leaflet answers _"where is the nearest evacuation center and is my street in a flood zone?"_ — it needs real coordinates, a real basemap, and correct geometry. Three.js answers _"which part of the barangay needs help most?"_ — it needs visual impact and does not need geographic precision (BR-2.8 already states boundaries are approximate). Forcing one library to do both means either an ugly showpiece or a hand-built mapping engine.
 
 ---
 
 ## 3. Backend
 
-| Tool | Purpose | Notes |
-|---|---|---|
-| **FastAPI** | Web framework | Auto-generated OpenAPI docs at `/docs` — useful for the team, and worth showing judges as evidence of engineering rigour |
-| **Python 3.12+** | Runtime | |
-| **Pydantic v2** | Validation and serialization | Built into FastAPI |
-| **SQLAlchemy 2.0** | ORM | |
-| **Alembic** | Database migrations | Essential the moment more than one person runs the project |
-| **GeoAlchemy2** | PostGIS types in SQLAlchemy | Lets you store and query area polygons and household points through the ORM |
-| **Uvicorn** + **Gunicorn** | ASGI server | Uvicorn workers managed by Gunicorn in production |
-| **httpx** | Outbound HTTP | Async client for Open-Meteo and the PAGASA scraper |
-| **PyJWT** + **passlib[argon2]** | Custom auth | See Section 5 |
-| **pytest** + **pytest-asyncio** | Testing | |
-| **ruff** | Lint and format | One tool replacing flake8, isort, and black |
+| Tool                            | Purpose                      | Notes                                                                                                                    |
+| ------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **FastAPI**                     | Web framework                | Auto-generated OpenAPI docs at `/docs` — useful for the team, and worth showing judges as evidence of engineering rigour |
+| **Python 3.12+**                | Runtime                      |                                                                                                                          |
+| **Pydantic v2**                 | Validation and serialization | Built into FastAPI                                                                                                       |
+| **SQLAlchemy 2.0**              | ORM                          |                                                                                                                          |
+| **Alembic**                     | Database migrations          | Essential the moment more than one person runs the project                                                               |
+| **GeoAlchemy2**                 | PostGIS types in SQLAlchemy  | Lets you store and query area polygons and household points through the ORM                                              |
+| **Uvicorn** + **Gunicorn**      | ASGI server                  | Uvicorn workers managed by Gunicorn in production                                                                        |
+| **httpx**                       | Outbound HTTP                | Async client for Open-Meteo and the PAGASA scraper                                                                       |
+| **PyJWT** + **passlib[argon2]** | Custom auth                  | See Section 5                                                                                                            |
+| **pytest** + **pytest-asyncio** | Testing                      |                                                                                                                          |
+| **ruff**                        | Lint and format              | One tool replacing flake8, isort, and black                                                                              |
 
 ### One-time data preparation (developer tooling, not runtime)
 
-| Tool | Purpose |
-|---|---|
-| **GeoPandas** + **Shapely** | Clip the Project NOAH province shapefile down to Barangay San Jose (Section 6) |
-| **QGIS** *(desktop, optional)* | Visual alternative to the above — easier if nobody on the team is comfortable with geospatial Python |
+| Tool                           | Purpose                                                                                              |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| **GeoPandas** + **Shapely**    | Clip the Project NOAH province shapefile down to Barangay San Jose (Section 6)                       |
+| **QGIS** _(desktop, optional)_ | Visual alternative to the above — easier if nobody on the team is comfortable with geospatial Python |
 
 ---
 
@@ -111,11 +111,11 @@ PostGIS is the reason to choose Postgres here rather than anything else, and it 
 
 Doing this without PostGIS means computing point-in-polygon in Python on every request.
 
-| Tool | Purpose |
-|---|---|
-| **PostgreSQL 16** | Primary datastore |
-| **PostGIS 3.4** | Spatial types, indexes, and functions |
-| **Redis** *(optional)* | Cache for weather and river readings. Skip initially — a `last_fetched_at` column and a short TTL in application code is enough at this scale. Add it only if the API starts hammering upstream sources |
+| Tool                   | Purpose                                                                                                                                                                                                 |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **PostgreSQL 16**      | Primary datastore                                                                                                                                                                                       |
+| **PostGIS 3.4**        | Spatial types, indexes, and functions                                                                                                                                                                   |
+| **Redis** _(optional)_ | Cache for weather and river readings. Skip initially — a `last_fetched_at` column and a short TTL in application code is enough at this scale. Add it only if the API starts hammering upstream sources |
 
 File uploads (incident photos, BR-5.6) go to a Docker volume served by the reverse proxy. Object storage is unnecessary at this scale.
 
@@ -125,15 +125,15 @@ File uploads (incident photos, BR-5.6) go to a Docker volume served by the rever
 
 You chose to own this. That is workable, but the pieces below are not optional, because rolling your own auth badly is the most common way student projects get compromised.
 
-| Concern | Approach |
-|---|---|
-| Password hashing | **argon2** via `passlib`. Never bcrypt-by-hand, never SHA-anything |
-| Token type | Short-lived access token (~15 min) + longer refresh token |
-| Token storage | Refresh token in an **httpOnly, Secure, SameSite cookie** — not `localStorage`, which is readable by any injected script. **`Secure` requires HTTPS** — see Section 9 |
-| Roles | Six roles from BRD 5.1 as a claim in the token; **authorization enforced server-side on every endpoint**, never by hiding UI |
-| Area scoping | BHW access is limited to assigned areas (BR-1.44) — enforced as a query filter in the data layer, not a UI condition |
-| Password reset | Token emailed via a transactional provider free tier (Resend, Brevo), or barangay-admin-initiated reset if email is more trouble than it is worth |
-| Rate limiting | **slowapi** on login and rescue-request endpoints |
+| Concern          | Approach                                                                                                                                                              |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Password hashing | **argon2** via `passlib`. Never bcrypt-by-hand, never SHA-anything                                                                                                    |
+| Token type       | Short-lived access token (~15 min) + longer refresh token                                                                                                             |
+| Token storage    | Refresh token in an **httpOnly, Secure, SameSite cookie** — not `localStorage`, which is readable by any injected script. **`Secure` requires HTTPS** — see Section 9 |
+| Roles            | Six roles from BRD 5.1 as a claim in the token; **authorization enforced server-side on every endpoint**, never by hiding UI                                          |
+| Area scoping     | BHW access is limited to assigned areas (BR-1.44) — enforced as a query filter in the data layer, not a UI condition                                                  |
+| Password reset   | Token emailed via a transactional provider free tier (Resend, Brevo), or barangay-admin-initiated reset if email is more trouble than it is worth                     |
+| Rate limiting    | **slowapi** on login and rescue-request endpoints                                                                                                                     |
 
 > **Reconsider if time gets tight.** Auth is invisible when it works and catastrophic when it does not, and it demos exactly the same either way. If R-8 (scope overrun) starts to bite, this is the single best candidate to swap for a managed service — Supabase Auth or Better Auth would return several days to the schedule and no judge would notice.
 
@@ -141,7 +141,7 @@ You chose to own this. That is workable, but the pieces below are not optional, 
 
 ## 6. Hazard Data — Project NOAH
 
-LiPAD and Project NOAH publish the *same underlying data* — both are products of the DOST-funded UP DREAM / Phil-LiDAR programmes. LiPAD is the archive and distribution portal; NOAH is the public viewer built on top of it. Choosing between them is about packaging, not quality.
+LiPAD and Project NOAH publish the _same underlying data_ — both are products of the DOST-funded UP DREAM / Phil-LiDAR programmes. LiPAD is the archive and distribution portal; NOAH is the public viewer built on top of it. Choosing between them is about packaging, not quality.
 
 **Decision: BetterGov / NOAH province shapefiles.** LiPAD's municipality-level downloads were the first choice — smaller and better documented — but the downloads came through corrupted in practice. The province-level files work, and the extra size is absorbed entirely by the one-time clipping step below.
 
@@ -151,15 +151,15 @@ LiPAD and Project NOAH publish the *same underlying data* — both are products 
 dataset/Rizal_Flood_5year.shp   .shx   .dbf   .prj   .xml
 ```
 
-| Property | Value |
-|---|---|
-| CRS | WGS84 / EPSG:4326 (confirm via `.prj`) — **no reprojection needed** |
-| Hazard classes | `1` Low (0–0.5 m) · `2` Medium (0.5–1.5 m) · `3` High (>1.5 m) |
-| Also present | "Area Assessed" and "Area Not Assessed" polygons — filter these out |
-| Licence | ODC-ODbL — attribution mandatory, derivatives inherit the licence |
-| Sidecar | `.xml` carries the metadata; keep it with the source data |
+| Property       | Value                                                               |
+| -------------- | ------------------------------------------------------------------- |
+| CRS            | WGS84 / EPSG:4326 (confirm via `.prj`) — **no reprojection needed** |
+| Hazard classes | `1` Low (0–0.5 m) · `2` Medium (0.5–1.5 m) · `3` High (>1.5 m)      |
+| Also present   | "Area Assessed" and "Area Not Assessed" polygons — filter these out |
+| Licence        | ODC-ODbL — attribution mandatory, derivatives inherit the licence   |
+| Sidecar        | `.xml` carries the metadata; keep it with the source data           |
 
-> **Take all three return periods** (5, 25, 100-year) if the downloads cooperate. Together they carry an argument a single layer cannot: *"this area floods in a 5-year event — roughly every five years, not once in a lifetime."* If only one is available, 5-year is arguably the strongest for the pitch, because it describes something residents have actually lived through.
+> **Take all three return periods** (5, 25, 100-year) if the downloads cooperate. Together they carry an argument a single layer cannot: _"this area floods in a 5-year event — roughly every five years, not once in a lifetime."_ If only one is available, 5-year is arguably the strongest for the pitch, because it describes something residents have actually lived through.
 
 > **Keep all five sidecar files together.** A `.shp` without its `.shx`, `.dbf`, and `.prj` is unreadable — this is the most common cause of "corrupted shapefile" errors. If a download fails, re-fetch the whole set rather than the single file.
 
@@ -201,11 +201,11 @@ Poll on a schedule and cache — do not call it per page view. One barangay need
 
 **There is no public API.** The Pasig-Marikina-Tullahan FFWS publishes water level and rainfall through a web interface intended for humans. Getting it programmatically means scraping.
 
-| Consideration | Position |
-|---|---|
+| Consideration        | Position                                                                                                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Legality / etiquette | A government public-information page. Scrape **politely** — identify your user agent, poll no more than every 10–15 minutes, cache aggressively, back off on errors. Do not hammer it |
-| Fragility | Any markup change breaks the parser without warning |
-| Availability | The site is under heaviest load during exactly the events you need it for |
+| Fragility            | Any markup change breaks the parser without warning                                                                                                                                   |
+| Availability         | The site is under heaviest load during exactly the events you need it for                                                                                                             |
 
 **Design accordingly — three layers, in this order:**
 
@@ -238,8 +238,18 @@ returns a plain JSON array — **not HTML** — for all 16 Pasig-Marikina-Tullah
 `OPEN_METEO_LAT`/`LON` centroid already in `.env.example`. Each row carries:
 
 ```json
-{"obsnm": "Montalban", "lon": 121.1306, "lat": 14.7331, "ymdhm": null, "timestr": null,
- "wl": null, "alertwl": "22.40", "alarmwl": "23.00", "criticalwl": "23.60", "icon": "nodata"}
+{
+  "obsnm": "Montalban",
+  "lon": 121.1306,
+  "lat": 14.7331,
+  "ymdhm": null,
+  "timestr": null,
+  "wl": null,
+  "alertwl": "22.40",
+  "alarmwl": "23.00",
+  "criticalwl": "23.60",
+  "icon": "nodata"
+}
 ```
 
 `wl` (current water level) is `null` outside active flood events — the gauge only reports a
@@ -285,21 +295,21 @@ Use the library the team already has. This is static reference data — load it 
 
 A dedicated **cron container** in the Compose stack, running a small Python script against the API or the database directly.
 
-| Tool | Purpose | Notes |
-|---|---|---|
-| **APScheduler** | Job scheduling inside the cron container | Interval and cron triggers, `coalesce` and `max_instances=1` so a missed run is skipped rather than replayed in a burst. **The objection below is to APScheduler *inside the API*, not to APScheduler itself** — this container runs exactly one replica, so the duplicate-execution problem cannot arise. The alternative, a `while True: sleep()` loop, means hand-rolling misfire handling and cron expressions |
+| Tool            | Purpose                                  | Notes                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **APScheduler** | Job scheduling inside the cron container | Interval and cron triggers, `coalesce` and `max_instances=1` so a missed run is skipped rather than replayed in a burst. **The objection below is to APScheduler _inside the API_, not to APScheduler itself** — this container runs exactly one replica, so the duplicate-execution problem cannot arise. The alternative, a `while True: sleep()` loop, means hand-rolling misfire handling and cron expressions |
 
-| Job | Frequency | Purpose |
-|---|---|---|
-| Fetch Open-Meteo forecast | 15–30 min | BR-3.1 |
-| Scrape PAGASA river level | 10–15 min | BR-3.2 |
-| Evaluate alert thresholds | After each fetch | BR-3.4 — prompts BDRRMC, never auto-publishes |
-| Flag stale registry records | Daily | R-2 |
-| Send activity reminders | Daily | BR-8.3 |
+| Job                         | Frequency        | Purpose                                       |
+| --------------------------- | ---------------- | --------------------------------------------- |
+| Fetch Open-Meteo forecast   | 15–30 min        | BR-3.1                                        |
+| Scrape PAGASA river level   | 10–15 min        | BR-3.2                                        |
+| Evaluate alert thresholds   | After each fetch | BR-3.4 — prompts BDRRMC, never auto-publishes |
+| Flag stale registry records | Daily            | R-2                                           |
+| Send activity reminders     | Daily            | BR-8.3                                        |
 
 > **APScheduler inside FastAPI is the tempting shortcut.** It breaks the moment you run more than one worker, because every worker runs every job. A separate container avoids that entirely and costs nothing.
 
-> **BR-3.4 says *prompt*, not *publish*.** A scheduled job must never issue a public alert on its own. It notifies the BDRRMC, a human decides. Automated warnings from a student prototype to 143,000 residents is not a risk worth taking.
+> **BR-3.4 says _prompt_, not _publish_.** A scheduled job must never issue a public alert on its own. It notifies the BDRRMC, a human decides. Automated warnings from a student prototype to 143,000 residents is not a risk worth taking.
 
 ---
 
@@ -309,13 +319,13 @@ A dedicated **cron container** in the Compose stack, running a small Python scri
 
 **Docker + Docker Compose**, one stack that runs identically on a laptop and on the VPS — which is what makes "local only" and "single VPS" the same decision rather than two.
 
-| Service | Contents |
-|---|---|
-| `web` | Next.js |
-| `api` | FastAPI + Uvicorn/Gunicorn |
-| `db` | PostgreSQL + PostGIS |
-| `cron` | Scheduled jobs |
-| `proxy` | Caddy |
+| Service | Contents                   |
+| ------- | -------------------------- |
+| `web`   | Next.js                    |
+| `api`   | FastAPI + Uvicorn/Gunicorn |
+| `db`    | PostgreSQL + PostGIS       |
+| `cron`  | Scheduled jobs             |
+| `proxy` | Caddy                      |
 
 ### Reverse proxy — Caddy (still), configured for HTTP
 
@@ -336,11 +346,11 @@ A reverse proxy is needed regardless: one entry point routing `/` to Next.js and
 
 Browsers hard-block a few APIs on non-secure origins. This is not configurable — no header or permission prompt turns it off for visitors. On `http://<public-ip>`:
 
-| API | Behaviour | Affects |
-|---|---|---|
-| `navigator.geolocation` | Error callback fires immediately; the user is never prompted | "Use my location" |
-| `getUserMedia` | Throws. **Gallery file upload is unaffected** | Direct camera capture |
-| `Secure` cookies | Never transmitted | Set the flag from an env var |
+| API                     | Behaviour                                                    | Affects                      |
+| ----------------------- | ------------------------------------------------------------ | ---------------------------- |
+| `navigator.geolocation` | Error callback fires immediately; the user is never prompted | "Use my location"            |
+| `getUserMedia`          | Throws. **Gallery file upload is unaffected**                | Direct camera capture        |
+| `Secure` cookies        | Never transmitted                                            | Set the flag from an env var |
 
 `localhost` is explicitly exempt.
 
@@ -352,12 +362,12 @@ Nothing in the BRD depends on these — they are conveniences over manual equiva
 
 This is progressive enhancement, and it is the right design regardless of hosting. A large share of residents will decline the location permission prompt even where it works, so a manual path is required either way.
 
-| Feature | Baseline — always available | Enhancement when secure context is present |
-|---|---|---|
-| **Household location** (BR-1.7) | Address fields + a **draggable pin on the map**. The user places their house themselves | A "use my location" button that pre-positions the pin |
-| **Incident photo** (BR-5.6) | **File upload** from the phone's gallery | Direct camera capture |
-| **Incident location** (BR-5.6) | Draggable pin, same as above | Auto-fill from GPS |
-| **Refresh cookie** (Section 5) | `httpOnly` + `SameSite`, `Secure` omitted | `Secure` added — set from an environment variable, not hardcoded |
+| Feature                         | Baseline — always available                                                             | Enhancement when secure context is present                       |
+| ------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **Household location** (BR-1.7) | Address fields + a **draggable pin on the map**. The user places their house themselves | A "use my location" button that pre-positions the pin            |
+| **Incident photo** (BR-5.6)     | **File upload** from the phone's gallery                                                | Direct camera capture                                            |
+| **Incident location** (BR-5.6)  | Draggable pin, same as above                                                            | Auto-fill from GPS                                               |
+| **Refresh cookie** (Section 5)  | `httpOnly` + `SameSite`, `Secure` omitted                                               | `Secure` added — set from an environment variable, not hardcoded |
 
 > **No BRD amendment is needed.** BR-1.7 says a household "can be geotagged to a location on the barangay map" — a draggable pin satisfies that completely. GPS was only ever one way to place it.
 
@@ -367,12 +377,12 @@ Detect support at runtime rather than assuming: check `window.isSecureContext` a
 
 If you want the enhancements on the public URL, any of these work. **None is required.**
 
-| Option | Effort | Notes |
-|---|---|---|
-| **`sslip.io` + Caddy** *(easiest)* | ~10 min, **no signup** | `203-0-113-5.sslip.io` resolves to `203.0.113.5` automatically. Put that hostname in the Caddyfile in place of `:80` and Caddy fetches a Let's Encrypt certificate itself. No account, no DNS panel |
-| **DuckDNS + Caddy** | ~20 min | Free account and a chosen subdomain. Worth having as a fallback if sslip.io hits certificate rate limits |
-| **Cloudflare Tunnel** | ~20 min | `cloudflared` as one more container; no inbound ports needed at all |
-| **Nothing** | — | Baseline behaviour above. Fully functional |
+| Option                             | Effort                 | Notes                                                                                                                                                                                               |
+| ---------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`sslip.io` + Caddy** _(easiest)_ | ~10 min, **no signup** | `203-0-113-5.sslip.io` resolves to `203.0.113.5` automatically. Put that hostname in the Caddyfile in place of `:80` and Caddy fetches a Let's Encrypt certificate itself. No account, no DNS panel |
+| **DuckDNS + Caddy**                | ~20 min                | Free account and a chosen subdomain. Worth having as a fallback if sslip.io hits certificate rate limits                                                                                            |
+| **Cloudflare Tunnel**              | ~20 min                | `cloudflared` as one more container; no inbound ports needed at all                                                                                                                                 |
+| **Nothing**                        | —                      | Baseline behaviour above. Fully functional                                                                                                                                                          |
 
 **Note also that `localhost` is a secure context.** If the live demo runs from a laptop — one of your chosen deployment targets — the enhancements are available during the pitch with no setup whatsoever, regardless of how the VPS is configured.
 
@@ -382,11 +392,11 @@ If you want the enhancements on the public URL, any of these work. **None is req
 
 ### Supporting tools
 
-| Tool | Purpose |
-|---|---|
-| **GitHub** + **GitHub Actions** | Version control; CI running lint and tests on PRs |
+| Tool                              | Purpose                                                                                                                             |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **GitHub** + **GitHub Actions**   | Version control; CI running lint and tests on PRs                                                                                   |
 | **`.env` files + `.env.example`** | Configuration. **Never commit real secrets** — a committed database password in a public student repo is a genuinely common failure |
-| **Backups** | `pg_dump` on a cron schedule to a second location. A VPS with no backup is one failed disk away from losing the whole demo |
+| **Backups**                       | `pg_dump` on a cron schedule to a second location. A VPS with no backup is one failed disk away from losing the whole demo          |
 
 ---
 
@@ -394,47 +404,47 @@ If you want the enhancements on the public URL, any of these work. **None is req
 
 Recording these so they are not revisited without a reason.
 
-| Not chosen | Why |
-|---|---|
-| Kubernetes | One barangay, one VPS. Compose is correct |
-| Microservices | A team of five shipping in weeks needs one API, not service boundaries |
-| MongoDB | The data is relational and spatial. Postgres + PostGIS wins on both counts |
-| GraphQL | REST plus TanStack Query covers every screen here |
-| Mapbox / Google Maps | Both require API keys and billing. OSM is free and adequate |
-| MapLibre GL | Would work, and handles PMTiles natively — but the clipped-GeoJSON approach (Section 6) removes the reason to prefer it |
-| Managed auth (Supabase, Auth0) | Team chose custom JWT. Listed here as the fallback if Section 5 becomes a time sink |
-| Server-side rendering for the portal | Only the public site benefits from SSR/ISR. The logged-in portal is an app; client-side rendering is simpler |
-| Native mobile | Out of scope per BRD 4.2. A responsive web app is the deliverable |
+| Not chosen                           | Why                                                                                                                     |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| Kubernetes                           | One barangay, one VPS. Compose is correct                                                                               |
+| Microservices                        | A team of five shipping in weeks needs one API, not service boundaries                                                  |
+| MongoDB                              | The data is relational and spatial. Postgres + PostGIS wins on both counts                                              |
+| GraphQL                              | REST plus TanStack Query covers every screen here                                                                       |
+| Mapbox / Google Maps                 | Both require API keys and billing. OSM is free and adequate                                                             |
+| MapLibre GL                          | Would work, and handles PMTiles natively — but the clipped-GeoJSON approach (Section 6) removes the reason to prefer it |
+| Managed auth (Supabase, Auth0)       | Team chose custom JWT. Listed here as the fallback if Section 5 becomes a time sink                                     |
+| Server-side rendering for the portal | Only the public site benefits from SSR/ISR. The logged-in portal is an app; client-side rendering is simpler            |
+| Native mobile                        | Out of scope per BRD 4.2. A responsive web app is the deliverable                                                       |
 
 ---
 
 ## 11. Risks Carried by These Choices
 
-| # | Risk | Mitigation |
-|---|---|---|
-| T-1 | **PAGASA scraper breaks or is unavailable** during the event it exists for | Manual override built first (Section 7); seeded data for the demo; last-known-good with visible staleness |
-| T-2 | **Custom auth is implemented insecurely** | argon2, httpOnly cookies, server-side authorization, rate limiting (Section 5). Swap to managed auth if time pressure mounts |
-| T-3 | **Single VPS is a single point of failure** | Automated `pg_dump` backups off-box; a local Compose stack can run the demo if the VPS dies on the day |
-| T-4 | **PostGIS learning curve** — nobody on the team may have used it | Only three or four spatial queries are actually needed. Learn those, not the whole surface |
-| T-5 | **Three.js is a time sink.** 3D work expands to fill available time | Time-box it. A simple extruded-polygon map coloured by risk level delivers the point; photorealism does not add marks |
-| T-6 | **OSM tile policy** breached if traffic grows | Attribution in place from day one; switch to Carto or Stadia free tier if needed (one-line change) |
-| T-7 | **Free-tier and open data sources change terms** | Open-Meteo and NOAH data are both cached or vendored locally, so a change upstream does not break a running demo |
-| T-8 | **Geolocation and camera are unavailable over plain HTTP** | **Low** — by design | Manual paths are the baseline, not the fallback: draggable map pin and gallery upload (Section 9). GPS and camera are optional enhancements. HTTPS via sslip.io is available if wanted, not required |
-| T-9 | **Enhancement-only code paths go untested.** They work on `localhost` and are invisible on the deployed HTTP URL, so a bug in the manual path can hide behind the GPS path during development | Medium | Develop against the manual path as the default. Test the deployed URL from a phone before the pitch |
+| #   | Risk                                                                                                                                                                                          | Mitigation                                                                                                                   |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| T-1 | **PAGASA scraper breaks or is unavailable** during the event it exists for                                                                                                                    | Manual override built first (Section 7); seeded data for the demo; last-known-good with visible staleness                    |
+| T-2 | **Custom auth is implemented insecurely**                                                                                                                                                     | argon2, httpOnly cookies, server-side authorization, rate limiting (Section 5). Swap to managed auth if time pressure mounts |
+| T-3 | **Single VPS is a single point of failure**                                                                                                                                                   | Automated `pg_dump` backups off-box; a local Compose stack can run the demo if the VPS dies on the day                       |
+| T-4 | **PostGIS learning curve** — nobody on the team may have used it                                                                                                                              | Only three or four spatial queries are actually needed. Learn those, not the whole surface                                   |
+| T-5 | **Three.js is a time sink.** 3D work expands to fill available time                                                                                                                           | Time-box it. A simple extruded-polygon map coloured by risk level delivers the point; photorealism does not add marks        |
+| T-6 | **OSM tile policy** breached if traffic grows                                                                                                                                                 | Attribution in place from day one; switch to Carto or Stadia free tier if needed (one-line change)                           |
+| T-7 | **Free-tier and open data sources change terms**                                                                                                                                              | Open-Meteo and NOAH data are both cached or vendored locally, so a change upstream does not break a running demo             |
+| T-8 | **Geolocation and camera are unavailable over plain HTTP**                                                                                                                                    | **Low** — by design                                                                                                          | Manual paths are the baseline, not the fallback: draggable map pin and gallery upload (Section 9). GPS and camera are optional enhancements. HTTPS via sslip.io is available if wanted, not required |
+| T-9 | **Enhancement-only code paths go untested.** They work on `localhost` and are invisible on the deployed HTTP URL, so a bug in the manual path can hide behind the GPS path during development | Medium                                                                                                                       | Develop against the manual path as the default. Test the deployed URL from a phone before the pitch                                                                                                  |
 
 ---
 
 ## 12. Open Technical Decisions
 
-| # | Item | Owner |
-|---|---|---|
-| ~~T-OI-1~~ | *Resolved (Section 7)* — the legacy FFWS endpoint returns JSON directly; no scraper or PANaHON evaluation needed | — |
-| T-OI-2 | Obtain the **San Jose boundary polygon** needed to clip the hazard data. Fastest route is OpenStreetMap via Overpass (`admin_level=10`); alternatives are PSA shapefiles or the barangay itself. A bounding box works as a stopgap | IT lead + PubAd lead |
-| T-OI-7 | *Resolved* — using BetterGov / NOAH province shapefiles under ODC-ODbL after LiPAD downloads corrupted. Attribution required in the map footer and About section | IT lead |
-| T-OI-3 | Confirm the **area/zone boundaries** (BRD OI-3) — the 3D map cannot be built without them | PubAd lead, via barangay |
-| T-OI-4 | Decide whether email is needed for password reset, or whether admin-initiated reset is sufficient (Section 5) | IT lead |
-| T-OI-5 | Choose a VPS provider and region — local Philippine hosting may beat cheaper EU options on latency | IT lead |
-| T-OI-6 | **Optional: enable HTTPS via sslip.io (Section 9).** Not required — the app works on plain HTTP by design. Ten minutes if the team wants GPS and camera on the public URL | IT lead |
+| #          | Item                                                                                                                                                                                                                               | Owner                    |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| ~~T-OI-1~~ | _Resolved (Section 7)_ — the legacy FFWS endpoint returns JSON directly; no scraper or PANaHON evaluation needed                                                                                                                   | —                        |
+| T-OI-2     | Obtain the **San Jose boundary polygon** needed to clip the hazard data. Fastest route is OpenStreetMap via Overpass (`admin_level=10`); alternatives are PSA shapefiles or the barangay itself. A bounding box works as a stopgap | IT lead + PubAd lead     |
+| T-OI-7     | _Resolved_ — using BetterGov / NOAH province shapefiles under ODC-ODbL after LiPAD downloads corrupted. Attribution required in the map footer and About section                                                                   | IT lead                  |
+| T-OI-3     | Confirm the **area/zone boundaries** (BRD OI-3) — the 3D map cannot be built without them                                                                                                                                          | PubAd lead, via barangay |
+| T-OI-4     | Decide whether email is needed for password reset, or whether admin-initiated reset is sufficient (Section 5)                                                                                                                      | IT lead                  |
+| T-OI-5     | Choose a VPS provider and region — local Philippine hosting may beat cheaper EU options on latency                                                                                                                                 | IT lead                  |
+| T-OI-6     | **Optional: enable HTTPS via sslip.io (Section 9).** Not required — the app works on plain HTTP by design. Ten minutes if the team wants GPS and camera on the public URL                                                          | IT lead                  |
 
 ---
 

@@ -23,7 +23,10 @@ import type { UnregisteredPersonIn, UnregisteredPersonOut } from "@/lib/api/safe
 
 const LocationPicker = dynamic(
   () => import("@/components/features/registry/location-picker"),
-  { ssr: false, loading: () => <div className="h-72 w-full rounded-lg bg-neutral-100" /> },
+  {
+    ssr: false,
+    loading: () => <div className="h-72 w-full rounded-lg bg-neutral-100" />,
+  },
 );
 
 /**

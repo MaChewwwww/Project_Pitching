@@ -26,7 +26,10 @@ import type { IncidentReportOut, IncidentType } from "@/lib/api/safety-types";
 
 const LocationPicker = dynamic(
   () => import("@/components/features/registry/location-picker"),
-  { ssr: false, loading: () => <div className="h-72 w-full rounded-lg bg-neutral-100" /> },
+  {
+    ssr: false,
+    loading: () => <div className="h-72 w-full rounded-lg bg-neutral-100" />,
+  },
 );
 
 const MAX_PHOTO_MB = 5;

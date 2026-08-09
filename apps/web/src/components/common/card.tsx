@@ -52,7 +52,8 @@ const VARIANT = {
   dark: "bg-primary-950 ring-0 border border-primary-800/80 text-primary-100 shadow-sm-card",
   tint: "bg-surface-tint/80 ring-0 border border-primary-200/80 shadow-flat",
   glass: "glass-card ring-0 shadow-sm-card",
-  "gradient-edge": "bg-card ring-0 border border-primary-200/70 shadow-sm-card relative overflow-hidden",
+  "gradient-edge":
+    "bg-card ring-0 border border-primary-200/70 shadow-sm-card relative overflow-hidden",
 } as const;
 
 export function Card({
@@ -71,7 +72,7 @@ export function Card({
         VARIANT[variant],
         "[--card-spacing:--spacing(4)] md:[--card-spacing:--spacing(6)]",
         interactive &&
-          "card-hover-lift cursor-pointer focus-within:ring-2 focus-within:ring-primary-500/50",
+          "card-hover-lift focus-within:ring-primary-500/50 cursor-pointer focus-within:ring-2",
         topAccent && "border-t-primary-600 border-t-[3px]",
         className,
       )}

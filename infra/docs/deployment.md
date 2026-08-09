@@ -7,10 +7,10 @@ Two isolated **profiles**, `staging` and `demo`, each its own Compose project fr
 13.1). Either can run on a laptop or the VPS; a VPS deploy is simply the `demo` profile running
 on a server instead of localhost.
 
-| Profile | Purpose | Runs on | Data | Secure context |
-|---|---|---|---|---|
-| `staging` | Day-to-day dev and feature testing | Laptop, Compose | Seeded synthetic | Yes — `localhost` is exempt |
-| `demo` | Curated, isolated, for the pitch | Laptop or VPS, same Compose | Seeded synthetic | Only if sslip.io is enabled on the VPS |
+| Profile   | Purpose                            | Runs on                     | Data             | Secure context                         |
+| --------- | ---------------------------------- | --------------------------- | ---------------- | -------------------------------------- |
+| `staging` | Day-to-day dev and feature testing | Laptop, Compose             | Seeded synthetic | Yes — `localhost` is exempt            |
+| `demo`    | Curated, isolated, for the pitch   | Laptop or VPS, same Compose | Seeded synthetic | Only if sslip.io is enabled on the VPS |
 
 The same `compose.yml` for both. The only differences are which `.env.<profile>` file is loaded,
 the Compose project name (`-p sagip-<profile>`), and whether `compose.override.yml` is applied.
@@ -26,14 +26,14 @@ and `.env.demo.example` are committed; **the real `.env.staging` / `.env.demo` a
 
 The ones that actually change between a laptop and the VPS:
 
-| Variable | Local | VPS |
-|---|---|---|
-| `JWT_SECRET` | The dev placeholder | **Generate one**: `openssl rand -hex 32` |
-| `POSTGRES_PASSWORD` | The dev placeholder | **Change it** |
-| `COOKIE_SECURE` | `false` | `true` only if HTTPS is on |
-| `CORS_ORIGINS` | `http://localhost:8090` (demo) | The public origin |
-| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:8090/api/v1` (demo) | The public origin + `/api/v1` |
-| `PROXY_PORT` | `8090` (demo) / `8080` (staging) | `80` |
+| Variable                   | Local                                 | VPS                                      |
+| -------------------------- | ------------------------------------- | ---------------------------------------- |
+| `JWT_SECRET`               | The dev placeholder                   | **Generate one**: `openssl rand -hex 32` |
+| `POSTGRES_PASSWORD`        | The dev placeholder                   | **Change it**                            |
+| `COOKIE_SECURE`            | `false`                               | `true` only if HTTPS is on               |
+| `CORS_ORIGINS`             | `http://localhost:8090` (demo)        | The public origin                        |
+| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:8090/api/v1` (demo) | The public origin + `/api/v1`            |
+| `PROXY_PORT`               | `8090` (demo) / `8080` (staging)      | `80`                                     |
 
 `NEXT_PUBLIC_API_BASE_URL` is **inlined at build time**, not read at runtime. Changing it means
 rebuilding `web`, not restarting it.
@@ -73,7 +73,7 @@ Philippine provider may beat a cheaper EU one on latency, which matters more her
 
 **The app is designed to work on plain HTTP.** Browsers block `navigator.geolocation` and
 `getUserMedia` on non-secure origins, but nothing in the requirements depends on them — the
-draggable pin and gallery upload are the *baseline*, and GPS and camera are enhancements
+draggable pin and gallery upload are the _baseline_, and GPS and camera are enhancements
 detected at runtime via `window.isSecureContext`.
 
 If you want the enhancements on the public URL, the cheapest route is **sslip.io**: replace

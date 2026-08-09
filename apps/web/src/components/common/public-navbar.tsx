@@ -42,7 +42,6 @@ import { Button } from "./button";
 import { LanguageToggle } from "./language-toggle";
 import { LogoLockup } from "./logo";
 import { LOGIN_HREF, REGISTER_HREF, NAV_GROUPS, type NavItem } from "@/lib/content/site";
-import { toTelHref } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { PublicHotline } from "@/lib/api/public-types";
 
@@ -111,7 +110,8 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   /** A group is current when any of its destinations is. */
-  const isGroupActive = (items: { href: string }[]) => items.some((i) => isActive(i.href));
+  const isGroupActive = (items: { href: string }[]) =>
+    items.some((i) => isActive(i.href));
 
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-200/80 bg-white/95 backdrop-blur-md">
@@ -119,7 +119,7 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
         <Link
           href="/"
           aria-label="Go to the home page"
-          className="focus-visible:ring-ring shrink-0 rounded-md focus-visible:ring-2 focus-visible:outline-none transition-transform hover:scale-[1.02]"
+          className="focus-visible:ring-ring shrink-0 rounded-md transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:outline-none"
         >
           <LogoLockup size={40} />
         </Link>
@@ -149,10 +149,10 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
                     className={cn(
                       "group/trigger text-label h-10 rounded-lg px-4 transition-all duration-150",
                       "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
-                      "[text-underline-offset:5px] [text-decoration-thickness:2px]",
+                      "[text-decoration-thickness:2px] [text-underline-offset:5px]",
                       groupActive
-                        ? "text-primary-700 font-semibold bg-primary-50 underline decoration-primary-600 data-[state=open]:bg-primary-100"
-                        : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 no-underline data-[state=open]:bg-neutral-100 data-[state=open]:text-neutral-900",
+                        ? "text-primary-700 bg-primary-50 decoration-primary-600 data-[state=open]:bg-primary-100 font-semibold underline"
+                        : "text-neutral-600 no-underline hover:bg-neutral-100 hover:text-neutral-900 data-[state=open]:bg-neutral-100 data-[state=open]:text-neutral-900",
                     )}
                   >
                     {group.title}
@@ -170,7 +170,7 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
                                 href={item.href}
                                 className={cn(
                                   "group flex items-center gap-4 rounded-xl p-3.5 transition-all duration-200",
-                                  "focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2",
+                                  "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
                                   active
                                     ? "bg-primary-50 shadow-[0_0_0_1px_theme(colors.primary.200),0_4px_16px_-4px_rgba(31,128,73,0.18)]"
                                     : "hover:bg-primary-100 hover:shadow-[0_0_0_1px_theme(colors.primary.200),0_4px_20px_-4px_rgba(31,128,73,0.14)]",
@@ -182,11 +182,15 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
                                     "flex size-10 shrink-0 items-center justify-center rounded-lg transition-all duration-200",
                                     active
                                       ? "bg-primary-600 text-white"
-                                      : "bg-neutral-100 text-neutral-500 group-hover:bg-primary-100 group-hover:text-primary-700",
+                                      : "group-hover:bg-primary-100 group-hover:text-primary-700 bg-neutral-100 text-neutral-500",
                                   )}
                                 >
                                   {Icon ? (
-                                    <Icon aria-hidden className="size-[18px]" strokeWidth={2} />
+                                    <Icon
+                                      aria-hidden
+                                      className="size-[18px]"
+                                      strokeWidth={2}
+                                    />
                                   ) : null}
                                 </span>
 
@@ -197,7 +201,7 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
                                       "text-label transition-colors duration-150",
                                       active
                                         ? "text-primary-700 font-semibold"
-                                        : "text-neutral-800 group-hover:text-primary-800",
+                                        : "group-hover:text-primary-800 text-neutral-800",
                                     )}
                                   >
                                     {item.label}
@@ -206,7 +210,9 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
                                     <span
                                       className={cn(
                                         "text-caption leading-snug transition-colors duration-150",
-                                        active ? "text-primary-600/70" : "text-neutral-500 group-hover:text-neutral-600",
+                                        active
+                                          ? "text-primary-600/70"
+                                          : "text-neutral-500 group-hover:text-neutral-600",
                                       )}
                                     >
                                       {item.description}
@@ -221,7 +227,7 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
                                     "size-4 shrink-0 transition-all duration-150",
                                     active
                                       ? "text-primary-500 opacity-100"
-                                      : "text-neutral-400 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0",
+                                      : "-translate-x-1 text-neutral-400 opacity-0 group-hover:translate-x-0 group-hover:opacity-100",
                                   )}
                                 />
                               </Link>
@@ -243,8 +249,8 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
           {/* Stays outside the hamburger at every width (Section 9.3). */}
           {primaryHotline ? (
             <a
-              href={toTelHref(primaryHotline.number)}
-              aria-label={`Call ${primaryHotline.label} at ${primaryHotline.number}`}
+              href="#footer"
+              aria-label="Emergency hotlines in footer"
               className="tap-48 bg-danger-bg text-danger hover:bg-danger focus-visible:ring-danger grid size-10 place-items-center rounded-full transition-colors hover:text-white focus-visible:ring-2 focus-visible:outline-none lg:hidden"
             >
               <Phone aria-hidden className="size-[18px]" strokeWidth={2.5} />
@@ -359,7 +365,7 @@ function MobileNavGroup({
       </CollapsibleTrigger>
 
       <CollapsibleContent>
-        <ul className="ml-3 my-1 flex flex-col gap-0.5 border-l border-neutral-200 pl-2">
+        <ul className="my-1 ml-3 flex flex-col gap-0.5 border-l border-neutral-200 pl-2">
           {items.map((item) => {
             const active = isActive(item.href);
             const Icon = item.icon ? ICON_MAP[item.icon] : undefined;
@@ -382,7 +388,9 @@ function MobileNavGroup({
                       aria-hidden
                       className={cn(
                         "size-4 shrink-0 transition-colors",
-                        active ? "text-primary-600" : "text-neutral-400 group-hover:text-neutral-600",
+                        active
+                          ? "text-primary-600"
+                          : "text-neutral-400 group-hover:text-neutral-600",
                       )}
                       strokeWidth={2}
                     />

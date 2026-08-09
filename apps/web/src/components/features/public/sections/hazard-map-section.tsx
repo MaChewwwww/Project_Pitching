@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Map } from "lucide-react";
 
 import { Button } from "@/components/common/button";
+import { Reveal } from "@/components/common/reveal";
 import { SectionHeader } from "@/components/common/section-header";
 import { HazardMapPlaceholder } from "@/components/features/map/hazard-map-placeholder";
 import { Section } from "./section";
@@ -30,25 +31,26 @@ export async function HazardMapSection() {
 
   return (
     <Section id="hazard-map" tone="tint">
-      <SectionHeader
-        icon={Map}
-        eyebrow="Know your area"
-        title="Flood"
-        titleAccent="hazard map"
-        description="Flood-prone areas across the barangay, surveyed by Project NOAH. Colours follow the national hazard-map convention used on every government map."
-        action={
-          <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
-            <Link href="/hazard-map">
-              Exposure by area
-              <ArrowRight aria-hidden className="size-4" />
-            </Link>
-          </Button>
-        }
-      />
+      <Reveal>
+        <SectionHeader
+          icon={Map}
+          title="Flood"
+          titleAccent="Hazard Map"
+          description="Flood-prone areas across the barangay, surveyed by Project NOAH. Colours follow the national hazard-map convention used on every government map."
+          action={
+            <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
+              <Link href="/hazard-map">
+                Exposure by area
+                <ArrowRight aria-hidden className="size-4" />
+              </Link>
+            </Button>
+          }
+        />
+      </Reveal>
 
-      <div className="mt-8">
+      <Reveal delay={1} className="mt-8">
         <HazardMapPlaceholder areas={areas} facilities={facilities} river={river} />
-      </div>
+      </Reveal>
     </Section>
   );
 }

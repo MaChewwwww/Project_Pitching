@@ -5,7 +5,7 @@
 
 **Companions:** [`business-requirements.md`](./business-requirements.md) · [`frs_nfrs.md`](./frs_nfrs.md) · [`tech_stack.md`](./tech_stack.md) · [`design.md`](./design.md) · [`schema.md`](./schema.md)
 
-> **Scope.** How the system is structured — services, boundaries, data model, API design, repository layout, and deployment topology. *What* to build is in `frs_nfrs.md`; *which tools* is in `tech_stack.md`; *how it looks* is in `design.md`; the physical tables are in `schema.md`.
+> **Scope.** How the system is structured — services, boundaries, data model, API design, repository layout, and deployment topology. _What_ to build is in `frs_nfrs.md`; _which tools_ is in `tech_stack.md`; _how it looks_ is in `design.md`; the physical tables are in `schema.md`.
 
 ---
 
@@ -13,15 +13,15 @@
 
 The requirements that actually shaped this design. Everything else followed from them.
 
-| # | Driver | Source | Consequence |
-|---|---|---|---|
-| D-1 | **Spatial queries are core, not incidental** — households in areas, households in flood zones, vulnerability aggregated by area | BR-2.2, FR-REG-043 | PostGIS is load-bearing. Spatial logic lives in the database, not in Python |
-| D-2 | **Emergency paths must work when everything else fails** | BR-0.17, FR-SAF-009, NFR-AVL-004 | Anonymous rescue endpoint with no auth dependency; hotlines served statically; section-level failure isolation |
-| D-3 | **External data is unreliable and must never block a page** | BR-3.8, NFR-AVL-002/003 | All upstream data is fetched by a scheduler and read from the database. No request path ever calls an external service |
-| D-4 | **Alerts are human-issued, never automated** | BR-3.4, FR-WX-009 | The threshold evaluator creates a *prompt*, not an alert. No code path publishes to the public without an officer |
-| D-5 | **A team of five, mostly non-IT, on a competition timeline** | R-8 | One deployable API, one database, no service boundaries, no message broker |
-| D-6 | **Runs identically on a laptop and a single VPS** | tech_stack 9 | One Compose file, environment-driven config, no cloud-managed dependencies |
-| D-7 | **Registry is opt-in and partial** | BRD 4.4 | Registered counts are derived; barangay totals are configuration. Two different things, never the same column |
+| #   | Driver                                                                                                                          | Source                           | Consequence                                                                                                            |
+| --- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| D-1 | **Spatial queries are core, not incidental** — households in areas, households in flood zones, vulnerability aggregated by area | BR-2.2, FR-REG-043               | PostGIS is load-bearing. Spatial logic lives in the database, not in Python                                            |
+| D-2 | **Emergency paths must work when everything else fails**                                                                        | BR-0.17, FR-SAF-009, NFR-AVL-004 | Anonymous rescue endpoint with no auth dependency; hotlines served statically; section-level failure isolation         |
+| D-3 | **External data is unreliable and must never block a page**                                                                     | BR-3.8, NFR-AVL-002/003          | All upstream data is fetched by a scheduler and read from the database. No request path ever calls an external service |
+| D-4 | **Alerts are human-issued, never automated**                                                                                    | BR-3.4, FR-WX-009                | The threshold evaluator creates a _prompt_, not an alert. No code path publishes to the public without an officer      |
+| D-5 | **A team of five, mostly non-IT, on a competition timeline**                                                                    | R-8                              | One deployable API, one database, no service boundaries, no message broker                                             |
+| D-6 | **Runs identically on a laptop and a single VPS**                                                                               | tech_stack 9                     | One Compose file, environment-driven config, no cloud-managed dependencies                                             |
+| D-7 | **Registry is opt-in and partial**                                                                                              | BRD 4.4                          | Registered counts are derived; barangay totals are configuration. Two different things, never the same column          |
 
 ---
 
@@ -105,14 +105,14 @@ graph TB
     CRON -->|httpx| EXT[External sources]
 ```
 
-| Container | Responsibility | Scaling |
-|---|---|---|
-| `proxy` | Single entry point; path routing; static upload serving; TLS if enabled | 1 |
-| `web` | Next.js — public site SSR/ISR, portal and console as a client app | 1 |
-| `api` | All business logic, authorization, persistence | Gunicorn + Uvicorn workers |
-| `cron` | Scheduled ingestion and maintenance. **No HTTP surface** | Exactly 1 — see Section 9 |
-| `db` | PostgreSQL + PostGIS. Single source of truth | 1 |
-| `uploads` | Incident photos on a bind volume, served by the proxy | — |
+| Container | Responsibility                                                          | Scaling                    |
+| --------- | ----------------------------------------------------------------------- | -------------------------- |
+| `proxy`   | Single entry point; path routing; static upload serving; TLS if enabled | 1                          |
+| `web`     | Next.js — public site SSR/ISR, portal and console as a client app       | 1                          |
+| `api`     | All business logic, authorization, persistence                          | Gunicorn + Uvicorn workers |
+| `cron`    | Scheduled ingestion and maintenance. **No HTTP surface**                | Exactly 1 — see Section 9  |
+| `db`      | PostgreSQL + PostGIS. Single source of truth                            | 1                          |
+| `uploads` | Incident photos on a bind volume, served by the proxy                   | —                          |
 
 > **Why `cron` is a separate container and not APScheduler inside `api`.** With more than one Gunicorn worker, in-process schedulers fire the same job once per worker — duplicate scrapes, duplicate alerts, duplicate reminders. A dedicated single-replica container makes that impossible by construction rather than by convention.
 
@@ -176,7 +176,7 @@ models.py     SQLAlchemy ORM
 2. **Services never import another module's `models.py`.** Cross-module access goes through the owning service.
 3. **`domain/` is pure.** No I/O, no ORM, no framework imports — which is why it is the one place with a real unit test suite (NFR-MNT-005).
 4. **Authorization lives in `deps.py`**, applied as a router dependency. Never inside a service, never in the frontend.
-5. **Every `models.py` is imported by `db/models_registry.py`.** Alembic's autogenerate compares `Base.metadata` against the live database; a model nothing imports is absent from that metadata, and autogenerate will emit a migration that *drops its table*.
+5. **Every `models.py` is imported by `db/models_registry.py`.** Alembic's autogenerate compares `Base.metadata` against the live database; a model nothing imports is absent from that metadata, and autogenerate will emit a migration that _drops its table_.
 
 ---
 
@@ -214,39 +214,39 @@ erDiagram
 
 **`household`** — the anchor.
 
-| Column | Notes |
-|---|---|
-| `id`, `reference_no` | Reference generated at creation (FR-REG-006) |
-| `head_name`, `contact_number` | Contact nullable (FR-REG-005) |
-| `unreachable_by_phone` | Derived on write; feeds capacity scoring |
-| `area_id` | FK; **also derivable** via `ST_Contains` when a geotag exists |
-| `location` | `GEOMETRY(Point, 4326)`, nullable |
-| `address_psgc` | PSGC codes + free-text street |
-| `verified_at`, `verified_by` | Verification does not gate service (FR-REG-011) |
-| `created_by_user_id`, `source` | `self` or `bhw` — needed for the coverage metric |
-| `deleted_at` | Soft delete (NFR-DAT-004) |
+| Column                         | Notes                                                         |
+| ------------------------------ | ------------------------------------------------------------- |
+| `id`, `reference_no`           | Reference generated at creation (FR-REG-006)                  |
+| `head_name`, `contact_number`  | Contact nullable (FR-REG-005)                                 |
+| `unreachable_by_phone`         | Derived on write; feeds capacity scoring                      |
+| `area_id`                      | FK; **also derivable** via `ST_Contains` when a geotag exists |
+| `location`                     | `GEOMETRY(Point, 4326)`, nullable                             |
+| `address_psgc`                 | PSGC codes + free-text street                                 |
+| `verified_at`, `verified_by`   | Verification does not gate service (FR-REG-011)               |
+| `created_by_user_id`, `source` | `self` or `bhw` — needed for the coverage metric              |
+| `deleted_at`                   | Soft delete (NFR-DAT-004)                                     |
 
 **`member`** — carries the vulnerability flags directly as booleans (`is_child`, `is_senior`, `is_pwd`, `is_pregnant`, `has_chronic_condition`, `is_bedridden`). Booleans rather than a lookup table because the set is fixed by BR-1.32, small, and queried on every classification pass.
 
 **`vulnerability_assessment`** — **append-only**, never updated.
 
-| Column | Notes |
-|---|---|
-| `household_id`, `computed_at` | |
-| `level` | `low` · `moderate` · `high` · `priority` |
-| `factors` | `JSONB` — the contributing factors, for explainability (FR-REG-045) |
-| `override_level`, `override_reason`, `override_by` | Manual override with mandatory reason (FR-REG-046) |
+| Column                                             | Notes                                                               |
+| -------------------------------------------------- | ------------------------------------------------------------------- |
+| `household_id`, `computed_at`                      |                                                                     |
+| `level`                                            | `low` · `moderate` · `high` · `priority`                            |
+| `factors`                                          | `JSONB` — the contributing factors, for explainability (FR-REG-045) |
+| `override_level`, `override_reason`, `override_by` | Manual override with mandatory reason (FR-REG-046)                  |
 
 > Keeping this append-only means the household's risk history is a free by-product, and a bad classifier change is diagnosable rather than destructive.
 
 **`reading`** — one table for every external measurement.
 
-| Column | Notes |
-|---|---|
-| `source` | `open_meteo` · `pagasa` · `manual` |
-| `metric` | `river_level` · `rainfall` · `temperature` · `heat_index` |
-| `value`, `unit`, `observed_at`, `fetched_at` | Both timestamps — the gap *is* the staleness (FR-WX-011) |
-| `raw` | `JSONB` payload, kept for debugging a broken parser |
+| Column                                       | Notes                                                     |
+| -------------------------------------------- | --------------------------------------------------------- |
+| `source`                                     | `open_meteo` · `pagasa` · `manual`                        |
+| `metric`                                     | `river_level` · `rainfall` · `temperature` · `heat_index` |
+| `value`, `unit`, `observed_at`, `fetched_at` | Both timestamps — the gap _is_ the staleness (FR-WX-011)  |
+| `raw`                                        | `JSONB` payload, kept for debugging a broken parser       |
 
 Every reading surfaced to a user carries `source` and `observed_at` (FR-WX-010). A value without an age is never rendered.
 
@@ -254,13 +254,13 @@ Every reading surfaced to a user carries `source` and `observed_at` (FR-WX-010).
 
 ### 5.3 Spatial model
 
-| Object | Type | Source |
-|---|---|---|
-| Area boundaries | `GEOMETRY(MultiPolygon, 4326)` | Seeded (FR-SYS-013) |
-| Household location | `GEOMETRY(Point, 4326)` | Draggable pin |
-| Facilities | `GEOMETRY(Point, 4326)` | Admin-managed |
-| Siren alert units | `GEOMETRY(Point, 4326)` | Admin-managed & triggerable simulation (FR-MAP-014, FR-ALT-012) |
-| Flood hazard | `GEOMETRY(MultiPolygon, 4326)` | Vendored GeoJSON, seeded per return period |
+| Object             | Type                           | Source                                                          |
+| ------------------ | ------------------------------ | --------------------------------------------------------------- |
+| Area boundaries    | `GEOMETRY(MultiPolygon, 4326)` | Seeded (FR-SYS-013)                                             |
+| Household location | `GEOMETRY(Point, 4326)`        | Draggable pin                                                   |
+| Facilities         | `GEOMETRY(Point, 4326)`        | Admin-managed                                                   |
+| Siren alert units  | `GEOMETRY(Point, 4326)`        | Admin-managed & triggerable simulation (FR-MAP-014, FR-ALT-012) |
+| Flood hazard       | `GEOMETRY(MultiPolygon, 4326)` | Vendored GeoJSON, seeded per return period                      |
 
 **Everything is EPSG:4326.** The NOAH shapefiles arrive in WGS84, Leaflet expects WGS84, GeoJSON's default is WGS84 — so no reprojection exists anywhere in the system. GiST indexes on all four geometry columns.
 
@@ -289,14 +289,14 @@ GROUP BY h.id;
 
 ### 5.4 Derived vs configured — the distinction the BRD insists on
 
-| Figure | Origin | Table |
-|---|---|---|
-| Registered households | `COUNT(*)` at query time | `household` |
-| Registered members | `COUNT(*)` at query time | `member` |
-| **Barangay-wide households** | Admin-entered | `config` |
-| **Barangay-wide population** | Admin-entered | `config` |
+| Figure                       | Origin                   | Table       |
+| ---------------------------- | ------------------------ | ----------- |
+| Registered households        | `COUNT(*)` at query time | `household` |
+| Registered members           | `COUNT(*)` at query time | `member`    |
+| **Barangay-wide households** | Admin-entered            | `config`    |
+| **Barangay-wide population** | Admin-entered            | `config`    |
 
-Never stored as duplicate columns, never conflated (NFR-DAT-005, FR-ANL-003). Coverage is always presented as *derived over configured*.
+Never stored as duplicate columns, never conflated (NFR-DAT-005, FR-ANL-003). Coverage is always presented as _derived over configured_.
 
 ---
 
@@ -306,17 +306,17 @@ REST over JSON at `/api/v1`. OpenAPI at `/api/docs`.
 
 ### 6.1 Conventions
 
-| Concern | Convention |
-|---|---|
-| Naming | Plural nouns, kebab-case: `/households`, `/rescue-requests` |
-| Pagination | `?page=1&size=20` → `{ items, total, page, size, pages }` |
-| Filtering | Explicit query params. No generic filter DSL |
-| Sorting | `?sort=created_at&order=desc` |
-| Errors | RFC 7807-shaped: `{ type, title, status, detail, errors[] }` |
-| Validation | Pydantic; 422 with field-level detail |
-| Timestamps | ISO 8601, UTC, `Z` suffix. Display conversion is the frontend's job (NFR-DAT-003) |
-| Geometry | GeoJSON in and out |
-| Idempotency | `PUT` for full replace, `PATCH` for partial |
+| Concern     | Convention                                                                        |
+| ----------- | --------------------------------------------------------------------------------- |
+| Naming      | Plural nouns, kebab-case: `/households`, `/rescue-requests`                       |
+| Pagination  | `?page=1&size=20` → `{ items, total, page, size, pages }`                         |
+| Filtering   | Explicit query params. No generic filter DSL                                      |
+| Sorting     | `?sort=created_at&order=desc`                                                     |
+| Errors      | RFC 7807-shaped: `{ type, title, status, detail, errors[] }`                      |
+| Validation  | Pydantic; 422 with field-level detail                                             |
+| Timestamps  | ISO 8601, UTC, `Z` suffix. Display conversion is the frontend's job (NFR-DAT-003) |
+| Geometry    | GeoJSON in and out                                                                |
+| Idempotency | `PUT` for full replace, `PATCH` for partial                                       |
 
 ### 6.2 Access tiers
 
@@ -352,11 +352,13 @@ GET  /public/faqs                       FR-PUB-011, FR-PRP-005
 GET  /public/flood-events               FR-WX-013 — flood history, publicly viewable
 GET  /public/announcements/active       FR-PUB-017 — the takeover banner, polled short-cycle
 GET  /public/areas                      FR-SYS-013 — names/codes for public area filters, no geom
+GET  /public/area-boundaries            FR-MAP-001 — area boundary polygons as GeoJSON
+GET  /public/sirens                     FR-MAP-014 — siren unit locations and status
 ```
 
-> The last four were missing from this list while the requirements that need them
-> were already marked mandatory. `/public/guides/{slug}` is the only detail route
-> the public site needs — everything else is a list, because the landing page is
+> `/public/area-boundaries` and `/public/sirens` were added during the MAP build (FR-MAP-001, FR-MAP-014).
+> `/public/area-boundaries` delivers polygon geometry separately from `/public/areas` (which returns names/stats).
+> `/public/guides/{slug}` is the only detail route the public site needs — everything else is a list, because the landing page is
 > one document rather than a set of drill-downs. `/public/announcements/active` and
 > `/public/areas` were added for the same reason during the FR-PUB-013 close-out;
 > `/public/emergency-events/active` was added during the SAF build (FR-SAF-018/019).
@@ -426,6 +428,7 @@ PUT   /admin/config/{key}
 /admin/guides                POST, GET, PATCH, DELETE
 /admin/faqs                  POST, GET, PATCH, DELETE
 /admin/hotlines               POST, GET, PATCH, DELETE
+/admin/sirens                 POST, GET, PATCH, POST /{id}/trigger, DELETE (FR-MAP-014)
 /admin/facilities            POST, GET, PATCH, DELETE
 /admin/donation-drives        POST, GET, PATCH        (+ nested drive_need)
 /admin/flood-events            POST, GET, PATCH, DELETE
@@ -563,14 +566,14 @@ Three implementations — `OpenMeteoSource`, `PagasaSource`, `ManualSource` — 
 
 Single-replica `cron` container. Jobs are plain Python functions invoked by the container's scheduler.
 
-| Job | Cadence | Writes | Requirement |
-|---|---|---|---|
-| `fetch_weather` | 20 min | `reading` | FR-WX-003 |
-| `fetch_river_level` | 15 min | `reading` | FR-WX-008 |
-| `evaluate_thresholds` | after each river fetch | `alert_prompt` | FR-WX-009 |
-| `flag_stale_records` | daily 02:00 | `household.stale_at` | R-2 |
-| `send_activity_reminders` | daily 08:00 | `notification` | FR-ACT-005 |
-| `backup_database` | daily 03:00 | off-box dump | NFR-AVL-005 |
+| Job                       | Cadence                | Writes               | Requirement |
+| ------------------------- | ---------------------- | -------------------- | ----------- |
+| `fetch_weather`           | 20 min                 | `reading`            | FR-WX-003   |
+| `fetch_river_level`       | 15 min                 | `reading`            | FR-WX-008   |
+| `evaluate_thresholds`     | after each river fetch | `alert_prompt`       | FR-WX-009   |
+| `flag_stale_records`      | daily 02:00            | `household.stale_at` | R-2         |
+| `send_activity_reminders` | daily 08:00            | `notification`       | FR-ACT-005  |
+| `backup_database`         | daily 03:00            | off-box dump         | NFR-AVL-005 |
 
 **Job discipline**
 
@@ -599,13 +602,13 @@ The human step in the middle is the architecture, not a formality.
 
 ### 10.1 Rendering strategy — by surface, not globally
 
-| Surface | Strategy | Why |
-|---|---|---|
-| Public landing | **ISR**, ~60s revalidate | Fast on a cheap phone; content changes slowly (NFR-PERF-001) |
-| Public hazard map | Static shell + client-side GeoJSON | Map libraries are client-only |
-| Emergency alert banner | **Client-side, short poll** | Must reflect reality within seconds, not a revalidation window |
-| Resident portal | Client-side (CSR) | Per-user data, no SEO value |
-| Admin console | Client-side (CSR) | An application, not a document |
+| Surface                | Strategy                           | Why                                                            |
+| ---------------------- | ---------------------------------- | -------------------------------------------------------------- |
+| Public landing         | **ISR**, ~60s revalidate           | Fast on a cheap phone; content changes slowly (NFR-PERF-001)   |
+| Public hazard map      | Static shell + client-side GeoJSON | Map libraries are client-only                                  |
+| Emergency alert banner | **Client-side, short poll**        | Must reflect reality within seconds, not a revalidation window |
+| Resident portal        | Client-side (CSR)                  | Per-user data, no SEO value                                    |
+| Admin console          | Client-side (CSR)                  | An application, not a document                                 |
 
 > **Only the public site benefits from server rendering.** Making the whole app SSR would add auth-on-the-server complexity for zero user-visible gain.
 
@@ -631,23 +634,23 @@ apps/web/src/
 
 ### 10.3 State
 
-| Kind | Owner |
-|---|---|
-| Server data | **TanStack Query** — the default for almost everything |
-| Forms | React Hook Form + Zod |
-| Auth session | Context; access token in memory |
-| Ephemeral UI | Local `useState` |
-| Cross-cutting UI (active alert, map layers) | Zustand — deliberately small |
+| Kind                                        | Owner                                                  |
+| ------------------------------------------- | ------------------------------------------------------ |
+| Server data                                 | **TanStack Query** — the default for almost everything |
+| Forms                                       | React Hook Form + Zod                                  |
+| Auth session                                | Context; access token in memory                        |
+| Ephemeral UI                                | Local `useState`                                       |
+| Cross-cutting UI (active alert, map layers) | Zustand — deliberately small                           |
 
 **No global store of server data.** Query owns the cache; duplicating it into Zustand is how staleness bugs get created.
 
 ### 10.4 Map components
 
-| Component | Loading |
-|---|---|
-| `HazardMap` (Leaflet) | `dynamic(..., { ssr: false })` — Leaflet touches `window` at import |
-| `ZoneMap3D` (R3F) | `dynamic` + `Suspense`, **and gated** on viewport ≥ `md` and `hardwareConcurrency > 4` (FR-MAP-012) |
-| Recharts | `dynamic` — never in the landing bundle (NFR-PERF-007) |
+| Component             | Loading                                                                                             |
+| --------------------- | --------------------------------------------------------------------------------------------------- |
+| `HazardMap` (Leaflet) | `dynamic(..., { ssr: false })` — Leaflet touches `window` at import                                 |
+| `ZoneMap3D` (R3F)     | `dynamic` + `Suspense`, **and gated** on viewport ≥ `md` and `hardwareConcurrency > 4` (FR-MAP-012) |
+| Recharts              | `dynamic` — never in the landing bundle (NFR-PERF-007)                                              |
 
 ---
 
@@ -663,7 +666,7 @@ graph LR
     D --> E[simplify + round<br/>to 6 decimals]
     E --> F[(dataset/derived/<br/>san_jose_flood_5yr.geojson<br/>COMMITTED, ~200KB)]
     F --> G[seed migration<br/>→ PostGIS]
-    F --> H[copy to public/data<br/>→ Leaflet]
+    F --> H[make hazard-web<br/>→ public/data → Leaflet]
 ```
 
 Two consumers, one artifact:
@@ -673,7 +676,11 @@ Two consumers, one artifact:
 
 > **Dissolving by hazard level before simplifying** is the single biggest size reduction: thousands of small polygons collapse to three multipolygons. Doing it in the other order wastes most of the benefit.
 
-The script lives in `tools/prepare_hazard.py` and is **not** part of the running system — it is a maintenance tool, not a build step. The committed output in `dataset/derived/` is what everything actually reads (Section 12.5). If the source data is ever updated, someone re-runs `make hazard` and commits the new GeoJSON.
+The derive half lives in `tools/prepare_hazard.py` and is **not** part of the running system — it is a maintenance tool. The committed output in `dataset/derived/` is what everything actually reads (Section 12.5). If the source data is ever updated, someone re-runs `make hazard-derive` and commits the new GeoJSON.
+
+**`make hazard-web` (`tools/stage_hazard_web.py`) is the other half, and it _is_ a build step.** `apps/web/public/data/*.geojson` is gitignored, so a fresh clone, a CI web build, and a Docker image build each start with no hazard layer and have to stage one. Splitting the two targets is what makes that possible: staging is stdlib-only, while deriving needs GeoPandas and shapefiles that are not in the repo. Before the split, CI could not stage the layer at all.
+
+A missing layer is **degraded, not fatal**. `apps/web/src/lib/hazard-geojson.ts` catches the 404, logs it, and renders the map without the flood polygons — the basemap, area boundaries, facility pins, legend, and attribution are all still correct. Same principle as the public-seam fallbacks in Section 10 (FR-PUB-016, NFR-AVL-002).
 
 ---
 
@@ -683,13 +690,13 @@ One repository holds the frontend, backend, tooling, infrastructure, and docs.
 
 ### 12.1 Why a monorepo here
 
-| Reason | Detail |
-|---|---|
-| **One deployable unit** | The whole system ships as a single Compose stack (D-6). Splitting the repo would mean coordinating versions across repos to deploy one thing |
-| **Contract stays in sync** | The API's OpenAPI schema generates the frontend's TypeScript types. In one repo a breaking change fails CI in the same PR; across two repos it fails in production |
-| **Five people, one review queue** | Cross-cutting changes — add a field, expose it, render it — are one PR against one FRS requirement, not three |
-| **Docs travel with code** | `frs_nfrs.md` must be updated in the same PR that implements a requirement. That only works if they live together |
-| **Nobody has to clone four things** | NFR-MNT-008: a new member runs the stack in under 30 minutes |
+| Reason                              | Detail                                                                                                                                                             |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **One deployable unit**             | The whole system ships as a single Compose stack (D-6). Splitting the repo would mean coordinating versions across repos to deploy one thing                       |
+| **Contract stays in sync**          | The API's OpenAPI schema generates the frontend's TypeScript types. In one repo a breaking change fails CI in the same PR; across two repos it fails in production |
+| **Five people, one review queue**   | Cross-cutting changes — add a field, expose it, render it — are one PR against one FRS requirement, not three                                                      |
+| **Docs travel with code**           | `frs_nfrs.md` must be updated in the same PR that implements a requirement. That only works if they live together                                                  |
+| **Nobody has to clone four things** | NFR-MNT-008: a new member runs the stack in under 30 minutes                                                                                                       |
 
 ### 12.2 Layout
 
@@ -753,12 +760,12 @@ project-pitching/
 
 Two ecosystems, so no single workspace tool covers everything. **A `Makefile` is the top-level interface**, and it is the only thing a team member has to remember.
 
-| Layer | Tool | Scope |
-|---|---|---|
-| JS/TS | **npm workspaces** | `apps/web`, `packages/api-types` |
-| Python | **uv** (or venv + pip) | `apps/api`, `services/cron` — separate envs |
-| Orchestration | **Make** | `make dev`, `make test`, `make lint`, `make seed`, `make types` |
-| Containers | **Docker Compose** | Everything, identically local and on the VPS |
+| Layer         | Tool                   | Scope                                                           |
+| ------------- | ---------------------- | --------------------------------------------------------------- |
+| JS/TS         | **npm workspaces**     | `apps/web`, `packages/api-types`                                |
+| Python        | **uv** (or venv + pip) | `apps/api`, `services/cron` — separate envs                     |
+| Orchestration | **Make**               | `make dev`, `make test`, `make lint`, `make seed`, `make types` |
+| Containers    | **Docker Compose**     | Everything, identically local and on the VPS                    |
 
 ```makefile
 dev:        ## start the whole stack with hot reload
@@ -797,32 +804,32 @@ FastAPI route + Pydantic schema
   apps/web/src/lib/api/*
 ```
 
-**`generated.ts` is never hand-edited and is committed.** Committing it means CI can diff it: if a PR changes an API response without regenerating, the diff is empty and the check fails loudly. Combined with Zod-parsing responses at runtime, a backend change surfaces as a type error at build time *and* a clear runtime error — not as `undefined` on a dashboard.
+**`generated.ts` is never hand-edited and is committed.** Committing it means CI can diff it: if a PR changes an API response without regenerating, the diff is empty and the check fails loudly. Combined with Zod-parsing responses at runtime, a backend change surfaces as a type error at build time _and_ a clear runtime error — not as `undefined` on a dashboard.
 
 ### 12.5 What is and is not committed
 
 **The rule: raw source is downloaded, derived output is committed.** `dataset/` holds both, split by subdirectory.
 
-| Path | Committed? | Why |
-|---|---|---|
-| `dataset/raw/**` | **No** | Province shapefiles are hundreds of MB and re-downloadable |
-| **`dataset/derived/*.geojson`** | **Yes** | A few hundred KB each. **The canonical hazard data lives here** |
-| `dataset/README.md` | Yes | Provenance and the exact regeneration command |
-| `packages/api-types/src/generated.ts` | Yes | So CI can diff it (Section 12.4) |
-| `docs/**` | Yes | |
-| `apps/web/public/data/*.geojson` | **No** | Copied from `dataset/derived/` by `make hazard` — a build artifact, not a second source of truth |
-| `.env` | No | Secrets (NFR-SEC-010) |
-| `.next`, `node_modules`, `__pycache__`, `.venv` | No | Build artifacts |
-| `uploads/` | No | Runtime user content — lives on a volume |
+| Path                                            | Committed? | Why                                                                                                  |
+| ----------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------- |
+| `dataset/raw/**`                                | **No**     | Province shapefiles are hundreds of MB and re-downloadable                                           |
+| **`dataset/derived/*.geojson`**                 | **Yes**    | A few hundred KB each. **The canonical hazard data lives here**                                      |
+| `dataset/README.md`                             | Yes        | Provenance and the exact regeneration command                                                        |
+| `packages/api-types/src/generated.ts`           | Yes        | So CI can diff it (Section 12.4)                                                                     |
+| `docs/**`                                       | Yes        |                                                                                                      |
+| `apps/web/public/data/*.geojson`                | **No**     | Staged from `dataset/derived/` by `make hazard-web` — a build artifact, not a second source of truth |
+| `.env`                                          | No         | Secrets (NFR-SEC-010)                                                                                |
+| `.next`, `node_modules`, `__pycache__`, `.venv` | No         | Build artifacts                                                                                      |
+| `uploads/`                                      | No         | Runtime user content — lives on a volume                                                             |
 
 **Why the clipped GeoJSON is committed and the shapefiles are not:**
 
 - **It is the actual input to the running system.** Both the seed migration and Leaflet read it. Anyone who clones the repo can run the stack with a working hazard map, no downloads, no GIS tooling.
 - **It is small and diffable.** A few hundred KB of text; a change to the clip is visible in review.
 - **The source is fragile.** LiPAD downloads already corrupted once. Depending on a re-download to rebuild the map is a demo-day risk.
-- **Regeneration is rarely needed.** These are historical model outputs. `make hazard` exists for when the source data is genuinely updated — not as a build step.
+- **Regeneration is rarely needed.** These are historical model outputs. `make hazard-derive` exists for when the source data is genuinely updated — not as a build step.
 
-> **`dataset/derived/` is the single source of truth in git; `apps/web/public/data/` is a copy.** `make hazard` writes both, and the `public/` copy is gitignored so the same bytes never live in two places in version control.
+> **`dataset/derived/` is the single source of truth in git; `apps/web/public/data/` is a copy.** `make hazard-web` writes the copy, and it is gitignored so the same bytes never live in two places in version control. Because it is gitignored, staging it is a **build** step that runs on every fresh clone, CI web job, and image build — `make hazard-derive` is the maintenance step that rarely runs. Section 11 explains why they are separate targets.
 
 `dataset/README.md` records, per file: the source URL, download date, licence, and the exact command that produced the derived output.
 
@@ -830,12 +837,12 @@ FastAPI route + Pydantic schema
 
 One workflow, jobs gated on what changed:
 
-| Job | Triggers on | Runs |
-|---|---|---|
-| `api` | `apps/api/**`, `services/cron/**` | ruff, pytest, alembic upgrade against a throwaway Postgres+PostGIS |
-| `web` | `apps/web/**`, `packages/**` | eslint, tsc, next build |
-| `types` | `apps/api/**` | regenerate and fail if `generated.ts` differs |
-| `docs` | `docs/**` | link check |
+| Job     | Triggers on                       | Runs                                                               |
+| ------- | --------------------------------- | ------------------------------------------------------------------ |
+| `api`   | `apps/api/**`, `services/cron/**` | ruff, pytest, alembic upgrade against a throwaway Postgres+PostGIS |
+| `web`   | `apps/web/**`, `packages/**`      | eslint, tsc, next build                                            |
+| `types` | `apps/api/**`                     | regenerate and fail if `generated.ts` differs                      |
+| `docs`  | `docs/**`                         | link check                                                         |
 
 ### 12.7 Commit scopes
 
@@ -858,10 +865,10 @@ Two named **profiles**, each its own Compose project from the same `infra/compos
 separate database, volumes, network, and host ports — so they can run on the same machine
 at once without colliding, and testing a feature in one can never corrupt the other:
 
-| Profile | Purpose | Runs on | Data | Ports (proxy/web/api/db) |
-|---|---|---|---|---|
-| **staging** | Day-to-day development and feature testing. Safe to break. | Laptop, Compose | Seeded synthetic | 8080 / 3000 / 8000 / 5433 |
-| **demo** | Curated, isolated, for the pitch. Reseed fresh before presenting. | Laptop or VPS, same Compose | Seeded synthetic | 8090 / 3010 / 8010 / 5443 |
+| Profile     | Purpose                                                           | Runs on                     | Data             | Ports (proxy/web/api/db)  |
+| ----------- | ----------------------------------------------------------------- | --------------------------- | ---------------- | ------------------------- |
+| **staging** | Day-to-day development and feature testing. Safe to break.        | Laptop, Compose             | Seeded synthetic | 8080 / 3000 / 8000 / 5433 |
+| **demo**    | Curated, isolated, for the pitch. Reseed fresh before presenting. | Laptop or VPS, same Compose | Seeded synthetic | 8090 / 3010 / 8010 / 5443 |
 
 ```bash
 make dev                 # staging — the default profile
@@ -930,66 +937,66 @@ mid-way, or after adding a new seed section that predates a running database.
 
 ## 14. Cross-Cutting Concerns
 
-| Concern | Approach |
-|---|---|
-| **Logging** | Structured JSON, request ID propagated through middleware (NFR-OBS-001) |
-| **Errors** | Single exception handler → consistent envelope. Internals never leak to clients |
-| **Audit** | `audit_log` written by a service-layer helper on every state change: actor, action, target, timestamp (FR-SYS-008) |
-| **Soft delete** | `deleted_at` mixin; default query filter excludes deleted rows |
-| **Timestamps** | UTC everywhere in storage and transport; PHT only at render |
-| **Uploads** | Type and size validated server-side; stored outside the web root; served by the proxy (NFR-SEC-008) |
-| **Rate limiting** | `slowapi` on login and rescue endpoints. Generous on rescue by design |
-| **Health** | `/health` returns app and database status (NFR-OBS-004) |
-| **Migrations** | Alembic only. No manual DDL, ever (NFR-MNT-004) |
+| Concern           | Approach                                                                                                           |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Logging**       | Structured JSON, request ID propagated through middleware (NFR-OBS-001)                                            |
+| **Errors**        | Single exception handler → consistent envelope. Internals never leak to clients                                    |
+| **Audit**         | `audit_log` written by a service-layer helper on every state change: actor, action, target, timestamp (FR-SYS-008) |
+| **Soft delete**   | `deleted_at` mixin; default query filter excludes deleted rows                                                     |
+| **Timestamps**    | UTC everywhere in storage and transport; PHT only at render                                                        |
+| **Uploads**       | Type and size validated server-side; stored outside the web root; served by the proxy (NFR-SEC-008)                |
+| **Rate limiting** | `slowapi` on login and rescue endpoints. Generous on rescue by design                                              |
+| **Health**        | `/health` returns app and database status (NFR-OBS-004)                                                            |
+| **Migrations**    | Alembic only. No manual DDL, ever (NFR-MNT-004)                                                                    |
 
 ---
 
 ## 15. Key Decisions
 
-| # | Decision | Alternative rejected | Rationale |
-|---|---|---|---|
-| A-1 | Modular monolith | Microservices | Five people, weeks, one barangay (D-5) |
-| A-2 | PostGIS in the database | Spatial logic in Python | Point-in-polygon per request does not scale, and the queries are trivial in SQL (D-1) |
-| A-3 | Scheduler-writes / API-reads | On-demand external fetch | External failure must never reach a user (D-3) |
-| A-4 | Separate `cron` container | APScheduler in the API | Multi-worker duplicate execution |
-| A-5 | Access token in memory, refresh in httpOnly cookie | Token in `localStorage` | XSS cannot read either |
-| A-6 | Area scoping in the data layer | Route-level checks | A forgotten filter leaks the barangay |
-| A-7 | Vendored hazard GeoJSON | Runtime fetch from NOAH | Zero dependency on demo day; the data does not change |
-| A-8 | Append-only vulnerability assessments | Mutable level column | Free history; classifier changes stay diagnosable |
-| A-9 | Anonymous rescue endpoint | Auth-gated | Requiring registration before rescue is the worst possible failure (D-2) |
-| A-10 | Alert prompts, never auto-publish | Automated alerts on threshold | A student prototype must not warn 143,000 people unsupervised (D-4) |
-| A-11 | Tier-split API namespaces | Resource-split with per-route auth | Public routes cannot inherit authenticated serializers |
-| A-12 | Rendering strategy per surface | SSR everywhere | Auth-on-server complexity for no gain in the portal |
-| A-13 | **Monorepo** | Split web/api repos | One deployable unit; the OpenAPI→TypeScript contract breaks in the same PR rather than in production (Section 12) |
-| A-14 | Make as the orchestrator | Nx / Turborepo | Two apps in two languages — their caching buys nothing and costs configuration a mostly non-IT team pays for |
-| A-15 | `dataset/raw/` gitignored, `dataset/derived/` committed | Commit the shapefiles, or commit nothing | The clipped GeoJSON *is* the system's input — a fresh clone must produce a working map without GIS tooling or a re-download (Section 12.5) |
+| #    | Decision                                                | Alternative rejected                     | Rationale                                                                                                                                  |
+| ---- | ------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| A-1  | Modular monolith                                        | Microservices                            | Five people, weeks, one barangay (D-5)                                                                                                     |
+| A-2  | PostGIS in the database                                 | Spatial logic in Python                  | Point-in-polygon per request does not scale, and the queries are trivial in SQL (D-1)                                                      |
+| A-3  | Scheduler-writes / API-reads                            | On-demand external fetch                 | External failure must never reach a user (D-3)                                                                                             |
+| A-4  | Separate `cron` container                               | APScheduler in the API                   | Multi-worker duplicate execution                                                                                                           |
+| A-5  | Access token in memory, refresh in httpOnly cookie      | Token in `localStorage`                  | XSS cannot read either                                                                                                                     |
+| A-6  | Area scoping in the data layer                          | Route-level checks                       | A forgotten filter leaks the barangay                                                                                                      |
+| A-7  | Vendored hazard GeoJSON                                 | Runtime fetch from NOAH                  | Zero dependency on demo day; the data does not change                                                                                      |
+| A-8  | Append-only vulnerability assessments                   | Mutable level column                     | Free history; classifier changes stay diagnosable                                                                                          |
+| A-9  | Anonymous rescue endpoint                               | Auth-gated                               | Requiring registration before rescue is the worst possible failure (D-2)                                                                   |
+| A-10 | Alert prompts, never auto-publish                       | Automated alerts on threshold            | A student prototype must not warn 143,000 people unsupervised (D-4)                                                                        |
+| A-11 | Tier-split API namespaces                               | Resource-split with per-route auth       | Public routes cannot inherit authenticated serializers                                                                                     |
+| A-12 | Rendering strategy per surface                          | SSR everywhere                           | Auth-on-server complexity for no gain in the portal                                                                                        |
+| A-13 | **Monorepo**                                            | Split web/api repos                      | One deployable unit; the OpenAPI→TypeScript contract breaks in the same PR rather than in production (Section 12)                          |
+| A-14 | Make as the orchestrator                                | Nx / Turborepo                           | Two apps in two languages — their caching buys nothing and costs configuration a mostly non-IT team pays for                               |
+| A-15 | `dataset/raw/` gitignored, `dataset/derived/` committed | Commit the shapefiles, or commit nothing | The clipped GeoJSON _is_ the system's input — a fresh clone must produce a working map without GIS tooling or a re-download (Section 12.5) |
 
 ---
 
 ## 16. Architectural Risks
 
-| # | Risk | Mitigation |
-|---|---|---|
-| AR-1 | **Registry module becomes a monolith inside the monolith** — FRs land in one place | Split internally: `household`, `members`, `vulnerability`. Keep `domain/vulnerability.py` pure |
-| AR-2 | **Vulnerability classifier changes invalidate history** | Append-only assessments (A-8); store the factor set with each row |
-| AR-3 | **PostGIS unfamiliarity blocks progress** | Only three queries are needed (Section 5.3). Write them first, as tested fixtures |
-| AR-4 | **`cron` silently stops** and stale data goes unnoticed | Staleness is user-visible by design (FR-WX-011); job outcomes logged; `/health` surfaces last successful run |
-| AR-5 | **Single VPS failure on demo day** | Identical local Compose stack; verified restore; DEMO_MODE removes external dependencies entirely |
-| AR-6 | **Auth implementation defects** | Concentrate in `core/security.py`; test the 403 paths explicitly; managed-auth swap remains the escape hatch (T-2) |
-| AR-7 | **Frontend/backend contract drift** | Zod-parse every response (`lib/api`); generated types committed and diff-checked in CI (Section 12.4), so drift fails the build rather than rendering `undefined` |
-| AR-8 | **Monorepo CI runs everything on every change**, slowing the review loop | Path-filtered jobs (Section 12.6) — a docs-only PR does not rebuild the frontend |
-| AR-9 | **Generated types drift because someone skips `make types`** | CI regenerates and fails on any diff (Section 12.6). Never rely on the convention alone |
+| #    | Risk                                                                               | Mitigation                                                                                                                                                        |
+| ---- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AR-1 | **Registry module becomes a monolith inside the monolith** — FRs land in one place | Split internally: `household`, `members`, `vulnerability`. Keep `domain/vulnerability.py` pure                                                                    |
+| AR-2 | **Vulnerability classifier changes invalidate history**                            | Append-only assessments (A-8); store the factor set with each row                                                                                                 |
+| AR-3 | **PostGIS unfamiliarity blocks progress**                                          | Only three queries are needed (Section 5.3). Write them first, as tested fixtures                                                                                 |
+| AR-4 | **`cron` silently stops** and stale data goes unnoticed                            | Staleness is user-visible by design (FR-WX-011); job outcomes logged; `/health` surfaces last successful run                                                      |
+| AR-5 | **Single VPS failure on demo day**                                                 | Identical local Compose stack; verified restore; DEMO_MODE removes external dependencies entirely                                                                 |
+| AR-6 | **Auth implementation defects**                                                    | Concentrate in `core/security.py`; test the 403 paths explicitly; managed-auth swap remains the escape hatch (T-2)                                                |
+| AR-7 | **Frontend/backend contract drift**                                                | Zod-parse every response (`lib/api`); generated types committed and diff-checked in CI (Section 12.4), so drift fails the build rather than rendering `undefined` |
+| AR-8 | **Monorepo CI runs everything on every change**, slowing the review loop           | Path-filtered jobs (Section 12.6) — a docs-only PR does not rebuild the frontend                                                                                  |
+| AR-9 | **Generated types drift because someone skips `make types`**                       | CI regenerates and fails on any diff (Section 12.6). Never rely on the convention alone                                                                           |
 
 ---
 
 ## 17. Open Architecture Decisions
 
-| # | Item | Blocked by | Owner |
-|---|---|---|---|
-| A-OI-1 | Area boundary polygons — the spatial model cannot be seeded without them | BRD OI-3 | PubAd lead |
-| A-OI-2 | San Jose boundary for the clipping step | T-OI-2 | IT lead |
-| ~~A-OI-3~~ | ~~Nutrition indicator schema~~ | — | **Resolved: moot.** `nutrition_record` is cut (BRD D-15, closes OI-2) |
-| A-OI-4 | Vulnerability weighting — determines `domain/vulnerability.py` | BRD OI-18 | PubAd lead |
-| A-OI-5 | Whether `alert_prompt` needs its own table or is a status on `reading` | — | IT lead |
-| A-OI-6 | Notification delivery: poll vs SSE for the emergency banner. Poll is the default; SSE only if latency proves inadequate | — | IT lead |
-| A-OI-7 | Whether `evacuation_checkin` should reference `member` or duplicate the name for unregistered evacuees | FR-EVC-005 | IT lead |
+| #          | Item                                                                                                                    | Blocked by | Owner                                                                 |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------- |
+| A-OI-1     | Area boundary polygons — the spatial model cannot be seeded without them                                                | BRD OI-3   | PubAd lead                                                            |
+| A-OI-2     | San Jose boundary for the clipping step                                                                                 | T-OI-2     | IT lead                                                               |
+| ~~A-OI-3~~ | ~~Nutrition indicator schema~~                                                                                          | —          | **Resolved: moot.** `nutrition_record` is cut (BRD D-15, closes OI-2) |
+| A-OI-4     | Vulnerability weighting — determines `domain/vulnerability.py`                                                          | BRD OI-18  | PubAd lead                                                            |
+| A-OI-5     | Whether `alert_prompt` needs its own table or is a status on `reading`                                                  | —          | IT lead                                                               |
+| A-OI-6     | Notification delivery: poll vs SSE for the emergency banner. Poll is the default; SSE only if latency proves inadequate | —          | IT lead                                                               |
+| A-OI-7     | Whether `evacuation_checkin` should reference `member` or duplicate the name for unregistered evacuees                  | FR-EVC-005 | IT lead                                                               |

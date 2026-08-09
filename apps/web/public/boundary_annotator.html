@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Barangay San Jose Boundary Annotator</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    #container { display: flex; height: 100vh; width: 100vw; }
+    #map { flex: 1; height: 100%; }
+    #sidebar { width: 380px; background: #0f172a; color: #f8fafc; padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; border-left: 1px solid #334155; }
+    h1 { font-size: 1.25rem; font-weight: 700; color: #38bdf8; }
+    p { font-size: 0.875rem; color: #94a3b8; line-height: 1.4; }
+    .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    button { background: #0284c7; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-weight: 600; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; }
+    button:hover { background: #0369a1; }
+    button.danger { background: #ef4444; }
+    button.danger:hover { background: #dc2626; }
+    button.secondary { background: #334155; color: #f1f5f9; }
+    button.secondary:hover { background: #475569; }
+    .stat-card { background: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; }
+    .stat-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-val { font-size: 1.125rem; font-weight: 700; color: #f8fafc; margin-top: 2px; }
+    textarea { width: 100%; height: 160px; background: #1e293b; color: #38bdf8; border: 1px solid #334155; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.75rem; resize: vertical; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: #0369a1; color: #e0f2fe; }
+    .instructions { background: #1e293b; padding: 12px; border-radius: 8px; border-left: 4px solid #38bdf8; font-size: 0.8125rem; color: #cbd5e1; }
+    .instructions ol { padding-left: 18px; margin-top: 6px; }
+    .instructions li { margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+
+<div id="container">
+  <div id="map"></div>
+
+  <div id="sidebar">
+    <div>
+      <h1>San Jose Boundary Annotator</h1>
+      <p>Click on the map to place boundary pins for Barangay San Jose.</p>
+    </div>
+
+    <div class="instructions">
+      <strong>How to use:</strong>
+      <ol>
+        <li>Click anywhere on the map to add a border pin.</li>
+        <li>Drag pins to adjust border lines.</li>
+        <li>Click a pin to remove it.</li>
+        <li>Copy the JSON / WKT output below when finished.</li>
+      </ol>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Total Pins Placed</div>
+      <div id="pin-count" class="stat-val">0</div>
+    </div>
+
+    <div class="btn-group">
+      <button onclick="undoLastPin()" class="secondary">Undo Last Pin</button>
+      <button onclick="clearAllPins()" class="danger">Clear All</button>
+      <button onclick="loadDefaultBoundary()" class="secondary">Load Current Boundary</button>
+    </div>
+
+    <div>
+      <label class="stat-label" style="display:block; margin-bottom: 6px;">Output GeoJSON Coordinates</label>
+      <textarea id="output-json" readonly placeholder="Pin coordinates will appear here..."></textarea>
+    </div>
+
+    <div class="btn-group">
+      <button onclick="copyToClipboard()" style="width: 100%;">Copy GeoJSON to Clipboard</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const BARANGAY_CENTER = [14.738, 121.133];
+  const map = L.map('map').setView(BARANGAY_CENTER, 14);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Reference facilities
+  const facilities = [
+    { name: "Barangay San Jose Hall", lat: 14.7352, lng: 121.1351, color: "#3b82f6" },
+    { name: "San Jose Elementary School", lat: 14.7371, lng: 121.1318, color: "#10b981" },
+    { name: "Rodriguez District Hospital", lat: 14.7296, lng: 121.1287, color: "#ef4444" },
+    { name: "San Jose National High School", lat: 14.7334, lng: 121.1389, color: "#8b5cf6" },
+    { name: "San Jose Multi-Purpose Hall", lat: 14.7318, lng: 121.1402, color: "#f59e0b" },
+    { name: "Riverside Health Outpost", lat: 14.7288, lng: 121.1412, color: "#ec4899" }
+  ];
+
+  facilities.forEach(f => {
+    L.circleMarker([f.lat, f.lng], {
+      radius: 6,
+      fillColor: f.color,
+      color: '#ffffff',
+      weight: 2,
+      fillOpacity: 0.9
+    }).addTo(map).bindTooltip(`<b>${f.name}</b>`, { permanent: false });
+  });
+
+  let pins = [];
+  let markers = [];
+  let polygonLayer = null;
+
+  map.on('click', function(e) {
+    addPin(e.latlng.lat, e.latlng.lng);
+  });
+
+  function addPin(lat, lng) {
+    const coord = [parseFloat(lat.toFixed(6)), parseFloat(lng.toFixed(6))];
+    pins.push(coord);
+
+    const marker = L.marker(coord, { draggable: true }).addTo(map);
+    const index = pins.length - 1;
+
+    marker.on('drag', function(e) {
+      const newPos = e.target.getLatLng();
+      pins[index] = [parseFloat(newPos.lat.toFixed(6)), parseFloat(newPos.lng.toFixed(6))];
+      updatePolygon();
+    });
+
+    marker.on('click', function(e) {
+      L.DomEvent.stopPropagation(e);
+      removePin(index);
+    });
+
+    markers.push(marker);
+    updatePolygon();
+  }
+
+  function removePin(index) {
+    map.removeLayer(markers[index]);
+    pins.splice(index, 1);
+    markers.splice(index, 1);
+
+    // Re-bind click events for remaining markers
+    markers.forEach((m, idx) => {
+      m.off('click');
+      m.off('drag');
+      m.on('drag', function(e) {
+        const newPos = e.target.getLatLng();
+        pins[idx] = [parseFloat(newPos.lat.toFixed(6)), parseFloat(newPos.lng.toFixed(6))];
+        updatePolygon();
+      });
+      m.on('click', function(e) {
+        L.DomEvent.stopPropagation(e);
+        removePin(idx);
+      });
+    });
+
+    updatePolygon();
+  }
+
+  function undoLastPin() {
+    if (pins.length > 0) {
+      removePin(pins.length - 1);
+    }
+  }
+
+  function clearAllPins() {
+    markers.forEach(m => map.removeLayer(m));
+    pins = [];
+    markers = [];
+    updatePolygon();
+  }
+
+  function updatePolygon() {
+    if (polygonLayer) {
+      map.removeLayer(polygonLayer);
+    }
+
+    document.getElementById('pin-count').innerText = pins.length;
+
+    if (pins.length >= 3) {
+      // Leaflet expects [lat, lng]
+      polygonLayer = L.polygon(pins, {
+        color: '#38bdf8',
+        weight: 3,
+        fillColor: '#0284c7',
+        fillOpacity: 0.25
+      }).addTo(map);
+    }
+
+    // Format output as GeoJSON coordinates [lng, lat]
+    const geoJsonCoords = pins.map(p => [p[1], p[0]]);
+    if (geoJsonCoords.length > 0) {
+      // Close polygon ring for valid GeoJSON LinearRing
+      geoJsonCoords.push(geoJsonCoords[0]);
+    }
+
+    const output = {
+      type: "Feature",
+      properties: { name: "Barangay San Jose Annotated Boundary" },
+      geometry: {
+        type: "Polygon",
+        coordinates: [geoJsonCoords]
+      }
+    };
+
+    document.getElementById('output-json').value = JSON.stringify(output, null, 2);
+  }
+
+  function loadDefaultBoundary() {
+    clearAllPins();
+    const defaultCoords = [
+      [14.762, 121.125],
+      [14.761, 121.132],
+      [14.758, 121.135],
+      [14.753, 121.137],
+      [14.748, 121.139],
+      [14.743, 121.141],
+      [14.738, 121.144],
+      [14.734, 121.145],
+      [14.730, 121.144],
+      [14.726, 121.137],
+      [14.718, 121.137],
+      [14.716, 121.134],
+      [14.712, 121.131],
+      [14.710, 121.128],
+      [14.713, 121.124],
+      [14.720, 121.121],
+      [14.728, 121.120],
+      [14.734, 121.116],
+      [14.743, 121.116],
+      [14.750, 121.118],
+      [14.756, 121.121]
+    ];
+    defaultCoords.forEach(c => addPin(c[0], c[1]));
+  }
+
+  function copyToClipboard() {
+    const text = document.getElementById('output-json').value;
+    navigator.clipboard.writeText(text).then(() => {
+      alert("GeoJSON coordinates copied to clipboard!");
+    }).catch(err => {
+      alert("Could not copy text: " + err);
+    });
+  }
+</script>
+
+</body>
+</html>

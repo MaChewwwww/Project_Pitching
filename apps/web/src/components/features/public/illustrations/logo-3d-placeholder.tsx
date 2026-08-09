@@ -15,32 +15,38 @@ export function Logo3DPlaceholder({ className }: { className?: string }) {
       )}
     >
       {/* Ambient background glowing lighting */}
-      <div className="pointer-events-none absolute size-72 rounded-full bg-primary-400/20 blur-3xl animate-pulse" />
-      <div className="pointer-events-none absolute size-96 rounded-full bg-primary-500/10 blur-[100px]" />
+      <div className="bg-primary-400/20 pointer-events-none absolute size-72 animate-pulse rounded-full blur-3xl" />
+      <div className="bg-primary-500/10 pointer-events-none absolute size-96 rounded-full blur-[100px]" />
 
       {/* 3D Perspective Canvas Container */}
       <div className="group relative flex flex-col items-center justify-center [perspective:1000px]">
         {/* Orbital Ring 1 */}
-        <div aria-hidden className="absolute size-72 rounded-full border border-primary-400/30 border-dashed animate-[spin_20s_linear_infinite]" />
-        
+        <div
+          aria-hidden
+          className="border-primary-400/30 absolute size-72 animate-[spin_20s_linear_infinite] rounded-full border border-dashed"
+        />
+
         {/* Orbital Ring 2 */}
-        <div aria-hidden className="absolute size-84 rounded-full border border-primary-300/20 animate-[spin_30s_linear_infinite_reverse]" />
+        <div
+          aria-hidden
+          className="border-primary-300/20 absolute size-84 animate-[spin_30s_linear_infinite_reverse] rounded-full border"
+        />
 
         {/* Floating 3D Badge */}
         <div className="relative flex flex-col items-center justify-center transition-all duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateY(12deg)_rotateX(-8deg)_scale(1.05)]">
-          
           {/* Badge 3D Shadow Base */}
-          <div className="absolute size-44 rounded-3xl bg-primary-950/80 blur-xl translate-z-[-40px] translate-y-8" />
+          <div className="bg-primary-950/80 absolute size-44 translate-y-8 translate-z-[-40px] rounded-3xl blur-xl" />
 
           {/* Main 3D Emblem Container */}
-          <div className="relative flex size-44 items-center justify-center rounded-3xl bg-gradient-to-br from-primary-400 via-primary-600 to-primary-900 p-1 shadow-2xl transition-transform duration-500 [transform-style:preserve-3d] border border-primary-300/40">
-            
+          <div className="from-primary-400 via-primary-600 to-primary-900 border-primary-300/40 relative flex size-44 items-center justify-center rounded-3xl border bg-gradient-to-br p-1 shadow-2xl transition-transform duration-500 [transform-style:preserve-3d]">
             {/* Glass reflection overlay */}
-            <div aria-hidden className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-white/30 via-transparent to-transparent opacity-80" />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-white/30 via-transparent to-transparent opacity-80"
+            />
 
             {/* Inner Emblem Content */}
-            <div className="flex size-full flex-col items-center justify-center rounded-[22px] bg-primary-950/90 backdrop-blur-sm p-5 shadow-inner">
-              
+            <div className="bg-primary-950/90 flex size-full flex-col items-center justify-center rounded-[22px] p-5 shadow-inner backdrop-blur-sm">
               {/* Roof & Water Mark SVG with 3D Pop */}
               <svg
                 viewBox="0 0 40 40"
@@ -54,10 +60,7 @@ export function Logo3DPlaceholder({ className }: { className?: string }) {
                   d="M20 8 L32 18.5 H28.5 V18.7 H11.5 V18.5 L20 8 Z"
                   className="fill-white drop-shadow-md"
                 />
-                <path
-                  d="M13.5 20 H26.5 V24.5 H13.5 Z"
-                  className="fill-white/90"
-                />
+                <path d="M13.5 20 H26.5 V24.5 H13.5 Z" className="fill-white/90" />
                 {/* Water Waves */}
                 <path
                   d="M7 28.5c2.4 0 2.4 2 4.8 2s2.4-2 4.8-2 2.4 2 4.8 2 2.4-2 4.8-2 2.4 2 4.8 2"

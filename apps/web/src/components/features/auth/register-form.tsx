@@ -23,7 +23,10 @@ import type { ProblemDetail } from "@/lib/api/client";
 const registerSchema = z
   .object({
     full_name: z.string().min(1, "Enter your full name"),
-    email: z.string().min(1, "Enter your email address").email("Enter a valid email address"),
+    email: z
+      .string()
+      .min(1, "Enter your email address")
+      .email("Enter a valid email address"),
     password: z.string().min(8, "At least 8 characters"),
     confirmPassword: z.string().min(1, "Confirm your password"),
   })
@@ -59,7 +62,9 @@ export function RegisterForm() {
       const problem = error as ProblemDetail;
       setServerError(problem.detail ?? "Could not create your account. Try again.");
       for (const fieldError of problem.errors ?? []) {
-        setError(fieldError.field as keyof RegisterFormValues, { message: fieldError.message });
+        setError(fieldError.field as keyof RegisterFormValues, {
+          message: fieldError.message,
+        });
       }
     }
   }

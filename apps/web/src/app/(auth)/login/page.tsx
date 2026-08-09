@@ -28,7 +28,10 @@ export default function LoginPage() {
 
         <p className="text-body-sm mt-6 text-center text-neutral-600">
           Registering a household?{" "}
-          <Link href="/register" className="text-primary-700 font-semibold hover:underline">
+          <Link
+            href="/register"
+            className="text-primary-700 font-semibold hover:underline"
+          >
             Create an account
           </Link>
         </p>

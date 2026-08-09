@@ -28,9 +28,8 @@ export async function WeatherSection() {
       <Reveal>
         <SectionHeader
           icon={CloudRain}
-          eyebrow="Conditions right now"
           title="Weather &"
-          titleAccent="river level"
+          titleAccent="River Level"
           description="Every reading below shows when it was taken and where it came from. Readings older than 45 minutes are marked."
           action={
             <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
@@ -43,10 +42,10 @@ export async function WeatherSection() {
         />
       </Reveal>
 
-      <div className="mt-8 grid gap-4 md:gap-6 lg:grid-cols-[2fr_1fr]">
+      <Reveal delay={1} className="mt-8 grid gap-4 md:gap-6 lg:grid-cols-[2fr_1fr]">
         <WeatherPanel weather={weather} />
         <RiverLevelPanel river={river} />
-      </div>
+      </Reveal>
     </Section>
   );
 }

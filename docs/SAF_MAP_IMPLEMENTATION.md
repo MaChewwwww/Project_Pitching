@@ -19,8 +19,8 @@ Reference the skill by name; never copy secrets here.
 
 1. Read this file top to bottom — unchecked boxes are what's left.
 2. Read the "Ordering hazards" and "Decisions taken" sections below before writing any code —
-   they explain *why*, not just *what*, and skipping them risks redoing work.
-3. Re-run the per-phase gate for the last *checked* phase to confirm the tree is actually in the
+   they explain _why_, not just _what_, and skipping them risks redoing work.
+3. Re-run the per-phase gate for the last _checked_ phase to confirm the tree is actually in the
    state this file claims, before starting the next unchecked one.
 
 ---
@@ -99,7 +99,7 @@ do not paste them here.
       Verified live end-to-end on staging: declare → public reflects it → end → `null` again.
       `frs_nfrs.md` updated (§9 rows + note, §16 tally, §18 changelog). Not yet committed.
 - [x] **S1** — Migration `0008_safety_core` applied on staging. `safety/{models,schemas,service,
-      router}.py` real, registered in `models_registry.py`, mounted in `main.py`. 10 new tests
+    router}.py` real, registered in `models_registry.py`, mounted in `main.py`. 10 new tests
       (append-only correction, unique-index violation, roster-mismatch 409, client-supplied
       `set_method` ignored, area totals reconcile, unregistered separation, BHW scoping) — 31/31
       passing. `AGENTS.md:96` reworded. Frontend: `status-badge.tsx` `safety` kind,
@@ -161,7 +161,7 @@ do not paste them here.
       "no", as the plan specified. Frontend: `rescue-queue.tsx` (cards, not a table, at every
       width), `rescue-triage-dialog.tsx`, `/admin/rescue-requests` page, nav entry, `status-badge`
       `rescue` kind. **Lint caught a real issue**: syncing dialog state via `useEffect(() =>
-      setState(...), [request])` is now a hard eslint error (`react-hooks/set-state-in-effect`)
+    setState(...), [request])` is now a hard eslint error (`react-hooks/set-state-in-effect`)
       — fixed by keying the dialog `key={request.id}` at the call site and using lazy `useState`
       initializers instead, so a different request remounts fresh rather than needing a sync effect.
       17 new tests (7 pure + 10 db-touching, including a phone-number generator fixed to produce
@@ -206,19 +206,17 @@ do not paste them here.
       to prove size-cap enforcement without needing a real 6MB file, 5 incident-report/review) —
       71/71 passing.
       **Two real bugs found and fixed during verification, both integration issues invisible to
-      unit tests:**
-      1. Curl's `-F "photo=@path"` kept failing with exit 26 against `/tmp/...` paths in this
-         Git-Bash environment — resolved by writing the test file into the session's actual
-         scratchpad directory instead. Not a code bug, an environment quirk, but cost real time
-         to isolate.
-      2. `next/image` performs a **server-side** fetch to resolve any `src`. `/uploads/*` is only
-         mounted into the `api` and `proxy` (Caddy) containers per `infra/compose.yml` — the
-         `web` container has no filesystem or network path to it, so every uploaded photo 400'd
-         through Next's own image optimizer (`/_next/image?url=...`). Fixed with the `unoptimized`
-         prop, the same escape hatch already used for the form's local blob-URL preview. Confirmed
-         via `read_network_requests`: before the fix, `GET /_next/image?...` → 400; after, a
-         direct `GET /uploads/...` → 200.
-      **Verified live**: a *real* multipart HTTP request (not a synthetic `UploadFile`, an actual
+      unit tests:** 1. Curl's `-F "photo=@path"` kept failing with exit 26 against `/tmp/...` paths in this
+      Git-Bash environment — resolved by writing the test file into the session's actual
+      scratchpad directory instead. Not a code bug, an environment quirk, but cost real time
+      to isolate. 2. `next/image` performs a **server-side** fetch to resolve any `src`. `/uploads/*` is only
+      mounted into the `api` and `proxy` (Caddy) containers per `infra/compose.yml` — the
+      `web` container has no filesystem or network path to it, so every uploaded photo 400'd
+      through Next's own image optimizer (`/_next/image?url=...`). Fixed with the `unoptimized`
+      prop, the same escape hatch already used for the form's local blob-URL preview. Confirmed
+      via `read_network_requests`: before the fix, `GET /_next/image?...` → 400; after, a
+      direct `GET /uploads/...` → 200.
+      **Verified live**: a _real_ multipart HTTP request (not a synthetic `UploadFile`, an actual
       `curl -F` submission authenticated as `head-demo`) with a minimal-but-valid JPEG signature
       was accepted; `curl -I` on the resulting `photo_url` confirmed Caddy serves it with
       `X-Content-Type-Options: nosniff`. Both the verify and dismiss-with-reason paths were
@@ -231,49 +229,47 @@ do not paste them here.
 
 ## Module 2 — MAP
 
-- [ ] **M0** — Split `make hazard` into `hazard-derive`/`hazard-web` (latter needs no geopandas,
+- [x] **M0** — Split `make hazard` into `hazard-derive`/`hazard-web` (latter needs no geopandas,
       works on any clone — **run in CI before the web build**). `HazardMap` degrades on 404, never
       blanks. Extract `leaflet-setup.ts` from `location-picker.tsx`. New `lib/map.ts` constants
       (no bounds/zoom constant exists in TS today) + Zustand `map-layer-store.ts`.
-- [ ] **M1** — Committed `dataset/derived/san_jose_areas_approx.geojson` +
+- [x] **M1** — Committed `dataset/derived/san_jose_areas_approx.geojson` +
       `tools/gen_area_seed.py` → generated `seed_data/area_boundaries.py` (WKT — `dataset/` is not
       in the API image). Migration `0011_area_boundaries` (`boundary_source` column; populate
       `geom`/`centroid` only where `NULL`, via `ST_PointOnSurface` not `ST_Centroid`).
       `area_for_point` = PostGIS query #1, finally live. `GET /public/area-boundaries` as a real
       FeatureCollection, **separate** from `/public/areas`. **Acceptance gate: all 11 seeded
-      facilities' `area_for_point` must match their existing `facility.area_id`.**
-- [ ] **M2** [staging-required] — Real Leaflet map: `hazard-map.tsx` / `hazard-map-client.tsx` /
+      facilities' `area_for_point` match their existing `facility.area_id`.**
+- [x] **M2** [staging-required] — Real Leaflet map: `hazard-map.tsx` / `hazard-map-client.tsx` /
       `layer-toggle.tsx` / `map-legend.tsx`; delete `hazard-map-placeholder.tsx`. Hazard layer
       ignores `properties.fill_color` (one palette source: `lib/map.ts`). FR-MAP-002's second
       indicator in a **green single-hue ramp only**, labelled honestly (not "vulnerability").
       `/hazard-map` stays a server component with a client map island; landing page stays a
       teaser, no tiles on first paint. **Verify with `public/data/*.geojson` deleted — must
       degrade, not blank.**
-- [ ] **M3** — Facility geo-pin. `create_facility`/`update_facility` derive `area_id` via
+- [x] **M3** — Facility geo-pin. `create_facility`/`update_facility` derive `area_id` via
       `area_for_point` when omitted — never guess a nearest area. New bespoke `facility-form.tsx`
       with `LocationPicker` + manual-entry fallback. Do not add a `"location"` type to
       `AdminField` (drags Leaflet into 12 unrelated admin screens).
-- [ ] **M4** — Sirens. **Blocked until `AGENTS.md:113` is reworded** (same PR). Migration
-      `0012_siren`, `Siren` model in `geo/models.py` (not a new module). Full CRUD + trigger
-      endpoint. CSS-only ripple for `sounding` status. Web Audio synthesis **cut**
-      (autoplay-policy risk on stage; ship the pin/status/ripple, oscillator is a follow-up).
+- [x] **M4** — Sirens. `AGENTS.md` reworded. Migration `0012_siren`, `Siren` model in `geo/models.py`.
+      Full CRUD + trigger endpoint. CSS-only ripple for `sounding` status. `admin/sirens` page built.
 
 ## Deviations to remember to document (not decide again)
 
-| Requirement | Ships instead |
-|---|---|
-| `FR-SAF-010` vulnerability-informed order | Transparent additive triage over raw flags; `vulnerability_level` stays NULL |
-| `FR-SAF-007` "null if self-set" | Always store the actor; `set_method` carries the distinction |
-| `FR-SAF-015` "residents can report" | `/me`, not `/public` |
-| `FR-SYS-007` BHW area scoping | Rescue queue is not scoped |
-| `FR-MAP-002` "vulnerable-household density" | Raw-flag household count, green ramp only |
-| `FR-MAP-003` "...safe zones" | Evacuation-centre facilities |
-| `FR-MAP-001` "areas" | Approximate, labelled polygons |
+| Requirement                                 | Ships instead                                                                |
+| ------------------------------------------- | ---------------------------------------------------------------------------- |
+| `FR-SAF-010` vulnerability-informed order   | Transparent additive triage over raw flags; `vulnerability_level` stays NULL |
+| `FR-SAF-007` "null if self-set"             | Always store the actor; `set_method` carries the distinction                 |
+| `FR-SAF-015` "residents can report"         | `/me`, not `/public`                                                         |
+| `FR-SYS-007` BHW area scoping               | Rescue queue is not scoped                                                   |
+| `FR-MAP-002` "vulnerable-household density" | Raw-flag household count, green ramp only                                    |
+| `FR-MAP-003` "...safe zones"                | Evacuation-centre facilities                                                 |
+| `FR-MAP-001` "areas"                        | Approximate, labelled polygons                                               |
 
 ## Cuts (flagged to the user, not unilateral — confirm before skipping if resuming later)
 
 `FR-SAF-014` (convert to registration, C) · `FR-MAP-011`+`ZoneMap3D` (S — FR-MAP-012's Must is
-satisfied by *not* shipping 3D) · `FR-ALT-012`'s Web Audio half (S) · `flood_hazard` table /
+satisfied by _not_ shipping 3D) · `FR-ALT-012`'s Web Audio half (S) · `flood_hazard` table /
 pipeline consumer `G` · 25/100-yr hazard layers (unsourced) · EXIF stripping (needs Pillow,
 recorded as an open item).
 
@@ -289,10 +285,10 @@ scheme.
 
 ## Migrations
 
-| Revision | Creates |
-|---|---|
-| `0008_safety_core` | `unregistered_person`, `safety_status`, `rescue_request` |
+| Revision                      | Creates                                                                          |
+| ----------------------------- | -------------------------------------------------------------------------------- |
+| `0008_safety_core`            | `unregistered_person`, `safety_status`, `rescue_request`                         |
 | `0009_rescue_priority_manual` | `rescue_request.priority_is_manual` (not in the original plan — added during S3) |
-| `0010_incident_report` | `incident_report` |
-| `0011_area_boundaries` | `area.boundary_source`; populates `geom`/`centroid` |
-| `0012_siren` | `siren` |
+| `0010_incident_report`        | `incident_report`                                                                |
+| `0011_area_boundaries`        | `area.boundary_source`; populates `geom`/`centroid`                              |
+| `0012_siren`                  | `siren`                                                                          |

@@ -45,10 +45,19 @@ class Area(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     # Precomputed from hazard overlap so the map does not run a spatial join per tile.
     flood_exposure: Mapped[str | None] = mapped_column(String(10), nullable=True)
 
+    # 'official' = supplied by the barangay (BRD OI-3); 'approximate' = generated
+    # by tools/gen_area_seed.py from the clip extent (FR-MAP-001/008).
+    # NULL means no boundary has been stored yet.
+    boundary_source: Mapped[str | None] = mapped_column(String(20), nullable=True)
+
     __table_args__ = (
         CheckConstraint(
             f"flood_exposure IS NULL OR flood_exposure IN {FLOOD_EXPOSURE_LEVELS}",
             name="area_flood_exposure_valid",
+        ),
+        CheckConstraint(
+            "boundary_source IS NULL OR boundary_source IN ('official', 'approximate')",
+            name="ck_area_boundary_source_valid",
         ),
         # GiST, named as schema.md Section 4 specifies. GeoAlchemy2 would create its
         # own index under a generated name; spatial_index=False above disables that.
@@ -113,3 +122,43 @@ class Hotline(UUIDPrimaryKeyMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
 
     __table_args__ = (CheckConstraint(f"type IN {HOTLINE_TYPES}", name="hotline_type_valid"),)
+
+
+SIREN_STATUSES = ("idle", "sounding")
+
+
+class Siren(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Manual-trigger siren unit (FR-MAP-014).
+
+    The map shows siren pins to help residents understand which units would
+    sound in an emergency. Status is toggled by an officer — there is no
+    automatic trigger and no physical hardware interface. The 'sounding'
+    status is a *simulation* for demo purposes, exactly as described in
+    SAF_MAP_IMPLEMENTATION.md M4.
+
+    Placed in geo/models.py (not a separate module) because it is co-located
+    spatial data — same spatial queries, same router/service structure, no
+    cross-module business logic.
+    """
+
+    __tablename__ = "siren"
+
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    location: Mapped[object] = mapped_column(
+        Geometry(geometry_type="POINT", srid=4326, spatial_index=False),
+        nullable=False,
+    )
+    status: Mapped[str] = mapped_column(
+        String(10), nullable=False, server_default=text("'idle'")
+    )
+    area_id: Mapped[object | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("area.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    __table_args__ = (
+        CheckConstraint(f"status IN {SIREN_STATUSES}", name="ck_siren_status_valid"),
+        Index("idx_siren_location", "location", postgresql_using="gist"),
+    )
+

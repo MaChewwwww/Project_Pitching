@@ -6,24 +6,24 @@
 
 **Companions:** [`architecture.md`](./architecture.md) · [`frs_nfrs.md`](./frs_nfrs.md) · [`tech_stack.md`](./tech_stack.md)
 
-> **Scope.** The physical data model — tables, columns, types, constraints, indexes. Service boundaries and query patterns are in `architecture.md`; *what* the data is for is in `frs_nfrs.md`.
+> **Scope.** The physical data model — tables, columns, types, constraints, indexes. Service boundaries and query patterns are in `architecture.md`; _what_ the data is for is in `frs_nfrs.md`.
 
 ---
 
 ## 1. Conventions
 
-| Concern | Rule |
-|---|---|
-| Naming | `snake_case`; singular table names (`household`, not `households`) |
-| Primary keys | `id UUID PRIMARY KEY DEFAULT gen_random_uuid()` |
-| Foreign keys | `<referenced_table>_id`, always with an explicit `ON DELETE` |
-| Timestamps | `TIMESTAMPTZ` only. **Never** `TIMESTAMP` — it silently drops the offset |
-| Storage timezone | UTC. Conversion to PHT happens at render (NFR-DAT-003) |
-| Soft delete | `deleted_at TIMESTAMPTZ NULL`; default queries filter it out |
-| Enumerations | `TEXT` + `CHECK` constraint — see below |
-| Booleans | Prefixed `is_` / `has_`, `NOT NULL DEFAULT false` |
-| Money | Not stored. The platform never handles money (FR-DON-010) |
-| Geometry | `GEOMETRY(<type>, 4326)` — WGS84 throughout, no reprojection anywhere |
+| Concern          | Rule                                                                     |
+| ---------------- | ------------------------------------------------------------------------ |
+| Naming           | `snake_case`; singular table names (`household`, not `households`)       |
+| Primary keys     | `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`                          |
+| Foreign keys     | `<referenced_table>_id`, always with an explicit `ON DELETE`             |
+| Timestamps       | `TIMESTAMPTZ` only. **Never** `TIMESTAMP` — it silently drops the offset |
+| Storage timezone | UTC. Conversion to PHT happens at render (NFR-DAT-003)                   |
+| Soft delete      | `deleted_at TIMESTAMPTZ NULL`; default queries filter it out             |
+| Enumerations     | `TEXT` + `CHECK` constraint — see below                                  |
+| Booleans         | Prefixed `is_` / `has_`, `NOT NULL DEFAULT false`                        |
+| Money            | Not stored. The platform never handles money (FR-DON-010)                |
+| Geometry         | `GEOMETRY(<type>, 4326)` — WGS84 throughout, no reprojection anywhere    |
 
 ### Why `TEXT` + `CHECK` rather than native `ENUM`
 
@@ -82,17 +82,17 @@ erDiagram
 
 ### `user`
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `email` | CITEXT | UNIQUE NOT NULL | `citext` makes matching case-insensitive |
-| `password_hash` | TEXT | NOT NULL | argon2 (NFR-SEC-001) |
-| `full_name` | TEXT | NOT NULL | |
-| `contact_number` | TEXT | | |
-| `role` | TEXT | NOT NULL CHECK | `head` · `bhw` · `admin` · `sk` · `superadmin` |
-| `status` | TEXT | NOT NULL DEFAULT `'pending'` CHECK | `pending` · `active` · `disabled` |
-| `last_login_at` | TIMESTAMPTZ | | |
-| `created_at`, `updated_at`, `deleted_at` | TIMESTAMPTZ | | |
+| Column                                   | Type        | Constraints                        | Notes                                          |
+| ---------------------------------------- | ----------- | ---------------------------------- | ---------------------------------------------- |
+| `id`                                     | UUID        | PK                                 |                                                |
+| `email`                                  | CITEXT      | UNIQUE NOT NULL                    | `citext` makes matching case-insensitive       |
+| `password_hash`                          | TEXT        | NOT NULL                           | argon2 (NFR-SEC-001)                           |
+| `full_name`                              | TEXT        | NOT NULL                           |                                                |
+| `contact_number`                         | TEXT        |                                    |                                                |
+| `role`                                   | TEXT        | NOT NULL CHECK                     | `head` · `bhw` · `admin` · `sk` · `superadmin` |
+| `status`                                 | TEXT        | NOT NULL DEFAULT `'pending'` CHECK | `pending` · `active` · `disabled`              |
+| `last_login_at`                          | TIMESTAMPTZ |                                    |                                                |
+| `created_at`, `updated_at`, `deleted_at` | TIMESTAMPTZ |                                    |                                                |
 
 ```sql
 CREATE INDEX idx_user_role_status ON "user"(role, status) WHERE deleted_at IS NULL;
@@ -102,11 +102,11 @@ CREATE INDEX idx_user_role_status ON "user"(role, status) WHERE deleted_at IS NU
 
 ### `user_area` — BHW scoping (FR-SYS-007)
 
-| Column | Type | Constraints |
-|---|---|---|
-| `user_id` | UUID | FK → `user` ON DELETE CASCADE |
-| `area_id` | UUID | FK → `area` ON DELETE CASCADE |
-| `assigned_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() |
+| Column        | Type        | Constraints                   |
+| ------------- | ----------- | ----------------------------- |
+| `user_id`     | UUID        | FK → `user` ON DELETE CASCADE |
+| `area_id`     | UUID        | FK → `area` ON DELETE CASCADE |
+| `assigned_at` | TIMESTAMPTZ | NOT NULL DEFAULT now()        |
 
 `PRIMARY KEY (user_id, area_id)`
 
@@ -114,14 +114,14 @@ CREATE INDEX idx_user_role_status ON "user"(role, status) WHERE deleted_at IS NU
 
 ### `refresh_token`
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `user_id` | UUID | FK → `user` ON DELETE CASCADE | |
-| `token_hash` | TEXT | UNIQUE NOT NULL | **Hashed, never plaintext** |
-| `expires_at` | TIMESTAMPTZ | NOT NULL | |
-| `revoked_at` | TIMESTAMPTZ | | Set on logout |
-| `user_agent`, `ip` | TEXT | | For session review |
+| Column             | Type        | Constraints                   | Notes                       |
+| ------------------ | ----------- | ----------------------------- | --------------------------- |
+| `id`               | UUID        | PK                            |                             |
+| `user_id`          | UUID        | FK → `user` ON DELETE CASCADE |                             |
+| `token_hash`       | TEXT        | UNIQUE NOT NULL               | **Hashed, never plaintext** |
+| `expires_at`       | TIMESTAMPTZ | NOT NULL                      |                             |
+| `revoked_at`       | TIMESTAMPTZ |                               | Set on logout               |
+| `user_agent`, `ip` | TEXT        |                               | For session review          |
 
 ```sql
 CREATE INDEX idx_refresh_user_active ON refresh_token(user_id) WHERE revoked_at IS NULL;
@@ -133,16 +133,16 @@ Same shape: `id`, `user_id`, `token_hash` UNIQUE, `expires_at`, `used_at`. Singl
 
 ### `audit_log` (FR-SYS-008)
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | BIGSERIAL | PK | High volume; sequential is fine and cheaper |
-| `actor_user_id` | UUID | FK → `user` ON DELETE SET NULL | Null for system actions |
-| `action` | TEXT | NOT NULL | `household.create`, `alert.publish`, … |
-| `entity_type` | TEXT | NOT NULL | |
-| `entity_id` | UUID | | |
-| `changes` | JSONB | | Before/after for updates |
-| `ip` | INET | | |
-| `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
+| Column          | Type        | Constraints                    | Notes                                       |
+| --------------- | ----------- | ------------------------------ | ------------------------------------------- |
+| `id`            | BIGSERIAL   | PK                             | High volume; sequential is fine and cheaper |
+| `actor_user_id` | UUID        | FK → `user` ON DELETE SET NULL | Null for system actions                     |
+| `action`        | TEXT        | NOT NULL                       | `household.create`, `alert.publish`, …      |
+| `entity_type`   | TEXT        | NOT NULL                       |                                             |
+| `entity_id`     | UUID        |                                |                                             |
+| `changes`       | JSONB       |                                | Before/after for updates                    |
+| `ip`            | INET        |                                |                                             |
+| `created_at`    | TIMESTAMPTZ | NOT NULL DEFAULT now()         |                                             |
 
 ```sql
 CREATE INDEX idx_audit_entity  ON audit_log(entity_type, entity_id, created_at DESC);
@@ -157,13 +157,13 @@ CREATE INDEX idx_audit_actor   ON audit_log(actor_user_id, created_at DESC);
 
 ### `config` (FR-SYS-010, FR-ANL-002)
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `key` | TEXT | PK | `barangay.total_households`, `alert.threshold_level_1` |
-| `value` | JSONB | NOT NULL | Typed on read by Pydantic |
-| `description` | TEXT | | Shown in the admin UI |
-| `updated_by_user_id` | UUID | FK → `user` | |
-| `updated_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
+| Column               | Type        | Constraints            | Notes                                                  |
+| -------------------- | ----------- | ---------------------- | ------------------------------------------------------ |
+| `key`                | TEXT        | PK                     | `barangay.total_households`, `alert.threshold_level_1` |
+| `value`              | JSONB       | NOT NULL               | Typed on read by Pydantic                              |
+| `description`        | TEXT        |                        | Shown in the admin UI                                  |
+| `updated_by_user_id` | UUID        | FK → `user`            |                                                        |
+| `updated_at`         | TIMESTAMPTZ | NOT NULL DEFAULT now() |                                                        |
 
 Seed keys:
 
@@ -181,25 +181,26 @@ weather.latitude / .longitude
 
 ### `psgc` — address reference (FR-SYS-012)
 
-| Column | Type | Constraints |
-|---|---|---|
-| `code` | TEXT | PK — 10-digit PSGC code |
-| `name` | TEXT | NOT NULL |
-| `level` | TEXT | CHECK: `region` · `province` · `city` · `barangay` |
-| `parent_code` | TEXT | FK → `psgc(code)` |
+| Column        | Type | Constraints                                        |
+| ------------- | ---- | -------------------------------------------------- |
+| `code`        | TEXT | PK — 10-digit PSGC code                            |
+| `name`        | TEXT | NOT NULL                                           |
+| `level`       | TEXT | CHECK: `region` · `province` · `city` · `barangay` |
+| `parent_code` | TEXT | FK → `psgc(code)`                                  |
 
 Single self-referencing table rather than four — the hierarchy is uniform and the cascading select is one recursive query.
 
 ### `area` — barangay zones (FR-SYS-013)
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `name` | TEXT | UNIQUE NOT NULL | "Area 1", "Area 2", … |
-| `code` | TEXT | UNIQUE | Short code for references |
-| `geom` | GEOMETRY(MultiPolygon, 4326) | **NULLABLE** | Boundary (BRD OI-3) |
-| `centroid` | GEOMETRY(Point, 4326) | | Generated; used for map labels |
-| `flood_exposure` | TEXT | CHECK: `low` · `medium` · `high` | Precomputed from hazard overlap |
+| Column           | Type                         | Constraints                      | Notes                           |
+| ---------------- | ---------------------------- | -------------------------------- | ------------------------------- |
+| `id`             | UUID                         | PK                               |                                 |
+| `name`           | TEXT                         | UNIQUE NOT NULL                  | "Area 1", "Area 2", …           |
+| `code`           | TEXT                         | UNIQUE                           | Short code for references       |
+| `geom`           | GEOMETRY(MultiPolygon, 4326) | **NULLABLE**                     | Boundary (BRD OI-3)             |
+| `centroid`       | GEOMETRY(Point, 4326)        |                                  | Generated; used for map labels  |
+| `flood_exposure` | TEXT                         | CHECK: `low` · `medium` · `high` | Precomputed from hazard overlap |
+| `boundary_source`| TEXT                         | CHECK: `official` · `approximate` | Source of boundary polygon (FR-MAP-001/008) |
 
 ```sql
 CREATE INDEX idx_area_geom ON area USING GIST(geom);
@@ -217,16 +218,16 @@ CREATE INDEX idx_area_geom ON area USING GIST(geom);
 
 ### `facility` (FR-SYS-015)
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `name` | TEXT | NOT NULL | |
-| `type` | TEXT | NOT NULL CHECK | `evacuation_center` · `hospital` · `clinic` · `barangay_hall` · `police` · `fire` · `rescue_station` |
-| `address` | TEXT | | |
-| `contact_number` | TEXT | | |
-| `location` | GEOMETRY(Point, 4326) | NOT NULL | |
-| `area_id` | UUID | FK → `area` | Derivable via `ST_Contains` |
-| `is_active` | BOOLEAN | NOT NULL DEFAULT true | |
+| Column           | Type                  | Constraints           | Notes                                                                                                |
+| ---------------- | --------------------- | --------------------- | ---------------------------------------------------------------------------------------------------- |
+| `id`             | UUID                  | PK                    |                                                                                                      |
+| `name`           | TEXT                  | NOT NULL              |                                                                                                      |
+| `type`           | TEXT                  | NOT NULL CHECK        | `evacuation_center` · `hospital` · `clinic` · `barangay_hall` · `police` · `fire` · `rescue_station` |
+| `address`        | TEXT                  |                       |                                                                                                      |
+| `contact_number` | TEXT                  |                       |                                                                                                      |
+| `location`       | GEOMETRY(Point, 4326) | NOT NULL              |                                                                                                      |
+| `area_id`        | UUID                  | FK → `area`           | Derivable via `ST_Contains`                                                                          |
+| `is_active`      | BOOLEAN               | NOT NULL DEFAULT true |                                                                                                      |
 
 ```sql
 CREATE INDEX idx_facility_location ON facility USING GIST(location);
@@ -237,15 +238,15 @@ CREATE INDEX idx_facility_type ON facility(type) WHERE is_active;
 
 Visual siren simulation & alert unit point locations.
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `name` | TEXT | NOT NULL | e.g. "Riverside Area 1 Emergency Siren" |
-| `location` | GEOMETRY(Point, 4326) | NOT NULL | Siren pin location on map |
-| `area_id` | UUID | FK → `area` | Derivable via `ST_Contains` |
-| `status` | TEXT | NOT NULL DEFAULT 'idle' CHECK | `idle` · `sounding` · `testing` |
-| `last_triggered_at` | TIMESTAMPTZ | | Timestamp of last siren activation simulation |
-| `is_active` | BOOLEAN | NOT NULL DEFAULT true | |
+| Column              | Type                  | Constraints                   | Notes                                         |
+| ------------------- | --------------------- | ----------------------------- | --------------------------------------------- |
+| `id`                | UUID                  | PK                            |                                               |
+| `name`              | TEXT                  | NOT NULL                      | e.g. "Riverside Area 1 Emergency Siren"       |
+| `location`          | GEOMETRY(Point, 4326) | NOT NULL                      | Siren pin location on map                     |
+| `area_id`           | UUID                  | FK → `area`                   | Derivable via `ST_Contains`                   |
+| `status`            | TEXT                  | NOT NULL DEFAULT 'idle' CHECK | `idle` · `sounding` · `testing`               |
+| `last_triggered_at` | TIMESTAMPTZ           |                               | Timestamp of last siren activation simulation |
+| `is_active`         | BOOLEAN               | NOT NULL DEFAULT true         |                                               |
 
 ```sql
 CREATE INDEX idx_siren_location ON siren USING GIST(location);
@@ -258,13 +259,13 @@ CREATE INDEX idx_siren_area ON siren(area_id);
 
 ### `flood_hazard` (FR-MAP-003, FR-REG-043)
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `return_period` | SMALLINT | NOT NULL CHECK IN (5, 25, 100) | Years |
-| `level` | SMALLINT | NOT NULL CHECK IN (1, 2, 3) | 1 Low · 2 Medium · 3 High |
-| `geom` | GEOMETRY(MultiPolygon, 4326) | NOT NULL | Dissolved by level |
-| `source` | TEXT | NOT NULL DEFAULT `'NOAH/DREAM'` | Attribution (NFR-LGL-001) |
+| Column          | Type                         | Constraints                     | Notes                     |
+| --------------- | ---------------------------- | ------------------------------- | ------------------------- |
+| `id`            | UUID                         | PK                              |                           |
+| `return_period` | SMALLINT                     | NOT NULL CHECK IN (5, 25, 100)  | Years                     |
+| `level`         | SMALLINT                     | NOT NULL CHECK IN (1, 2, 3)     | 1 Low · 2 Medium · 3 High |
+| `geom`          | GEOMETRY(MultiPolygon, 4326) | NOT NULL                        | Dissolved by level        |
+| `source`        | TEXT                         | NOT NULL DEFAULT `'NOAH/DREAM'` | Attribution (NFR-LGL-001) |
 
 ```sql
 CREATE INDEX idx_hazard_geom ON flood_hazard USING GIST(geom);
@@ -279,25 +280,25 @@ CREATE UNIQUE INDEX idx_hazard_period_level ON flood_hazard(return_period, level
 
 ### `household` (FR-REG-001 … 011)
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `reference_no` | TEXT | UNIQUE NOT NULL | Generated at creation (FR-REG-006) |
-| `head_name` | TEXT | NOT NULL | |
-| `head_user_id` | UUID | UNIQUE FK → `user` ON DELETE SET NULL | **Null for BHW-created records** |
-| `contact_number` | TEXT | | Nullable (FR-REG-005) |
-| `is_unreachable_by_phone` | BOOLEAN | NOT NULL DEFAULT false | Derived on write; feeds capacity scoring |
-| `area_id` | UUID | NOT NULL FK → `area` | |
-| `psgc_barangay_code` | TEXT | FK → `psgc(code)` | |
-| `street_address` | TEXT | | |
-| `location` | GEOMETRY(Point, 4326) | | Nullable — pin is optional |
-| `source` | TEXT | NOT NULL CHECK | `self` · `bhw` — required for the coverage metric |
-| `created_by_user_id` | UUID | FK → `user` ON DELETE SET NULL | The BHW, where applicable (FR-REG-007) |
-| `verified_at` | TIMESTAMPTZ | | |
-| `verified_by_user_id` | UUID | FK → `user` | |
-| `stale_at` | TIMESTAMPTZ | | Set by the daily job (R-2) |
-| `merged_into_id` | UUID | FK → `household` | Set when merged as a duplicate |
-| `created_at`, `updated_at`, `deleted_at` | TIMESTAMPTZ | | |
+| Column                                   | Type                  | Constraints                           | Notes                                             |
+| ---------------------------------------- | --------------------- | ------------------------------------- | ------------------------------------------------- |
+| `id`                                     | UUID                  | PK                                    |                                                   |
+| `reference_no`                           | TEXT                  | UNIQUE NOT NULL                       | Generated at creation (FR-REG-006)                |
+| `head_name`                              | TEXT                  | NOT NULL                              |                                                   |
+| `head_user_id`                           | UUID                  | UNIQUE FK → `user` ON DELETE SET NULL | **Null for BHW-created records**                  |
+| `contact_number`                         | TEXT                  |                                       | Nullable (FR-REG-005)                             |
+| `is_unreachable_by_phone`                | BOOLEAN               | NOT NULL DEFAULT false                | Derived on write; feeds capacity scoring          |
+| `area_id`                                | UUID                  | NOT NULL FK → `area`                  |                                                   |
+| `psgc_barangay_code`                     | TEXT                  | FK → `psgc(code)`                     |                                                   |
+| `street_address`                         | TEXT                  |                                       |                                                   |
+| `location`                               | GEOMETRY(Point, 4326) |                                       | Nullable — pin is optional                        |
+| `source`                                 | TEXT                  | NOT NULL CHECK                        | `self` · `bhw` — required for the coverage metric |
+| `created_by_user_id`                     | UUID                  | FK → `user` ON DELETE SET NULL        | The BHW, where applicable (FR-REG-007)            |
+| `verified_at`                            | TIMESTAMPTZ           |                                       |                                                   |
+| `verified_by_user_id`                    | UUID                  | FK → `user`                           |                                                   |
+| `stale_at`                               | TIMESTAMPTZ           |                                       | Set by the daily job (R-2)                        |
+| `merged_into_id`                         | UUID                  | FK → `household`                      | Set when merged as a duplicate                    |
+| `created_at`, `updated_at`, `deleted_at` | TIMESTAMPTZ           |                                       |                                                   |
 
 ```sql
 CREATE INDEX idx_household_area     ON household(area_id) WHERE deleted_at IS NULL;
@@ -314,24 +315,24 @@ CREATE INDEX idx_household_head_name_trgm ON household USING GIN(head_name gin_t
 
 ### `member` (FR-REG-020 … 026)
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `household_id` | UUID | NOT NULL FK → `household` ON DELETE CASCADE | |
-| `full_name` | TEXT | NOT NULL | |
-| `birth_date` | DATE | | Age derived, never stored |
-| `sex` | TEXT | CHECK: `male` · `female` | |
-| `relationship_to_head` | TEXT | | FR-REG-023 |
-| `is_head` | BOOLEAN | NOT NULL DEFAULT false | Exactly one per household |
-| `is_child` | BOOLEAN | NOT NULL DEFAULT false | Derived from `birth_date` where present |
-| `is_senior` | BOOLEAN | NOT NULL DEFAULT false | |
-| `is_pwd` | BOOLEAN | NOT NULL DEFAULT false | |
-| `is_pregnant` | BOOLEAN | NOT NULL DEFAULT false | |
-| `is_lactating` | BOOLEAN | NOT NULL DEFAULT false | |
-| `has_chronic_condition` | BOOLEAN | NOT NULL DEFAULT false | Requiring regular medication |
-| `chronic_condition_note` | TEXT | | Free text, optional |
-| `is_bedridden` | BOOLEAN | NOT NULL DEFAULT false | **Most decisive single factor** |
-| `created_at`, `updated_at`, `deleted_at` | TIMESTAMPTZ | | |
+| Column                                   | Type        | Constraints                                 | Notes                                   |
+| ---------------------------------------- | ----------- | ------------------------------------------- | --------------------------------------- |
+| `id`                                     | UUID        | PK                                          |                                         |
+| `household_id`                           | UUID        | NOT NULL FK → `household` ON DELETE CASCADE |                                         |
+| `full_name`                              | TEXT        | NOT NULL                                    |                                         |
+| `birth_date`                             | DATE        |                                             | Age derived, never stored               |
+| `sex`                                    | TEXT        | CHECK: `male` · `female`                    |                                         |
+| `relationship_to_head`                   | TEXT        |                                             | FR-REG-023                              |
+| `is_head`                                | BOOLEAN     | NOT NULL DEFAULT false                      | Exactly one per household               |
+| `is_child`                               | BOOLEAN     | NOT NULL DEFAULT false                      | Derived from `birth_date` where present |
+| `is_senior`                              | BOOLEAN     | NOT NULL DEFAULT false                      |                                         |
+| `is_pwd`                                 | BOOLEAN     | NOT NULL DEFAULT false                      |                                         |
+| `is_pregnant`                            | BOOLEAN     | NOT NULL DEFAULT false                      |                                         |
+| `is_lactating`                           | BOOLEAN     | NOT NULL DEFAULT false                      |                                         |
+| `has_chronic_condition`                  | BOOLEAN     | NOT NULL DEFAULT false                      | Requiring regular medication            |
+| `chronic_condition_note`                 | TEXT        |                                             | Free text, optional                     |
+| `is_bedridden`                           | BOOLEAN     | NOT NULL DEFAULT false                      | **Most decisive single factor**         |
+| `created_at`, `updated_at`, `deleted_at` | TIMESTAMPTZ |                                             |                                         |
 
 ```sql
 CREATE INDEX idx_member_household ON member(household_id) WHERE deleted_at IS NULL;
@@ -348,18 +349,18 @@ CREATE INDEX idx_member_vulnerable ON member(household_id)
 
 > **Never migrated, and now never will be.** The team confirmed the platform will not collect clinical nutrition-assessment data (BRD D-15, closes OI-2). This table was documented but not implemented — no code change follows from the cut, only this note. The table shape below is kept for historical reference, not as a build target.
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `member_id` | UUID | NOT NULL FK → `member` ON DELETE CASCADE | |
-| `measured_at` | DATE | NOT NULL | |
-| `weight_kg` | NUMERIC(5,2) | | |
-| `height_cm` | NUMERIC(5,1) | | |
-| `muac_cm` | NUMERIC(4,1) | | Mid-upper arm circumference — OPT+ standard |
-| `indicators` | JSONB | | **Extension point** — see below |
-| `status` | TEXT | CHECK | Computed. Provisional set: `normal` · `underweight` · `severely_underweight` · `stunted` · `severely_stunted` · `wasted` · `severely_wasted` · `overweight` · `obese` |
-| `computed_at` | TIMESTAMPTZ | | |
-| `recorded_by_user_id` | UUID | FK → `user` | |
+| Column                | Type         | Constraints                              | Notes                                                                                                                                                                 |
+| --------------------- | ------------ | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                  | UUID         | PK                                       |                                                                                                                                                                       |
+| `member_id`           | UUID         | NOT NULL FK → `member` ON DELETE CASCADE |                                                                                                                                                                       |
+| `measured_at`         | DATE         | NOT NULL                                 |                                                                                                                                                                       |
+| `weight_kg`           | NUMERIC(5,2) |                                          |                                                                                                                                                                       |
+| `height_cm`           | NUMERIC(5,1) |                                          |                                                                                                                                                                       |
+| `muac_cm`             | NUMERIC(4,1) |                                          | Mid-upper arm circumference — OPT+ standard                                                                                                                           |
+| `indicators`          | JSONB        |                                          | **Extension point** — see below                                                                                                                                       |
+| `status`              | TEXT         | CHECK                                    | Computed. Provisional set: `normal` · `underweight` · `severely_underweight` · `stunted` · `severely_stunted` · `wasted` · `severely_wasted` · `overweight` · `obese` |
+| `computed_at`         | TIMESTAMPTZ  |                                          |                                                                                                                                                                       |
+| `recorded_by_user_id` | UUID         | FK → `user`                              |                                                                                                                                                                       |
 
 ```sql
 CREATE INDEX idx_nutrition_member_date ON nutrition_record(member_id, measured_at DESC);
@@ -367,21 +368,21 @@ CREATE INDEX idx_nutrition_member_date ON nutrition_record(member_id, measured_a
 
 ### `vulnerability_assessment` (FR-REG-040 … 048)
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `household_id` | UUID | NOT NULL FK → `household` ON DELETE CASCADE | |
-| `computed_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
-| `level` | TEXT | NOT NULL CHECK | `low` · `moderate` · `high` · `priority` |
-| `person_score` | NUMERIC(5,2) | | Group A |
-| `exposure_score` | NUMERIC(5,2) | | Group B |
-| `capacity_score` | NUMERIC(5,2) | | Group C — reduces |
-| `factors` | JSONB | NOT NULL | Contributing factors, for explainability (FR-REG-045) |
-| `override_level` | TEXT | CHECK — same set | FR-REG-046 |
-| `override_reason` | TEXT | | **Required when `override_level` is set** |
-| `override_by_user_id` | UUID | FK → `user` | |
-| `override_at` | TIMESTAMPTZ | | |
-| `is_current` | BOOLEAN | NOT NULL DEFAULT true | Exactly one per household |
+| Column                | Type         | Constraints                                 | Notes                                                 |
+| --------------------- | ------------ | ------------------------------------------- | ----------------------------------------------------- |
+| `id`                  | UUID         | PK                                          |                                                       |
+| `household_id`        | UUID         | NOT NULL FK → `household` ON DELETE CASCADE |                                                       |
+| `computed_at`         | TIMESTAMPTZ  | NOT NULL DEFAULT now()                      |                                                       |
+| `level`               | TEXT         | NOT NULL CHECK                              | `low` · `moderate` · `high` · `priority`              |
+| `person_score`        | NUMERIC(5,2) |                                             | Group A                                               |
+| `exposure_score`      | NUMERIC(5,2) |                                             | Group B                                               |
+| `capacity_score`      | NUMERIC(5,2) |                                             | Group C — reduces                                     |
+| `factors`             | JSONB        | NOT NULL                                    | Contributing factors, for explainability (FR-REG-045) |
+| `override_level`      | TEXT         | CHECK — same set                            | FR-REG-046                                            |
+| `override_reason`     | TEXT         |                                             | **Required when `override_level` is set**             |
+| `override_by_user_id` | UUID         | FK → `user`                                 |                                                       |
+| `override_at`         | TIMESTAMPTZ  |                                             |                                                       |
+| `is_current`          | BOOLEAN      | NOT NULL DEFAULT true                       | Exactly one per household                             |
 
 ```sql
 CREATE INDEX idx_vuln_household ON vulnerability_assessment(household_id, computed_at DESC);
@@ -397,9 +398,9 @@ ALTER TABLE vulnerability_assessment ADD CONSTRAINT chk_override_reason
 
 ```json
 {
-  "person":   [{"factor": "bedridden_member", "member_id": "…", "weight": 40}],
-  "exposure": [{"factor": "flood_zone_high", "value": 3, "weight": 25}],
-  "capacity": [{"factor": "no_contact_number", "weight": -10}],
+  "person": [{ "factor": "bedridden_member", "member_id": "…", "weight": 40 }],
+  "exposure": [{ "factor": "flood_zone_high", "value": 3, "weight": 25 }],
+  "capacity": [{ "factor": "no_contact_number", "weight": -10 }],
   "rule_applied": "most_vulnerable_member"
 }
 ```
@@ -408,18 +409,18 @@ ALTER TABLE vulnerability_assessment ADD CONSTRAINT chk_override_reason
 
 > **Never migrated, and now never will be.** This table existed to carry BHW dietary guidance back to a resident. With nutrition-assessment data cut (BRD D-15), there is nothing for a health worker to give feedback on, so the whole loop — including this table — is withdrawn (closes OI-11, retires R-13). Kept below for historical reference only.
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `member_id` | UUID | NOT NULL FK → `member` ON DELETE CASCADE | |
-| `body` | TEXT | NOT NULL | |
-| `origin` | TEXT | NOT NULL CHECK | `authored` · `drafted` — drafted means machine-generated |
-| `status` | TEXT | NOT NULL DEFAULT `'draft'` CHECK | `draft` · `published` |
-| `reviewed_by_user_id` | UUID | FK → `user` | |
-| `reviewed_at` | TIMESTAMPTZ | | |
-| `published_at` | TIMESTAMPTZ | | |
-| `source_reference` | TEXT | | NNC / DOH / DOST-FNRI basis (formerly FR-REG-053) |
-| `author_user_id` | UUID | FK → `user` | |
+| Column                | Type        | Constraints                              | Notes                                                    |
+| --------------------- | ----------- | ---------------------------------------- | -------------------------------------------------------- |
+| `id`                  | UUID        | PK                                       |                                                          |
+| `member_id`           | UUID        | NOT NULL FK → `member` ON DELETE CASCADE |                                                          |
+| `body`                | TEXT        | NOT NULL                                 |                                                          |
+| `origin`              | TEXT        | NOT NULL CHECK                           | `authored` · `drafted` — drafted means machine-generated |
+| `status`              | TEXT        | NOT NULL DEFAULT `'draft'` CHECK         | `draft` · `published`                                    |
+| `reviewed_by_user_id` | UUID        | FK → `user`                              |                                                          |
+| `reviewed_at`         | TIMESTAMPTZ |                                          |                                                          |
+| `published_at`        | TIMESTAMPTZ |                                          |                                                          |
+| `source_reference`    | TEXT        |                                          | NNC / DOH / DOST-FNRI basis (formerly FR-REG-053)        |
+| `author_user_id`      | UUID        | FK → `user`                              |                                                          |
 
 ```sql
 CREATE INDEX idx_feedback_member ON feedback(member_id, published_at DESC);
@@ -457,18 +458,18 @@ ALTER TABLE feedback ADD CONSTRAINT chk_drafted_requires_review
 
 ### `reading` (FR-WX-001 … 012)
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | BIGSERIAL | PK | High volume |
-| `source` | TEXT | NOT NULL CHECK | `open_meteo` · `pagasa` · `manual` |
-| `metric` | TEXT | NOT NULL CHECK | `river_level` · `rainfall` · `temperature` · `humidity` · `heat_index` · `precipitation_probability` |
-| `value` | NUMERIC(10,3) | NOT NULL | |
-| `unit` | TEXT | NOT NULL | `m`, `mm`, `°C`, `%` |
-| `station` | TEXT | | PAGASA station name |
-| `observed_at` | TIMESTAMPTZ | NOT NULL | When the world was measured |
-| `fetched_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | When we learned it |
-| `entered_by_user_id` | UUID | FK → `user` | Set only for `manual` (FR-WX-007) |
-| `raw` | JSONB | | Original payload, for debugging a broken parser |
+| Column               | Type          | Constraints            | Notes                                                                                                |
+| -------------------- | ------------- | ---------------------- | ---------------------------------------------------------------------------------------------------- |
+| `id`                 | BIGSERIAL     | PK                     | High volume                                                                                          |
+| `source`             | TEXT          | NOT NULL CHECK         | `open_meteo` · `pagasa` · `manual`                                                                   |
+| `metric`             | TEXT          | NOT NULL CHECK         | `river_level` · `rainfall` · `temperature` · `humidity` · `heat_index` · `precipitation_probability` |
+| `value`              | NUMERIC(10,3) | NOT NULL               |                                                                                                      |
+| `unit`               | TEXT          | NOT NULL               | `m`, `mm`, `°C`, `%`                                                                                 |
+| `station`            | TEXT          |                        | PAGASA station name                                                                                  |
+| `observed_at`        | TIMESTAMPTZ   | NOT NULL               | When the world was measured                                                                          |
+| `fetched_at`         | TIMESTAMPTZ   | NOT NULL DEFAULT now() | When we learned it                                                                                   |
+| `entered_by_user_id` | UUID          | FK → `user`            | Set only for `manual` (FR-WX-007)                                                                    |
+| `raw`                | JSONB         |                        | Original payload, for debugging a broken parser                                                      |
 
 ```sql
 CREATE INDEX idx_reading_latest ON reading(metric, source, observed_at DESC);
@@ -480,17 +481,17 @@ CREATE INDEX idx_reading_latest ON reading(metric, source, observed_at DESC);
 
 ### `forecast` (FR-WX-002, FR-WX-015)
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | BIGSERIAL | PK | |
-| `source` | TEXT | NOT NULL CHECK | `open_meteo` · `pagasa` |
-| `metric` | TEXT | NOT NULL CHECK | Same set as `reading.metric` |
-| `value` | NUMERIC(10,3) | NOT NULL | |
-| `unit` | TEXT | NOT NULL | |
-| `valid_at` | TIMESTAMPTZ | NOT NULL | The **future** moment this predicts |
-| `horizon` | TEXT | NOT NULL CHECK | `hourly` · `daily` |
-| `fetched_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | When this prediction was issued |
-| `raw` | JSONB | | Original payload |
+| Column       | Type          | Constraints            | Notes                               |
+| ------------ | ------------- | ---------------------- | ----------------------------------- |
+| `id`         | BIGSERIAL     | PK                     |                                     |
+| `source`     | TEXT          | NOT NULL CHECK         | `open_meteo` · `pagasa`             |
+| `metric`     | TEXT          | NOT NULL CHECK         | Same set as `reading.metric`        |
+| `value`      | NUMERIC(10,3) | NOT NULL               |                                     |
+| `unit`       | TEXT          | NOT NULL               |                                     |
+| `valid_at`   | TIMESTAMPTZ   | NOT NULL               | The **future** moment this predicts |
+| `horizon`    | TEXT          | NOT NULL CHECK         | `hourly` · `daily`                  |
+| `fetched_at` | TIMESTAMPTZ   | NOT NULL DEFAULT now() | When this prediction was issued     |
+| `raw`        | JSONB         |                        | Original payload                    |
 
 ```sql
 CREATE UNIQUE INDEX idx_forecast_point
@@ -508,7 +509,7 @@ CREATE INDEX idx_forecast_upcoming ON forecast(metric, horizon, valid_at);
 > one.** During a flood that is the worst bug this schema could produce.
 >
 > They also behave differently. A reading is an immutable historical fact and the
-> table is append-only. A forecast is *superseded*: each fetch returns a fresh
+> table is append-only. A forecast is _superseded_: each fetch returns a fresh
 > series that replaces the previous one for the same `valid_at`, which is what the
 > unique index above enforces via upsert. Forecasts have no `station`, are never
 > `manual` (FR-WX-007 is about observations), and are never subject to
@@ -516,31 +517,31 @@ CREATE INDEX idx_forecast_upcoming ON forecast(metric, horizon, valid_at);
 
 ### `alert_prompt` (FR-WX-009)
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `reading_id` | BIGINT | FK → `reading` | What triggered it |
-| `level` | SMALLINT | NOT NULL CHECK IN (1,2,3) | |
-| `threshold_value` | NUMERIC(10,3) | NOT NULL | The configured value crossed |
-| `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
-| `acknowledged_by_user_id` | UUID | FK → `user` | |
-| `acknowledged_at` | TIMESTAMPTZ | | |
-| `resulted_in_announcement_id` | UUID | FK → `announcement` | Null if the officer chose not to publish |
+| Column                        | Type          | Constraints               | Notes                                    |
+| ----------------------------- | ------------- | ------------------------- | ---------------------------------------- |
+| `id`                          | UUID          | PK                        |                                          |
+| `reading_id`                  | BIGINT        | FK → `reading`            | What triggered it                        |
+| `level`                       | SMALLINT      | NOT NULL CHECK IN (1,2,3) |                                          |
+| `threshold_value`             | NUMERIC(10,3) | NOT NULL                  | The configured value crossed             |
+| `created_at`                  | TIMESTAMPTZ   | NOT NULL DEFAULT now()    |                                          |
+| `acknowledged_by_user_id`     | UUID          | FK → `user`               |                                          |
+| `acknowledged_at`             | TIMESTAMPTZ   |                           |                                          |
+| `resulted_in_announcement_id` | UUID          | FK → `announcement`       | Null if the officer chose not to publish |
 
 > **This table is where D-4 lives.** The scheduler writes an `alert_prompt`; publishing requires a named officer creating an `announcement`. No code path connects them automatically. `resulted_in_announcement_id` being null is a legitimate, recorded outcome — the officer looked and decided not to warn.
 
 ### `flood_event` (FR-WX-013)
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `name` | TEXT | NOT NULL | "Typhoon Ulysses (Vamco)" |
-| `started_at` | TIMESTAMPTZ | NOT NULL | |
-| `ended_at` | TIMESTAMPTZ | | Null while ongoing |
-| `peak_level_m` | NUMERIC(10,3) | | |
-| `peak_at` | TIMESTAMPTZ | | |
-| `households_displaced` | INTEGER | | Recorded after the fact, often revised |
-| `notes` | TEXT | | |
+| Column                 | Type          | Constraints | Notes                                  |
+| ---------------------- | ------------- | ----------- | -------------------------------------- |
+| `id`                   | UUID          | PK          |                                        |
+| `name`                 | TEXT          | NOT NULL    | "Typhoon Ulysses (Vamco)"              |
+| `started_at`           | TIMESTAMPTZ   | NOT NULL    |                                        |
+| `ended_at`             | TIMESTAMPTZ   |             | Null while ongoing                     |
+| `peak_level_m`         | NUMERIC(10,3) |             |                                        |
+| `peak_at`              | TIMESTAMPTZ   |             |                                        |
+| `households_displaced` | INTEGER       |             | Recorded after the fact, often revised |
+| `notes`                | TEXT          |             |                                        |
 
 ### `flood_event_area` (FR-WX-013)
 
@@ -558,21 +559,21 @@ CREATE INDEX idx_forecast_upcoming ON forecast(metric, horizon, valid_at);
 
 ### `announcement` (FR-ALT-001 … 011)
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `kind` | TEXT | NOT NULL CHECK | `announcement` · `alert` — one engine, two presentations |
-| `type` | TEXT | NOT NULL CHECK | `general` · `class_suspension` · `road_closure` · `utility_interruption` · `flood_warning` · `earthquake` · `typhoon` · `heavy_rainfall` · `heat_index` · `evacuation` |
-| `severity` | TEXT | CHECK | `info` · `warning` · `emergency` |
-| `alert_level` | SMALLINT | CHECK IN (1,2,3) | Only for river alerts |
-| `title` | TEXT | NOT NULL | |
-| `body` | TEXT | NOT NULL | |
-| `instruction` | TEXT | | **Required when `kind = 'alert'`** (FR-ALT-005) |
-| `is_barangay_wide` | BOOLEAN | NOT NULL DEFAULT true | |
-| `published_at` | TIMESTAMPTZ | | |
-| `expires_at` | TIMESTAMPTZ | | |
-| `deactivated_at` | TIMESTAMPTZ | | FR-ALT-011 |
-| `issued_by_user_id` | UUID | NOT NULL FK → `user` | FR-ALT-007 — never null |
+| Column              | Type        | Constraints           | Notes                                                                                                                                                                  |
+| ------------------- | ----------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                | UUID        | PK                    |                                                                                                                                                                        |
+| `kind`              | TEXT        | NOT NULL CHECK        | `announcement` · `alert` — one engine, two presentations                                                                                                               |
+| `type`              | TEXT        | NOT NULL CHECK        | `general` · `class_suspension` · `road_closure` · `utility_interruption` · `flood_warning` · `earthquake` · `typhoon` · `heavy_rainfall` · `heat_index` · `evacuation` |
+| `severity`          | TEXT        | CHECK                 | `info` · `warning` · `emergency`                                                                                                                                       |
+| `alert_level`       | SMALLINT    | CHECK IN (1,2,3)      | Only for river alerts                                                                                                                                                  |
+| `title`             | TEXT        | NOT NULL              |                                                                                                                                                                        |
+| `body`              | TEXT        | NOT NULL              |                                                                                                                                                                        |
+| `instruction`       | TEXT        |                       | **Required when `kind = 'alert'`** (FR-ALT-005)                                                                                                                        |
+| `is_barangay_wide`  | BOOLEAN     | NOT NULL DEFAULT true |                                                                                                                                                                        |
+| `published_at`      | TIMESTAMPTZ |                       |                                                                                                                                                                        |
+| `expires_at`        | TIMESTAMPTZ |                       |                                                                                                                                                                        |
+| `deactivated_at`    | TIMESTAMPTZ |                       | FR-ALT-011                                                                                                                                                             |
+| `issued_by_user_id` | UUID        | NOT NULL FK → `user`  | FR-ALT-007 — never null                                                                                                                                                |
 
 ```sql
 ALTER TABLE announcement ADD CONSTRAINT chk_alert_needs_instruction
@@ -596,7 +597,7 @@ CREATE INDEX idx_announcement_active ON announcement(kind, published_at DESC)
 
 `id`, `name`, `type` (CHECK: `flood` · `earthquake` · `typhoon` · `fire` · `other`), `started_at`, `ended_at`, `is_active`, `declared_by_user_id`.
 
-Scopes safety statuses, rescue requests, incident reports, and donation drives so that "accounted for" always means *for this event*.
+Scopes safety statuses, rescue requests, incident reports, and donation drives so that "accounted for" always means _for this event_.
 
 ```sql
 CREATE UNIQUE INDEX idx_one_active_event ON emergency_event((true)) WHERE is_active;
@@ -604,17 +605,17 @@ CREATE UNIQUE INDEX idx_one_active_event ON emergency_event((true)) WHERE is_act
 
 ### `safety_status` (FR-SAF-001 … 007) — **implemented, migration `0008_safety_core`**
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `event_id` | UUID | NOT NULL FK → `emergency_event` ON DELETE CASCADE | |
-| `member_id` | UUID | FK → `member` ON DELETE CASCADE | Null for unregistered persons |
-| `unregistered_person_id` | UUID | FK → `unregistered_person` ON DELETE CASCADE | Null for registered members |
-| `status` | TEXT | NOT NULL CHECK | `safe` · `needs_rescue` · `unaccounted` |
-| `set_by_user_id` | UUID | FK → `user` ON DELETE SET NULL | **Always the actor** — see deviation note below |
-| `set_method` | TEXT | NOT NULL CHECK | `self` · `assisted` · `household_bulk` |
-| `set_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
-| `superseded_at` | TIMESTAMPTZ | | Corrections insert a new row (FR-SAF-006) |
+| Column                   | Type        | Constraints                                       | Notes                                           |
+| ------------------------ | ----------- | ------------------------------------------------- | ----------------------------------------------- |
+| `id`                     | UUID        | PK                                                |                                                 |
+| `event_id`               | UUID        | NOT NULL FK → `emergency_event` ON DELETE CASCADE |                                                 |
+| `member_id`              | UUID        | FK → `member` ON DELETE CASCADE                   | Null for unregistered persons                   |
+| `unregistered_person_id` | UUID        | FK → `unregistered_person` ON DELETE CASCADE      | Null for registered members                     |
+| `status`                 | TEXT        | NOT NULL CHECK                                    | `safe` · `needs_rescue` · `unaccounted`         |
+| `set_by_user_id`         | UUID        | FK → `user` ON DELETE SET NULL                    | **Always the actor** — see deviation note below |
+| `set_method`             | TEXT        | NOT NULL CHECK                                    | `self` · `assisted` · `household_bulk`          |
+| `set_at`                 | TIMESTAMPTZ | NOT NULL DEFAULT now()                            |                                                 |
+| `superseded_at`          | TIMESTAMPTZ |                                                   | Corrections insert a new row (FR-SAF-006)       |
 
 ```sql
 CREATE INDEX idx_safety_event_current ON safety_status(event_id, status) WHERE superseded_at IS NULL;
@@ -634,22 +635,22 @@ CREATE UNIQUE INDEX uq_safety_current_unreg ON safety_status(event_id, unregiste
 
 > **`set_method` is what makes FR-SAF-005 possible.** The dashboard distinguishes individually confirmed statuses from those swept in by a household bulk action, so the BDRRMC can see how much confidence a "safe" count actually carries. Without this column the distinction cannot be made after the fact.
 
-> **Deviation, documented (FR-REG-011 precedent): `set_by_user_id` is always the actor, never null.** This note used to say "null if self-set by the head" — that describes when null is *permitted*, but FR-SAF-007 requires recording *who* set a status, and nulling it on self-set entries loses exactly that. `set_method` already carries the self/assisted/bulk distinction, so nothing is lost by also recording the actor.
+> **Deviation, documented (FR-REG-011 precedent): `set_by_user_id` is always the actor, never null.** This note used to say "null if self-set by the head" — that describes when null is _permitted_, but FR-SAF-007 requires recording _who_ set a status, and nulling it on self-set entries loses exactly that. `set_method` already carries the self/assisted/bulk distinction, so nothing is lost by also recording the actor.
 
 ### `unregistered_person` (FR-SAF-012, FR-EVC-005) — **implemented, migration `0008_safety_core`**
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | Not in the original design — recording *when* is otherwise unrecoverable |
-| `updated_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
-| `event_id` | UUID | NOT NULL FK → `emergency_event` ON DELETE CASCADE | |
-| `full_name` | TEXT | NOT NULL | **Name and location is enough** |
-| `contact_number` | TEXT | | |
-| `location` | GEOMETRY(Point, 4326) | | |
-| `location_note` | TEXT | | Free text — "near Wawa bridge" |
-| `recorded_by_user_id` | UUID | FK → `user` ON DELETE SET NULL | |
-| `converted_household_id` | UUID | FK → `household` ON DELETE SET NULL | FR-SAF-014 — conversion itself is cut, Aug 2026 (see below) |
+| Column                   | Type                  | Constraints                                       | Notes                                                                    |
+| ------------------------ | --------------------- | ------------------------------------------------- | ------------------------------------------------------------------------ |
+| `id`                     | UUID                  | PK                                                |                                                                          |
+| `created_at`             | TIMESTAMPTZ           | NOT NULL DEFAULT now()                            | Not in the original design — recording _when_ is otherwise unrecoverable |
+| `updated_at`             | TIMESTAMPTZ           | NOT NULL DEFAULT now()                            |                                                                          |
+| `event_id`               | UUID                  | NOT NULL FK → `emergency_event` ON DELETE CASCADE |                                                                          |
+| `full_name`              | TEXT                  | NOT NULL                                          | **Name and location is enough**                                          |
+| `contact_number`         | TEXT                  |                                                   |                                                                          |
+| `location`               | GEOMETRY(Point, 4326) |                                                   |                                                                          |
+| `location_note`          | TEXT                  |                                                   | Free text — "near Wawa bridge"                                           |
+| `recorded_by_user_id`    | UUID                  | FK → `user` ON DELETE SET NULL                    |                                                                          |
+| `converted_household_id` | UUID                  | FK → `household` ON DELETE SET NULL               | FR-SAF-014 — conversion itself is cut, Aug 2026 (see below)              |
 
 Indexes: `idx_unregistered_event(event_id)`, `idx_unregistered_location` GiST.
 
@@ -657,26 +658,26 @@ Indexes: `idx_unregistered_event(event_id)`, `idx_unregistered_location` GiST.
 
 ### `rescue_request` (FR-SAF-008 … 010) — **implemented, migration `0008_safety_core`**
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | Not in the original design — `idx_rescue_open` referenced this column without it ever being listed here; fixed alongside the migration |
-| `updated_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | The queue mutates on triage, so this is tracked like `TimestampMixin` elsewhere |
-| `event_id` | UUID | FK → `emergency_event` ON DELETE SET NULL | Nullable — a request may precede a declared event |
-| `household_id` | UUID | FK → `household` ON DELETE SET NULL | **Nullable — anonymous requests** |
-| `requester_name` | TEXT | NOT NULL | |
-| `contact_number` | TEXT | | |
-| `location` | GEOMETRY(Point, 4326) | | |
-| `location_note` | TEXT | | |
-| `description` | TEXT | NOT NULL | |
-| `people_count` | INTEGER | | |
-| `status` | TEXT | NOT NULL DEFAULT `'pending'` CHECK | `pending` · `verified` · `dispatched` · `resolved` · `dismissed` |
-| `priority` | INTEGER | | Computed at triage (`FR-SAF-010`, not yet built) |
-| `vulnerability_level` | TEXT | | Left NULL by design — see the FR-SAF-010 deviation note in `frs_nfrs.md` §9; a made-up level would poison this column once BRD OI-18 lands |
-| `assigned_to_user_id` | UUID | FK → `user` ON DELETE SET NULL | |
-| `resolved_at` | TIMESTAMPTZ | | |
-| `resolution_note` | TEXT | | |
-| `source_ip` | INET | | Abuse investigation only — never in a response DTO |
+| Column                | Type                  | Constraints                               | Notes                                                                                                                                      |
+| --------------------- | --------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`                  | UUID                  | PK                                        |                                                                                                                                            |
+| `created_at`          | TIMESTAMPTZ           | NOT NULL DEFAULT now()                    | Not in the original design — `idx_rescue_open` referenced this column without it ever being listed here; fixed alongside the migration     |
+| `updated_at`          | TIMESTAMPTZ           | NOT NULL DEFAULT now()                    | The queue mutates on triage, so this is tracked like `TimestampMixin` elsewhere                                                            |
+| `event_id`            | UUID                  | FK → `emergency_event` ON DELETE SET NULL | Nullable — a request may precede a declared event                                                                                          |
+| `household_id`        | UUID                  | FK → `household` ON DELETE SET NULL       | **Nullable — anonymous requests**                                                                                                          |
+| `requester_name`      | TEXT                  | NOT NULL                                  |                                                                                                                                            |
+| `contact_number`      | TEXT                  |                                           |                                                                                                                                            |
+| `location`            | GEOMETRY(Point, 4326) |                                           |                                                                                                                                            |
+| `location_note`       | TEXT                  |                                           |                                                                                                                                            |
+| `description`         | TEXT                  | NOT NULL                                  |                                                                                                                                            |
+| `people_count`        | INTEGER               |                                           |                                                                                                                                            |
+| `status`              | TEXT                  | NOT NULL DEFAULT `'pending'` CHECK        | `pending` · `verified` · `dispatched` · `resolved` · `dismissed`                                                                           |
+| `priority`            | INTEGER               |                                           | Computed at triage (`FR-SAF-010`, not yet built)                                                                                           |
+| `vulnerability_level` | TEXT                  |                                           | Left NULL by design — see the FR-SAF-010 deviation note in `frs_nfrs.md` §9; a made-up level would poison this column once BRD OI-18 lands |
+| `assigned_to_user_id` | UUID                  | FK → `user` ON DELETE SET NULL            |                                                                                                                                            |
+| `resolved_at`         | TIMESTAMPTZ           |                                           |                                                                                                                                            |
+| `resolution_note`     | TEXT                  |                                           |                                                                                                                                            |
+| `source_ip`           | INET                  |                                           | Abuse investigation only — never in a response DTO                                                                                         |
 
 ```sql
 CREATE INDEX idx_rescue_open ON rescue_request(status, priority, created_at)
@@ -702,17 +703,17 @@ CREATE INDEX idx_rescue_location ON rescue_request USING GIST(location);
 
 ### `evac_checkin` (FR-EVC-004, 005)
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `evac_center_id` | UUID | NOT NULL FK | |
-| `event_id` | UUID | NOT NULL FK | |
-| `member_id` | UUID | FK → `member` | Null for unregistered |
-| `unregistered_person_id` | UUID | FK | Null for registered |
-| `person_name` | TEXT | NOT NULL | Denormalised — needed when neither FK is set |
-| `checked_in_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
-| `checked_out_at` | TIMESTAMPTZ | | |
-| `recorded_by_user_id` | UUID | FK → `user` | |
+| Column                   | Type        | Constraints            | Notes                                        |
+| ------------------------ | ----------- | ---------------------- | -------------------------------------------- |
+| `id`                     | UUID        | PK                     |                                              |
+| `evac_center_id`         | UUID        | NOT NULL FK            |                                              |
+| `event_id`               | UUID        | NOT NULL FK            |                                              |
+| `member_id`              | UUID        | FK → `member`          | Null for unregistered                        |
+| `unregistered_person_id` | UUID        | FK                     | Null for registered                          |
+| `person_name`            | TEXT        | NOT NULL               | Denormalised — needed when neither FK is set |
+| `checked_in_at`          | TIMESTAMPTZ | NOT NULL DEFAULT now() |                                              |
+| `checked_out_at`         | TIMESTAMPTZ |                        |                                              |
+| `recorded_by_user_id`    | UUID        | FK → `user`            |                                              |
 
 ```sql
 CREATE INDEX idx_checkin_occupancy ON evac_checkin(evac_center_id)
@@ -739,22 +740,22 @@ CREATE INDEX idx_checkin_occupancy ON evac_checkin(evac_center_id)
 
 ### `donation` (FR-DON-002 … 008)
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `drive_id` | UUID | NOT NULL FK | |
-| `drive_need_id` | UUID | FK | Nullable — "other" donations |
-| `reference_no` | TEXT | UNIQUE NOT NULL | Quoted on delivery (FR-DON-003) |
-| `donor_name` | TEXT | NOT NULL | |
-| `donor_contact` | TEXT | | Optional |
-| `item_name` | TEXT | NOT NULL | |
-| `quantity_pledged` | NUMERIC(10,2) | NOT NULL | |
-| `quantity_received` | NUMERIC(10,2) | | Set at receipt |
-| `unit` | TEXT | NOT NULL | |
-| `status` | TEXT | NOT NULL DEFAULT `'submitted'` CHECK | `submitted` · `received` · `partially_received` · `not_fulfilled` |
-| `is_walk_in` | BOOLEAN | NOT NULL DEFAULT false | FR-DON-007 |
-| `status_changed_by_user_id` | UUID | FK → `user` | FR-DON-006 |
-| `status_changed_at` | TIMESTAMPTZ | | |
+| Column                      | Type          | Constraints                          | Notes                                                             |
+| --------------------------- | ------------- | ------------------------------------ | ----------------------------------------------------------------- |
+| `id`                        | UUID          | PK                                   |                                                                   |
+| `drive_id`                  | UUID          | NOT NULL FK                          |                                                                   |
+| `drive_need_id`             | UUID          | FK                                   | Nullable — "other" donations                                      |
+| `reference_no`              | TEXT          | UNIQUE NOT NULL                      | Quoted on delivery (FR-DON-003)                                   |
+| `donor_name`                | TEXT          | NOT NULL                             |                                                                   |
+| `donor_contact`             | TEXT          |                                      | Optional                                                          |
+| `item_name`                 | TEXT          | NOT NULL                             |                                                                   |
+| `quantity_pledged`          | NUMERIC(10,2) | NOT NULL                             |                                                                   |
+| `quantity_received`         | NUMERIC(10,2) |                                      | Set at receipt                                                    |
+| `unit`                      | TEXT          | NOT NULL                             |                                                                   |
+| `status`                    | TEXT          | NOT NULL DEFAULT `'submitted'` CHECK | `submitted` · `received` · `partially_received` · `not_fulfilled` |
+| `is_walk_in`                | BOOLEAN       | NOT NULL DEFAULT false               | FR-DON-007                                                        |
+| `status_changed_by_user_id` | UUID          | FK → `user`                          | FR-DON-006                                                        |
+| `status_changed_at`         | TIMESTAMPTZ   |                                      |                                                                   |
 
 ```sql
 CREATE INDEX idx_donation_drive_status ON donation(drive_id, status);
@@ -764,17 +765,17 @@ CREATE INDEX idx_donation_drive_status ON donation(drive_id, status);
 
 ### `assistance_record` (FR-DON-011 … 014)
 
-| Column | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | |
-| `household_id` | UUID | NOT NULL FK | |
-| `event_id` | UUID | FK | |
-| `description` | TEXT | NOT NULL | |
-| `scheduled_at` | TIMESTAMPTZ | | |
-| `claim_location` | TEXT | | |
-| `status` | TEXT | NOT NULL CHECK | `pending` · `scheduled` · `claimed` |
-| `claimed_at` | TIMESTAMPTZ | | |
-| `recorded_by_user_id` | UUID | FK → `user` | |
+| Column                | Type        | Constraints    | Notes                               |
+| --------------------- | ----------- | -------------- | ----------------------------------- |
+| `id`                  | UUID        | PK             |                                     |
+| `household_id`        | UUID        | NOT NULL FK    |                                     |
+| `event_id`            | UUID        | FK             |                                     |
+| `description`         | TEXT        | NOT NULL       |                                     |
+| `scheduled_at`        | TIMESTAMPTZ |                |                                     |
+| `claim_location`      | TEXT        |                |                                     |
+| `status`              | TEXT        | NOT NULL CHECK | `pending` · `scheduled` · `claimed` |
+| `claimed_at`          | TIMESTAMPTZ |                |                                     |
+| `recorded_by_user_id` | UUID        | FK → `user`    |                                     |
 
 > **No foreign key to `donation` or `donation_drive`, deliberately.** FR-DON-014 and BRD D-8: the barangay records what a household received; where the goods came from is out of scope. Adding that link later would pull inventory and allocation into scope with it.
 
@@ -863,14 +864,14 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;      -- fuzzy name matching for duplicat
 
 ## 14. Index Summary
 
-| Kind | Tables | Purpose |
-|---|---|---|
-| **GiST spatial** | `area.geom`, `household.location`, `facility.location`, `flood_hazard.geom` | Every `ST_Contains` / `ST_Distance` query |
-| **GIN trigram** | `household.head_name` | Duplicate detection (FR-REG-010) |
-| **Partial** | active alerts, open rescues, current occupancy, unread notifications, current assessments | Keeps hot queries scanning only live rows |
-| **Composite** | `reading(metric, source, observed_at DESC)` | Latest-reading lookup, hit on every page |
-| **Unique** | `forecast(source, metric, horizon, valid_at)` | Makes each fetch an upsert, so a refreshed series replaces the old one instead of accumulating duplicate predictions for the same moment |
-| **Unique partial** | one head per household, one current assessment, one active event | Invariants enforced by the database |
+| Kind               | Tables                                                                                    | Purpose                                                                                                                                  |
+| ------------------ | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **GiST spatial**   | `area.geom`, `household.location`, `facility.location`, `flood_hazard.geom`               | Every `ST_Contains` / `ST_Distance` query                                                                                                |
+| **GIN trigram**    | `household.head_name`                                                                     | Duplicate detection (FR-REG-010)                                                                                                         |
+| **Partial**        | active alerts, open rescues, current occupancy, unread notifications, current assessments | Keeps hot queries scanning only live rows                                                                                                |
+| **Composite**      | `reading(metric, source, observed_at DESC)`                                               | Latest-reading lookup, hit on every page                                                                                                 |
+| **Unique**         | `forecast(source, metric, horizon, valid_at)`                                             | Makes each fetch an upsert, so a refreshed series replaces the old one instead of accumulating duplicate predictions for the same moment |
+| **Unique partial** | one head per household, one current assessment, one active event                          | Invariants enforced by the database                                                                                                      |
 
 ---
 
@@ -878,51 +879,51 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;      -- fuzzy name matching for duplicat
 
 Loaded by migration, not at runtime (NFR-DAT-007).
 
-| Data | Source | Rows |
-|---|---|---|
-| PSGC hierarchy | Team's PSGC library | ~42,000 |
-| Barangay areas | BRD OI-3 — **blocked** | ~10–20 |
-| Flood hazard | `dataset/raw/Rizal_Flood_5year.shp` → `dataset/derived/san_jose_flood_5yr.geojson` | 3 (5yr only, today) |
-| Hotlines | Barangay | ~8 |
-| Facilities | Barangay | ~15 |
-| Go-bag items | NDRRMC standard list | ~15 |
-| Config defaults | This document Section 4 | ~12 |
-| Demo households | Generated, marked synthetic | ~200 |
+| Data            | Source                                                                             | Rows                |
+| --------------- | ---------------------------------------------------------------------------------- | ------------------- |
+| PSGC hierarchy  | Team's PSGC library                                                                | ~42,000             |
+| Barangay areas  | BRD OI-3 — **blocked**                                                             | ~10–20              |
+| Flood hazard    | `dataset/raw/Rizal_Flood_5year.shp` → `dataset/derived/san_jose_flood_5yr.geojson` | 3 (5yr only, today) |
+| Hotlines        | Barangay                                                                           | ~8                  |
+| Facilities      | Barangay                                                                           | ~15                 |
+| Go-bag items    | NDRRMC standard list                                                               | ~15                 |
+| Config defaults | This document Section 4                                                            | ~12                 |
+| Demo households | Generated, marked synthetic                                                        | ~200                |
 
 ---
 
 ## 16. Data Lifecycle
 
-| Concern | Rule |
-|---|---|
-| Soft delete | `household`, `member`, `user` — default query filter excludes `deleted_at IS NOT NULL` |
-| Hard delete | Only on a privacy request (FR-SYS-018), cascading through members and assessments |
-| Append-only | `audit_log`, `vulnerability_assessment`, `reading`, `safety_status` |
-| Retention | `reading` older than 2 years may be downsampled; audit log retained indefinitely at this scale |
-| Backups | Daily `pg_dump`, off-box, restore verified before the pitch (NFR-AVL-006) |
+| Concern     | Rule                                                                                           |
+| ----------- | ---------------------------------------------------------------------------------------------- |
+| Soft delete | `household`, `member`, `user` — default query filter excludes `deleted_at IS NOT NULL`         |
+| Hard delete | Only on a privacy request (FR-SYS-018), cascading through members and assessments              |
+| Append-only | `audit_log`, `vulnerability_assessment`, `reading`, `safety_status`                            |
+| Retention   | `reading` older than 2 years may be downsampled; audit log retained indefinitely at this scale |
+| Backups     | Daily `pg_dump`, off-box, restore verified before the pitch (NFR-AVL-006)                      |
 
 ---
 
 ## 17. Open Schema Decisions
 
-| # | Item | Blocked by | Owner |
-|---|---|---|---|
-| ~~S-OI-1~~ | ~~Nutrition indicator columns~~ | — | **Resolved: moot.** `nutrition_record` is cut (BRD D-15, closes OI-2) — no indicator set to finalise. |
-| S-OI-2 | **Area boundary geometry** — nothing spatial can be seeded without it | BRD OI-3 | PubAd lead |
-| S-OI-3 | **Alert threshold values** for `config` | BRD OI-4 | PubAd lead |
+| #          | Item                                                                  | Blocked by | Owner                                                                                                 |
+| ---------- | --------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------- |
+| ~~S-OI-1~~ | ~~Nutrition indicator columns~~                                       | —          | **Resolved: moot.** `nutrition_record` is cut (BRD D-15, closes OI-2) — no indicator set to finalise. |
+| S-OI-2     | **Area boundary geometry** — nothing spatial can be seeded without it | BRD OI-3   | PubAd lead                                                                                            |
+| S-OI-3     | **Alert threshold values** for `config`                               | BRD OI-4   | PubAd lead                                                                                            |
 
 > **Interim values seeded, not left null.** `config.alert.threshold_level_{1,2,3}_m` are seeded
 > with the PAGASA FFWS Montalban gauge's own published `alertwl`/`alarmwl`/`criticalwl` values
 > (22.40 / 23.00 / 23.60 m — confirmed live at `GET /water/map_list.do`, `tech_stack.md` §7).
 > These are the gauge operator's own numbers, not an invented guess, and the `description`
-> column says so explicitly: *"PAGASA Montalban gauge published value — pending MDRRMO
-> confirmation (BRD OI-4)"*. Admin-editable via `PUT /admin/config/{key}` the moment MDRRMO
+> column says so explicitly: _"PAGASA Montalban gauge published value — pending MDRRMO
+> confirmation (BRD OI-4)"_. Admin-editable via `PUT /admin/config/{key}` the moment MDRRMO
 > supplies a locally-confirmed figure. OI-4 is not resolved by this — it stays open — but the
 > platform no longer runs on a blank threshold while it waits.
-| S-OI-4 | **Barangay total households** for `config` | BRD OI-12 | PubAd lead |
-| S-OI-5 | Whether `vulnerability_assessment` scores are stored or recomputed on read. Stored is the default — history matters more than the space | — | IT lead |
-| S-OI-6 | Whether `evac_checkin.person_name` should be dropped in favour of always creating an `unregistered_person` row | FR-EVC-005 | IT lead |
-| S-OI-7 | Whether `announcement` needs a separate `alert` table. Current design uses one table with `kind` — revisit only if the columns diverge | — | IT lead |
-| ~~S-OI-8~~ | **Resolved: a separate `forecast` table** (Section 6). A `reading.kind` discriminator was rejected — it would make `observed_at` mean two different things and leave every "latest reading" query one missed filter away from rendering a prediction as the current value | Resolved | — |
-| ~~S-OI-9~~ | **Resolved: `flood_event_area`** (Section 6), mirroring `announcement_area`. Note the semantic difference: an empty set means *unrecorded*, not barangay-wide | Resolved | — |
-| S-OI-10 | Whether `evac_center.contact_person` may ever be shown publicly. It names an individual, so FR-PUB-014 and NFR-PRV-006 currently exclude it from the public DTO while `contact_number` (an official line) is exposed. The parallel carve-out for `announcement.issued_by_user_id` → `issued_by_name` is already taken, on the grounds that FR-ALT-007 explicitly requires attributing the issuing officer. Whether "officials in official capacity" is a general exception is a policy call, not an engineering one | FR-PUB-014 | PolSci lead |
+> | S-OI-4 | **Barangay total households** for `config` | BRD OI-12 | PubAd lead |
+> | S-OI-5 | Whether `vulnerability_assessment` scores are stored or recomputed on read. Stored is the default — history matters more than the space | — | IT lead |
+> | S-OI-6 | Whether `evac_checkin.person_name` should be dropped in favour of always creating an `unregistered_person` row | FR-EVC-005 | IT lead |
+> | S-OI-7 | Whether `announcement` needs a separate `alert` table. Current design uses one table with `kind` — revisit only if the columns diverge | — | IT lead |
+> | ~~S-OI-8~~ | **Resolved: a separate `forecast` table** (Section 6). A `reading.kind` discriminator was rejected — it would make `observed_at` mean two different things and leave every "latest reading" query one missed filter away from rendering a prediction as the current value | Resolved | — |
+> | ~~S-OI-9~~ | **Resolved: `flood_event_area`** (Section 6), mirroring `announcement_area`. Note the semantic difference: an empty set means _unrecorded_, not barangay-wide | Resolved | — |
+> | S-OI-10 | Whether `evac_center.contact_person` may ever be shown publicly. It names an individual, so FR-PUB-014 and NFR-PRV-006 currently exclude it from the public DTO while `contact_number` (an official line) is exposed. The parallel carve-out for `announcement.issued_by_user_id` → `issued_by_name` is already taken, on the grounds that FR-ALT-007 explicitly requires attributing the issuing officer. Whether "officials in official capacity" is a general exception is a policy call, not an engineering one | FR-PUB-014 | PolSci lead |

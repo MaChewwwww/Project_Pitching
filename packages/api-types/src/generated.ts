@@ -186,6 +186,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/area-boundaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Area boundary polygons as GeoJSON FeatureCollection (FR-MAP-001)
+         * @description Separate from /public/areas — that returns names/stats; this returns geometry.
+         *
+         *     An empty feature list is valid: boundaries may not yet be loaded. The
+         *     frontend map degrades gracefully on an empty collection (same principle
+         *     as the hazard layer 404 handling).
+         */
+        get: operations["public_area_boundaries_api_v1_public_area_boundaries_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/sirens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Siren units with status (FR-MAP-014) */
+        get: operations["public_sirens_api_v1_public_sirens_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/announcements": {
         parameters: {
             query?: never;
@@ -597,6 +638,59 @@ export interface paths {
         head?: never;
         /** Edit an area's name/code/exposure */
         patch: operations["admin_update_area_api_v1_admin_areas__area_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/sirens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List sirens (admin) */
+        get: operations["admin_list_sirens_api_v1_admin_sirens_get"];
+        put?: never;
+        /** Add a siren */
+        post: operations["admin_create_siren_api_v1_admin_sirens_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sirens/{siren_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a siren */
+        delete: operations["admin_delete_siren_api_v1_admin_sirens__siren_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a siren */
+        patch: operations["admin_update_siren_api_v1_admin_sirens__siren_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/sirens/{siren_id}/trigger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Trigger/toggle siren status (simulation) */
+        post: operations["admin_trigger_siren_api_v1_admin_sirens__siren_id__trigger_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/admin/announcements": {
@@ -1387,6 +1481,52 @@ export interface components {
             /** Unaccounted */
             unaccounted: number;
         };
+        /**
+         * AreaBoundaryCollection
+         * @description GeoJSON FeatureCollection of area boundary polygons.
+         *
+         *     A 404/empty geometry is not an error — the map degrades gracefully if
+         *     boundaries have not been loaded yet (same principle as the hazard layer).
+         */
+        AreaBoundaryCollection: {
+            /**
+             * Type
+             * @default FeatureCollection
+             */
+            type: string;
+            /** Features */
+            features: components["schemas"]["AreaBoundaryFeature"][];
+        };
+        /** AreaBoundaryFeature */
+        AreaBoundaryFeature: {
+            /**
+             * Type
+             * @default Feature
+             */
+            type: string;
+            properties: components["schemas"]["AreaBoundaryProperties"];
+            /** Geometry */
+            geometry: unknown;
+        };
+        /**
+         * AreaBoundaryProperties
+         * @description Non-spatial properties attached to each area boundary feature.
+         */
+        AreaBoundaryProperties: {
+            /**
+             * Area Id
+             * Format: uuid
+             */
+            area_id: string;
+            /** Name */
+            name: string;
+            /** Code */
+            code: string | null;
+            /** Flood Exposure */
+            flood_exposure: string | null;
+            /** Boundary Source */
+            boundary_source: string | null;
+        };
         /** AreaOut */
         AreaOut: {
             /**
@@ -1402,6 +1542,8 @@ export interface components {
             flood_exposure: string | null;
             /** Has Boundary */
             has_boundary: boolean;
+            /** Boundary Source */
+            boundary_source: string | null;
         };
         /** AreaPatch */
         AreaPatch: {
@@ -2818,6 +2960,21 @@ export interface components {
             is_stale: boolean;
             last_known_good: components["schemas"]["PublicReading"] | null;
         };
+        /** PublicSiren */
+        PublicSiren: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Status */
+            status: string;
+            location: components["schemas"]["GeoJsonPoint"];
+            /** Area Id */
+            area_id: string | null;
+        };
         /** PublicWeatherCurrent */
         PublicWeatherCurrent: {
             /** Readings */
@@ -3041,6 +3198,37 @@ export interface components {
              * @enum {integer}
              */
             highest_alert_level: 0 | 1 | 2 | 3;
+        };
+        /** SirenIn */
+        SirenIn: {
+            /** Name */
+            name: string;
+            /** Longitude */
+            longitude: number;
+            /** Latitude */
+            latitude: number;
+            /** Area Id */
+            area_id?: string | null;
+            /**
+             * Status
+             * @default idle
+             */
+            status: string;
+        };
+        /** SirenOut */
+        SirenOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Status */
+            status: string;
+            location: components["schemas"]["GeoJsonPoint"];
+            /** Area Id */
+            area_id: string | null;
         };
         /**
          * UnregisteredPersonIn
@@ -3390,6 +3578,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicArea"][];
+                };
+            };
+        };
+    };
+    public_area_boundaries_api_v1_public_area_boundaries_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AreaBoundaryCollection"];
+                };
+            };
+        };
+    };
+    public_sirens_api_v1_public_sirens_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSiren"][];
                 };
             };
         };
@@ -4196,6 +4424,158 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AreaOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_sirens_api_v1_admin_sirens_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SirenOut"][];
+                };
+            };
+        };
+    };
+    admin_create_siren_api_v1_admin_sirens_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SirenIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SirenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_delete_siren_api_v1_admin_sirens__siren_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                siren_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_siren_api_v1_admin_sirens__siren_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                siren_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SirenIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SirenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_trigger_siren_api_v1_admin_sirens__siren_id__trigger_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                siren_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SirenOut"];
                 };
             };
             /** @description Validation Error */

@@ -29,14 +29,13 @@ export async function EvacCentersSection() {
       <Reveal>
         <SectionHeader
           icon={BedDouble}
-          eyebrow="Where to go"
           title="Evacuation"
-          titleAccent="centres"
+          titleAccent="Centers"
           description="Capacity and current occupancy, updated as people check in."
           action={
             <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
               <Link href="/evacuation-centers">
-                All {centers.length} centres
+                All {centers.length} centers
                 <ArrowRight aria-hidden className="size-4" />
               </Link>
             </Button>

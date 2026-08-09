@@ -37,9 +37,9 @@ export interface SectionHeaderProps {
 }
 
 const TITLE_CLASS = {
-  h1: "text-display-md",
-  h2: "text-display-md",
-  h3: "text-h2",
+  h1: "text-display-lg sm:text-display-xl",
+  h2: "text-display-md sm:text-display-lg",
+  h3: "text-h1 sm:text-display-md",
 } as const;
 
 export function SectionHeader({
@@ -59,100 +59,120 @@ export function SectionHeader({
   const centred = align === "center";
 
   return (
-    <div
-      className={cn(
-        "flex gap-4",
-        centred ? "flex-col items-center text-center" : "flex-col",
-        !centred && action && "sm:flex-row sm:items-end sm:justify-between",
-        className,
-      )}
-    >
-      <div className={cn("flex flex-col gap-3", centred && "items-center")}>
-        {(eyebrow || Icon) && (
-          <div className={cn("flex items-center gap-2.5", centred && "justify-center")}>
-            {Icon ? (
-              <span
-                className={cn(
-                  "grid size-10 shrink-0 place-items-center rounded-xl transition-transform duration-200",
-                  onDark
-                    ? "text-primary-300 bg-white/10 border border-white/10"
-                    : "bg-primary-50 text-primary-700 border border-primary-100/80 shadow-sm-card",
-                  centred && "size-auto rounded-none bg-transparent border-none shadow-none",
-                )}
-              >
-                <Icon
-                  aria-hidden
-                  className={centred ? "size-4 text-primary-600" : "size-5"}
-                  strokeWidth={2}
-                />
-              </span>
-            ) : null}
-            {eyebrow ? (
-              <span
-                className={cn(
-                  "text-overline tracking-wider font-bold",
-                  onDark ? "text-primary-300" : "text-primary-700",
-                )}
-              >
-                {eyebrow}
-              </span>
-            ) : null}
-          </div>
-        )}
-
-        {rule ? (
-          <span
-            aria-hidden
-            className={cn(
-              "block h-1 w-12 rounded-full",
-              onDark
-                ? "bg-gradient-to-r from-primary-400 to-primary-200"
-                : "bg-gradient-to-r from-primary-600 to-primary-400",
-            )}
-          />
-        ) : null}
-
-        <Heading
-          className={cn(TITLE_CLASS[as], "tracking-tight", onDark ? "text-white" : "text-neutral-900")}
-        >
-          {title}
-          {titleAccent ? (
-            <>
-              {" "}
-              <span
-                className={cn(
-                  "relative inline-block whitespace-nowrap font-extrabold",
-                  onDark ? "text-primary-300" : "text-primary-600",
-                )}
-              >
-                {titleAccent}
-                <span
-                  aria-hidden
-                  className={cn(
-                    "absolute inset-x-0 -bottom-1.5 block h-[4px] rounded-full",
-                    onDark
-                      ? "bg-gradient-to-r from-primary-400/80 via-primary-300/60 to-transparent"
-                      : "bg-gradient-to-r from-primary-600/70 via-primary-500/40 to-transparent",
-                  )}
-                />
-              </span>
-            </>
+    <div className={cn("flex flex-col gap-2.5", className)}>
+      {eyebrow && (
+        <div className={cn("flex items-center gap-2.5", centred && "justify-center")}>
+          {Icon ? (
+            <span
+              className={cn(
+                "grid size-10 shrink-0 place-items-center rounded-xl transition-transform duration-200",
+                onDark
+                  ? "text-primary-300 border border-white/10 bg-white/10"
+                  : "bg-primary-50 text-primary-700 border-primary-100/80 shadow-sm-card border",
+                centred &&
+                  "size-auto rounded-none border-none bg-transparent shadow-none",
+              )}
+            >
+              <Icon
+                aria-hidden
+                className={centred ? "text-primary-600 size-4" : "size-5"}
+                strokeWidth={2}
+              />
+            </span>
           ) : null}
-        </Heading>
-
-        {description ? (
-          <p
+          <span
             className={cn(
-              "text-body-lg max-w-2xl leading-relaxed",
-              onDark ? "text-primary-100/85" : "text-neutral-600",
+              "text-overline font-bold tracking-wider",
+              onDark ? "text-primary-300" : "text-primary-700",
             )}
           >
-            {description}
-          </p>
-        ) : null}
+            {eyebrow}
+          </span>
+        </div>
+      )}
+
+      {rule ? (
+        <span
+          aria-hidden
+          className={cn(
+            "block h-1 w-12 rounded-full",
+            onDark
+              ? "from-primary-400 to-primary-200 bg-gradient-to-r"
+              : "from-primary-600 to-primary-400 bg-gradient-to-r",
+          )}
+        />
+      ) : null}
+
+      {/* Heading Row: Title + Action Button side by side */}
+      <div
+        className={cn(
+          "flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap",
+          centred && "justify-center",
+        )}
+      >
+        <Heading
+          className={cn(
+            TITLE_CLASS[as],
+            "tracking-tight flex items-center gap-3.5 flex-wrap",
+            centred && "justify-center",
+            onDark ? "text-white" : "text-neutral-900",
+          )}
+        >
+          {!eyebrow && Icon ? (
+            <span
+              className={cn(
+                "flex size-11 shrink-0 items-center justify-center rounded-2xl transition-all duration-300",
+                onDark
+                  ? "bg-white/10 text-primary-300 border border-white/20 ring-4 ring-white/5"
+                  : "bg-gradient-to-br from-primary-500/15 via-primary-600/10 to-emerald-600/5 text-primary-600 border border-primary-600/20 shadow-sm ring-4 ring-primary-500/10",
+              )}
+            >
+              <Icon aria-hidden className="size-5.5 text-primary-600" strokeWidth={2.2} />
+            </span>
+          ) : null}
+          <span className="font-extrabold">
+            {title}
+            {titleAccent ? (
+              <>
+                {" "}
+                <span
+                  className={cn(
+                    "relative inline-block font-extrabold whitespace-nowrap",
+                    onDark
+                      ? "text-primary-300"
+                      : "bg-gradient-to-r from-primary-600 via-primary-700 to-emerald-600 bg-clip-text text-transparent",
+                  )}
+                >
+                  {titleAccent}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "absolute inset-x-0 -bottom-1 block h-[3.5px] rounded-full opacity-70",
+                      onDark
+                        ? "from-primary-400/80 via-primary-300/60 bg-gradient-to-r to-transparent"
+                        : "from-primary-500 via-emerald-500 bg-gradient-to-r to-primary-300/40",
+                    )}
+                  />
+                </span>
+              </>
+            ) : null}
+          </span>
+        </Heading>
+
+        {action && !centred ? <div className="shrink-0 max-sm:w-full">{action}</div> : null}
       </div>
 
-      {action && !centred ? <div className="shrink-0">{action}</div> : null}
+      {description ? (
+        <p
+          className={cn(
+            "text-body-lg max-w-none leading-relaxed",
+            onDark ? "text-primary-100/85" : "text-neutral-600",
+            centred && "text-center mx-auto",
+          )}
+        >
+          {description}
+        </p>
+      ) : null}
     </div>
   );
 }

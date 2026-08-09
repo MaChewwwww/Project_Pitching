@@ -39,7 +39,10 @@ export default function PortalReportPage() {
         <IncidentReportForm onDone={() => setSubmitted(true)} />
       )}
 
-      <Link href="/portal" className="text-body-sm text-primary-700 font-semibold underline">
+      <Link
+        href="/portal"
+        className="text-body-sm text-primary-700 font-semibold underline"
+      >
         Back to dashboard
       </Link>
     </div>
