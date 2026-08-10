@@ -160,11 +160,21 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
                       {item.total} {item.total === 1 ? "Household" : "Households"}
                     </span>
                   </span>
-                  <span className="text-[11px] tabular text-neutral-500 font-medium">
-                    <span className="text-emerald-700 font-bold">{item.low}</span> /{" "}
-                    <span className="text-amber-700 font-bold">{item.med}</span> /{" "}
-                    <span className="text-red-700 font-bold">{item.high}</span>
-                  </span>
+                  {isHovered ? (
+                    <div className="rounded-md border border-emerald-500/50 bg-emerald-950/95 px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-2xs animate-in fade-in-0 flex items-center gap-2">
+                      <span className="text-emerald-300">Low: <strong className="text-white">{item.low}</strong> ({item.lowPct}%)</span>
+                      <span className="text-emerald-800">|</span>
+                      <span className="text-amber-300">Med: <strong className="text-white">{item.med}</strong> ({item.medPct}%)</span>
+                      <span className="text-emerald-800">|</span>
+                      <span className="text-red-300">High: <strong className="text-white">{item.high}</strong> ({item.highPct}%)</span>
+                    </div>
+                  ) : (
+                    <span className="text-[11px] tabular text-neutral-500 font-medium">
+                      <span className="text-emerald-700 font-bold">{item.low}</span> /{" "}
+                      <span className="text-amber-700 font-bold">{item.med}</span> /{" "}
+                      <span className="text-red-700 font-bold">{item.high}</span>
+                    </span>
+                  )}
                 </div>
 
                 {/* Multi-Segment Stacked Progress Bar */}
@@ -191,20 +201,6 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
                     />
                   )}
                 </div>
-
-                {/* Anchored Floating Tooltip ABOVE the Row (Green-ish theme, zero bar overlap) */}
-                {isHovered && (
-                  <div className="absolute -top-9 right-2 z-50 pointer-events-none rounded-lg border border-emerald-500/50 bg-emerald-950/95 px-3 py-1 text-xs text-white shadow-xl backdrop-blur-md animate-in fade-in-0 zoom-in-95 flex items-center gap-3">
-                    <span className="font-extrabold text-emerald-300 text-xs shrink-0">{item.name}</span>
-                    <div className="flex items-center gap-2.5 text-[11px] font-semibold shrink-0">
-                      <span className="text-emerald-300">Low: <strong className="text-white">{item.low}</strong> ({item.lowPct}%)</span>
-                      <span className="text-emerald-800">|</span>
-                      <span className="text-amber-300">Med: <strong className="text-white">{item.med}</strong> ({item.medPct}%)</span>
-                      <span className="text-emerald-800">|</span>
-                      <span className="text-red-300">High: <strong className="text-white">{item.high}</strong> ({item.highPct}%)</span>
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}
