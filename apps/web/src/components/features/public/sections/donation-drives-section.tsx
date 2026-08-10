@@ -32,7 +32,7 @@ export async function DonationDrivesSection() {
           action={
             <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
               <Link href="/donation-drives">
-                All Drives
+                View All
                 <ArrowRight aria-hidden className="size-4" />
               </Link>
             </Button>

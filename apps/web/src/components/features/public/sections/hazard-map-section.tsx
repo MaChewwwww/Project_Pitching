@@ -40,7 +40,7 @@ export async function HazardMapSection() {
           action={
             <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
               <Link href="/hazard-map">
-                Exposure by Area
+                View All
                 <ArrowRight aria-hidden className="size-4" />
               </Link>
             </Button>

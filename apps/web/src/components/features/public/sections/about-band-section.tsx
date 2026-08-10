@@ -60,7 +60,7 @@ export function AboutBandSection() {
             className="self-start max-sm:w-full"
           >
             <Link href="/about">
-              About the Platform &amp; Our Goals
+              View All
               <ArrowRight aria-hidden className="size-4" />
             </Link>
           </Button>
