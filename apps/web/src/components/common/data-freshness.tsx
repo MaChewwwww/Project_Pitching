@@ -50,21 +50,21 @@ export function DataFreshness({
   const sourceLabel = SOURCE_LABEL[source] || source;
 
   const threshold = staleAfterMinutes || 60;
-  const isSevere = ageMinutes >= threshold * 2.5 || ageMinutes >= 180;
   const isWarning = isStale || ageMinutes >= threshold;
+  const isSevere = isWarning && ageMinutes >= threshold * 2;
 
   let dotPingBg = "bg-emerald-400";
   let dotBg = "bg-emerald-500";
-  let textColor = onDark ? "text-emerald-300" : "text-emerald-700";
+  let textColor = onDark ? "text-primary-100/70" : "text-neutral-500";
 
   if (isSevere) {
     dotPingBg = "bg-red-400";
     dotBg = "bg-red-500";
-    textColor = onDark ? "text-red-300" : "text-red-700";
+    textColor = onDark ? "text-red-300 font-semibold" : "text-red-600 font-semibold";
   } else if (isWarning) {
     dotPingBg = "bg-amber-400";
     dotBg = "bg-amber-500";
-    textColor = onDark ? "text-amber-300" : "text-amber-700";
+    textColor = onDark ? "text-amber-300 font-semibold" : "text-amber-600 font-semibold";
   }
 
   return (
