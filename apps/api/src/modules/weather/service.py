@@ -30,7 +30,7 @@ from src.modules.weather.schemas import (
     SimulateTyphoonResult,
 )
 
-CURRENT_METRICS = ("temperature", "rainfall", "humidity", "precipitation_probability", "heat_index")
+CURRENT_METRICS = ("temperature", "rainfall", "humidity", "heat_index")
 
 DEFAULT_STALE_MINUTES = 45
 

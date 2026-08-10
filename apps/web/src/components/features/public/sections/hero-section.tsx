@@ -20,7 +20,8 @@ export async function HeroSection() {
   const tempReading = weather.readings.find((r) => r.metric === "temperature");
   const heatIndexReading = weather.readings.find((r) => r.metric === "heat_index");
   const rainReading = weather.readings.find((r) => r.metric === "rainfall");
-  const rainChanceReading = weather.readings.find((r) => r.metric === "precipitation_probability");
+  const rainChanceForecast = weather.forecast.find((f) => f.metric === "precipitation_probability");
+  const rainChanceValue = rainChanceForecast ? Math.round(rainChanceForecast.value) : undefined;
 
   const chips = [
     {
@@ -184,7 +185,7 @@ export async function HeroSection() {
                 </span>
                 <div className="mt-0.5 flex items-baseline gap-1.5">
                   <span className="text-sm font-black text-white tabular">
-                    {rainChanceReading ? `${rainChanceReading.value}%` : "65%"}
+                    {rainChanceValue !== undefined ? `${rainChanceValue}%` : "65%"}
                   </span>
                   <span className="text-[11px] font-bold text-sky-200/90 tabular">
                     {rainReading ? `${rainReading.value} ${rainReading.unit}` : "12.6 mm"}
