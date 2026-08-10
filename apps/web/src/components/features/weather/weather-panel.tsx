@@ -192,37 +192,38 @@ export function WeatherPanel({
           </div>
         </div>
 
-        {/* DOST-PAGASA Tropical Cyclone Wind Signal (TCWS #1 to #5) & Typhoon Watch Banner (Bottom Highlighted Area) */}
+        {/* DOST-PAGASA Tropical Cyclone Wind Signal (TCWS #1 to #5) & Typhoon Watch Banner (2-Row Symmetrical Layout) */}
         <div className={cn(
-          "rounded-2xl border p-3.5 flex flex-col gap-2 bg-gradient-to-r transition-all duration-300 shadow-2xs mt-auto",
+          "rounded-2xl border p-3 flex flex-col gap-2 bg-gradient-to-r transition-all duration-300 shadow-2xs mt-auto",
           tcwsInfo.bgGradient,
           signalLevel > 0 ? "border-amber-300 shadow-xs" : "border-emerald-200/80"
         )}>
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <ShieldAlert className={cn("size-4.5", signalLevel > 0 ? "text-amber-600" : "text-emerald-600")} />
-              <span className="text-overline font-black uppercase tracking-wider text-neutral-900">
+          {/* Row 1: Title, Station & Signal Badge */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <ShieldAlert className={cn("size-4 shrink-0", signalLevel > 0 ? "text-amber-600" : "text-emerald-600")} />
+              <span className="text-overline font-black uppercase tracking-wider text-neutral-900 truncate">
                 DOST-PAGASA Tropical Cyclone Wind Signal (TCWS)
               </span>
+              <span className="text-[10px] text-neutral-500 font-medium italic hidden md:inline shrink-0">
+                • Station: Province of Rizal
+              </span>
             </div>
-            <span className={cn("text-[10px] px-2.5 py-0.5 rounded-full border shadow-2xs font-extrabold uppercase", tcwsInfo.badgeBg)}>
+            <span className={cn("text-[10px] px-2.5 py-0.5 rounded-full border shadow-2xs font-extrabold uppercase shrink-0", tcwsInfo.badgeBg)}>
               {tcwsInfo.label}
             </span>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs text-neutral-800">
-            <span className="font-semibold text-neutral-700">
+          {/* Row 2: Winds & Threat Advisory (Symmetrical & Horizontally Aligned) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs bg-white/80 rounded-xl px-3 py-2 border border-black/5">
+            <span className="font-semibold text-neutral-800 shrink-0">
               💨 Expected Winds: <strong className="text-neutral-900 font-extrabold">{tcwsInfo.wind}</strong>
             </span>
-            <span className="text-[11px] text-neutral-500 font-medium italic">
-              Station: Province of Rizal / Montalban
+            <span className="text-[11px] text-neutral-700 font-medium truncate flex items-center gap-1.5 sm:justify-end">
+              <AlertTriangle className={cn("size-3.5 shrink-0", signalLevel > 0 ? "text-amber-600" : "text-emerald-600")} />
+              <span className="truncate">{tcwsInfo.threat}</span>
             </span>
           </div>
-
-          <p className="text-caption text-neutral-700 font-medium flex items-center gap-1.5 bg-white/70 rounded-lg p-2 border border-black/5">
-            <AlertTriangle className={cn("size-3.5 shrink-0", signalLevel > 0 ? "text-amber-600" : "text-emerald-600")} />
-            <span>{tcwsInfo.threat}</span>
-          </p>
         </div>
 
         {/* Freshness Footer */}
