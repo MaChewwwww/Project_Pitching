@@ -166,7 +166,7 @@ export const SAN_JOSE_OUTER_BOUNDARY_GEOJSON: GeoJSON.Feature = {
 export const HAZARD_LEVELS = [
   { level: 1, label: "Low", depth: "0–0.5 m", color: "#FFED4A" },
   { level: 2, label: "Medium", depth: "0.5–1.5 m", color: "#F59E0B" },
-  { level: 3, label: "High", depth: "over 1.5 m", color: "#EF4444" },
+  { level: 3, label: "High", depth: "Over 1.5 m", color: "#EF4444" },
 ] as const;
 
 export type HazardLevel = (typeof HAZARD_LEVELS)[number]["level"];

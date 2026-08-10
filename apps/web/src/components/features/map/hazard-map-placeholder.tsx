@@ -39,7 +39,7 @@ const HAZARD_LEGEND = [
   },
   {
     level: "High Hazard",
-    depth: "over 1.5 m",
+    depth: "Over 1.5 m",
     proximityText: "Waterway Proximity: Very Near (1 km or less)",
     color: "bg-[#EF4444]",
     borderColor: "border-red-600/50",
