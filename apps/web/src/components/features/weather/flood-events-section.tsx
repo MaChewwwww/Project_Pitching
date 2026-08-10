@@ -7,6 +7,13 @@ import { Badge } from "@/components/common/badge";
 import { Card, CardContent } from "@/components/common/card";
 import { EmptyState } from "@/components/common/empty-state";
 import { FloodHistoryVisualizer } from "@/components/features/weather/flood-history-visualizer";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { PublicFloodEvent } from "@/lib/api/public-types";
 import { formatNumber, formatPhtDate } from "@/lib/format";
 
@@ -55,27 +62,27 @@ export function FloodEventsSection({ events }: FloodEventsSectionProps) {
           {/* Year Filter Control */}
           <div className="flex items-center gap-2">
             <Filter className="size-3.5 text-neutral-400 shrink-0" />
-            <label htmlFor="year-filter" className="text-caption font-semibold text-neutral-500 shrink-0">
+            <span className="text-caption font-semibold text-neutral-500 shrink-0">
               Filter Year:
-            </label>
-            <select
-              id="year-filter"
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-caption font-semibold text-neutral-800 shadow-2xs transition-colors hover:border-neutral-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
-            >
-              <option value="all">All Years ({events.length})</option>
-              {availableYears.map((yr) => {
-                const count = events.filter(
-                  (e) => new Date(e.started_at).getFullYear().toString() === yr
-                ).length;
-                return (
-                  <option key={yr} value={yr}>
-                    {yr} ({count})
-                  </option>
-                );
-              })}
-            </select>
+            </span>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="h-8 text-caption font-semibold bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 shadow-2xs">
+                <SelectValue placeholder="Select year" />
+              </SelectTrigger>
+              <SelectContent align="end">
+                <SelectItem value="all">All Years ({events.length})</SelectItem>
+                {availableYears.map((yr) => {
+                  const count = events.filter(
+                    (e) => new Date(e.started_at).getFullYear().toString() === yr
+                  ).length;
+                  return (
+                    <SelectItem key={yr} value={yr}>
+                      {yr} ({count})
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
