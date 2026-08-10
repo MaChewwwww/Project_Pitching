@@ -30,7 +30,7 @@ export async function EvacCentersSection() {
           icon={Building2}
           title="Barangay"
           titleAccent="Facilities"
-          description="Evacuation centers, barangay halls, health clinics, and emergency posts across San Jose."
+          description="Evacuation centers, barangay halls, health centers, and community facilities across San Jose."
           action={
             <Button asChild variant="outline" pill size="md" className="shrink-0 max-sm:px-3">
               <Link href="/evacuation-centers" aria-label="View All">
