@@ -11,20 +11,26 @@ import { formatAge, formatPhtDateTime } from "@/lib/format";
  * hydration mismatch, and under ISR the server's copy can be a full revalidation
  * window out of date.
  *
- * So: render the absolute Philippine time during SSR and on the first client
- * render, then swap to the relative form inside an effect, once only the browser
- * is deciding. The value ticks every 30 seconds afterwards so an open page does
- * not quietly go stale.
- *
- * `suppressHydrationWarning` would also silence the warning, but it silences the
- * whole class of bug rather than fixing this instance of it.
+ * Renders the absolute Philippine time during SSR and on the first client
+ * render, then swaps to the relative form inside an effect once only the browser
+ * is deciding. Ticks every 30 seconds afterwards so an open page does not quietly go stale.
  */
 export function useRelativeTime(iso: string, ageMinutes: number): string {
   const [relative, setRelative] = useState<string | null>(null);
 
   useEffect(() => {
-    const compute = () =>
-      setRelative(formatAge(Math.floor((Date.now() - Date.parse(iso)) / 60_000)));
+    const compute = () => {
+      if (!iso) return;
+      // Ensure ISO string is treated as UTC if missing timezone suffix
+      const normalizedIso =
+        iso.endsWith("Z") || /[+-]\d{2}:\d{2}$/.test(iso) ? iso : `${iso}Z`;
+
+      const parsed = Date.parse(normalizedIso);
+      if (isNaN(parsed)) return;
+
+      const diffMinutes = Math.max(0, Math.floor((Date.now() - parsed) / 60_000));
+      setRelative(formatAge(diffMinutes));
+    };
 
     compute();
     const timer = setInterval(compute, 30_000);

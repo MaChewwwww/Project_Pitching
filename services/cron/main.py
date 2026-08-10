@@ -87,6 +87,18 @@ def main() -> None:
         extra={"job": ",".join(sorted(j.id for j in scheduler.get_jobs())), "outcome": "startup"},
     )
 
+    # Initial data ingestion on container startup so readings are fresh immediately
+    for name, func in [
+        ("fetch_weather", fetch_weather),
+        ("fetch_river_level", fetch_river_level),
+        ("fetch_tcws_signal", fetch_tcws_signal),
+    ]:
+        try:
+            log.info("running initial %s on startup", name)
+            func()
+        except Exception as exc:
+            log.warning("initial %s failed: %s", name, exc)
+
     try:
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):

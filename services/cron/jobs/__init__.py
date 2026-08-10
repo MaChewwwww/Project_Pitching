@@ -16,12 +16,18 @@ Job discipline — every one of these holds, for every job:
 
 from jobs.backup import backup_database
 from jobs.maintenance import flag_stale_records, send_activity_reminders
-from jobs.readings import evaluate_thresholds, fetch_river_level, fetch_weather
+from jobs.readings import (
+    evaluate_thresholds,
+    fetch_river_level,
+    fetch_tcws_signal,
+    fetch_weather,
+)
 
 __all__ = [
     "backup_database",
     "evaluate_thresholds",
     "fetch_river_level",
+    "fetch_tcws_signal",
     "fetch_weather",
     "flag_stale_records",
     "send_activity_reminders",
