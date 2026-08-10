@@ -152,16 +152,14 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
       {/* Left Column: Stacked Horizontal Bar Chart by Area */}
-      <Card radius="xl" className="lg:col-span-7 border border-neutral-200/90 shadow-sm flex flex-col justify-between">
+      <Card radius="xl" className="lg:col-span-7 border border-neutral-200/90 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between overflow-hidden">
+        <div className="h-1 w-full bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500" />
         <CardContent className="flex flex-col h-full justify-between p-5 md:p-6 gap-4">
           <div>
             <div className="flex items-center justify-between gap-3 mb-1">
-              <span className="text-overline inline-flex items-center gap-1.5 font-bold uppercase tracking-wider text-emerald-800">
+              <span className="text-overline inline-flex items-center gap-1.5 font-extrabold uppercase tracking-wider text-emerald-800">
                 <BarChart3 aria-hidden className="size-4 text-emerald-600" />
                 Risk Classification by Area
-              </span>
-              <span className="text-xs font-semibold text-neutral-500 bg-neutral-100 px-2.5 py-1 rounded-full border border-neutral-200">
-                {areas.length} Areas Profiled
               </span>
             </div>
             <p className="text-caption text-neutral-600">
@@ -170,57 +168,61 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
           </div>
 
           {/* Bar Chart Container */}
-          <div className="h-[280px] w-full pt-2">
+          <div className="h-[290px] w-full pt-1">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={barData}
                 layout="vertical"
-                margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
-                barSize={18}
+                margin={{ top: 5, right: 15, left: 10, bottom: 5 }}
+                barSize={22}
               >
                 <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis
                   type="category"
                   dataKey="name"
-                  stroke="#475569"
-                  fontSize={12}
-                  fontWeight={600}
+                  stroke="#334155"
+                  fontSize={13}
+                  fontWeight={700}
                   tickLine={false}
                   axisLine={false}
-                  width={60}
+                  width={62}
                 />
-                <Tooltip content={<CustomBarTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.6)" }} />
+                <Tooltip content={<CustomBarTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.7)", radius: 6 }} />
                 <Bar dataKey="low" name="Low Risk" stackId="risk" fill="#10B981" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="medium" name="Medium Risk" stackId="risk" fill="#F59E0B" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="high" name="High Risk" stackId="risk" fill="#EF4444" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="high" name="High Risk" stackId="risk" fill="#EF4444" radius={[0, 6, 6, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
           {/* Legend Strip */}
-          <div className="flex items-center justify-center gap-6 border-t border-neutral-100 pt-3 text-xs font-semibold">
-            <div className="flex items-center gap-1.5 text-neutral-700">
-              <span className="size-3 rounded-sm bg-emerald-500" />
+          <div className="flex items-center justify-center gap-6 border-t border-neutral-100 pt-3.5 text-xs font-semibold">
+            <div className="flex items-center gap-2 text-neutral-700">
+              <span className="size-3 rounded-full bg-emerald-500 shadow-2xs" />
               <span>Low Risk</span>
+              <span className="text-[11px] text-neutral-500 font-normal">({totalLow})</span>
             </div>
-            <div className="flex items-center gap-1.5 text-neutral-700">
-              <span className="size-3 rounded-sm bg-amber-500" />
+            <div className="flex items-center gap-2 text-neutral-700">
+              <span className="size-3 rounded-full bg-amber-500 shadow-2xs" />
               <span>Medium Risk</span>
+              <span className="text-[11px] text-neutral-500 font-normal">({totalMed})</span>
             </div>
-            <div className="flex items-center gap-1.5 text-neutral-700">
-              <span className="size-3 rounded-sm bg-red-500" />
+            <div className="flex items-center gap-2 text-neutral-700">
+              <span className="size-3 rounded-full bg-red-500 shadow-2xs" />
               <span>High Risk</span>
+              <span className="text-[11px] text-neutral-500 font-normal">({totalHigh})</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Right Column: Overall Donut / Pie Chart for San Jose */}
-      <Card radius="xl" className="lg:col-span-5 border border-neutral-200/90 shadow-sm flex flex-col justify-between">
+      <Card radius="xl" className="lg:col-span-5 border border-neutral-200/90 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between overflow-hidden">
+        <div className="h-1 w-full bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500" />
         <CardContent className="flex flex-col h-full justify-between p-5 md:p-6 gap-4">
           <div>
             <div className="flex items-center justify-between gap-3 mb-1">
-              <span className="text-overline inline-flex items-center gap-1.5 font-bold uppercase tracking-wider text-emerald-800">
+              <span className="text-overline inline-flex items-center gap-1.5 font-extrabold uppercase tracking-wider text-emerald-800">
                 <PieChartIcon aria-hidden className="size-4 text-emerald-600" />
                 San Jose Overall Distribution
               </span>
@@ -238,13 +240,14 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
                   data={pieData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={3}
+                  innerRadius={62}
+                  outerRadius={92}
+                  paddingAngle={4}
                   dataKey="value"
+                  cornerRadius={4}
                 >
                   {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
+                    <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={3} />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomPieTooltip />} />
@@ -252,38 +255,40 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
             </ResponsiveContainer>
 
             {/* Central Hero Metric */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-display-sm font-black text-neutral-900 leading-none">
-                {overallTotal}
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mt-0.5">
-                Households
-              </span>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="size-28 flex flex-col items-center justify-center rounded-full bg-slate-50/90 border border-slate-200/80 shadow-2xs backdrop-blur-xs">
+                <span className="text-display-sm font-black text-neutral-900 leading-none">
+                  {overallTotal}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mt-1">
+                  Households
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Breakdown Pills */}
           <div className="grid grid-cols-3 gap-2 border-t border-neutral-100 pt-3">
-            <div className="flex flex-col items-center rounded-xl bg-emerald-50/80 border border-emerald-200/60 p-2 text-center">
-              <span className="text-[10px] font-bold text-emerald-800 uppercase">Low Risk</span>
-              <span className="text-h3 font-black text-emerald-950 tabular">{totalLow}</span>
-              <span className="text-[10px] font-semibold text-emerald-700">
+            <div className="flex flex-col items-center rounded-xl bg-emerald-50/90 border border-emerald-200/70 p-2.5 text-center transition-all hover:bg-emerald-100/80">
+              <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Low Risk</span>
+              <span className="text-h3 font-black text-emerald-950 tabular my-0.5">{totalLow}</span>
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/90 px-1.5 py-0.2 rounded-md">
                 {overallTotal ? Math.round((totalLow / overallTotal) * 100) : 0}%
               </span>
             </div>
 
-            <div className="flex flex-col items-center rounded-xl bg-amber-50/80 border border-amber-200/60 p-2 text-center">
-              <span className="text-[10px] font-bold text-amber-800 uppercase">Medium</span>
-              <span className="text-h3 font-black text-amber-950 tabular">{totalMed}</span>
-              <span className="text-[10px] font-semibold text-amber-700">
+            <div className="flex flex-col items-center rounded-xl bg-amber-50/90 border border-amber-200/70 p-2.5 text-center transition-all hover:bg-amber-100/80">
+              <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">Medium</span>
+              <span className="text-h3 font-black text-amber-950 tabular my-0.5">{totalMed}</span>
+              <span className="text-[10px] font-bold text-amber-700 bg-amber-100/90 px-1.5 py-0.2 rounded-md">
                 {overallTotal ? Math.round((totalMed / overallTotal) * 100) : 0}%
               </span>
             </div>
 
-            <div className="flex flex-col items-center rounded-xl bg-red-50/80 border border-red-200/60 p-2 text-center">
-              <span className="text-[10px] font-bold text-red-800 uppercase">High Risk</span>
-              <span className="text-h3 font-black text-red-950 tabular">{totalHigh}</span>
-              <span className="text-[10px] font-semibold text-red-700">
+            <div className="flex flex-col items-center rounded-xl bg-red-50/90 border border-red-200/70 p-2.5 text-center transition-all hover:bg-red-100/80">
+              <span className="text-[10px] font-bold text-red-800 uppercase tracking-wider">High Risk</span>
+              <span className="text-h3 font-black text-red-950 tabular my-0.5">{totalHigh}</span>
+              <span className="text-[10px] font-bold text-red-700 bg-red-100/90 px-1.5 py-0.2 rounded-md">
                 {overallTotal ? Math.round((totalHigh / overallTotal) * 100) : 0}%
               </span>
             </div>
