@@ -33,9 +33,9 @@ const HAZARD_LEGEND = [
     depth: "0.5–1.5 m",
     proximityText: "Waterway Proximity: Near (1 – 5 km)",
     color: "bg-[#F59E0B]",
-    borderColor: "border-amber-600/50",
-    badgeBg: "bg-amber-100/90 text-amber-900 border-amber-300/70",
-    cardBg: "border-amber-200 bg-amber-50/60",
+    borderColor: "border-orange-600/70",
+    badgeBg: "bg-orange-100 text-orange-950 border-orange-300",
+    cardBg: "border-orange-300/80 bg-orange-50/90",
   },
   {
     level: "High Hazard",
