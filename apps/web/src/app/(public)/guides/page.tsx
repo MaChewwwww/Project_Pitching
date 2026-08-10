@@ -20,11 +20,10 @@ export default async function GuidesPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Preparedness"
-        title="Know what to do"
-        titleAccent="before it happens"
+        title="Preparedness"
+        titleAccent="Guidelines"
         description="Practical guides for the hazards San Jose actually faces. Each one cites its source and shows when it was last reviewed."
-        breadcrumb={[{ label: "Home", href: "/" }, { label: "Preparedness guidelines" }]}
+        breadcrumb={[{ label: "Home", href: "/" }, { label: "Preparedness Guidelines" }]}
       />
 
       <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-6 md:py-12">

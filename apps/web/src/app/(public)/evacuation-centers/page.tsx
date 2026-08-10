@@ -53,9 +53,8 @@ export default async function EvacuationCentersPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Directory & Services"
         title="Barangay"
-        titleAccent="facilities"
+        titleAccent="Facilities & Centers"
         description={
           centers.length > 0
             ? `${open} of ${centers.length} evacuation centers open. Full directory of emergency stations, clinics, and barangay facilities below.`

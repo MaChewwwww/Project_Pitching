@@ -34,7 +34,6 @@ export default async function WeatherPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Conditions Right Now"
         title="Weather &"
         titleAccent="River Level"
         description="Every reading shows when it was taken and where it came from. Readings past their staleness window are marked as such rather than quietly shown as current."

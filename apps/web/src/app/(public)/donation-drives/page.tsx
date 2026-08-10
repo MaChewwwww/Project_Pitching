@@ -30,11 +30,10 @@ export default async function DonationDrivesPage() {
   return (
     <>
       <PageHeader
-        eyebrow="How to help"
-        title="Donation"
-        titleAccent="drives"
+        title="Active"
+        titleAccent="Donation Drives"
         description="Progress below counts what has actually arrived, not what was pledged. No account is needed to donate."
-        breadcrumb={[{ label: "Home", href: "/" }, { label: "Donation drives" }]}
+        breadcrumb={[{ label: "Home", href: "/" }, { label: "Donation Drives" }]}
       />
 
       <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-6 md:py-12">

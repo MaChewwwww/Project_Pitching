@@ -20,7 +20,7 @@ function toTitleCase(str: string): string {
 export interface PageHeaderProps {
   eyebrow?: string;
   title: React.ReactNode;
-  /** Rendered in `primary-600`, after `title`. */
+  /** Rendered in gradient text with accent underline, after `title`. */
   titleAccent?: React.ReactNode;
   description?: React.ReactNode;
   breadcrumb?: { label: string; href?: Route }[];
@@ -29,7 +29,6 @@ export interface PageHeaderProps {
 }
 
 export function PageHeader({
-  eyebrow,
   title,
   titleAccent,
   description,
@@ -50,7 +49,7 @@ export function PageHeader({
       />
       <div className="relative mx-auto max-w-[1440px] px-4 py-7 md:px-6 md:py-10">
         {breadcrumb && breadcrumb.length > 0 ? (
-          <nav aria-label="Breadcrumb" className="mb-4 flex items-center">
+          <nav aria-label="Breadcrumb" className="mb-4.5 flex items-center">
             <ol className="-ml-1.5 inline-flex flex-wrap items-center gap-2 rounded-full border border-slate-200/90 bg-white/95 px-3.5 py-1.5 text-sm shadow-xs backdrop-blur-md">
               {breadcrumb.map((crumb, i) => {
                 const last = i === breadcrumb.length - 1;
@@ -88,22 +87,23 @@ export function PageHeader({
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex flex-col gap-2">
-            {eyebrow ? (
-              <span className="text-overline font-bold tracking-wider text-primary-700">
-                {toTitleCase(eyebrow)}
-              </span>
-            ) : null}
-            <h1 className="text-display-md font-bold tracking-tight text-neutral-900">
+            <h1 className="text-display-md sm:text-display-lg font-black tracking-tight text-neutral-900">
               {typeof title === "string" ? toTitleCase(title) : title}
               {titleAccent ? (
-                <span className="font-extrabold text-primary-600">
+                <>
                   {" "}
-                  {typeof titleAccent === "string" ? toTitleCase(titleAccent) : titleAccent}
-                </span>
+                  <span className="relative inline-block bg-gradient-to-r from-primary-600 via-primary-700 to-emerald-600 bg-clip-text font-black text-transparent">
+                    {typeof titleAccent === "string" ? toTitleCase(titleAccent) : titleAccent}
+                    <span
+                      aria-hidden
+                      className="absolute -bottom-1.5 left-0 h-[3.5px] w-full rounded-full bg-gradient-to-r from-primary-500/60 via-primary-600/70 to-emerald-500/60"
+                    />
+                  </span>
+                </>
               ) : null}
             </h1>
             {description ? (
-              <p className="text-body-lg max-w-2xl leading-relaxed text-neutral-600">
+              <p className="text-body-lg max-w-2xl leading-relaxed text-neutral-600 pt-1">
                 {description}
               </p>
             ) : null}

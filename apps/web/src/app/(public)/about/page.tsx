@@ -27,8 +27,7 @@ export default function AboutPage() {
   return (
     <>
       <PageHeader
-        eyebrow="About"
-        title="Built for"
+        title="Built For"
         titleAccent="Barangay San Jose"
         description="One place the barangay maintains, readable on whatever phone a resident already owns."
         breadcrumb={[{ label: "Home", href: "/" }, { label: "About" }]}

@@ -26,9 +26,8 @@ export default async function AnnouncementsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="From the barangay"
-        title="Announcements &"
-        titleAccent="advisories"
+        title="Barangay"
+        titleAccent="Announcements"
         description="Newest first. Ended alerts are kept here so residents can see what was issued and when."
         breadcrumb={[{ label: "Home", href: "/" }, { label: "Announcements" }]}
       />

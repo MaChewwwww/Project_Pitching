@@ -25,9 +25,8 @@ export default async function RescuePage() {
   return (
     <>
       <PageHeader
-        eyebrow="In an emergency"
-        title="Ask for"
-        titleAccent="rescue"
+        title="Emergency"
+        titleAccent="Rescue Request"
         description="No account needed. Give your name, where you are, and what's happening."
         breadcrumb={[{ label: "Home", href: "/" }, { label: "Rescue" }]}
       />

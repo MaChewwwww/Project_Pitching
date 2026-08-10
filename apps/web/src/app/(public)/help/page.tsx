@@ -31,9 +31,8 @@ export default async function HelpPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Help"
-        title="Questions &"
-        titleAccent="contact"
+        title="Frequently Asked"
+        titleAccent="Questions"
         description="If you cannot find an answer here, call the barangay office or visit during working hours."
         breadcrumb={[{ label: "Home", href: "/" }, { label: "Help & FAQs" }]}
       />

@@ -76,7 +76,6 @@ export default async function HazardMapPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Know Your Area"
         title="Flood"
         titleAccent="Hazard Map"
         description="Colours follow the national hazard-map convention used on every government map — yellow, orange and red by depth, not by urgency."

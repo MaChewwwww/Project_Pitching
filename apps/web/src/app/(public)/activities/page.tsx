@@ -29,9 +29,8 @@ export default async function ActivitiesPage() {
   return (
     <>
       <PageHeader
-        eyebrow="What's on"
         title="Community"
-        titleAccent="activities"
+        titleAccent="Activities"
         description="Drills, training and programmes run by the barangay and SK. Open to all residents unless stated otherwise."
         breadcrumb={[{ label: "Home", href: "/" }, { label: "Activities" }]}
       />
