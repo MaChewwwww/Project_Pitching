@@ -352,10 +352,8 @@ export function HazardMapClient({
                 </div>
               `;
 
-              layer.bindTooltip(tooltipHtml, {
-                sticky: true,
-                opacity: 0.95,
-                className: "dark-leaflet-tooltip",
+              layer.bindPopup(tooltipHtml, {
+                className: "dark-leaflet-popup",
               });
             }}
           />
@@ -380,48 +378,6 @@ export function HazardMapClient({
                   fillOpacity: 0.95,
                 }}
               >
-                <Tooltip sticky={true} opacity={0.98} className="dark-leaflet-tooltip">
-                  <div className="p-1.5 font-sans min-w-[190px] space-y-1.5">
-                    <div className="flex items-start gap-2">
-                      <div className="w-4 h-4 shrink-0 flex items-center justify-center mt-0.5">
-                        <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-                      </div>
-                      <strong className="block text-xs font-bold text-white leading-snug">
-                        {facility.name}
-                      </strong>
-                    </div>
-                    {(facility as FacilityWithCapacity).capacity != null && (
-                      <div className="flex items-center gap-2 text-[11px] text-slate-200">
-                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-emerald-400">
-                          <Users className="size-3.5" />
-                        </div>
-                        <span className="leading-tight">
-                          Capacity: <span className="font-bold text-white">{(facility as FacilityWithCapacity).capacity}</span> persons
-                        </span>
-                      </div>
-                    )}
-                    {facility.address && (
-                      <div className="flex items-start gap-2 text-[11px] font-medium text-amber-300">
-                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-amber-300 mt-0.5">
-                          <MapPin className="size-3.5" />
-                        </div>
-                        <span className="leading-tight break-words">
-                          {facility.address}
-                        </span>
-                      </div>
-                    )}
-                    {facility.contact_number && (
-                      <div className="flex items-center gap-2 text-[11px] font-semibold text-red-400">
-                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-red-400">
-                          <Phone className="size-3.5" />
-                        </div>
-                        <span className="leading-tight">
-                          {facility.contact_number}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </Tooltip>
                 <Popup className="dark-leaflet-popup">
                   <div className="p-2 font-sans min-w-[200px] space-y-2">
                     <div className="flex items-start gap-2">
@@ -502,29 +458,6 @@ export function HazardMapClient({
                   className: isSounding ? "sagip-siren-ripple" : undefined,
                 }}
               >
-                <Tooltip sticky={true} opacity={0.98} className="dark-leaflet-tooltip">
-                  <div className="p-1.5 font-sans min-w-[150px]">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 shrink-0 flex items-center justify-center">
-                        {isSounding ? (
-                          <Volume2 className="size-3.5 text-red-400 animate-pulse" />
-                        ) : (
-                          <VolumeX className="size-3.5 text-slate-400" />
-                        )}
-                      </div>
-                      <div>
-                        <strong className="block text-xs font-bold text-white leading-tight">
-                          {siren.name}
-                        </strong>
-                        <span
-                          className={`text-[10px] font-semibold ${isSounding ? "text-red-400" : "text-slate-400"}`}
-                        >
-                          {isSounding ? "Sounding Siren" : "Idle Siren"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </Tooltip>
                 <Popup className="dark-leaflet-popup">
                   <div className="p-1.5 font-sans">
                     <div className="flex items-center gap-2">
