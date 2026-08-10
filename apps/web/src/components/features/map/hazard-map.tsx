@@ -41,6 +41,7 @@ export interface HazardMapProps {
   areaStats?: PublicAreaStat[];
   sirens?: PublicSiren[];
   interactive?: boolean;
+  zoom?: number;
   className?: string;
 }
 
@@ -50,6 +51,7 @@ export function HazardMap({
   areaStats = [],
   sirens = [],
   interactive = true,
+  zoom,
   className,
 }: HazardMapProps) {
   return (
@@ -60,6 +62,7 @@ export function HazardMap({
         areaStats={areaStats}
         sirens={sirens}
         interactive={interactive}
+        zoom={zoom}
       />
     </div>
   );
