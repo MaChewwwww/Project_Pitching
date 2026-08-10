@@ -1,11 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, Filter } from "lucide-react";
+import { Filter } from "lucide-react";
 
 import { EmptyState } from "@/components/common/empty-state";
 import { EvacCenterCard } from "@/components/features/evacuation/evac-center-card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { PublicEvacCenter } from "@/lib/api/public-types";
+import { cn } from "@/lib/utils";
 
 const AREAS = [
   "All",
@@ -44,7 +52,7 @@ export function EvacCenterFilterGrid({
 
   return (
     <div className="flex flex-col">
-      {/* Header row: Title on left, Dropdown on top-right */}
+      {/* Header row: Title on left, Custom Dropdown on top-right */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
         <div>
           <h2 className="text-h2 text-neutral-900">Evacuation Centers</h2>
@@ -53,28 +61,52 @@ export function EvacCenterFilterGrid({
           </p>
         </div>
 
-        {/* Dropdown Filter Select */}
-        <div className="relative inline-flex items-center shrink-0 w-fit">
-          <Filter aria-hidden className="absolute left-3.5 size-3.5 text-emerald-600 pointer-events-none" />
-          <select
-            aria-label="Filter evacuation centers by Area"
-            value={selectedArea}
-            onChange={(e) => setSelectedArea(e.target.value)}
-            className="appearance-none rounded-xl border border-neutral-300 bg-white pl-9 pr-9 py-2 text-xs font-bold text-neutral-800 shadow-xs hover:border-emerald-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none cursor-pointer transition-all min-w-[150px]"
+        {/* Custom Themed Select Dropdown */}
+        <Select value={selectedArea} onValueChange={setSelectedArea}>
+          <SelectTrigger className="inline-flex h-10 w-fit items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-4 py-2 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all cursor-pointer">
+            <Filter aria-hidden className="size-3.5 text-emerald-600 shrink-0" />
+            <SelectValue placeholder="Select Area">
+              {selectedArea === "All"
+                ? `All Areas (${countsByArea.All ?? 0})`
+                : `${selectedArea} (${countsByArea[selectedArea] ?? 0})`}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent
+            align="end"
+            className="z-50 min-w-[200px] overflow-hidden rounded-2xl border border-neutral-200/90 bg-white p-1.5 shadow-xl transition-all"
           >
             {AREAS.map((area) => {
               const count = countsByArea[area] ?? 0;
-              const label =
-                area === "All" ? `All Areas (${count})` : `${area} (${count})`;
+              const isSelected = selectedArea === area;
+              const label = area === "All" ? "All Areas" : area;
+
               return (
-                <option key={area} value={area}>
-                  {label}
-                </option>
+                <SelectItem
+                  key={area}
+                  value={area}
+                  className={cn(
+                    "relative flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-xs font-semibold transition-colors cursor-pointer my-0.5",
+                    isSelected
+                      ? "bg-emerald-600 text-white font-bold focus:bg-emerald-600 focus:text-white"
+                      : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950"
+                  )}
+                >
+                  <span>{label}</span>
+                  <span
+                    className={cn(
+                      "ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0",
+                      isSelected
+                        ? "bg-white/25 text-white"
+                        : "bg-emerald-100/80 text-emerald-800"
+                    )}
+                  >
+                    {count}
+                  </span>
+                </SelectItem>
               );
             })}
-          </select>
-          <ChevronDown aria-hidden className="absolute right-3 size-3.5 text-neutral-400 pointer-events-none" />
-        </div>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Centers Grid */}
@@ -95,4 +127,3 @@ export function EvacCenterFilterGrid({
     </div>
   );
 }
-
