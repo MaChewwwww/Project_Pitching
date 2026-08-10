@@ -72,7 +72,9 @@ export function EvacCenterFilterGrid({
             </SelectValue>
           </SelectTrigger>
           <SelectContent
+            position="popper"
             align="end"
+            sideOffset={6}
             className="z-50 min-w-[200px] overflow-hidden rounded-2xl border border-neutral-200/90 bg-white p-1.5 shadow-xl transition-all"
           >
             {AREAS.map((area) => {
