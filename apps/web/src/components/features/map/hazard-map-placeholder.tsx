@@ -228,7 +228,7 @@ export function HazardMapPlaceholder({
           <Attribution
             className="mt-auto pt-1"
             sources={["hazard", "basemap", "river"]}
-            disclaimer={["boundaries", "warning-authority"]}
+            disclaimer="warning-authority"
           />
         </div>
       </div>

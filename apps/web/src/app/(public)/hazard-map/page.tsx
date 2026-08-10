@@ -144,7 +144,7 @@ export default async function HazardMapPage() {
 
         <Attribution
           sources={["hazard", "basemap", "river"]}
-          disclaimer={["boundaries", "warning-authority"]}
+          disclaimer="warning-authority"
         />
       </div>
     </>

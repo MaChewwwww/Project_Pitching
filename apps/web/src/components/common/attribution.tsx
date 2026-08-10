@@ -12,9 +12,9 @@ export type AttributionSource = keyof typeof ATTRIBUTION;
 export type DisclaimerKind = "warning-authority" | "no-rescue-promise" | "boundaries";
 
 const DISCLAIMERS: Record<DisclaimerKind, string> = {
-  // NFR-LGL-005 — Rephrased for Barangay implementation
+  // NFR-LGL-005 — Consolidated official authority & boundaries disclaimer
   "warning-authority":
-    "Official flood advisories and river level monitoring are managed by Barangay San Jose in coordination with DOST-PAGASA and the Rodriguez MDRRMO. Always follow emergency instructions issued by barangay officials.",
+    "Official area boundaries, hazard maps, flood advisories, and river monitoring are managed by Barangay San Jose in coordination with DOST-PAGASA and the Rodriguez MDRRMO. Always follow emergency instructions issued by barangay officials.",
   // NFR-LGL-007, FR-SAF-017
   "no-rescue-promise":
     "Submitting information here does not guarantee a rescue response. In an emergency, call the hotlines above.",
