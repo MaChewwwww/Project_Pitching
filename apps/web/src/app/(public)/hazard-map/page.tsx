@@ -103,25 +103,27 @@ export default async function HazardMapPage() {
             <div className="flex flex-col gap-4 lg:w-64 lg:shrink-0">
               {/* River Alert Level Pill — sitting directly above the Layers container */}
               {river.alert_level > 0 && (
-                <div className="flex items-center justify-between rounded-xl bg-slate-900 px-3.5 py-2.5 text-xs font-bold text-slate-100 shadow-md border border-slate-800 backdrop-blur-md">
-                  <span className="flex items-center gap-2">
-                    <span className="relative flex size-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-                      <span className="relative inline-flex size-2 rounded-full bg-amber-500" />
-                    </span>
-                    River Status
+                <div
+                  className={
+                    "flex items-center justify-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-extrabold shadow-md border backdrop-blur-md " +
+                    (river.alert_level >= 3
+                      ? "bg-red-950/80 border-red-800/60 text-red-300"
+                      : river.alert_level === 2
+                        ? "bg-amber-950/80 border-amber-800/60 text-amber-300"
+                        : "bg-yellow-950/80 border-yellow-800/60 text-yellow-300")
+                  }
+                >
+                  <span className="relative flex size-2 shrink-0">
+                    <span className={
+                      "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 " +
+                      (river.alert_level >= 3 ? "bg-red-400" : river.alert_level === 2 ? "bg-amber-400" : "bg-yellow-400")
+                    } />
+                    <span className={
+                      "relative inline-flex size-2 rounded-full " +
+                      (river.alert_level >= 3 ? "bg-red-500" : river.alert_level === 2 ? "bg-amber-500" : "bg-yellow-400")
+                    } />
                   </span>
-                  <span
-                    className={
-                      river.alert_level >= 3
-                        ? "text-red-400 font-extrabold"
-                        : river.alert_level === 2
-                          ? "text-amber-400 font-extrabold"
-                          : "text-yellow-300 font-extrabold"
-                    }
-                  >
-                    🌊 River Alert Level {river.alert_level}
-                  </span>
+                  🌊 Alert Level {river.alert_level}
                 </div>
               )}
 
