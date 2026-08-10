@@ -1,20 +1,11 @@
 import * as React from "react";
+import { AlertCircle, AlertTriangle, ShieldAlert } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { AlertLevel, RiverThresholds } from "@/lib/api/public-types";
 
 /**
  * The three-segment river alert gauge (design.md Section 7.2, BR-3.2).
- *
- * **When `thresholds` is null the gauge says so rather than inventing numbers.**
- * The Level 1/2/3 heights for this station are an open item — the MDRRMO has not
- * confirmed them (BRD OI-4). The obvious shortcut is to borrow Marikina's
- * 15/16/18 m, but those belong to a different river at a different gauge, and
- * printing them here would be worse than printing nothing: a resident comparing
- * a real reading against a wrong threshold draws a wrong conclusion.
- *
- * Alert levels are always a solid badge or banner with a number and a word, never
- * a map fill (design.md Section 3.4). This gauge is the badge form.
  */
 
 export interface AlertLevelIndicatorProps {
@@ -34,16 +25,27 @@ const SEGMENTS = [
   {
     level: 1 as const,
     label: "Prepare",
-    active: "bg-alert-1",
+    activeBg: "bg-amber-500/10 border-amber-300/80 text-amber-950",
+    barColor: "bg-amber-500",
+    icon: AlertCircle,
     key: "level_1_m" as const,
   },
   {
     level: 2 as const,
     label: "Evacuate",
-    active: "bg-alert-2",
+    activeBg: "bg-orange-500/15 border-orange-400 text-orange-950 shadow-2xs",
+    barColor: "bg-orange-500",
+    icon: AlertTriangle,
     key: "level_2_m" as const,
   },
-  { level: 3 as const, label: "Forced", active: "bg-alert-3", key: "level_3_m" as const },
+  {
+    level: 3 as const,
+    label: "Forced Evac",
+    activeBg: "bg-red-500/20 border-red-500 text-red-950 shadow-xs",
+    barColor: "bg-red-600",
+    icon: ShieldAlert,
+    key: "level_3_m" as const,
+  },
 ];
 
 export function AlertLevelIndicator({
@@ -61,9 +63,9 @@ export function AlertLevelIndicator({
       thresholds.level_3_m != null);
 
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
+    <div className={cn("flex flex-col gap-3", className)}>
       <div
-        className="flex gap-1"
+        className="grid grid-cols-3 gap-2"
         role="img"
         aria-label={
           level === 0
@@ -73,33 +75,48 @@ export function AlertLevelIndicator({
       >
         {SEGMENTS.map((segment) => {
           const reached = level >= segment.level;
+          const isCurrent = level === segment.level;
+          const Icon = segment.icon;
+
           return (
-            <div key={segment.level} className="flex flex-1 flex-col gap-1.5">
-              <span
-                className={cn(
-                  "block h-2 rounded-full",
-                  reached ? segment.active : onDark ? "bg-white/15" : "bg-neutral-200",
-                )}
-              />
-              <span
-                className={cn(
-                  "text-caption font-semibold",
-                  reached
-                    ? onDark
-                      ? "text-white"
-                      : "text-neutral-800"
-                    : onDark
-                      ? "text-primary-100/50"
-                      : "text-neutral-400",
-                )}
-              >
-                {segment.level} · {segment.label}
-              </span>
+            <div
+              key={segment.level}
+              className={cn(
+                "flex flex-col gap-1.5 rounded-xl border p-2.5 transition-all duration-200",
+                reached
+                  ? segment.activeBg
+                  : onDark
+                  ? "border-white/10 bg-white/5 text-neutral-400"
+                  : "border-neutral-200/60 bg-neutral-50/60 text-neutral-400"
+              )}
+            >
+              {/* Segment Progress Fill Bar */}
+              <div className="w-full bg-neutral-200/70 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all duration-500",
+                    reached ? segment.barColor : "bg-transparent"
+                  )}
+                  style={{ width: reached ? "100%" : "0%" }}
+                />
+              </div>
+
+              {/* Step Label & Active Icon */}
+              <div className="flex items-center justify-between gap-1 mt-0.5">
+                <span className="text-[11px] font-black uppercase tracking-wider">
+                  {segment.level} · {segment.label}
+                </span>
+                {reached ? (
+                  <Icon className={cn("size-3.5 shrink-0", isCurrent && "animate-pulse")} />
+                ) : null}
+              </div>
+
+              {/* Threshold Height */}
               {hasThresholds ? (
                 <span
                   className={cn(
-                    "text-caption tabular",
-                    onDark ? "text-primary-100/60" : "text-neutral-500",
+                    "text-caption tabular font-bold",
+                    reached ? "text-neutral-900" : "text-neutral-400"
                   )}
                 >
                   {thresholds?.[segment.key] != null
@@ -115,8 +132,8 @@ export function AlertLevelIndicator({
       {!hasThresholds && explainMissingThresholds ? (
         <p
           className={cn(
-            "text-caption",
-            onDark ? "text-primary-100/70" : "text-neutral-500",
+            "text-caption italic",
+            onDark ? "text-primary-100/70" : "text-neutral-500"
           )}
         >
           Threshold heights for this station are pending confirmation from the Rodriguez

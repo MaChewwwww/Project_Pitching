@@ -1,18 +1,11 @@
 import * as React from "react";
+import { Info, ShieldAlert } from "lucide-react";
 
 import { ATTRIBUTION } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 /**
  * Data credits and legal disclaimers (NFR-LGL-001 … 005, FR-MAP-008, FR-MAP-009).
- *
- * **These are licence terms and statutory positions, not footer decoration.**
- * The Project NOAH hazard data is ODC-ODbL: attribution is mandatory and
- * derivatives inherit the licence. And NFR-LGL-005 requires the platform state
- * plainly that it is not an official warning authority — PAGASA and the NDRRMC
- * are. Removing any of this because it clutters a layout is not a design call.
- *
- * Source strings live in `lib/brand.ts` so the wording is identical everywhere.
  */
 
 export type AttributionSource = keyof typeof ATTRIBUTION;
@@ -31,12 +24,6 @@ const DISCLAIMERS: Record<DisclaimerKind, string> = {
     "Area boundaries shown are approximations for planning and orientation. They are not cadastral or survey-grade data.",
 };
 
-/**
- * One-line forms, for surfaces where the full sentence would dominate — the hero
- * card, a map corner. The obligation is to state the limitation plainly, not to
- * state it at a particular length, and a disclaimer nobody reads because it
- * swallowed the panel is worse than a short one they do.
- */
 const SHORT_DISCLAIMERS: Record<DisclaimerKind, string> = {
   "warning-authority": "Not an official warning authority — see DOST-PAGASA.",
   "no-rescue-promise": "Submitting this does not guarantee a response.",
@@ -46,7 +33,6 @@ const SHORT_DISCLAIMERS: Record<DisclaimerKind, string> = {
 export interface AttributionProps {
   sources?: AttributionSource[];
   disclaimer?: DisclaimerKind | DisclaimerKind[] | null;
-  /** Use the condensed wording. */
   short?: boolean;
   onDark?: boolean;
   className?: string;
@@ -67,17 +53,33 @@ export function Attribution({
 
   if (sources.length === 0 && disclaimers.length === 0) return null;
 
-  const muted = onDark ? "text-primary-100/60" : "text-neutral-500";
+  const muted = onDark ? "text-primary-100/80" : "text-neutral-700";
 
   return (
-    <div className={cn("flex flex-col gap-1.5", className)}>
-      {disclaimers.map((kind) => (
-        <p key={kind} className={cn("text-caption", muted)}>
-          {short ? SHORT_DISCLAIMERS[kind] : DISCLAIMERS[kind]}
-        </p>
-      ))}
+    <div className={cn("flex flex-col gap-2", className)}>
+      {disclaimers.map((kind) => {
+        const isWarning = kind === "warning-authority";
+        const Icon = isWarning ? ShieldAlert : Info;
+
+        return (
+          <div
+            key={kind}
+            className={cn(
+              "flex gap-2.5 items-start rounded-xl border p-3 text-caption leading-relaxed",
+              onDark
+                ? "border-white/10 bg-white/5 text-primary-100/90"
+                : "border-neutral-200/80 bg-neutral-50/80 text-neutral-700 shadow-2xs"
+            )}
+          >
+            <Icon className="size-4 shrink-0 text-amber-600 mt-0.5" />
+            <p className={cn("text-caption font-medium leading-normal", muted)}>
+              {short ? SHORT_DISCLAIMERS[kind] : DISCLAIMERS[kind]}
+            </p>
+          </div>
+        );
+      })}
       {sources.length > 0 ? (
-        <p className={cn("text-caption", muted)}>
+        <p className={cn("text-caption px-1", muted)}>
           {sources.map((s) => ATTRIBUTION[s]).join(" · ")}
         </p>
       ) : null}
