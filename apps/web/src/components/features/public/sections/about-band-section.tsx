@@ -56,11 +56,11 @@ export function AboutBandSection() {
             asChild
             variant="outline"
             pill
-            size="lg"
-            className="self-start max-sm:w-full"
+            size="md"
+            className="self-start shrink-0 max-sm:px-3"
           >
-            <Link href="/about">
-              View All
+            <Link href="/about" aria-label="View All">
+              <span className="hidden sm:inline">View All</span>
               <ArrowRight aria-hidden className="size-4" />
             </Link>
           </Button>

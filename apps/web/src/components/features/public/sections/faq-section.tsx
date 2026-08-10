@@ -30,10 +30,10 @@ export async function FaqSection() {
             variant="outline"
             pill
             size="md"
-            className="self-start max-sm:w-full"
+            className="self-start shrink-0 max-sm:px-3"
           >
-            <Link href="/help">
-              View All
+            <Link href="/help" aria-label="View All">
+              <span className="hidden sm:inline">View All</span>
               <ArrowRight aria-hidden className="size-4" />
             </Link>
           </Button>

@@ -32,9 +32,9 @@ export async function AnnouncementsSection() {
         titleAccent="Advisories"
         description="Weather advisories, class suspensions, road closures and emergency notices — posted by the barangay office."
         action={
-          <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
-            <Link href="/announcements">
-              View All
+          <Button asChild variant="outline" pill size="md" className="shrink-0 max-sm:px-3">
+            <Link href="/announcements" aria-label="View All">
+              <span className="hidden sm:inline">View All</span>
               <ArrowRight aria-hidden className="size-4" />
             </Link>
           </Button>

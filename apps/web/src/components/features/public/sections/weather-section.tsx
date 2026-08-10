@@ -32,9 +32,9 @@ export async function WeatherSection() {
           titleAccent="River Level"
           description="Monitors real-time weather metrics and the DOST-PAGASA Montalban river gauge. Automated polling tracks rainfall, temperature, heat index, and rising water levels to alert San Jose residents of potential flood threats."
           action={
-            <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
-              <Link href="/weather">
-                View All
+            <Button asChild variant="outline" pill size="md" className="shrink-0 max-sm:px-3">
+              <Link href="/weather" aria-label="View All">
+                <span className="hidden sm:inline">View All</span>
                 <ArrowRight aria-hidden className="size-4" />
               </Link>
             </Button>

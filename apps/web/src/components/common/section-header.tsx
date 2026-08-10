@@ -106,14 +106,14 @@ export function SectionHeader({
       {/* Heading Row: Title + Action Button side by side */}
       <div
         className={cn(
-          "flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap",
+          "flex items-center justify-between gap-3 sm:gap-4",
           centred && "justify-center",
         )}
       >
         <Heading
           className={cn(
             TITLE_CLASS[as],
-            "tracking-tight flex items-center gap-3.5 flex-wrap",
+            "tracking-tight flex items-center gap-2.5 sm:gap-3.5 flex-wrap",
             centred && "justify-center",
             onDark ? "text-white" : "text-neutral-900",
           )}
@@ -121,13 +121,13 @@ export function SectionHeader({
           {!eyebrow && Icon ? (
             <span
               className={cn(
-                "flex size-11 shrink-0 items-center justify-center rounded-2xl transition-all duration-300",
+                "flex size-9 sm:size-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl transition-all duration-300",
                 onDark
                   ? "bg-white/10 text-primary-300 border border-white/20 ring-4 ring-white/5"
                   : "bg-gradient-to-br from-primary-500/15 via-primary-600/10 to-emerald-600/5 text-primary-600 border border-primary-600/20 shadow-sm ring-4 ring-primary-500/10",
               )}
             >
-              <Icon aria-hidden className="size-5.5 text-primary-600" strokeWidth={2.2} />
+              <Icon aria-hidden className="size-4.5 sm:size-5.5 text-primary-600" strokeWidth={2.2} />
             </span>
           ) : null}
           <span className="font-extrabold">
@@ -159,7 +159,7 @@ export function SectionHeader({
           </span>
         </Heading>
 
-        {action && !centred ? <div className="shrink-0 max-sm:w-full">{action}</div> : null}
+        {action && !centred ? <div className="shrink-0">{action}</div> : null}
       </div>
 
       {description ? (

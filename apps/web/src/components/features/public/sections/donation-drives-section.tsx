@@ -30,9 +30,9 @@ export async function DonationDrivesSection() {
           titleAccent="Drive"
           description="What the barangay is collecting right now, and how much has actually arrived. No account needed to donate."
           action={
-            <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
-              <Link href="/donation-drives">
-                View All
+            <Button asChild variant="outline" pill size="md" className="shrink-0 max-sm:px-3">
+              <Link href="/donation-drives" aria-label="View All">
+                <span className="hidden sm:inline">View All</span>
                 <ArrowRight aria-hidden className="size-4" />
               </Link>
             </Button>

@@ -23,9 +23,9 @@ export async function PreparednessSection() {
         titleAccent="Guidelines"
         description="Short, practical guides for the hazards San Jose actually faces — written for this barangay, not adapted from national leaflets."
         action={
-          <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
-            <Link href="/guides">
-              View All
+          <Button asChild variant="outline" pill size="md" className="shrink-0 max-sm:px-3">
+            <Link href="/guides" aria-label="View All">
+              <span className="hidden sm:inline">View All</span>
               <ArrowRight aria-hidden className="size-4" />
             </Link>
           </Button>

@@ -38,9 +38,9 @@ export async function HazardMapSection() {
           titleAccent="Hazard Map"
           description="Flood-prone areas across the barangay, surveyed by Project NOAH. Colours follow the national hazard-map convention used on every government map."
           action={
-            <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
-              <Link href="/hazard-map">
-                View All
+            <Button asChild variant="outline" pill size="md" className="shrink-0 max-sm:px-3">
+              <Link href="/hazard-map" aria-label="View All">
+                <span className="hidden sm:inline">View All</span>
                 <ArrowRight aria-hidden className="size-4" />
               </Link>
             </Button>

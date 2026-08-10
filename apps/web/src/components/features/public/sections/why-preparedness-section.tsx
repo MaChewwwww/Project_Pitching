@@ -84,9 +84,9 @@ export async function WhyPreparednessSection() {
             ))}
           </ul>
 
-          <Button asChild pill size="lg" className="self-start max-sm:w-full">
-            <Link href="/guides">
-              View All
+          <Button asChild pill size="lg" className="self-start shrink-0 max-sm:px-3">
+            <Link href="/guides" aria-label="View All">
+              <span className="hidden sm:inline">View All</span>
               <ArrowRight aria-hidden className="size-4" />
             </Link>
           </Button>
