@@ -86,7 +86,7 @@ export function PageHeader({
         ) : null}
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 w-full flex-1">
             <h1 className="text-display-md sm:text-display-lg font-black tracking-tight text-neutral-900">
               {typeof title === "string" ? toTitleCase(title) : title}
               {titleAccent ? (
@@ -103,7 +103,7 @@ export function PageHeader({
               ) : null}
             </h1>
             {description ? (
-              <p className="text-body-lg max-w-2xl leading-relaxed text-neutral-600 pt-1">
+              <p className="text-body-lg w-full max-w-none leading-relaxed text-neutral-600 pt-1">
                 {description}
               </p>
             ) : null}
