@@ -48,9 +48,9 @@ export const DARK_TILE_ATTRIBUTION =
 
 /** Thick dashed dark blue administrative boundary line style */
 export const BOUNDARY_LINE_STYLE = {
-  color: "#1F8049",
-  weight: 5,
-  opacity: 0.95,
+  color: "#4ade80",
+  weight: 4,
+  opacity: 1,
   dashArray: "10, 8",
   fill: false,
 };
