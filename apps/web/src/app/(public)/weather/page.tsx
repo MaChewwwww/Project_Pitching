@@ -47,8 +47,7 @@ export default async function WeatherPage() {
           <div className="flex flex-col gap-1 mb-6">
             <h2 className="text-h2 text-neutral-900">Past flood events</h2>
             <p className="text-body text-neutral-600">
-              What the river has done before. Peak levels here are the figures every
-              barangay plan since has been measured against. Automatically updated during active flood emergency events.
+              Explore historical river peak levels, household displacement figures, and affected areas from past flood events in Barangay San Jose. Live metrics and event logs update automatically during active flood emergencies.
             </p>
           </div>
 
