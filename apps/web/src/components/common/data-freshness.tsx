@@ -79,7 +79,7 @@ export function DataFreshness({
         )}
       >
         <Database aria-hidden className="size-3 text-sky-500 shrink-0" />
-        <span>Source: {sourceMeta.full}</span>
+        <span>{sourceMeta.full}</span>
         {showStation && station ? ` · ${station}` : null}
       </span>
 
