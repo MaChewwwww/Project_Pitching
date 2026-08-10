@@ -21,6 +21,7 @@ OLD_METRICS = "('river_level', 'rainfall', 'temperature', 'humidity', 'heat_inde
 
 
 def upgrade() -> None:
+    op.execute("ALTER TABLE reading DROP CONSTRAINT IF EXISTS ck_reading_ck_reading_reading_metric_valid")
     op.execute("ALTER TABLE reading DROP CONSTRAINT IF EXISTS ck_reading_reading_metric_valid")
     op.execute("ALTER TABLE reading DROP CONSTRAINT IF EXISTS reading_metric_valid")
     op.execute(
