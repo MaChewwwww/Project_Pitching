@@ -57,118 +57,123 @@ export default async function WeatherPage() {
             </p>
           </div>
 
-          {/* Visualization Section: Metrics & Interactive Charts First */}
-          <FloodHistoryVisualizer events={floods.items} />
+          <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr] lg:items-start">
+            {/* Left Column: Summary Metrics & Interactive Chart */}
+            <div className="min-w-0">
+              <FloodHistoryVisualizer events={floods.items} />
+            </div>
 
-          {floods.items.length > 0 ? (
-            <ul className="flex flex-col gap-4">
-              {floods.items.map((event) => {
-                const isOngoing = event.is_ongoing || !event.ended_at;
-                return (
-                  <li key={event.id}>
-                    <Card radius="xl" className={isOngoing ? "border-danger/40 bg-red-50/30 dark:bg-red-950/10" : ""}>
-                      <CardContent className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
-                        <div className="flex min-w-0 flex-col gap-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-h3 text-neutral-900">{event.name}</h3>
-                            {isOngoing ? (
-                              <Badge tone="danger" icon={AlertTriangle}>
-                                ONGOING FLOOD EVENT
-                              </Badge>
-                            ) : null}
-                            {event.emergency_event_id ? (
-                              <Badge tone="info" outline>
-                                Live Emergency Record
-                              </Badge>
-                            ) : null}
-                          </div>
+            {/* Right Column: Text-Based Event Log List */}
+            <div className="flex flex-col gap-4 min-w-0">
+              <h3 className="text-h3 text-neutral-900 dark:text-white">Historical Event Log</h3>
 
-                          <span className="text-body-sm text-neutral-500 flex flex-wrap items-center gap-1.5">
-                            <time dateTime={event.started_at}>
-                              {formatPhtDate(event.started_at)}
-                            </time>
-                            {event.ended_at ? (
-                              <>
-                                <span>–</span>
-                                <time dateTime={event.ended_at}>
-                                  {formatPhtDate(event.ended_at)}
+              {floods.items.length > 0 ? (
+                <ul className="flex flex-col gap-4">
+                  {floods.items.map((event) => {
+                    const isOngoing = event.is_ongoing || !event.ended_at;
+                    return (
+                      <li key={event.id}>
+                        <Card radius="xl" className={isOngoing ? "border-danger/40 bg-red-50/30 dark:bg-red-950/10" : ""}>
+                          <CardContent className="flex flex-col gap-4 p-5">
+                            <div className="flex flex-col gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h4 className="text-h3 text-neutral-900">{event.name}</h4>
+                                {isOngoing ? (
+                                  <Badge tone="danger" icon={AlertTriangle}>
+                                    ONGOING
+                                  </Badge>
+                                ) : null}
+                                {event.emergency_event_id ? (
+                                  <Badge tone="info" outline>
+                                    Auto-synced
+                                  </Badge>
+                                ) : null}
+                              </div>
+
+                              <span className="text-body-sm text-neutral-500 flex flex-wrap items-center gap-1.5">
+                                <time dateTime={event.started_at}>
+                                  {formatPhtDate(event.started_at)}
                                 </time>
-                              </>
-                            ) : (
-                              <span className="font-medium text-danger">(Ongoing)</span>
-                            )}
-                          </span>
-
-                          {event.notes ? (
-                            <p className="text-body mt-1 text-neutral-600">{event.notes}</p>
-                          ) : null}
-
-                          {event.area_names.length > 0 ? (
-                            <p className="text-caption mt-1 text-neutral-500">
-                              <strong className="font-semibold text-neutral-700">Areas affected:</strong>{" "}
-                              {event.area_names.join(", ")}
-                            </p>
-                          ) : (
-                            <p className="text-caption mt-1 text-neutral-500">
-                              Areas affected were not recorded.
-                            </p>
-                          )}
-                        </div>
-
-                        <dl className="flex shrink-0 gap-6 rounded-lg bg-neutral-50/80 p-3.5 border border-neutral-100 dark:bg-neutral-900/50 dark:border-neutral-800">
-                          <div>
-                            <dt className="text-overline text-neutral-500">Peak level</dt>
-                            <dd className="text-h2 tabular text-neutral-900">
-                              {event.peak_level_m != null ? (
-                                <>
-                                  {event.peak_level_m}
-                                  <span className="text-body ml-0.5 font-normal text-neutral-500">
-                                    m
-                                  </span>
-                                </>
-                              ) : (
-                                <span className="text-body font-normal text-neutral-500">
-                                  {isOngoing ? "Tracking..." : "Not recorded"}
-                                </span>
-                              )}
-                            </dd>
-                            {event.peak_at ? (
-                              <span className="text-caption block text-neutral-400">
-                                at {formatPhtDate(event.peak_at)}
+                                {event.ended_at ? (
+                                  <>
+                                    <span>–</span>
+                                    <time dateTime={event.ended_at}>
+                                      {formatPhtDate(event.ended_at)}
+                                    </time>
+                                  </>
+                                ) : (
+                                  <span className="font-medium text-danger">(Ongoing)</span>
+                                )}
                               </span>
-                            ) : null}
-                          </div>
-                          <div className="border-l border-neutral-200 pl-6 dark:border-neutral-800">
-                            <dt className="text-overline text-neutral-500">Displaced</dt>
-                            <dd className="text-h2 tabular text-neutral-900">
-                              {event.households_displaced != null ? (
-                                <>
-                                  {formatNumber(event.households_displaced)}
-                                  <span className="text-body ml-1 font-normal text-neutral-500">
-                                    households
-                                  </span>
-                                </>
+
+                              {event.notes ? (
+                                <p className="text-body text-neutral-600">{event.notes}</p>
+                              ) : null}
+
+                              {event.area_names.length > 0 ? (
+                                <p className="text-caption text-neutral-500">
+                                  <strong className="font-semibold text-neutral-700">Areas affected:</strong>{" "}
+                                  {event.area_names.join(", ")}
+                                </p>
                               ) : (
-                                <span className="text-body font-normal text-neutral-500">
-                                  {isOngoing ? "Tracking..." : "Not recorded"}
-                                </span>
+                                <p className="text-caption text-neutral-500">
+                                  Areas affected were not recorded.
+                                </p>
                               )}
-                            </dd>
-                          </div>
-                        </dl>
-                      </CardContent>
-                    </Card>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <EmptyState
-              icon={Waves}
-              title="No flood events recorded"
-              description="Past events are added as the barangay reconstructs them from its records or declares emergency flood events."
-            />
-          )}
+                            </div>
+
+                            <dl className="grid grid-cols-2 gap-4 rounded-lg bg-neutral-50/80 p-3 border border-neutral-100 dark:bg-neutral-900/50 dark:border-neutral-800">
+                              <div>
+                                <dt className="text-overline text-neutral-500">Peak level</dt>
+                                <dd className="text-h3 tabular font-bold text-neutral-900">
+                                  {event.peak_level_m != null ? (
+                                    <>
+                                      {event.peak_level_m}
+                                      <span className="text-body-sm font-normal text-neutral-500 ml-0.5">m</span>
+                                    </>
+                                  ) : (
+                                    <span className="text-body-sm font-normal text-neutral-500">
+                                      {isOngoing ? "Tracking..." : "Not recorded"}
+                                    </span>
+                                  )}
+                                </dd>
+                                {event.peak_at ? (
+                                  <span className="text-caption block text-neutral-400">
+                                    at {formatPhtDate(event.peak_at)}
+                                  </span>
+                                ) : null}
+                              </div>
+                              <div className="border-l border-neutral-200 pl-4 dark:border-neutral-800">
+                                <dt className="text-overline text-neutral-500">Displaced</dt>
+                                <dd className="text-h3 tabular font-bold text-neutral-900">
+                                  {event.households_displaced != null ? (
+                                    <>
+                                      {formatNumber(event.households_displaced)}
+                                      <span className="text-body-sm font-normal text-neutral-500 ml-1">hh</span>
+                                    </>
+                                  ) : (
+                                    <span className="text-body-sm font-normal text-neutral-500">
+                                      {isOngoing ? "Tracking..." : "Not recorded"}
+                                    </span>
+                                  )}
+                                </dd>
+                              </div>
+                            </dl>
+                          </CardContent>
+                        </Card>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <EmptyState
+                  icon={Waves}
+                  title="No flood events recorded"
+                  description="Past events are added as the barangay reconstructs them from its records or declares emergency flood events."
+                />
+              )}
+            </div>
+          </div>
         </section>
 
         <Attribution sources={["weather", "river"]} disclaimer="warning-authority" />
