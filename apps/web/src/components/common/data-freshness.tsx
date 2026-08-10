@@ -47,8 +47,25 @@ export function DataFreshness({
   showStaleBadge = false,
 }: DataFreshnessProps) {
   const relative = useRelativeTime(observedAt, ageMinutes);
-  const muted = onDark ? "text-primary-100/70" : "text-neutral-500";
   const sourceLabel = SOURCE_LABEL[source] || source;
+
+  const threshold = staleAfterMinutes || 60;
+  const isSevere = ageMinutes >= threshold * 2.5 || ageMinutes >= 180;
+  const isWarning = isStale || ageMinutes >= threshold;
+
+  let dotPingBg = "bg-emerald-400";
+  let dotBg = "bg-emerald-500";
+  let textColor = onDark ? "text-emerald-300" : "text-emerald-700";
+
+  if (isSevere) {
+    dotPingBg = "bg-red-400";
+    dotBg = "bg-red-500";
+    textColor = onDark ? "text-red-300" : "text-red-700";
+  } else if (isWarning) {
+    dotPingBg = "bg-amber-400";
+    dotBg = "bg-amber-500";
+    textColor = onDark ? "text-amber-300" : "text-amber-700";
+  }
 
   return (
     <div
@@ -59,10 +76,10 @@ export function DataFreshness({
       )}
     >
       {/* Updated Time Badge */}
-      <span className={cn("text-caption inline-flex items-center gap-1.5 font-semibold shrink-0 whitespace-nowrap", muted)}>
+      <span className={cn("text-caption inline-flex items-center gap-1.5 font-semibold shrink-0 whitespace-nowrap", textColor)}>
         <span className="relative flex size-2 shrink-0">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+          <span className={cn("absolute inline-flex h-full w-full animate-ping rounded-full opacity-75", dotPingBg)} />
+          <span className={cn("relative inline-flex size-2 rounded-full", dotBg)} />
         </span>
         <time dateTime={observedAt} title={formatPhtDateTime(observedAt)}>
           Updated {relative}
