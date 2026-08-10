@@ -368,8 +368,8 @@ export function HazardMapClient({
                       </div>
                     )}
                     {facility.address && (
-                      <div className="flex items-start gap-2 text-[11px] text-slate-300">
-                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-slate-400 mt-0.5">
+                      <div className="flex items-start gap-2 text-[11px] font-medium text-amber-300">
+                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-amber-300 mt-0.5">
                           <MapPin className="size-3.5" />
                         </div>
                         <span className="leading-tight break-words">
@@ -378,8 +378,8 @@ export function HazardMapClient({
                       </div>
                     )}
                     {facility.contact_number && (
-                      <div className="flex items-center gap-2 text-[11px] font-semibold text-emerald-400">
-                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-emerald-400">
+                      <div className="flex items-center gap-2 text-[11px] font-semibold text-red-400">
+                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-red-400">
                           <Phone className="size-3.5" />
                         </div>
                         <span className="leading-tight">
@@ -410,8 +410,8 @@ export function HazardMapClient({
                       </div>
                     )}
                     {facility.address && (
-                      <div className="flex items-start gap-2 text-xs text-slate-300">
-                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-slate-400 mt-0.5">
+                      <div className="flex items-start gap-2 text-xs font-medium text-amber-300">
+                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-amber-300 mt-0.5">
                           <MapPin className="size-3.5" />
                         </div>
                         <span className="leading-tight break-words">
@@ -420,8 +420,8 @@ export function HazardMapClient({
                       </div>
                     )}
                     {facility.contact_number && (
-                      <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400">
-                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-emerald-400">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-red-400">
+                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-red-400">
                           <Phone className="size-3.5" />
                         </div>
                         <a
