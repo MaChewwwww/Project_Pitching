@@ -15,42 +15,42 @@ import type {
  *
  * Renders a non-interactable Leaflet hazard overview map alongside the official
  * Project NOAH 5-Year Flood Hazard Layer legend (Low, Medium, High Hazard depths)
- * enriched with resident onboarding survey waterway proximity classifications.
+ * matching the exact resident onboarding survey waterway proximity options.
  */
 
 const HAZARD_LEGEND = [
   {
     level: "Low Hazard",
     depth: "0–0.5 m",
-    waterwayDistance: "> 200m from riverbank",
-    waterwayDesc: "Far from primary river overflow zones",
+    waterwayDistance: "6 km o higit pa",
+    waterwayDesc: "Far from waterways (Malayo)",
     color: "bg-[#FFED4A]",
     borderColor: "border-yellow-500/40",
     badgeBg: "bg-yellow-100/90 text-yellow-900 border-yellow-300/70",
     cardBg: "border-yellow-200 bg-yellow-50/60",
-    distanceBadge: "text-yellow-800 bg-yellow-200/60 border-yellow-300/80",
+    distanceBadge: "text-yellow-900 bg-yellow-200/60 border-yellow-300/80 font-bold",
   },
   {
     level: "Medium Hazard",
     depth: "0.5–1.5 m",
-    waterwayDistance: "50m – 200m from waterways",
-    waterwayDesc: "Mid-slope / moderate overflow reach",
+    waterwayDistance: "1 – 5 km",
+    waterwayDesc: "Near waterway reach (Malapit)",
     color: "bg-[#F59E0B]",
     borderColor: "border-amber-600/40",
     badgeBg: "bg-amber-100/90 text-amber-900 border-amber-300/70",
     cardBg: "border-amber-200 bg-amber-50/60",
-    distanceBadge: "text-amber-800 bg-amber-200/60 border-amber-300/80",
+    distanceBadge: "text-amber-900 bg-amber-200/60 border-amber-300/80 font-bold",
   },
   {
     level: "High Hazard",
     depth: "over 1.5 m",
-    waterwayDistance: "< 50m from riverbank",
-    waterwayDesc: "Immediate riverbank & low-lying flood line",
+    waterwayDistance: "1 km below",
+    waterwayDesc: "Very Near waterway (Sobrang Lapit)",
     color: "bg-[#EF4444]",
     borderColor: "border-red-600/40",
     badgeBg: "bg-red-100/90 text-red-900 border-red-300/70",
     cardBg: "border-red-200 bg-red-50/60",
-    distanceBadge: "text-red-800 bg-red-200/60 border-red-300/80",
+    distanceBadge: "text-red-900 bg-red-200/60 border-red-300/80 font-bold",
   },
 ];
 
@@ -108,7 +108,7 @@ export function HazardMapPlaceholder({
           {/* Official Flood Hazard Legend Cards with Waterway Proximity */}
           <div className="flex flex-col gap-2">
             <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500">
-              Flood Risk Levels, Depths & Waterway Distances
+              Flood Risk Levels, Depths & Waterway Proximity
             </p>
 
             <div className="flex flex-col gap-2.5">
@@ -143,7 +143,7 @@ export function HazardMapPlaceholder({
                     </span>
                   </div>
 
-                  {/* Waterway Proximity Sub-Row */}
+                  {/* Waterway Proximity Sub-Row matching onboarding survey */}
                   <div className="flex items-center justify-between pl-6 pt-0.5">
                     <span className="text-[11px] font-medium text-neutral-600 flex items-center gap-1.5">
                       <Waves className="size-3.5 text-neutral-500 shrink-0" />
