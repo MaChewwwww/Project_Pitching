@@ -149,8 +149,8 @@ export function RiverLevelPanel({
             source={reading.source}
             showStation={false}
             ageMinutes={reading.age_minutes}
-            isStale={reading.is_stale || river.is_stale}
-            staleAfterMinutes={reading.stale_after_minutes}
+            isStale={reading.is_stale || river.is_stale || reading.age_minutes > 15}
+            staleAfterMinutes={15}
             onDark={onDark}
           />
         </div>

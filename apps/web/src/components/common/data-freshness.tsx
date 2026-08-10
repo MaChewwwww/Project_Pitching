@@ -49,9 +49,9 @@ export function DataFreshness({
   const relative = useRelativeTime(observedAt, ageMinutes);
   const sourceLabel = SOURCE_LABEL[source] || source;
 
-  const threshold = staleAfterMinutes || 60;
-  const isWarning = isStale || ageMinutes >= threshold;
-  const isSevere = isWarning && ageMinutes >= threshold * 2;
+  const threshold = staleAfterMinutes || 30;
+  const isWarning = isStale || ageMinutes > threshold;
+  const isSevere = isWarning && ageMinutes > threshold * 2;
 
   let dotPingBg = "bg-emerald-400";
   let dotBg = "bg-emerald-500";

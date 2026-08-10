@@ -145,8 +145,8 @@ export function WeatherPanel({
             observedAt={weather.observed_at}
             source={weather.source}
             ageMinutes={weather.readings[0]?.age_minutes ?? 0}
-            isStale={weather.is_stale}
-            staleAfterMinutes={weather.readings[0]?.stale_after_minutes}
+            isStale={weather.is_stale || (weather.readings[0]?.age_minutes ?? 0) > 30}
+            staleAfterMinutes={30}
           />
         ) : (
           <p className="text-caption mt-auto text-neutral-500">
