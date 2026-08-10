@@ -27,7 +27,7 @@ export function EvacCenterCarousel({ centers, className }: EvacCenterCarouselPro
     setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 5);
 
     // Calculate active slide index
-    const cardWidth = 360;
+    const cardWidth = 340;
     const index = Math.round(scrollLeft / cardWidth);
     setActiveIndex(Math.min(Math.max(0, index), centers.length - 1));
   }, [centers.length]);
@@ -64,7 +64,7 @@ export function EvacCenterCarousel({ centers, className }: EvacCenterCarouselPro
     const card = el.children[index] as HTMLElement | undefined;
     if (card) {
       el.scrollTo({
-        left: card.offsetLeft - 16,
+        left: card.offsetLeft - 8,
         behavior: "smooth",
       });
     }
@@ -73,52 +73,46 @@ export function EvacCenterCarousel({ centers, className }: EvacCenterCarouselPro
   if (!centers || centers.length === 0) return null;
 
   return (
-    <div className={cn("group/carousel relative flex flex-col gap-3", className)}>
-      {/* Scrollable Track Container with Side Navigation Overlays */}
-      <div className="relative w-full">
-        {/* Previous Button (Left Overlay) */}
+    <div className={cn("relative flex flex-col gap-3", className)}>
+      {/* Side-by-side Layout: [Left Button] [Cards Track in Middle] [Right Button] */}
+      <div className="flex items-center gap-2 sm:gap-3.5">
+        {/* Previous Button (Always Shown, Disabled when at start) */}
         <button
           type="button"
           onClick={() => scrollBy("left")}
           disabled={!canScrollLeft}
           aria-label="Previous facility"
-          className={cn(
-            "absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 z-20 flex size-10 sm:size-11 items-center justify-center rounded-full border border-neutral-200/80 bg-white/95 text-neutral-800 shadow-md backdrop-blur-md transition-all duration-200 hover:bg-white hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none cursor-pointer",
-            !canScrollLeft && "pointer-events-none opacity-0"
-          )}
+          className="shrink-0 flex size-10 sm:size-11 items-center justify-center rounded-full border border-neutral-200/90 bg-white text-neutral-800 shadow-sm transition-all hover:bg-neutral-50 hover:border-neutral-300 hover:shadow-md active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed disabled:pointer-events-none cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
         >
           <ChevronLeft className="size-5 sm:size-6 text-neutral-700" />
         </button>
 
-        {/* Next Button (Right Overlay) */}
-        <button
-          type="button"
-          onClick={() => scrollBy("right")}
-          disabled={!canScrollRight}
-          aria-label="Next facility"
-          className={cn(
-            "absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-20 flex size-10 sm:size-11 items-center justify-center rounded-full border border-neutral-200/80 bg-white/95 text-neutral-800 shadow-md backdrop-blur-md transition-all duration-200 hover:bg-white hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none cursor-pointer",
-            !canScrollRight && "pointer-events-none opacity-0"
-          )}
-        >
-          <ChevronRight className="size-5 sm:size-6 text-neutral-700" />
-        </button>
-
-        {/* Scrollable Track */}
+        {/* Middle Track (Takes remaining space, clip bounded) */}
         <div
           ref={containerRef}
-          className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none py-2 px-1"
+          className="flex-1 min-w-0 flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none py-2 px-1"
           style={{ scrollBehavior: "smooth" }}
         >
           {centers.map((center) => (
             <div
               key={center.id}
-              className="w-[85vw] max-w-[340px] sm:w-[360px] md:w-[380px] shrink-0 snap-start"
+              className="w-[82vw] max-w-[320px] sm:w-[340px] md:w-[350px] shrink-0 snap-start"
             >
               <EvacCenterCard center={center} className="h-full" />
             </div>
           ))}
         </div>
+
+        {/* Next Button (Always Shown, Disabled when at end) */}
+        <button
+          type="button"
+          onClick={() => scrollBy("right")}
+          disabled={!canScrollRight}
+          aria-label="Next facility"
+          className="shrink-0 flex size-10 sm:size-11 items-center justify-center rounded-full border border-neutral-200/90 bg-white text-neutral-800 shadow-sm transition-all hover:bg-neutral-50 hover:border-neutral-300 hover:shadow-md active:scale-95 disabled:opacity-35 disabled:cursor-not-allowed disabled:pointer-events-none cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+        >
+          <ChevronRight className="size-5 sm:size-6 text-neutral-700" />
+        </button>
       </div>
 
       {/* Pagination Dot Track */}
