@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, BarChart3, PieChart as PieChartIcon, ShieldAlert, ShieldCheck } from "lucide-react";
+import { AlertTriangle, BarChart3, PieChart as PieChartIcon, ShieldAlert, ShieldCheck, Sparkles } from "lucide-react";
 
 import { Card } from "@/components/common/card";
 import type { PublicAreaStat } from "@/lib/api/public-types";
@@ -100,11 +100,21 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
   const strokeOffsetMed = -strokeDashLow;
   const strokeOffsetHigh = -(strokeDashLow + strokeDashMed);
 
-  const handleMouseMove = (
-    e: React.MouseEvent,
-    item: (typeof areaData)[0],
-    segment?: "low" | "med" | "high"
+  const handleRowMouseMove = (
+    e: React.MouseEvent<HTMLDivElement>,
+    item: (typeof areaData)[0]
   ) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const relX = Math.max(0, e.clientX - rect.left);
+    const pct = (relX / rect.width) * 100;
+
+    let segment: "low" | "med" | "high" = "low";
+    if (pct > item.lowPct + item.medPct) {
+      segment = "high";
+    } else if (pct > item.lowPct) {
+      segment = "med";
+    }
+
     setTooltip({
       x: e.clientX,
       y: e.clientY,
@@ -121,15 +131,15 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start relative">
-      {/* Custom Floating Tooltip */}
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch relative">
+      {/* Custom Floating Cursor Tooltip */}
       {tooltip && (
         <div
           style={{
-            left: Math.min(tooltip.x + 12, typeof window !== "undefined" ? window.innerWidth - 230 : tooltip.x),
-            top: tooltip.y - 12,
+            left: Math.min(tooltip.x + 14, typeof window !== "undefined" ? window.innerWidth - 240 : tooltip.x),
+            top: tooltip.y - 14,
           }}
-          className="fixed z-50 pointer-events-none rounded-xl border border-slate-700/90 bg-slate-900/95 p-3 text-xs text-white shadow-2xl backdrop-blur-md transition-all duration-75 animate-in fade-in-0 zoom-in-95 min-w-[200px]"
+          className="fixed z-50 pointer-events-none rounded-xl border border-slate-700/90 bg-slate-900/95 p-3 text-xs text-white shadow-2xl backdrop-blur-md transition-all duration-75 animate-in fade-in-0 zoom-in-95 min-w-[210px]"
         >
           <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
             <span className="font-extrabold text-sm text-white">{tooltip.areaName}</span>
@@ -164,7 +174,7 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
       )}
 
       {/* LEFT COLUMN: Area-by-Area Stacked Risk Distribution */}
-      <Card radius="xl" className="lg:col-span-7 border border-neutral-200/90 shadow-sm p-4 sm:p-5 flex flex-col gap-3">
+      <Card radius="xl" className="lg:col-span-7 border border-neutral-200/90 shadow-sm p-4 sm:p-5 flex flex-col gap-3 justify-between">
         {/* Header */}
         <div className="flex items-center justify-between gap-3 pb-2 border-b border-neutral-100">
           <div>
@@ -199,15 +209,18 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
             return (
               <div
                 key={item.id}
-                onMouseEnter={() => setHoveredArea(item.id)}
+                onMouseEnter={(e) => {
+                  setHoveredArea(item.id);
+                  handleRowMouseMove(e, item);
+                }}
                 onMouseLeave={() => {
                   setHoveredArea(null);
                   setTooltip(null);
                 }}
-                onMouseMove={(e) => handleMouseMove(e, item)}
+                onMouseMove={(e) => handleRowMouseMove(e, item)}
                 className={cn(
-                  "flex flex-col gap-1.5 rounded-xl p-2.5 transition-all duration-200 border border-transparent cursor-pointer",
-                  isHovered ? "bg-slate-50 border-slate-200 shadow-2xs" : "hover:bg-neutral-50/70"
+                  "flex flex-col gap-1.5 rounded-xl p-2.5 transition-all duration-200 border border-transparent cursor-pointer select-none",
+                  isHovered ? "bg-slate-100/80 border-slate-200 shadow-2xs" : "hover:bg-neutral-50/80"
                 )}
               >
                 {/* Row Header */}
@@ -218,7 +231,7 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
                       {item.total} {item.total === 1 ? "Household" : "Households"}
                     </span>
                   </span>
-                  <span className="text-[11px] tabular text-neutral-500">
+                  <span className="text-[11px] tabular text-neutral-500 font-medium">
                     <span className="text-emerald-700 font-bold">{item.low}</span> /{" "}
                     <span className="text-amber-700 font-bold">{item.med}</span> /{" "}
                     <span className="text-red-700 font-bold">{item.high}</span>
@@ -231,33 +244,21 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
                   {item.lowPct > 0 && (
                     <div
                       style={{ width: `${item.lowPct}%` }}
-                      onMouseMove={(e) => {
-                        e.stopPropagation();
-                        handleMouseMove(e, item, "low");
-                      }}
-                      className="h-full bg-emerald-500 hover:bg-emerald-400 transition-all duration-150 relative cursor-pointer"
+                      className="h-full bg-emerald-500 transition-all duration-150 relative"
                     />
                   )}
                   {/* Medium Risk Segment */}
                   {item.medPct > 0 && (
                     <div
                       style={{ width: `${item.medPct}%` }}
-                      onMouseMove={(e) => {
-                        e.stopPropagation();
-                        handleMouseMove(e, item, "med");
-                      }}
-                      className="h-full bg-amber-500 hover:bg-amber-400 transition-all duration-150 relative cursor-pointer"
+                      className="h-full bg-amber-500 transition-all duration-150 relative"
                     />
                   )}
                   {/* High Risk Segment */}
                   {item.highPct > 0 && (
                     <div
                       style={{ width: `${item.highPct}%` }}
-                      onMouseMove={(e) => {
-                        e.stopPropagation();
-                        handleMouseMove(e, item, "high");
-                      }}
-                      className="h-full bg-red-500 hover:bg-red-400 transition-all duration-150 relative cursor-pointer"
+                      className="h-full bg-red-500 transition-all duration-150 relative"
                     />
                   )}
                 </div>
@@ -267,8 +268,8 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
         </div>
       </Card>
 
-      {/* RIGHT COLUMN: San Jose Overall Donut & Risk Summary Cards */}
-      <Card radius="xl" className="lg:col-span-5 border border-neutral-200/90 shadow-sm p-4 sm:p-5 flex flex-col gap-3">
+      {/* RIGHT COLUMN: San Jose Overall Donut, Risk Summary Cards & Priority Insights */}
+      <Card radius="xl" className="lg:col-span-5 border border-neutral-200/90 shadow-sm p-4 sm:p-5 flex flex-col gap-3 justify-between">
         {/* Header */}
         <div className="pb-2 border-b border-neutral-100">
           <h3 className="text-overline inline-flex items-center gap-1.5 font-black uppercase tracking-wider text-emerald-800">
@@ -281,8 +282,8 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
         </div>
 
         {/* Donut Gauge Visual */}
-        <div className="flex items-center justify-center py-2">
-          <div className="relative size-40 flex items-center justify-center">
+        <div className="flex items-center justify-center py-1">
+          <div className="relative size-36 flex items-center justify-center">
             <svg className="size-full -rotate-90" viewBox="0 0 120 120">
               {/* Background Ring */}
               <circle
@@ -344,12 +345,12 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
         </div>
 
         {/* High Impact Stat Cards Grid */}
-        <div className="grid grid-cols-3 gap-2.5 pt-1">
+        <div className="grid grid-cols-3 gap-2 pt-1">
           {/* Low Risk Card */}
-          <div className="flex flex-col gap-1 rounded-xl bg-emerald-50/90 border border-emerald-200/80 p-2.5 transition-all duration-200 hover:shadow-2xs hover:-translate-y-0.5">
-            <div className="flex items-center justify-between text-[11px] font-bold text-emerald-800">
+          <div className="flex flex-col gap-1 rounded-xl bg-emerald-50/90 border border-emerald-200/80 p-2 transition-all duration-200 hover:shadow-2xs">
+            <div className="flex items-center justify-between text-[10px] font-bold text-emerald-800">
               <span className="inline-flex items-center gap-1">
-                <ShieldCheck aria-hidden className="size-3 text-emerald-600" />
+                <ShieldCheck aria-hidden className="size-3 text-emerald-600 shrink-0" />
                 Low
               </span>
               <span className="text-[10px] text-emerald-700 bg-emerald-100/90 px-1 py-0.2 rounded font-extrabold">
@@ -365,10 +366,10 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
           </div>
 
           {/* Medium Risk Card */}
-          <div className="flex flex-col gap-1 rounded-xl bg-amber-50/90 border border-amber-200/80 p-2.5 transition-all duration-200 hover:shadow-2xs hover:-translate-y-0.5">
-            <div className="flex items-center justify-between text-[11px] font-bold text-amber-800">
+          <div className="flex flex-col gap-1 rounded-xl bg-amber-50/90 border border-amber-200/80 p-2 transition-all duration-200 hover:shadow-2xs">
+            <div className="flex items-center justify-between text-[10px] font-bold text-amber-800">
               <span className="inline-flex items-center gap-1">
-                <AlertTriangle aria-hidden className="size-3 text-amber-600" />
+                <AlertTriangle aria-hidden className="size-3 text-amber-600 shrink-0" />
                 Med
               </span>
               <span className="text-[10px] text-amber-700 bg-amber-100/90 px-1 py-0.2 rounded font-extrabold">
@@ -384,10 +385,10 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
           </div>
 
           {/* High Risk Card */}
-          <div className="flex flex-col gap-1 rounded-xl bg-red-50/90 border border-red-200/80 p-2.5 transition-all duration-200 hover:shadow-2xs hover:-translate-y-0.5">
-            <div className="flex items-center justify-between text-[11px] font-bold text-red-800">
+          <div className="flex flex-col gap-1 rounded-xl bg-red-50/90 border border-red-200/80 p-2 transition-all duration-200 hover:shadow-2xs">
+            <div className="flex items-center justify-between text-[10px] font-bold text-red-800">
               <span className="inline-flex items-center gap-1">
-                <ShieldAlert aria-hidden className="size-3 text-red-600" />
+                <ShieldAlert aria-hidden className="size-3 text-red-600 shrink-0" />
                 High
               </span>
               <span className="text-[10px] text-red-700 bg-red-100/90 px-1 py-0.2 rounded font-extrabold">
@@ -399,6 +400,31 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
             </span>
             <div className="h-1.5 w-full rounded-full bg-red-200/80 overflow-hidden mt-0.5">
               <div style={{ width: `${highPctOverall}%` }} className="h-full bg-red-500 rounded-full" />
+            </div>
+          </div>
+        </div>
+
+        {/* Priority Insights Banner — Fills right column height & matches left column exactly */}
+        <div className="rounded-xl border border-sky-200/80 bg-gradient-to-r from-sky-50/90 via-indigo-50/50 to-sky-50/90 p-2.5 text-xs flex flex-col gap-2 shadow-2xs mt-1">
+          <div className="flex items-center justify-between font-bold text-sky-900 border-b border-sky-200/60 pb-1">
+            <span className="inline-flex items-center gap-1.5 text-sky-800 uppercase tracking-wider text-[10px] font-black">
+              <Sparkles aria-hidden className="size-3.5 text-sky-600" />
+              Priority DRRM Insights
+            </span>
+            <span className="text-[10px] text-sky-700 font-bold bg-white/90 px-2 py-0.5 rounded-full border border-sky-200/80 shadow-2xs">
+              Live Summary
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-[11px]">
+            <div className="flex flex-col gap-0.5 rounded-lg bg-white/80 p-2 border border-sky-100">
+              <span className="text-[10px] font-bold text-red-700 uppercase tracking-wide">Highest Risk Zone</span>
+              <span className="font-extrabold text-neutral-900">Area 1 &amp; Area 2</span>
+              <span className="text-[10px] text-neutral-500 font-semibold">19 High Risk Families each</span>
+            </div>
+            <div className="flex flex-col gap-0.5 rounded-lg bg-white/80 p-2 border border-sky-100">
+              <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide">Primary Safe Zone</span>
+              <span className="font-extrabold text-neutral-900">Area 6</span>
+              <span className="text-[10px] text-neutral-500 font-semibold">21 Low Risk Families (62%)</span>
             </div>
           </div>
         </div>
