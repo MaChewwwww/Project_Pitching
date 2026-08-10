@@ -11,22 +11,12 @@ import type { ReadingSource } from "@/lib/api/public-types";
 /**
  * When a reading was taken, where it came from, and whether it is too old to
  * trust (FR-WX-010, FR-WX-011, BR-3.8).
- *
- * design.md's third principle: "a number with no age is a lie waiting to happen."
- * This component is the reason no reading on the public site is ever rendered
- * bare.
- *
- * **Stale data is marked, not hidden.** A 90-minute-old river level is still the
- * best information available; blanking it would leave the resident with nothing.
- *
- * Client-rendered solely so the relative time is hydration-safe — see
- * `use-relative-time`.
  */
 
 const SOURCE_LABEL: Record<ReadingSource, string> = {
   open_meteo: "Open-Meteo",
   pagasa: "DOST-PAGASA",
-  manual: "Entered by barangay staff",
+  manual: "Entered by staff",
 };
 
 export interface DataFreshnessProps {
@@ -35,6 +25,7 @@ export interface DataFreshnessProps {
   ageMinutes: number;
   isStale: boolean;
   station?: string | null;
+  showStation?: boolean;
   staleAfterMinutes?: number;
   variant?: "inline" | "block";
   onDark?: boolean;
@@ -47,6 +38,7 @@ export function DataFreshness({
   ageMinutes,
   isStale,
   station,
+  showStation = true,
   staleAfterMinutes,
   variant = "inline",
   onDark = false,
@@ -58,7 +50,7 @@ export function DataFreshness({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-x-2 gap-y-1",
+        "flex w-full items-center justify-between gap-x-2 gap-y-1",
         variant === "block" && "flex-col items-start gap-1",
         className,
       )}
@@ -77,10 +69,10 @@ export function DataFreshness({
         </time>
       </span>
 
-      <span className={cn("text-caption inline-flex items-center gap-1", muted)}>
+      <span className={cn("text-caption inline-flex items-center gap-1 ml-auto", muted)}>
         <RadioTower aria-hidden className="size-3" />
         {SOURCE_LABEL[source]}
-        {station ? ` · ${station}` : null}
+        {showStation && station ? ` · ${station}` : null}
       </span>
 
       {isStale ? (

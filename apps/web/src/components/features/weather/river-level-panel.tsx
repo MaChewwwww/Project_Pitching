@@ -112,16 +112,16 @@ export function RiverLevelPanel({
         </div>
 
         <div className={cn("mt-auto flex flex-col pt-2 border-t border-neutral-100", compact ? "gap-1 pt-0.5" : "gap-2")}>
+          <Attribution onDark={onDark} disclaimer="warning-authority" short={compact} />
           <DataFreshness
             observedAt={reading.observed_at}
             source={reading.source}
-            station={reading.station}
+            showStation={false}
             ageMinutes={reading.age_minutes}
             isStale={reading.is_stale || river.is_stale}
             staleAfterMinutes={reading.stale_after_minutes}
             onDark={onDark}
           />
-          <Attribution onDark={onDark} disclaimer="warning-authority" short={compact} />
         </div>
       </CardContent>
     </Card>

@@ -107,15 +107,7 @@ export function WeatherPanel({
                   key={`${item.timeIso}-${i}`}
                   className="group flex flex-1 flex-col items-center justify-between h-full rounded-xl p-1.5 transition-all duration-200 hover:-translate-y-1 hover:bg-white/80 hover:shadow-sm"
                 >
-                  {/* Rain Chance % Badge */}
-                  <div className="flex flex-col items-center gap-0.5">
-                    <span className="inline-flex items-center gap-0.5 rounded-full bg-sky-100/90 px-1.5 py-0.5 text-[10px] font-black text-sky-800 border border-sky-200/60">
-                      <Droplets className="size-2.5 text-sky-600" />
-                      {item.probability}%
-                    </span>
-                  </div>
-
-                  {/* Rainfall Visual Bar */}
+                  {/* Rainfall Visual Bar & Value (TOP) */}
                   <div className="flex flex-col items-center justify-end w-full flex-1 gap-1 py-1">
                     <span className="text-[11px] font-semibold tabular text-neutral-600 opacity-80 group-hover:opacity-100">
                       {item.rainfall} mm
@@ -127,10 +119,18 @@ export function WeatherPanel({
                     />
                   </div>
 
-                  {/* Hour Label */}
+                  {/* Hour Label (MIDDLE) */}
                   <span className="text-caption font-bold text-neutral-700 text-[11px]">
                     {hour}
                   </span>
+
+                  {/* Rain Chance % Badge (BOTTOM - below hour label) */}
+                  <div className="flex flex-col items-center gap-0.5 mt-1">
+                    <span className="inline-flex items-center gap-0.5 rounded-full bg-sky-100/90 px-1.5 py-0.5 text-[10px] font-black text-sky-800 border border-sky-200/60">
+                      <Droplets className="size-2.5 text-sky-600" />
+                      {item.probability}%
+                    </span>
+                  </div>
                 </div>
               );
             })}
