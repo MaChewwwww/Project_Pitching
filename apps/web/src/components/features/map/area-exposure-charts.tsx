@@ -31,8 +31,23 @@ function getAreaRiskBreakdown(area: PublicAreaStat) {
   return { low, med, high, total };
 }
 
+interface CustomTooltipState {
+  x: number;
+  y: number;
+  areaName: string;
+  total: number;
+  low: number;
+  med: number;
+  high: number;
+  lowPct: number;
+  medPct: number;
+  highPct: number;
+  hoveredSegment?: "low" | "med" | "high" | null;
+}
+
 export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
   const [hoveredArea, setHoveredArea] = React.useState<string | null>(null);
+  const [tooltip, setTooltip] = React.useState<CustomTooltipState | null>(null);
 
   const areaData = React.useMemo(() => {
     return areas.map((area) => {
@@ -85,8 +100,69 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
   const strokeOffsetMed = -strokeDashLow;
   const strokeOffsetHigh = -(strokeDashLow + strokeDashMed);
 
+  const handleMouseMove = (
+    e: React.MouseEvent,
+    item: (typeof areaData)[0],
+    segment?: "low" | "med" | "high"
+  ) => {
+    setTooltip({
+      x: e.clientX,
+      y: e.clientY,
+      areaName: item.name,
+      total: item.total,
+      low: item.low,
+      med: item.med,
+      high: item.high,
+      lowPct: item.lowPct,
+      medPct: item.medPct,
+      highPct: item.highPct,
+      hoveredSegment: segment,
+    });
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start relative">
+      {/* Custom Floating Tooltip */}
+      {tooltip && (
+        <div
+          style={{
+            left: Math.min(tooltip.x + 12, typeof window !== "undefined" ? window.innerWidth - 230 : tooltip.x),
+            top: tooltip.y - 12,
+          }}
+          className="fixed z-50 pointer-events-none rounded-xl border border-slate-700/90 bg-slate-900/95 p-3 text-xs text-white shadow-2xl backdrop-blur-md transition-all duration-75 animate-in fade-in-0 zoom-in-95 min-w-[200px]"
+        >
+          <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
+            <span className="font-extrabold text-sm text-white">{tooltip.areaName}</span>
+            <span className="text-[10px] font-semibold text-slate-300 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700">
+              {tooltip.total} {tooltip.total === 1 ? "Household" : "Households"}
+            </span>
+          </div>
+          <div className="space-y-1.5 font-medium">
+            <div className={cn("flex items-center justify-between gap-4 px-2 py-1 rounded-md transition-colors", tooltip.hoveredSegment === "low" ? "bg-emerald-500/25 text-emerald-300 font-bold border border-emerald-500/40" : "text-emerald-400")}>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-emerald-400 shrink-0" />
+                Low Risk
+              </span>
+              <span>{tooltip.low} <span className="text-[10px] opacity-75">({tooltip.lowPct}%)</span></span>
+            </div>
+            <div className={cn("flex items-center justify-between gap-4 px-2 py-1 rounded-md transition-colors", tooltip.hoveredSegment === "med" ? "bg-amber-500/25 text-amber-300 font-bold border border-amber-500/40" : "text-amber-400")}>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-amber-400 shrink-0" />
+                Medium Risk
+              </span>
+              <span>{tooltip.med} <span className="text-[10px] opacity-75">({tooltip.medPct}%)</span></span>
+            </div>
+            <div className={cn("flex items-center justify-between gap-4 px-2 py-1 rounded-md transition-colors", tooltip.hoveredSegment === "high" ? "bg-red-500/25 text-red-300 font-bold border border-red-500/40" : "text-red-400")}>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-red-400 shrink-0" />
+                High Risk
+              </span>
+              <span>{tooltip.high} <span className="text-[10px] opacity-75">({tooltip.highPct}%)</span></span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* LEFT COLUMN: Area-by-Area Stacked Risk Distribution */}
       <Card radius="xl" className="lg:col-span-7 border border-neutral-200/90 shadow-sm p-4 sm:p-5 flex flex-col gap-3">
         {/* Header */}
@@ -124,9 +200,13 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
               <div
                 key={item.id}
                 onMouseEnter={() => setHoveredArea(item.id)}
-                onMouseLeave={() => setHoveredArea(null)}
+                onMouseLeave={() => {
+                  setHoveredArea(null);
+                  setTooltip(null);
+                }}
+                onMouseMove={(e) => handleMouseMove(e, item)}
                 className={cn(
-                  "flex flex-col gap-1.5 rounded-xl p-2.5 transition-all duration-200 border border-transparent",
+                  "flex flex-col gap-1.5 rounded-xl p-2.5 transition-all duration-200 border border-transparent cursor-pointer",
                   isHovered ? "bg-slate-50 border-slate-200 shadow-2xs" : "hover:bg-neutral-50/70"
                 )}
               >
@@ -151,24 +231,33 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
                   {item.lowPct > 0 && (
                     <div
                       style={{ width: `${item.lowPct}%` }}
-                      className="h-full bg-emerald-500 transition-all duration-300 relative group cursor-pointer"
-                      title={`Low Risk: ${item.low} (${item.lowPct}%)`}
+                      onMouseMove={(e) => {
+                        e.stopPropagation();
+                        handleMouseMove(e, item, "low");
+                      }}
+                      className="h-full bg-emerald-500 hover:bg-emerald-400 transition-all duration-150 relative cursor-pointer"
                     />
                   )}
                   {/* Medium Risk Segment */}
                   {item.medPct > 0 && (
                     <div
                       style={{ width: `${item.medPct}%` }}
-                      className="h-full bg-amber-500 transition-all duration-300 relative group cursor-pointer"
-                      title={`Medium Risk: ${item.med} (${item.medPct}%)`}
+                      onMouseMove={(e) => {
+                        e.stopPropagation();
+                        handleMouseMove(e, item, "med");
+                      }}
+                      className="h-full bg-amber-500 hover:bg-amber-400 transition-all duration-150 relative cursor-pointer"
                     />
                   )}
                   {/* High Risk Segment */}
                   {item.highPct > 0 && (
                     <div
                       style={{ width: `${item.highPct}%` }}
-                      className="h-full bg-red-500 transition-all duration-300 relative group cursor-pointer"
-                      title={`High Risk: ${item.high} (${item.highPct}%)`}
+                      onMouseMove={(e) => {
+                        e.stopPropagation();
+                        handleMouseMove(e, item, "high");
+                      }}
+                      className="h-full bg-red-500 hover:bg-red-400 transition-all duration-150 relative cursor-pointer"
                     />
                   )}
                 </div>
