@@ -34,11 +34,11 @@ export default async function WeatherPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Conditions right now"
+        eyebrow="Conditions Right Now"
         title="Weather &"
-        titleAccent="river level"
+        titleAccent="River Level"
         description="Every reading shows when it was taken and where it came from. Readings past their staleness window are marked as such rather than quietly shown as current."
-        breadcrumb={[{ label: "Home", href: "/" }, { label: "Weather & river level" }]}
+        breadcrumb={[{ label: "Home", href: "/" }, { label: "Weather & River Level" }]}
       />
 
       <div className="mx-auto flex max-w-[1440px] flex-col gap-8 px-4 py-8 md:gap-12 md:px-6 md:py-12">

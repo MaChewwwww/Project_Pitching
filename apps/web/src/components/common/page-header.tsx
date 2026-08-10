@@ -51,31 +51,31 @@ export function PageHeader({
       <div className="relative mx-auto max-w-[1440px] px-4 py-7 md:px-6 md:py-10">
         {breadcrumb && breadcrumb.length > 0 ? (
           <nav aria-label="Breadcrumb" className="mb-4 flex items-center">
-            <ol className="-ml-1 inline-flex flex-wrap items-center gap-1.5 rounded-full border border-slate-200/90 bg-white/90 px-3 py-1.5 text-xs shadow-2xs backdrop-blur-md">
+            <ol className="-ml-1.5 inline-flex flex-wrap items-center gap-2 rounded-full border border-slate-200/90 bg-white/95 px-3.5 py-1.5 text-sm shadow-xs backdrop-blur-md">
               {breadcrumb.map((crumb, i) => {
                 const last = i === breadcrumb.length - 1;
                 const formattedLabel = toTitleCase(crumb.label);
                 const isHome = i === 0 && (crumb.label.toLowerCase() === "home" || crumb.href === "/");
 
                 return (
-                  <li key={`${crumb.label}-${i}`} className="flex items-center gap-1.5">
+                  <li key={`${crumb.label}-${i}`} className="flex items-center gap-2">
                     {i > 0 ? (
-                      <ChevronRight aria-hidden className="size-3.5 shrink-0 text-slate-400" />
+                      <ChevronRight aria-hidden className="size-4 shrink-0 text-slate-400" />
                     ) : null}
                     {crumb.href && !last ? (
                       <Link
                         href={crumb.href}
                         className="rounded-xs inline-flex items-center gap-1.5 font-medium text-slate-600 transition-colors hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
-                        {isHome ? <Home aria-hidden className="size-3.5 text-primary-600" /> : null}
+                        {isHome ? <Home aria-hidden className="size-4 text-primary-600" /> : null}
                         <span>{formattedLabel}</span>
                       </Link>
                     ) : (
                       <span
                         aria-current={last ? "page" : undefined}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-primary-200/70 bg-primary-50 px-2 py-0.5 font-bold text-primary-900"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-primary-200/80 bg-primary-50 px-2.5 py-0.5 font-bold text-primary-900"
                       >
-                        {isHome ? <Home aria-hidden className="size-3.5 text-primary-600" /> : null}
+                        {isHome ? <Home aria-hidden className="size-4 text-primary-600" /> : null}
                         <span>{formattedLabel}</span>
                       </span>
                     )}
