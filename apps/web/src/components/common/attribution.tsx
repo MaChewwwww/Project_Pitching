@@ -52,30 +52,44 @@ export function Attribution({
 
   if (sources.length === 0 && disclaimers.length === 0) return null;
 
-  const muted = onDark ? "text-primary-100/80" : "text-neutral-700";
+  const textClass = onDark ? "text-primary-100/90" : "text-neutral-600";
+  const mutedClass = onDark ? "text-primary-200/70" : "text-neutral-500";
+  const borderClass = onDark ? "border-white/10" : "border-neutral-200/60";
 
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
-      {disclaimers.map((kind) => (
-        <div
-          key={kind}
-          className={cn(
-            "rounded-xl border p-3 text-caption leading-relaxed",
-            onDark
-              ? "border-white/10 bg-white/5 text-primary-100/90"
-              : "border-neutral-200/80 bg-neutral-50/80 text-neutral-700 shadow-2xs"
-          )}
-        >
-          <p className={cn("text-caption font-medium leading-normal", muted)}>
-            {short ? SHORT_DISCLAIMERS[kind] : DISCLAIMERS[kind]}
+    <div
+      className={cn(
+        "rounded-xl border p-4 text-xs leading-relaxed",
+        onDark
+          ? "border-white/10 bg-white/5 text-primary-100"
+          : "border-neutral-200/80 bg-neutral-50/80 text-neutral-700 shadow-2xs",
+        className,
+      )}
+    >
+      <div className="flex flex-col gap-2">
+        {disclaimers.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            {disclaimers.map((kind) => (
+              <p key={kind} className={cn("text-xs font-medium leading-relaxed", textClass)}>
+                {short ? SHORT_DISCLAIMERS[kind] : DISCLAIMERS[kind]}
+              </p>
+            ))}
+          </div>
+        )}
+
+        {sources.length > 0 && (
+          <p
+            className={cn(
+              "text-[11px] font-normal leading-normal pt-2 border-t",
+              borderClass,
+              mutedClass,
+            )}
+          >
+            {sources.map((s) => ATTRIBUTION[s]).join(" · ")}
           </p>
-        </div>
-      ))}
-      {sources.length > 0 ? (
-        <p className={cn("text-caption px-1", muted)}>
-          {sources.map((s) => ATTRIBUTION[s]).join(" · ")}
-        </p>
-      ) : null}
+        )}
+      </div>
     </div>
   );
 }
+

@@ -106,7 +106,7 @@ export function EvacCenterCard({
             title="Open on OpenStreetMap"
           >
             <Compass aria-hidden className="size-3" />
-            OSM
+            OpenStreetMap
           </a>
         </div>
       </CardContent>
