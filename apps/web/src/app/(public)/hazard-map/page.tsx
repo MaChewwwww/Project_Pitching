@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { Attribution } from "@/components/common/attribution";
 import { PageHeader } from "@/components/common/page-header";
-import { EvacCenterCard } from "@/components/features/evacuation/evac-center-card";
+import { EvacCenterFilterGrid } from "@/components/features/evacuation/evac-center-filter-grid";
 import { AreaExposureCharts } from "@/components/features/map/area-exposure-charts";
 import { HazardMap } from "@/components/features/map/hazard-map";
 import { LayerToggle } from "@/components/features/map/layer-toggle";
@@ -139,26 +139,14 @@ export default async function HazardMapPage() {
         </section>
 
         <section>
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-h2 text-neutral-900">Evacuation Centers</h2>
-              <p className="text-body text-neutral-600">
-                {evacCenters.length} active evacuation centers pinned on the hazard map.
-              </p>
-            </div>
-            <a
-              href="/evacuation-centers"
-              className="text-body-sm font-semibold text-primary-700 hover:text-primary-800 flex items-center gap-1 hover:underline w-fit shrink-0"
-            >
-              View full directory &rarr;
-            </a>
+          <div className="mb-6">
+            <h2 className="text-h2 text-neutral-900">Evacuation Centers</h2>
+            <p className="text-body text-neutral-600">
+              {evacCenters.length} active evacuation centers pinned on the hazard map. Select an area below to filter.
+            </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3">
-            {evacCenters.map((center) => (
-              <EvacCenterCard key={center.id} center={center} />
-            ))}
-          </div>
+          <EvacCenterFilterGrid centers={evacCenters} />
         </section>
 
         <Attribution
