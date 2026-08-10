@@ -182,10 +182,7 @@ export function FloodHistoryVisualizer({ events }: FloodHistoryVisualizerProps) 
       <Card radius="xl" className="overflow-hidden border-neutral-200/90 shadow-sm dark:border-neutral-800">
         <div className="border-b border-neutral-200/80 bg-neutral-50/60 p-4 sm:p-6 dark:border-neutral-800 dark:bg-neutral-900/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-h3 text-neutral-900 dark:text-white">Historical Flood Comparison</h3>
-              <Badge tone="primary" outline>Interactive Chart</Badge>
-            </div>
+            <h3 className="text-h3 text-neutral-900 dark:text-white">Historical Flood Comparison</h3>
             <p className="text-caption text-neutral-500 mt-1">
               Comparing river peak crest height (meters) and household displacement across past events
             </p>
