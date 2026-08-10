@@ -119,6 +119,20 @@ const RIPPLE_STYLE = `
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6) !important;
   padding: 4px !important;
 }
+.dark-leaflet-popup a {
+  color: #ffffff !important;
+}
+.dark-leaflet-popup a.sagip-gmaps-btn {
+  color: #ffffff !important;
+  background-color: #059669 !important;
+}
+.dark-leaflet-popup a.sagip-gmaps-btn:hover {
+  background-color: #10b981 !important;
+}
+.dark-leaflet-popup a.sagip-gmaps-btn svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
 .dark-leaflet-popup .leaflet-popup-tip {
   background-color: #052e16 !important;
   border: 1px solid #166534 !important;
@@ -433,15 +447,16 @@ export function HazardMapClient({
                         </a>
                       </div>
                     )}
-                    <div className="pt-1.5 border-t border-emerald-900/60 mt-2">
+                    <div className="pt-2 border-t border-emerald-900/60 mt-2">
                       <a
                         href={googleMapsDirectionsUrl(lon, lat, facility.name)}
                         target="_blank"
                         rel="noreferrer noopener"
-                        className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 shadow-xs flex items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 transition-colors no-underline"
+                        className="sagip-gmaps-btn text-xs font-bold text-white !text-white bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 shadow-xs flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 transition-colors no-underline"
+                        style={{ color: "#ffffff" }}
                       >
-                        <Navigation className="size-3 fill-white/20" />
-                        Google Maps Directions
+                        <Navigation className="size-3.5 text-white !text-white shrink-0" style={{ color: "#ffffff", stroke: "#ffffff" }} />
+                        <span className="!text-white font-bold" style={{ color: "#ffffff" }}>Google Maps Directions</span>
                       </a>
                     </div>
                   </div>
