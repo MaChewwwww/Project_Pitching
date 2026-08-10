@@ -61,7 +61,7 @@ function InvalidateSizeOnMount({ interactive = true }: { interactive?: boolean }
   React.useEffect(() => {
     if (!interactive) {
       const isMobile = window.innerWidth < 640;
-      const overviewZoom = isMobile ? 12.7 : 13.4;
+      const overviewZoom = isMobile ? 12.75 : 13.45;
       map.setView([14.7415, 121.1305], overviewZoom);
     } else {
       const isMobile = window.innerWidth < 640;
