@@ -143,6 +143,12 @@ const RIPPLE_STYLE = `
   min-height: 420px !important;
   background: #090d16 !important;
 }
+.leaflet-interactive:focus {
+  outline: none !important;
+}
+path.leaflet-interactive:focus {
+  outline: none !important;
+}
 `;
 
 let rippleInjected = false;
