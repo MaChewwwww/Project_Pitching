@@ -3,13 +3,12 @@ import { Compass, MapPin, Navigation, Users } from "lucide-react";
 
 import { Card, CardContent } from "@/components/common/card";
 import { MeterBar } from "@/components/common/meter-bar";
-import { StatusBadge } from "@/components/common/status-badge";
 import { formatNumber, googleMapsDirectionsUrl, osmDirectionsUrl } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { PublicEvacCenter } from "@/lib/api/public-types";
 
 /**
- * An evacuation centre (FR-PUB-008, FR-EVC-001/002/003).
+ * An evacuation centre card (FR-PUB-008, FR-EVC-001/002/003).
  */
 export function EvacCenterCard({
   center,
@@ -32,82 +31,70 @@ export function EvacCenterCard({
     <Card
       radius="xl"
       className={cn(
-        "group card-hover-lift hover:border-primary-400 relative flex h-full flex-col justify-between overflow-hidden border border-neutral-200/80 bg-white transition-all duration-200 hover:shadow-md",
+        "group card-hover-lift hover:border-primary-400 relative flex h-full flex-col overflow-hidden border border-neutral-200/80 bg-white transition-all duration-200 hover:shadow-md",
         className,
       )}
     >
-      {/* Subtle top accent bar */}
-      <div
-        className={cn(
-          "h-1.5 w-full",
-          center.is_at_capacity
-            ? "bg-red-500"
-            : center.is_open
-              ? "bg-emerald-500"
-              : "bg-neutral-300",
-        )}
-      />
+      {/* Top accent bar */}
+      <div className="h-1.5 w-full bg-emerald-500" />
 
-      <CardContent className="flex h-full flex-col gap-3.5 p-5 md:p-6">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-col gap-1">
+      <CardContent className="flex flex-1 flex-col justify-between gap-3 p-4 sm:p-5">
+        <div className="flex flex-col gap-2.5">
+          {/* Header row: Name + Area pill top-right */}
+          <div className="flex items-start justify-between gap-2.5">
+            <h3 className="text-h3 group-hover:text-primary-800 font-bold text-neutral-900 transition-colors leading-snug">
+              {center.facility.name}
+            </h3>
             {center.facility.area_name && (
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-md w-fit">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-md shrink-0">
                 {center.facility.area_name}
               </span>
             )}
-            <h3 className="text-h3 group-hover:text-primary-800 font-bold text-neutral-900 transition-colors leading-tight">
-              {center.facility.name}
-            </h3>
           </div>
-          <StatusBadge
-            kind="evac"
-            isOpen={center.is_open}
-            isAtCapacity={center.is_at_capacity}
-            className="shrink-0 shadow-xs mt-0.5"
-          />
+
+          {/* Address */}
+          {center.facility.address ? (
+            <span className="text-body-sm inline-flex items-start gap-1.5 font-medium text-neutral-600">
+              <MapPin aria-hidden className="text-primary-600 mt-0.5 size-4 shrink-0" />
+              <span className="leading-snug">{center.facility.address}</span>
+            </span>
+          ) : null}
+
+          {/* Occupancy meter */}
+          {center.capacity != null ? (
+            <div className="flex flex-col gap-2 rounded-xl border border-neutral-100 bg-neutral-50/70 p-3">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-overline inline-flex items-center gap-1.5 font-bold tracking-wider text-neutral-600">
+                  <Users aria-hidden className="text-primary-600 size-3.5" />
+                  Occupancy
+                </span>
+                <span className="text-body-sm tabular font-bold text-neutral-900">
+                  {formatNumber(center.occupancy)}{" "}
+                  <span className="font-normal text-neutral-500">
+                    / {formatNumber(center.capacity)} people
+                  </span>
+                </span>
+              </div>
+              <MeterBar
+                value={center.occupancy}
+                max={center.capacity}
+                tone={tone}
+                label={`Occupancy at ${center.facility.name}`}
+                valueText={`${center.occupancy} of ${center.capacity} people`}
+              />
+            </div>
+          ) : (
+            <p className="text-caption text-neutral-500">Capacity not yet recorded.</p>
+          )}
         </div>
 
-        {center.facility.address ? (
-          <span className="text-body-sm inline-flex items-start gap-2 font-medium text-neutral-600">
-            <MapPin aria-hidden className="text-primary-600 mt-0.5 size-4 shrink-0" />
-            <span className="leading-snug">{center.facility.address}</span>
-          </span>
-        ) : null}
-
-        {center.capacity != null ? (
-          <div className="flex flex-col gap-2 rounded-xl border border-neutral-100 bg-neutral-50/70 p-3.5">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-overline inline-flex items-center gap-1.5 font-bold tracking-wider text-neutral-600">
-                <Users aria-hidden className="text-primary-600 size-3.5" />
-                Occupancy
-              </span>
-              <span className="text-body-sm tabular font-bold text-neutral-900">
-                {formatNumber(center.occupancy)}{" "}
-                <span className="font-normal text-neutral-500">
-                  / {formatNumber(center.capacity)} people
-                </span>
-              </span>
-            </div>
-            <MeterBar
-              value={center.occupancy}
-              max={center.capacity}
-              tone={tone}
-              label={`Occupancy at ${center.facility.name}`}
-              valueText={`${center.occupancy} of ${center.capacity} people`}
-            />
-          </div>
-        ) : (
-          <p className="text-caption text-neutral-500">Capacity not yet recorded.</p>
-        )}
-
-
-        <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 pt-3">
+        {/* Buttons row — compact and aligned */}
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 pt-2.5">
           <a
             href={gmapsUrl}
             target="_blank"
             rel="noreferrer noopener"
-            className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 shadow-xs inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+            className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 shadow-xs inline-flex min-h-8 items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
           >
             <Navigation aria-hidden className="size-3.5 fill-white/20" />
             Directions (Google Maps)
@@ -128,4 +115,5 @@ export function EvacCenterCard({
     </Card>
   );
 }
+
 
