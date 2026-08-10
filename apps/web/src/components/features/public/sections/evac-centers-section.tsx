@@ -1,6 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, BedDouble } from "lucide-react";
+import { ArrowRight, Building2 } from "lucide-react";
 
 import { Button } from "@/components/common/button";
 import { Reveal } from "@/components/common/reveal";
@@ -10,10 +10,9 @@ import { Section } from "./section";
 import { getEvacuationCenters } from "@/lib/api/public";
 
 /**
- * Evacuation centres (FR-PUB-008, BR-0.8) — landing page carousel.
+ * Barangay Facilities (FR-PUB-008, BR-0.8) — landing page carousel.
  *
- * Open centres first, displayed in a non-autoscrolling carousel for easy
- * horizontal browsing.
+ * Evacuation centers, barangay halls, health clinics, and emergency posts across San Jose.
  */
 export async function EvacCentersSection() {
   const { items: centers } = await getEvacuationCenters({ size: 50 });
@@ -28,10 +27,10 @@ export async function EvacCentersSection() {
     <Section id="evacuation-centers">
       <Reveal>
         <SectionHeader
-          icon={BedDouble}
-          title="Evacuation"
-          titleAccent="Centers"
-          description="Capacity and current occupancy, updated as people check in."
+          icon={Building2}
+          title="Barangay"
+          titleAccent="Facilities"
+          description="Evacuation centers, barangay halls, health clinics, and emergency posts across San Jose."
           action={
             <Button asChild variant="outline" pill size="md" className="shrink-0 max-sm:px-3">
               <Link href="/evacuation-centers" aria-label="View All">

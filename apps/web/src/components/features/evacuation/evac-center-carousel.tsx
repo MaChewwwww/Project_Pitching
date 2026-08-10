@@ -73,50 +73,52 @@ export function EvacCenterCarousel({ centers, className }: EvacCenterCarouselPro
   if (!centers || centers.length === 0) return null;
 
   return (
-    <div className={cn("relative flex flex-col gap-4", className)}>
-      {/* Carousel Track Header / Navigation Controls */}
-      <div className="flex items-center justify-between">
-        <span className="text-caption font-medium text-neutral-500">
-          Showing <strong className="font-bold text-neutral-900">{centers.length}</strong> evacuation centers
-        </span>
+    <div className={cn("group/carousel relative flex flex-col gap-3", className)}>
+      {/* Scrollable Track Container with Side Navigation Overlays */}
+      <div className="relative w-full">
+        {/* Previous Button (Left Overlay) */}
+        <button
+          type="button"
+          onClick={() => scrollBy("left")}
+          disabled={!canScrollLeft}
+          aria-label="Previous facility"
+          className={cn(
+            "absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 z-20 flex size-10 sm:size-11 items-center justify-center rounded-full border border-neutral-200/80 bg-white/95 text-neutral-800 shadow-md backdrop-blur-md transition-all duration-200 hover:bg-white hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none cursor-pointer",
+            !canScrollLeft && "pointer-events-none opacity-0"
+          )}
+        >
+          <ChevronLeft className="size-5 sm:size-6 text-neutral-700" />
+        </button>
 
-        {/* Manual Arrow Controls */}
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => scrollBy("left")}
-            disabled={!canScrollLeft}
-            aria-label="Previous evacuation center"
-            className="flex size-9 items-center justify-center rounded-full border border-neutral-200/80 bg-white text-neutral-700 shadow-2xs transition-all hover:bg-neutral-50 hover:text-neutral-900 active:scale-95 disabled:pointer-events-none disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none cursor-pointer"
-          >
-            <ChevronLeft className="size-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollBy("right")}
-            disabled={!canScrollRight}
-            aria-label="Next evacuation center"
-            className="flex size-9 items-center justify-center rounded-full border border-neutral-200/80 bg-white text-neutral-700 shadow-2xs transition-all hover:bg-neutral-50 hover:text-neutral-900 active:scale-95 disabled:pointer-events-none disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none cursor-pointer"
-          >
-            <ChevronRight className="size-5" />
-          </button>
+        {/* Next Button (Right Overlay) */}
+        <button
+          type="button"
+          onClick={() => scrollBy("right")}
+          disabled={!canScrollRight}
+          aria-label="Next facility"
+          className={cn(
+            "absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-20 flex size-10 sm:size-11 items-center justify-center rounded-full border border-neutral-200/80 bg-white/95 text-neutral-800 shadow-md backdrop-blur-md transition-all duration-200 hover:bg-white hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none cursor-pointer",
+            !canScrollRight && "pointer-events-none opacity-0"
+          )}
+        >
+          <ChevronRight className="size-5 sm:size-6 text-neutral-700" />
+        </button>
+
+        {/* Scrollable Track */}
+        <div
+          ref={containerRef}
+          className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none py-2 px-1"
+          style={{ scrollBehavior: "smooth" }}
+        >
+          {centers.map((center) => (
+            <div
+              key={center.id}
+              className="w-[85vw] max-w-[340px] sm:w-[360px] md:w-[380px] shrink-0 snap-start"
+            >
+              <EvacCenterCard center={center} className="h-full" />
+            </div>
+          ))}
         </div>
-      </div>
-
-      {/* Scrollable Track */}
-      <div
-        ref={containerRef}
-        className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none py-1.5 px-0.5 -mx-1 px-1"
-        style={{ scrollBehavior: "smooth" }}
-      >
-        {centers.map((center) => (
-          <div
-            key={center.id}
-            className="w-[85vw] max-w-[340px] sm:w-[360px] md:w-[380px] shrink-0 snap-start"
-          >
-            <EvacCenterCard center={center} className="h-full" />
-          </div>
-        ))}
       </div>
 
       {/* Pagination Dot Track */}
@@ -132,7 +134,7 @@ export function EvacCenterCarousel({ centers, className }: EvacCenterCarouselPro
                 "h-2 rounded-full transition-all duration-300 cursor-pointer",
                 activeIndex === idx
                   ? "w-6 bg-emerald-600 shadow-xs"
-                  : "w-2 bg-neutral-300 hover:bg-neutral-400",
+                  : "w-2 bg-neutral-300 hover:bg-neutral-400"
               )}
             />
           ))}
