@@ -63,10 +63,17 @@ export function DataFreshness({
         className,
       )}
     >
-      <span className={cn("text-caption inline-flex items-center gap-1", muted)}>
-        <Clock aria-hidden className="size-3" />
+      <span className={cn("text-caption inline-flex items-center gap-1.5 font-medium", muted)}>
+        {!isStale ? (
+          <span className="relative flex size-2 shrink-0">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+          </span>
+        ) : (
+          <Clock aria-hidden className="size-3 text-warning shrink-0" />
+        )}
         <time dateTime={observedAt} title={formatPhtDateTime(observedAt)}>
-          {relative}
+          Updated {relative}
         </time>
       </span>
 

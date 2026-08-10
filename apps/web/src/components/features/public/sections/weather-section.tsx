@@ -30,7 +30,7 @@ export async function WeatherSection() {
           icon={CloudRain}
           title="Weather &"
           titleAccent="River Level"
-          description="Every reading below shows when it was taken and where it came from. Readings older than 45 minutes are marked."
+          description="Monitors real-time weather metrics and the DOST-PAGASA Montalban river gauge. Automated polling tracks rainfall, temperature, heat index, and rising water levels to alert San Jose residents of potential flood threats."
           action={
             <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
               <Link href="/weather">
