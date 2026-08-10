@@ -22,7 +22,7 @@ const HAZARD_LEGEND = [
   {
     level: "Low Hazard",
     depth: "0–0.5 m",
-    proximityText: "Water Proximity: Far (6 km or more)",
+    proximityText: "Waterway Proximity: Far (6 km or more)",
     color: "bg-[#FFED4A]",
     borderColor: "border-yellow-500/50",
     badgeBg: "bg-yellow-100/90 text-yellow-900 border-yellow-300/70",
@@ -31,7 +31,7 @@ const HAZARD_LEGEND = [
   {
     level: "Medium Hazard",
     depth: "0.5–1.5 m",
-    proximityText: "Water Proximity: Near (1 – 5 km)",
+    proximityText: "Waterway Proximity: Near (1 – 5 km)",
     color: "bg-[#F59E0B]",
     borderColor: "border-amber-600/50",
     badgeBg: "bg-amber-100/90 text-amber-900 border-amber-300/70",
@@ -40,7 +40,7 @@ const HAZARD_LEGEND = [
   {
     level: "High Hazard",
     depth: "over 1.5 m",
-    proximityText: "Water Proximity: Very Near (1 km or less)",
+    proximityText: "Waterway Proximity: Very Near (1 km or less)",
     color: "bg-[#EF4444]",
     borderColor: "border-red-600/50",
     badgeBg: "bg-red-100/90 text-red-900 border-red-300/70",
