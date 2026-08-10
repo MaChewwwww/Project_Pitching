@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, date, datetime
+from typing import Literal, cast
 
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -78,7 +79,7 @@ async def counts_by_area(session: AsyncSession) -> dict[uuid.UUID, tuple[int, in
 
 
 async def risk_counts_by_area(session: AsyncSession) -> dict[uuid.UUID, tuple[int, int, int]]:
-    """`{area_id: (low_risk_count, medium_risk_count, high_risk_count)}` — derived from waterway_proximity.
+    """`{area_id: (low, med, high)}` — derived from waterway_proximity.
     - 'far' => low risk
     - 'near' => medium risk
     - 'very_near' => high risk
@@ -219,7 +220,7 @@ async def _household_out(
         street_address=household.street_address,
         waterway_proximity=household.waterway_proximity,
         location=await _location_geojson(session, household.id),
-        source=household.source,
+        source=cast(Literal["self", "bhw"], household.source),
         verified_at=household.verified_at,
         has_possible_duplicate=has_possible_duplicate,
         member_count=member_count,
@@ -271,7 +272,7 @@ async def find_duplicate_candidates(
             (Member.full_name == name) & (Member.birth_date == birth_date)
             for name, birth_date in own_members
         ]
-        member_matches = (
+        member_matches = list(
             (
                 await session.execute(
                     select(Household)
