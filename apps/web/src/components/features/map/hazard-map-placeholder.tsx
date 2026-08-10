@@ -231,8 +231,8 @@ export function HazardMapPlaceholder({
           {/* Attribution Footer */}
           <Attribution
             className="mt-auto pt-1"
-            sources={["hazard", "basemap"]}
-            disclaimer="boundaries"
+            sources={["hazard", "basemap", "river"]}
+            disclaimer={["boundaries", "warning-authority"]}
           />
         </div>
       </div>
