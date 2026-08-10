@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CloudRain, Droplets, Thermometer, Umbrella, Wind } from "lucide-react";
+import { Clock, CloudRain, Droplets, Thermometer, Umbrella, Wind } from "lucide-react";
 
 import { Card, CardContent } from "@/components/common/card";
 import { DataFreshness } from "@/components/common/data-freshness";
@@ -87,7 +87,8 @@ export function WeatherPanel({
               <Umbrella className="size-4 text-sky-600" />
               Hourly Prediction &amp; Rain Chance
             </span>
-            <span className="text-caption font-semibold text-sky-700/80">
+            <span className="inline-flex items-center gap-1 rounded-md bg-sky-100/90 px-2 py-0.5 text-caption font-bold text-sky-800 border border-sky-200/60 shadow-2xs">
+              <Clock className="size-3 text-sky-600" />
               Next 18 Hours
             </span>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Clock, RadioTower, TriangleAlert } from "lucide-react";
+import { Clock, Database, TriangleAlert } from "lucide-react";
 
 import { useRelativeTime } from "@/hooks/use-relative-time";
 import { formatPhtDateTime } from "@/lib/format";
@@ -13,10 +13,10 @@ import type { ReadingSource } from "@/lib/api/public-types";
  * trust (FR-WX-010, FR-WX-011, BR-3.8).
  */
 
-const SOURCE_LABEL: Record<ReadingSource, string> = {
-  open_meteo: "Open-Meteo",
-  pagasa: "DOST-PAGASA",
-  manual: "Entered by staff",
+const SOURCE_LABEL: Record<ReadingSource, { name: string; full: string }> = {
+  open_meteo: { name: "Open-Meteo", full: "Open-Meteo Weather API" },
+  pagasa: { name: "DOST-PAGASA", full: "DOST-PAGASA River Station" },
+  manual: { name: "Staff Entry", full: "Barangay Staff Entry" },
 };
 
 export interface DataFreshnessProps {
@@ -46,6 +46,7 @@ export function DataFreshness({
 }: DataFreshnessProps) {
   const relative = useRelativeTime(observedAt, ageMinutes);
   const muted = onDark ? "text-primary-100/70" : "text-neutral-500";
+  const sourceMeta = SOURCE_LABEL[source] || { name: source, full: source };
 
   return (
     <div
@@ -55,7 +56,8 @@ export function DataFreshness({
         className,
       )}
     >
-      <span className={cn("text-caption inline-flex items-center gap-1.5 font-medium", muted)}>
+      {/* Updated Time Badge */}
+      <span className={cn("text-caption inline-flex items-center gap-1.5 font-semibold", muted)}>
         {!isStale ? (
           <span className="relative flex size-2 shrink-0">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
@@ -69,12 +71,19 @@ export function DataFreshness({
         </time>
       </span>
 
-      <span className={cn("text-caption inline-flex items-center gap-1 ml-auto", muted)}>
-        <RadioTower aria-hidden className="size-3" />
-        {SOURCE_LABEL[source]}
+      {/* Source Tag Badge */}
+      <span
+        className={cn(
+          "text-caption inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-semibold text-neutral-600 border-neutral-200/80 bg-neutral-50/90 shadow-2xs ml-auto",
+          onDark && "border-white/10 bg-white/10 text-white"
+        )}
+      >
+        <Database aria-hidden className="size-3 text-sky-500 shrink-0" />
+        <span>Source: {sourceMeta.full}</span>
         {showStation && station ? ` · ${station}` : null}
       </span>
 
+      {/* Stale Warning Badge */}
       {isStale ? (
         <span className="text-caption border-warning-border bg-warning-bg text-warning inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 font-semibold">
           <TriangleAlert aria-hidden className="size-3" />
