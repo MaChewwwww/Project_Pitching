@@ -15,7 +15,7 @@ import type {
  *
  * Renders a non-interactable Leaflet hazard overview map alongside the official
  * Project NOAH 5-Year Flood Hazard Layer legend (Low, Medium, High Hazard depths)
- * matching the exact resident onboarding survey waterway proximity options.
+ * strictly matched with the resident onboarding survey waterway proximity options.
  */
 
 const HAZARD_LEGEND = [
@@ -23,7 +23,8 @@ const HAZARD_LEGEND = [
     level: "Low Hazard",
     depth: "0–0.5 m",
     waterwayDistance: "6 km o higit pa",
-    waterwayDesc: "Far from waterways (Malayo)",
+    waterwayDesc: "Far: 6 km o higit pa",
+    waterwayTagalog: "Malayo: Anim na kilometro o higit pa",
     color: "bg-[#FFED4A]",
     borderColor: "border-yellow-500/40",
     badgeBg: "bg-yellow-100/90 text-yellow-900 border-yellow-300/70",
@@ -34,7 +35,8 @@ const HAZARD_LEGEND = [
     level: "Medium Hazard",
     depth: "0.5–1.5 m",
     waterwayDistance: "1 – 5 km",
-    waterwayDesc: "Near waterway reach (Malapit)",
+    waterwayDesc: "Near: 1 – 5 km",
+    waterwayTagalog: "Malapit: Isa hanggang Limang kilometro",
     color: "bg-[#F59E0B]",
     borderColor: "border-amber-600/40",
     badgeBg: "bg-amber-100/90 text-amber-900 border-amber-300/70",
@@ -45,7 +47,8 @@ const HAZARD_LEGEND = [
     level: "High Hazard",
     depth: "over 1.5 m",
     waterwayDistance: "1 km below",
-    waterwayDesc: "Very Near waterway (Sobrang Lapit)",
+    waterwayDesc: "Very Near: 1 km below",
+    waterwayTagalog: "Sobrang Lapit: Isang kilometro pababa",
     color: "bg-[#EF4444]",
     borderColor: "border-red-600/40",
     badgeBg: "bg-red-100/90 text-red-900 border-red-300/70",
@@ -77,10 +80,10 @@ export function HazardMapPlaceholder({
     >
       <div className="grid lg:grid-cols-[1.4fr_1fr]">
         {/* Left Column: Non-interactable Leaflet Map Preview */}
-        <div className="relative flex h-[410px] lg:h-full w-full items-center justify-center bg-slate-950 p-0 overflow-hidden">
+        <div className="relative flex h-[430px] lg:h-full w-full items-center justify-center bg-slate-950 p-0 overflow-hidden">
           <HazardMap
             interactive={false}
-            className="h-full w-full min-h-[410px]"
+            className="h-full w-full min-h-[430px]"
           />
           <span className="text-caption absolute top-4 left-4 z-[600] rounded-full border border-white/20 bg-slate-900/85 px-3.5 py-1.5 font-extrabold text-emerald-400 backdrop-blur-md shadow-md flex items-center gap-2">
             <span className="size-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -143,19 +146,24 @@ export function HazardMapPlaceholder({
                     </span>
                   </div>
 
-                  {/* Waterway Proximity Sub-Row matching onboarding survey */}
-                  <div className="flex items-center justify-between pl-6 pt-0.5">
-                    <span className="text-[11px] font-medium text-neutral-600 flex items-center gap-1.5">
-                      <Waves className="size-3.5 text-neutral-500 shrink-0" />
-                      {item.waterwayDesc}
-                    </span>
-                    <span
-                      className={cn(
-                        "text-[10px] font-extrabold px-2 py-0.5 rounded-md border shrink-0",
-                        item.distanceBadge,
-                      )}
-                    >
-                      {item.waterwayDistance}
+                  {/* Waterway Proximity Sub-Row strictly matching onboarding survey */}
+                  <div className="flex flex-col gap-0.5 pl-6 pt-0.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-neutral-800 flex items-center gap-1.5">
+                        <Waves className="size-3.5 text-neutral-500 shrink-0" />
+                        {item.waterwayDesc}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-[10px] font-extrabold px-2 py-0.5 rounded-md border shrink-0",
+                          item.distanceBadge,
+                        )}
+                      >
+                        {item.waterwayDistance}
+                      </span>
+                    </div>
+                    <span className="text-[10px] italic text-neutral-600 font-serif pl-5">
+                      ({item.waterwayTagalog})
                     </span>
                   </div>
                 </div>
