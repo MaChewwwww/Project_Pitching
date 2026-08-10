@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AlertCircle, AlertTriangle, ShieldAlert, Zap } from "lucide-react";
+import { AlertCircle, AlertTriangle, ShieldAlert } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { AlertLevel, RiverThresholds } from "@/lib/api/public-types";
@@ -38,7 +38,7 @@ const SEGMENTS = [
   },
   {
     level: 3 as const,
-    label: "Forced Evac",
+    label: "Forced Evacuation",
     activeCard: "border-red-500 bg-red-50/90 text-red-950 shadow-xs ring-1 ring-red-400/50",
     icon: ShieldAlert,
     key: "level_3_m" as const,
@@ -79,35 +79,16 @@ export function AlertLevelIndicator({
             : `River alert level ${level} of 3${currentValueM != null ? `, currently ${currentValueM} metres` : ""}`
         }
       >
-        {/* Container Header Bar */}
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-overline inline-flex items-center gap-1.5 font-bold tracking-wider text-slate-700 uppercase">
-            <Zap className="size-3.5 text-amber-500" />
-            Alert Threshold Stages
-          </span>
-          {level > 0 ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-300/60 whitespace-nowrap">
-              <span className="relative flex size-2 shrink-0">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-amber-500" />
-              </span>
-              Stage {level} Active {currentValueM != null ? `(${currentValueM}m)` : null}
-            </span>
-          ) : (
-            <span className="text-caption font-semibold text-emerald-700">Normal Water Stage</span>
-          )}
-        </div>
-
         {/* Continuous Multi-Color Gauge Track */}
-        <div className="relative w-full h-2 rounded-full bg-neutral-200/80 overflow-hidden">
+        <div className="relative w-full h-2.5 rounded-full bg-neutral-200/80 overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-700 ease-out bg-gradient-to-r from-amber-400 via-orange-500 to-red-600"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
 
-        {/* 3 Symmetrical Step Cards */}
-        <div className="grid grid-cols-3 gap-2.5 pt-0.5">
+        {/* 3 Step Cards Layout */}
+        <div className="grid grid-cols-3 gap-2 pt-0.5">
           {SEGMENTS.map((segment) => {
             const reached = level >= segment.level;
             const isCurrent = level === segment.level;
@@ -117,7 +98,7 @@ export function AlertLevelIndicator({
               <div
                 key={segment.level}
                 className={cn(
-                  "flex flex-col justify-between gap-2 rounded-xl border p-3 transition-all duration-300 min-h-[72px]",
+                  "flex flex-col justify-between gap-2 rounded-xl border p-2.5 transition-all duration-300 min-h-[68px]",
                   reached
                     ? segment.activeCard
                     : onDark
@@ -126,9 +107,9 @@ export function AlertLevelIndicator({
                 )}
               >
                 {/* Stage Header */}
-                <div className="flex items-center justify-between gap-1 w-full">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wide truncate">
-                    {segment.level} · {segment.label}
+                <div className="flex items-center justify-between gap-1 w-full overflow-hidden">
+                  <span className="text-[10px] sm:text-[10.5px] font-extrabold uppercase tracking-tight whitespace-nowrap">
+                    {segment.label}
                   </span>
                   {reached ? (
                     <Icon className={cn("size-3.5 shrink-0 ml-auto text-current", isCurrent && "animate-pulse")} />
