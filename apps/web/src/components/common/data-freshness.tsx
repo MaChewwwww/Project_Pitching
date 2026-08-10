@@ -64,7 +64,10 @@ export function DataFreshness({
             <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
           </span>
         ) : (
-          <Clock aria-hidden className="size-3 text-warning shrink-0" />
+          <span className="relative flex size-2 shrink-0">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+            <span className="relative inline-flex size-2 rounded-full bg-amber-500" />
+          </span>
         )}
         <time dateTime={observedAt} title={formatPhtDateTime(observedAt)}>
           Updated {relative}
