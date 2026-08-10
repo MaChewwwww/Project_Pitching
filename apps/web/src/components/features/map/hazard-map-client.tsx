@@ -239,15 +239,9 @@ export function HazardMapClient({
         <GeoJSON
           key="thick-dashed-outer-boundary"
           data={SAN_JOSE_OUTER_BOUNDARY_GEOJSON as GeoJSON.GeoJsonObject}
-          interactive={true}
+          interactive={false}
           pane="topBoundaryPane"
           style={() => BOUNDARY_LINE_STYLE}
-          onEachFeature={(_, layer) => {
-            layer.bindTooltip("Barangay San Jose Administrative Boundary", {
-              sticky: true,
-              className: "dark-leaflet-tooltip",
-            });
-          }}
         />
 
         {/* Boundary Label Badge — Centered on top of the boundary line */}
