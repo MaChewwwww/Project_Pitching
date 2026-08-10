@@ -143,24 +143,51 @@ export function FloodEventsSection({ events }: FloodEventsSectionProps) {
 
                       <dl className="grid grid-cols-2 gap-4 rounded-lg bg-neutral-50/80 p-3 border border-neutral-100 dark:bg-neutral-900/50 dark:border-neutral-800">
                         <div>
-                          <dt className="text-overline text-neutral-500">Peak level</dt>
-                          <dd className="text-h3 tabular font-bold text-neutral-900">
-                            {event.peak_level_m != null ? (
+                          {(() => {
+                            const peakM = event.peak_level_m;
+                            let colorClass = "text-neutral-900";
+                            let label = null;
+                            let badgeClass = "";
+                            if (peakM != null) {
+                              if (peakM >= 21.0) {
+                                colorClass = "text-red-600 dark:text-red-400";
+                                label = "Extreme";
+                                badgeClass = "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800";
+                              } else if (peakM >= 18.0) {
+                                colorClass = "text-amber-600 dark:text-amber-400";
+                                label = "Severe";
+                                badgeClass = "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800";
+                              } else {
+                                colorClass = "text-blue-600 dark:text-blue-400";
+                                label = "Moderate";
+                                badgeClass = "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800";
+                              }
+                            }
+                            return (
                               <>
-                                {event.peak_level_m}
-                                <span className="text-body-sm font-normal text-neutral-500 ml-0.5">m</span>
+                                <div className="flex items-center justify-between">
+                                  <dt className="text-overline text-neutral-500">Peak level</dt>
+                                  {label ? (
+                                    <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded border ${badgeClass}`}>
+                                      {label}
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <dd className={`text-h3 tabular font-bold mt-0.5 ${colorClass}`}>
+                                  {event.peak_level_m != null ? (
+                                    <>
+                                      {event.peak_level_m}
+                                      <span className="text-body-sm font-normal text-neutral-500 ml-0.5">m</span>
+                                    </>
+                                  ) : (
+                                    <span className="text-body-sm font-normal text-neutral-500">
+                                      {isOngoing ? "Tracking..." : "Not recorded"}
+                                    </span>
+                                  )}
+                                </dd>
                               </>
-                            ) : (
-                              <span className="text-body-sm font-normal text-neutral-500">
-                                {isOngoing ? "Tracking..." : "Not recorded"}
-                              </span>
-                            )}
-                          </dd>
-                          {event.peak_at ? (
-                            <span className="text-caption block text-neutral-400">
-                              at {formatPhtDate(event.peak_at)}
-                            </span>
-                          ) : null}
+                            );
+                          })()}
                         </div>
                         <div className="border-l border-neutral-200 pl-4 dark:border-neutral-800">
                           <dt className="text-overline text-neutral-500">Displaced</dt>
