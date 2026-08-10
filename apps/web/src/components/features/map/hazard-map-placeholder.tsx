@@ -93,7 +93,7 @@ export function HazardMapPlaceholder({
           <HazardMap
             interactive={false}
             center={[14.7410, 121.1315]}
-            zoom={14.8}
+            zoom={16}
             className="h-full w-full min-h-[390px]"
           />
         </div>
