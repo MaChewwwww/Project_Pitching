@@ -85,7 +85,7 @@ export function MapLegend({ className }: { className?: string }) {
             MAP BOUNDARIES
           </p>
           <div className="flex items-center gap-2 text-xs text-primary-100/80">
-            <span className="w-5 border-b-[3px] border-dashed border-blue-500" />
+            <span className="w-5 border-b-[3px] border-dashed border-primary-500" />
             <span>San Jose Boundary</span>
           </div>
         </div>

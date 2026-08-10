@@ -110,21 +110,21 @@ const RIPPLE_STYLE = `
 }
 
 .dark-leaflet-popup .leaflet-popup-content-wrapper {
-  background-color: #0f172a !important;
-  color: #f8fafc !important;
-  border: 1px solid #334155 !important;
+  background-color: #052e16 !important;
+  color: #d1fae5 !important;
+  border: 1px solid #166534 !important;
   border-radius: 0.75rem !important;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6) !important;
   padding: 4px !important;
 }
 .dark-leaflet-popup .leaflet-popup-tip {
-  background-color: #0f172a !important;
-  border: 1px solid #334155 !important;
+  background-color: #052e16 !important;
+  border: 1px solid #166534 !important;
 }
 .dark-leaflet-tooltip {
-  background-color: #0f172a !important;
-  color: #38bdf8 !important;
-  border: 1px solid #0284c7 !important;
+  background-color: #052e16 !important;
+  color: #4ade80 !important;
+  border: 1px solid #166534 !important;
   border-radius: 0.5rem !important;
   font-weight: 600 !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
