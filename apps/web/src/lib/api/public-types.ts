@@ -509,6 +509,9 @@ export interface PublicAreaStat {
   registered_members: number;
   /** derived — COUNT. */
   evac_center_count: number;
+  low_risk_households: number;
+  medium_risk_households: number;
+  high_risk_households: number;
 }
 
 export interface PublicBarangayStats {

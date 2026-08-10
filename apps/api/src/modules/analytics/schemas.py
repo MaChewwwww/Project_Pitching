@@ -28,6 +28,9 @@ class PublicAreaStat(BaseModel):
     registered_households: int
     registered_members: int
     evac_center_count: int
+    low_risk_households: int = 0
+    medium_risk_households: int = 0
+    high_risk_households: int = 0
 
 
 class PublicBarangayStats(BaseModel):

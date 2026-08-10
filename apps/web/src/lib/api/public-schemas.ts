@@ -310,6 +310,9 @@ export const publicAreaStatSchema = z.object({
   registered_households: z.number(),
   registered_members: z.number(),
   evac_center_count: z.number(),
+  low_risk_households: z.number().default(0),
+  medium_risk_households: z.number().default(0),
+  high_risk_households: z.number().default(0),
 });
 
 export const publicBarangayStatsSchema = z.object({

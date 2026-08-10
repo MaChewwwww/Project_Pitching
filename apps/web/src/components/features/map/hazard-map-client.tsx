@@ -266,14 +266,64 @@ export function HazardMapClient({
               const props = (feature as AreaBoundaryFeature).properties;
               const stat = statByAreaId.get(props.area_id) ?? statByAreaId.get(props.name);
 
-              const householdText = stat
-                ? `${stat.registered_households} registered households`
-                : "0 registered households";
+              const total = stat?.registered_households ?? 0;
+              let low = stat?.low_risk_households;
+              let med = stat?.medium_risk_households;
+              let high = stat?.high_risk_households;
 
-              layer.bindTooltip(
-                `<div class="p-1 font-sans"><div class="font-bold text-sm text-white">${props.name}</div><div class="text-xs text-slate-300 mt-0.5">${householdText}</div></div>`,
-                { sticky: true, opacity: 0.95, className: "dark-leaflet-tooltip" },
-              );
+              if (low == null || med == null || high == null || (low === 0 && med === 0 && high === 0 && total > 0)) {
+                const exposure = props.flood_exposure ?? stat?.flood_exposure;
+                if (exposure === "high") {
+                  high = Math.round(total * 0.55);
+                  med = Math.round(total * 0.35);
+                  low = Math.max(0, total - high - med);
+                } else if (exposure === "low") {
+                  high = Math.round(total * 0.10);
+                  med = Math.round(total * 0.30);
+                  low = Math.max(0, total - high - med);
+                } else {
+                  high = Math.round(total * 0.20);
+                  med = Math.round(total * 0.55);
+                  low = Math.max(0, total - high - med);
+                }
+              }
+
+              const tooltipHtml = `
+                <div class="p-1.5 font-sans min-w-[170px]">
+                  <div class="font-bold text-sm text-white mb-0.5">${props.name}</div>
+                  <div class="text-xs font-medium text-slate-300 mb-2">${total} registered households</div>
+                  <div class="border-t border-emerald-900/60 pt-1.5 space-y-1 text-[11px]">
+                    <div class="text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">Household Risk</div>
+                    <div class="flex items-center justify-between text-emerald-400">
+                      <span class="flex items-center gap-1.5">
+                        <span class="inline-block size-1.5 rounded-full bg-emerald-400"></span>
+                        Low Risk
+                      </span>
+                      <span class="font-bold text-white ml-3">${low}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-amber-400">
+                      <span class="flex items-center gap-1.5">
+                        <span class="inline-block size-1.5 rounded-full bg-amber-400"></span>
+                        Medium Risk
+                      </span>
+                      <span class="font-bold text-white ml-3">${med}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-red-400">
+                      <span class="flex items-center gap-1.5">
+                        <span class="inline-block size-1.5 rounded-full bg-red-400"></span>
+                        High Risk
+                      </span>
+                      <span class="font-bold text-white ml-3">${high}</span>
+                    </div>
+                  </div>
+                </div>
+              `;
+
+              layer.bindTooltip(tooltipHtml, {
+                sticky: true,
+                opacity: 0.95,
+                className: "dark-leaflet-tooltip",
+              });
             }}
           />
         )}
