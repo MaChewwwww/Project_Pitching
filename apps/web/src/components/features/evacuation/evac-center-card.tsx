@@ -78,30 +78,31 @@ export function EvacCenterCard({
       <div className="h-1.5 w-full bg-emerald-500" />
 
       <CardContent className="flex flex-col gap-2.5 p-3.5 sm:p-4">
-        {/* Badges row: Facility Type + Area pill */}
-        <div className="flex flex-wrap items-center justify-between gap-1.5 min-h-6">
-          {showTypeBadge ? (
-            <span
-              className={cn(
-                "text-[10px] font-extrabold uppercase tracking-wider border px-2 py-0.5 rounded-md shrink-0 shadow-2xs",
-                typeMeta.bg,
-              )}
-            >
-              {typeMeta.label}
-            </span>
-          ) : null}
+        {/* Header row: Name + Area pill (and optional Facility Type badge) */}
+        <div className="flex items-start justify-between gap-2.5">
+          <h3 className="text-h3 group-hover:text-primary-800 font-bold text-neutral-900 transition-colors leading-snug">
+            {center.facility.name}
+          </h3>
 
-          {center.facility.area_name && (
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700 bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded-md shrink-0 ml-auto">
-              {center.facility.area_name}
-            </span>
-          )}
+          <div className="flex flex-wrap items-center justify-end gap-1.5 shrink-0 pt-0.5">
+            {showTypeBadge && (
+              <span
+                className={cn(
+                  "text-[10px] font-extrabold uppercase tracking-wider border px-2 py-0.5 rounded-md shrink-0 shadow-2xs",
+                  typeMeta.bg,
+                )}
+              >
+                {typeMeta.label}
+              </span>
+            )}
+
+            {center.facility.area_name && (
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-md shrink-0">
+                {center.facility.area_name}
+              </span>
+            )}
+          </div>
         </div>
-
-        {/* Title */}
-        <h3 className="text-h3 group-hover:text-primary-800 font-bold text-neutral-900 transition-colors leading-snug">
-          {center.facility.name}
-        </h3>
 
         {/* Address */}
         {center.facility.address ? (
