@@ -15,45 +15,39 @@ import type {
  *
  * Renders a non-interactable Leaflet hazard overview map alongside the official
  * Project NOAH 5-Year Flood Hazard Layer legend (Low, Medium, High Hazard depths)
- * strictly matched with the resident onboarding survey waterway proximity options.
+ * using a compact 2-row English design for waterway survey proximity.
  */
 
 const HAZARD_LEGEND = [
   {
     level: "Low Hazard",
     depth: "0–0.5 m",
-    waterwayDistance: "6 km o higit pa",
-    waterwayDesc: "Far: 6 km o higit pa",
-    waterwayTagalog: "Malayo: Anim na kilometro o higit pa",
+    proximityText: "Far: 6 km or more",
     color: "bg-[#FFED4A]",
     borderColor: "border-yellow-500/40",
     badgeBg: "bg-yellow-100/90 text-yellow-900 border-yellow-300/70",
     cardBg: "border-yellow-200 bg-yellow-50/60",
-    distanceBadge: "text-yellow-900 bg-yellow-200/60 border-yellow-300/80 font-bold",
+    distanceBadge: "text-yellow-900 bg-yellow-200/70 border-yellow-300/80 font-extrabold",
   },
   {
     level: "Medium Hazard",
     depth: "0.5–1.5 m",
-    waterwayDistance: "1 – 5 km",
-    waterwayDesc: "Near: 1 – 5 km",
-    waterwayTagalog: "Malapit: Isa hanggang Limang kilometro",
+    proximityText: "Near: 1 – 5 km",
     color: "bg-[#F59E0B]",
     borderColor: "border-amber-600/40",
     badgeBg: "bg-amber-100/90 text-amber-900 border-amber-300/70",
     cardBg: "border-amber-200 bg-amber-50/60",
-    distanceBadge: "text-amber-900 bg-amber-200/60 border-amber-300/80 font-bold",
+    distanceBadge: "text-amber-900 bg-amber-200/70 border-amber-300/80 font-extrabold",
   },
   {
     level: "High Hazard",
     depth: "over 1.5 m",
-    waterwayDistance: "1 km below",
-    waterwayDesc: "Very Near: 1 km below",
-    waterwayTagalog: "Sobrang Lapit: Isang kilometro pababa",
+    proximityText: "Very Near: 1 km or less",
     color: "bg-[#EF4444]",
     borderColor: "border-red-600/40",
     badgeBg: "bg-red-100/90 text-red-900 border-red-300/70",
     cardBg: "border-red-200 bg-red-50/60",
-    distanceBadge: "text-red-900 bg-red-200/60 border-red-300/80 font-bold",
+    distanceBadge: "text-red-900 bg-red-200/70 border-red-300/80 font-extrabold",
   },
 ];
 
@@ -80,10 +74,10 @@ export function HazardMapPlaceholder({
     >
       <div className="grid lg:grid-cols-[1.4fr_1fr]">
         {/* Left Column: Non-interactable Leaflet Map Preview */}
-        <div className="relative flex h-[430px] lg:h-full w-full items-center justify-center bg-slate-950 p-0 overflow-hidden">
+        <div className="relative flex h-[380px] lg:h-full w-full items-center justify-center bg-slate-950 p-0 overflow-hidden">
           <HazardMap
             interactive={false}
-            className="h-full w-full min-h-[430px]"
+            className="h-full w-full min-h-[380px]"
           />
           <span className="text-caption absolute top-4 left-4 z-[600] rounded-full border border-white/20 bg-slate-900/85 px-3.5 py-1.5 font-extrabold text-emerald-400 backdrop-blur-md shadow-md flex items-center gap-2">
             <span className="size-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -92,9 +86,9 @@ export function HazardMapPlaceholder({
         </div>
 
         {/* Right Column: Official Flood Hazard Layer Legend & Onboarding Waterway Proximity */}
-        <div className="flex flex-col gap-4 p-5 md:p-6 bg-slate-50/50">
+        <div className="flex flex-col gap-3.5 p-5 md:p-6 bg-slate-50/50">
           {/* Header */}
-          <div className="flex items-center gap-2.5 border-b border-neutral-200/80 pb-3">
+          <div className="flex items-center gap-2.5 border-b border-neutral-200/80 pb-2.5">
             <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-xs">
               <Layers className="size-4" />
             </div>
@@ -108,26 +102,27 @@ export function HazardMapPlaceholder({
             </div>
           </div>
 
-          {/* Official Flood Hazard Legend Cards with Waterway Proximity */}
-          <div className="flex flex-col gap-2">
+          {/* Official Flood Hazard Legend Cards (Strict Max 2-Row English Layout) */}
+          <div className="flex flex-col gap-1.5">
             <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500">
-              Flood Risk Levels, Depths & Waterway Proximity
+              Flood Risk Levels & Waterway Proximity
             </p>
 
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-2">
               {HAZARD_LEGEND.map((item) => (
                 <div
                   key={item.level}
                   className={cn(
-                    "flex flex-col gap-1.5 rounded-xl border p-3 shadow-2xs transition-all",
+                    "flex flex-col gap-1.5 rounded-xl border p-2.5 shadow-2xs transition-all",
                     item.cardBg,
                   )}
                 >
+                  {/* Row 1: Swatch + Title & Depth Badge */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2">
                       <span
                         className={cn(
-                          "size-4 rounded-full border shadow-xs shrink-0",
+                          "size-3.5 rounded-full border shadow-xs shrink-0",
                           item.color,
                           item.borderColor,
                         )}
@@ -138,7 +133,7 @@ export function HazardMapPlaceholder({
                     </div>
                     <span
                       className={cn(
-                        "text-xs font-extrabold px-2.5 py-0.5 rounded-full border shadow-2xs",
+                        "text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border shadow-2xs",
                         item.badgeBg,
                       )}
                     >
@@ -146,24 +141,19 @@ export function HazardMapPlaceholder({
                     </span>
                   </div>
 
-                  {/* Waterway Proximity Sub-Row strictly matching onboarding survey */}
-                  <div className="flex flex-col gap-0.5 pl-6 pt-0.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-neutral-800 flex items-center gap-1.5">
-                        <Waves className="size-3.5 text-neutral-500 shrink-0" />
-                        {item.waterwayDesc}
-                      </span>
-                      <span
-                        className={cn(
-                          "text-[10px] font-extrabold px-2 py-0.5 rounded-md border shrink-0",
-                          item.distanceBadge,
-                        )}
-                      >
-                        {item.waterwayDistance}
-                      </span>
-                    </div>
-                    <span className="text-[10px] italic text-neutral-600 font-serif pl-5">
-                      ({item.waterwayTagalog})
+                  {/* Row 2: Waterway Proximity Survey (English Only) */}
+                  <div className="flex items-center justify-between pl-5.5 text-[11px]">
+                    <span className="font-semibold text-neutral-700 flex items-center gap-1.5">
+                      <Waves className="size-3.5 text-neutral-500 shrink-0" />
+                      Waterway Proximity
+                    </span>
+                    <span
+                      className={cn(
+                        "text-[10px] font-extrabold px-2 py-0.5 rounded-md border shrink-0",
+                        item.distanceBadge,
+                      )}
+                    >
+                      {item.proximityText}
                     </span>
                   </div>
                 </div>
@@ -172,8 +162,8 @@ export function HazardMapPlaceholder({
           </div>
 
           {/* Infrastructure Metrics */}
-          <div className="flex items-center gap-3 rounded-xl border border-neutral-200/80 bg-white p-3.5 shadow-2xs">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
+          <div className="flex items-center gap-3 rounded-xl border border-neutral-200/80 bg-white p-3 shadow-2xs">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
               <Building2 className="size-4" />
             </div>
             <div className="flex flex-col">
@@ -191,7 +181,7 @@ export function HazardMapPlaceholder({
 
           {/* Attribution Footer */}
           <Attribution
-            className="mt-auto pt-2"
+            className="mt-auto pt-1"
             sources={["hazard", "basemap"]}
             disclaimer="boundaries"
           />
