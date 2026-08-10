@@ -8,11 +8,34 @@ import { DataFreshness } from "@/components/common/data-freshness";
 import { EmptyState } from "@/components/common/empty-state";
 import { StatusBadge } from "@/components/common/status-badge";
 import { cn } from "@/lib/utils";
-import type { PublicRiverLevel } from "@/lib/api/public-types";
+import type { AlertLevel, PublicRiverLevel } from "@/lib/api/public-types";
 
 /**
  * River level and the current alert level (FR-WX-004/005/010/011/012).
  */
+
+const MEASUREMENT_THEME: Record<AlertLevel, { bg: string; unit: string; val: string }> = {
+  0: {
+    bg: "border-emerald-200/80 bg-gradient-to-r from-emerald-50/80 to-teal-50/30",
+    unit: "text-emerald-700",
+    val: "text-neutral-900",
+  },
+  1: {
+    bg: "border-amber-300/80 bg-gradient-to-r from-amber-50/90 to-yellow-50/40 shadow-2xs",
+    unit: "text-amber-800 font-bold",
+    val: "text-amber-950",
+  },
+  2: {
+    bg: "border-orange-300/90 bg-gradient-to-r from-orange-50/90 to-amber-50/40 shadow-2xs",
+    unit: "text-orange-800 font-bold",
+    val: "text-orange-950",
+  },
+  3: {
+    bg: "border-red-400 bg-gradient-to-r from-red-50 to-rose-50/40 shadow-xs",
+    unit: "text-red-800 font-bold",
+    val: "text-red-950",
+  },
+};
 
 export function RiverLevelPanel({
   river,
@@ -28,6 +51,7 @@ export function RiverLevelPanel({
   const reading = river.reading ?? river.last_known_good;
   const usingFallback = river.reading == null && river.last_known_good != null;
   const compact = density === "compact";
+  const theme = MEASUREMENT_THEME[river.alert_level] ?? MEASUREMENT_THEME[0];
 
   if (!reading) {
     return (
@@ -69,18 +93,24 @@ export function RiverLevelPanel({
             <StatusBadge kind="alert" level={river.alert_level} className="shrink-0 shadow-xs" />
           </div>
 
-          <div className="flex items-baseline gap-2 rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50/60 to-teal-50/30 p-4">
+          {/* Dynamic Measurement Banner matching active alert stage */}
+          <div
+            className={cn(
+              "flex items-baseline gap-2 rounded-2xl border p-4 transition-all duration-300",
+              onDark ? "border-white/10 bg-white/10" : theme.bg
+            )}
+          >
             <span
               className={cn(
                 "tabular font-black tracking-tight",
                 compact ? "text-display-md" : "text-display-lg",
-                onDark ? "text-white" : "text-neutral-900"
+                onDark ? "text-white" : theme.val
               )}
             >
               {reading.value}
             </span>
             <span
-              className={cn("text-h2 font-bold", onDark ? "text-primary-200" : "text-emerald-700")}
+              className={cn("text-h2 font-bold", onDark ? "text-primary-200" : theme.unit)}
             >
               {reading.unit}
             </span>
