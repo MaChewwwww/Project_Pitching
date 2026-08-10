@@ -145,7 +145,6 @@ export default async function HazardMapPage() {
                   <span>&middot;</span>
                   <span>&copy;</span>
                   <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="text-primary-300 hover:text-white transition-colors">OpenStreetMap</a>
-                  <span>contributors</span>
                 </div>
               </div>
             </div>
