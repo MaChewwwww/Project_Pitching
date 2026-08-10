@@ -13,6 +13,7 @@ export type BadgeTone =
   | "primary"
   | "success"
   | "warning"
+  | "orange"
   | "danger"
   | "info"
   | "onDark";
@@ -22,6 +23,7 @@ const TONE: Record<BadgeTone, string> = {
   primary: "bg-primary-100/90 text-primary-900 border-primary-200/80",
   success: "bg-emerald-100/90 text-emerald-950 border-emerald-300/80",
   warning: "bg-amber-100/90 text-amber-950 border-amber-300/80",
+  orange: "bg-orange-100/95 text-orange-950 border-orange-400/90",
   danger: "bg-red-100/90 text-red-950 border-red-300/80",
   info: "bg-sky-100/90 text-sky-950 border-sky-300/80",
   onDark: "bg-white/15 text-white border-white/20",
@@ -31,7 +33,8 @@ const TONE_OUTLINE: Record<BadgeTone, string> = {
   neutral: "bg-transparent text-neutral-700 border-neutral-300",
   primary: "bg-transparent text-primary-700 border-primary-300",
   success: "bg-transparent text-success border-success",
-  warning: "bg-transparent text-warning border-warning",
+  warning: "bg-transparent text-amber-600 border-amber-400",
+  orange: "bg-transparent text-orange-600 border-orange-500",
   danger: "bg-transparent text-danger border-danger",
   info: "bg-transparent text-info border-info",
   onDark: "bg-transparent text-primary-100 border-white/30",
