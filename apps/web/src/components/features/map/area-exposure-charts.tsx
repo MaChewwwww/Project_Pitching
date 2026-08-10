@@ -192,16 +192,16 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
                   )}
                 </div>
 
-                {/* Anchored Popover Tooltip on Hover */}
+                {/* Anchored Floating Tooltip ABOVE the Row (Green-ish theme, zero bar overlap) */}
                 {isHovered && (
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 z-40 pointer-events-none rounded-xl border border-slate-800 bg-slate-950/95 px-3.5 py-2 text-xs text-white shadow-2xl backdrop-blur-md animate-in fade-in-0 zoom-in-95 flex items-center gap-3">
-                    <span className="font-extrabold text-white text-xs shrink-0">{item.name}</span>
+                  <div className="absolute -top-9 right-2 z-50 pointer-events-none rounded-lg border border-emerald-500/50 bg-emerald-950/95 px-3 py-1 text-xs text-white shadow-xl backdrop-blur-md animate-in fade-in-0 zoom-in-95 flex items-center gap-3">
+                    <span className="font-extrabold text-emerald-300 text-xs shrink-0">{item.name}</span>
                     <div className="flex items-center gap-2.5 text-[11px] font-semibold shrink-0">
-                      <span className="text-emerald-400">Low: <strong className="text-white">{item.low}</strong> ({item.lowPct}%)</span>
-                      <span className="text-slate-700">|</span>
-                      <span className="text-amber-400">Med: <strong className="text-white">{item.med}</strong> ({item.medPct}%)</span>
-                      <span className="text-slate-700">|</span>
-                      <span className="text-red-400">High: <strong className="text-white">{item.high}</strong> ({item.highPct}%)</span>
+                      <span className="text-emerald-300">Low: <strong className="text-white">{item.low}</strong> ({item.lowPct}%)</span>
+                      <span className="text-emerald-800">|</span>
+                      <span className="text-amber-300">Med: <strong className="text-white">{item.med}</strong> ({item.medPct}%)</span>
+                      <span className="text-emerald-800">|</span>
+                      <span className="text-red-300">High: <strong className="text-white">{item.high}</strong> ({item.highPct}%)</span>
                     </div>
                   </div>
                 )}
