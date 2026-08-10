@@ -34,7 +34,7 @@ export async function AnnouncementsSection() {
         action={
           <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
             <Link href="/announcements">
-              View all
+              View All
               <ArrowRight aria-hidden className="size-4" />
             </Link>
           </Button>

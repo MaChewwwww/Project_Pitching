@@ -25,7 +25,7 @@ export async function ActivitiesSection() {
         action={
           <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
             <Link href="/activities">
-              View all
+              View All
               <ArrowRight aria-hidden className="size-4" />
             </Link>
           </Button>

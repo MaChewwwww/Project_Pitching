@@ -34,7 +34,7 @@ export async function WeatherSection() {
           action={
             <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
               <Link href="/weather">
-                Forecast &amp; flood history
+                Forecast &amp; Flood History
                 <ArrowRight aria-hidden className="size-4" />
               </Link>
             </Button>

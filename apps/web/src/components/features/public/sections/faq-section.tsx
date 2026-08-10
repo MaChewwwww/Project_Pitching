@@ -33,7 +33,7 @@ export async function FaqSection() {
             className="self-start max-sm:w-full"
           >
             <Link href="/help">
-              All questions &amp; contact
+              All Questions &amp; Contact
               <ArrowRight aria-hidden className="size-4" />
             </Link>
           </Button>

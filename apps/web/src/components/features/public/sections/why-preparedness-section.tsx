@@ -86,7 +86,7 @@ export async function WhyPreparednessSection() {
 
           <Button asChild pill size="lg" className="self-start max-sm:w-full">
             <Link href="/guides">
-              Read the preparedness guidelines
+              Read the Preparedness Guidelines
               <ArrowRight aria-hidden className="size-4" />
             </Link>
           </Button>
