@@ -201,6 +201,7 @@ export interface HazardMapClientProps {
   areaStats?: PublicAreaStat[];
   sirens?: PublicSiren[];
   interactive?: boolean;
+  center?: [number, number];
   zoom?: number;
 }
 
@@ -210,6 +211,7 @@ export function HazardMapClient({
   areaStats = [],
   sirens = [],
   interactive = true,
+  center = BARANGAY_VIEW.center,
   zoom = BARANGAY_VIEW.zoom,
 }: HazardMapClientProps) {
   const { visible } = useMapLayers();
@@ -233,7 +235,7 @@ export function HazardMapClient({
     <div className="relative min-h-[340px] h-full w-full bg-slate-950 font-sans text-slate-100 overflow-hidden rounded-2xl border border-slate-800 shadow-2xl">
       {/* Leaflet Map Canvas */}
       <MapContainer
-        center={BARANGAY_VIEW.center}
+        center={center}
         zoom={zoom}
         minZoom={BARANGAY_VIEW.minZoom}
         maxZoom={BARANGAY_VIEW.maxZoom}

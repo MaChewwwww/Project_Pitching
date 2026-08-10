@@ -19,8 +19,8 @@ import { BARANGAY_CENTER } from "@/lib/brand";
 
 /** Leaflet's spelling of `BARANGAY_CENTER`, default zoom 14 for desktop web. */
 export const BARANGAY_VIEW = {
-  center: [14.7445, 121.1300] as [number, number],
-  zoom: 15.5,
+  center: [14.7385, 121.1285] as [number, number],
+  zoom: 16.2,
   minZoom: 11,
   maxZoom: 18,
 } as const;
