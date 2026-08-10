@@ -14,7 +14,7 @@ import type {
  * The hazard map overview card on the public landing page.
  *
  * Renders a non-interactable Leaflet hazard overview map alongside a 2-column panel:
- * - Column 1: Official Project NOAH Flood Hazard Legend with vertical dot swatch & waterway proximity
+ * - Column 1: Official Project NOAH Flood Hazard Legend with vertical dot swatch & inline waterway proximity
  * - Column 2: Key Barangay disaster preparedness metrics and attribution disclaimer
  */
 
@@ -22,32 +22,29 @@ const HAZARD_LEGEND = [
   {
     level: "Low Hazard",
     depth: "0–0.5 m",
-    proximityText: "Far: 6 km or more",
+    proximityText: "Water Proximity: Far (6 km or more)",
     color: "bg-[#FFED4A]",
     borderColor: "border-yellow-500/50",
     badgeBg: "bg-yellow-100/90 text-yellow-900 border-yellow-300/70",
     cardBg: "border-yellow-200 bg-yellow-50/60",
-    distanceBadge: "text-yellow-900 bg-yellow-200/70 border-yellow-300/80 font-extrabold",
   },
   {
     level: "Medium Hazard",
     depth: "0.5–1.5 m",
-    proximityText: "Near: 1 – 5 km",
+    proximityText: "Water Proximity: Near (1 – 5 km)",
     color: "bg-[#F59E0B]",
     borderColor: "border-amber-600/50",
     badgeBg: "bg-amber-100/90 text-amber-900 border-amber-300/70",
     cardBg: "border-amber-200 bg-amber-50/60",
-    distanceBadge: "text-amber-900 bg-amber-200/70 border-amber-300/80 font-extrabold",
   },
   {
     level: "High Hazard",
     depth: "over 1.5 m",
-    proximityText: "Very Near: 1 km or less",
+    proximityText: "Water Proximity: Very Near (1 km or less)",
     color: "bg-[#EF4444]",
     borderColor: "border-red-600/50",
     badgeBg: "bg-red-100/90 text-red-900 border-red-300/70",
     cardBg: "border-red-200 bg-red-50/60",
-    distanceBadge: "text-red-900 bg-red-200/70 border-red-300/80 font-extrabold",
   },
 ];
 
@@ -165,20 +162,10 @@ export function HazardMapPlaceholder({
                         </span>
                       </div>
 
-                      {/* Row 2: Waterway Proximity */}
-                      <div className="flex items-center justify-between gap-1 text-[10px]">
-                        <span className="font-semibold text-neutral-700 truncate flex items-center gap-1">
-                          <Waves className="size-3 text-neutral-500 shrink-0" />
-                          Waterway
-                        </span>
-                        <span
-                          className={cn(
-                            "text-[10px] font-extrabold px-1.5 py-0.2 rounded border shrink-0",
-                            item.distanceBadge,
-                          )}
-                        >
-                          {item.proximityText}
-                        </span>
+                      {/* Row 2: Waterway Proximity Inline String (No right badge) */}
+                      <div className="flex items-center text-[10px] font-semibold text-neutral-700 gap-1.5 min-w-0">
+                        <Waves className="size-3 text-neutral-500 shrink-0" />
+                        <span className="truncate">{item.proximityText}</span>
                       </div>
                     </div>
                   </div>
