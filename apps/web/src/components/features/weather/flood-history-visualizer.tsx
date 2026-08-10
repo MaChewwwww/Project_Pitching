@@ -276,7 +276,7 @@ export function FloodHistoryVisualizer({ events }: FloodHistoryVisualizerProps) 
                             <div className="flex justify-between">
                               <span className="text-neutral-500">Displaced:</span>
                               <span className="font-bold text-neutral-900 dark:text-white">
-                                {ev.households_displaced != null ? `${formatNumber(ev.households_displaced)} hh` : "—"}
+                                {ev.households_displaced != null ? `${formatNumber(ev.households_displaced)} Households` : "—"}
                               </span>
                             </div>
                             {ev.area_names.length > 0 ? (
