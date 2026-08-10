@@ -117,7 +117,7 @@ export function FloodHistoryVisualizer({ events }: FloodHistoryVisualizerProps) 
                 <span className="text-body-sm font-normal text-neutral-500">m</span>
               </div>
               <p className="text-caption text-neutral-500 truncate mt-0.5">
-                {metrics.maxPeakEvent ? metrics.maxPeakEvent.name : "No peak recorded"}
+                {metrics.maxPeakEvent ? (metrics.maxPeakEvent as PublicFloodEvent).name : "No peak recorded"}
               </p>
             </div>
           </CardContent>
@@ -227,7 +227,7 @@ export function FloodHistoryVisualizer({ events }: FloodHistoryVisualizerProps) 
               <BarChart
                 data={chartData}
                 margin={{ top: 20, right: 20, left: -10, bottom: 25 }}
-                onClick={(state) => {
+                onClick={(state: any) => {
                   if (state && state.activePayload && state.activePayload.length) {
                     setSelectedEventId(state.activePayload[0].payload.id);
                   }
