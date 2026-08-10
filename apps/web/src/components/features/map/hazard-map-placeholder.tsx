@@ -130,7 +130,7 @@ export function HazardMapPlaceholder({
                   <div
                     key={item.level}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-xl border py-2 px-2.5 shadow-2xs transition-all",
+                      "flex h-[50px] items-center gap-2.5 rounded-xl border px-2.5 py-1.5 shadow-2xs transition-all",
                       item.cardBg,
                     )}
                   >
@@ -146,7 +146,7 @@ export function HazardMapPlaceholder({
                     </div>
 
                     {/* 2 Rows Content */}
-                    <div className="flex flex-1 flex-col gap-0.5 min-w-0">
+                    <div className="flex flex-1 flex-col gap-0.5 min-w-0 justify-center">
                       {/* Row 1: Title + Depth Badge */}
                       <div className="flex items-center justify-between gap-1 leading-tight">
                         <span className="text-xs font-bold text-neutral-900 truncate">
@@ -181,7 +181,7 @@ export function HazardMapPlaceholder({
 
               <div className="flex flex-col gap-2">
                 {/* Metric 1: Evacuation Infrastructure */}
-                <div className="flex items-center gap-2.5 rounded-xl border border-neutral-200/80 bg-white p-2.5 shadow-2xs">
+                <div className="flex h-[50px] items-center gap-2.5 rounded-xl border border-neutral-200/80 bg-white px-2.5 py-1.5 shadow-2xs">
                   <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
                     <Building2 className="size-3.5" />
                   </div>
@@ -195,23 +195,8 @@ export function HazardMapPlaceholder({
                   </div>
                 </div>
 
-                {/* Metric 2: High Risk Household Exposure */}
-                <div className="flex items-center gap-2.5 rounded-xl border border-neutral-200/80 bg-white p-2.5 shadow-2xs">
-                  <div className="flex size-7 items-center justify-center rounded-lg bg-red-100 text-red-700 shrink-0">
-                    <ShieldAlert className="size-3.5" />
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[9px] font-extrabold text-neutral-500 uppercase tracking-wider">
-                      High-Risk Inundation
-                    </span>
-                    <span className="text-xs font-extrabold text-neutral-900 truncate">
-                      {statsSummary.high > 0 ? `${statsSummary.high.toLocaleString()} HHs` : "High Risk Zones Mapped"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Metric 3: Mapped Areas Scope */}
-                <div className="flex items-center gap-2.5 rounded-xl border border-neutral-200/80 bg-white p-2.5 shadow-2xs">
+                {/* Metric 2: Mapped Areas Scope */}
+                <div className="flex h-[50px] items-center gap-2.5 rounded-xl border border-neutral-200/80 bg-white px-2.5 py-1.5 shadow-2xs">
                   <div className="flex size-7 items-center justify-center rounded-lg bg-blue-100 text-blue-700 shrink-0">
                     <Users className="size-3.5" />
                   </div>
@@ -221,6 +206,21 @@ export function HazardMapPlaceholder({
                     </span>
                     <span className="text-xs font-extrabold text-neutral-900 truncate">
                       {areas.length} Mapped Areas
+                    </span>
+                  </div>
+                </div>
+
+                {/* Metric 3: High Risk Household Exposure */}
+                <div className="flex h-[50px] items-center gap-2.5 rounded-xl border border-neutral-200/80 bg-white px-2.5 py-1.5 shadow-2xs">
+                  <div className="flex size-7 items-center justify-center rounded-lg bg-red-100 text-red-700 shrink-0">
+                    <ShieldAlert className="size-3.5" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[9px] font-extrabold text-neutral-500 uppercase tracking-wider">
+                      High-Risk Inundation
+                    </span>
+                    <span className="text-xs font-extrabold text-neutral-900 truncate">
+                      {statsSummary.high > 0 ? `${statsSummary.high.toLocaleString()} HHs` : "High Risk Zones Mapped"}
                     </span>
                   </div>
                 </div>
