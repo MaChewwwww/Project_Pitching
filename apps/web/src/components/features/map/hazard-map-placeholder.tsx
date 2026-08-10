@@ -190,7 +190,7 @@ export function HazardMapPlaceholder({
                       Evacuation Centers
                     </span>
                     <span className="text-xs font-extrabold text-neutral-900 truncate">
-                      {evacCount} Centers <span className="text-neutral-400 font-normal">({facilities.length} mapped)</span>
+                      {evacCount} Evacuation Centers
                     </span>
                   </div>
                 </div>
@@ -220,7 +220,7 @@ export function HazardMapPlaceholder({
                       High-Risk Inundation
                     </span>
                     <span className="text-xs font-extrabold text-neutral-900 truncate">
-                      {statsSummary.high > 0 ? `${statsSummary.high.toLocaleString()} HHs` : "High Risk Zones Mapped"}
+                      {statsSummary.high > 0 ? `${statsSummary.high.toLocaleString()} Households` : "High Risk Zones Mapped"}
                     </span>
                   </div>
                 </div>
