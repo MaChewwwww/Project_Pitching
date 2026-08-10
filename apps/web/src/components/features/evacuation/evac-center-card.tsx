@@ -101,13 +101,6 @@ export function EvacCenterCard({
           <p className="text-caption text-neutral-500">Capacity not yet recorded.</p>
         )}
 
-        {center.notes ? (
-          <div className="rounded-lg bg-amber-50/60 border border-amber-200/50 p-2.5">
-            <p className="text-xs leading-relaxed text-amber-900 font-medium">
-              💡 {center.notes}
-            </p>
-          </div>
-        ) : null}
 
         <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 pt-3">
           <a
