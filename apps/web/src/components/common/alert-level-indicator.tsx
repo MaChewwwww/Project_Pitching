@@ -25,30 +25,21 @@ const SEGMENTS = [
   {
     level: 1 as const,
     label: "Prepare",
-    badgeText: "L1 · Prepare",
     activeCard: "border-amber-300 bg-amber-50/80 text-amber-950 shadow-2xs",
-    activeDot: "bg-amber-500",
-    badgeColor: "bg-amber-100 text-amber-950 border-amber-300",
     icon: AlertCircle,
     key: "level_1_m" as const,
   },
   {
     level: 2 as const,
     label: "Evacuate",
-    badgeText: "L2 · Evacuate",
     activeCard: "border-orange-400 bg-orange-50/90 text-orange-950 shadow-2xs ring-1 ring-orange-300/50",
-    activeDot: "bg-orange-500",
-    badgeColor: "bg-orange-100 text-orange-950 border-orange-400",
     icon: AlertTriangle,
     key: "level_2_m" as const,
   },
   {
     level: 3 as const,
     label: "Forced Evac",
-    badgeText: "L3 · Forced Evac",
     activeCard: "border-red-500 bg-red-50/90 text-red-950 shadow-xs ring-1 ring-red-400/50",
-    activeDot: "bg-red-600",
-    badgeColor: "bg-red-100 text-red-950 border-red-400",
     icon: ShieldAlert,
     key: "level_3_m" as const,
   },
@@ -95,7 +86,7 @@ export function AlertLevelIndicator({
             Alert Threshold Stages
           </span>
           {level > 0 ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-300/60">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-300/60 whitespace-nowrap">
               <span className="relative flex size-2 shrink-0">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
                 <span className="relative inline-flex size-2 rounded-full bg-amber-500" />
@@ -115,8 +106,8 @@ export function AlertLevelIndicator({
           />
         </div>
 
-        {/* 3 Step Cards Layout */}
-        <div className="grid grid-cols-3 gap-2 pt-0.5">
+        {/* 3 Symmetrical Step Cards */}
+        <div className="grid grid-cols-3 gap-2.5 pt-0.5">
           {SEGMENTS.map((segment) => {
             const reached = level >= segment.level;
             const isCurrent = level === segment.level;
@@ -126,38 +117,33 @@ export function AlertLevelIndicator({
               <div
                 key={segment.level}
                 className={cn(
-                  "flex flex-col gap-1.5 rounded-xl border p-2.5 transition-all duration-300",
+                  "flex flex-col justify-between gap-2 rounded-xl border p-3 transition-all duration-300 min-h-[72px]",
                   reached
                     ? segment.activeCard
                     : onDark
                     ? "border-white/10 bg-white/5 text-neutral-400"
-                    : "border-neutral-200/60 bg-white/60 text-neutral-400"
+                    : "border-neutral-200/60 bg-white/70 text-neutral-400"
                 )}
               >
-                {/* Step Badge & Icon */}
-                <div className="flex items-center justify-between gap-1">
-                  <span
-                    className={cn(
-                      "text-[10px] font-extrabold uppercase tracking-tight rounded-md px-1.5 py-0.5 border leading-none",
-                      reached
-                        ? segment.badgeColor
-                        : "bg-neutral-100 text-neutral-500 border-neutral-200/60"
-                    )}
-                  >
-                    {segment.badgeText}
+                {/* Stage Header */}
+                <div className="flex items-center justify-between gap-1 w-full">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wide truncate">
+                    {segment.level} · {segment.label}
                   </span>
                   {reached ? (
-                    <Icon className={cn("size-3.5 shrink-0", isCurrent && "animate-pulse")} />
+                    <Icon className={cn("size-3.5 shrink-0 ml-auto text-current", isCurrent && "animate-pulse")} />
                   ) : null}
                 </div>
 
-                {/* Threshold Value */}
+                {/* Threshold Height Value */}
                 {hasThresholds ? (
-                  <div className="flex items-baseline justify-between gap-1 mt-1">
-                    <span className="text-[10px] font-medium text-neutral-400 uppercase">Height</span>
+                  <div className="flex items-baseline justify-between gap-1 w-full border-t border-neutral-200/50 pt-1.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 shrink-0">
+                      Height
+                    </span>
                     <span
                       className={cn(
-                        "text-caption tabular font-black tracking-tight",
+                        "text-body tabular font-black tracking-tight ml-auto",
                         reached ? "text-neutral-950" : "text-neutral-400"
                       )}
                     >
