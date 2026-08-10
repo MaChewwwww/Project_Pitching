@@ -199,7 +199,7 @@ export function HazardMapClient({
   }, [areaStats]);
 
   return (
-
+    <div className="relative min-h-[420px] h-full w-full bg-slate-950 font-sans text-slate-100 overflow-hidden rounded-2xl border border-slate-800 shadow-2xl">
       {/* Leaflet Map Canvas */}
       <MapContainer
         center={BARANGAY_VIEW.center}
