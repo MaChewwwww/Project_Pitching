@@ -69,3 +69,34 @@ class EvacCenterIn(BaseModel):
     contact_number: str | None = None
     is_open: bool = True
     notes: str | None = None
+
+
+class EvacCheckinCreate(BaseModel):
+    evac_center_id: uuid.UUID
+    event_id: uuid.UUID | None = None
+    member_id: uuid.UUID | None = None
+    unregistered_person_id: uuid.UUID | None = None
+    person_name: str
+    checked_in_at: datetime | None = None
+
+
+class EvacCheckinOut(BaseModel):
+    id: uuid.UUID
+    evac_center_id: uuid.UUID
+    evac_center_name: str
+    event_id: uuid.UUID
+    event_name: str
+    member_id: uuid.UUID | None
+    unregistered_person_id: uuid.UUID | None
+    person_name: str
+    checked_in_at: datetime
+    checked_out_at: datetime | None
+    recorded_by_user_id: uuid.UUID | None
+    recorded_by_name: str | None
+
+
+class PortalEvacuationStatusOut(BaseModel):
+    is_currently_evacuated: bool
+    active_checkin: EvacCheckinOut | None
+    history: list[EvacCheckinOut]
+

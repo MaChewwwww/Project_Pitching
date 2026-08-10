@@ -63,3 +63,39 @@ class EvacCenter(Base):
     contact_number: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_open: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class EvacCheckin(UUIDPrimaryKeyMixin, Base):
+    """FR-EVC-004/005. Records resident check-ins at an evacuation center."""
+
+    __tablename__ = "evac_checkin"
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    evac_center_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("evac_center.id", ondelete="CASCADE"), nullable=False
+    )
+    event_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("emergency_event.id", ondelete="CASCADE"), nullable=False
+    )
+    member_id: Mapped[uuid.UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("member.id", ondelete="CASCADE"), nullable=True
+    )
+    unregistered_person_id: Mapped[uuid.UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("unregistered_person.id", ondelete="CASCADE"), nullable=True
+    )
+    person_name: Mapped[str] = mapped_column(Text, nullable=False)
+    checked_in_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    checked_out_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    recorded_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("user.id", ondelete="SET NULL"), nullable=True
+    )
+

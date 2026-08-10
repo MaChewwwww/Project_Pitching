@@ -8,6 +8,7 @@ import { ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/common/page-header";
 import { SafetyStatusControl } from "@/components/common/safety-status-control";
 import { Card, CardContent } from "@/components/common/card";
+import { PortalEvacuationStatusCard } from "@/components/features/portal/portal-evacuation-status-card";
 import { api, toDisplayError } from "@/lib/api/client";
 import type {
   MySafetyOut,
@@ -106,6 +107,8 @@ export default function PortalSafetyPage() {
               })
             }
           />
+
+          <PortalEvacuationStatusCard />
         </>
       )}
 

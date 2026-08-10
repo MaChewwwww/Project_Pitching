@@ -19,6 +19,9 @@ from src.modules.evacuation.schemas import (
     EmergencyEventDeclare,
     EmergencyEventOut,
     EvacCenterIn,
+    EvacCheckinCreate,
+    EvacCheckinOut,
+    PortalEvacuationStatusOut,
     PublicEmergencyEvent,
     PublicEvacCenter,
 )
@@ -112,3 +115,52 @@ async def admin_update_evac_center(
 ) -> dict[str, bool]:
     await service.update_evac_center(session, center_id, body, actor_id=user.id)
     return {"ok": True}
+
+
+@admin_router.post(
+    "/evacuation-centers/check-ins",
+    dependencies=[Depends(require_role("admin", "bhw"))],
+    summary="Log a check-in at an evacuation center (FR-EVC-004)",
+)
+async def admin_create_checkin(
+    body: EvacCheckinCreate, session: DbSessionDep, user: CurrentUser
+) -> EvacCheckinOut:
+    return await service.create_checkin(session, body, actor=user)
+
+
+@admin_router.post(
+    "/evacuation-centers/check-ins/{checkin_id}/check-out",
+    dependencies=[Depends(require_role("admin", "bhw"))],
+    summary="Log a resident check-out from an evacuation center (FR-EVC-005)",
+)
+async def admin_checkout_checkin(
+    checkin_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> EvacCheckinOut:
+    return await service.checkout_checkin(session, checkin_id, actor=user)
+
+
+@admin_router.get(
+    "/evacuation-centers/{center_id}/check-ins",
+    dependencies=[Depends(require_role("admin", "bhw"))],
+    summary="List check-ins for an evacuation center",
+)
+async def admin_list_center_checkins(
+    center_id: uuid.UUID,
+    session: DbSessionDep,
+    event_id: uuid.UUID | None = None,
+    active_only: bool = False,
+) -> list[EvacCheckinOut]:
+    return await service.list_checkins_for_center(
+        session, center_id, event_id=event_id, active_only=active_only
+    )
+
+
+@admin_router.get(
+    "/portal/evacuation-status",
+    dependencies=[Depends(require_role("head", "admin", "bhw", "sk"))],
+    summary="Get citizen active evacuation status and history",
+)
+async def portal_evacuation_status(
+    session: DbSessionDep, user: CurrentUser
+) -> PortalEvacuationStatusOut:
+    return await service.get_portal_evacuation_status(session, user)

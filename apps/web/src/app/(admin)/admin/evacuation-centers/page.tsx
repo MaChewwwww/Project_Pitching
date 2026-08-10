@@ -15,11 +15,14 @@ import {
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 
+import { EvacCheckinManagerDialog } from "@/components/features/admin/evac-checkin-manager-dialog";
+
 /** Evacuation centre operations (FR-EVC-001..003). Admin only. */
 
 interface EvacCenter {
   id: string;
   capacity: number | null;
+  occupancy?: number;
   is_open: boolean;
   notes: string | null;
   facility: { id: string; name: string };
@@ -106,7 +109,15 @@ export default function AdminEvacCentersPage() {
 
   const columns: ResourceColumn<EvacCenter>[] = [
     { key: "facility", header: "Facility", render: (row) => row.facility.name },
-    { key: "capacity", header: "Capacity", render: (row) => row.capacity ?? "—" },
+    {
+      key: "occupancy",
+      header: "Occupancy",
+      render: (row) => (
+        <span className="font-bold tabular-nums text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
+          {row.occupancy ?? 0} / {row.capacity ?? "—"}
+        </span>
+      ),
+    },
     {
       key: "is_open",
       header: "Status",
@@ -119,7 +130,7 @@ export default function AdminEvacCentersPage() {
       <PageHeader
         title="Evacuation"
         titleAccent="centers"
-        description="Capacity and open/closed status shown on the public site."
+        description="Capacity, live check-ins, and open/closed status."
         action={
           <ResourceFormDialog
             title="Register an evacuation center"
@@ -143,27 +154,34 @@ export default function AdminEvacCentersPage() {
         emptyDescription='Add a facility of type "evacuation_center" first, then register it here.'
         getRowKey={(row) => row.id}
         rowActions={(row) => (
-          <ResourceFormDialog
-            title="Edit evacuation center"
-            fields={fields}
-            schema={evacCenterSchema}
-            defaultValues={{
-              facility_id: row.facility.id,
-              capacity: row.capacity ?? undefined,
-              contact_person: "",
-              contact_number: "",
-              is_open: row.is_open,
-              notes: row.notes ?? "",
-            }}
-            onSubmit={async (values) => {
-              await updateMutation.mutateAsync({ id: row.id, values });
-            }}
-            trigger={
-              <Button variant="outline" size="sm">
-                Edit
-              </Button>
-            }
-          />
+          <div className="flex items-center gap-2">
+            <EvacCheckinManagerDialog
+              centerId={row.id}
+              centerName={row.facility.name}
+              capacity={row.capacity}
+            />
+            <ResourceFormDialog
+              title="Edit evacuation center"
+              fields={fields}
+              schema={evacCenterSchema}
+              defaultValues={{
+                facility_id: row.facility.id,
+                capacity: row.capacity ?? undefined,
+                contact_person: "",
+                contact_number: "",
+                is_open: row.is_open,
+                notes: row.notes ?? "",
+              }}
+              onSubmit={async (values) => {
+                await updateMutation.mutateAsync({ id: row.id, values });
+              }}
+              trigger={
+                <Button variant="outline" size="sm">
+                  Edit
+                </Button>
+              }
+            />
+          </div>
         )}
       />
     </div>

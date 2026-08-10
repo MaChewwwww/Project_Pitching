@@ -289,6 +289,37 @@ export interface PublicEvacCenter {
   // `contact_number` above carries the same practical value.
 }
 
+export interface EvacCheckinCreate {
+  evac_center_id: string;
+  event_id?: string | null;
+  member_id?: string | null;
+  unregistered_person_id?: string | null;
+  person_name: string;
+  checked_in_at?: string | null;
+}
+
+export interface EvacCheckinOut {
+  id: string;
+  evac_center_id: string;
+  evac_center_name: string;
+  event_id: string;
+  event_name: string;
+  member_id: string | null;
+  unregistered_person_id: string | null;
+  person_name: string;
+  checked_in_at: string;
+  checked_out_at: string | null;
+  recorded_by_user_id: string | null;
+  recorded_by_name: string | null;
+}
+
+export interface PortalEvacuationStatusOut {
+  is_currently_evacuated: boolean;
+  active_checkin: EvacCheckinOut | null;
+  history: EvacCheckinOut[];
+}
+
+
 /* ---------------------------------------------------------------------------
    Activities — `activity` (FR-ACT-*, FR-PUB-006)
    --------------------------------------------------------------------------- */

@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/common/page-header";
 import { api } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { HouseholdOut } from "@/lib/api/registry-types";
+import { PortalEvacuationStatusCard } from "@/components/features/portal/portal-evacuation-status-card";
 
 /**
  * Read-only resident dashboard, plus a link into safety check-in (FR-SAF-001
@@ -83,6 +84,8 @@ export default function PortalDashboardPage() {
           ) : null}
         </CardContent>
       </Card>
+
+      <PortalEvacuationStatusCard />
 
       <Button asChild variant="outline">
         <Link href="/portal/safety">
