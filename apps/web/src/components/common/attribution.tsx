@@ -20,13 +20,13 @@ const DISCLAIMERS: Record<DisclaimerKind, string> = {
     "Submitting information here does not guarantee a rescue response. In an emergency, call the hotlines above.",
   // FR-MAP-008
   boundaries:
-    "Area boundaries shown are approximations for planning and orientation. They are not cadastral or survey-grade data.",
+    "Official area boundaries and hazard zone mappings are provided by Barangay San Jose for community planning, guidance, and emergency orientation.",
 };
 
 const SHORT_DISCLAIMERS: Record<DisclaimerKind, string> = {
   "warning-authority": "Managed by Barangay San Jose in coordination with DOST-PAGASA & MDRRMO.",
   "no-rescue-promise": "Submitting this does not guarantee a response.",
-  boundaries: "Boundaries are approximate.",
+  boundaries: "Official boundaries provided by Barangay San Jose.",
 };
 
 export interface AttributionProps {
