@@ -76,11 +76,11 @@ export default async function HazardMapPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Know your area"
+        eyebrow="Know Your Area"
         title="Flood"
-        titleAccent="hazard map"
+        titleAccent="Hazard Map"
         description="Colours follow the national hazard-map convention used on every government map — yellow, orange and red by depth, not by urgency."
-        breadcrumb={[{ label: "Home", href: "/" }, { label: "Hazard map" }]}
+        breadcrumb={[{ label: "Home", href: "/" }, { label: "Hazard Map" }]}
       />
 
       <div className="mx-auto flex max-w-[1440px] flex-col gap-8 px-4 py-8 md:gap-12 md:px-6 md:py-12">
