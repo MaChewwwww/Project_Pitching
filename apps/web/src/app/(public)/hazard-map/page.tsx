@@ -5,6 +5,7 @@ import { Attribution } from "@/components/common/attribution";
 import { Badge } from "@/components/common/badge";
 import { Card, CardContent } from "@/components/common/card";
 import { PageHeader } from "@/components/common/page-header";
+import { AreaExposureCharts } from "@/components/features/map/area-exposure-charts";
 import { HazardMap } from "@/components/features/map/hazard-map";
 import { LayerToggle } from "@/components/features/map/layer-toggle";
 import { MapLegend } from "@/components/features/map/map-legend";
@@ -154,46 +155,10 @@ export default async function HazardMapPage() {
         <section>
           <h2 className="text-h2 mb-1 text-neutral-900">Exposure by area</h2>
           <p className="text-body mb-6 text-neutral-600">
-            How much of each area sits inside a mapped flood polygon, and how many
-            households are registered there.
+            Household risk classification distribution per area and overall across Barangay San Jose.
           </p>
 
-          <div className="grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3">
-            {stats.areas.map((area) => (
-              <Card key={area.area_id} radius="xl">
-                <CardContent className="flex flex-col gap-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-h4 text-neutral-900">{area.area_name}</h3>
-                    <Badge
-                      tone={
-                        area.flood_exposure
-                          ? EXPOSURE_TONE[area.flood_exposure]
-                          : "neutral"
-                      }
-                      className="shrink-0"
-                    >
-                      {area.flood_exposure ?? "unassessed"}
-                    </Badge>
-                  </div>
-
-                  <dl className="grid grid-cols-2 gap-3">
-                    <div>
-                      <dt className="text-overline text-neutral-500">Households</dt>
-                      <dd className="text-h3 tabular text-neutral-900">
-                        {area.registered_households}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-overline text-neutral-500">Evac centers</dt>
-                      <dd className="text-h3 tabular text-neutral-900">
-                        {area.evac_center_count}
-                      </dd>
-                    </div>
-                  </dl>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <AreaExposureCharts areas={stats.areas} />
         </section>
 
         <section>
