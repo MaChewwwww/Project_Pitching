@@ -130,7 +130,7 @@ export function HazardMapPlaceholder({
                   <div
                     key={item.level}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-xl border p-2.5 shadow-2xs transition-all",
+                      "flex items-center gap-2.5 rounded-xl border py-2 px-2.5 shadow-2xs transition-all",
                       item.cardBg,
                     )}
                   >
@@ -138,7 +138,7 @@ export function HazardMapPlaceholder({
                     <div className="flex shrink-0 items-center justify-center self-stretch">
                       <span
                         className={cn(
-                          "size-4 rounded-full border-2 shadow-xs",
+                          "size-3.5 rounded-full border-2 shadow-xs",
                           item.color,
                           item.borderColor,
                         )}
@@ -146,9 +146,9 @@ export function HazardMapPlaceholder({
                     </div>
 
                     {/* 2 Rows Content */}
-                    <div className="flex flex-1 flex-col gap-1 min-w-0">
+                    <div className="flex flex-1 flex-col gap-0.5 min-w-0">
                       {/* Row 1: Title + Depth Badge */}
-                      <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center justify-between gap-1 leading-tight">
                         <span className="text-xs font-bold text-neutral-900 truncate">
                           {item.level}
                         </span>
@@ -163,7 +163,7 @@ export function HazardMapPlaceholder({
                       </div>
 
                       {/* Row 2: Waterway Proximity Inline String (No right badge) */}
-                      <div className="flex items-center text-[10px] font-semibold text-neutral-700 gap-1.5 min-w-0">
+                      <div className="flex items-center text-[10px] font-semibold text-neutral-700 gap-1.5 min-w-0 leading-tight">
                         <Waves className="size-3 text-neutral-500 shrink-0" />
                         <span className="truncate">{item.proximityText}</span>
                       </div>
