@@ -193,41 +193,144 @@ FACILITY_DEFS = [
         14.7352,
         "Area 1",
     ),
+    # The 14 real evacuation centres. Coordinates are from OpenStreetMap
+    # (Nominatim + Overpass), reverse-geocode-confirmed to Montalban, Rizal;
+    # `area_name` was computed by point-in-polygon against the boundaries in
+    # `seed_data/area_boundaries.py`, not guessed — all 14 land inside a polygon.
+    #
+    # Every one is officially in Barangay San Jose: Kasiglahan Village, Rodriguez
+    # Heights and Tagumpay are resettlement sites and subdivisions, *not*
+    # barangays (Rodriguez has 11, listed in PhilAtlas). OSM tags KV variously as
+    # San Isidro or San Rafael and is wrong; the addresses below follow DepEd.
+    #
+    # `contact` is None throughout: no published number was found for any of
+    # them, and a placeholder would be a fake number on a public page people
+    # might dial in an emergency.
     (
         "San Jose Elementary School",
         "evacuation_center",
-        "Purok 2, Barangay San Jose",
-        "(02) 8555-0110",
-        121.1318,
-        14.7371,
-        "Area 2",
-    ),
-    (
-        "San Jose National High School",
-        "evacuation_center",
-        "Purok 5, Barangay San Jose",
-        "(02) 8555-0111",
-        121.1389,
-        14.7334,
+        "Barangay San Jose, Rodriguez, Rizal",
+        None,
+        121.134770,
+        14.730057,
         "Area 4",
     ),
     (
-        "Barangay Covered Court",
+        "San Jose Litex Senior High School",
         "evacuation_center",
-        "Purok 1, Barangay San Jose",
+        "Litex Village, Barangay San Jose, Rodriguez, Rizal",
         None,
-        121.1357,
-        14.7344,
+        121.130018,
+        14.735593,
         "Area 1",
     ),
     (
-        "San Jose Multi-Purpose Hall",
+        "Kasiglahan Elementary School (Main)",
         "evacuation_center",
-        "Purok 7, Barangay San Jose",
+        "Phase 1B, Kasiglahan Village, Barangay San Jose, Rodriguez, Rizal",
         None,
-        121.1402,
-        14.7318,
-        "Area 5",
+        121.141590,
+        14.748304,
+        "Area 3",
+    ),
+    (
+        "Kasiglahan Village National High School",
+        "evacuation_center",
+        "Phase 1B, Kasiglahan Village, Barangay San Jose, Rodriguez, Rizal",
+        None,
+        121.141548,
+        14.749463,
+        "Area 3",
+    ),
+    (
+        "Kasiglahan Village Senior High School",
+        "evacuation_center",
+        "Kasiglahan Village, Barangay San Jose, Rodriguez, Rizal",
+        None,
+        121.143777,
+        14.744411,
+        "Area 3",
+    ),
+    (
+        "Colegio De Montalban",
+        "evacuation_center",
+        "Kasiglahan Village, Barangay San Jose, Rodriguez, Rizal",
+        None,
+        121.141636,
+        14.750415,
+        "Area 3",
+    ),
+    (
+        "Phase 1B Covered Court KV1",
+        "evacuation_center",
+        "Phase 1B, Kasiglahan Village 1, Barangay San Jose, Rodriguez, Rizal",
+        None,
+        121.137494,
+        14.744080,
+        "Area 3",
+    ),
+    (
+        "Kasiglahan Elementary School (Unit 1)",
+        "evacuation_center",
+        "Phase 1A, Kasiglahan Village, Barangay San Jose, Rodriguez, Rizal",
+        None,
+        121.140167,
+        14.744495,
+        "Area 3",
+    ),
+    (
+        "Barangay Annex Phase 1A KV1",
+        "evacuation_center",
+        "Phase 1A, Kasiglahan Village 1, Barangay San Jose, Rodriguez, Rizal",
+        None,
+        121.140840,
+        14.744607,
+        "Area 3",
+    ),
+    (
+        "Rodriguez Heights Elementary School",
+        "evacuation_center",
+        "Rodriguez Heights, Barangay San Jose, Rodriguez, Rizal",
+        None,
+        121.123567,
+        14.746546,
+        "Area 2",
+    ),
+    (
+        "Phase 1k1 Covered Court",
+        "evacuation_center",
+        "Phase 1K-1, Kasiglahan Village, Barangay San Jose, Rodriguez, Rizal",
+        None,
+        121.144138,
+        14.743326,
+        "Area 3",
+    ),
+    (
+        "Phase 1k2 Covered Court",
+        "evacuation_center",
+        "Phase 1K-2, Kasiglahan Village, Barangay San Jose, Rodriguez, Rizal",
+        None,
+        121.145849,
+        14.740192,
+        "Area 3",
+    ),
+    (
+        "Munting Ilaw, Kasiglahan Village",
+        "evacuation_center",
+        "Munting Ilaw, Phase 1D, Kasiglahan Village, Barangay San Jose, Rodriguez, Rizal",
+        None,
+        121.138726,
+        14.743006,
+        "Area 3",
+    ),
+    (
+        "Tagumpay National High School",
+        "evacuation_center",
+        "Pamayanan ng Tagumpay, Barangay San Jose, Rodriguez, Rizal",
+        None,
+        121.131258,
+        14.745373,
+        "Area 2",
     ),
     (
         "Barangay Health Center",
@@ -310,25 +413,109 @@ async def seed_facilities(session, areas: dict[str, Area]) -> dict[str, Facility
 
 # --- evacuation centres (fixtures/evac-centers.ts) -----------------------------
 
+# Capacity is an *estimate* scaled by facility size — no per-centre figure is
+# published anywhere. The only real number is an aggregate: during Typhoon
+# Ulysses (November 2020) 16 Rodriguez evacuation centres held 3,363 families /
+# 15,591 individuals, described in local press as `siksikan` (overcrowded), which
+# makes the ~7,600 below plausible as *normal* rather than surge capacity.
+#
+# Every `notes` string says the number is an estimate, and the five centres whose
+# coordinates could not be pinned exactly say that too. These strings render on
+# the public evacuation-centre cards, so an unqualified number would read as
+# surveyed fact. Same honesty as `area.boundary_source = 'approximate'`.
 EVAC_CENTER_DEFS = [
     (
-        "San Jose Elementary School",
-        320,
+        "Kasiglahan Village National High School",
+        1200,
         True,
-        "Ground floor reserved for seniors and persons with disabilities.",
+        "Largest of the Kasiglahan Village centres. Estimated capacity, pending "
+        "MDRRMO confirmation.",
     ),
     (
-        "San Jose National High School",
+        "Colegio De Montalban",
+        1000,
+        True,
+        "Tertiary campus with multiple buildings. Estimated capacity, pending "
+        "MDRRMO confirmation.",
+    ),
+    (
+        "Tagumpay National High School",
+        900,
+        True,
+        "Serves the Pamayanan ng Tagumpay side. Estimated capacity, pending "
+        "MDRRMO confirmation.",
+    ),
+    (
+        "Kasiglahan Elementary School (Main)",
+        800,
+        True,
+        "Reportedly the largest enrolment in the Division of Rizal. Estimated "
+        "capacity, pending MDRRMO confirmation.",
+    ),
+    (
+        "Kasiglahan Village Senior High School",
+        800,
+        True,
+        "Estimated capacity, pending MDRRMO confirmation.",
+    ),
+    (
+        "San Jose Litex Senior High School",
+        700,
+        True,
+        "Estimated capacity, pending MDRRMO confirmation.",
+    ),
+    (
+        "San Jose Elementary School",
+        500,
+        True,
+        "Ground floor reserved for seniors and persons with disabilities. "
+        "Estimated capacity, pending MDRRMO confirmation.",
+    ),
+    (
+        "Kasiglahan Elementary School (Unit 1)",
+        500,
+        True,
+        "Estimated capacity, pending MDRRMO confirmation.",
+    ),
+    (
+        "Rodriguez Heights Elementary School",
         450,
         True,
-        "Largest capacity. Covered parking available for evacuee vehicles.",
+        "Estimated capacity, pending MDRRMO confirmation.",
     ),
-    ("Barangay Covered Court", 180, True, None),
     (
-        "San Jose Multi-Purpose Hall",
-        140,
-        False,
-        "Currently closed for roof repair. Reopens once works are complete.",
+        "Phase 1B Covered Court KV1",
+        250,
+        True,
+        "Estimated capacity, pending MDRRMO confirmation. Pin is approximate — "
+        "a second covered court in Phase 1B is also tagged as a shelter.",
+    ),
+    (
+        "Munting Ilaw, Kasiglahan Village",
+        200,
+        True,
+        "Has previously sheltered about 160 families. Estimated capacity, "
+        "pending MDRRMO confirmation. Pin is at the Munting Ilaw health centre.",
+    ),
+    (
+        "Phase 1k1 Covered Court",
+        200,
+        True,
+        "Estimated capacity, pending MDRRMO confirmation. Pin is approximate.",
+    ),
+    (
+        "Phase 1k2 Covered Court",
+        200,
+        True,
+        "Estimated capacity, pending MDRRMO confirmation. Pin marks the Phase "
+        "1K-2 area, not the building.",
+    ),
+    (
+        "Barangay Annex Phase 1A KV1",
+        100,
+        True,
+        "Smallest of the centres. Estimated capacity, pending MDRRMO "
+        "confirmation. Pin marks the Phase 1A area, not the building.",
     ),
 ]
 
@@ -571,7 +758,7 @@ ACTIVITY_DEFS = [
         "A simultaneous Duck, Cover and Hold drill across all puroks, followed by an evacuation "
         "walkthrough.",
         4,
-        "All puroks — assembly at Barangay Covered Court",
+        "All puroks — assembly at Phase 1B Covered Court, Kasiglahan Village",
         None,
     ),
     (
@@ -641,8 +828,12 @@ ANNOUNCEMENT_DEFS = [
         "Alert Level 2 — Evacuate riverside areas now",
         "The river has risen past the Level 2 threshold and continues to climb. Residents in "
         "Areas 1 and 2 must move to an evacuation centre now.",
-        "Go to San Jose Elementary School or the Barangay Covered Court now. Bring your Go Bag, "
-        "IDs, and medication.",
+        # Both centres named here must be ones that actually exist and sit in the
+        # areas this announcement targets (Areas 1 and 2) — directing evacuees to
+        # a centre in another area, or to one no longer in the registry, is the
+        # kind of detail that gets someone hurt.
+        "Go to San Jose Litex Senior High School or Rodriguez Heights Elementary School now. "
+        "Bring your Go Bag, IDs, and medication.",
         False,
         -2,
         10,
@@ -936,7 +1127,13 @@ async def seed_readings(session) -> None:
         ("humidity", 89, "%", "open_meteo", now - timedelta(minutes=14), None, None),
         ("rainfall", 12.6, "mm", "open_meteo", now - timedelta(minutes=14), None, None),
         (
-            "precipitation_probability", 85, "%", "open_meteo", now - timedelta(minutes=14), None, None
+            "precipitation_probability",
+            85,
+            "%",
+            "open_meteo",
+            now - timedelta(minutes=14),
+            None,
+            None,
         ),
         ("heat_index", 31.2, "°C", "open_meteo", now - timedelta(minutes=14), None, None),
         ("river_level", 22.6, "m", "pagasa", now - timedelta(hours=1), PAGASA_STATION, None),

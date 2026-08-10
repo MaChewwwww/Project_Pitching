@@ -885,7 +885,7 @@ Loaded by migration, not at runtime (NFR-DAT-007).
 | Barangay areas  | BRD OI-3 — **blocked**                                                             | ~10–20              |
 | Flood hazard    | `dataset/raw/Rizal_Flood_5year.shp` → `dataset/derived/san_jose_flood_5yr.geojson` | 3 (5yr only, today) |
 | Hotlines        | Barangay                                                                           | ~8                  |
-| Facilities      | Barangay                                                                           | ~15                 |
+| Facilities      | Barangay — 14 real evacuation centres, rest demo                                   | 21                  |
 | Go-bag items    | NDRRMC standard list                                                               | ~15                 |
 | Config defaults | This document Section 4                                                            | ~12                 |
 | Demo households | Generated, marked synthetic                                                        | ~200                |

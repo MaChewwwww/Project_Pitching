@@ -31,10 +31,17 @@ export const BARANGAY_VIEW = {
  * The hazard GeoJSON is clipped to exactly this box, so panning outside it shows
  * basemap with no data and reads as "the flood layer stopped working". Leaflet
  * order is [[south, west], [north, east]].
+ *
+ * These used to read [[14.728, 121.120], [14.762, 121.142]], which did not match
+ * the extent the comment above claims: the box was short on all sides except
+ * north. Nothing imports this constant today, so nothing was clamped to the
+ * wrong box — but three of the Kasiglahan Village evacuation centres sit east of
+ * the old 121.142 edge, so anything that had started using it would have cut
+ * them off.
  */
 export const BARANGAY_BOUNDS: [[number, number], [number, number]] = [
-  [14.728, 121.120],
-  [14.762, 121.142],
+  [14.708, 121.108],
+  [14.762, 121.162],
 ];
 
 export const OSM_TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
