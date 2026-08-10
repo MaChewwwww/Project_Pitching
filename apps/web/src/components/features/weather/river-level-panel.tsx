@@ -2,7 +2,6 @@ import * as React from "react";
 import { Waves } from "lucide-react";
 
 import { AlertLevelIndicator } from "@/components/common/alert-level-indicator";
-import { Attribution } from "@/components/common/attribution";
 import { Card, CardContent } from "@/components/common/card";
 import { DataFreshness } from "@/components/common/data-freshness";
 import { EmptyState } from "@/components/common/empty-state";
@@ -139,8 +138,6 @@ export function RiverLevelPanel({
             onDark={onDark}
             explainMissingThresholds={!compact}
           />
-
-          <Attribution onDark={onDark} disclaimer="warning-authority" short={compact} />
         </div>
 
         <div className={cn("mt-auto flex flex-col pt-2 border-t border-neutral-100", compact ? "gap-1 pt-0.5" : "gap-2")}>

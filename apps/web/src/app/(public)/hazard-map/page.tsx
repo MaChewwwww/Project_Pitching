@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 
-import { Attribution } from "@/components/common/attribution";
 import { PageHeader } from "@/components/common/page-header";
 import { EvacCenterFilterGrid } from "@/components/features/evacuation/evac-center-filter-grid";
 import { AreaExposureCharts } from "@/components/features/map/area-exposure-charts";
@@ -143,11 +142,6 @@ export default async function HazardMapPage() {
         <section>
           <EvacCenterFilterGrid centers={evacCenters} />
         </section>
-
-        <Attribution
-          sources={["hazard", "basemap", "river"]}
-          disclaimer="warning-authority"
-        />
       </div>
     </>
   );

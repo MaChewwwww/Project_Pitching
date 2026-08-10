@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 
-import { Attribution } from "@/components/common/attribution";
 import { PageHeader } from "@/components/common/page-header";
 import { RiverLevelPanel } from "@/components/features/weather/river-level-panel";
 import { WeatherPanel } from "@/components/features/weather/weather-panel";
@@ -53,8 +52,6 @@ export default async function WeatherPage() {
 
           <FloodEventsSection events={floods.items} />
         </section>
-
-        <Attribution sources={["weather", "river"]} disclaimer="warning-authority" />
       </div>
     </>
   );
