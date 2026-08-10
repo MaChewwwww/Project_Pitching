@@ -127,6 +127,29 @@ export default async function HazardMapPage() {
 
               <LayerToggle />
               <MapLegend />
+
+              {/* Data & map attribution — always visible including mobile */}
+              <div className="rounded-xl border border-primary-800/60 bg-primary-950/95 px-4 py-3 text-[11px] text-primary-200/60 shadow-xl backdrop-blur-md flex flex-col gap-1.5">
+                <div>
+                  <span className="font-semibold text-white/70">Locality</span>{" "}
+                  Barangay San Jose, Rodriguez (Montalban), Rizal
+                </div>
+                <div>
+                  <span className="font-semibold text-white/70">Data</span>{" "}
+                  <span className="text-primary-300">UP NOAH / UPAD (ODC-ODbL)</span>
+                </div>
+                <div className="border-t border-primary-800/60 pt-1.5 flex flex-wrap gap-x-1.5 gap-y-0.5">
+                  <span className="font-semibold text-white/70">Map</span>
+                  <a href="https://leafletjs.com" target="_blank" rel="noopener noreferrer" className="text-primary-300 hover:text-white transition-colors">Leaflet</a>
+                  <span>&middot;</span>
+                  <span>&copy;</span>
+                  <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="text-primary-300 hover:text-white transition-colors">OpenStreetMap</a>
+                  <span>contributors</span>
+                  <span>&middot;</span>
+                  <span>&copy;</span>
+                  <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer" className="text-primary-300 hover:text-white transition-colors">CARTO</a>
+                </div>
+              </div>
             </div>
           </div>
         </section>

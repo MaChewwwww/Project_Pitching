@@ -420,20 +420,6 @@ export function HazardMapClient({
             );
           })}
       </MapContainer>
-
-      {/* Green Command-Center Footer Metadata Bar Overlay (hidden on mobile) */}
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-[400] hidden md:flex flex-wrap items-center justify-between gap-2 bg-primary-950/95 px-4 py-1.5 text-[11px] text-primary-200/60 backdrop-blur-md border-t border-primary-800/60">
-        <div>
-          Locality: <span className="font-medium text-white/80">Barangay San Jose, Rodriguez (Montalban), Rizal</span> &middot; Data: <span className="font-medium text-primary-300">UP NOAH / UPAD (ODC-ODbL)</span>
-        </div>
-        <div className="pointer-events-auto flex items-center gap-2">
-          Map: <a href="https://leafletjs.com" target="_blank" rel="noopener noreferrer" className="font-medium text-primary-300 hover:text-white transition-colors">Leaflet</a>
-          &middot;
-          &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="font-medium text-primary-300 hover:text-white transition-colors">OpenStreetMap</a> contributors
-          &middot;
-          &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer" className="font-medium text-primary-300 hover:text-white transition-colors">CARTO</a>
-        </div>
-      </div>
     </div>
   );
 }
