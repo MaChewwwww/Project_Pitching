@@ -2,7 +2,7 @@
 
 Adds waterway_proximity column to household table ('very_near', 'near', 'far').
 
-Revision ID: 0013_household_waterway_proximity
+Revision ID: 0013_waterway_proximity
 Revises: 0012_siren
 Create Date: 2026-08-10
 """
@@ -14,7 +14,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0013_household_waterway_proximity"
+revision: str = "0013_waterway_proximity"
 down_revision: str | None = "0012_siren"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
