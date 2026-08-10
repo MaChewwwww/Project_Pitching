@@ -288,9 +288,11 @@ export const publicRiverLevelSchema = z.object({
 
 export const publicFloodEventSchema = z.object({
   id: z.string(),
+  emergency_event_id: z.string().nullable().optional(),
   name: z.string(),
   started_at: z.string(),
   ended_at: z.string().nullable(),
+  is_ongoing: z.boolean().optional().default(false),
   peak_level_m: z.number().nullable(),
   peak_at: z.string().nullable(),
   households_displaced: z.number().nullable(),

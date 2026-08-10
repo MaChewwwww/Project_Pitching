@@ -16,16 +16,21 @@ import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import { formatPhtDate } from "@/lib/format";
 
+import { Badge } from "@/components/common/badge";
+
 /** Flood history (FR-WX-013). Admin only. */
 
 interface FloodEvent {
   id: string;
+  emergency_event_id?: string | null;
   name: string;
   started_at: string;
   ended_at: string | null;
+  is_ongoing?: boolean;
   peak_level_m: number | null;
   households_displaced: number | null;
   notes: string | null;
+  area_names?: string[];
 }
 interface Page<T> {
   items: T[];
@@ -100,7 +105,28 @@ export default function AdminFloodEventsPage() {
   });
 
   const columns: ResourceColumn<FloodEvent>[] = [
-    { key: "name", header: "Name" },
+    {
+      key: "name",
+      header: "Name",
+      render: (row) => (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 font-medium text-neutral-900">
+            <span>{row.name}</span>
+            {row.emergency_event_id ? (
+              <Badge tone="info" outline>Auto-synced</Badge>
+            ) : null}
+            {!row.ended_at || row.is_ongoing ? (
+              <Badge tone="danger">Ongoing</Badge>
+            ) : null}
+          </div>
+          {row.area_names && row.area_names.length > 0 ? (
+            <span className="text-caption text-neutral-500">
+              Areas: {row.area_names.join(", ")}
+            </span>
+          ) : null}
+        </div>
+      ),
+    },
     {
       key: "started_at",
       header: "Started",
@@ -114,7 +140,7 @@ export default function AdminFloodEventsPage() {
     {
       key: "households_displaced",
       header: "Households displaced",
-      render: (row) => row.households_displaced ?? "—",
+      render: (row) => (row.households_displaced != null ? row.households_displaced : "—"),
     },
   ];
 

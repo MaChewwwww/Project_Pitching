@@ -532,16 +532,17 @@ CREATE INDEX idx_forecast_upcoming ON forecast(metric, horizon, valid_at);
 
 ### `flood_event` (FR-WX-013)
 
-| Column                 | Type          | Constraints | Notes                                  |
-| ---------------------- | ------------- | ----------- | -------------------------------------- |
-| `id`                   | UUID          | PK          |                                        |
-| `name`                 | TEXT          | NOT NULL    | "Typhoon Ulysses (Vamco)"              |
-| `started_at`           | TIMESTAMPTZ   | NOT NULL    |                                        |
-| `ended_at`             | TIMESTAMPTZ   |             | Null while ongoing                     |
-| `peak_level_m`         | NUMERIC(10,3) |             |                                        |
-| `peak_at`              | TIMESTAMPTZ   |             |                                        |
-| `households_displaced` | INTEGER       |             | Recorded after the fact, often revised |
-| `notes`                | TEXT          |             |                                        |
+| Column                 | Type          | Constraints                       | Notes                                  |
+| ---------------------- | ------------- | --------------------------------- | -------------------------------------- |
+| `id`                   | UUID          | PK                                |                                        |
+| `emergency_event_id`   | UUID          | FK → `emergency_event` (SET NULL) | Auto-linked when declared from event   |
+| `name`                 | TEXT          | NOT NULL                          | "Typhoon Ulysses (Vamco)"              |
+| `started_at`           | TIMESTAMPTZ   | NOT NULL                          |                                        |
+| `ended_at`             | TIMESTAMPTZ   |                                   | Null while ongoing                     |
+| `peak_level_m`         | NUMERIC(10,3) |                                   |                                        |
+| `peak_at`              | TIMESTAMPTZ   |                                   |                                        |
+| `households_displaced` | INTEGER       |                                   | Recorded after the fact, often revised |
+| `notes`                | TEXT          |                                   |                                        |
 
 ### `flood_event_area` (FR-WX-013)
 

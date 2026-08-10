@@ -1062,38 +1062,55 @@ async def seed_donations(session, users: dict[str, User]) -> None:
 
 # --- flood events (fixtures/flood-events.ts) -----------------------------------
 
-FLOOD_EVENT_DEFS = [
-    (
-        "Typhoon Ondoy (Ketsana)",
-        datetime(2009, 9, 26, tzinfo=UTC),
-        datetime(2009, 9, 29, tzinfo=UTC),
-        21.5,
-        datetime(2009, 9, 26, 14, tzinfo=UTC),
-        1240,
-        "The reference event for the whole municipality. Water reached second-floor level "
-        "across most of the riverside puroks.",
-        ["Area 1", "Area 2", "Area 3", "Area 4"],
-    ),
-    (
-        "Typhoon Ulysses (Vamco)",
-        datetime(2020, 11, 11, tzinfo=UTC),
-        datetime(2020, 11, 14, tzinfo=UTC),
-        20.7,
-        datetime(2020, 11, 12, 4, tzinfo=UTC),
-        980,
-        "Comparable to Ondoy in river height. Earlier evacuation kept casualties lower despite "
-        "similar water levels.",
-        ["Area 1", "Area 2", "Area 3"],
-    ),
-]
+def _get_flood_defs():
+    return [
+        (
+            "Typhoon Ondoy (Ketsana)",
+            datetime(2009, 9, 26, tzinfo=UTC),
+            datetime(2009, 9, 29, tzinfo=UTC),
+            21.5,
+            datetime(2009, 9, 26, 14, tzinfo=UTC),
+            1240,
+            "The reference event for the whole municipality. Water reached second-floor level "
+            "across most of the riverside puroks.",
+            ["Area 1", "Area 2", "Area 3", "Area 4"],
+        ),
+        (
+            "Typhoon Ulysses (Vamco)",
+            datetime(2020, 11, 11, tzinfo=UTC),
+            datetime(2020, 11, 14, tzinfo=UTC),
+            20.7,
+            datetime(2020, 11, 12, 4, tzinfo=UTC),
+            980,
+            "Comparable to Ondoy in river height. Earlier evacuation kept casualties lower despite "
+            "similar water levels.",
+            ["Area 1", "Area 2", "Area 3"],
+        ),
+        (
+            "2025 Habagat Flooding — Prior Event",
+            _now() - timedelta(days=45),
+            _now() - timedelta(days=42),
+            19.8,
+            _now() - timedelta(days=44, hours=10),
+            420,
+            "Heavy monsoon rains enhanced by offshore severe tropical storm. Auto-linked from declared Emergency Event.",
+            ["Area 1", "Area 2"],
+        ),
+    ]
 
 
 async def seed_flood_events(session, areas: dict[str, Area]) -> None:
     if await _table_has_rows(session, FloodEvent):
         return
-    for name, started_at, ended_at, peak, peak_at, displaced, notes, area_names in FLOOD_EVENT_DEFS:
+    defs = _get_flood_defs()
+    # Check if emergency_event exists for linking
+    ee_rows = (await session.execute(select(EmergencyEvent))).scalars().all()
+    ee_by_name = {ee.name: ee.id for ee in ee_rows}
+
+    for name, started_at, ended_at, peak, peak_at, displaced, notes, area_names in defs:
         event = FloodEvent(
             name=name,
+            emergency_event_id=ee_by_name.get(name),
             started_at=started_at,
             ended_at=ended_at,
             peak_level_m=peak,
@@ -1104,8 +1121,9 @@ async def seed_flood_events(session, areas: dict[str, Area]) -> None:
         session.add(event)
         await session.flush()
         for area_name in area_names:
-            session.add(FloodEventArea(flood_event_id=event.id, area_id=areas[area_name].id))
-    log.info("seeded flood events", extra={"count": len(FLOOD_EVENT_DEFS)})
+            if area_name in areas:
+                session.add(FloodEventArea(flood_event_id=event.id, area_id=areas[area_name].id))
+    log.info("seeded flood events", extra={"count": len(defs)})
 
 
 # --- weather readings ------------------------------------------------------------

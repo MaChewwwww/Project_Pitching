@@ -342,9 +342,11 @@ async def list_flood_events(
     items = [
         PublicFloodEvent(
             id=e.id,
+            emergency_event_id=e.emergency_event_id,
             name=e.name,
             started_at=e.started_at,
             ended_at=e.ended_at,
+            is_ongoing=e.ended_at is None,
             peak_level_m=float(e.peak_level_m) if e.peak_level_m is not None else None,
             peak_at=e.peak_at,
             households_displaced=e.households_displaced,
@@ -360,6 +362,7 @@ async def create_flood_event(
     session: AsyncSession, data: FloodEventIn, *, actor_id: uuid.UUID
 ) -> FloodEvent:
     event = FloodEvent(
+        emergency_event_id=data.emergency_event_id,
         name=data.name,
         started_at=data.started_at,
         ended_at=data.ended_at,
@@ -389,6 +392,8 @@ async def update_flood_event(
     event = await session.get(FloodEvent, event_id)
     if event is None:
         raise NotFoundError("Flood event not found.")
+    if data.emergency_event_id is not None:
+        event.emergency_event_id = data.emergency_event_id
     event.name = data.name
     event.started_at = data.started_at
     event.ended_at = data.ended_at
@@ -420,4 +425,71 @@ async def update_flood_event(
         entity_id=event.id,
     )
     await session.commit()
+    return event
+
+
+async def create_flood_event_from_emergency(
+    session: AsyncSession,
+    *,
+    emergency_event_id: uuid.UUID,
+    name: str,
+    started_at: datetime,
+) -> FloodEvent:
+    """Auto-creates a linked FloodEvent when a flood/typhoon EmergencyEvent is declared."""
+    event = FloodEvent(
+        emergency_event_id=emergency_event_id,
+        name=name,
+        started_at=started_at,
+        notes="Auto-created from active Emergency Event",
+    )
+    session.add(event)
+    await session.flush()
+    return event
+
+
+async def finalize_flood_event_from_emergency(
+    session: AsyncSession,
+    *,
+    emergency_event_id: uuid.UUID,
+    ended_at: datetime,
+) -> FloodEvent | None:
+    """Finalizes a linked FloodEvent when the EmergencyEvent is ended."""
+    stmt = select(FloodEvent).where(FloodEvent.emergency_event_id == emergency_event_id)
+    event = (await session.execute(stmt)).scalar_one_or_none()
+    if event is None:
+        return None
+
+    event.ended_at = ended_at
+
+    # Find highest river reading recorded between started_at and ended_at
+    from sqlalchemy import func
+
+    peak_stmt = (
+        select(Reading)
+        .where(
+            Reading.metric == "river_level",
+            Reading.observed_at >= event.started_at,
+            Reading.observed_at <= ended_at,
+        )
+        .order_by(Reading.value.desc())
+        .limit(1)
+    )
+    peak_reading = (await session.execute(peak_stmt)).scalar_one_or_none()
+    if peak_reading is not None:
+        event.peak_level_m = float(peak_reading.value)
+        event.peak_at = peak_reading.observed_at
+
+    # Compute displaced count from evac checkins if available
+    try:
+        from src.modules.evacuation.models import EvacCheckin
+
+        evac_stmt = select(func.count(func.distinct(EvacCheckin.member_id))).where(
+            EvacCheckin.event_id == emergency_event_id
+        )
+        evac_count = (await session.execute(evac_stmt)).scalar() or 0
+        if evac_count > 0 and event.households_displaced is None:
+            event.households_displaced = evac_count
+    except Exception:
+        pass
+
     return event

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { Waves } from "lucide-react";
+import { AlertTriangle, Waves } from "lucide-react";
 
 import { Attribution } from "@/components/common/attribution";
+import { Badge } from "@/components/common/badge";
 import { Card, CardContent } from "@/components/common/card";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/common/page-header";
@@ -47,93 +48,121 @@ export default async function WeatherPage() {
         </div>
 
         <section>
-          <h2 className="text-h2 mb-1 text-neutral-900">Past flood events</h2>
-          <p className="text-body mb-6 text-neutral-600">
-            What the river has done before. Peak levels here are the figures every
-            barangay plan since has been measured against.
-          </p>
+          <div className="flex flex-col gap-1 mb-6">
+            <h2 className="text-h2 text-neutral-900">Past flood events</h2>
+            <p className="text-body text-neutral-600">
+              What the river has done before. Peak levels here are the figures every
+              barangay plan since has been measured against. Automatically updated during active flood emergency events.
+            </p>
+          </div>
 
           {floods.items.length > 0 ? (
             <ul className="flex flex-col gap-4">
-              {floods.items.map((event) => (
-                <li key={event.id}>
-                  <Card radius="xl">
-                    <CardContent className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-6">
-                      <div className="flex min-w-0 flex-col gap-1">
-                        <h3 className="text-h3 text-neutral-900">{event.name}</h3>
-                        <span className="text-body-sm text-neutral-500">
-                          <time dateTime={event.started_at}>
-                            {formatPhtDate(event.started_at)}
-                          </time>
-                          {event.ended_at ? (
-                            <>
-                              {" – "}
-                              <time dateTime={event.ended_at}>
-                                {formatPhtDate(event.ended_at)}
-                              </time>
-                            </>
-                          ) : null}
-                        </span>
-                        {event.notes ? (
-                          <p className="text-body mt-1 text-neutral-600">{event.notes}</p>
-                        ) : null}
-                        {event.area_names.length > 0 ? (
-                          <p className="text-caption mt-1 text-neutral-500">
-                            Areas affected: {event.area_names.join(", ")}
-                          </p>
-                        ) : (
-                          <p className="text-caption mt-1 text-neutral-500">
-                            Areas affected were not recorded.
-                          </p>
-                        )}
-                      </div>
+              {floods.items.map((event) => {
+                const isOngoing = event.is_ongoing || !event.ended_at;
+                return (
+                  <li key={event.id}>
+                    <Card radius="xl" className={isOngoing ? "border-danger/40 bg-red-50/30 dark:bg-red-950/10" : ""}>
+                      <CardContent className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
+                        <div className="flex min-w-0 flex-col gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-h3 text-neutral-900">{event.name}</h3>
+                            {isOngoing ? (
+                              <Badge tone="danger" icon={AlertTriangle}>
+                                ONGOING FLOOD EVENT
+                              </Badge>
+                            ) : null}
+                            {event.emergency_event_id ? (
+                              <Badge tone="info" outline>
+                                Live Emergency Record
+                              </Badge>
+                            ) : null}
+                          </div>
 
-                      <dl className="flex shrink-0 gap-6">
-                        <div>
-                          <dt className="text-overline text-neutral-500">Peak level</dt>
-                          <dd className="text-h2 tabular text-neutral-900">
-                            {event.peak_level_m != null ? (
+                          <span className="text-body-sm text-neutral-500 flex flex-wrap items-center gap-1.5">
+                            <time dateTime={event.started_at}>
+                              {formatPhtDate(event.started_at)}
+                            </time>
+                            {event.ended_at ? (
                               <>
-                                {event.peak_level_m}
-                                <span className="text-body ml-0.5 font-normal text-neutral-500">
-                                  m
-                                </span>
+                                <span>–</span>
+                                <time dateTime={event.ended_at}>
+                                  {formatPhtDate(event.ended_at)}
+                                </time>
                               </>
                             ) : (
-                              <span className="text-body font-normal text-neutral-500">
-                                Not recorded
-                              </span>
+                              <span className="font-medium text-danger">(Ongoing)</span>
                             )}
-                          </dd>
+                          </span>
+
+                          {event.notes ? (
+                            <p className="text-body mt-1 text-neutral-600">{event.notes}</p>
+                          ) : null}
+
+                          {event.area_names.length > 0 ? (
+                            <p className="text-caption mt-1 text-neutral-500">
+                              <strong className="font-semibold text-neutral-700">Areas affected:</strong>{" "}
+                              {event.area_names.join(", ")}
+                            </p>
+                          ) : (
+                            <p className="text-caption mt-1 text-neutral-500">
+                              Areas affected were not recorded.
+                            </p>
+                          )}
                         </div>
-                        <div>
-                          <dt className="text-overline text-neutral-500">Displaced</dt>
-                          <dd className="text-h2 tabular text-neutral-900">
-                            {event.households_displaced != null ? (
-                              <>
-                                {formatNumber(event.households_displaced)}
-                                <span className="text-body ml-1 font-normal text-neutral-500">
-                                  households
+
+                        <dl className="flex shrink-0 gap-6 rounded-lg bg-neutral-50/80 p-3.5 border border-neutral-100 dark:bg-neutral-900/50 dark:border-neutral-800">
+                          <div>
+                            <dt className="text-overline text-neutral-500">Peak level</dt>
+                            <dd className="text-h2 tabular text-neutral-900">
+                              {event.peak_level_m != null ? (
+                                <>
+                                  {event.peak_level_m}
+                                  <span className="text-body ml-0.5 font-normal text-neutral-500">
+                                    m
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-body font-normal text-neutral-500">
+                                  {isOngoing ? "Tracking..." : "Not recorded"}
                                 </span>
-                              </>
-                            ) : (
-                              <span className="text-body font-normal text-neutral-500">
-                                Not recorded
+                              )}
+                            </dd>
+                            {event.peak_at ? (
+                              <span className="text-caption block text-neutral-400">
+                                at {formatPhtDate(event.peak_at)}
                               </span>
-                            )}
-                          </dd>
-                        </div>
-                      </dl>
-                    </CardContent>
-                  </Card>
-                </li>
-              ))}
+                            ) : null}
+                          </div>
+                          <div className="border-l border-neutral-200 pl-6 dark:border-neutral-800">
+                            <dt className="text-overline text-neutral-500">Displaced</dt>
+                            <dd className="text-h2 tabular text-neutral-900">
+                              {event.households_displaced != null ? (
+                                <>
+                                  {formatNumber(event.households_displaced)}
+                                  <span className="text-body ml-1 font-normal text-neutral-500">
+                                    households
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-body font-normal text-neutral-500">
+                                  {isOngoing ? "Tracking..." : "Not recorded"}
+                                </span>
+                              )}
+                            </dd>
+                          </div>
+                        </dl>
+                      </CardContent>
+                    </Card>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <EmptyState
               icon={Waves}
               title="No flood events recorded"
-              description="Past events are added as the barangay reconstructs them from its records."
+              description="Past events are added as the barangay reconstructs them from its records or declares emergency flood events."
             />
           )}
         </section>

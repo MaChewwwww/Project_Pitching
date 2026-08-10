@@ -200,6 +200,12 @@ async def declare_event(
             )
         active.is_active = False
         active.ended_at = datetime.now(UTC)
+        if active.type in ("flood", "typhoon"):
+            from src.modules.weather import service as weather_service
+
+            await weather_service.finalize_flood_event_from_emergency(
+                session, emergency_event_id=active.id, ended_at=active.ended_at
+            )
         await write_audit(
             session,
             actor_user_id=actor.id,
@@ -220,6 +226,17 @@ async def declare_event(
     )
     session.add(event)
     await session.flush()
+
+    if event.type in ("flood", "typhoon"):
+        from src.modules.weather import service as weather_service
+
+        await weather_service.create_flood_event_from_emergency(
+            session,
+            emergency_event_id=event.id,
+            name=event.name,
+            started_at=event.started_at,
+        )
+
     await write_audit(
         session,
         actor_user_id=actor.id,
@@ -243,6 +260,14 @@ async def end_event(
         raise ConflictError("This emergency event has already ended.")
     event.is_active = False
     event.ended_at = datetime.now(UTC)
+
+    if event.type in ("flood", "typhoon"):
+        from src.modules.weather import service as weather_service
+
+        await weather_service.finalize_flood_event_from_emergency(
+            session, emergency_event_id=event.id, ended_at=event.ended_at
+        )
+
     await write_audit(
         session,
         actor_user_id=actor.id,

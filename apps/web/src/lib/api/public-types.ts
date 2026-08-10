@@ -501,9 +501,11 @@ export interface PublicRiverLevel {
 
 export interface PublicFloodEvent {
   id: string;
+  emergency_event_id?: string | null;
   name: string;
   started_at: string;
   ended_at: string | null;
+  is_ongoing?: boolean;
   peak_level_m: Numeric | null;
   peak_at: string | null;
   households_displaced: number | null;

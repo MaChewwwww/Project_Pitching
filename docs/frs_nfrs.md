@@ -396,7 +396,7 @@ _Overall Active Completion: **108 / 269 requirements (40%)** implemented or in p
 | FR-WX-010 | Provenance and timestamp on every reading | Source and time shown; no bare numbers                                                     | BR-3.8       | M   | ◐      | —   |
 | FR-WX-011 | Stale data marked                         | Readings older than threshold visibly flagged as stale                                     | BR-3.8       | M   | ◐      | —   |
 | FR-WX-012 | Last-known-good retention                 | Previous reading shown with its age when a fetch fails; never silently blank               | Tech Stack 7 | M   | ◐      | —   |
-| FR-WX-013 | Flood event history                       | Date, level reached, areas affected, households displaced                                  | BR-3.5       | S   | ◐      | —   |
+| FR-WX-013 | Flood event history                       | Date, level reached, areas affected, households displaced                                  | BR-3.5       | S   | ✅     | —   |
 | FR-WX-014 | Forecast-based advance warning            | Predicted threshold breach surfaced where data supports it                                 | BR-3.6       | S   | ☐      | —   |
 | FR-WX-015 | Heat index & typhoon advisories           | Surfaced on portal and public site                                                         | BR-3.7       | C   | ◐      | —   |
 | FR-WX-016 | Demo/simulation mode                      | Seeded scenario can drive readings on a scripted timeline for the pitch                    | Tech Stack 7 | S   | ☐      | —   |

@@ -74,9 +74,11 @@ class PublicRiverLevel(BaseModel):
 
 class PublicFloodEvent(BaseModel):
     id: uuid.UUID
+    emergency_event_id: uuid.UUID | None = None
     name: str
     started_at: datetime
     ended_at: datetime | None
+    is_ongoing: bool = False
     peak_level_m: float | None
     peak_at: datetime | None
     households_displaced: int | None
@@ -103,6 +105,7 @@ class SimulateTyphoonResult(BaseModel):
 
 class FloodEventIn(BaseModel):
     name: str
+    emergency_event_id: uuid.UUID | None = None
     started_at: datetime
     ended_at: datetime | None = None
     peak_level_m: float | None = None
