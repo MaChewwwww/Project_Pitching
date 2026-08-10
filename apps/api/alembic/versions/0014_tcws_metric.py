@@ -16,15 +16,21 @@ down_revision: str | None = "0013_waterway_proximity"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-OLD_METRICS = "('river_level', 'rainfall', 'temperature', 'humidity', 'heat_index', 'precipitation_probability')"
 NEW_METRICS = "('river_level', 'rainfall', 'temperature', 'humidity', 'heat_index', 'precipitation_probability', 'tcws_signal')"
+OLD_METRICS = "('river_level', 'rainfall', 'temperature', 'humidity', 'heat_index', 'precipitation_probability')"
 
 
 def upgrade() -> None:
-    op.drop_constraint("reading_metric_valid", "reading", type_="check")
-    op.create_check_constraint("reading_metric_valid", "reading", f"metric IN {NEW_METRICS}")
+    op.execute("ALTER TABLE reading DROP CONSTRAINT IF EXISTS ck_reading_reading_metric_valid")
+    op.execute("ALTER TABLE reading DROP CONSTRAINT IF EXISTS reading_metric_valid")
+    op.execute(
+        f"ALTER TABLE reading ADD CONSTRAINT ck_reading_reading_metric_valid CHECK (metric IN {NEW_METRICS})"
+    )
 
 
 def downgrade() -> None:
-    op.drop_constraint("reading_metric_valid", "reading", type_="check")
-    op.create_check_constraint("reading_metric_valid", "reading", f"metric IN {OLD_METRICS}")
+    op.execute("ALTER TABLE reading DROP CONSTRAINT IF EXISTS ck_reading_reading_metric_valid")
+    op.execute("ALTER TABLE reading DROP CONSTRAINT IF EXISTS reading_metric_valid")
+    op.execute(
+        f"ALTER TABLE reading ADD CONSTRAINT ck_reading_reading_metric_valid CHECK (metric IN {OLD_METRICS})"
+    )
