@@ -52,9 +52,9 @@ interface Resolved {
 /** BR-3.2 — the level number is part of the label, never implied by colour. */
 const ALERT: Record<0 | 1 | 2 | 3, Resolved> = {
   0: { tone: "success", label: "Normal", icon: CircleCheck },
-  1: { tone: "warning", label: "Alert Level 1 · Prepare", icon: CircleAlert },
-  2: { tone: "warning", label: "Alert Level 2 · Evacuate", icon: TriangleAlert, pulse: true },
-  3: { tone: "danger", label: "Alert Level 3 · Forced Evacuation", icon: TriangleAlert, pulse: true },
+  1: { tone: "warning", label: "Alert Level 1", icon: CircleAlert },
+  2: { tone: "warning", label: "Alert Level 2", icon: TriangleAlert, pulse: true },
+  3: { tone: "danger", label: "Alert Level 3", icon: TriangleAlert, pulse: true },
 };
 
 function resolve(props: StatusBadgeProps): Resolved {
