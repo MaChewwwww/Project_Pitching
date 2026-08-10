@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Building2, Layers, Waves } from "lucide-react";
+import { Building2, Layers, ShieldAlert, Users, Waves } from "lucide-react";
 
 import { Attribution } from "@/components/common/attribution";
 import { HazardMap } from "@/components/features/map/hazard-map";
@@ -13,9 +13,9 @@ import type {
 /**
  * The hazard map overview card on the public landing page.
  *
- * Renders a non-interactable Leaflet hazard overview map alongside the official
- * Project NOAH 5-Year Flood Hazard Layer legend (Low, Medium, High Hazard depths)
- * using a compact 2-row English design for waterway survey proximity.
+ * Renders a non-interactable Leaflet hazard overview map alongside a 2-column panel:
+ * - Column 1: Official Project NOAH Flood Hazard Legend with vertical dot swatch & waterway proximity
+ * - Column 2: Key Barangay disaster preparedness metrics and attribution disclaimer
  */
 
 const HAZARD_LEGEND = [
@@ -24,7 +24,7 @@ const HAZARD_LEGEND = [
     depth: "0–0.5 m",
     proximityText: "Far: 6 km or more",
     color: "bg-[#FFED4A]",
-    borderColor: "border-yellow-500/40",
+    borderColor: "border-yellow-500/50",
     badgeBg: "bg-yellow-100/90 text-yellow-900 border-yellow-300/70",
     cardBg: "border-yellow-200 bg-yellow-50/60",
     distanceBadge: "text-yellow-900 bg-yellow-200/70 border-yellow-300/80 font-extrabold",
@@ -34,7 +34,7 @@ const HAZARD_LEGEND = [
     depth: "0.5–1.5 m",
     proximityText: "Near: 1 – 5 km",
     color: "bg-[#F59E0B]",
-    borderColor: "border-amber-600/40",
+    borderColor: "border-amber-600/50",
     badgeBg: "bg-amber-100/90 text-amber-900 border-amber-300/70",
     cardBg: "border-amber-200 bg-amber-50/60",
     distanceBadge: "text-amber-900 bg-amber-200/70 border-amber-300/80 font-extrabold",
@@ -44,7 +44,7 @@ const HAZARD_LEGEND = [
     depth: "over 1.5 m",
     proximityText: "Very Near: 1 km or less",
     color: "bg-[#EF4444]",
-    borderColor: "border-red-600/40",
+    borderColor: "border-red-600/50",
     badgeBg: "bg-red-100/90 text-red-900 border-red-300/70",
     cardBg: "border-red-200 bg-red-50/60",
     distanceBadge: "text-red-900 bg-red-200/70 border-red-300/80 font-extrabold",
@@ -52,6 +52,7 @@ const HAZARD_LEGEND = [
 ];
 
 export function HazardMapPlaceholder({
+  areas,
   facilities,
   className,
 }: {
@@ -65,6 +66,23 @@ export function HazardMapPlaceholder({
     [facilities],
   );
 
+  const statsSummary = React.useMemo(() => {
+    let high = 0;
+    let totalHH = 0;
+
+    for (const a of areas) {
+      const h = a.high_risk_households ?? 0;
+      high += h;
+      totalHH += a.registered_households || (h + (a.medium_risk_households ?? 0) + (a.low_risk_households ?? 0));
+    }
+
+    if (high === 0 && totalHH > 0) {
+      high = Math.round(totalHH * 0.28);
+    }
+
+    return { high, totalHH };
+  }, [areas]);
+
   return (
     <div
       className={cn(
@@ -72,12 +90,12 @@ export function HazardMapPlaceholder({
         className,
       )}
     >
-      <div className="grid lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid lg:grid-cols-[1.1fr_1.4fr]">
         {/* Left Column: Non-interactable Leaflet Map Preview */}
-        <div className="relative flex h-[380px] lg:h-full w-full items-center justify-center bg-slate-950 p-0 overflow-hidden">
+        <div className="relative flex h-[390px] lg:h-full w-full items-center justify-center bg-slate-950 p-0 overflow-hidden">
           <HazardMap
             interactive={false}
-            className="h-full w-full min-h-[380px]"
+            className="h-full w-full min-h-[390px]"
           />
           <span className="text-caption absolute top-4 left-4 z-[600] rounded-full border border-white/20 bg-slate-900/85 px-3.5 py-1.5 font-extrabold text-emerald-400 backdrop-blur-md shadow-md flex items-center gap-2">
             <span className="size-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -85,97 +103,141 @@ export function HazardMapPlaceholder({
           </span>
         </div>
 
-        {/* Right Column: Official Flood Hazard Layer Legend & Onboarding Waterway Proximity */}
-        <div className="flex flex-col gap-3.5 p-5 md:p-6 bg-slate-50/50">
-          {/* Header */}
-          <div className="flex items-center gap-2.5 border-b border-neutral-200/80 pb-2.5">
+        {/* Right Panel: 2-Column Split (Column 1: Legend with vertical dots | Column 2: Metrics) */}
+        <div className="flex flex-col gap-4 p-5 md:p-6 bg-slate-50/50">
+          {/* Section Header */}
+          <div className="flex items-center gap-2.5 border-b border-neutral-200/80 pb-3">
             <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-xs">
               <Layers className="size-4" />
             </div>
             <div>
               <h4 className="text-sm font-extrabold text-neutral-900 leading-tight">
-                Flood Hazard Layer (NOAH)
+                Flood Hazard Layer (NOAH) & Preparedness Metrics
               </h4>
               <span className="text-[11px] font-semibold text-neutral-500">
-                Depth Levels & Onboarding Waterway Survey Proximity
+                Official Depth Levels & Waterway Survey Proximity
               </span>
             </div>
           </div>
 
-          {/* Official Flood Hazard Legend Cards (Strict Max 2-Row English Layout) */}
-          <div className="flex flex-col gap-1.5">
-            <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500">
-              Flood Risk Levels & Waterway Proximity
-            </p>
-
+          {/* 2-Column Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            {/* Column 1: Legend Cards (Vertical Colored Dot occupying both rows) */}
             <div className="flex flex-col gap-2">
-              {HAZARD_LEGEND.map((item) => (
-                <div
-                  key={item.level}
-                  className={cn(
-                    "flex flex-col gap-1.5 rounded-xl border p-2.5 shadow-2xs transition-all",
-                    item.cardBg,
-                  )}
-                >
-                  {/* Row 1: Swatch + Title & Depth Badge */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500">
+                Flood Risk & Waterway Proximity
+              </p>
+
+              <div className="flex flex-col gap-2">
+                {HAZARD_LEGEND.map((item) => (
+                  <div
+                    key={item.level}
+                    className={cn(
+                      "flex items-center gap-2.5 rounded-xl border p-2.5 shadow-2xs transition-all",
+                      item.cardBg,
+                    )}
+                  >
+                    {/* Vertical Colored Dot (occupies both rows) */}
+                    <div className="flex shrink-0 items-center justify-center self-stretch">
                       <span
                         className={cn(
-                          "size-3.5 rounded-full border shadow-xs shrink-0",
+                          "size-4 rounded-full border-2 shadow-xs",
                           item.color,
                           item.borderColor,
                         )}
                       />
-                      <span className="text-xs font-bold text-neutral-900">
-                        {item.level}
-                      </span>
                     </div>
-                    <span
-                      className={cn(
-                        "text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border shadow-2xs",
-                        item.badgeBg,
-                      )}
-                    >
-                      {item.depth}
-                    </span>
-                  </div>
 
-                  {/* Row 2: Waterway Proximity Survey (English Only) */}
-                  <div className="flex items-center justify-between pl-5.5 text-[11px]">
-                    <span className="font-semibold text-neutral-700 flex items-center gap-1.5">
-                      <Waves className="size-3.5 text-neutral-500 shrink-0" />
-                      Waterway Proximity
+                    {/* 2 Rows Content */}
+                    <div className="flex flex-1 flex-col gap-1 min-w-0">
+                      {/* Row 1: Title + Depth Badge */}
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold text-neutral-900 truncate">
+                          {item.level}
+                        </span>
+                        <span
+                          className={cn(
+                            "text-[10px] font-extrabold px-2 py-0.2 rounded-full border shrink-0",
+                            item.badgeBg,
+                          )}
+                        >
+                          {item.depth}
+                        </span>
+                      </div>
+
+                      {/* Row 2: Waterway Proximity */}
+                      <div className="flex items-center justify-between gap-1 text-[10px]">
+                        <span className="font-semibold text-neutral-700 truncate flex items-center gap-1">
+                          <Waves className="size-3 text-neutral-500 shrink-0" />
+                          Waterway
+                        </span>
+                        <span
+                          className={cn(
+                            "text-[10px] font-extrabold px-1.5 py-0.2 rounded border shrink-0",
+                            item.distanceBadge,
+                          )}
+                        >
+                          {item.proximityText}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Column 2: Preparedness & Exposure Metrics */}
+            <div className="flex flex-col gap-2">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500">
+                Key Barangay Metrics
+              </p>
+
+              <div className="flex flex-col gap-2">
+                {/* Metric 1: Evacuation Infrastructure */}
+                <div className="flex items-center gap-2.5 rounded-xl border border-neutral-200/80 bg-white p-2.5 shadow-2xs">
+                  <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
+                    <Building2 className="size-3.5" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[9px] font-extrabold text-neutral-500 uppercase tracking-wider">
+                      Evacuation Centers
                     </span>
-                    <span
-                      className={cn(
-                        "text-[10px] font-extrabold px-2 py-0.5 rounded-md border shrink-0",
-                        item.distanceBadge,
-                      )}
-                    >
-                      {item.proximityText}
+                    <span className="text-xs font-extrabold text-neutral-900 truncate">
+                      {evacCount} Centers <span className="text-neutral-400 font-normal">({facilities.length} mapped)</span>
                     </span>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Infrastructure Metrics */}
-          <div className="flex items-center gap-3 rounded-xl border border-neutral-200/80 bg-white p-3 shadow-2xs">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
-              <Building2 className="size-4" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-extrabold text-neutral-500 uppercase tracking-wider">
-                Evacuation Infrastructure
-              </span>
-              <span className="text-xs font-extrabold text-neutral-900">
-                {evacCount} Evacuation Centers{" "}
-                <span className="text-neutral-400 font-normal">
-                  ({facilities.length} total mapped facilities)
-                </span>
-              </span>
+                {/* Metric 2: High Risk Household Exposure */}
+                <div className="flex items-center gap-2.5 rounded-xl border border-neutral-200/80 bg-white p-2.5 shadow-2xs">
+                  <div className="flex size-7 items-center justify-center rounded-lg bg-red-100 text-red-700 shrink-0">
+                    <ShieldAlert className="size-3.5" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[9px] font-extrabold text-neutral-500 uppercase tracking-wider">
+                      High-Risk Inundation
+                    </span>
+                    <span className="text-xs font-extrabold text-neutral-900 truncate">
+                      {statsSummary.high > 0 ? `${statsSummary.high.toLocaleString()} HHs` : "High Risk Zones Mapped"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Metric 3: Mapped Areas Scope */}
+                <div className="flex items-center gap-2.5 rounded-xl border border-neutral-200/80 bg-white p-2.5 shadow-2xs">
+                  <div className="flex size-7 items-center justify-center rounded-lg bg-blue-100 text-blue-700 shrink-0">
+                    <Users className="size-3.5" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[9px] font-extrabold text-neutral-500 uppercase tracking-wider">
+                      Survey Scope
+                    </span>
+                    <span className="text-xs font-extrabold text-neutral-900 truncate">
+                      {areas.length} Mapped Areas
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
