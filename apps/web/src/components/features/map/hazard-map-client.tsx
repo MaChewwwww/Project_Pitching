@@ -13,6 +13,7 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import type { PathOptions } from "leaflet";
+import { MapPin, Phone, Users, Volume2, VolumeX } from "lucide-react";
 
 import { useHazardGeoJson } from "@/lib/hazard-geojson";
 import "@/lib/leaflet-setup";
@@ -111,7 +112,7 @@ const RIPPLE_STYLE = `
 
 .dark-leaflet-popup .leaflet-popup-content-wrapper {
   background-color: #052e16 !important;
-  color: #d1fae5 !important;
+  color: #f8fafc !important;
   border: 1px solid #166534 !important;
   border-radius: 0.75rem !important;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6) !important;
@@ -123,10 +124,9 @@ const RIPPLE_STYLE = `
 }
 .dark-leaflet-tooltip {
   background-color: #052e16 !important;
-  color: #4ade80 !important;
+  color: #f8fafc !important;
   border: 1px solid #166534 !important;
   border-radius: 0.5rem !important;
-  font-weight: 600 !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
 }
 
@@ -271,7 +271,7 @@ export function HazardMapClient({
                 : "0 registered households";
 
               layer.bindTooltip(
-                `<div class="p-1 font-sans text-slate-100"><div class="font-bold text-sm text-sky-300">${props.name}</div><div class="text-xs text-slate-300">${householdText}</div></div>`,
+                `<div class="p-1 font-sans"><div class="font-bold text-sm text-white">${props.name}</div><div class="text-xs text-slate-300 mt-0.5">${householdText}</div></div>`,
                 { sticky: true, opacity: 0.95, className: "dark-leaflet-tooltip" },
               );
             }}
@@ -298,52 +298,89 @@ export function HazardMapClient({
                 }}
               >
                 <Tooltip sticky={true} opacity={0.98} className="dark-leaflet-tooltip">
-                  <div className="p-1.5 font-sans min-w-[170px]">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <strong className="block text-xs font-bold text-white leading-tight">
+                  <div className="p-1.5 font-sans min-w-[190px] space-y-1.5">
+                    <div className="flex items-start gap-2">
+                      <div className="w-4 h-4 shrink-0 flex items-center justify-center mt-0.5">
+                        <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                      </div>
+                      <strong className="block text-xs font-bold text-white leading-snug">
                         {facility.name}
                       </strong>
                     </div>
                     {(facility as FacilityWithCapacity).capacity != null && (
-                      <div className="text-[11px] font-medium text-slate-200">
-                        👥 Capacity: <span className="font-bold text-white">{(facility as FacilityWithCapacity).capacity}</span> persons
+                      <div className="flex items-center gap-2 text-[11px] text-slate-200">
+                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-emerald-400">
+                          <Users className="size-3.5" />
+                        </div>
+                        <span className="leading-tight">
+                          Capacity: <span className="font-bold text-white">{(facility as FacilityWithCapacity).capacity}</span> persons
+                        </span>
                       </div>
                     )}
                     {facility.address && (
-                      <div className="mt-1 text-[10px] text-slate-300">
-                        📍 {facility.address}
+                      <div className="flex items-start gap-2 text-[11px] text-slate-300">
+                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-slate-400 mt-0.5">
+                          <MapPin className="size-3.5" />
+                        </div>
+                        <span className="leading-tight break-words">
+                          {facility.address}
+                        </span>
                       </div>
                     )}
                     {facility.contact_number && (
-                      <div className="mt-1 text-[10px] font-semibold text-sky-400">
-                        📞 {facility.contact_number}
+                      <div className="flex items-center gap-2 text-[11px] font-semibold text-emerald-400">
+                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-emerald-400">
+                          <Phone className="size-3.5" />
+                        </div>
+                        <span className="leading-tight">
+                          {facility.contact_number}
+                        </span>
                       </div>
                     )}
                   </div>
                 </Tooltip>
                 <Popup className="dark-leaflet-popup">
-                  <div className="p-1">
-                    <strong className="block text-sm font-bold text-white">
-                      {facility.name}
-                    </strong>
+                  <div className="p-2 font-sans min-w-[200px] space-y-2">
+                    <div className="flex items-start gap-2">
+                      <div className="w-4 h-4 shrink-0 flex items-center justify-center mt-0.5">
+                        <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                      </div>
+                      <strong className="block text-sm font-bold text-white leading-snug">
+                        {facility.name}
+                      </strong>
+                    </div>
                     {(facility as FacilityWithCapacity).capacity != null && (
-                      <span className="mt-1 block text-xs font-semibold text-emerald-400">
-                        Capacity: {(facility as FacilityWithCapacity).capacity} persons
-                      </span>
+                      <div className="flex items-center gap-2 text-xs text-slate-200">
+                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-emerald-400">
+                          <Users className="size-3.5" />
+                        </div>
+                        <span>
+                          Capacity: <span className="font-bold text-white">{(facility as FacilityWithCapacity).capacity}</span> persons
+                        </span>
+                      </div>
                     )}
                     {facility.address && (
-                      <span className="mt-1 block text-xs text-slate-300">
-                        {facility.address}
-                      </span>
+                      <div className="flex items-start gap-2 text-xs text-slate-300">
+                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-slate-400 mt-0.5">
+                          <MapPin className="size-3.5" />
+                        </div>
+                        <span className="leading-tight break-words">
+                          {facility.address}
+                        </span>
+                      </div>
                     )}
                     {facility.contact_number && (
-                      <a
-                        href={`tel:${facility.contact_number}`}
-                        className="mt-1 block text-xs font-semibold text-emerald-400 hover:underline"
-                      >
-                        📞 {facility.contact_number}
-                      </a>
+                      <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400">
+                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-emerald-400">
+                          <Phone className="size-3.5" />
+                        </div>
+                        <a
+                          href={`tel:${facility.contact_number}`}
+                          className="hover:underline"
+                        >
+                          {facility.contact_number}
+                        </a>
+                      </div>
                     )}
                   </div>
                 </Popup>
@@ -370,16 +407,50 @@ export function HazardMapClient({
                   className: isSounding ? "sagip-siren-ripple" : undefined,
                 }}
               >
+                <Tooltip sticky={true} opacity={0.98} className="dark-leaflet-tooltip">
+                  <div className="p-1.5 font-sans min-w-[150px]">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 shrink-0 flex items-center justify-center">
+                        {isSounding ? (
+                          <Volume2 className="size-3.5 text-red-400 animate-pulse" />
+                        ) : (
+                          <VolumeX className="size-3.5 text-slate-400" />
+                        )}
+                      </div>
+                      <div>
+                        <strong className="block text-xs font-bold text-white leading-tight">
+                          {siren.name}
+                        </strong>
+                        <span
+                          className={`text-[10px] font-semibold ${isSounding ? "text-red-400" : "text-slate-400"}`}
+                        >
+                          {isSounding ? "Sounding Siren" : "Idle Siren"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Tooltip>
                 <Popup className="dark-leaflet-popup">
-                  <div className="p-1">
-                    <strong className="block text-sm font-bold text-white">
-                      {siren.name}
-                    </strong>
-                    <span
-                      className={`text-xs font-semibold ${isSounding ? "text-red-400" : "text-slate-400"}`}
-                    >
-                      {isSounding ? "🔊 Sounding Siren" : "Idle Siren"}
-                    </span>
+                  <div className="p-1.5 font-sans">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 shrink-0 flex items-center justify-center">
+                        {isSounding ? (
+                          <Volume2 className="size-4 text-red-400 animate-pulse" />
+                        ) : (
+                          <VolumeX className="size-4 text-slate-400" />
+                        )}
+                      </div>
+                      <div>
+                        <strong className="block text-sm font-bold text-white">
+                          {siren.name}
+                        </strong>
+                        <span
+                          className={`text-xs font-semibold ${isSounding ? "text-red-400" : "text-slate-400"}`}
+                        >
+                          {isSounding ? "Sounding Siren" : "Idle Siren"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </Popup>
               </CircleMarker>
@@ -389,3 +460,4 @@ export function HazardMapClient({
     </div>
   );
 }
+
