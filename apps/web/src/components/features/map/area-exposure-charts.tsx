@@ -384,7 +384,7 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
           <div className="flex items-center justify-between font-bold text-emerald-900 border-b border-emerald-200/60 pb-1">
             <span className="inline-flex items-center gap-1.5 text-emerald-800 uppercase tracking-wider text-[10px] font-black">
               <Sparkles aria-hidden className="size-3.5 text-emerald-600" />
-              Priority DRRM Insights
+              SAGIP Priority Insights
             </span>
             <span className="text-[10px] text-emerald-700 font-bold bg-white/90 px-2 py-0.5 rounded-full border border-emerald-200/80 shadow-2xs">
               Live Summary
