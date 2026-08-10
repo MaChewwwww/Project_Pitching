@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Clock, CloudRain, Droplets, Thermometer, Umbrella, Wind } from "lucide-react";
+import { AlertTriangle, Clock, CloudRain, Droplets, ShieldAlert, Thermometer, Umbrella, Wind } from "lucide-react";
 
 import { Card, CardContent } from "@/components/common/card";
 import { DataFreshness } from "@/components/common/data-freshness";
@@ -24,6 +24,55 @@ const METRIC_META: Record<
   precipitation_probability: { label: "Chance of rain", icon: Umbrella, color: "text-indigo-600", bg: "bg-indigo-50/70 border-indigo-200/60" },
   heat_index: { label: "Heat index", icon: Wind, color: "text-orange-600", bg: "bg-orange-50/70 border-orange-200/60" },
   river_level: { label: "River level", icon: CloudRain, color: "text-emerald-600", bg: "bg-emerald-50/70 border-emerald-200/60" },
+  tcws_signal: { label: "PAGASA TCWS", icon: ShieldAlert, color: "text-purple-600", bg: "bg-purple-50/70 border-purple-200/60" },
+};
+
+const TCWS_META: Record<
+  number,
+  { label: string; badgeBg: string; wind: string; threat: string; bgGradient: string }
+> = {
+  0: {
+    label: "NO ACTIVE TCWS SIGNAL IN EFFECT",
+    badgeBg: "bg-emerald-100 text-emerald-800 border-emerald-300",
+    wind: "Normal / Light winds (0 – 38 km/h)",
+    threat: "No Tropical Cyclone Wind Signal currently hoisted over Barangay San Jose / Rizal.",
+    bgGradient: "from-emerald-50/60 via-teal-50/30 to-white",
+  },
+  1: {
+    label: "PAGASA TCWS SIGNAL NO. 1",
+    badgeBg: "bg-amber-500 text-white border-amber-600 font-extrabold animate-pulse",
+    wind: "39 – 61 km/h (Strong Winds expected in 36 hrs)",
+    threat: "Minimal to minor threat. Secure loose outdoor objects and monitor PAGASA advisories.",
+    bgGradient: "from-amber-50 via-yellow-50/70 to-orange-50/30",
+  },
+  2: {
+    label: "PAGASA TCWS SIGNAL NO. 2",
+    badgeBg: "bg-orange-600 text-white border-orange-700 font-extrabold animate-pulse",
+    wind: "62 – 88 km/h (Gale-Force Winds expected in 24 hrs)",
+    threat: "Minor to moderate threat. Stay indoors, charge devices, classes suspended.",
+    bgGradient: "from-orange-100/80 via-amber-50 to-red-50/40",
+  },
+  3: {
+    label: "PAGASA TCWS SIGNAL NO. 3",
+    badgeBg: "bg-red-600 text-white border-red-700 font-extrabold animate-bounce",
+    wind: "89 – 117 km/h (Storm-Force Winds expected in 18 hrs)",
+    threat: "Moderate to significant threat. Seek sturdy shelter; prepare for pre-emptive evacuation.",
+    bgGradient: "from-red-100 via-rose-50 to-orange-100/50",
+  },
+  4: {
+    label: "PAGASA TCWS SIGNAL NO. 4",
+    badgeBg: "bg-rose-700 text-white border-rose-800 font-extrabold animate-bounce",
+    wind: "118 – 184 km/h (Typhoon-Force Winds expected in 12 hrs)",
+    threat: "Severe threat to life & property. Mandatory evacuation in progress.",
+    bgGradient: "from-rose-150 via-red-100 to-purple-100/60",
+  },
+  5: {
+    label: "PAGASA TCWS SIGNAL NO. 5",
+    badgeBg: "bg-purple-800 text-white border-purple-900 font-extrabold animate-bounce ring-2 ring-purple-400",
+    wind: "> 185 km/h (Super Typhoon-Force Winds expected in 12 hrs)",
+    threat: "Extreme & catastrophic threat. Remain inside assigned evacuation centers.",
+    bgGradient: "from-purple-100 via-rose-100 to-red-100",
+  },
 };
 
 export function WeatherPanel({
@@ -33,6 +82,10 @@ export function WeatherPanel({
   weather: PublicWeatherCurrent;
   className?: string;
 }) {
+  const tcwsReading = weather.readings.find((r) => r.metric === "tcws_signal");
+  const signalLevel = tcwsReading ? Math.round(Number(tcwsReading.value)) : 0;
+  const tcwsInfo = TCWS_META[signalLevel] || TCWS_META[0];
+
   // Pair forecast array by valid_at timestamp to display both rainfall (mm) and rain chance (%)
   const hourlyMap = new Map<string, { timeIso: string; rainfall: number; probability: number }>();
   for (const point of weather.forecast) {
@@ -48,13 +101,48 @@ export function WeatherPanel({
 
   const hourlyForecast = Array.from(hourlyMap.values()).slice(0, 6);
   const peakRainfall = Math.max(...hourlyForecast.map((f) => f.rainfall), 1);
+  const standardReadings = weather.readings.filter((r) => r.metric !== "tcws_signal" && r.metric !== "river_level");
 
   return (
     <Card radius="xl" className={cn("h-full border border-neutral-200/80 shadow-sm transition-all duration-300 hover:shadow-md", className)}>
-      <CardContent className="flex h-full flex-col gap-6">
+      <CardContent className="flex h-full flex-col gap-5">
+
+        {/* DOST-PAGASA Tropical Cyclone Wind Signal (TCWS #1 to #5) & Typhoon Watch Banner */}
+        <div className={cn(
+          "rounded-2xl border p-4 flex flex-col gap-2.5 bg-gradient-to-r transition-all duration-300 shadow-2xs",
+          tcwsInfo.bgGradient,
+          signalLevel > 0 ? "border-amber-300 shadow-xs" : "border-emerald-200/80"
+        )}>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className={cn("size-5", signalLevel > 0 ? "text-amber-600" : "text-emerald-600")} />
+              <span className="text-overline font-black uppercase tracking-wider text-neutral-900">
+                DOST-PAGASA Tropical Cyclone Wind Signal (TCWS)
+              </span>
+            </div>
+            <span className={cn("text-[10px] px-2.5 py-1 rounded-full border shadow-2xs font-extrabold uppercase", tcwsInfo.badgeBg)}>
+              {tcwsInfo.label}
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs text-neutral-800">
+            <span className="font-semibold text-neutral-700">
+              💨 Expected Winds: <strong className="text-neutral-900 font-extrabold">{tcwsInfo.wind}</strong>
+            </span>
+            <span className="text-[11px] text-neutral-500 font-medium italic">
+              Station: Province of Rizal / Montalban
+            </span>
+          </div>
+
+          <p className="text-caption text-neutral-700 font-medium flex items-center gap-1.5 bg-white/70 rounded-lg p-2 border border-black/5">
+            <AlertTriangle className={cn("size-3.5 shrink-0", signalLevel > 0 ? "text-amber-600" : "text-emerald-600")} />
+            <span>{tcwsInfo.threat}</span>
+          </p>
+        </div>
+
         {/* Metric Cards Grid */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {weather.readings.map((reading: PublicReading) => {
+          {standardReadings.map((reading: PublicReading) => {
             const meta = METRIC_META[reading.metric];
             const Icon = meta.icon;
             return (

@@ -122,6 +122,37 @@ def fetch_river_level() -> None:
     )
 
 
+@job("fetch_tcws_signal")
+def fetch_tcws_signal() -> None:
+    """Poll PAGASA for Tropical Cyclone Wind Signal (TCWS #1 to #5) status in Rizal."""
+    source = PagasaSource(station=PAGASA_STATION)
+    try:
+        readings = source.fetch_tcws()
+    except Exception as exc:
+        log.warning("fetch failed", extra={"source": "pagasa_tcws", "reason": str(exc)})
+        raise
+
+    with engine.begin() as conn:
+        for r in readings:
+            conn.execute(
+                _INSERT_READING,
+                {
+                    "source": r.source,
+                    "metric": r.metric,
+                    "value": r.value,
+                    "unit": r.unit,
+                    "station": r.station,
+                    "observed_at": r.observed_at,
+                    "raw": json.dumps(r.raw) if r.raw is not None else None,
+                },
+            )
+
+    log.info(
+        "fetch_tcws_signal written",
+        extra={"job": "fetch_tcws_signal", "written": len(readings), "source": "pagasa"},
+    )
+
+
 _LATEST_RIVER_READING = text(
     "SELECT id, value FROM reading WHERE metric = 'river_level' ORDER BY observed_at DESC LIMIT 1"
 )

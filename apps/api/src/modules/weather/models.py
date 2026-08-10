@@ -40,6 +40,7 @@ METRICS = (
     "humidity",
     "heat_index",
     "precipitation_probability",
+    "tcws_signal",
 )
 FORECAST_HORIZONS = ("hourly", "daily")
 

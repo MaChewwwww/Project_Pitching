@@ -23,6 +23,7 @@ from jobs import (
     backup_database,
     evaluate_thresholds,
     fetch_river_level,
+    fetch_tcws_signal,
     fetch_weather,
     flag_stale_records,
     send_activity_reminders,
@@ -54,6 +55,11 @@ def build_scheduler() -> BlockingScheduler:
         fetch_river_level,
         IntervalTrigger(minutes=SCRAPE_INTERVAL_MINUTES),
         id="fetch_river_level",
+    )
+    scheduler.add_job(
+        fetch_tcws_signal,
+        IntervalTrigger(minutes=30),
+        id="fetch_tcws_signal",
     )
     # Runs just after each river fetch rather than on the same trigger, so a slow
     # scrape cannot make the evaluation read the previous reading.

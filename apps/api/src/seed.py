@@ -932,15 +932,31 @@ async def seed_readings(session) -> None:
 
     now = _now()
     readings = [
-        ("temperature", 27.4, "°C", "open_meteo", now - timedelta(minutes=14), None),
-        ("humidity", 89, "%", "open_meteo", now - timedelta(minutes=14), None),
-        ("rainfall", 12.6, "mm", "open_meteo", now - timedelta(minutes=14), None),
-        ("precipitation_probability", 85, "%", "open_meteo", now - timedelta(minutes=14), None),
-        ("heat_index", 31.2, "°C", "open_meteo", now - timedelta(minutes=14), None),
-        ("river_level", 22.6, "m", "pagasa", now - timedelta(hours=1), PAGASA_STATION),
-        ("river_level", 23.1, "m", "pagasa", now - timedelta(minutes=22), PAGASA_STATION),
+        ("temperature", 27.4, "°C", "open_meteo", now - timedelta(minutes=14), None, None),
+        ("humidity", 89, "%", "open_meteo", now - timedelta(minutes=14), None, None),
+        ("rainfall", 12.6, "mm", "open_meteo", now - timedelta(minutes=14), None, None),
+        (
+            "precipitation_probability", 85, "%", "open_meteo", now - timedelta(minutes=14), None, None
+        ),
+        ("heat_index", 31.2, "°C", "open_meteo", now - timedelta(minutes=14), None, None),
+        ("river_level", 22.6, "m", "pagasa", now - timedelta(hours=1), PAGASA_STATION, None),
+        ("river_level", 23.1, "m", "pagasa", now - timedelta(minutes=22), PAGASA_STATION, None),
+        (
+            "tcws_signal",
+            0.0,
+            "signal",
+            "pagasa",
+            now - timedelta(minutes=10),
+            "Rizal",
+            {
+                "tc_name": "None",
+                "proximity": "No Active Cyclone in PAR / Rizal",
+                "wind_speed_range": "Normal winds (0-38 km/h)",
+                "description": "No Tropical Cyclone Wind Signal currently hoisted over Rizal.",
+            },
+        ),
     ]
-    for metric, value, unit, source, observed_at, station in readings:
+    for metric, value, unit, source, observed_at, station, raw in readings:
         session.add(
             Reading(
                 source=source,
@@ -950,6 +966,7 @@ async def seed_readings(session) -> None:
                 station=station,
                 observed_at=observed_at,
                 fetched_at=observed_at,
+                raw=raw,
             )
         )
 

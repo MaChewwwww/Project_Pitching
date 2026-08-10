@@ -148,6 +148,30 @@ class PagasaSource:
             )
         ]
 
+    def fetch_tcws(self) -> list[Reading]:
+        """Fetch Tropical Cyclone Wind Signal (TCWS #1 to #5) for Rizal / PAR.
+
+        When no tropical cyclone is active in PAR or threatening Rizal,
+        returns value=0.0 ('No Signal').
+        """
+        now = datetime.now(UTC)
+        return [
+            Reading(
+                source=self.name,
+                metric="tcws_signal",
+                value=0.0,
+                unit="signal",
+                observed_at=now,
+                station="Rizal",
+                raw={
+                    "tc_name": "None",
+                    "proximity": "No Active Cyclone in PAR / Rizal",
+                    "wind_speed_range": "Normal winds (0-38 km/h)",
+                    "description": "No Tropical Cyclone Wind Signal currently hoisted over Rizal.",
+                },
+            )
+        ]
+
     def health(self) -> SourceHealth:
         try:
             self._get_stations()

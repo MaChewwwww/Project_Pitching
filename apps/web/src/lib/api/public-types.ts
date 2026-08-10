@@ -375,7 +375,8 @@ export type ReadingMetric =
   | "temperature"
   | "humidity"
   | "heat_index"
-  | "precipitation_probability";
+  | "precipitation_probability"
+  | "tcws_signal";
 
 export interface PublicReading {
   /** `BIGSERIAL` — one of only two non-UUID ids in the schema. */

@@ -16,7 +16,13 @@ from pydantic import BaseModel
 
 ReadingSource = Literal["open_meteo", "pagasa", "manual"]
 ReadingMetric = Literal[
-    "river_level", "rainfall", "temperature", "humidity", "heat_index", "precipitation_probability"
+    "river_level",
+    "rainfall",
+    "temperature",
+    "humidity",
+    "heat_index",
+    "precipitation_probability",
+    "tcws_signal",
 ]
 
 
