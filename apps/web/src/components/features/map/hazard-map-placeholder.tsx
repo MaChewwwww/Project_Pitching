@@ -4,7 +4,6 @@ import { Layers, MapPin } from "lucide-react";
 import { Attribution } from "@/components/common/attribution";
 import { Badge } from "@/components/common/badge";
 import { HazardMap } from "@/components/features/map/hazard-map";
-import { RiverLevelPanel } from "@/components/features/weather/river-level-panel";
 import { cn } from "@/lib/utils";
 import type {
   PublicAreaStat,
@@ -15,8 +14,8 @@ import type {
 /**
  * The hazard map overview card on the public landing page.
  *
- * Renders a non-interactable preview showing the Barangay San Jose outer boundary
- * and 5-year flood hazard risk layer, alongside the river level gauge overlay and legend.
+ * Renders a non-interactable preview showing the entire Barangay San Jose boundary
+ * and 5-year flood hazard risk layer, alongside the legend.
  */
 
 const HAZARD_LEGEND = [
@@ -34,7 +33,6 @@ const EXPOSURE_TONE = {
 export function HazardMapPlaceholder({
   areas,
   facilities,
-  river,
   className,
 }: {
   areas: PublicAreaStat[];
@@ -50,23 +48,15 @@ export function HazardMapPlaceholder({
       )}
     >
       <div className="grid lg:grid-cols-[1.4fr_1fr]">
-        <div className="relative flex min-h-[360px] h-full w-full items-center justify-center bg-slate-950 p-0 overflow-hidden">
+        <div className="relative flex min-h-[380px] h-full w-full items-center justify-center bg-slate-950 p-0 overflow-hidden">
           <HazardMap
             interactive={false}
-            className="h-full w-full min-h-[360px]"
+            className="h-full w-full min-h-[380px]"
           />
           <span className="text-caption absolute top-4 left-4 z-[600] rounded-full border border-white/20 bg-slate-900/80 px-3 py-1 font-bold text-emerald-400 backdrop-blur-md shadow-md flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-emerald-400 animate-pulse"></span>
             Barangay San Jose Flood Overview
           </span>
-
-          {river ? (
-            <div className="pointer-events-none absolute inset-x-4 bottom-4 z-[600] flex justify-end md:inset-x-6 md:bottom-6">
-              <div className="pointer-events-auto w-full max-w-[17rem]">
-                <RiverLevelPanel river={river} onDark density="compact" />
-              </div>
-            </div>
-          ) : null}
         </div>
 
         <div className="flex flex-col gap-5 p-5 md:p-6">

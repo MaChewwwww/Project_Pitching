@@ -56,19 +56,25 @@ function MapPanes() {
   return null;
 }
 
-function InvalidateSizeOnMount() {
+function InvalidateSizeOnMount({ interactive = true }: { interactive?: boolean }) {
   const map = useMap();
   React.useEffect(() => {
-    const isMobile = window.innerWidth < 640;
-    const targetZoom = isMobile ? 13 : 14;
-    if (map.getZoom() !== targetZoom) {
-      map.setZoom(targetZoom);
+    if (!interactive) {
+      const isMobile = window.innerWidth < 640;
+      const overviewZoom = isMobile ? 11.8 : 12.4;
+      map.setView([14.7410, 121.1300], overviewZoom);
+    } else {
+      const isMobile = window.innerWidth < 640;
+      const targetZoom = isMobile ? 13 : 14;
+      if (map.getZoom() !== targetZoom) {
+        map.setZoom(targetZoom);
+      }
     }
     const timer = setTimeout(() => {
       map.invalidateSize();
     }, 200);
     return () => clearTimeout(timer);
-  }, [map]);
+  }, [map, interactive]);
   return null;
 }
 
@@ -241,7 +247,7 @@ export function HazardMapClient({
         attributionControl={false}
       >
         <MapPanes />
-        <InvalidateSizeOnMount />
+        <InvalidateSizeOnMount interactive={interactive} />
 
         {/* CartoDB Dark Matter Obsidian Basemap Tiles */}
         <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} />
