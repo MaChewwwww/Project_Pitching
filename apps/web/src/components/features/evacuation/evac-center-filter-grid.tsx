@@ -63,7 +63,7 @@ export function EvacCenterFilterGrid({
 
         {/* Custom Themed Select Dropdown */}
         <Select value={selectedArea} onValueChange={setSelectedArea}>
-          <SelectTrigger className="inline-flex h-10 w-fit items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-4 py-2 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all cursor-pointer">
+          <SelectTrigger className="inline-flex h-9 w-fit items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all cursor-pointer">
             <Filter aria-hidden className="size-3.5 text-emerald-600 shrink-0" />
             <SelectValue placeholder="Select Area">
               {selectedArea === "All"
@@ -75,7 +75,7 @@ export function EvacCenterFilterGrid({
             position="popper"
             align="end"
             sideOffset={6}
-            className="z-50 min-w-[200px] overflow-hidden rounded-2xl border border-neutral-200/90 bg-white p-1.5 shadow-xl transition-all"
+            className="z-50 w-44 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md"
           >
             {AREAS.map((area) => {
               const count = countsByArea[area] ?? 0;
@@ -87,19 +87,19 @@ export function EvacCenterFilterGrid({
                   key={area}
                   value={area}
                   className={cn(
-                    "relative flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-xs font-semibold transition-colors cursor-pointer my-0.5",
+                    "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer my-0.5",
                     isSelected
                       ? "bg-emerald-600 text-white font-bold focus:bg-emerald-600 focus:text-white"
                       : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950"
                   )}
                 >
-                  <span>{label}</span>
+                  <span className="truncate">{label}</span>
                   <span
                     className={cn(
-                      "ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0",
+                      "text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 tabular-nums ml-auto",
                       isSelected
                         ? "bg-white/25 text-white"
-                        : "bg-emerald-100/80 text-emerald-800"
+                        : "bg-neutral-100 text-neutral-600"
                     )}
                   >
                     {count}
