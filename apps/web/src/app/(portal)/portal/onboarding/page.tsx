@@ -30,6 +30,7 @@ import type {
   HouseholdCreateSelf,
 } from "@/lib/api/registry-types";
 import type { LatLng } from "@/components/features/registry/location-picker";
+import { cn } from "@/lib/utils";
 
 const LocationPicker = dynamic(
   () => import("@/components/features/registry/location-picker"),
@@ -48,6 +49,9 @@ const LocationPicker = dynamic(
 const onboardingSchema = z
   .object({
     street_address: z.string().optional(),
+    waterway_proximity: z.enum(["very_near", "near", "far"], {
+      message: "Kailangang piliin ang kalapitan sa daanan ng tubig",
+    }),
     area_id: z.string().min(1, "Select your area"),
     contact_number: z.string().optional(),
     is_unreachable_by_phone: z.boolean(),
@@ -77,6 +81,7 @@ type OnboardingFormValues = z.infer<typeof onboardingSchema>;
 
 const emptyValues: OnboardingFormValues = {
   street_address: "",
+  waterway_proximity: "far",
   area_id: "",
   contact_number: "",
   is_unreachable_by_phone: false,
@@ -131,6 +136,7 @@ export default function OnboardingPage() {
     setServerError(null);
     await submitMutation.mutateAsync({
       street_address: values.street_address || null,
+      waterway_proximity: values.waterway_proximity,
       area_id: values.area_id,
       latitude: location?.lat ?? null,
       longitude: location?.lng ?? null,
@@ -235,6 +241,82 @@ export default function OnboardingPage() {
                 </Label>
                 <Input id="street_address" type="text" {...register("street_address")} placeholder="e.g. 12 Sampaguita St., Purok 3" />
               </div>
+            </div>
+
+            {/* ── PROXIMITY FROM A WATERWAY (E.G. RIVERS, CREEKS)? ── */}
+            <div className="rounded-xl border border-neutral-300 bg-neutral-50/50 p-4 flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <Label className="text-body-sm font-black uppercase tracking-wide text-neutral-900 flex items-center justify-between">
+                  <span>
+                    PROXIMITY FROM A WATERWAY (E.G. RIVERS, CREEKS)?: <span className="text-red-500">*</span>
+                  </span>
+                </Label>
+                <p className="text-sm italic text-neutral-700 font-serif">
+                  Gaano ka kalapit sa daanan ng tubig (Halimbawa: Ilog, Creek)?
+                </p>
+              </div>
+
+              <Controller
+                control={control}
+                name="waterway_proximity"
+                render={({ field }) => (
+                  <div className="flex flex-col gap-2.5 pt-1">
+                    {[
+                      {
+                        value: "very_near",
+                        label: "Very Near: 1 km below (Sobrang Lapit: Isang kilometro pababa)",
+                        badge: "High Risk Classification",
+                        badgeColor: "bg-red-100 text-red-700 border-red-200",
+                      },
+                      {
+                        value: "near",
+                        label: "Near: 1 – 5 km (Malapit: Isa hanggang Limang kilometro)",
+                        badge: "Medium Risk Classification",
+                        badgeColor: "bg-amber-100 text-amber-700 border-amber-200",
+                      },
+                      {
+                        value: "far",
+                        label: "Far: 6 km o higit pa (Malayo: Anim na kilometro o higit pa)",
+                        badge: "Low Risk Classification",
+                        badgeColor: "bg-emerald-100 text-emerald-700 border-emerald-200",
+                      },
+                    ].map((opt) => {
+                      const selected = field.value === opt.value;
+                      return (
+                        <label
+                          key={opt.value}
+                          className={cn(
+                            "flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all duration-150",
+                            selected
+                              ? "border-emerald-600 bg-emerald-50/70 shadow-2xs"
+                              : "border-neutral-200 bg-white hover:bg-neutral-50"
+                          )}
+                        >
+                          <input
+                            type="radio"
+                            name="waterway_proximity"
+                            value={opt.value}
+                            checked={selected}
+                            onChange={() => field.onChange(opt.value)}
+                            className="mt-0.5 size-4 accent-emerald-600 cursor-pointer shrink-0"
+                          />
+                          <div className="flex flex-col gap-0.5 text-xs text-neutral-800 font-medium">
+                            <span className="font-semibold text-neutral-900">{opt.label}</span>
+                            <span className={cn("text-[10px] font-bold w-fit px-1.5 py-0.2 rounded border mt-0.5", opt.badgeColor)}>
+                              {opt.badge}
+                            </span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              />
+              {errors.waterway_proximity ? (
+                <p className="text-danger text-xs font-semibold">
+                  {errors.waterway_proximity.message}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex flex-col gap-1.5">

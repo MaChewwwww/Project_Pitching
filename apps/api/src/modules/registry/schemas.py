@@ -58,6 +58,7 @@ class HouseholdCreateSelf(BaseModel):
     asked here (FR-REG-005): required unless `is_unreachable_by_phone` is set."""
 
     street_address: str | None = None
+    waterway_proximity: Literal["very_near", "near", "far"] | None = None
     area_id: uuid.UUID
     latitude: float | None = Field(None, ge=-90, le=90)
     longitude: float | None = Field(None, ge=-180, le=180)
@@ -82,6 +83,7 @@ class HouseholdCreateBhw(BaseModel):
     is_unreachable_by_phone: bool = False
     area_id: uuid.UUID
     street_address: str | None = None
+    waterway_proximity: Literal["very_near", "near", "far"] | None = None
     latitude: float | None = Field(None, ge=-90, le=90)
     longitude: float | None = Field(None, ge=-180, le=180)
     head_member: MemberIn
@@ -123,6 +125,7 @@ class HouseholdOut(BaseModel):
     area_id: uuid.UUID
     area_name: str | None = None
     street_address: str | None
+    waterway_proximity: str | None = None
     location: GeoJsonPoint | None
     source: Literal["self", "bhw"]
     verified_at: datetime | None

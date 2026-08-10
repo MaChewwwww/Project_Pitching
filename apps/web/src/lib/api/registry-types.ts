@@ -34,6 +34,7 @@ export interface HeadMemberIn {
 
 export interface HouseholdCreateSelf {
   street_address: string | null;
+  waterway_proximity?: "very_near" | "near" | "far" | null;
   area_id: string;
   latitude: number | null;
   longitude: number | null;
@@ -81,6 +82,7 @@ export interface HouseholdOut {
   area_id: string;
   area_name: string | null;
   street_address: string | null;
+  waterway_proximity?: string | null;
   location: { type: "Point"; coordinates: [number, number] } | null;
   source: "self" | "bhw";
   verified_at: string | null;

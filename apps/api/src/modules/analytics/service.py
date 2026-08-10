@@ -43,12 +43,22 @@ def _calculate_risk_breakdown(exposure: str | None, total: int) -> tuple[int, in
 async def get_area_stats(session: AsyncSession) -> PublicBarangayStats:
     areas = await geo_service.list_areas(session)
     household_member_by_area = await registry_service.counts_by_area(session)
+    risk_by_area = await registry_service.risk_counts_by_area(session)
     evac_by_area = await evacuation_service.count_by_area(session)
 
     area_stats = []
     for a in areas:
         reg_h = household_member_by_area.get(a.id, (0, 0))[0]
-        low_h, med_h, high_h = _calculate_risk_breakdown(a.flood_exposure, reg_h)
+        low_h, med_h, high_h = risk_by_area.get(a.id, (0, 0, 0))
+
+        if (low_h + med_h + high_h) < reg_h:
+            fb_low, fb_med, fb_high = _calculate_risk_breakdown(
+                a.flood_exposure, reg_h - (low_h + med_h + high_h)
+            )
+            low_h += fb_low
+            med_h += fb_med
+            high_h += fb_high
+
         area_stats.append(
             PublicAreaStat(
                 area_id=a.id,

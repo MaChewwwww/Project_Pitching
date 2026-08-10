@@ -1007,12 +1007,23 @@ async def seed_households(session, areas: dict[str, Area]) -> None:
     for i in range(1, 201):
         area = area_list[i % len(area_list)]
         head_name = f"{rng.choice(FIRST_NAMES)} {rng.choice(LAST_NAMES)}"
+        if area.flood_exposure == "high":
+            r = rng.random()
+            proximity = "very_near" if r < 0.55 else ("near" if r < 0.90 else "far")
+        elif area.flood_exposure == "low":
+            r = rng.random()
+            proximity = "far" if r < 0.60 else ("near" if r < 0.90 else "very_near")
+        else:
+            r = rng.random()
+            proximity = "near" if r < 0.55 else ("very_near" if r < 0.75 else "far")
+
         household = Household(
             reference_no=f"HH-SEED-{i:05d}",
             head_name=head_name,
             contact_number=None if rng.random() < 0.1 else f"09{rng.randint(100000000, 999999999)}",
             is_unreachable_by_phone=rng.random() < 0.1,
             area_id=area.id,
+            waterway_proximity=proximity,
             source="bhw",
         )
         session.add(household)

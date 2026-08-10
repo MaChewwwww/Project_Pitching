@@ -77,6 +77,27 @@ async def counts_by_area(session: AsyncSession) -> dict[uuid.UUID, tuple[int, in
     return {aid: (household_by_area.get(aid, 0), member_by_area.get(aid, 0)) for aid in area_ids}
 
 
+async def risk_counts_by_area(session: AsyncSession) -> dict[uuid.UUID, tuple[int, int, int]]:
+    """`{area_id: (low_risk_count, medium_risk_count, high_risk_count)}` — derived from waterway_proximity.
+    - 'far' => low risk
+    - 'near' => medium risk
+    - 'very_near' => high risk
+    """
+    rows = (
+        await session.execute(
+            select(
+                Household.area_id,
+                func.count().filter(Household.waterway_proximity == "far").label("low"),
+                func.count().filter(Household.waterway_proximity == "near").label("med"),
+                func.count().filter(Household.waterway_proximity == "very_near").label("high"),
+            )
+            .where(Household.deleted_at.is_(None))
+            .group_by(Household.area_id)
+        )
+    ).all()
+    return {row[0]: (row[1], row[2], row[3]) for row in rows}
+
+
 async def total_counts(session: AsyncSession) -> tuple[int, int]:
     households = (
         await session.execute(
@@ -196,6 +217,7 @@ async def _household_out(
         area_id=household.area_id,
         area_name=area_name,
         street_address=household.street_address,
+        waterway_proximity=household.waterway_proximity,
         location=await _location_geojson(session, household.id),
         source=household.source,
         verified_at=household.verified_at,
@@ -356,6 +378,7 @@ async def create_household_self(
         is_unreachable_by_phone=body.is_unreachable_by_phone,
         area_id=area.id,
         street_address=body.street_address,
+        waterway_proximity=body.waterway_proximity,
         location=location,
         source="self",
         created_by_user_id=user.id,
@@ -426,6 +449,7 @@ async def create_household_bhw(
         is_unreachable_by_phone=body.is_unreachable_by_phone,
         area_id=area.id,
         street_address=body.street_address,
+        waterway_proximity=body.waterway_proximity,
         location=location,
         source="bhw",
         created_by_user_id=user.id,
