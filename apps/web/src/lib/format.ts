@@ -116,3 +116,16 @@ export function formatQuantity(value: number): string {
 export function osmDirectionsUrl(lon: number, lat: number): string {
   return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=17/${lat}/${lon}`;
 }
+
+/**
+ * Direct Google Maps navigation URL for resident evacuation routing.
+ */
+export function googleMapsDirectionsUrl(lon: number, lat: number, name?: string): string {
+  const destination = `${lat},${lon}`;
+  if (name) {
+    const query = encodeURIComponent(`${name}, Barangay San Jose, Rodriguez, Rizal`);
+    return `https://www.google.com/maps/dir/?api=1&destination=${destination}&query=${query}`;
+  }
+  return `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+}
+

@@ -1,45 +1,26 @@
 import type { Metadata } from "next";
-import { Building2 } from "lucide-react";
 
 import { Attribution } from "@/components/common/attribution";
-import { Badge } from "@/components/common/badge";
-import { Card, CardContent } from "@/components/common/card";
 import { PageHeader } from "@/components/common/page-header";
+import { EvacCenterCard } from "@/components/features/evacuation/evac-center-card";
 import { AreaExposureCharts } from "@/components/features/map/area-exposure-charts";
 import { HazardMap } from "@/components/features/map/hazard-map";
 import { LayerToggle } from "@/components/features/map/layer-toggle";
 import { MapLegend } from "@/components/features/map/map-legend";
-import { toTelHref } from "@/lib/format";
 import {
   getAreaBoundaries,
   getAreaStats,
+  getEvacuationCenters,
   getFacilities,
   getRiverLevel,
   getSirens,
 } from "@/lib/api/public";
-import type { FacilityType } from "@/lib/api/public-types";
 
 export const metadata: Metadata = {
   title: "Flood hazard map",
   description:
     "Flood-prone areas across Barangay San Jose, surveyed by Project NOAH, with barangay facilities and current river level.",
 };
-
-const FACILITY_LABEL: Record<FacilityType, string> = {
-  evacuation_center: "Evacuation centers",
-  hospital: "Hospitals",
-  clinic: "Clinics",
-  barangay_hall: "Barangay hall",
-  police: "Police",
-  fire: "Fire station",
-  rescue_station: "Rescue stations",
-};
-
-const EXPOSURE_TONE = {
-  low: "success",
-  medium: "warning",
-  high: "danger",
-} as const;
 
 /**
  * The hazard map route (FR-PUB-009, FR-MAP-001…006, FR-MAP-007).
@@ -54,25 +35,21 @@ const EXPOSURE_TONE = {
  * Only area-level aggregates appear here (FR-PUB-014): counts, never a household.
  */
 export default async function HazardMapPage() {
-  const [stats, facilities, river, areaBoundaries, sirens] = await Promise.all([
-    getAreaStats(),
-    getFacilities(),
-    getRiverLevel(),
-    getAreaBoundaries(),
-    getSirens(),
-  ]);
+  const [stats, facilities, river, areaBoundaries, sirens, evacCentersResponse] =
+    await Promise.all([
+      getAreaStats(),
+      getFacilities(),
+      getRiverLevel(),
+      getAreaBoundaries(),
+      getSirens(),
+      getEvacuationCenters({ size: 50 }),
+    ]);
 
   const evacuationFacilities = facilities.filter(
     (f) => f.type === "evacuation_center",
   );
 
-  const byType = evacuationFacilities.reduce<Partial<Record<FacilityType, typeof facilities>>>(
-    (acc, facility) => {
-      (acc[facility.type] ??= []).push(facility);
-      return acc;
-    },
-    {},
-  );
+  const evacCenters = evacCentersResponse.items;
 
   return (
     <>
@@ -162,43 +139,24 @@ export default async function HazardMapPage() {
         </section>
 
         <section>
-          <h2 className="text-h2 mb-1 text-neutral-900">Evacuation centers</h2>
-          <p className="text-body mb-6 text-neutral-600">
-            {evacuationFacilities.length} evacuation centers are pinned on the map.
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-h2 text-neutral-900">Evacuation Centers</h2>
+              <p className="text-body text-neutral-600">
+                {evacCenters.length} active evacuation centers pinned on the hazard map.
+              </p>
+            </div>
+            <a
+              href="/evacuation-centers"
+              className="text-body-sm font-semibold text-primary-700 hover:text-primary-800 flex items-center gap-1 hover:underline w-fit shrink-0"
+            >
+              View full directory &rarr;
+            </a>
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3">
-            {Object.entries(byType).map(([type, items]) => (
-              <Card key={type} radius="xl">
-                <CardContent className="flex flex-col gap-3">
-                  <span className="text-overline text-primary-700 inline-flex items-center gap-1.5">
-                    <Building2 aria-hidden className="size-3.5" />
-                    {FACILITY_LABEL[type as FacilityType]}
-                  </span>
-                  <ul className="flex flex-col gap-2.5">
-                    {items.map((facility) => (
-                      <li key={facility.id} className="flex flex-col">
-                        <span className="text-body font-semibold text-neutral-800">
-                          {facility.name}
-                        </span>
-                        {facility.address ? (
-                          <span className="text-caption text-neutral-500">
-                            {facility.address}
-                          </span>
-                        ) : null}
-                        {facility.contact_number ? (
-                          <a
-                            href={toTelHref(facility.contact_number)}
-                            className="text-caption text-primary-700 focus-visible:ring-ring w-fit rounded-sm font-semibold hover:underline focus-visible:ring-2 focus-visible:outline-none"
-                          >
-                            {facility.contact_number}
-                          </a>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
+            {evacCenters.map((center) => (
+              <EvacCenterCard key={center.id} center={center} />
             ))}
           </div>
         </section>
@@ -211,3 +169,4 @@ export default async function HazardMapPage() {
     </>
   );
 }
+

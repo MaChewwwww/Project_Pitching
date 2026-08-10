@@ -13,8 +13,9 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import type { PathOptions } from "leaflet";
-import { MapPin, Phone, Users, Volume2, VolumeX } from "lucide-react";
+import { MapPin, Navigation, Phone, Users, Volume2, VolumeX } from "lucide-react";
 
+import { googleMapsDirectionsUrl } from "@/lib/format";
 import { useHazardGeoJson } from "@/lib/hazard-geojson";
 import "@/lib/leaflet-setup";
 import {
@@ -432,6 +433,17 @@ export function HazardMapClient({
                         </a>
                       </div>
                     )}
+                    <div className="pt-1.5 border-t border-emerald-900/60 mt-2">
+                      <a
+                        href={googleMapsDirectionsUrl(lon, lat, facility.name)}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 shadow-xs flex items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 transition-colors no-underline"
+                      >
+                        <Navigation className="size-3 fill-white/20" />
+                        Google Maps Directions
+                      </a>
+                    </div>
                   </div>
                 </Popup>
               </CircleMarker>
