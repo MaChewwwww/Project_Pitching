@@ -103,7 +103,7 @@ export default async function HazardMapPage() {
             <div className="flex flex-col gap-4 lg:w-64 lg:shrink-0">
               {/* River Alert Level Pill — sitting directly above the Layers container */}
               {river.alert_level > 0 && (
-                <div className="flex items-center gap-2 rounded-xl border border-primary-800/60 bg-primary-950/95 px-3.5 py-2.5 text-xs font-extrabold text-white shadow-xl backdrop-blur-md">
+                <div className="flex items-center justify-center gap-2 rounded-xl border border-primary-800/60 bg-primary-950/95 px-3.5 py-2.5 text-xs font-extrabold text-white shadow-xl backdrop-blur-md">
                   <span className="relative flex size-2 shrink-0">
                     <span className={
                       "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 " +
@@ -125,8 +125,12 @@ export default async function HazardMapPage() {
               <LayerToggle />
               <MapLegend />
 
-              {/* Data & map attribution — always visible including mobile */}
+              {/* Data Sources */}
               <div className="rounded-xl border border-primary-800/60 bg-primary-950/95 px-4 py-3 text-[11px] text-primary-200/60 shadow-xl backdrop-blur-md flex flex-col gap-1.5">
+                <p className="mb-1 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary-400">
+                  <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 text-primary-400"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+                  Data Sources
+                </p>
                 <div>
                   <span className="font-semibold text-white/70">Locality</span>{" "}
                   Barangay San Jose, Rodriguez (Montalban), Rizal

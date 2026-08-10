@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Map } from "lucide-react";
 
 import {
   AREA_PALETTE,
@@ -39,7 +39,8 @@ export function MapLegend({ className }: { className?: string }) {
         aria-expanded={open}
         aria-controls="map-legend-body"
       >
-        <p className="text-xs font-bold uppercase tracking-wider text-primary-400">
+        <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary-400">
+          <Map aria-hidden className="size-3.5 text-primary-400" />
           Legend
         </p>
         <span className="md:hidden text-primary-300/60">
