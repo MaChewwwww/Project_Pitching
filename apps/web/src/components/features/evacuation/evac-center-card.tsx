@@ -10,6 +10,37 @@ import type { PublicEvacCenter } from "@/lib/api/public-types";
 /**
  * An evacuation centre card (FR-PUB-008, FR-EVC-001/002/003).
  */
+const FACILITY_TYPE_LABELS: Record<string, { label: string; bg: string }> = {
+  evacuation_center: {
+    label: "Evacuation Center",
+    bg: "bg-emerald-100/90 text-emerald-800 border-emerald-300/80",
+  },
+  hospital: {
+    label: "Hospital",
+    bg: "bg-rose-100/90 text-rose-800 border-rose-300/80",
+  },
+  clinic: {
+    label: "Health Clinic",
+    bg: "bg-teal-100/90 text-teal-800 border-teal-300/80",
+  },
+  barangay_hall: {
+    label: "Barangay Hall",
+    bg: "bg-blue-100/90 text-blue-800 border-blue-300/80",
+  },
+  police: {
+    label: "Police Station",
+    bg: "bg-indigo-100/90 text-indigo-800 border-indigo-300/80",
+  },
+  fire: {
+    label: "Fire Station",
+    bg: "bg-amber-100/90 text-amber-800 border-amber-300/80",
+  },
+  rescue_station: {
+    label: "Rescue Station",
+    bg: "bg-orange-100/90 text-orange-800 border-orange-300/80",
+  },
+};
+
 export function EvacCenterCard({
   center,
   className,
@@ -27,6 +58,12 @@ export function EvacCenterCard({
   const gmapsUrl = googleMapsDirectionsUrl(lon, lat, center.facility.name);
   const osmUrl = osmDirectionsUrl(lon, lat);
 
+  const rawType = center.facility.type ?? "evacuation_center";
+  const typeMeta = FACILITY_TYPE_LABELS[rawType] ?? {
+    label: rawType.replace(/_/g, " "),
+    bg: "bg-emerald-100/90 text-emerald-800 border-emerald-300/80",
+  };
+
   return (
     <Card
       radius="xl"
@@ -39,17 +76,28 @@ export function EvacCenterCard({
       <div className="h-1.5 w-full bg-emerald-500" />
 
       <CardContent className="flex flex-col gap-2.5 p-3.5 sm:p-4">
-        {/* Header row: Name + Area pill top-right */}
-        <div className="flex items-start justify-between gap-2.5">
-          <h3 className="text-h3 group-hover:text-primary-800 font-bold text-neutral-900 transition-colors leading-snug">
-            {center.facility.name}
-          </h3>
+        {/* Badges row: Facility Type + Area pill */}
+        <div className="flex flex-wrap items-center justify-between gap-1.5">
+          <span
+            className={cn(
+              "text-[10px] font-extrabold uppercase tracking-wider border px-2 py-0.5 rounded-md shrink-0 shadow-2xs",
+              typeMeta.bg,
+            )}
+          >
+            {typeMeta.label}
+          </span>
+
           {center.facility.area_name && (
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-md shrink-0">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700 bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded-md shrink-0">
               {center.facility.area_name}
             </span>
           )}
         </div>
+
+        {/* Title */}
+        <h3 className="text-h3 group-hover:text-primary-800 font-bold text-neutral-900 transition-colors leading-snug">
+          {center.facility.name}
+        </h3>
 
         {/* Address */}
         {center.facility.address ? (
