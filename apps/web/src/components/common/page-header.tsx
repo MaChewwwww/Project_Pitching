@@ -47,7 +47,7 @@ export function PageHeader({
         aria-hidden
         className="pointer-events-none absolute -top-20 -right-20 size-80 rounded-full bg-primary-200/30 blur-3xl"
       />
-      <div className="relative mx-auto max-w-[1440px] px-4 py-7 md:px-6 md:py-10">
+      <div className="relative mx-auto max-w-[1440px] px-4 pt-5 pb-5 md:px-6 md:pt-6 md:pb-6">
         {breadcrumb && breadcrumb.length > 0 ? (
           <nav aria-label="Breadcrumb" className="mb-4.5 flex items-center">
             <ol className="-ml-1.5 inline-flex flex-wrap items-center gap-2 rounded-full border border-slate-200/90 bg-white/95 px-3.5 py-1.5 text-sm shadow-xs backdrop-blur-md">

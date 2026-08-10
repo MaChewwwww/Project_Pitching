@@ -32,7 +32,7 @@ export default async function AnnouncementsPage() {
         breadcrumb={[{ label: "Home", href: "/" }, { label: "Announcements" }]}
       />
 
-      <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-6 md:py-12">
+      <div className="mx-auto max-w-[1440px] px-4 pt-5 pb-8 md:px-6 md:pt-6 md:pb-12">
         {announcements.items.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
             {announcements.items.map((announcement, i) => (

@@ -31,7 +31,7 @@ export default async function RescuePage() {
         breadcrumb={[{ label: "Home", href: "/" }, { label: "Rescue" }]}
       />
 
-      <div className="mx-auto grid max-w-[1100px] gap-8 px-4 py-8 md:grid-cols-2 md:px-6 md:py-12">
+      <div className="mx-auto grid max-w-[1100px] gap-8 px-4 pt-5 pb-8 md:grid-cols-2 md:px-6 md:pt-6 md:pb-12">
         <div className="flex flex-col gap-4">
           <HotlineList hotlines={hotlines} layout="stack" />
           <Attribution disclaimer={["no-rescue-promise", "warning-authority"]} />

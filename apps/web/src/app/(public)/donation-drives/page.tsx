@@ -36,7 +36,7 @@ export default async function DonationDrivesPage() {
         breadcrumb={[{ label: "Home", href: "/" }, { label: "Donation Drives" }]}
       />
 
-      <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-6 md:py-12">
+      <div className="mx-auto max-w-[1440px] px-4 pt-5 pb-8 md:px-6 md:pt-6 md:pb-12">
         {open.items.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 md:gap-6">
             {open.items.map((drive, i) => (

@@ -37,7 +37,7 @@ export default async function HelpPage() {
         breadcrumb={[{ label: "Home", href: "/" }, { label: "Help & FAQs" }]}
       />
 
-      <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-6 md:py-12">
+      <div className="mx-auto max-w-[1440px] px-4 pt-5 pb-8 md:px-6 md:pt-6 md:pb-12">
         <div className="grid gap-10 lg:grid-cols-[1.6fr_1fr] lg:gap-12">
           <div>
             <FaqAccordion faqs={faqs} />
