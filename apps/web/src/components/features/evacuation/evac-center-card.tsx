@@ -44,9 +44,11 @@ const FACILITY_TYPE_LABELS: Record<string, { label: string; bg: string }> = {
 export function EvacCenterCard({
   center,
   className,
+  showTypeBadge = true,
 }: {
   center: PublicEvacCenter;
   className?: string;
+  showTypeBadge?: boolean;
 }) {
   const [lon, lat] = center.facility.location.coordinates;
   const tone = center.is_at_capacity
@@ -77,18 +79,20 @@ export function EvacCenterCard({
 
       <CardContent className="flex flex-col gap-2.5 p-3.5 sm:p-4">
         {/* Badges row: Facility Type + Area pill */}
-        <div className="flex flex-wrap items-center justify-between gap-1.5">
-          <span
-            className={cn(
-              "text-[10px] font-extrabold uppercase tracking-wider border px-2 py-0.5 rounded-md shrink-0 shadow-2xs",
-              typeMeta.bg,
-            )}
-          >
-            {typeMeta.label}
-          </span>
+        <div className="flex flex-wrap items-center justify-between gap-1.5 min-h-6">
+          {showTypeBadge ? (
+            <span
+              className={cn(
+                "text-[10px] font-extrabold uppercase tracking-wider border px-2 py-0.5 rounded-md shrink-0 shadow-2xs",
+                typeMeta.bg,
+              )}
+            >
+              {typeMeta.label}
+            </span>
+          ) : null}
 
           {center.facility.area_name && (
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700 bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded-md shrink-0">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700 bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded-md shrink-0 ml-auto">
               {center.facility.area_name}
             </span>
           )}

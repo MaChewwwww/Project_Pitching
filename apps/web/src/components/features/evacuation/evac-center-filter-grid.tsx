@@ -19,8 +19,10 @@ const AREAS = [
 
 export function EvacCenterFilterGrid({
   centers,
+  showTypeBadge = false,
 }: {
   centers: PublicEvacCenter[];
+  showTypeBadge?: boolean;
 }) {
   const [selectedArea, setSelectedArea] = React.useState<string>("All");
 
@@ -79,7 +81,7 @@ export function EvacCenterFilterGrid({
       {filteredCenters.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3 items-start">
           {filteredCenters.map((center) => (
-            <EvacCenterCard key={center.id} center={center} />
+            <EvacCenterCard key={center.id} center={center} showTypeBadge={showTypeBadge} />
           ))}
         </div>
       ) : (
