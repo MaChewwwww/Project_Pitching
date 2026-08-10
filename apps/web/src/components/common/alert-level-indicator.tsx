@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AlertCircle, AlertTriangle, ShieldAlert } from "lucide-react";
+import { AlertCircle, AlertTriangle, ShieldAlert, Zap } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { AlertLevel, RiverThresholds } from "@/lib/api/public-types";
@@ -25,24 +25,30 @@ const SEGMENTS = [
   {
     level: 1 as const,
     label: "Prepare",
-    activeBg: "bg-amber-500/10 border-amber-300/80 text-amber-950",
-    barColor: "bg-amber-500",
+    badgeText: "L1 · Prepare",
+    activeCard: "border-amber-300 bg-amber-50/80 text-amber-950 shadow-2xs",
+    activeDot: "bg-amber-500",
+    badgeColor: "bg-amber-100 text-amber-950 border-amber-300",
     icon: AlertCircle,
     key: "level_1_m" as const,
   },
   {
     level: 2 as const,
     label: "Evacuate",
-    activeBg: "bg-orange-500/15 border-orange-400 text-orange-950 shadow-2xs",
-    barColor: "bg-orange-500",
+    badgeText: "L2 · Evacuate",
+    activeCard: "border-orange-400 bg-orange-50/90 text-orange-950 shadow-2xs ring-1 ring-orange-300/50",
+    activeDot: "bg-orange-500",
+    badgeColor: "bg-orange-100 text-orange-950 border-orange-400",
     icon: AlertTriangle,
     key: "level_2_m" as const,
   },
   {
     level: 3 as const,
     label: "Forced Evac",
-    activeBg: "bg-red-500/20 border-red-500 text-red-950 shadow-xs",
-    barColor: "bg-red-600",
+    badgeText: "L3 · Forced Evac",
+    activeCard: "border-red-500 bg-red-50/90 text-red-950 shadow-xs ring-1 ring-red-400/50",
+    activeDot: "bg-red-600",
+    badgeColor: "bg-red-100 text-red-950 border-red-400",
     icon: ShieldAlert,
     key: "level_3_m" as const,
   },
@@ -62,10 +68,19 @@ export function AlertLevelIndicator({
       thresholds.level_2_m != null ||
       thresholds.level_3_m != null);
 
+  // Compute continuous gauge fill percentage: 0% -> 33% -> 66% -> 100%
+  const progressPercent = level === 0 ? 0 : level === 1 ? 33 : level === 2 ? 66 : 100;
+
   return (
     <div className={cn("flex flex-col gap-3", className)}>
+      {/* Unified Gauge Stage Container */}
       <div
-        className="grid grid-cols-3 gap-2"
+        className={cn(
+          "flex flex-col gap-3 rounded-2xl border p-3.5 transition-all duration-300 shadow-2xs",
+          onDark
+            ? "border-white/15 bg-gradient-to-b from-slate-900/80 to-slate-950/60"
+            : "border-neutral-200/90 bg-gradient-to-b from-slate-50/90 via-white to-slate-50/50"
+        )}
         role="img"
         aria-label={
           level === 0
@@ -73,60 +88,89 @@ export function AlertLevelIndicator({
             : `River alert level ${level} of 3${currentValueM != null ? `, currently ${currentValueM} metres` : ""}`
         }
       >
-        {SEGMENTS.map((segment) => {
-          const reached = level >= segment.level;
-          const isCurrent = level === segment.level;
-          const Icon = segment.icon;
+        {/* Container Header Bar */}
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-overline inline-flex items-center gap-1.5 font-bold tracking-wider text-slate-700 uppercase">
+            <Zap className="size-3.5 text-amber-500" />
+            Alert Threshold Stages
+          </span>
+          {level > 0 ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-900 border border-amber-300/60">
+              <span className="relative flex size-2 shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-amber-500" />
+              </span>
+              Stage {level} Active {currentValueM != null ? `(${currentValueM}m)` : null}
+            </span>
+          ) : (
+            <span className="text-caption font-semibold text-emerald-700">Normal Water Stage</span>
+          )}
+        </div>
 
-          return (
-            <div
-              key={segment.level}
-              className={cn(
-                "flex flex-col gap-1.5 rounded-xl border p-2.5 transition-all duration-200",
-                reached
-                  ? segment.activeBg
-                  : onDark
-                  ? "border-white/10 bg-white/5 text-neutral-400"
-                  : "border-neutral-200/60 bg-neutral-50/60 text-neutral-400"
-              )}
-            >
-              {/* Segment Progress Fill Bar */}
-              <div className="w-full bg-neutral-200/70 rounded-full h-1.5 overflow-hidden">
-                <div
-                  className={cn(
-                    "h-full rounded-full transition-all duration-500",
-                    reached ? segment.barColor : "bg-transparent"
-                  )}
-                  style={{ width: reached ? "100%" : "0%" }}
-                />
-              </div>
+        {/* Continuous Multi-Color Gauge Track */}
+        <div className="relative w-full h-2 rounded-full bg-neutral-200/80 overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-700 ease-out bg-gradient-to-r from-amber-400 via-orange-500 to-red-600"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
 
-              {/* Step Label & Active Icon */}
-              <div className="flex items-center justify-between gap-1 mt-0.5">
-                <span className="text-[11px] font-black uppercase tracking-wider">
-                  {segment.level} · {segment.label}
-                </span>
-                {reached ? (
-                  <Icon className={cn("size-3.5 shrink-0", isCurrent && "animate-pulse")} />
+        {/* 3 Step Cards Layout */}
+        <div className="grid grid-cols-3 gap-2 pt-0.5">
+          {SEGMENTS.map((segment) => {
+            const reached = level >= segment.level;
+            const isCurrent = level === segment.level;
+            const Icon = segment.icon;
+
+            return (
+              <div
+                key={segment.level}
+                className={cn(
+                  "flex flex-col gap-1.5 rounded-xl border p-2.5 transition-all duration-300",
+                  reached
+                    ? segment.activeCard
+                    : onDark
+                    ? "border-white/10 bg-white/5 text-neutral-400"
+                    : "border-neutral-200/60 bg-white/60 text-neutral-400"
+                )}
+              >
+                {/* Step Badge & Icon */}
+                <div className="flex items-center justify-between gap-1">
+                  <span
+                    className={cn(
+                      "text-[10px] font-extrabold uppercase tracking-tight rounded-md px-1.5 py-0.5 border leading-none",
+                      reached
+                        ? segment.badgeColor
+                        : "bg-neutral-100 text-neutral-500 border-neutral-200/60"
+                    )}
+                  >
+                    {segment.badgeText}
+                  </span>
+                  {reached ? (
+                    <Icon className={cn("size-3.5 shrink-0", isCurrent && "animate-pulse")} />
+                  ) : null}
+                </div>
+
+                {/* Threshold Value */}
+                {hasThresholds ? (
+                  <div className="flex items-baseline justify-between gap-1 mt-1">
+                    <span className="text-[10px] font-medium text-neutral-400 uppercase">Height</span>
+                    <span
+                      className={cn(
+                        "text-caption tabular font-black tracking-tight",
+                        reached ? "text-neutral-950" : "text-neutral-400"
+                      )}
+                    >
+                      {thresholds?.[segment.key] != null
+                        ? `${thresholds[segment.key]} m`
+                        : "—"}
+                    </span>
+                  </div>
                 ) : null}
               </div>
-
-              {/* Threshold Height */}
-              {hasThresholds ? (
-                <span
-                  className={cn(
-                    "text-caption tabular font-bold",
-                    reached ? "text-neutral-900" : "text-neutral-400"
-                  )}
-                >
-                  {thresholds?.[segment.key] != null
-                    ? `${thresholds[segment.key]} m`
-                    : "—"}
-                </span>
-              ) : null}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {!hasThresholds && explainMissingThresholds ? (
