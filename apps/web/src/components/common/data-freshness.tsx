@@ -30,6 +30,7 @@ export interface DataFreshnessProps {
   variant?: "inline" | "block";
   onDark?: boolean;
   className?: string;
+  showStaleBadge?: boolean;
 }
 
 export function DataFreshness({
@@ -43,6 +44,7 @@ export function DataFreshness({
   variant = "inline",
   onDark = false,
   className,
+  showStaleBadge = false,
 }: DataFreshnessProps) {
   const relative = useRelativeTime(observedAt, ageMinutes);
   const muted = onDark ? "text-primary-100/70" : "text-neutral-500";
@@ -58,17 +60,10 @@ export function DataFreshness({
     >
       {/* Updated Time Badge */}
       <span className={cn("text-caption inline-flex items-center gap-1.5 font-semibold shrink-0 whitespace-nowrap", muted)}>
-        {!isStale ? (
-          <span className="relative flex size-2 shrink-0">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
-          </span>
-        ) : (
-          <span className="relative flex size-2 shrink-0">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-            <span className="relative inline-flex size-2 rounded-full bg-amber-500" />
-          </span>
-        )}
+        <span className="relative flex size-2 shrink-0">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+        </span>
         <time dateTime={observedAt} title={formatPhtDateTime(observedAt)}>
           Updated {relative}
         </time>
@@ -86,8 +81,8 @@ export function DataFreshness({
         {showStation && station ? ` · ${station}` : null}
       </span>
 
-      {/* Stale Warning Badge */}
-      {isStale ? (
+      {/* Stale Warning Badge — Hidden per user request */}
+      {showStaleBadge && isStale ? (
         <span className="text-caption border-warning-border bg-warning-bg text-warning inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 font-semibold shrink-0 whitespace-nowrap">
           <TriangleAlert aria-hidden className="size-3" />
           Stale
