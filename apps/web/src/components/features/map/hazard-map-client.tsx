@@ -201,23 +201,23 @@ export function HazardMapClient({
 
   return (
     <div className="relative min-h-[420px] h-full w-full bg-slate-950 font-sans text-slate-100 overflow-hidden rounded-2xl border border-slate-800 shadow-2xl">
-      {/* Dark Command-Center Header Bar Overlay */}
-      <div className="pointer-events-none absolute left-0 right-0 top-0 z-[400] flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 px-3 py-2 sm:px-4 sm:py-2.5 backdrop-blur-md border-b border-slate-800/80">
+      {/* Green Command-Center Header Bar Overlay */}
+      <div className="pointer-events-none absolute left-0 right-0 top-0 z-[400] flex flex-wrap items-center justify-between gap-2 bg-primary-950/95 px-3 py-2 sm:px-4 sm:py-2.5 backdrop-blur-md border-b border-primary-800/60">
         <div className="flex items-center gap-2">
-          <div className="flex size-6 sm:size-7 items-center justify-center rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 shrink-0">
+          <div className="flex size-6 sm:size-7 items-center justify-center rounded-lg bg-primary-500/20 text-primary-400 border border-primary-500/30 shrink-0">
             <ShieldAlert className="size-3.5 sm:size-4" />
           </div>
           <div>
             <h2 className="text-xs sm:text-sm font-bold tracking-wide text-white leading-none">
               Barangay San Jose Hazard Map
             </h2>
-            <p className="mt-0.5 text-[10px] sm:text-[11px] text-slate-400">
+            <p className="mt-0.5 text-[10px] sm:text-[11px] text-primary-300/70">
               UP Project NOAH 5-Year Flood Inundation (Rodriguez, Rizal)
             </p>
           </div>
         </div>
 
-        {/* Top-Right Hazard Level Badges matching mockup (hidden on small mobile screens) */}
+        {/* Top-Right Hazard Level Badges (hidden on small mobile screens) */}
         <div className="hidden md:flex items-center gap-2 text-[11px] font-semibold">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-red-950/80 px-2.5 py-1 text-red-300 border border-red-800/60 shadow-sm">
             <span className="size-2 rounded-full bg-red-500" />
@@ -421,13 +421,17 @@ export function HazardMapClient({
           })}
       </MapContainer>
 
-      {/* Dark Command-Center Footer Metadata Bar Overlay (hidden on mobile, replaced by river alert pill) */}
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-[400] hidden md:flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 px-4 py-1.5 text-[11px] text-slate-400 backdrop-blur-md border-t border-slate-800/80">
+      {/* Green Command-Center Footer Metadata Bar Overlay (hidden on mobile) */}
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-[400] hidden md:flex flex-wrap items-center justify-between gap-2 bg-primary-950/95 px-4 py-1.5 text-[11px] text-primary-200/60 backdrop-blur-md border-t border-primary-800/60">
         <div>
-          Locality: <span className="font-medium text-slate-200">Barangay San Jose, Rodriguez (Montalban), Rizal</span> &middot; Data: <span className="font-medium text-sky-400">UP NOAH / UPAD (ODC-ODbL)</span>
+          Locality: <span className="font-medium text-white/80">Barangay San Jose, Rodriguez (Montalban), Rizal</span> &middot; Data: <span className="font-medium text-primary-300">UP NOAH / UPAD (ODC-ODbL)</span>
         </div>
-        <div>
-          Coordinates: <span className="font-mono text-slate-300">EPSG:4326 (WGS84)</span>
+        <div className="pointer-events-auto flex items-center gap-2">
+          Map: <a href="https://leafletjs.com" target="_blank" rel="noopener noreferrer" className="font-medium text-primary-300 hover:text-white transition-colors">Leaflet</a>
+          &middot;
+          &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="font-medium text-primary-300 hover:text-white transition-colors">OpenStreetMap</a> contributors
+          &middot;
+          &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer" className="font-medium text-primary-300 hover:text-white transition-colors">CARTO</a>
         </div>
       </div>
     </div>

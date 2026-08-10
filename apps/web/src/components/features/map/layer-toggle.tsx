@@ -21,9 +21,9 @@ export function LayerToggle({ className }: { className?: string }) {
 
   return (
     <div className={className}>
-      <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-4 text-slate-100 shadow-xl backdrop-blur-md">
-        <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-sky-400">
-          <Layers aria-hidden className="size-3.5 text-sky-400" />
+      <div className="rounded-xl border border-primary-800/60 bg-primary-950/95 p-4 text-white shadow-xl backdrop-blur-md">
+        <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary-400">
+          <Layers aria-hidden className="size-3.5 text-primary-400" />
           Layers
         </p>
 
@@ -32,13 +32,13 @@ export function LayerToggle({ className }: { className?: string }) {
           {layers.map(([key, label]) => (
             <label
               key={key}
-              className="flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-200 hover:text-white"
+              className="flex cursor-pointer items-center gap-2 text-xs font-medium text-primary-100/80 hover:text-white"
             >
               <input
                 type="checkbox"
                 checked={visible[key]}
                 onChange={() => toggle(key)}
-                className="size-3.5 rounded accent-sky-500"
+                className="size-3.5 rounded accent-primary-500"
               />
               {label}
             </label>

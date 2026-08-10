@@ -28,7 +28,7 @@ export function MapLegend({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-slate-800 bg-slate-900/90 text-slate-100 shadow-xl backdrop-blur-md",
+        "rounded-xl border border-primary-800/60 bg-primary-950/95 text-white shadow-xl backdrop-blur-md",
         className,
       )}
     >
@@ -39,10 +39,10 @@ export function MapLegend({ className }: { className?: string }) {
         aria-expanded={open}
         aria-controls="map-legend-body"
       >
-        <p className="text-xs font-bold uppercase tracking-wider text-sky-400">
+        <p className="text-xs font-bold uppercase tracking-wider text-primary-400">
           Legend
         </p>
-        <span className="md:hidden text-slate-400">
+        <span className="md:hidden text-primary-300/60">
           {open ? (
             <ChevronUp aria-hidden className="size-4" />
           ) : (
@@ -58,7 +58,7 @@ export function MapLegend({ className }: { className?: string }) {
         {/* Hazard swatches */}
         {visible.hazard && (
           <div className="mb-3">
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-primary-300/60">
               FLOOD HAZARD LAYER (NOAH)
             </p>
             <ul className="flex flex-col gap-1.5">
@@ -69,7 +69,7 @@ export function MapLegend({ className }: { className?: string }) {
                     className="size-3.5 shrink-0 rounded-sm"
                     style={{ backgroundColor: h.color, opacity: 0.9 }}
                   />
-                  <span className="text-xs text-slate-200">
+                  <span className="text-xs text-primary-100/80">
                     <span className="font-semibold">{h.label} Hazard</span> ({h.depth})
                   </span>
                 </li>
@@ -79,12 +79,12 @@ export function MapLegend({ className }: { className?: string }) {
         )}
 
         {/* Map Boundaries matching mockup — ALWAYS VISIBLE */}
-        <div className="mb-3 border-t border-slate-800 pt-3">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+        <div className="mb-3 border-t border-primary-800/60 pt-3">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-primary-300/60">
             MAP BOUNDARIES
           </p>
-          <div className="flex items-center gap-2 text-xs text-slate-200">
-            <span className="w-5 border-b-[3px] border-dashed border-blue-600" />
+          <div className="flex items-center gap-2 text-xs text-primary-100/80">
+            <span className="w-5 border-b-[3px] border-dashed border-blue-500" />
             <span>San Jose Boundary</span>
           </div>
         </div>
@@ -93,8 +93,8 @@ export function MapLegend({ className }: { className?: string }) {
 
         {/* Siren legend */}
         {visible.sirens && (
-          <div className="mt-3 border-t border-slate-800 pt-3">
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+          <div className="mt-3 border-t border-primary-800/60 pt-3">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-primary-300/60">
               SIREN UNITS
             </p>
             <ul className="flex flex-col gap-1.5">
@@ -103,14 +103,14 @@ export function MapLegend({ className }: { className?: string }) {
                   aria-hidden
                   className="size-3 shrink-0 rounded-full bg-slate-500"
                 />
-                <span className="text-xs text-slate-200">Idle Siren</span>
+                <span className="text-xs text-primary-100/80">Idle Siren</span>
               </li>
               <li className="flex items-center gap-2">
                 <span
                   aria-hidden
                   className="size-3 shrink-0 rounded-full bg-red-500 shadow-sm shadow-red-500/50"
                 />
-                <span className="text-xs text-slate-200">Sounding Siren</span>
+                <span className="text-xs text-primary-100/80">Sounding Siren</span>
               </li>
             </ul>
           </div>
