@@ -139,13 +139,6 @@ export default async function HazardMapPage() {
         </section>
 
         <section>
-          <div className="mb-6">
-            <h2 className="text-h2 text-neutral-900">Evacuation Centers</h2>
-            <p className="text-body text-neutral-600">
-              {evacCenters.length} active evacuation centers pinned on the hazard map. Select an area below to filter.
-            </p>
-          </div>
-
           <EvacCenterFilterGrid centers={evacCenters} />
         </section>
 

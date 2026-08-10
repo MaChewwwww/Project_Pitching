@@ -1,12 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Filter } from "lucide-react";
+import { ChevronDown, Filter } from "lucide-react";
 
 import { EmptyState } from "@/components/common/empty-state";
 import { EvacCenterCard } from "@/components/features/evacuation/evac-center-card";
 import type { PublicEvacCenter } from "@/lib/api/public-types";
-import { cn } from "@/lib/utils";
 
 const AREAS = [
   "All",
@@ -42,41 +41,38 @@ export function EvacCenterFilterGrid({
   }, [centers, selectedArea]);
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header filter pills bar */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200/80 pb-4">
-        <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 mr-2 flex items-center gap-1.5 shrink-0">
-          <Filter className="size-3.5 text-emerald-600" />
-          Filter by Area:
-        </span>
-        {AREAS.map((area) => {
-          const count = countsByArea[area] ?? 0;
-          const isSelected = selectedArea === area;
-          return (
-            <button
-              key={area}
-              onClick={() => setSelectedArea(area)}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 cursor-pointer",
-                isSelected
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 border border-neutral-200/60",
-              )}
-            >
-              <span>{area}</span>
-              <span
-                className={cn(
-                  "rounded-full px-1.5 py-0.2 text-[10px] font-extrabold",
-                  isSelected
-                    ? "bg-emerald-700 text-white"
-                    : "bg-neutral-200 text-neutral-600",
-                )}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
+    <div className="flex flex-col">
+      {/* Header row: Title on left, Dropdown on top-right */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-h2 text-neutral-900">Evacuation Centers</h2>
+          <p className="text-body text-neutral-600">
+            {centers.length} active evacuation centers pinned on the hazard map.
+          </p>
+        </div>
+
+        {/* Dropdown Filter Select */}
+        <div className="relative inline-flex items-center shrink-0 w-fit">
+          <Filter aria-hidden className="absolute left-3.5 size-3.5 text-emerald-600 pointer-events-none" />
+          <select
+            aria-label="Filter evacuation centers by Area"
+            value={selectedArea}
+            onChange={(e) => setSelectedArea(e.target.value)}
+            className="appearance-none rounded-xl border border-neutral-300 bg-white pl-9 pr-9 py-2 text-xs font-bold text-neutral-800 shadow-xs hover:border-emerald-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none cursor-pointer transition-all min-w-[150px]"
+          >
+            {AREAS.map((area) => {
+              const count = countsByArea[area] ?? 0;
+              const label =
+                area === "All" ? `All Areas (${count})` : `${area} (${count})`;
+              return (
+                <option key={area} value={area}>
+                  {label}
+                </option>
+              );
+            })}
+          </select>
+          <ChevronDown aria-hidden className="absolute right-3 size-3.5 text-neutral-400 pointer-events-none" />
+        </div>
       </div>
 
       {/* Centers Grid */}
@@ -97,3 +93,4 @@ export function EvacCenterFilterGrid({
     </div>
   );
 }
+
