@@ -194,19 +194,16 @@ export function WeatherPanel({
 
         {/* DOST-PAGASA Tropical Cyclone Wind Signal (TCWS #1 to #5) & Typhoon Watch Banner (2-Row Symmetrical Layout) */}
         <div className={cn(
-          "rounded-2xl border p-3 flex flex-col gap-2 bg-gradient-to-r transition-all duration-300 shadow-2xs mt-auto",
+          "rounded-2xl border p-2.5 flex flex-col gap-2 bg-gradient-to-r transition-all duration-300 shadow-2xs mt-auto",
           tcwsInfo.bgGradient,
           signalLevel > 0 ? "border-amber-300 shadow-xs" : "border-emerald-200/80"
         )}>
-          {/* Row 1: Title, Station & Signal Badge */}
-          <div className="flex items-center justify-between gap-2">
+          {/* Row 1: Title & Signal Badge */}
+          <div className="flex items-center justify-between gap-2 px-3 pt-1">
             <div className="flex items-center gap-2 min-w-0">
               <ShieldAlert className={cn("size-4 shrink-0", signalLevel > 0 ? "text-amber-600" : "text-emerald-600")} />
               <span className="text-overline font-black uppercase tracking-wider text-neutral-900 truncate">
                 DOST-PAGASA Tropical Cyclone Wind Signal (TCWS)
-              </span>
-              <span className="text-[10px] text-neutral-500 font-medium italic hidden md:inline shrink-0">
-                • Station: Province of Rizal
               </span>
             </div>
             <span className={cn("text-[10px] px-2.5 py-0.5 rounded-full border shadow-2xs font-extrabold uppercase shrink-0", tcwsInfo.badgeBg)}>
