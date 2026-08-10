@@ -38,7 +38,7 @@ const SEGMENTS = [
   },
   {
     level: 3 as const,
-    label: "Forced Evacuation",
+    label: "Critical",
     activeCard: "border-red-500 bg-red-50/90 text-red-950 shadow-xs ring-1 ring-red-400/50",
     icon: ShieldAlert,
     key: "level_3_m" as const,
