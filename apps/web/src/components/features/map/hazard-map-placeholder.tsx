@@ -94,10 +94,6 @@ export function HazardMapPlaceholder({
             interactive={false}
             className="h-full w-full min-h-[390px]"
           />
-          <span className="text-caption absolute top-4 left-4 z-[600] rounded-full border border-white/20 bg-slate-900/85 px-3.5 py-1.5 font-extrabold text-emerald-400 backdrop-blur-md shadow-md flex items-center gap-2">
-            <span className="size-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            Barangay San Jose Flood Overview
-          </span>
         </div>
 
         {/* Right Panel: 2-Column Split (Column 1: Legend with vertical dots | Column 2: Metrics) */}
