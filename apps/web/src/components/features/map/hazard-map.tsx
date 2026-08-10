@@ -28,26 +28,28 @@ const HazardMapClientDynamic = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="animate-pulse h-full w-full bg-neutral-100 rounded-xl flex items-center justify-center">
-        <span className="text-sm text-neutral-400">Loading map…</span>
+      <div className="animate-pulse h-full w-full bg-slate-950 rounded-xl flex items-center justify-center min-h-[340px]">
+        <span className="text-sm font-medium text-slate-400">Loading map preview…</span>
       </div>
     ),
   },
 );
 
-interface HazardMapProps {
-  facilities: PublicFacility[];
-  areaBoundaries: AreaBoundaryFeature[];
-  areaStats: PublicAreaStat[];
-  sirens: PublicSiren[];
+export interface HazardMapProps {
+  facilities?: PublicFacility[];
+  areaBoundaries?: AreaBoundaryFeature[];
+  areaStats?: PublicAreaStat[];
+  sirens?: PublicSiren[];
+  interactive?: boolean;
   className?: string;
 }
 
 export function HazardMap({
-  facilities,
-  areaBoundaries,
-  areaStats,
-  sirens,
+  facilities = [],
+  areaBoundaries = [],
+  areaStats = [],
+  sirens = [],
+  interactive = true,
   className,
 }: HazardMapProps) {
   return (
@@ -57,6 +59,7 @@ export function HazardMap({
         areaBoundaries={areaBoundaries}
         areaStats={areaStats}
         sirens={sirens}
+        interactive={interactive}
       />
     </div>
   );

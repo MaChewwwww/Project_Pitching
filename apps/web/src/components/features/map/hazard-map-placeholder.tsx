@@ -3,7 +3,7 @@ import { Layers, MapPin } from "lucide-react";
 
 import { Attribution } from "@/components/common/attribution";
 import { Badge } from "@/components/common/badge";
-import { BarangayIsometric } from "@/components/features/public/illustrations/barangay-isometric";
+import { HazardMap } from "@/components/features/map/hazard-map";
 import { RiverLevelPanel } from "@/components/features/weather/river-level-panel";
 import { cn } from "@/lib/utils";
 import type {
@@ -13,11 +13,10 @@ import type {
 } from "@/lib/api/public-types";
 
 /**
- * The hazard map slot, before the real map exists.
+ * The hazard map overview card on the public landing page.
  *
- * Deliberately **not** a fake map: it is the legend, the area exposure
- * table, the facility count, disclaimers, and the live river level overlay,
- * over the isometric barangay illustration.
+ * Renders a non-interactable preview showing the Barangay San Jose outer boundary
+ * and 5-year flood hazard risk layer, alongside the river level gauge overlay and legend.
  */
 
 const HAZARD_LEGEND = [
@@ -51,14 +50,18 @@ export function HazardMapPlaceholder({
       )}
     >
       <div className="grid lg:grid-cols-[1.4fr_1fr]">
-        <div className="from-primary-700 via-primary-800 to-primary-950 relative flex min-h-[340px] items-center justify-center bg-gradient-to-br p-6">
-          <BarangayIsometric className="h-auto w-full max-w-lg" />
-          <span className="text-caption absolute top-4 left-4 rounded-full border border-white/10 bg-white/15 px-3 py-1 font-semibold text-white backdrop-blur-md">
-            Interactive map coming with mapping module
+        <div className="relative flex min-h-[360px] h-full w-full items-center justify-center bg-slate-950 p-0 overflow-hidden">
+          <HazardMap
+            interactive={false}
+            className="h-full w-full min-h-[360px]"
+          />
+          <span className="text-caption absolute top-4 left-4 z-[600] rounded-full border border-white/20 bg-slate-900/80 px-3 py-1 font-bold text-emerald-400 backdrop-blur-md shadow-md flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Barangay San Jose Flood Overview
           </span>
 
           {river ? (
-            <div className="pointer-events-none absolute inset-x-4 bottom-4 z-10 flex justify-end md:inset-x-6 md:bottom-6">
+            <div className="pointer-events-none absolute inset-x-4 bottom-4 z-[600] flex justify-end md:inset-x-6 md:bottom-6">
               <div className="pointer-events-auto w-full max-w-[17rem]">
                 <RiverLevelPanel river={river} onDark density="compact" />
               </div>

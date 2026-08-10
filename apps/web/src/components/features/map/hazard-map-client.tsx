@@ -190,20 +190,22 @@ interface FacilityWithCapacity extends PublicFacility {
 }
 
 export interface HazardMapClientProps {
-  areaBoundaries: AreaBoundaryFeature[];
-  facilities: PublicFacility[];
-  areaStats: PublicAreaStat[];
-  sirens: PublicSiren[];
+  areaBoundaries?: AreaBoundaryFeature[];
+  facilities?: PublicFacility[];
+  areaStats?: PublicAreaStat[];
+  sirens?: PublicSiren[];
+  interactive?: boolean;
 }
 
 export function HazardMapClient({
-  areaBoundaries,
-  facilities,
-  areaStats,
-  sirens,
+  areaBoundaries = [],
+  facilities = [],
+  areaStats = [],
+  sirens = [],
+  interactive = true,
 }: HazardMapClientProps) {
   const { visible } = useMapLayers();
-  const hazard = useHazardGeoJson(visible.hazard);
+  const hazard = useHazardGeoJson(interactive ? visible.hazard : true);
 
   React.useEffect(() => {
     ensureRippleStyle();
@@ -220,16 +222,22 @@ export function HazardMapClient({
   }, [areaStats]);
 
   return (
-    <div className="relative min-h-[420px] h-full w-full bg-slate-950 font-sans text-slate-100 overflow-hidden rounded-2xl border border-slate-800 shadow-2xl">
+    <div className="relative min-h-[340px] h-full w-full bg-slate-950 font-sans text-slate-100 overflow-hidden rounded-2xl border border-slate-800 shadow-2xl">
       {/* Leaflet Map Canvas */}
       <MapContainer
         center={BARANGAY_VIEW.center}
         zoom={BARANGAY_VIEW.zoom}
         minZoom={BARANGAY_VIEW.minZoom}
         maxZoom={BARANGAY_VIEW.maxZoom}
-        className="h-full w-full min-h-[420px]"
-        style={{ height: "100%", width: "100%", minHeight: "420px" }}
-        scrollWheelZoom={true}
+        className="h-full w-full min-h-[340px]"
+        style={{ height: "100%", width: "100%", minHeight: "340px" }}
+        scrollWheelZoom={interactive}
+        dragging={interactive}
+        touchZoom={interactive}
+        doubleClickZoom={interactive}
+        zoomControl={interactive}
+        keyboard={interactive}
+        boxZoom={interactive}
         attributionControl={false}
       >
         <MapPanes />
@@ -239,7 +247,7 @@ export function HazardMapClient({
         <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} />
 
         {/* Hazard flood layer — visual background only */}
-        {visible.hazard && hazard.status === "ready" && (
+        {hazard.status === "ready" && (
           <GeoJSON
             key="hazard"
             data={hazard.data as GeoJSON.GeoJsonObject}
@@ -268,7 +276,7 @@ export function HazardMapClient({
         />
 
         {/* Area List / Boundaries Shading — SHOWN ONLY WHEN 'Area list' IS CHECKED */}
-        {visible.areas && areaBoundaries.length > 0 && (
+        {interactive && visible.areas && areaBoundaries.length > 0 && (
           <GeoJSON
             key="areas-distinct-shading"
             data={{ type: "FeatureCollection", features: areaBoundaries } as GeoJSON.GeoJsonObject}
@@ -344,7 +352,7 @@ export function HazardMapClient({
         )}
 
         {/* Evacuation Center markers — ALWAYS ON TOP MOST LAYER (Filtered to evacuation_center type only) */}
-        {visible.facilities &&
+        {interactive && visible.facilities &&
           facilities
             .filter((facility) => facility.type === "evacuation_center")
             .map((facility) => {
@@ -466,7 +474,7 @@ export function HazardMapClient({
           })}
 
         {/* Siren markers — ALWAYS ON TOP MOST LAYER */}
-        {visible.sirens &&
+        {interactive && visible.sirens &&
           sirens.map((siren) => {
             const [lon, lat] = siren.location.coordinates;
             const isSounding = siren.status === "sounding";
