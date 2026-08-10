@@ -6,6 +6,7 @@
 | ------------------------- | ---------------------- | -------------------- | ----------- |
 | `fetch_weather`           | every 20 min           | `reading`            | FR-WX-003   |
 | `fetch_river_level`       | every 15 min           | `reading`            | FR-WX-008   |
+| `fetch_tcws_signal`       | every 30 min           | `reading`            | FR-WX-008   |
 | `evaluate_thresholds`     | after each river fetch | `alert_prompt`       | FR-WX-009   |
 | `flag_stale_records`      | daily 02:00            | `household.stale_at` | R-2         |
 | `send_activity_reminders` | daily 08:00            | `notification`       | FR-ACT-005  |

@@ -244,7 +244,7 @@ erDiagram
 | Column                                       | Notes                                                     |
 | -------------------------------------------- | --------------------------------------------------------- |
 | `source`                                     | `open_meteo` · `pagasa` · `manual`                        |
-| `metric`                                     | `river_level` · `rainfall` · `temperature` · `heat_index` |
+| `metric`                                     | `river_level` · `rainfall` · `temperature` · `humidity` · `heat_index` · `precipitation_probability` · `tcws_signal` |
 | `value`, `unit`, `observed_at`, `fetched_at` | Both timestamps — the gap _is_ the staleness (FR-WX-011)  |
 | `raw`                                        | `JSONB` payload, kept for debugging a broken parser       |
 
@@ -570,6 +570,7 @@ Single-replica `cron` container. Jobs are plain Python functions invoked by the 
 | ------------------------- | ---------------------- | -------------------- | ----------- |
 | `fetch_weather`           | 20 min                 | `reading`            | FR-WX-003   |
 | `fetch_river_level`       | 15 min                 | `reading`            | FR-WX-008   |
+| `fetch_tcws_signal`       | 30 min                 | `reading`            | FR-WX-008   |
 | `evaluate_thresholds`     | after each river fetch | `alert_prompt`       | FR-WX-009   |
 | `flag_stale_records`      | daily 02:00            | `household.stale_at` | R-2         |
 | `send_activity_reminders` | daily 08:00            | `notification`       | FR-ACT-005  |

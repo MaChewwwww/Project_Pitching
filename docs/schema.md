@@ -462,7 +462,7 @@ ALTER TABLE feedback ADD CONSTRAINT chk_drafted_requires_review
 | -------------------- | ------------- | ---------------------- | ---------------------------------------------------------------------------------------------------- |
 | `id`                 | BIGSERIAL     | PK                     | High volume                                                                                          |
 | `source`             | TEXT          | NOT NULL CHECK         | `open_meteo` · `pagasa` · `manual`                                                                   |
-| `metric`             | TEXT          | NOT NULL CHECK         | `river_level` · `rainfall` · `temperature` · `humidity` · `heat_index` · `precipitation_probability` |
+| `metric`             | TEXT          | NOT NULL CHECK         | `river_level` · `rainfall` · `temperature` · `humidity` · `heat_index` · `precipitation_probability` · `tcws_signal` |
 | `value`              | NUMERIC(10,3) | NOT NULL               |                                                                                                      |
 | `unit`               | TEXT          | NOT NULL               | `m`, `mm`, `°C`, `%`                                                                                 |
 | `station`            | TEXT          |                        | PAGASA station name                                                                                  |
