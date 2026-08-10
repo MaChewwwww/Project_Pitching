@@ -205,7 +205,7 @@ export function HazardMapPlaceholder({
                       Survey Scope
                     </span>
                     <span className="text-xs font-extrabold text-neutral-900 truncate">
-                      {areas.length} Mapped Areas
+                      Barangay San Jose
                     </span>
                   </div>
                 </div>
