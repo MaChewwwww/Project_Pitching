@@ -16,7 +16,6 @@ import type { PathOptions } from "leaflet";
 
 import { useHazardGeoJson } from "@/lib/hazard-geojson";
 import "@/lib/leaflet-setup";
-import { ShieldAlert } from "lucide-react";
 import {
   BARANGAY_VIEW,
   BOUNDARY_LINE_STYLE,
@@ -200,39 +199,6 @@ export function HazardMapClient({
   }, [areaStats]);
 
   return (
-    <div className="relative min-h-[420px] h-full w-full bg-slate-950 font-sans text-slate-100 overflow-hidden rounded-2xl border border-slate-800 shadow-2xl">
-      {/* Green Command-Center Header Bar Overlay */}
-      <div className="pointer-events-none absolute left-0 right-0 top-0 z-[400] flex flex-wrap items-center justify-between gap-2 bg-primary-950/95 px-3 py-2 sm:px-4 sm:py-2.5 backdrop-blur-md border-b border-primary-800/60">
-        <div className="flex items-center gap-2">
-          <div className="flex size-6 sm:size-7 items-center justify-center rounded-lg bg-primary-500/20 text-primary-400 border border-primary-500/30 shrink-0">
-            <ShieldAlert className="size-3.5 sm:size-4" />
-          </div>
-          <div>
-            <h2 className="text-xs sm:text-sm font-bold tracking-wide text-white leading-none">
-              Barangay San Jose Hazard Map
-            </h2>
-            <p className="mt-0.5 text-[10px] sm:text-[11px] text-primary-300/70">
-              UP Project NOAH 5-Year Flood Inundation (Rodriguez, Rizal)
-            </p>
-          </div>
-        </div>
-
-        {/* Top-Right Hazard Level Badges (hidden on small mobile screens) */}
-        <div className="hidden md:flex items-center gap-2 text-[11px] font-semibold">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-950/80 px-2.5 py-1 text-red-300 border border-red-800/60 shadow-sm">
-            <span className="size-2 rounded-full bg-red-500" />
-            High Hazard (&gt;1.5m)
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-950/80 px-2.5 py-1 text-amber-300 border border-amber-800/60 shadow-sm">
-            <span className="size-2 rounded-full bg-amber-500" />
-            Medium Hazard (0.5–1.5m)
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-950/80 px-2.5 py-1 text-yellow-300 border border-yellow-800/60 shadow-sm">
-            <span className="size-2 rounded-full bg-yellow-400" />
-            Low Hazard (0–0.5m)
-          </span>
-        </div>
-      </div>
 
       {/* Leaflet Map Canvas */}
       <MapContainer
