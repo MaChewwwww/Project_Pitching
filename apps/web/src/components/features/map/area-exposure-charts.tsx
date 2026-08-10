@@ -74,9 +74,9 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
   const medPctOverall = overallTotal ? Math.round((totalMed / overallTotal) * 100) : 0;
   const highPctOverall = overallTotal ? Math.max(0, 100 - lowPctOverall - medPctOverall) : 0;
 
-  // Donut SVG circumference math (radius 48)
-  const radius = 48;
-  const circum = 2 * Math.PI * radius; // ~301.59
+  // Donut SVG circumference math (radius 44, center 80, 80)
+  const radius = 44;
+  const circum = 2 * Math.PI * radius; // ~276.46
   const strokeDashLow = (lowPctOverall / 100) * circum;
   const strokeDashMed = (medPctOverall / 100) * circum;
   const strokeDashHigh = (highPctOverall / 100) * circum;
@@ -85,22 +85,27 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
   const strokeOffsetMed = -strokeDashLow;
   const strokeOffsetHigh = -(strokeDashLow + strokeDashMed);
 
-  // Math for Pie slice label midpoints
+  // Math for Pie slice label midpoints (Center = 80, 80)
   const lowMidAngle = ((0 + lowPctOverall / 2) / 100) * 360 - 90;
   const medMidAngle = ((lowPctOverall + medPctOverall / 2) / 100) * 360 - 90;
   const highMidAngle = ((lowPctOverall + medPctOverall + highPctOverall / 2) / 100) * 360 - 90;
 
-  const getPieLabelPos = (deg: number, r: number = 48) => {
+  const getPiePoint = (deg: number, r: number) => {
     const rad = (deg * Math.PI) / 180;
     return {
-      x: 60 + r * Math.cos(rad),
-      y: 60 + r * Math.sin(rad),
+      x: 80 + r * Math.cos(rad),
+      y: 80 + r * Math.sin(rad),
     };
   };
 
-  const posLow = getPieLabelPos(lowMidAngle);
-  const posMed = getPieLabelPos(medMidAngle);
-  const posHigh = getPieLabelPos(highMidAngle);
+  const lowPInner = getPiePoint(lowMidAngle, 51);
+  const lowPOuter = getPiePoint(lowMidAngle, 64);
+
+  const medPInner = getPiePoint(medMidAngle, 51);
+  const medPOuter = getPiePoint(medMidAngle, 64);
+
+  const highPInner = getPiePoint(highMidAngle, 51);
+  const highPOuter = getPiePoint(highMidAngle, 64);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch relative">
@@ -219,90 +224,134 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
           </p>
         </div>
 
-        {/* Donut Gauge Visual with Direct Percentage Slice Labels */}
+        {/* Donut Gauge Visual with External Pointer Lines & Black Percentage Labels */}
         <div className="flex items-center justify-center py-1">
           <div className="relative size-44 flex items-center justify-center">
-            <svg className="size-full -rotate-90" viewBox="0 0 120 120">
-              {/* Background Ring */}
-              <circle
-                cx="60"
-                cy="60"
-                r={radius}
-                fill="none"
-                stroke="#f1f5f9"
-                strokeWidth="16"
-              />
-              {/* Low Risk Arc */}
-              <circle
-                cx="60"
-                cy="60"
-                r={radius}
-                fill="none"
-                stroke="#10B981"
-                strokeWidth="16"
-                strokeDasharray={`${strokeDashLow} ${circum - strokeDashLow}`}
-                strokeDashoffset={strokeOffsetLow}
-                className="transition-all duration-500"
-              />
-              {/* Medium Risk Arc */}
-              <circle
-                cx="60"
-                cy="60"
-                r={radius}
-                fill="none"
-                stroke="#F59E0B"
-                strokeWidth="16"
-                strokeDasharray={`${strokeDashMed} ${circum - strokeDashMed}`}
-                strokeDashoffset={strokeOffsetMed}
-                className="transition-all duration-500"
-              />
-              {/* High Risk Arc */}
-              <circle
-                cx="60"
-                cy="60"
-                r={radius}
-                fill="none"
-                stroke="#EF4444"
-                strokeWidth="16"
-                strokeDasharray={`${strokeDashHigh} ${circum - strokeDashHigh}`}
-                strokeDashoffset={strokeOffsetHigh}
-                className="transition-all duration-500"
-              />
+            <svg className="size-full" viewBox="0 0 160 160">
+              {/* Rotated Donut Arcs */}
+              <g className="-rotate-90 origin-center">
+                {/* Background Ring */}
+                <circle
+                  cx="80"
+                  cy="80"
+                  r={radius}
+                  fill="none"
+                  stroke="#f1f5f9"
+                  strokeWidth="14"
+                />
+                {/* Low Risk Arc */}
+                <circle
+                  cx="80"
+                  cy="80"
+                  r={radius}
+                  fill="none"
+                  stroke="#10B981"
+                  strokeWidth="14"
+                  strokeDasharray={`${strokeDashLow} ${circum - strokeDashLow}`}
+                  strokeDashoffset={strokeOffsetLow}
+                  className="transition-all duration-500"
+                />
+                {/* Medium Risk Arc */}
+                <circle
+                  cx="80"
+                  cy="80"
+                  r={radius}
+                  fill="none"
+                  stroke="#F59E0B"
+                  strokeWidth="14"
+                  strokeDasharray={`${strokeDashMed} ${circum - strokeDashMed}`}
+                  strokeDashoffset={strokeOffsetMed}
+                  className="transition-all duration-500"
+                />
+                {/* High Risk Arc */}
+                <circle
+                  cx="80"
+                  cy="80"
+                  r={radius}
+                  fill="none"
+                  stroke="#EF4444"
+                  strokeWidth="14"
+                  strokeDasharray={`${strokeDashHigh} ${circum - strokeDashHigh}`}
+                  strokeDashoffset={strokeOffsetHigh}
+                  className="transition-all duration-500"
+                />
+              </g>
 
-              {/* Direct Percentage Slice Labels (Rotated back to upright) */}
-              <g className="rotate-90 origin-center pointer-events-none">
+              {/* External Pointer Lines & Black Text Labels */}
+              <g className="pointer-events-none">
+                {/* Low Risk Callout Pointer & Label */}
                 {lowPctOverall > 0 && (
-                  <text
-                    x={posLow.x}
-                    y={posLow.y}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    className="fill-white text-[10px] font-black drop-shadow-xs"
-                  >
-                    {lowPctOverall}%
-                  </text>
+                  <>
+                    <line
+                      x1={lowPInner.x}
+                      y1={lowPInner.y}
+                      x2={lowPOuter.x}
+                      y2={lowPOuter.y}
+                      stroke="#64748b"
+                      strokeWidth="1.2"
+                      strokeLinecap="round"
+                    />
+                    <circle cx={lowPInner.x} cy={lowPInner.y} r="2" fill="#0f172a" />
+                    <text
+                      x={lowPOuter.x + (lowPOuter.x >= 80 ? 6 : -6)}
+                      y={lowPOuter.y}
+                      textAnchor={lowPOuter.x >= 80 ? "start" : "end"}
+                      dominantBaseline="central"
+                      className="fill-slate-900 text-[11px] font-black"
+                    >
+                      {lowPctOverall}%
+                    </text>
+                  </>
                 )}
+
+                {/* Medium Risk Callout Pointer & Label */}
                 {medPctOverall > 0 && (
-                  <text
-                    x={posMed.x}
-                    y={posMed.y}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    className="fill-white text-[10px] font-black drop-shadow-xs"
-                  >
-                    {medPctOverall}%
-                  </text>
+                  <>
+                    <line
+                      x1={medPInner.x}
+                      y1={medPInner.y}
+                      x2={medPOuter.x}
+                      y2={medPOuter.y}
+                      stroke="#64748b"
+                      strokeWidth="1.2"
+                      strokeLinecap="round"
+                    />
+                    <circle cx={medPInner.x} cy={medPInner.y} r="2" fill="#0f172a" />
+                    <text
+                      x={medPOuter.x}
+                      y={medPOuter.y + (medPOuter.y >= 80 ? 8 : -8)}
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      className="fill-slate-900 text-[11px] font-black"
+                    >
+                      {medPctOverall}%
+                    </text>
+                  </>
                 )}
+
+                {/* High Risk Callout Pointer & Label */}
                 {highPctOverall > 0 && (
-                  <text
-                    x={posHigh.x}
-                    y={posHigh.y}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    className="fill-white text-[10px] font-black drop-shadow-xs"
-                  >
-                    {highPctOverall}%
-                  </text>
+                  <>
+                    <line
+                      x1={highPInner.x}
+                      y1={highPInner.y}
+                      x2={highPOuter.x}
+                      y2={highPOuter.y}
+                      stroke="#64748b"
+                      strokeWidth="1.2"
+                      strokeLinecap="round"
+                    />
+                    <circle cx={highPInner.x} cy={highPInner.y} r="2" fill="#0f172a" />
+                    <text
+                      x={highPOuter.x + (highPOuter.x >= 80 ? 6 : -6)}
+                      y={highPOuter.y}
+                      textAnchor={highPOuter.x >= 80 ? "start" : "end"}
+                      dominantBaseline="central"
+                      className="fill-slate-900 text-[11px] font-black"
+                    >
+                      {highPctOverall}%
+                    </text>
+                  </>
                 )}
               </g>
             </svg>
@@ -379,7 +428,7 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
           </div>
         </div>
 
-        {/* Priority Insights Banner — GREEN Theme (FR-WX & DRRM) */}
+        {/* Priority Insights Banner — SAGIP Priority Insights */}
         <div className="rounded-xl border border-emerald-200/80 bg-gradient-to-r from-emerald-50/90 via-teal-50/40 to-emerald-50/90 p-2.5 text-xs flex flex-col gap-2 shadow-2xs mt-1">
           <div className="flex items-center justify-between font-bold text-emerald-900 border-b border-emerald-200/60 pb-1">
             <span className="inline-flex items-center gap-1.5 text-emerald-800 uppercase tracking-wider text-[10px] font-black">
