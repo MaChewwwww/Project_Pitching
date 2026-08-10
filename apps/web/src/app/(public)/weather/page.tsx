@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/common/page-header";
 import { RiverLevelPanel } from "@/components/features/weather/river-level-panel";
 import { WeatherPanel } from "@/components/features/weather/weather-panel";
+import { FloodHistoryVisualizer } from "@/components/features/weather/flood-history-visualizer";
 import { formatNumber, formatPhtDate } from "@/lib/format";
 import { getFloodEvents, getRiverLevel, getWeatherCurrent } from "@/lib/api/public";
 
@@ -55,6 +56,9 @@ export default async function WeatherPage() {
               barangay plan since has been measured against. Automatically updated during active flood emergency events.
             </p>
           </div>
+
+          {/* Visualization Section: Metrics & Interactive Charts First */}
+          <FloodHistoryVisualizer events={floods.items} />
 
           {floods.items.length > 0 ? (
             <ul className="flex flex-col gap-4">
