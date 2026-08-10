@@ -92,6 +92,8 @@ export function HazardMapPlaceholder({
         <div className="relative flex h-[390px] lg:h-full w-full items-center justify-center bg-slate-950 p-0 overflow-hidden">
           <HazardMap
             interactive={false}
+            center={[14.7410, 121.1315]}
+            zoom={14.8}
             className="h-full w-full min-h-[390px]"
           />
         </div>
