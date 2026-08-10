@@ -31,65 +31,63 @@ export function EvacCenterCard({
     <Card
       radius="xl"
       className={cn(
-        "group card-hover-lift hover:border-primary-400 relative flex h-full flex-col overflow-hidden border border-neutral-200/80 bg-white transition-all duration-200 hover:shadow-md",
+        "group card-hover-lift hover:border-primary-400 relative flex flex-col overflow-hidden border border-neutral-200/80 bg-white transition-all duration-200 hover:shadow-md",
         className,
       )}
     >
       {/* Top accent bar */}
       <div className="h-1.5 w-full bg-emerald-500" />
 
-      <CardContent className="flex flex-1 flex-col justify-between gap-3 p-4 sm:p-5">
-        <div className="flex flex-col gap-2.5">
-          {/* Header row: Name + Area pill top-right */}
-          <div className="flex items-start justify-between gap-2.5">
-            <h3 className="text-h3 group-hover:text-primary-800 font-bold text-neutral-900 transition-colors leading-snug">
-              {center.facility.name}
-            </h3>
-            {center.facility.area_name && (
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-md shrink-0">
-                {center.facility.area_name}
-              </span>
-            )}
-          </div>
-
-          {/* Address */}
-          {center.facility.address ? (
-            <span className="text-body-sm inline-flex items-start gap-1.5 font-medium text-neutral-600">
-              <MapPin aria-hidden className="text-primary-600 mt-0.5 size-4 shrink-0" />
-              <span className="leading-snug">{center.facility.address}</span>
+      <CardContent className="flex flex-col gap-2.5 p-3.5 sm:p-4">
+        {/* Header row: Name + Area pill top-right */}
+        <div className="flex items-start justify-between gap-2.5">
+          <h3 className="text-h3 group-hover:text-primary-800 font-bold text-neutral-900 transition-colors leading-snug">
+            {center.facility.name}
+          </h3>
+          {center.facility.area_name && (
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-md shrink-0">
+              {center.facility.area_name}
             </span>
-          ) : null}
-
-          {/* Occupancy meter */}
-          {center.capacity != null ? (
-            <div className="flex flex-col gap-2 rounded-xl border border-neutral-100 bg-neutral-50/70 p-3">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-overline inline-flex items-center gap-1.5 font-bold tracking-wider text-neutral-600">
-                  <Users aria-hidden className="text-primary-600 size-3.5" />
-                  Occupancy
-                </span>
-                <span className="text-body-sm tabular font-bold text-neutral-900">
-                  {formatNumber(center.occupancy)}{" "}
-                  <span className="font-normal text-neutral-500">
-                    / {formatNumber(center.capacity)} people
-                  </span>
-                </span>
-              </div>
-              <MeterBar
-                value={center.occupancy}
-                max={center.capacity}
-                tone={tone}
-                label={`Occupancy at ${center.facility.name}`}
-                valueText={`${center.occupancy} of ${center.capacity} people`}
-              />
-            </div>
-          ) : (
-            <p className="text-caption text-neutral-500">Capacity not yet recorded.</p>
           )}
         </div>
 
+        {/* Address */}
+        {center.facility.address ? (
+          <span className="text-body-sm inline-flex items-start gap-1.5 font-medium text-neutral-600">
+            <MapPin aria-hidden className="text-primary-600 mt-0.5 size-4 shrink-0" />
+            <span className="leading-snug">{center.facility.address}</span>
+          </span>
+        ) : null}
+
+        {/* Occupancy meter */}
+        {center.capacity != null ? (
+          <div className="flex flex-col gap-2 rounded-xl border border-neutral-100 bg-neutral-50/70 p-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-overline inline-flex items-center gap-1.5 font-bold tracking-wider text-neutral-600">
+                <Users aria-hidden className="text-primary-600 size-3.5" />
+                Occupancy
+              </span>
+              <span className="text-body-sm tabular font-bold text-neutral-900">
+                {formatNumber(center.occupancy)}{" "}
+                <span className="font-normal text-neutral-500">
+                  / {formatNumber(center.capacity)} people
+                </span>
+              </span>
+            </div>
+            <MeterBar
+              value={center.occupancy}
+              max={center.capacity}
+              tone={tone}
+              label={`Occupancy at ${center.facility.name}`}
+              valueText={`${center.occupancy} of ${center.capacity} people`}
+            />
+          </div>
+        ) : (
+          <p className="text-caption text-neutral-500">Capacity not yet recorded.</p>
+        )}
+
         {/* Buttons row — compact and aligned */}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 pt-2.5">
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 pt-2.5">
           <a
             href={gmapsUrl}
             target="_blank"

@@ -81,7 +81,7 @@ export function EvacCenterFilterGrid({
 
       {/* Centers Grid */}
       {filteredCenters.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3 items-start">
           {filteredCenters.map((center) => (
             <EvacCenterCard key={center.id} center={center} />
           ))}
