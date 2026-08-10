@@ -46,3 +46,8 @@ known-first-party = ["src"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.pyright]
+pythonpath = ["."]
+extraPaths = ["."]
+

@@ -11,10 +11,11 @@ never their `models.py` — because nothing here owns data of its own.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.modules.analytics.schemas import PublicAreaStat, PublicBarangayStats
+from src.modules.analytics.schemas import FloodExposure, PublicAreaStat, PublicBarangayStats
 from src.modules.config import service as config_service
 from src.modules.evacuation import service as evacuation_service
 from src.modules.geo import service as geo_service
@@ -53,7 +54,7 @@ async def get_area_stats(session: AsyncSession) -> PublicBarangayStats:
                 area_id=a.id,
                 area_name=a.name,
                 area_code=a.code,
-                flood_exposure=a.flood_exposure,
+                flood_exposure=cast(FloodExposure | None, a.flood_exposure),
                 registered_households=reg_h,
                 registered_members=household_member_by_area.get(a.id, (0, 0))[1],
                 evac_center_count=evac_by_area.get(a.id, 0),
