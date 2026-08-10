@@ -135,60 +135,62 @@ export function WeatherPanel({
         </div>
 
         {/* Dual-Metric Hourly Prediction & Chance of Rain Strip */}
-        <div className="flex flex-col gap-3 rounded-2xl border border-sky-100 bg-gradient-to-b from-sky-50/50 to-indigo-50/20 p-4">
-          <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 rounded-2xl border border-sky-100 bg-gradient-to-b from-sky-50/50 to-indigo-50/20 p-3.5 sm:p-4">
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
             <span className="text-overline inline-flex items-center gap-1.5 font-bold tracking-wider text-sky-900 uppercase">
-              <Umbrella className="size-4 text-sky-600" />
-              Hourly Prediction &amp; Rain Chance
+              <Umbrella className="size-4 text-sky-600 shrink-0" />
+              <span className="truncate">Hourly Prediction &amp; Rain Chance</span>
             </span>
-            <span className="inline-flex items-center gap-1 rounded-md bg-sky-100/90 px-2 py-0.5 text-caption font-bold text-sky-800 border border-sky-200/60 shadow-2xs">
+            <span className="inline-flex items-center gap-1 rounded-md bg-sky-100/90 px-2 py-0.5 text-caption font-bold text-sky-800 border border-sky-200/60 shadow-2xs shrink-0">
               <Clock className="size-3 text-sky-600" />
               Next 18 Hours
             </span>
           </div>
 
-          <div className="flex h-36 items-end gap-2 pt-2">
-            {hourlyForecast.map((item, i) => {
-              const hour = new Intl.DateTimeFormat("en-PH", {
-                timeZone: "Asia/Manila",
-                hour: "numeric",
-                hour12: true,
-              }).format(new Date(item.timeIso));
+          <div className="overflow-x-auto scrollbar-none pt-2 -mx-1 px-1 sm:mx-0 sm:px-0">
+            <div className="flex h-36 items-end gap-1.5 sm:gap-2 min-w-[310px] sm:min-w-0">
+              {hourlyForecast.map((item, i) => {
+                const hour = new Intl.DateTimeFormat("en-PH", {
+                  timeZone: "Asia/Manila",
+                  hour: "numeric",
+                  hour12: true,
+                }).format(new Date(item.timeIso));
 
-              const heightPct = Math.max(12, (item.rainfall / peakRainfall) * 100);
+                const heightPct = Math.max(12, (item.rainfall / peakRainfall) * 100);
 
-              return (
-                <div
-                  key={`${item.timeIso}-${i}`}
-                  className="group flex flex-1 flex-col items-center justify-between h-full rounded-xl p-1.5 transition-all duration-200 hover:-translate-y-1 hover:bg-white/80 hover:shadow-sm"
-                >
-                  {/* Rainfall Visual Bar & Value (TOP) */}
-                  <div className="flex flex-col items-center justify-end w-full flex-1 gap-1 py-1">
-                    <span className="text-[11px] font-semibold tabular text-neutral-600 opacity-80 group-hover:opacity-100">
-                      {item.rainfall} mm
+                return (
+                  <div
+                    key={`${item.timeIso}-${i}`}
+                    className="group flex flex-1 min-w-[44px] sm:min-w-0 flex-col items-center justify-between h-full rounded-xl p-1 sm:p-1.5 transition-all duration-200 hover:-translate-y-1 hover:bg-white/80 hover:shadow-sm"
+                  >
+                    {/* Rainfall Visual Bar & Value (TOP) */}
+                    <div className="flex flex-col items-center justify-end w-full flex-1 gap-1 py-1">
+                      <span className="text-[10px] sm:text-[11px] font-semibold tabular text-neutral-600 opacity-80 group-hover:opacity-100 whitespace-nowrap">
+                        {item.rainfall} mm
+                      </span>
+                      <div
+                        className="w-full max-w-[24px] sm:max-w-[28px] rounded-t-md bg-gradient-to-t from-sky-500 via-sky-400 to-indigo-400 shadow-xs transition-all duration-300 group-hover:from-sky-600 group-hover:to-indigo-500"
+                        style={{ height: `${heightPct}%` }}
+                        aria-hidden
+                      />
+                    </div>
+
+                    {/* Hour Label (MIDDLE) */}
+                    <span className="text-caption font-bold text-neutral-700 text-[10px] sm:text-[11px] whitespace-nowrap">
+                      {hour}
                     </span>
-                    <div
-                      className="w-full max-w-[28px] rounded-t-md bg-gradient-to-t from-sky-500 via-sky-400 to-indigo-400 shadow-xs transition-all duration-300 group-hover:from-sky-600 group-hover:to-indigo-500"
-                      style={{ height: `${heightPct}%` }}
-                      aria-hidden
-                    />
-                  </div>
 
-                  {/* Hour Label (MIDDLE) */}
-                  <span className="text-caption font-bold text-neutral-700 text-[11px]">
-                    {hour}
-                  </span>
-
-                  {/* Rain Chance % Badge (BOTTOM - below hour label) */}
-                  <div className="flex flex-col items-center gap-0.5 mt-1">
-                    <span className="inline-flex items-center gap-0.5 rounded-full bg-sky-100/90 px-1.5 py-0.5 text-[10px] font-black text-sky-800 border border-sky-200/60">
-                      <Droplets className="size-2.5 text-sky-600" />
-                      {item.probability}%
-                    </span>
+                    {/* Rain Chance % Badge (BOTTOM - below hour label) */}
+                    <div className="flex flex-col items-center gap-0.5 mt-1">
+                      <span className="inline-flex items-center gap-0.5 rounded-full bg-sky-100/90 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-black text-sky-800 border border-sky-200/60 whitespace-nowrap">
+                        <Droplets className="size-2 sm:size-2.5 text-sky-600" />
+                        {item.probability}%
+                      </span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -199,10 +201,10 @@ export function WeatherPanel({
           signalLevel > 0 ? "border-amber-300 shadow-xs" : "border-emerald-200/80"
         )}>
           {/* Row 1: Title & Signal Badge */}
-          <div className="flex items-center justify-between gap-2 px-3 pt-1">
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 px-3 pt-1">
             <div className="flex items-center gap-2 min-w-0">
               <ShieldAlert className={cn("size-4 shrink-0", signalLevel > 0 ? "text-amber-600" : "text-emerald-600")} />
-              <span className="text-overline font-black uppercase tracking-wider text-neutral-900 truncate">
+              <span className="text-overline font-black uppercase tracking-wider text-neutral-900">
                 DOST-PAGASA Tropical Cyclone Wind Signal (TCWS)
               </span>
             </div>
@@ -216,9 +218,9 @@ export function WeatherPanel({
             <span className="font-semibold text-neutral-800 shrink-0">
               💨 Expected Winds: <strong className="text-neutral-900 font-extrabold">{tcwsInfo.wind}</strong>
             </span>
-            <span className="text-[11px] text-neutral-700 font-medium truncate flex items-center gap-1.5 sm:justify-end">
+            <span className="text-[11px] text-neutral-700 font-medium flex items-center gap-1.5 sm:justify-end">
               <AlertTriangle className={cn("size-3.5 shrink-0", signalLevel > 0 ? "text-amber-600" : "text-emerald-600")} />
-              <span className="truncate">{tcwsInfo.threat}</span>
+              <span>{tcwsInfo.threat}</span>
             </span>
           </div>
         </div>
