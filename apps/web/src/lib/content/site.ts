@@ -101,7 +101,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       {
         label: "Barangay Facilities",
-        href: "/evacuation-centers",
+        href: "/barangay-facilities",
         icon: "Building2",
         description: "Centers, health clinics, and emergency stations",
       },
@@ -177,7 +177,7 @@ export const HERO = {
   /** The two quick links over the hero visual. */
   quickLinks: [
     { label: "Flood Hazard Map", href: "/hazard-map", icon: "map" },
-    { label: "Barangay Facilities", href: "/evacuation-centers", icon: "shelter" },
+    { label: "Barangay Facilities", href: "/barangay-facilities", icon: "shelter" },
   ],
 } as const;
 

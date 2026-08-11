@@ -30,6 +30,16 @@ const nextConfig: NextConfig = {
   // taken of the running stack — including the ones used to review the design.
   // Compile and runtime errors are still surfaced without it.
   devIndicators: false,
+
+  async redirects() {
+    return [
+      {
+        source: "/evacuation-centers",
+        destination: "/barangay-facilities",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

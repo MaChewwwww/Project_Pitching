@@ -30,7 +30,7 @@ const FACILITY_LABEL: Record<FacilityType, string> = {
 /**
  * All barangay facilities & evacuation centers directory (FR-PUB-008, FR-EVC-002/003).
  */
-export default async function EvacuationCentersPage() {
+export default async function BarangayFacilitiesPage() {
   const [{ items: centers }, facilities, hotlines] = await Promise.all([
     getEvacuationCenters({ size: 50 }),
     getFacilities(),

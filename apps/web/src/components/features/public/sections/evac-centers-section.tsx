@@ -33,7 +33,7 @@ export async function EvacCentersSection() {
           description="Evacuation centers, barangay halls, health centers, and community facilities across San Jose."
           action={
             <Button asChild variant="outline" pill size="md" className="shrink-0 max-sm:px-3">
-              <Link href="/evacuation-centers" aria-label="View All">
+              <Link href="/barangay-facilities" aria-label="View All">
                 <span className="hidden sm:inline">View All</span>
                 <ArrowRight aria-hidden className="size-4" />
               </Link>
