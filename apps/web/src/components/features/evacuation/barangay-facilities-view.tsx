@@ -109,6 +109,8 @@ export const FACILITY_TYPES: {
   },
 ];
 
+const ALL_FACILITY_TYPES: FacilityType[] = FACILITY_TYPES.map((t) => t.type);
+
 export interface BarangayFacilitiesViewProps {
   facilities: PublicFacility[];
   evacCenters: PublicEvacCenter[];
@@ -122,7 +124,32 @@ export function BarangayFacilitiesView({
   areaBoundaries,
   hotlines,
 }: BarangayFacilitiesViewProps) {
-  const [selectedType, setSelectedType] = React.useState<"all" | FacilityType>("all");
+  // Multi-select checkbox state (initialized with all types enabled)
+  const [selectedTypes, setSelectedTypes] = React.useState<Set<FacilityType>>(
+    () => new Set(ALL_FACILITY_TYPES)
+  );
+
+  const toggleType = React.useCallback((type: FacilityType) => {
+    setSelectedTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) {
+        next.delete(type);
+      } else {
+        next.add(type);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleAllTypes = React.useCallback(() => {
+    setSelectedTypes((prev) => {
+      if (prev.size === ALL_FACILITY_TYPES.length) {
+        return new Set();
+      } else {
+        return new Set(ALL_FACILITY_TYPES);
+      }
+    });
+  }, []);
 
   // Build unified facility list
   const unifiedItems = React.useMemo(() => {
@@ -166,21 +193,12 @@ export function BarangayFacilitiesView({
     return map;
   }, [unifiedItems]);
 
-  // Evacuation readiness metrics
-  const evacStats = React.useMemo(() => {
-    const totalCenters = evacCenters.length;
-    const openCenters = evacCenters.filter((c) => c.is_open).length;
-    const totalCapacity = evacCenters.reduce((sum, c) => sum + (c.capacity ?? 0), 0);
-    const totalOccupancy = evacCenters.reduce((sum, c) => sum + c.occupancy, 0);
-
-    return { totalCenters, openCenters, totalCapacity, totalOccupancy };
-  }, [evacCenters]);
-
-  // Filtered facilities by type
+  // Filtered facilities based on multi-select checkboxes
   const filteredItems = React.useMemo(() => {
-    if (selectedType === "all") return unifiedItems;
-    return unifiedItems.filter((item) => item.type === selectedType);
-  }, [unifiedItems, selectedType]);
+    if (selectedTypes.size === ALL_FACILITY_TYPES.length) return unifiedItems;
+    if (selectedTypes.size === 0) return [];
+    return unifiedItems.filter((item) => selectedTypes.has(item.type));
+  }, [unifiedItems, selectedTypes]);
 
   // Facility markers for map
   const mapFacilities = React.useMemo(() => {
@@ -196,6 +214,21 @@ export function BarangayFacilitiesView({
       capacity: item.evacCenter?.capacity,
     }));
   }, [filteredItems]);
+
+  // Dropdown value indicator
+  const dropdownValue = React.useMemo(() => {
+    if (selectedTypes.size === ALL_FACILITY_TYPES.length) return "all";
+    if (selectedTypes.size === 1) return Array.from(selectedTypes)[0];
+    return "custom";
+  }, [selectedTypes]);
+
+  const handleDropdownSelect = React.useCallback((val: string) => {
+    if (val === "all") {
+      setSelectedTypes(new Set(ALL_FACILITY_TYPES));
+    } else if (val !== "custom") {
+      setSelectedTypes(new Set([val as FacilityType]));
+    }
+  }, []);
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -218,85 +251,81 @@ export function BarangayFacilitiesView({
 
           {/* RIGHT COLUMN: Metrics Sidebar (Equal height to map container) */}
           <div className="flex flex-col gap-3 lg:w-80 lg:shrink-0 lg:h-[580px]">
-            {/* Metric Card 1: Facility & Evacuation Overview */}
+            {/* Metric Card 1: Facility Overview */}
             <Card radius="xl" className="border-neutral-200/90 bg-white shadow-sm shrink-0">
-              <CardContent className="p-3.5 flex flex-col gap-2">
-                <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
-                  <span className="text-overline inline-flex items-center gap-1.5 font-bold uppercase text-neutral-500">
-                    <Building2 className="size-4 text-emerald-600" />
-                    Facility Overview
+              <CardContent className="p-3.5 flex flex-col gap-1">
+                <span className="text-overline inline-flex items-center gap-1.5 font-bold uppercase text-neutral-500">
+                  <Building2 className="size-4 text-emerald-600" />
+                  Facility Overview
+                </span>
+                <div className="flex items-baseline justify-between pt-1">
+                  <span className="text-display-md font-black text-neutral-900 tabular">
+                    {filteredItems.length}{" "}
+                    <span className="text-body-sm font-semibold text-neutral-500">
+                      / {unifiedItems.length} total
+                    </span>
                   </span>
-                  <span className="text-h3 font-black text-neutral-900 tabular">
-                    {unifiedItems.length} <span className="text-caption font-semibold text-neutral-500">total</span>
+                  <span className="text-caption font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80">
+                    {selectedTypes.size} {selectedTypes.size === 1 ? "type" : "types"} active
                   </span>
                 </div>
-
-                {evacStats.totalCenters > 0 && (
-                  <div className="flex items-center justify-between pt-0.5">
-                    <div className="flex flex-col">
-                      <span className="text-overline inline-flex items-center gap-1.5 font-bold uppercase text-emerald-800">
-                        <BedDouble className="size-3.5 text-emerald-600" />
-                        Evacuation
-                      </span>
-                      <span className="text-caption font-semibold text-neutral-600">
-                        {evacStats.openCenters} of {evacStats.totalCenters} open
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col items-end">
-                      <span className="text-body-sm font-black text-emerald-950 tabular">
-                        {formatNumber(evacStats.totalCapacity)}
-                      </span>
-                      <span className="text-[10.5px] font-medium text-emerald-800">
-                        total capacity
-                      </span>
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
 
-            {/* Metric Card 2: Facilities per Type List */}
+            {/* Metric Card 2: Facilities per Type Checkbox Filter List */}
             <Card radius="xl" className="border-neutral-200/90 bg-white shadow-sm flex-1 overflow-hidden">
               <CardContent className="p-3.5 flex flex-col gap-2.5 h-full overflow-y-auto">
-                <span className="text-overline font-bold uppercase tracking-wider text-neutral-500">
-                  Facilities per Type
-                </span>
+                <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
+                  <span className="text-overline font-bold uppercase tracking-wider text-neutral-500">
+                    Facilities per Type
+                  </span>
+                  <button
+                    type="button"
+                    onClick={toggleAllTypes}
+                    className="text-[11px] font-extrabold text-emerald-700 hover:text-emerald-900 hover:underline cursor-pointer"
+                  >
+                    {selectedTypes.size === ALL_FACILITY_TYPES.length ? "Deselect All" : "Select All"}
+                  </button>
+                </div>
 
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1.5">
                   {FACILITY_TYPES.map((cfg) => {
                     const count = countsPerType.get(cfg.type) ?? 0;
-                    const isSelected = selectedType === cfg.type;
+                    const isChecked = selectedTypes.has(cfg.type);
                     const Icon = cfg.icon;
 
                     return (
-                      <button
+                      <label
                         key={cfg.type}
-                        type="button"
-                        onClick={() => setSelectedType(isSelected ? "all" : cfg.type)}
                         className={cn(
-                          "flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs transition-all duration-200 cursor-pointer border text-left",
-                          isSelected
-                            ? "border-emerald-500 bg-emerald-50 font-bold text-emerald-950 shadow-2xs"
-                            : "border-neutral-100 bg-neutral-50/60 font-medium text-neutral-700 hover:bg-neutral-100/80"
+                          "flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs transition-all duration-200 cursor-pointer border select-none",
+                          isChecked
+                            ? "border-emerald-500/80 bg-emerald-50/70 font-bold text-emerald-950 shadow-2xs"
+                            : "border-neutral-100 bg-neutral-50/40 font-medium text-neutral-500 hover:bg-neutral-100/60 opacity-60"
                         )}
                       >
-                        <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleType(cfg.type)}
+                            className="size-3.5 rounded border-neutral-300 text-emerald-600 focus:ring-emerald-500/20 accent-emerald-600 cursor-pointer shrink-0"
+                          />
                           <span className={cn("size-2 rounded-full shrink-0", cfg.dot)} />
-                          <Icon className={cn("size-3.5 shrink-0", cfg.color)} />
+                          <Icon className={cn("size-3.5 shrink-0", isChecked ? cfg.color : "text-neutral-400")} />
                           <span className="truncate text-[11.5px]">{cfg.label}</span>
                         </div>
                         <span
                           className={cn(
                             "rounded-full px-2 py-0.2 text-[10.5px] font-black tabular shrink-0",
-                            isSelected
+                            isChecked
                               ? "bg-emerald-600 text-white"
-                              : "bg-neutral-200/80 text-neutral-800"
+                              : "bg-neutral-200/80 text-neutral-600"
                           )}
                         >
                           {count}
                         </span>
-                      </button>
+                      </label>
                     );
                   })}
                 </div>
@@ -312,9 +341,11 @@ export function BarangayFacilitiesView({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-200 pb-3">
           <div>
             <h2 className="text-h2 font-bold text-neutral-900">
-              {selectedType === "all"
+              {selectedTypes.size === ALL_FACILITY_TYPES.length
                 ? "All Barangay Facilities"
-                : (FACILITY_TYPES.find((t) => t.type === selectedType)?.label ?? "Facilities")}
+                : selectedTypes.size === 1
+                ? (FACILITY_TYPES.find((t) => selectedTypes.has(t.type))?.label ?? "Facilities")
+                : "Filtered Barangay Facilities"}
             </h2>
             <p className="text-caption font-medium text-neutral-500">
               Showing {filteredItems.length} of {unifiedItems.length} facilities across Barangay San Jose
@@ -322,13 +353,15 @@ export function BarangayFacilitiesView({
           </div>
 
           {/* Custom Dropdown Selector (Same style as hazard-map page) */}
-          <Select value={selectedType} onValueChange={(val) => setSelectedType(val as "all" | FacilityType)}>
+          <Select value={dropdownValue} onValueChange={handleDropdownSelect}>
             <SelectTrigger className="inline-flex h-9 w-fit items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all cursor-pointer">
               <Filter aria-hidden className="size-3.5 text-emerald-600 shrink-0" />
               <SelectValue placeholder="Filter Facility Type">
-                {selectedType === "all"
+                {selectedTypes.size === ALL_FACILITY_TYPES.length
                   ? `All Facilities (${unifiedItems.length})`
-                  : `${FACILITY_TYPES.find((t) => t.type === selectedType)?.label} (${countsPerType.get(selectedType as FacilityType) ?? 0})`}
+                  : selectedTypes.size === 1
+                  ? `${FACILITY_TYPES.find((t) => selectedTypes.has(t.type))?.label} (${filteredItems.length})`
+                  : `${selectedTypes.size} Types Selected (${filteredItems.length})`}
               </SelectValue>
             </SelectTrigger>
             <SelectContent
@@ -341,7 +374,7 @@ export function BarangayFacilitiesView({
                 value="all"
                 className={cn(
                   "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer my-0.5",
-                  selectedType === "all"
+                  selectedTypes.size === ALL_FACILITY_TYPES.length
                     ? "bg-emerald-600 text-white font-bold focus:bg-emerald-600 focus:text-white"
                     : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950"
                 )}
@@ -350,7 +383,7 @@ export function BarangayFacilitiesView({
                 <span
                   className={cn(
                     "text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 tabular-nums ml-auto",
-                    selectedType === "all"
+                    selectedTypes.size === ALL_FACILITY_TYPES.length
                       ? "bg-white/25 text-white"
                       : "bg-neutral-100 text-neutral-600"
                   )}
@@ -361,7 +394,7 @@ export function BarangayFacilitiesView({
 
               {FACILITY_TYPES.map((cfg) => {
                 const count = countsPerType.get(cfg.type) ?? 0;
-                const isSelected = selectedType === cfg.type;
+                const isSelected = selectedTypes.size === 1 && selectedTypes.has(cfg.type);
                 const Icon = cfg.icon;
 
                 return (
@@ -406,7 +439,7 @@ export function BarangayFacilitiesView({
           <EmptyState
             icon={Building2}
             title="No facilities found"
-            description="No facilities match the selected type."
+            description="No facilities match the selected type filters."
           />
         )}
       </section>
