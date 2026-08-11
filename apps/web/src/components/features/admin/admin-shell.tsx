@@ -33,8 +33,16 @@ import {
 } from "lucide-react";
 
 import { LogoLockup } from "@/components/common/logo";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { useAuth } from "@/lib/auth/auth-context";
+import { type SessionUser, useAuth } from "@/lib/auth/auth-context";
 import { cn } from "@/lib/utils";
 
 interface NavLink {
@@ -120,6 +128,63 @@ const CATEGORIES: NavCategory[] = [
     ],
   },
 ];
+
+function ConsoleProfileMenu({
+  user,
+  onLogout,
+  compact = false,
+}: {
+  user: SessionUser | null;
+  onLogout: () => Promise<void>;
+  compact?: boolean;
+}) {
+  const initial = user?.full_name?.trim().charAt(0).toUpperCase() || "U";
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "group flex items-center gap-2 rounded-md border border-neutral-200 bg-white p-1.5 text-left shadow-xs transition-colors hover:border-primary-300 hover:bg-primary-50 focus-visible:ring-primary-600 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+            compact && "border-white/15 bg-white/10 text-white hover:border-white/25 hover:bg-white/15",
+          )}
+          aria-label="Open profile menu"
+        >
+          <span className="bg-primary-700 grid size-8 place-items-center rounded-full text-xs font-bold text-white">
+            {initial}
+          </span>
+          {!compact ? (
+            <span className="min-w-0 pr-1">
+              <span className="block max-w-36 truncate text-xs font-bold text-neutral-900">
+                {user?.full_name ?? "Barangay staff"}
+              </span>
+              <span className="block text-[10px] font-semibold tracking-wide text-primary-700 uppercase">
+                {user?.role ?? "staff"}
+              </span>
+            </span>
+          ) : null}
+          <ChevronDown aria-hidden className={cn("size-3.5 text-neutral-500 transition-transform group-data-[state=open]:rotate-180", compact && "text-primary-100")} />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-60 rounded-lg border border-neutral-200 p-1.5 shadow-lg">
+        <DropdownMenuLabel className="px-2.5 py-2">
+          <span className="block truncate text-sm font-bold text-neutral-900">{user?.full_name ?? "Barangay staff"}</span>
+          <span className="mt-0.5 block truncate text-xs font-normal text-neutral-500">{user?.email}</span>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          className="gap-2 px-2.5 py-2 text-sm font-semibold"
+          onSelect={() => void onLogout()}
+        >
+          <LogOut aria-hidden className="size-4" />
+          Log out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -259,57 +324,41 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </div>
         </nav>
 
-        {/* Pinned User Profile Footer */}
-        <div className="border-t border-white/10 p-3.5">
-          <div className="mb-3 flex items-center gap-3 px-1">
-            <div className="bg-primary-700 grid size-9 place-items-center rounded-full text-xs font-bold text-white">
-              {user?.full_name?.charAt(0) ?? "U"}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-bold text-white">{user?.full_name}</p>
-              <div className="text-primary-300 mt-0.5 flex items-center gap-1.5 text-[11px]">
-                <ShieldCheck className="text-primary-200 size-3 shrink-0" />
-                <span className="text-primary-100 font-semibold capitalize">
-                  {user?.role}
-                </span>
-              </div>
-            </div>
-          </div>
-          <button
-            type="button"
-            className="text-primary-100 flex w-full items-center justify-center gap-2 rounded border border-white/15 px-3 py-2 text-xs font-bold transition-colors hover:bg-white/10 hover:text-white"
-            onClick={() => void logout()}
-          >
-            <LogOut aria-hidden className="size-3.5" />
-            <span>Sign out</span>
-          </button>
-        </div>
       </aside>
 
       {/* Main Content Area */}
       <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-20 hidden h-16 items-center justify-between border-b border-neutral-200 bg-white/95 px-6 backdrop-blur lg:flex xl:px-8">
+          <div>
+            <p className="text-overline text-primary-700 font-bold">Barangay San Jose</p>
+            <p className="mt-0.5 text-sm font-semibold text-neutral-800">Operations console</p>
+          </div>
+          <ConsoleProfileMenu user={user} onLogout={logout} />
+        </header>
         {/* Mobile Top Header */}
-        <header className="bg-primary-950 flex items-center justify-between px-4 py-3 text-white lg:hidden">
+        <header className="bg-primary-950 flex h-14 items-center justify-between px-4 text-white lg:hidden">
           <div className="flex items-center gap-2.5">
             <LogoLockup size={32} />
             <span className="text-body-sm font-bold text-white">SAGIP-SJ Admin</span>
           </div>
-          <Sheet>
-            <SheetTrigger asChild>
-              <button
-                type="button"
-                className="text-primary-100 rounded p-2 hover:bg-white/10"
+          <div className="flex items-center gap-2">
+            <ConsoleProfileMenu user={user} onLogout={logout} compact />
+            <Sheet>
+              <SheetTrigger asChild>
+                <button
+                  type="button"
+                  className="text-primary-100 rounded p-2 hover:bg-white/10"
+                >
+                  <Menu aria-hidden className="size-5" />
+                  <span className="sr-only">Open console navigation</span>
+                </button>
+              </SheetTrigger>
+              <SheetContent
+                side="left"
+                className="bg-primary-950 w-80 border-0 p-0 text-white"
               >
-                <Menu aria-hidden className="size-5" />
-                <span className="sr-only">Open console navigation</span>
-              </button>
-            </SheetTrigger>
-            <SheetContent
-              side="left"
-              className="bg-primary-950 w-80 border-0 p-0 text-white"
-            >
-              <SheetTitle className="sr-only">Console navigation</SheetTitle>
-              <nav className="space-y-4 overflow-y-auto p-4">
+                <SheetTitle className="sr-only">Console navigation</SheetTitle>
+                <nav className="space-y-4 overflow-y-auto p-4">
                 <Link
                   href="/admin"
                   className="bg-primary-600 flex items-center gap-3 rounded px-3 py-2.5 text-sm font-bold"
@@ -332,16 +381,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                     ))}
                   </section>
                 ))}
-                <button
-                  type="button"
-                  onClick={() => void logout()}
-                  className="text-primary-100 flex w-full items-center gap-3 rounded border border-white/15 px-3 py-2.5 text-sm font-bold"
-                >
-                  <LogOut className="size-4" /> Sign out
-                </button>
-              </nav>
-            </SheetContent>
-          </Sheet>
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
         </header>
 
         <main className="min-w-0 flex-1 p-4 md:p-6 xl:p-8">{children}</main>

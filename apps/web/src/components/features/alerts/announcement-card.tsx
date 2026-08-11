@@ -2,7 +2,7 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
-import { ArrowUpRight, CalendarClock, MapPin, Megaphone } from "lucide-react";
+import { ArrowUpRight, CalendarClock, MapPin } from "lucide-react";
 
 import { Card, CardContent } from "@/components/common/card";
 import { StatusBadge } from "@/components/common/status-badge";
@@ -14,7 +14,7 @@ import type { PublicAnnouncement } from "@/lib/api/public-types";
  * One announcement or alert (FR-PUB-003, FR-ALT-004).
  *
  * FR-ALT-004 requires emergency notices be **visually distinct** from routine
- * announcements, so an alert gets the danger palette and a left border rather
+ * announcements, so an alert gets the danger palette and a solid top rule rather
  * than only a differently-coloured badge — a difference visible while scrolling
  * past, not only when reading.
  *
@@ -48,13 +48,8 @@ export function AnnouncementCard({
       radius="xl"
       className={cn(
         "group card-hover-lift relative flex h-full flex-col justify-between overflow-hidden transition-all duration-200",
-        isAlert
-          ? "border-l-[4px]"
-          : "hover:border-primary-300 border border-neutral-200/80",
-        urgent ? "border-l-danger from-danger-bg/45 bg-gradient-to-br to-white" : "",
-        isAlert && !urgent
-          ? "border-l-warning from-warning-bg/40 bg-gradient-to-br to-white"
-          : "",
+        isAlert ? "border-danger/35 border-t-[4px] bg-gradient-to-b from-danger-bg/45 via-white to-white" : "hover:border-primary-300 border border-neutral-200/80",
+        urgent ? "shadow-[0_12px_30px_rgba(185,28,28,0.08)]" : "",
         !isAlert && "bg-white",
         className,
       )}
@@ -70,25 +65,6 @@ export function AnnouncementCard({
           />
         </div>
       ) : null}
-      {isAlert ? (
-        <div className="relative overflow-hidden border-b border-danger/15 bg-danger-bg/55 px-5 py-4">
-          <div className="absolute -top-8 -right-8 size-28 rounded-full border-[14px] border-danger/10" />
-          <div className="relative flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5">
-              <span className="flex size-9 items-center justify-center rounded-full bg-danger text-white shadow-sm">
-                <Megaphone aria-hidden className="size-4" />
-              </span>
-              <div>
-                <p className="text-overline text-danger font-bold">Barangay emergency bulletin</p>
-                <p className="mt-0.5 text-xs text-neutral-600">Official safety guidance</p>
-              </div>
-            </div>
-            <span className="border-danger/25 bg-white/75 text-danger rounded-full border px-2.5 py-1 text-xs font-bold">
-              L{announcement.alert_level ?? "!"}
-            </span>
-          </div>
-        </div>
-      ) : null}
       <CardContent className="flex h-full flex-col gap-3.5 p-5 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -101,17 +77,18 @@ export function AnnouncementCard({
                 Advisory
               </span>
             )}
-            {!announcement.is_active ? (
-              <span className="text-caption rounded-full border border-neutral-200 bg-neutral-100 px-2.5 py-0.5 font-semibold text-neutral-600">
-                Ended
-              </span>
-            ) : (
-              <span className="text-caption bg-success-bg text-success border-success-border inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-bold">
-                <span className="bg-success size-1.5 animate-pulse rounded-full" />
-                Active
-              </span>
-            )}
           </div>
+          <span
+            aria-hidden
+            className={cn(
+              "grid size-10 shrink-0 place-items-center rounded-full border transition-all duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5",
+              isAlert
+                ? "border-danger/25 bg-white text-danger group-hover:bg-danger group-hover:text-white"
+                : "border-primary-200 bg-primary-50 text-primary-700 group-hover:bg-primary-700 group-hover:text-white",
+            )}
+          >
+            <ArrowUpRight className="size-4" />
+          </span>
         </div>
 
         <h3 className="text-h3 group-hover:text-primary-800 leading-snug font-bold text-neutral-900 transition-colors">
@@ -128,9 +105,15 @@ export function AnnouncementCard({
         </p>
 
         {announcement.instruction ? (
-          <div className="border-primary-100 bg-primary-50/60 rounded-xl border p-3.5 shadow-sm">
-            <p className="text-overline text-primary-800 mb-1 font-bold tracking-wider">
-              What to do
+          <div className={cn(
+            "rounded-xl border p-3.5 shadow-sm",
+            isAlert ? "border-danger/15 bg-white/85" : "border-primary-100 bg-primary-50/60",
+          )}>
+            <p className={cn(
+              "text-overline mb-1 font-bold tracking-wider",
+              isAlert ? "text-danger" : "text-primary-800",
+            )}>
+              {isAlert ? "Immediate guidance" : "What to do"}
             </p>
             <p className="text-body-sm leading-normal font-medium text-neutral-800">
               {announcement.instruction}
@@ -156,10 +139,6 @@ export function AnnouncementCard({
             ) : null}
             {" · "}
             {announcement.issued_by_name}
-          </span>
-          <span className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-primary-700 transition-transform duration-200 group-hover:translate-x-1">
-            {isAlert ? "Read full safety bulletin" : "Read announcement"}
-            <ArrowUpRight aria-hidden className="size-4" />
           </span>
         </div>
       </CardContent>
