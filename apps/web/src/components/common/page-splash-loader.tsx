@@ -41,14 +41,19 @@ export function PageSplashLoader() {
   return (
     <div
       aria-hidden="true"
-      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-white/95 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-100/70 via-emerald-50/40 to-white backdrop-blur-xl transition-all duration-500 ease-in-out select-none ${
+      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-100/90 via-emerald-50/70 to-teal-100/90 backdrop-blur-xl transition-all duration-500 ease-in-out select-none ${
         fading ? "opacity-0 pointer-events-none scale-105" : "opacity-100 scale-100"
       }`}
     >
-      <div className="flex flex-col items-center gap-6 rounded-3xl border border-emerald-100/90 bg-white/85 p-8 text-center shadow-2xl shadow-emerald-950/5 backdrop-blur-md sm:p-10">
+      {/* Decorative Ambient Green Orbs */}
+      <div className="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full bg-emerald-300/40 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-teal-300/40 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/2 left-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-200/50 blur-[100px]" />
+
+      <div className="relative z-10 flex flex-col items-center gap-6 rounded-3xl border border-emerald-200/80 bg-white/90 p-8 text-center shadow-2xl shadow-emerald-950/10 backdrop-blur-md sm:p-10">
         {/* Brand Icon Badge with Pulsing Green Glow */}
         <div className="relative flex items-center justify-center">
-          <div className="absolute -inset-6 rounded-full bg-emerald-400/25 blur-2xl animate-pulse" />
+          <div className="absolute -inset-6 rounded-full bg-emerald-500/25 blur-2xl animate-pulse" />
           <WaterSpinner size="lg" label="Loading application data..." />
         </div>
 
@@ -66,7 +71,7 @@ export function PageSplashLoader() {
         </div>
 
         {/* Smooth Loading Progress Bar */}
-        <div className="mt-1 h-1.5 w-52 overflow-hidden rounded-full bg-emerald-100/90 border border-emerald-200/70">
+        <div className="mt-1 h-1.5 w-52 overflow-hidden rounded-full bg-emerald-100 border border-emerald-300/70">
           <div className="h-full w-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 animate-splash-progress origin-left rounded-full" />
         </div>
       </div>
