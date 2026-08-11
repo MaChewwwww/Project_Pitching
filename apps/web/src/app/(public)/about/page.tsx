@@ -6,7 +6,7 @@ import { AboutSection } from "@/components/features/public/sections/about-sectio
 import { WhyPreparednessSection } from "@/components/features/public/sections/why-preparedness-section";
 
 export const metadata: Metadata = {
-  title: "About the platform",
+  title: "About the Platform",
   description:
     "What this platform is for, who maintains it, and the Sustainable Development Goals it supports.",
 };

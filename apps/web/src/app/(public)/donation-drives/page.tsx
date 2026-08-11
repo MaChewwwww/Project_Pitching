@@ -9,7 +9,7 @@ import { UTILITY_BAR } from "@/lib/content/site";
 import { getDonationDrives } from "@/lib/api/public";
 
 export const metadata: Metadata = {
-  title: "Donation drives",
+  title: "Donation Drives & Relief",
   description:
     "What Barangay San Jose is collecting right now, how much has arrived, and where to drop goods off.",
 };

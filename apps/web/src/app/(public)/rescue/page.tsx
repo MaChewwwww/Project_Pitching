@@ -9,7 +9,7 @@ import { RescueRequestForm } from "@/components/common/rescue-request-form";
 import { getHotlines } from "@/lib/api/public";
 
 export const metadata: Metadata = {
-  title: "Ask for rescue",
+  title: "Emergency Rescue Assistance",
   description:
     "Ask for rescue without an account. Give your name, a pin or a description of where you are, and what's happening.",
 };

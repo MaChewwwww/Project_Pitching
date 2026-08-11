@@ -7,7 +7,7 @@ import { FloodEventsSection } from "@/components/features/weather/flood-events-s
 import { getFloodEvents, getRiverLevel, getWeatherCurrent } from "@/lib/api/public";
 
 export const metadata: Metadata = {
-  title: "Weather & river level",
+  title: "Weather & River Level Monitoring",
   description:
     "Current conditions, rainfall forecast, Marikina river level with alert thresholds, and past flood events in Barangay San Jose.",
 };

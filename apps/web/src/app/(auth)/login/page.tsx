@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, HeartPulse, Radio, Shield } from "lucide-react";
 
 import { LogoLockup } from "@/components/common/logo";
 import { LoginForm } from "@/components/features/auth/login-form";
+
+export const metadata: Metadata = {
+  title: "Login",
+  description: "Sign in to SAGIP San Jose portal.",
+};
 
 /**
  * Login for both barangay staff and self-registered residents (`head` role) — FR-SYS-002.

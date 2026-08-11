@@ -32,10 +32,18 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: `${APP_NAME} — Disaster Readiness & Community Health`,
-    template: `%s · ${APP_NAME}`,
+    default: `${APP_NAME} | Disaster Readiness & Community Health`,
+    template: `${APP_NAME} | %s`,
   },
   description: `Disaster readiness and community health platform for ${BARANGAY}.`,
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/icon.svg",
+    apple: "/assets/San Jose Logo.jpg",
+  },
 };
 
 export const viewport: Viewport = {

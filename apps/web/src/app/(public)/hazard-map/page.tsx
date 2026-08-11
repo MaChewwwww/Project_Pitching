@@ -16,7 +16,7 @@ import {
 } from "@/lib/api/public";
 
 export const metadata: Metadata = {
-  title: "Flood hazard map",
+  title: "Flood Hazard Map & Evacuation",
   description:
     "Flood-prone areas across Barangay San Jose, surveyed by Project NOAH, with barangay facilities and current river level.",
 };

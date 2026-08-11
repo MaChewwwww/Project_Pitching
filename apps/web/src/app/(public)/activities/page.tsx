@@ -8,7 +8,7 @@ import { ActivityCard } from "@/components/features/activities/activity-card";
 import { getActivities } from "@/lib/api/public";
 
 export const metadata: Metadata = {
-  title: "Activities",
+  title: "SK & Community Activities",
   description:
     "Drills, first aid training, clean-ups and community programmes in Barangay San Jose.",
 };

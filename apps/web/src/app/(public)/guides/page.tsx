@@ -8,7 +8,7 @@ import { GuideCard } from "@/components/features/preparedness/guide-card";
 import { getGuides } from "@/lib/api/public";
 
 export const metadata: Metadata = {
-  title: "Preparedness guidelines",
+  title: "Disaster Preparedness Guidelines",
   description:
     "Flood, earthquake, fire and typhoon preparedness for Barangay San Jose, plus the San Jose Go Bag list.",
 };

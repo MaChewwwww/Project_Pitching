@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, HeartPulse, Radio, Shield } from "lucide-react";
 
 import { LogoLockup } from "@/components/common/logo";
 import { RegisterForm } from "@/components/features/auth/register-form";
+
+export const metadata: Metadata = {
+  title: "Register Household",
+  description: "Register your household profile with Barangay San Jose.",
+};
 
 /**
  * Resident self-registration (FR-SYS-001).

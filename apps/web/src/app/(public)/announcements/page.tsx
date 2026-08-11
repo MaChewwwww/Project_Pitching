@@ -8,7 +8,7 @@ import { getAnnouncements } from "@/lib/api/public";
 import { Megaphone } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Announcements",
+  title: "Barangay Announcements",
   description:
     "Weather advisories, class suspensions, road closures and emergency notices from Barangay San Jose.",
 };
