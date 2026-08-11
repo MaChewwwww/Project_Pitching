@@ -239,8 +239,8 @@ export function BarangayFacilitiesView({
           <div className="relative h-[500px] sm:h-[540px] lg:h-[580px] flex-1 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-xl">
             <HazardMap
               className="h-full w-full min-h-[500px]"
-              center={[14.7415, 121.1315]}
-              zoom={13.25}
+              center={[14.7465, 121.1310]}
+              zoom={13.45}
               facilities={mapFacilities}
               areaBoundaries={areaBoundaries}
               areaStats={[]}
