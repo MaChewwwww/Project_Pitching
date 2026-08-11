@@ -164,14 +164,7 @@ export function AnnouncementDetailView({
 
             {/* Date Chip */}
             {article.published_at ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white/95 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs backdrop-blur-md shrink-0">
-                <CalendarClock
-                  aria-hidden
-                  className={cn(
-                    "size-3.5 shrink-0",
-                    isEmergency ? "text-red-600" : "text-primary-600",
-                  )}
-                />
+              <span className="inline-flex items-center rounded-full border border-slate-200/90 bg-white/95 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs backdrop-blur-md shrink-0">
                 <time dateTime={article.published_at}>
                   {formatPhtDateTime(article.published_at)}
                 </time>
