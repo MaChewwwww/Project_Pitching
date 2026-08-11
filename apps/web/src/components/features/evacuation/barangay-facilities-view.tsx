@@ -288,11 +288,11 @@ export function BarangayFacilitiesView({
       <section aria-label="Facilities Map and Metrics Overview">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-6">
           {/* LEFT COLUMN: Interactive Leaflet Map */}
-          <div className="relative min-h-[480px] sm:min-h-[550px] lg:min-h-[600px] flex-1 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
+          <div className="relative h-[380px] sm:h-[440px] lg:h-[480px] flex-1 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-xl">
             <HazardMap
-              className="h-full w-full min-h-[480px]"
+              className="h-full w-full min-h-[380px]"
               center={[14.7415, 121.1315]}
-              zoom={14.75}
+              zoom={13.4}
               facilities={mapFacilities}
               areaBoundaries={areaBoundaries}
               areaStats={[]}
@@ -302,6 +302,17 @@ export function BarangayFacilitiesView({
             <div className="absolute left-3 top-3 z-[400] flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-1.5 text-xs font-bold text-white shadow-lg backdrop-blur-md">
               <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
               <span>San Jose Facilities Map ({mapFacilities.length} shown)</span>
+            </div>
+
+            {/* Map Color Legend */}
+            <div className="absolute left-3 bottom-3 z-[400] hidden sm:flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg backdrop-blur-md">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Legend:</span>
+              {FACILITY_TYPES.map((cfg) => (
+                <div key={cfg.type} className="flex items-center gap-1.5">
+                  <span className={cn("size-2.5 rounded-full border border-white/40", cfg.dot)} />
+                  <span className="text-slate-200">{cfg.label}</span>
+                </div>
+              ))}
             </div>
           </div>
 

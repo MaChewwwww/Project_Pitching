@@ -56,25 +56,23 @@ function MapPanes() {
   return null;
 }
 
-function InvalidateSizeOnMount({ interactive = true }: { interactive?: boolean }) {
+function InvalidateSizeOnMount({ interactive = true, initialZoom }: { interactive?: boolean; initialZoom?: number }) {
   const map = useMap();
   React.useEffect(() => {
     if (!interactive) {
       const isMobile = window.innerWidth < 640;
       const overviewZoom = isMobile ? 12.75 : 13.38;
       map.setView([14.7440, 121.1305], overviewZoom);
-    } else {
+    } else if (initialZoom) {
       const isMobile = window.innerWidth < 640;
-      const targetZoom = isMobile ? 13 : 14;
-      if (map.getZoom() !== targetZoom) {
-        map.setZoom(targetZoom);
-      }
+      const targetZoom = isMobile ? initialZoom - 0.5 : initialZoom;
+      map.setZoom(targetZoom);
     }
     const timer = setTimeout(() => {
       map.invalidateSize();
     }, 200);
     return () => clearTimeout(timer);
-  }, [map, interactive]);
+  }, [map, interactive, initialZoom]);
   return null;
 }
 
@@ -251,7 +249,7 @@ export function HazardMapClient({
         attributionControl={false}
       >
         <MapPanes />
-        <InvalidateSizeOnMount interactive={interactive} />
+        <InvalidateSizeOnMount interactive={interactive} initialZoom={zoom} />
 
         {/* CartoDB Dark Matter Obsidian Basemap Tiles */}
         <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} />
@@ -359,12 +357,11 @@ export function HazardMapClient({
           />
         )}
 
-        {/* Evacuation Center markers — ALWAYS ON TOP MOST LAYER (Filtered to evacuation_center type only) */}
+        {/* All Facility markers — color-coded per facility.type */}
         {interactive && visible.facilities &&
-          facilities
-            .filter((facility) => facility.type === "evacuation_center")
-            .map((facility) => {
+          facilities.map((facility) => {
             const [lon, lat] = facility.location.coordinates;
+            const fColor = facilityColor(facility.type);
             return (
               <CircleMarker
                 key={facility.id}
@@ -374,7 +371,7 @@ export function HazardMapClient({
                 pathOptions={{
                   color: "#fff",
                   weight: 2,
-                  fillColor: facilityColor(facility.type),
+                  fillColor: fColor,
                   fillOpacity: 0.95,
                 }}
               >
@@ -382,11 +379,19 @@ export function HazardMapClient({
                   <div className="p-2 font-sans min-w-[200px] space-y-2">
                     <div className="flex items-start gap-2">
                       <div className="w-4 h-4 shrink-0 flex items-center justify-center mt-0.5">
-                        <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span
+                          className="size-2 rounded-full animate-pulse"
+                          style={{ backgroundColor: fColor }}
+                        />
                       </div>
-                      <strong className="block text-sm font-bold text-white leading-snug">
-                        {facility.name}
-                      </strong>
+                      <div className="flex flex-col">
+                        <strong className="block text-sm font-bold text-white leading-snug">
+                          {facility.name}
+                        </strong>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300">
+                          {facilityLabel(facility.type)}
+                        </span>
+                      </div>
                     </div>
                     {(facility as FacilityWithCapacity).capacity != null && (
                       <div className="flex items-center gap-2 text-xs text-slate-200">
