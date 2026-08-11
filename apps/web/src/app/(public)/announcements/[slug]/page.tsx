@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { PageHeader } from "@/components/common/page-header";
 import { AnnouncementDetailView } from "@/components/features/public/announcement-detail-view";
 import { getAnnouncement, getAnnouncements } from "@/lib/api/public";
 
@@ -22,20 +21,9 @@ export default async function AnnouncementArticlePage({
     .slice(0, 4);
 
   return (
-    <>
-      <PageHeader
-        title={article.title}
-        description={article.excerpt}
-        breadcrumb={[
-          { label: "Home", href: "/" },
-          { label: "Announcements", href: "/announcements" },
-          { label: article.title },
-        ]}
-      />
-      <AnnouncementDetailView
-        article={article}
-        recentArticles={recentArticles}
-      />
-    </>
+    <AnnouncementDetailView
+      article={article}
+      recentArticles={recentArticles}
+    />
   );
 }

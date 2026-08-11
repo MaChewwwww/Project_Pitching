@@ -12,6 +12,7 @@ import {
   User,
 } from "lucide-react";
 
+import { PageHeader } from "@/components/common/page-header";
 import { formatPhtDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type {
@@ -139,42 +140,51 @@ export function AnnouncementDetailView({
   }
 
   return (
-    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-6 md:py-10">
-      <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
-        {/* Left Main Article Column */}
-        <article className="flex flex-col gap-6 lg:col-span-8">
-          {/* Header Taxonomy & Metadata Bar */}
-          <div className="flex flex-col gap-3 border-b border-neutral-200/80 pb-4">
-            {/* Row 1: Badge on left, Date right-aligned on same row */}
-            <div className="flex items-center justify-between gap-3">
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs shadow-xs",
-                  badgeStyle,
-                )}
-              >
-                <BadgeIcon className="size-3.5 shrink-0" />
-                {badgeLabel}
+    <>
+      <PageHeader
+        title={article.title}
+        description={article.excerpt}
+        breadcrumb={[
+          { label: "Home", href: "/" },
+          { label: "Announcements", href: "/announcements" },
+          { label: article.title },
+        ]}
+        action={
+          <div className="flex flex-col items-start sm:items-end justify-between h-full gap-2.5 pt-1">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs shadow-xs font-bold shrink-0",
+                badgeStyle,
+              )}
+            >
+              <BadgeIcon className="size-3.5 shrink-0" />
+              {badgeLabel}
+            </span>
+
+            {article.published_at ? (
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-600 shrink-0">
+                <CalendarClock
+                  aria-hidden
+                  className={cn(
+                    "size-3.5 shrink-0",
+                    isEmergency ? "text-red-600" : "text-primary-600",
+                  )}
+                />
+                <time dateTime={article.published_at}>
+                  {formatPhtDateTime(article.published_at)}
+                </time>
               </span>
+            ) : null}
+          </div>
+        }
+      />
 
-              {article.published_at ? (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500">
-                  <CalendarClock
-                    aria-hidden
-                    className={cn(
-                      "size-3.5 shrink-0",
-                      isEmergency ? "text-red-600" : "text-primary-600",
-                    )}
-                  />
-                  <time dateTime={article.published_at}>
-                    {formatPhtDateTime(article.published_at)}
-                  </time>
-                </span>
-              ) : null}
-            </div>
-
-            {/* Row 2: Author & Location metadata */}
-            <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-neutral-500">
+      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-6 md:py-10">
+        <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
+          {/* Left Main Article Column */}
+          <article className="flex flex-col gap-6 lg:col-span-8">
+            {/* Header Metadata Bar: Author & Location */}
+            <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-neutral-500 border-b border-neutral-200/80 pb-3 -mt-2">
               <span className="inline-flex items-center gap-1.5 truncate">
                 <User
                   aria-hidden
@@ -201,7 +211,6 @@ export function AnnouncementDetailView({
                 </span>
               </span>
             </div>
-          </div>
 
           {/* Cover Media */}
           {cover ? (
@@ -393,5 +402,6 @@ export function AnnouncementDetailView({
         </aside>
       </div>
     </div>
-  );
+  </>
+);
 }
