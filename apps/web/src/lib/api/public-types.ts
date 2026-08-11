@@ -81,7 +81,7 @@ export interface ArticleDocument {
   content: Array<Record<string, unknown>>;
 }
 
-/** River alert level. `0` is Normal, which the `announcement` table stores as NULL. */
+/** River alert level. `0` represents normal conditions. */
 export type AlertLevel = 0 | 1 | 2 | 3;
 
 export interface PublicAnnouncement {
@@ -90,8 +90,6 @@ export interface PublicAnnouncement {
   kind: AnnouncementKind;
   type: AnnouncementType;
   severity: AnnouncementSeverity | null;
-  /** Only ever set for river alerts. */
-  alert_level: 1 | 2 | 3 | null;
   title: string;
   excerpt: string;
   body: string;

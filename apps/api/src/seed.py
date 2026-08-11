@@ -830,7 +830,6 @@ ANNOUNCEMENT_DEFS = [
         "alert",
         "flood_warning",
         "emergency",
-        2,
         "Alert Level 2 — Evacuate riverside areas now",
         "The river has risen past the Level 2 threshold and continues to climb. Residents in "
         "Areas 1 and 2 must move to an evacuation centre now.",
@@ -851,7 +850,6 @@ ANNOUNCEMENT_DEFS = [
         "announcement",
         "class_suspension",
         "warning",
-        None,
         "Classes suspended in all levels tomorrow",
         "Following the Alert Level 2 declaration, classes in all public and private schools are "
         "suspended for tomorrow.",
@@ -867,7 +865,6 @@ ANNOUNCEMENT_DEFS = [
         "announcement",
         "road_closure",
         "warning",
-        None,
         "Riverside Road impassable to all vehicles",
         "Riverside Road between Purok 2 and Purok 6 is impassable due to floodwater. Use the "
         "Quirino Highway route instead.",
@@ -883,7 +880,6 @@ ANNOUNCEMENT_DEFS = [
         "announcement",
         "utility_interruption",
         "info",
-        None,
         "Scheduled water interruption, Saturday 8:00 AM to 4:00 PM",
         "Manila Water will carry out pipeline maintenance affecting Areas 3, 4 and 5. Store "
         "enough water for the day.",
@@ -899,7 +895,6 @@ ANNOUNCEMENT_DEFS = [
         "announcement",
         "general",
         "info",
-        None,
         "Household registration now open at the barangay hall",
         "Barangay Health Workers are assisting residents with household registration every "
         "weekday, 8:00 AM to 5:00 PM.",
@@ -915,7 +910,6 @@ ANNOUNCEMENT_DEFS = [
         "announcement",
         "general",
         "info",
-        None,
         "Free first aid training — limited slots",
         "The Philippine Red Cross will run a basic first aid and CPR session at the barangay "
         "hall. Slots limited to 40.",
@@ -931,7 +925,6 @@ ANNOUNCEMENT_DEFS = [
         "alert",
         "heavy_rainfall",
         "warning",
-        1,
         "Alert Level 1 — Prepare to evacuate",
         "Continuous heavy rainfall has pushed the river past the Level 1 threshold. This is a "
         "preparation notice.",
@@ -954,7 +947,6 @@ async def seed_announcements(session, areas: dict[str, Area], users: dict[str, U
         kind,
         type_,
         severity,
-        alert_level,
         title,
         body,
         instruction,
@@ -969,7 +961,6 @@ async def seed_announcements(session, areas: dict[str, Area], users: dict[str, U
             kind=kind,
             type=type_,
             severity=severity,
-            alert_level=alert_level,
             title=title,
             slug=slug_base(title),
             excerpt=body,

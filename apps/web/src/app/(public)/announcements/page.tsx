@@ -17,9 +17,8 @@ export const metadata: Metadata = {
 /**
  * The full announcement feed (FR-PUB-003, FR-ALT-009).
  *
- * Includes ended alerts as well as active ones — FR-ALT-009 requires alert
- * history be publicly viewable, and `AnnouncementCard` marks the inactive ones so
- * an old evacuation order cannot be mistaken for a current one.
+ * Includes alerts and earlier notices. FR-ALT-009 requires alert history to stay
+ * publicly viewable without adding lifecycle labels to every article card.
  */
 export default async function AnnouncementsPage({
   searchParams,
@@ -35,7 +34,7 @@ export default async function AnnouncementsPage({
       <PageHeader
         title="Barangay"
         titleAccent="Announcements"
-        description="Newest first. Ended alerts are kept here so residents can see what was issued and when."
+        description="Newest first. Earlier alerts remain available as part of the public record."
         breadcrumb={[{ label: "Home", href: "/" }, { label: "Announcements" }]}
       />
 

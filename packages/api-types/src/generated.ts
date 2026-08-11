@@ -261,6 +261,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/announcements/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Published announcement article */
+        get: operations["public_announcement_detail_api_v1_public_announcements__slug__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/activities": {
         parameters: {
             query?: never;
@@ -268,8 +285,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Upcoming activities */
+        /** Published upcoming activities */
         get: operations["public_activities_api_v1_public_activities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/activities/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Published activity article */
+        get: operations["public_activity_detail_api_v1_public_activities__slug__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -370,8 +404,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Active donation drives and their progress */
+        /** Public Donation Drives */
         get: operations["public_donation_drives_api_v1_public_donation_drives_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/donation-drives/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Public Donation Drive Detail */
+        get: operations["public_donation_drive_detail_api_v1_public_donation_drives__slug__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -718,11 +769,65 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Announcement editor detail */
+        get: operations["admin_announcement_detail_api_v1_admin_announcements__announcement_id__get"];
         put?: never;
         post?: never;
         /** Deactivate an alert (FR-ALT-011) — never a delete */
         delete: operations["admin_deactivate_announcement_api_v1_admin_announcements__announcement_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update an announcement article and lifecycle */
+        patch: operations["admin_update_announcement_api_v1_admin_announcements__announcement_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/announcements/{announcement_id}/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload an announcement article image */
+        post: operations["admin_add_announcement_image_api_v1_admin_announcements__announcement_id__images_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/announcements/{announcement_id}/images/{image_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete announcement article image */
+        delete: operations["admin_delete_announcement_image_api_v1_admin_announcements__announcement_id__images__image_id__delete"];
+        options?: never;
+        head?: never;
+        /** Edit announcement image metadata */
+        patch: operations["admin_patch_announcement_image_api_v1_admin_announcements__announcement_id__images__image_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/announcements/{announcement_id}/images/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set complete announcement image order */
+        put: operations["admin_order_announcement_images_api_v1_admin_announcements__announcement_id__images_order_put"];
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -769,10 +874,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all activities */
+        /** Admin List Activities */
         get: operations["admin_list_activities_api_v1_admin_activities_get"];
         put?: never;
-        /** Create an activity */
+        /** Admin Create Activity */
         post: operations["admin_create_activity_api_v1_admin_activities_post"];
         delete?: never;
         options?: never;
@@ -787,15 +892,67 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Admin Activity Detail */
+        get: operations["admin_activity_detail_api_v1_admin_activities__activity_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Admin Update Activity */
+        patch: operations["admin_update_activity_api_v1_admin_activities__activity_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/activities/{activity_id}/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Admin Add Activity Image */
+        post: operations["admin_add_activity_image_api_v1_admin_activities__activity_id__images_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/activities/{activity_id}/images/{image_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
         get?: never;
         put?: never;
         post?: never;
-        /** Remove an activity */
-        delete: operations["admin_delete_activity_api_v1_admin_activities__activity_id__delete"];
+        /** Admin Delete Activity Image */
+        delete: operations["admin_delete_activity_image_api_v1_admin_activities__activity_id__images__image_id__delete"];
         options?: never;
         head?: never;
-        /** Update an activity */
-        patch: operations["admin_update_activity_api_v1_admin_activities__activity_id__patch"];
+        /** Admin Patch Activity Image */
+        patch: operations["admin_patch_activity_image_api_v1_admin_activities__activity_id__images__image_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/activities/{activity_id}/images/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Admin Order Activity Images */
+        put: operations["admin_order_activity_images_api_v1_admin_activities__activity_id__images_order_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/admin/guides": {
@@ -940,6 +1097,74 @@ export interface paths {
         patch: operations["admin_update_evac_center_api_v1_admin_evacuation_centers__center_id__patch"];
         trace?: never;
     };
+    "/api/v1/admin/evacuation-centers/check-ins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Log a check-in at an evacuation center (FR-EVC-004) */
+        post: operations["admin_create_checkin_api_v1_admin_evacuation_centers_check_ins_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/evacuation-centers/check-ins/{checkin_id}/check-out": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Log a resident check-out from an evacuation center (FR-EVC-005) */
+        post: operations["admin_checkout_checkin_api_v1_admin_evacuation_centers_check_ins__checkin_id__check_out_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/evacuation-centers/{center_id}/check-ins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List check-ins for an evacuation center */
+        get: operations["admin_list_center_checkins_api_v1_admin_evacuation_centers__center_id__check_ins_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/portal/evacuation-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get citizen active evacuation status and history */
+        get: operations["portal_evacuation_status_api_v1_admin_portal_evacuation_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/donation-drives": {
         parameters: {
             query?: never;
@@ -947,10 +1172,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all donation drives */
+        /** Admin List Donation Drives */
         get: operations["admin_list_donation_drives_api_v1_admin_donation_drives_get"];
         put?: never;
-        /** Create a donation drive */
+        /** Admin Create Donation Drive */
         post: operations["admin_create_donation_drive_api_v1_admin_donation_drives_post"];
         delete?: never;
         options?: never;
@@ -958,7 +1183,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/donation-drives/{drive_id}/close": {
+    "/api/v1/admin/donation-drives/{drive_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin Donation Drive Detail */
+        get: operations["admin_donation_drive_detail_api_v1_admin_donation_drives__drive_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Admin Update Donation Drive */
+        patch: operations["admin_update_donation_drive_api_v1_admin_donation_drives__drive_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/donation-drives/{drive_id}/images": {
         parameters: {
             query?: never;
             header?: never;
@@ -967,32 +1210,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Close a drive */
-        post: operations["admin_close_donation_drive_api_v1_admin_donation_drives__drive_id__close_post"];
+        /** Admin Add Donation Drive Image */
+        post: operations["admin_add_donation_drive_image_api_v1_admin_donation_drives__drive_id__images_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/donation-drives/{drive_id}/donations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Donations received for a drive */
-        get: operations["admin_list_donations_api_v1_admin_donation_drives__drive_id__donations_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/donations/{donation_id}/status": {
+    "/api/v1/admin/donation-drives/{drive_id}/images/{image_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1002,11 +1228,29 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
+        /** Admin Delete Donation Drive Image */
+        delete: operations["admin_delete_donation_drive_image_api_v1_admin_donation_drives__drive_id__images__image_id__delete"];
+        options?: never;
+        head?: never;
+        /** Admin Patch Donation Drive Image */
+        patch: operations["admin_patch_donation_drive_image_api_v1_admin_donation_drives__drive_id__images__image_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/donation-drives/{drive_id}/images/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Admin Order Donation Drive Images */
+        put: operations["admin_order_donation_drive_images_api_v1_admin_donation_drives__drive_id__images_order_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        /** Change a donation's status (FR-DON-005/006) */
-        patch: operations["admin_update_donation_status_api_v1_admin_donations__donation_id__status_patch"];
+        patch?: never;
         trace?: never;
     };
     "/api/v1/admin/readings": {
@@ -1371,17 +1615,69 @@ export interface components {
             /** Unregistered Needs Rescue */
             unregistered_needs_rescue: number;
         };
-        /** ActivityIn */
-        ActivityIn: {
+        /** ActivityDetail */
+        ActivityDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slug */
+            slug: string;
             /** Title */
             title: string;
+            /** Excerpt */
+            excerpt: string;
             /**
              * Type
              * @enum {string}
              */
             type: "drill" | "seminar" | "first_aid" | "cleanup" | "tree_planting" | "ngo_program" | "other";
-            /** Description */
-            description?: string | null;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /** Ends At */
+            ends_at: string | null;
+            /** Venue */
+            venue: string | null;
+            /** Area Id */
+            area_id: string | null;
+            /** Area Name */
+            area_name: string | null;
+            /** Published At */
+            published_at: string | null;
+            /** Archived At */
+            archived_at: string | null;
+            /** Is Upcoming */
+            is_upcoming: boolean;
+            cover_image?: components["schemas"]["ArticleImageOut"] | null;
+            /** Body Json */
+            body_json: {
+                [key: string]: unknown;
+            };
+            /** Images */
+            images: components["schemas"]["ArticleImageOut"][];
+        };
+        /** ActivityIn */
+        ActivityIn: {
+            /** Title */
+            title: string;
+            /**
+             * Excerpt
+             * @default
+             */
+            excerpt: string;
+            /** Body Json */
+            body_json?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "drill" | "seminar" | "first_aid" | "cleanup" | "tree_planting" | "ngo_program" | "other";
             /**
              * Starts At
              * Format: date-time
@@ -1394,10 +1690,66 @@ export interface components {
             /** Area Id */
             area_id?: string | null;
             /**
-             * Is Published
-             * @default true
+             * Publication Status
+             * @default draft
+             * @enum {string}
              */
-            is_published: boolean;
+            publication_status: "draft" | "published" | "archived";
+        };
+        /**
+         * AdminAnnouncementDetail
+         * @description Editor-only targeting IDs; public readers receive display names only.
+         */
+        AdminAnnouncementDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slug */
+            slug: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "announcement" | "alert";
+            /** Type */
+            type: string;
+            /** Severity */
+            severity: ("info" | "warning" | "emergency") | null;
+            /** Title */
+            title: string;
+            /** Excerpt */
+            excerpt: string;
+            /** Body */
+            body: string;
+            /** Instruction */
+            instruction: string | null;
+            /** Is Barangay Wide */
+            is_barangay_wide: boolean;
+            /** Published At */
+            published_at: string | null;
+            /** Expires At */
+            expires_at: string | null;
+            /** Deactivated At */
+            deactivated_at: string | null;
+            /** Archived At */
+            archived_at: string | null;
+            /** Area Names */
+            area_names: string[];
+            /** Issued By Name */
+            issued_by_name: string;
+            /** Is Active */
+            is_active: boolean;
+            cover_image?: components["schemas"]["ArticleImageOut"] | null;
+            /** Body Json */
+            body_json: {
+                [key: string]: unknown;
+            };
+            /** Images */
+            images: components["schemas"]["ArticleImageOut"][];
+            /** Area Ids */
+            area_ids: string[];
         };
         /** AlertPromptOut */
         AlertPromptOut: {
@@ -1427,6 +1779,56 @@ export interface components {
             /** Resulted In Announcement Id */
             resulted_in_announcement_id: string | null;
         };
+        /** AnnouncementDetail */
+        AnnouncementDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slug */
+            slug: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "announcement" | "alert";
+            /** Type */
+            type: string;
+            /** Severity */
+            severity: ("info" | "warning" | "emergency") | null;
+            /** Title */
+            title: string;
+            /** Excerpt */
+            excerpt: string;
+            /** Body */
+            body: string;
+            /** Instruction */
+            instruction: string | null;
+            /** Is Barangay Wide */
+            is_barangay_wide: boolean;
+            /** Published At */
+            published_at: string | null;
+            /** Expires At */
+            expires_at: string | null;
+            /** Deactivated At */
+            deactivated_at: string | null;
+            /** Archived At */
+            archived_at: string | null;
+            /** Area Names */
+            area_names: string[];
+            /** Issued By Name */
+            issued_by_name: string;
+            /** Is Active */
+            is_active: boolean;
+            cover_image?: components["schemas"]["ArticleImageOut"] | null;
+            /** Body Json */
+            body_json: {
+                [key: string]: unknown;
+            };
+            /** Images */
+            images: components["schemas"]["ArticleImageOut"][];
+        };
         /** AnnouncementIn */
         AnnouncementIn: {
             /**
@@ -1438,12 +1840,17 @@ export interface components {
             type: string;
             /** Severity */
             severity?: ("info" | "warning" | "emergency") | null;
-            /** Alert Level */
-            alert_level?: (1 | 2 | 3) | null;
             /** Title */
             title: string;
-            /** Body */
-            body: string;
+            /**
+             * Excerpt
+             * @default
+             */
+            excerpt: string;
+            /** Body Json */
+            body_json?: {
+                [key: string]: unknown;
+            };
             /** Instruction */
             instruction?: string | null;
             /**
@@ -1451,18 +1858,16 @@ export interface components {
              * @default true
              */
             is_barangay_wide: boolean;
-            /**
-             * Area Ids
-             * @default []
-             */
-            area_ids: string[];
+            /** Area Ids */
+            area_ids?: string[];
             /** Expires At */
             expires_at?: string | null;
             /**
-             * Publish Now
-             * @default true
+             * Publication Status
+             * @default draft
+             * @enum {string}
              */
-            publish_now: boolean;
+            publication_status: "draft" | "published" | "archived";
         };
         /** AreaAccountedFor */
         AreaAccountedFor: {
@@ -1554,6 +1959,48 @@ export interface components {
             /** Flood Exposure */
             flood_exposure?: string | null;
         };
+        /** ArticleImageOut */
+        ArticleImageOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Url */
+            url: string;
+            /** Alt Text */
+            alt_text: string;
+            /** Caption */
+            caption: string | null;
+            /** Sort Order */
+            sort_order: number;
+            /** Is Cover */
+            is_cover: boolean;
+        };
+        /** ArticleImagePatch */
+        ArticleImagePatch: {
+            /** Alt Text */
+            alt_text?: string | null;
+            /** Caption */
+            caption?: string | null;
+            /** Is Cover */
+            is_cover?: boolean | null;
+        };
+        /** Body_admin_add_activity_image_api_v1_admin_activities__activity_id__images_post */
+        Body_admin_add_activity_image_api_v1_admin_activities__activity_id__images_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_admin_add_announcement_image_api_v1_admin_announcements__announcement_id__images_post */
+        Body_admin_add_announcement_image_api_v1_admin_announcements__announcement_id__images_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_admin_add_donation_drive_image_api_v1_admin_donation_drives__drive_id__images_post */
+        Body_admin_add_donation_drive_image_api_v1_admin_donation_drives__drive_id__images_post: {
+            /** File */
+            file: string;
+        };
         /** Body_me_create_incident_report_api_v1_me_incident_reports_post */
         Body_me_create_incident_report_api_v1_me_incident_reports_post: {
             /**
@@ -1593,80 +2040,76 @@ export interface components {
             /** Description */
             description?: string | null;
         };
-        /** DonationDriveIn */
-        DonationDriveIn: {
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Needs
-             * @default []
-             */
-            needs: components["schemas"]["DriveNeedIn"][];
-        };
-        /** DonationOut */
-        DonationOut: {
+        /** DonationDriveDetail */
+        DonationDriveDetail: {
             /**
              * Id
              * Format: uuid
              */
             id: string;
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
+            /** Excerpt */
+            excerpt: string;
+            /** Event Id */
+            event_id: string | null;
+            /** Event Name */
+            event_name: string | null;
+            /** Organizer Name */
+            organizer_name: string | null;
+            /** Organizer Contact */
+            organizer_contact: string | null;
+            /** Drop Off Instructions */
+            drop_off_instructions: string | null;
+            /** Active From */
+            active_from: string | null;
+            /** Active Until */
+            active_until: string | null;
+            /** Published At */
+            published_at: string | null;
+            /** Archived At */
+            archived_at: string | null;
+            cover_image?: components["schemas"]["ArticleImageOut"] | null;
+            /** Body Json */
+            body_json: {
+                [key: string]: unknown;
+            };
+            /** Images */
+            images: components["schemas"]["ArticleImageOut"][];
+        };
+        /** DonationDriveIn */
+        DonationDriveIn: {
+            /** Title */
+            title: string;
             /**
-             * Drive Id
-             * Format: uuid
+             * Excerpt
+             * @default
              */
-            drive_id: string;
-            /** Reference No */
-            reference_no: string;
-            /** Donor Name */
-            donor_name: string;
-            /** Donor Contact */
-            donor_contact: string | null;
-            /** Item Name */
-            item_name: string;
-            /** Quantity Pledged */
-            quantity_pledged: number;
-            /** Quantity Received */
-            quantity_received: number | null;
-            /** Unit */
-            unit: string;
+            excerpt: string;
+            /** Body Json */
+            body_json?: {
+                [key: string]: unknown;
+            };
+            /** Event Id */
+            event_id?: string | null;
+            /** Organizer Name */
+            organizer_name?: string | null;
+            /** Organizer Contact */
+            organizer_contact?: string | null;
+            /** Drop Off Instructions */
+            drop_off_instructions?: string | null;
+            /** Active From */
+            active_from?: string | null;
+            /** Active Until */
+            active_until?: string | null;
             /**
-             * Status
+             * Publication Status
+             * @default draft
              * @enum {string}
              */
-            status: "submitted" | "received" | "partially_received" | "not_fulfilled";
-            /** Is Walk In */
-            is_walk_in: boolean;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
-        /** DonationStatusPatch */
-        DonationStatusPatch: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "submitted" | "received" | "partially_received" | "not_fulfilled";
-            /** Quantity Received */
-            quantity_received?: number | null;
-        };
-        /** DriveNeedIn */
-        DriveNeedIn: {
-            /** Item Name */
-            item_name: string;
-            /** Target Quantity */
-            target_quantity: number;
-            /** Unit */
-            unit: string;
-            /**
-             * Sort Order
-             * @default 0
-             */
-            sort_order: number;
+            publication_status: "draft" | "published" | "archived";
         };
         /** DuplicateCandidate */
         DuplicateCandidate: {
@@ -1756,6 +2199,63 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /** EvacCheckinCreate */
+        EvacCheckinCreate: {
+            /**
+             * Evac Center Id
+             * Format: uuid
+             */
+            evac_center_id: string;
+            /** Event Id */
+            event_id?: string | null;
+            /** Member Id */
+            member_id?: string | null;
+            /** Unregistered Person Id */
+            unregistered_person_id?: string | null;
+            /** Person Name */
+            person_name: string;
+            /** Checked In At */
+            checked_in_at?: string | null;
+        };
+        /** EvacCheckinOut */
+        EvacCheckinOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Evac Center Id
+             * Format: uuid
+             */
+            evac_center_id: string;
+            /** Evac Center Name */
+            evac_center_name: string;
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            /** Event Name */
+            event_name: string;
+            /** Member Id */
+            member_id: string | null;
+            /** Unregistered Person Id */
+            unregistered_person_id: string | null;
+            /** Person Name */
+            person_name: string;
+            /**
+             * Checked In At
+             * Format: date-time
+             */
+            checked_in_at: string;
+            /** Checked Out At */
+            checked_out_at: string | null;
+            /** Recorded By User Id */
+            recorded_by_user_id: string | null;
+            /** Recorded By Name */
+            recorded_by_name: string | null;
+        };
         /** FacilityIn */
         FacilityIn: {
             /** Name */
@@ -1829,6 +2329,8 @@ export interface components {
         FloodEventIn: {
             /** Name */
             name: string;
+            /** Emergency Event Id */
+            emergency_event_id?: string | null;
             /**
              * Started At
              * Format: date-time
@@ -2005,6 +2507,8 @@ export interface components {
             area_id: string;
             /** Street Address */
             street_address?: string | null;
+            /** Waterway Proximity */
+            waterway_proximity?: ("very_near" | "near" | "far") | null;
             /** Latitude */
             latitude?: number | null;
             /** Longitude */
@@ -2036,6 +2540,8 @@ export interface components {
         HouseholdCreateSelf: {
             /** Street Address */
             street_address?: string | null;
+            /** Waterway Proximity */
+            waterway_proximity?: ("very_near" | "near" | "far") | null;
             /**
              * Area Id
              * Format: uuid
@@ -2095,6 +2601,8 @@ export interface components {
             area_name?: string | null;
             /** Street Address */
             street_address: string | null;
+            /** Waterway Proximity */
+            waterway_proximity?: string | null;
             location: components["schemas"]["GeoJsonPoint"] | null;
             /**
              * Source
@@ -2131,6 +2639,11 @@ export interface components {
             reference_no: string;
             /** Members */
             members: components["schemas"]["MemberSafetyOut"][];
+        };
+        /** ImageOrderIn */
+        ImageOrderIn: {
+            /** Image Ids */
+            image_ids: string[];
         };
         /** IncidentReportOut */
         IncidentReportOut: {
@@ -2201,7 +2714,7 @@ export interface components {
              * Metric
              * @enum {string}
              */
-            metric: "river_level" | "rainfall" | "temperature" | "humidity" | "heat_index" | "precipitation_probability";
+            metric: "river_level" | "rainfall" | "temperature" | "humidity" | "heat_index" | "precipitation_probability" | "tcws_signal";
             /** Value */
             value: number;
             /** Unit */
@@ -2489,6 +3002,14 @@ export interface components {
             /** Pages */
             pages: number;
         };
+        /** PortalEvacuationStatusOut */
+        PortalEvacuationStatusOut: {
+            /** Is Currently Evacuated */
+            is_currently_evacuated: boolean;
+            active_checkin: components["schemas"]["EvacCheckinOut"] | null;
+            /** History */
+            history: components["schemas"]["EvacCheckinOut"][];
+        };
         /** PublicActivity */
         PublicActivity: {
             /**
@@ -2496,15 +3017,17 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Slug */
+            slug: string;
             /** Title */
             title: string;
+            /** Excerpt */
+            excerpt: string;
             /**
              * Type
              * @enum {string}
              */
             type: "drill" | "seminar" | "first_aid" | "cleanup" | "tree_planting" | "ngo_program" | "other";
-            /** Description */
-            description: string | null;
             /**
              * Starts At
              * Format: date-time
@@ -2518,8 +3041,13 @@ export interface components {
             area_id: string | null;
             /** Area Name */
             area_name: string | null;
+            /** Published At */
+            published_at: string | null;
+            /** Archived At */
+            archived_at: string | null;
             /** Is Upcoming */
             is_upcoming: boolean;
+            cover_image?: components["schemas"]["ArticleImageOut"] | null;
         };
         /** PublicAnnouncement */
         PublicAnnouncement: {
@@ -2528,6 +3056,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Slug */
+            slug: string;
             /**
              * Kind
              * @enum {string}
@@ -2537,10 +3067,10 @@ export interface components {
             type: string;
             /** Severity */
             severity: ("info" | "warning" | "emergency") | null;
-            /** Alert Level */
-            alert_level: (1 | 2 | 3) | null;
             /** Title */
             title: string;
+            /** Excerpt */
+            excerpt: string;
             /** Body */
             body: string;
             /** Instruction */
@@ -2553,12 +3083,15 @@ export interface components {
             expires_at: string | null;
             /** Deactivated At */
             deactivated_at: string | null;
+            /** Archived At */
+            archived_at: string | null;
             /** Area Names */
             area_names: string[];
             /** Issued By Name */
             issued_by_name: string;
             /** Is Active */
             is_active: boolean;
+            cover_image?: components["schemas"]["ArticleImageOut"] | null;
         };
         /** PublicArea */
         PublicArea: {
@@ -2597,6 +3130,21 @@ export interface components {
             registered_members: number;
             /** Evac Center Count */
             evac_center_count: number;
+            /**
+             * Low Risk Households
+             * @default 0
+             */
+            low_risk_households: number;
+            /**
+             * Medium Risk Households
+             * @default 0
+             */
+            medium_risk_households: number;
+            /**
+             * High Risk Households
+             * @default 0
+             */
+            high_risk_households: number;
         };
         /** PublicBarangayStats */
         PublicBarangayStats: {
@@ -2629,52 +3177,31 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Slug */
+            slug: string;
             /** Title */
             title: string;
-            /** Description */
-            description: string | null;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "open" | "closed";
-            /**
-             * Opened At
-             * Format: date-time
-             */
-            opened_at: string;
-            /** Closed At */
-            closed_at: string | null;
+            /** Excerpt */
+            excerpt: string;
             /** Event Id */
             event_id: string | null;
             /** Event Name */
             event_name: string | null;
-            /** Needs */
-            needs: components["schemas"]["PublicDriveNeed"][];
-            /** Overall Progress Pct */
-            overall_progress_pct: number;
-        };
-        /** PublicDriveNeed */
-        PublicDriveNeed: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Item Name */
-            item_name: string;
-            /** Target Quantity */
-            target_quantity: number;
-            /** Unit */
-            unit: string;
-            /** Sort Order */
-            sort_order: number;
-            /** Received Quantity */
-            received_quantity: number;
-            /** Pledged Quantity */
-            pledged_quantity: number;
-            /** Progress Pct */
-            progress_pct: number;
+            /** Organizer Name */
+            organizer_name: string | null;
+            /** Organizer Contact */
+            organizer_contact: string | null;
+            /** Drop Off Instructions */
+            drop_off_instructions: string | null;
+            /** Active From */
+            active_from: string | null;
+            /** Active Until */
+            active_until: string | null;
+            /** Published At */
+            published_at: string | null;
+            /** Archived At */
+            archived_at: string | null;
+            cover_image?: components["schemas"]["ArticleImageOut"] | null;
         };
         /**
          * PublicEmergencyEvent
@@ -2770,6 +3297,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Emergency Event Id */
+            emergency_event_id?: string | null;
             /** Name */
             name: string;
             /**
@@ -2779,6 +3308,11 @@ export interface components {
             started_at: string;
             /** Ended At */
             ended_at: string | null;
+            /**
+             * Is Ongoing
+             * @default false
+             */
+            is_ongoing: boolean;
             /** Peak Level M */
             peak_level_m: number | null;
             /** Peak At */
@@ -2801,7 +3335,7 @@ export interface components {
              * Metric
              * @enum {string}
              */
-            metric: "river_level" | "rainfall" | "temperature" | "humidity" | "heat_index" | "precipitation_probability";
+            metric: "river_level" | "rainfall" | "temperature" | "humidity" | "heat_index" | "precipitation_probability" | "tcws_signal";
             /** Value */
             value: number;
             /** Unit */
@@ -2923,7 +3457,7 @@ export interface components {
              * Metric
              * @enum {string}
              */
-            metric: "river_level" | "rainfall" | "temperature" | "humidity" | "heat_index" | "precipitation_probability";
+            metric: "river_level" | "rainfall" | "temperature" | "humidity" | "heat_index" | "precipitation_probability" | "tcws_signal";
             /** Value */
             value: number;
             /** Unit */
@@ -3675,6 +4209,37 @@ export interface operations {
             };
         };
     };
+    public_announcement_detail_api_v1_public_announcements__slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnouncementDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     public_activities_api_v1_public_activities_get: {
         parameters: {
             query?: {
@@ -3695,6 +4260,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_PublicActivity_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_activity_detail_api_v1_public_activities__slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityDetail"];
                 };
             };
             /** @description Validation Error */
@@ -3848,7 +4444,6 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
-                status?: string;
             };
             header?: never;
             path?: never;
@@ -3863,6 +4458,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_PublicDonationDrive_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_donation_drive_detail_api_v1_public_donation_drives__slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DonationDriveDetail"];
                 };
             };
             /** @description Validation Error */
@@ -4642,6 +5268,37 @@ export interface operations {
             };
         };
     };
+    admin_announcement_detail_api_v1_admin_announcements__announcement_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                announcement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAnnouncementDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     admin_deactivate_announcement_api_v1_admin_announcements__announcement_id__delete: {
         parameters: {
             query?: never;
@@ -4662,6 +5319,181 @@ export interface operations {
                     "application/json": {
                         [key: string]: boolean;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_announcement_api_v1_admin_announcements__announcement_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                announcement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicAnnouncement"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_add_announcement_image_api_v1_admin_announcements__announcement_id__images_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                announcement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_admin_add_announcement_image_api_v1_admin_announcements__announcement_id__images_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArticleImageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_delete_announcement_image_api_v1_admin_announcements__announcement_id__images__image_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                announcement_id: string;
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_patch_announcement_image_api_v1_admin_announcements__announcement_id__images__image_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                announcement_id: string;
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArticleImagePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArticleImageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_order_announcement_images_api_v1_admin_announcements__announcement_id__images_order_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                announcement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImageOrderIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArticleImageOut"][];
                 };
             };
             /** @description Validation Error */
@@ -4794,7 +5626,7 @@ export interface operations {
             };
         };
     };
-    admin_delete_activity_api_v1_admin_activities__activity_id__delete: {
+    admin_activity_detail_api_v1_admin_activities__activity_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -4811,9 +5643,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
+                    "application/json": components["schemas"]["ActivityDetail"];
                 };
             };
             /** @description Validation Error */
@@ -4849,6 +5679,146 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicActivity"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_add_activity_image_api_v1_admin_activities__activity_id__images_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_admin_add_activity_image_api_v1_admin_activities__activity_id__images_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArticleImageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_delete_activity_image_api_v1_admin_activities__activity_id__images__image_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: string;
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_patch_activity_image_api_v1_admin_activities__activity_id__images__image_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: string;
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArticleImagePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArticleImageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_order_activity_images_api_v1_admin_activities__activity_id__images_order_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImageOrderIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArticleImageOut"][];
                 };
             };
             /** @description Validation Error */
@@ -5292,6 +6262,124 @@ export interface operations {
             };
         };
     };
+    admin_create_checkin_api_v1_admin_evacuation_centers_check_ins_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvacCheckinCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvacCheckinOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_checkout_checkin_api_v1_admin_evacuation_centers_check_ins__checkin_id__check_out_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                checkin_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvacCheckinOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_center_checkins_api_v1_admin_evacuation_centers__center_id__check_ins_get: {
+        parameters: {
+            query?: {
+                event_id?: string | null;
+                active_only?: boolean;
+            };
+            header?: never;
+            path: {
+                center_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvacCheckinOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    portal_evacuation_status_api_v1_admin_portal_evacuation_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalEvacuationStatusOut"];
+                };
+            };
+        };
+    };
     admin_list_donation_drives_api_v1_admin_donation_drives_get: {
         parameters: {
             query?: never;
@@ -5331,9 +6419,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: string;
-                    };
+                    "application/json": components["schemas"]["PublicDonationDrive"];
                 };
             };
             /** @description Validation Error */
@@ -5347,7 +6433,7 @@ export interface operations {
             };
         };
     };
-    admin_close_donation_drive_api_v1_admin_donation_drives__drive_id__close_post: {
+    admin_donation_drive_detail_api_v1_admin_donation_drives__drive_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5364,9 +6450,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
+                    "application/json": components["schemas"]["DonationDriveDetail"];
                 };
             };
             /** @description Validation Error */
@@ -5380,51 +6464,87 @@ export interface operations {
             };
         };
     };
-    admin_list_donations_api_v1_admin_donation_drives__drive_id__donations_get: {
+    admin_update_donation_drive_api_v1_admin_donation_drives__drive_id__patch: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 drive_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DonationOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    admin_update_donation_status_api_v1_admin_donations__donation_id__status_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                donation_id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DonationStatusPatch"];
+                "application/json": components["schemas"]["DonationDriveIn"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicDonationDrive"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_add_donation_drive_image_api_v1_admin_donation_drives__drive_id__images_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                drive_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_admin_add_donation_drive_image_api_v1_admin_donation_drives__drive_id__images_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArticleImageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_delete_donation_drive_image_api_v1_admin_donation_drives__drive_id__images__image_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                drive_id: string;
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -5435,6 +6555,77 @@ export interface operations {
                     "application/json": {
                         [key: string]: boolean;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_patch_donation_drive_image_api_v1_admin_donation_drives__drive_id__images__image_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                drive_id: string;
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArticleImagePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArticleImageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_order_donation_drive_images_api_v1_admin_donation_drives__drive_id__images_order_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                drive_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImageOrderIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArticleImageOut"][];
                 };
             };
             /** @description Validation Error */

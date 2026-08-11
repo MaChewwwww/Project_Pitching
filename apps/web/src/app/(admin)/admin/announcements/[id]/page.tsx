@@ -24,7 +24,6 @@ interface AnnouncementEditor {
   kind: AnnouncementFormValues["kind"];
   type: AnnouncementFormValues["type"];
   severity: AnnouncementFormValues["severity"] | null;
-  alert_level: 1 | 2 | 3 | null;
   title: string;
   excerpt: string;
   body_json: ArticleDocument;
@@ -66,7 +65,6 @@ export default function AdminAnnouncementEditorPage() {
         ...values,
         instruction: values.instruction || null,
         severity: values.severity || null,
-        alert_level: values.alert_level || null,
         expires_at: values.expires_at ? new Date(values.expires_at).toISOString() : null,
       }),
     onSuccess: () => {
@@ -87,7 +85,6 @@ export default function AdminAnnouncementEditorPage() {
     kind: data.kind,
     type: data.type,
     severity: data.severity ?? undefined,
-    alert_level: data.alert_level ?? undefined,
     title: data.title,
     excerpt: data.excerpt,
     body_json: data.body_json,
@@ -115,7 +112,7 @@ export default function AdminAnnouncementEditorPage() {
         }
       />
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_26rem]">
-        <div className="rounded-[16px] border border-neutral-200 bg-white p-6 shadow-sm-card sm:p-8">
+        <div className="shadow-sm-card rounded-[16px] border border-neutral-200 bg-white p-6 sm:p-8">
           <AnnouncementForm
             areas={areas}
             defaultValues={defaultValues}

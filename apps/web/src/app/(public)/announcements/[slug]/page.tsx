@@ -26,9 +26,11 @@ export default async function AnnouncementArticlePage({
         body={article.body_json}
         images={article.images}
         cover={article.cover_image}
-        eyebrow={article.kind === "alert" ? `Alert level ${article.alert_level ?? ""}` : "Barangay advisory"}
+        eyebrow={article.kind === "alert" ? "Emergency alert" : "Barangay advisory"}
         metadata={[
-          article.published_at ? formatPhtDateTime(article.published_at) : "Published notice",
+          article.published_at
+            ? formatPhtDateTime(article.published_at)
+            : "Published notice",
           article.issued_by_name,
           article.area_names.length ? article.area_names.join(", ") : "Barangay-wide",
         ]}

@@ -51,7 +51,6 @@ export const announcementFormSchema = z
     kind: z.enum(["announcement", "alert"]),
     type: z.enum(announcementTypes),
     severity: z.enum(["info", "warning", "emergency"]).optional(),
-    alert_level: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
     title: z.string().min(1, "Required"),
     excerpt: z.string().max(360, "Keep the summary under 360 characters").default(""),
     body_json: z.custom<ArticleDocument>(),
@@ -169,50 +168,24 @@ export function AnnouncementForm({
       </div>
 
       {kind === "alert" ? (
-        <div className="grid grid-cols-2 gap-6">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="severity">Severity</Label>
-            <Controller
-              control={control}
-              name="severity"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger id="severity" className="w-full">
-                    <SelectValue placeholder="Select severity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="info">Info</SelectItem>
-                    <SelectItem value="warning">Warning</SelectItem>
-                    <SelectItem value="emergency">Emergency</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="alert_level">River alert level</Label>
-            <Controller
-              control={control}
-              name="alert_level"
-              render={({ field }) => (
-                <Select
-                  value={field.value ? String(field.value) : ""}
-                  onValueChange={(v) =>
-                    field.onChange(v ? (Number(v) as 1 | 2 | 3) : undefined)
-                  }
-                >
-                  <SelectTrigger id="alert_level" className="w-full">
-                    <SelectValue placeholder="None" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 · Prepare</SelectItem>
-                    <SelectItem value="2">2 · Evacuate</SelectItem>
-                    <SelectItem value="3">3 · Forced Evacuation</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="severity">Severity</Label>
+          <Controller
+            control={control}
+            name="severity"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger id="severity" className="w-full">
+                  <SelectValue placeholder="Select severity" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="info">Info</SelectItem>
+                  <SelectItem value="warning">Warning</SelectItem>
+                  <SelectItem value="emergency">Emergency</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
         </div>
       ) : null}
 

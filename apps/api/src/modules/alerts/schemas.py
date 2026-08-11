@@ -52,7 +52,6 @@ class PublicAnnouncement(BaseModel):
     kind: Literal["announcement", "alert"]
     type: str
     severity: Literal["info", "warning", "emergency"] | None
-    alert_level: Literal[1, 2, 3] | None
     title: str
     excerpt: str
     body: str
@@ -83,7 +82,6 @@ class AnnouncementIn(BaseModel):
     kind: Literal["announcement", "alert"]
     type: str
     severity: Literal["info", "warning", "emergency"] | None = None
-    alert_level: Literal[1, 2, 3] | None = None
     title: str
     excerpt: str = ""
     body_json: dict[str, Any] = Field(default_factory=lambda: {"type": "doc", "content": []})

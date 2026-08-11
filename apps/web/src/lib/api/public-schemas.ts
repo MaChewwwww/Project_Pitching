@@ -48,7 +48,6 @@ export const publicAnnouncementSchema = z.object({
   kind: z.enum(["announcement", "alert"]),
   type: announcementTypeSchema,
   severity: z.enum(["info", "warning", "emergency"]).nullable(),
-  alert_level: z.union([z.literal(1), z.literal(2), z.literal(3)]).nullable(),
   title: z.string(),
   excerpt: z.string(),
   body: z.string(),

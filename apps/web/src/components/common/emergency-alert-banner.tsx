@@ -41,18 +41,12 @@ export function EmergencyAlertBanner({
   const activeAlert = alert && alert.is_active ? alert : null;
   if (!activeAlert && !emergencyEvent) return null;
 
-  // Level 2 and 3 mean "move now"; level 1 is a preparation notice. The palette
-  // separates them so a Prepare notice does not read as an evacuation order.
+  // Severity determines the urgency palette; river conditions remain in the
+  // dedicated weather surfaces rather than being copied into an alert article.
   // An active event with no announcement is always urgent — a declared
   // emergency with no advisory yet is not a "prepare" state.
-  const urgent = activeAlert
-    ? (activeAlert.alert_level ?? 0) >= 2 || activeAlert.severity === "emergency"
-    : true;
-  const levelText = activeAlert
-    ? activeAlert.alert_level != null
-      ? `Level ${activeAlert.alert_level}`
-      : "Emergency"
-    : "Active";
+  const urgent = activeAlert ? activeAlert.severity === "emergency" : true;
+  const levelText = activeAlert?.severity ?? "Active";
 
   const title = activeAlert
     ? activeAlert.title

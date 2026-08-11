@@ -114,7 +114,6 @@ async def _to_public(
                 kind=a.kind,
                 type=a.type,
                 severity=a.severity,
-                alert_level=a.alert_level,
                 title=a.title,
                 excerpt=a.excerpt,
                 body=document_plain_text(a.body_json),
@@ -238,7 +237,6 @@ async def create_announcement(
         kind=data.kind,
         type=data.type,
         severity=data.severity,
-        alert_level=data.alert_level,
         title=data.title,
         slug=await _unique_slug(session, data.title),
         excerpt=data.excerpt,
@@ -276,7 +274,7 @@ async def update_announcement(
         raise NotFoundError("Announcement not found.")
     now = datetime.now(UTC)
     announcement.kind, announcement.type = data.kind, data.type
-    announcement.severity, announcement.alert_level = data.severity, data.alert_level
+    announcement.severity = data.severity
     announcement.title, announcement.excerpt, announcement.body_json = (
         data.title,
         data.excerpt,

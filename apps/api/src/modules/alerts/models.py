@@ -54,7 +54,6 @@ class Announcement(UUIDPrimaryKeyMixin, Base):
     kind: Mapped[str] = mapped_column(Text, nullable=False)
     type: Mapped[str] = mapped_column(Text, nullable=False)
     severity: Mapped[str | None] = mapped_column(Text, nullable=True)
-    alert_level: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     slug: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
     excerpt: Mapped[str] = mapped_column(Text, nullable=False)
@@ -82,9 +81,6 @@ class Announcement(UUIDPrimaryKeyMixin, Base):
         CheckConstraint(
             f"severity IS NULL OR severity IN {ANNOUNCEMENT_SEVERITIES}",
             name="announcement_severity_valid",
-        ),
-        CheckConstraint(
-            "alert_level IS NULL OR alert_level IN (1, 2, 3)", name="announcement_alert_level_valid"
         ),
         # FR-ALT-005: an alert cannot be saved without telling people what to do.
         CheckConstraint(
