@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckCircle2, HeartPulse, Radio, Shield } from "lucide-react";
 
 import { LogoLockup } from "@/components/common/logo";
 import { RegisterForm } from "@/components/features/auth/register-form";
@@ -9,42 +9,85 @@ import { RegisterForm } from "@/components/features/auth/register-form";
  */
 export default function RegisterPage() {
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50/50 via-slate-50 to-neutral-100 px-4 py-16">
-      {/* Top Left Floating Back to Home Button */}
+    <div className="relative min-h-screen flex flex-col justify-center items-center bg-slate-950 px-4 py-12 overflow-hidden selection:bg-emerald-500 selection:text-white">
+      {/* Background Ambient Mesh Glows */}
+      <div className="absolute top-0 left-1/4 size-[500px] rounded-full bg-emerald-600/15 blur-[120px] pointer-events-none animate-pulse" />
+      <div className="absolute bottom-0 right-1/4 size-[500px] rounded-full bg-teal-600/15 blur-[120px] pointer-events-none animate-pulse" />
+
+      {/* Floating Top Left Back to Home Button */}
       <Link
         href="/"
-        className="fixed top-5 left-5 z-50 inline-flex items-center gap-2 rounded-full border border-neutral-200/90 bg-white/90 px-4 py-2 text-xs font-extrabold text-neutral-800 shadow-xs backdrop-blur-md hover:border-emerald-600/40 hover:bg-emerald-50/80 hover:text-emerald-950 transition-all cursor-pointer"
+        className="fixed top-5 left-5 z-50 inline-flex items-center gap-2 rounded-full border border-white/15 bg-slate-900/80 px-4 py-2 text-xs font-extrabold text-white shadow-xl backdrop-blur-md hover:bg-slate-800 hover:border-emerald-500/50 hover:scale-105 active:scale-95 transition-all cursor-pointer"
       >
-        <ArrowLeft aria-hidden className="size-4 text-emerald-700 shrink-0" />
+        <ArrowLeft aria-hidden className="size-4 text-emerald-400 shrink-0" />
         <span>Back to Home</span>
       </Link>
 
-      <div className="w-full max-w-md">
-        <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <div className="rounded-2xl border border-emerald-200/60 bg-white p-3 shadow-2xs">
-            <LogoLockup size={40} />
+      {/* Master 2-Column Auth Card Container */}
+      <div className="relative z-10 w-full max-w-4xl rounded-3xl border border-white/10 bg-slate-900/60 shadow-2xl backdrop-blur-2xl overflow-hidden grid lg:grid-cols-12 min-h-[540px] animate-in fade-in zoom-in-95 duration-300">
+        {/* Left Column: Dark Emerald Brand Hero Panel */}
+        <div className="lg:col-span-5 bg-gradient-to-br from-emerald-950 via-slate-900 to-emerald-900 p-8 text-white flex flex-col justify-between relative overflow-hidden border-b lg:border-b-0 lg:border-r border-white/10">
+          <div className="absolute -bottom-12 -right-12 size-56 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
+
+          {/* Logo & Platform Info */}
+          <div className="flex flex-col gap-6 relative z-10">
+            <div className="flex items-center gap-3">
+              <LogoLockup size={40} onDark />
+            </div>
+
+            <div className="space-y-2.5 pt-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 px-3 py-1 text-[11px] font-extrabold text-emerald-300 uppercase tracking-wider">
+                <Shield aria-hidden className="size-3.5 text-emerald-400" />
+                San Jose Platform
+              </span>
+              <h2 className="text-2xl font-black text-white leading-tight tracking-tight">
+                Household Registration
+              </h2>
+              <p className="text-xs text-slate-300 leading-relaxed font-normal">
+                Register your household account to access safety guides, family status updates, and emergency assistance.
+              </p>
+            </div>
           </div>
-          <div className="mt-1">
-            <h1 className="text-h2 font-black text-neutral-900">Create your account</h1>
-            <p className="text-body-sm mt-1 font-medium text-neutral-500 max-w-xs mx-auto">
-              For San Jose residents registering a household. You&apos;ll set up address details next.
+
+          {/* Platform Highlights List */}
+          <div className="space-y-3 pt-6 border-t border-white/10 relative z-10">
+            <div className="flex items-center gap-2.5 text-xs text-slate-200 font-medium">
+              <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
+              <span>Quick Account Setup for San Jose Heads</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-xs text-slate-200 font-medium">
+              <Radio className="size-4 text-emerald-400 shrink-0" />
+              <span>Direct Emergency Siren Notifications</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-xs text-slate-200 font-medium">
+              <HeartPulse className="size-4 text-emerald-400 shrink-0" />
+              <span>Priority Evacuation Center Tracking</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Form Container Panel */}
+        <div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white">
+          <div>
+            <div className="mb-5">
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Create your account</h1>
+              <p className="text-xs font-medium text-slate-500 mt-1">
+                For San Jose residents registering a household. You&apos;ll set up address details next.
+              </p>
+            </div>
+
+            <RegisterForm />
+          </div>
+
+          <div className="pt-5 mt-5 border-t border-slate-100 text-center">
+            <p className="text-xs font-medium text-slate-600">
+              Already have an account?{" "}
+              <Link href="/login" className="text-emerald-700 font-extrabold hover:text-emerald-900 hover:underline transition-colors">
+                Sign in
+              </Link>
             </p>
           </div>
         </div>
-
-        <div className="rounded-2xl border border-neutral-200/90 bg-white p-6 sm:p-8 shadow-xl backdrop-blur-md">
-          <RegisterForm />
-        </div>
-
-        <p className="text-body-sm mt-6 text-center text-neutral-600 font-medium">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="text-emerald-700 font-bold hover:text-emerald-900 hover:underline"
-          >
-            Sign in
-          </Link>
-        </p>
       </div>
     </div>
   );
