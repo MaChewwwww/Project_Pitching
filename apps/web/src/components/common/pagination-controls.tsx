@@ -8,10 +8,12 @@ export function PaginationControls({
   page,
   pages,
   pathname,
+  params,
 }: {
   page: number;
   pages: number;
   pathname: string;
+  params?: Record<string, string | undefined>;
 }) {
   if (pages <= 1) return null;
 
@@ -19,7 +21,17 @@ export function PaginationControls({
     { length: Math.min(pages, 5) },
     (_, index) => Math.max(1, Math.min(pages - 4, page - 3)) + index,
   );
-  const href = (nextPage: number) => `${pathname}?page=${nextPage}`;
+
+  const href = (nextPage: number) => {
+    const query = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, val]) => {
+        if (val && key !== "page") query.set(key, val);
+      });
+    }
+    query.set("page", String(nextPage));
+    return `${pathname}?${query.toString()}`;
+  };
 
   return (
     <nav
