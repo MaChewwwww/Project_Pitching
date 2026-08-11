@@ -150,10 +150,11 @@ export function AnnouncementDetailView({
           { label: article.title },
         ]}
         action={
-          <div className="flex flex-col items-start sm:items-end justify-between h-full gap-2.5 pt-1">
+          <div className="flex flex-col items-start sm:items-end justify-center gap-2.5 shrink-0 sm:self-center">
+            {/* Badge Chip */}
             <span
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs shadow-xs font-bold shrink-0",
+                "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold shadow-2xs shrink-0 tracking-wide",
                 badgeStyle,
               )}
             >
@@ -161,8 +162,9 @@ export function AnnouncementDetailView({
               {badgeLabel}
             </span>
 
+            {/* Date Chip */}
             {article.published_at ? (
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-600 shrink-0">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white/95 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs backdrop-blur-md shrink-0">
                 <CalendarClock
                   aria-hidden
                   className={cn(
