@@ -144,20 +144,21 @@ export function AnnouncementDetailView({
         {/* Left Main Article Column */}
         <article className="flex flex-col gap-6 lg:col-span-8">
           {/* Header Taxonomy & Metadata Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200/80 pb-4">
-            <span
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs shadow-xs",
-                badgeStyle,
-              )}
-            >
-              <BadgeIcon className="size-3.5 shrink-0" />
-              {badgeLabel}
-            </span>
+          <div className="flex flex-col gap-3 border-b border-neutral-200/80 pb-4">
+            {/* Row 1: Badge on left, Date right-aligned on same row */}
+            <div className="flex items-center justify-between gap-3">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs shadow-xs",
+                  badgeStyle,
+                )}
+              >
+                <BadgeIcon className="size-3.5 shrink-0" />
+                {badgeLabel}
+              </span>
 
-            <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-neutral-500">
               {article.published_at ? (
-                <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500">
                   <CalendarClock
                     aria-hidden
                     className={cn(
@@ -170,7 +171,10 @@ export function AnnouncementDetailView({
                   </time>
                 </span>
               ) : null}
+            </div>
 
+            {/* Row 2: Author & Location metadata */}
+            <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-neutral-500">
               <span className="inline-flex items-center gap-1.5 truncate">
                 <User
                   aria-hidden
@@ -201,7 +205,7 @@ export function AnnouncementDetailView({
 
           {/* Cover Media */}
           {cover ? (
-            <figure className="overflow-hidden rounded-[20px] border border-neutral-200 bg-neutral-100 shadow-sm-card">
+            <figure className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 shadow-sm-card">
               <Image
                 src={cover.url}
                 alt={cover.alt_text}
@@ -221,7 +225,7 @@ export function AnnouncementDetailView({
 
           {/* Immediate Guidance Callout for Emergency Alerts */}
           {isAlert && article.instruction ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50/90 p-5 text-red-950 shadow-xs">
+            <div className="rounded-xl border border-red-200 bg-red-50/90 p-5 text-red-950 shadow-xs">
               <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-700">
                 <TriangleAlert className="size-4 shrink-0 text-red-600" />
                 <span>Immediate Guidance</span>
@@ -258,7 +262,7 @@ export function AnnouncementDetailView({
                 {gallery.map((image) => (
                   <figure
                     key={image.id}
-                    className="overflow-hidden rounded-[16px] border border-neutral-200 bg-white shadow-xs"
+                    className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-xs"
                   >
                     <Image
                       src={image.url}
@@ -283,12 +287,12 @@ export function AnnouncementDetailView({
         {/* Right Sidebar Column */}
         <aside className="lg:col-span-4">
           <div className="sticky top-24 space-y-6">
-            {/* Recent Notices Card */}
-            <div className="rounded-[24px] border border-neutral-200/90 bg-white p-5 md:p-6 shadow-xs">
+            {/* Recent Announcements Card */}
+            <div className="rounded-2xl border border-neutral-200/90 bg-white p-5 md:p-6 shadow-xs">
               <div className="mb-4 flex items-center justify-between border-b border-neutral-100 pb-3.5">
                 <h3 className="inline-flex items-center gap-2 font-display text-base font-bold text-neutral-900">
                   <Megaphone className="size-4 text-primary-600" />
-                  Recent Notices
+                  Recent Announcements
                 </h3>
                 <Link
                   href="/announcements"
@@ -325,7 +329,7 @@ export function AnnouncementDetailView({
                         className="group flex items-start gap-3.5 py-3.5 first:pt-0 last:pb-0 transition-colors"
                       >
                         {/* Thumbnail */}
-                        <div className="relative aspect-[16/10] w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
+                        <div className="relative aspect-[16/10] w-20 shrink-0 overflow-hidden rounded-md bg-neutral-100">
                           {recent.cover_image ? (
                             <Image
                               src={recent.cover_image.url}
