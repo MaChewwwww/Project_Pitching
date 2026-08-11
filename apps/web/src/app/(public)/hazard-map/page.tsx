@@ -69,7 +69,7 @@ export default async function HazardMapPage() {
               <HazardMap
                 className="h-full w-full min-h-[450px]"
                 center={[14.7415, 121.1315]}
-                zoom={14.75}
+                zoom={13.4}
                 facilities={evacuationFacilities}
                 areaBoundaries={areaBoundaries.features}
                 areaStats={stats.areas}
