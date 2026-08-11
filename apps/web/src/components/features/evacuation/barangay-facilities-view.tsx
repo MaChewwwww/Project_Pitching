@@ -249,33 +249,45 @@ export function BarangayFacilitiesView({
             />
           </div>
 
-          {/* RIGHT COLUMN: Metrics Sidebar (Equal height to map container) */}
-          <div className="flex flex-col gap-3 lg:w-80 lg:shrink-0 lg:h-[580px]">
-            {/* Metric Card 1: Facility Overview */}
-            <Card radius="xl" className="border-neutral-200/90 bg-white shadow-sm shrink-0">
-              <CardContent className="p-3.5 flex flex-col gap-1">
-                <span className="text-overline inline-flex items-center gap-1.5 font-bold uppercase text-neutral-500">
-                  <Building2 className="size-4 text-emerald-600" />
-                  Facility Overview
-                </span>
-                <div className="flex items-baseline justify-between pt-1">
-                  <span className="text-display-md font-black text-neutral-900 tabular">
-                    {filteredItems.length}{" "}
-                    <span className="text-body-sm font-semibold text-neutral-500">
-                      / {unifiedItems.length} total
-                    </span>
+          {/* RIGHT COLUMN: Merged Metrics & Checkbox Filter Sidebar (Equal height to map container) */}
+          <Card radius="xl" className="border-neutral-200/90 bg-white shadow-sm flex flex-col lg:w-80 lg:shrink-0 lg:h-[580px] overflow-hidden">
+            <CardContent className="p-4 flex flex-col gap-3.5 h-full overflow-y-auto">
+              {/* Facility Overview Header */}
+              <div className="flex flex-col gap-2 rounded-xl bg-neutral-50/80 border border-neutral-200/80 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-overline inline-flex items-center gap-1.5 font-bold uppercase text-neutral-500">
+                    <Building2 className="size-3.5 text-emerald-600" />
+                    Facility Overview
                   </span>
-                  <span className="text-caption font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80">
+                  <span className="text-[10.5px] font-extrabold text-emerald-800 bg-emerald-100/90 border border-emerald-200/80 px-2 py-0.5 rounded-full">
                     {selectedTypes.size} {selectedTypes.size === 1 ? "type" : "types"} active
                   </span>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Metric Card 2: Facilities per Type Checkbox Filter List */}
-            <Card radius="xl" className="border-neutral-200/90 bg-white shadow-sm flex-1 overflow-hidden">
-              <CardContent className="p-3.5 flex flex-col gap-2.5 h-full overflow-y-auto">
-                <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
+                <div className="flex items-baseline justify-between pt-0.5">
+                  <div className="flex flex-col">
+                    <span className="text-h2 font-black text-neutral-900 tabular leading-tight">
+                      {filteredItems.length} {filteredItems.length === 1 ? "Facility" : "Facilities"}
+                    </span>
+                    <span className="text-[11px] font-medium text-neutral-500">
+                      Showing on map & directory
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col items-end">
+                    <span className="text-body-sm font-bold text-neutral-700 tabular">
+                      {unifiedItems.length} Total
+                    </span>
+                    <span className="text-[10.5px] font-medium text-neutral-400">
+                      registered
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Facilities per Type Checkbox Filter List */}
+              <div className="flex flex-col gap-2.5 flex-1 min-h-0">
+                <div className="flex items-center justify-between">
                   <span className="text-overline font-bold uppercase tracking-wider text-neutral-500">
                     Facilities per Type
                   </span>
@@ -288,7 +300,7 @@ export function BarangayFacilitiesView({
                   </button>
                 </div>
 
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 overflow-y-auto pr-0.5">
                   {FACILITY_TYPES.map((cfg) => {
                     const count = countsPerType.get(cfg.type) ?? 0;
                     const isChecked = selectedTypes.has(cfg.type);
@@ -297,12 +309,7 @@ export function BarangayFacilitiesView({
                     return (
                       <label
                         key={cfg.type}
-                        className={cn(
-                          "flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs transition-all duration-200 cursor-pointer border select-none",
-                          isChecked
-                            ? "border-emerald-500/80 bg-emerald-50/70 font-bold text-emerald-950 shadow-2xs"
-                            : "border-neutral-100 bg-neutral-50/40 font-medium text-neutral-500 hover:bg-neutral-100/60 opacity-60"
-                        )}
+                        className="flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs transition-colors duration-150 cursor-pointer border border-neutral-100 bg-neutral-50/60 hover:bg-neutral-100/80 select-none"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
                           <input
@@ -312,26 +319,19 @@ export function BarangayFacilitiesView({
                             className="size-3.5 rounded border-neutral-300 text-emerald-600 focus:ring-emerald-500/20 accent-emerald-600 cursor-pointer shrink-0"
                           />
                           <span className={cn("size-2 rounded-full shrink-0", cfg.dot)} />
-                          <Icon className={cn("size-3.5 shrink-0", isChecked ? cfg.color : "text-neutral-400")} />
-                          <span className="truncate text-[11.5px]">{cfg.label}</span>
+                          <Icon className={cn("size-3.5 shrink-0", cfg.color)} />
+                          <span className="truncate text-[11.5px] font-semibold text-neutral-800">{cfg.label}</span>
                         </div>
-                        <span
-                          className={cn(
-                            "rounded-full px-2 py-0.2 text-[10.5px] font-black tabular shrink-0",
-                            isChecked
-                              ? "bg-emerald-600 text-white"
-                              : "bg-neutral-200/80 text-neutral-600"
-                          )}
-                        >
+                        <span className="rounded-full px-2 py-0.2 text-[10.5px] font-black tabular shrink-0 bg-neutral-200/80 text-neutral-800">
                           {count}
                         </span>
                       </label>
                     );
                   })}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
