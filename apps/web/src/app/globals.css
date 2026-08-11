@@ -1101,4 +1101,22 @@
       transition: none !important;
     }
   }
+
+  /* --- Page Splash Loader Progress Bar Animation --- */
+  @keyframes splash-progress {
+    0% {
+      transform: scaleX(0);
+    }
+    50% {
+      transform: scaleX(0.65);
+    }
+    100% {
+      transform: scaleX(1);
+    }
+  }
+
+  .animate-splash-progress {
+    animation: splash-progress 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 }
+
