@@ -179,7 +179,7 @@ export function AnnouncementDetailView({
           {/* Left Main Article Column */}
           <article className="flex flex-col gap-6 lg:col-span-8">
             {/* Header Metadata Bar: Author & Location */}
-            <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-neutral-500 border-b border-neutral-200/80 pb-3 -mt-2">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-medium text-neutral-500 -mt-2 -mb-2">
               <span className="inline-flex items-center gap-1.5 truncate">
                 <User
                   aria-hidden
