@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/common/button";
+import { emptyArticleDocument } from "@/components/features/admin/rich-text-editor";
 import {
   AnnouncementForm,
   type AnnouncementFormValues,
@@ -43,12 +44,13 @@ const emptyValues: AnnouncementFormValues = {
   kind: "announcement",
   type: "general",
   title: "",
-  body: "",
+  excerpt: "",
+  body_json: emptyArticleDocument,
   instruction: "",
   is_barangay_wide: true,
   area_ids: [],
   expires_at: "",
-  publish_now: true,
+  publication_status: "draft",
 };
 
 export default function AdminAnnouncementsPage() {

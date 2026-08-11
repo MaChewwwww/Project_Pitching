@@ -33,9 +33,10 @@ from src.core.security import hash_password
 # cannot resolve that string-based ForeignKey at flush time.
 from src.db.models_registry import Base  # noqa: F401
 from src.db.session import SessionLocal, engine
+from src.domain.article_document import plain_text_document, slug_base
 from src.modules.activities.models import Activity
 from src.modules.alerts.models import Announcement, AnnouncementArea
-from src.modules.donations.models import Donation, DonationDrive, DriveNeed
+from src.modules.donations.models import DonationDrive
 from src.modules.evacuation.models import EmergencyEvent, EvacCenter
 from src.modules.geo.models import Area, Facility, Hotline
 from src.modules.preparedness.models import Faq, Guide
@@ -76,6 +77,7 @@ async def seed_areas(session) -> dict[str, Area]:
         return {a.name: a for a in rows}
 
     from src.seed_data.area_boundaries import AREA_BOUNDARIES
+
     bounds_map = {name: (src, wkt) for name, code, src, wkt in AREA_BOUNDARIES}
 
     areas = {}
@@ -435,15 +437,13 @@ EVAC_CENTER_DEFS = [
         "Colegio De Montalban",
         1000,
         True,
-        "Tertiary campus with multiple buildings. Estimated capacity, pending "
-        "MDRRMO confirmation.",
+        "Tertiary campus with multiple buildings. Estimated capacity, pending MDRRMO confirmation.",
     ),
     (
         "Tagumpay National High School",
         900,
         True,
-        "Serves the Pamayanan ng Tagumpay side. Estimated capacity, pending "
-        "MDRRMO confirmation.",
+        "Serves the Pamayanan ng Tagumpay side. Estimated capacity, pending MDRRMO confirmation.",
     ),
     (
         "Kasiglahan Elementary School (Main)",
@@ -805,13 +805,16 @@ async def seed_activities(session, areas: dict[str, Area], users: dict[str, User
             Activity(
                 title=title,
                 type=type_,
-                description=description,
+                slug=slug_base(title),
+                excerpt=description,
+                body_json=plain_text_document(description),
+                publication_status="published",
+                published_at=_now(),
                 starts_at=_now() + timedelta(days=days_ahead),
                 ends_at=_now() + timedelta(days=days_ahead, hours=3),
                 venue=venue,
                 area_id=areas[area_name].id if area_name else None,
                 created_by_user_id=creator.id,
-                is_published=True,
             )
         )
     log.info("seeded activities", extra={"count": len(ACTIVITY_DEFS)})
@@ -965,7 +968,10 @@ async def seed_announcements(session, areas: dict[str, Area], users: dict[str, U
             severity=severity,
             alert_level=alert_level,
             title=title,
-            body=body,
+            slug=slug_base(title),
+            excerpt=body,
+            body_json=plain_text_document(body),
+            publication_status="archived" if deactivated_hours_ago else "published",
             instruction=instruction,
             is_barangay_wide=is_barangay_wide,
             published_at=_now() + timedelta(hours=published_hours_ago),
@@ -973,6 +979,9 @@ async def seed_announcements(session, areas: dict[str, Area], users: dict[str, U
             if expires_hours_ahead
             else None,
             deactivated_at=_now() + timedelta(hours=deactivated_hours_ago)
+            if deactivated_hours_ago
+            else None,
+            archived_at=_now() + timedelta(hours=deactivated_hours_ago)
             if deactivated_hours_ago
             else None,
             issued_by_user_id=users[issuer_name].id,
@@ -1006,61 +1015,42 @@ async def seed_donations(session, users: dict[str, User]) -> None:
     drive1 = DonationDrive(
         event_id=event.id,
         title="Relief Goods for Riverside Households",
-        description=(
+        slug="relief-goods-for-riverside-households",
+        excerpt=(
             "Supporting the households in Areas 1 and 2 currently sheltering "
             "at San Jose Elementary School."
         ),
-        status="open",
-        opened_at=_now() - timedelta(days=3),
+        body_json=plain_text_document(
+            "Supporting the households in Areas 1 and 2 currently sheltering at San Jose Elementary School."
+        ),
+        publication_status="published",
+        published_at=_now() - timedelta(days=3),
+        active_from=_now() - timedelta(days=3),
         created_by_user_id=users["Admin Demo"].id,
     )
     drive2 = DonationDrive(
         title="Go Bag Supplies for Priority Households",
-        description=(
+        slug="go-bag-supplies-for-priority-households",
+        excerpt=(
             "Building ready-to-issue Go Bags for households with seniors, "
             "infants, or members who need help evacuating."
         ),
-        status="open",
-        opened_at=_now() - timedelta(days=11),
+        body_json=plain_text_document(
+            "Building ready-to-issue Go Bags for households with seniors, infants, or members who need help evacuating."
+        ),
+        publication_status="published",
+        published_at=_now() - timedelta(days=11),
+        active_from=_now() - timedelta(days=11),
         created_by_user_id=users["Admin Demo"].id,
     )
     session.add_all([drive1, drive2])
     await session.flush()
 
-    needs = [
-        (drive1, "Rice", 400, "kg", 285, 340),
-        (drive1, "Canned goods", 600, "cans", 512, 640),
-        (drive1, "Drinking water", 500, "litres", 190, 420),
-        (drive1, "Blankets", 200, "pcs", 64, 150),
-        (drive2, "Flashlights", 150, "pcs", 138, 145),
-        (drive2, "Power banks", 120, "pcs", 41, 88),
-        (drive2, "First aid kits", 150, "kits", 96, 120),
-    ]
-    for drive, item_name, target, unit, received, pledged in needs:
-        need = DriveNeed(drive_id=drive.id, item_name=item_name, target_quantity=target, unit=unit)
-        session.add(need)
-        await session.flush()
-        if received:
-            session.add(
-                Donation(
-                    drive_id=drive.id,
-                    drive_need_id=need.id,
-                    reference_no=f"DON-SEED-{need.id.hex[:8].upper()}",
-                    donor_name="Multiple donors (aggregated seed figure)",
-                    item_name=item_name,
-                    quantity_pledged=pledged,
-                    quantity_received=received,
-                    unit=unit,
-                    status="received",
-                    is_walk_in=True,
-                    status_changed_by_user_id=users["Admin Demo"].id,
-                    status_changed_at=_now(),
-                )
-            )
     log.info("seeded donation drives", extra={"count": 2})
 
 
 # --- flood events (fixtures/flood-events.ts) -----------------------------------
+
 
 def _get_flood_defs():
     return [

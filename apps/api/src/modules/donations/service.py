@@ -1,135 +1,202 @@
-"""Business logic and transaction boundaries for the donations module (FR-DON-*).
-
-Services own the transaction and may query their own module's models. A service
-never imports another module's `models.py` — cross-module access goes through
-the owning service (AGENTS.md Section 5).
-"""
+"""Informational donation-drive article services (FR-DON-001, 015…017)."""
 
 from __future__ import annotations
 
-import secrets
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
-from sqlalchemy import func, select
+from fastapi import UploadFile
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.audit import write_audit
-from src.core.errors import NotFoundError
+from src.core.config import settings
+from src.core.errors import ConflictError, NotFoundError
 from src.core.pagination import Page, page_meta
-from src.modules.donations.models import Donation, DonationDrive, DriveNeed
-from src.modules.donations.schemas import (
-    DonationDriveIn,
-    DonationOut,
-    DonationStatusPatch,
-    PublicDonationDrive,
-    PublicDriveNeed,
-)
+from src.core.uploads import save_upload
+from src.domain.article_document import slug_base
+from src.modules.alerts.schemas import ArticleImageOut, ArticleImagePatch, ImageOrderIn
+from src.modules.donations.models import DonationDrive, DonationDriveImage
+from src.modules.donations.schemas import DonationDriveDetail, DonationDriveIn, PublicDonationDrive
 from src.modules.evacuation.service import get_event_names
 
 
-def _reference_no() -> str:
-    # e.g. DON-7F3A9C21 — short enough to quote over the phone (FR-DON-003).
-    return f"DON-{secrets.token_hex(4).upper()}"
+def _image_out(image: DonationDriveImage) -> ArticleImageOut:
+    return ArticleImageOut(
+        id=image.id,
+        url=f"/uploads/{image.file_path}",
+        alt_text=image.alt_text,
+        caption=image.caption,
+        sort_order=image.sort_order,
+        is_cover=image.is_cover,
+    )
 
 
-async def _needs_with_progress(session: AsyncSession, drive_id: uuid.UUID) -> list[PublicDriveNeed]:
-    needs = (
+async def _images(session: AsyncSession, drive_id: uuid.UUID) -> list[DonationDriveImage]:
+    return (
         (
             await session.execute(
-                select(DriveNeed)
-                .where(DriveNeed.drive_id == drive_id)
-                .order_by(DriveNeed.sort_order)
+                select(DonationDriveImage)
+                .where(DonationDriveImage.donation_drive_id == drive_id)
+                .order_by(DonationDriveImage.sort_order)
             )
         )
         .scalars()
         .all()
     )
-    out = []
-    for need in needs:
-        sums = (
-            await session.execute(
-                select(
-                    func.coalesce(func.sum(Donation.quantity_received), 0),
-                    func.coalesce(func.sum(Donation.quantity_pledged), 0),
-                ).where(Donation.drive_need_id == need.id)
-            )
-        ).one()
-        received, pledged = float(sums[0]), float(sums[1])
-        target = float(need.target_quantity) or 1.0
-        out.append(
-            PublicDriveNeed(
-                id=need.id,
-                item_name=need.item_name,
-                target_quantity=float(need.target_quantity),
-                unit=need.unit,
-                sort_order=need.sort_order,
-                received_quantity=received,
-                pledged_quantity=pledged,
-                progress_pct=round(min(100.0, 100 * received / target), 1),
-            )
-        )
-    return out
 
 
-async def _drive_to_public(
+async def _unique_slug(
+    session: AsyncSession, title: str, *, exclude_id: uuid.UUID | None = None
+) -> str:
+    base, candidate, number = slug_base(title), slug_base(title), 2
+    while True:
+        stmt = select(DonationDrive.id).where(DonationDrive.slug == candidate)
+        if exclude_id:
+            stmt = stmt.where(DonationDrive.id != exclude_id)
+        if (await session.execute(stmt)).scalar_one_or_none() is None:
+            return candidate
+        candidate, number = f"{base}-{number}", number + 1
+
+
+def _ensure_publishable(images: list[DonationDriveImage]) -> None:
+    if len(images) > 10:
+        raise ConflictError("An article may contain at most ten images.")
+    if len([image for image in images if image.is_cover]) != 1:
+        raise ConflictError("A published donation drive needs exactly one cover image.")
+    if any(not image.alt_text.strip() for image in images):
+        raise ConflictError("Add meaningful alt text to every image before publishing.")
+
+
+async def _to_public(
     session: AsyncSession, drive: DonationDrive, event_name: str | None
 ) -> PublicDonationDrive:
-    needs = await _needs_with_progress(session, drive.id)
-    overall = round(sum(n.progress_pct for n in needs) / len(needs), 1) if needs else 0.0
+    images = await _images(session, drive.id)
+    cover = next((image for image in images if image.is_cover), None)
     return PublicDonationDrive(
         id=drive.id,
+        slug=drive.slug,
         title=drive.title,
-        description=drive.description,
-        status=drive.status,
-        opened_at=drive.opened_at,
-        closed_at=drive.closed_at,
+        excerpt=drive.excerpt,
         event_id=drive.event_id,
         event_name=event_name,
-        needs=needs,
-        overall_progress_pct=overall,
+        organizer_name=drive.organizer_name,
+        organizer_contact=drive.organizer_contact,
+        drop_off_instructions=drive.drop_off_instructions,
+        active_from=drive.active_from,
+        active_until=drive.active_until,
+        published_at=drive.published_at,
+        archived_at=drive.archived_at,
+        cover_image=_image_out(cover) if cover else None,
     )
 
 
-async def list_donation_drives(
-    session: AsyncSession, *, page: int = 1, size: int = 20, status: str | None = "open"
-) -> Page[PublicDonationDrive]:
-    stmt = select(DonationDrive)
-    if status:
-        stmt = stmt.where(DonationDrive.status == status)
-    stmt = stmt.order_by(DonationDrive.opened_at.desc())
+async def _event_name(session: AsyncSession, event_id: uuid.UUID | None) -> str | None:
+    if event_id is None:
+        return None
+    return (await get_event_names(session, [event_id])).get(event_id)
 
-    total = len((await session.execute(stmt)).all())
-    drives = (await session.execute(stmt.limit(size).offset((page - 1) * size))).scalars().all()
-    event_names = await get_event_names(session, [d.event_id for d in drives if d.event_id])
-    items = [await _drive_to_public(session, d, event_names.get(d.event_id)) for d in drives]
-    return Page[PublicDonationDrive](items=items, **page_meta(total, page, size))
+
+async def list_donation_drives(
+    session: AsyncSession, *, page: int = 1, size: int = 20
+) -> Page[PublicDonationDrive]:
+    now = datetime.now(UTC)
+    drives = (
+        (
+            await session.execute(
+                select(DonationDrive)
+                .where(DonationDrive.publication_status == "published")
+                .where((DonationDrive.active_from.is_(None)) | (DonationDrive.active_from <= now))
+                .where((DonationDrive.active_until.is_(None)) | (DonationDrive.active_until >= now))
+                .order_by(DonationDrive.published_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    names = await get_event_names(session, [drive.event_id for drive in drives if drive.event_id])
+    page_drives = drives[(page - 1) * size : page * size]
+    return Page[PublicDonationDrive](
+        items=[
+            await _to_public(session, drive, names.get(drive.event_id)) for drive in page_drives
+        ],
+        **page_meta(len(drives), page, size),
+    )
 
 
 async def list_donation_drives_admin(session: AsyncSession) -> list[PublicDonationDrive]:
     drives = (
-        (await session.execute(select(DonationDrive).order_by(DonationDrive.opened_at.desc())))
+        (
+            await session.execute(
+                select(DonationDrive).order_by(
+                    DonationDrive.published_at.desc(), DonationDrive.title
+                )
+            )
+        )
         .scalars()
         .all()
     )
-    event_names = await get_event_names(session, [d.event_id for d in drives if d.event_id])
-    return [await _drive_to_public(session, d, event_names.get(d.event_id)) for d in drives]
+    names = await get_event_names(session, [drive.event_id for drive in drives if drive.event_id])
+    return [await _to_public(session, drive, names.get(drive.event_id)) for drive in drives]
+
+
+async def get_drive(
+    session: AsyncSession, drive_id: uuid.UUID, *, public: bool
+) -> DonationDriveDetail:
+    stmt = select(DonationDrive).where(DonationDrive.id == drive_id)
+    if public:
+        stmt = stmt.where(DonationDrive.publication_status.in_(("published", "archived")))
+    drive = (await session.execute(stmt)).scalar_one_or_none()
+    if drive is None:
+        raise NotFoundError("Donation drive not found.")
+    preview = await _to_public(session, drive, await _event_name(session, drive.event_id))
+    return DonationDriveDetail(
+        **preview.model_dump(),
+        body_json=drive.body_json,
+        images=[_image_out(image) for image in await _images(session, drive.id)],
+    )
+
+
+async def get_drive_by_slug(session: AsyncSession, slug: str) -> DonationDriveDetail:
+    drive = (
+        await session.execute(
+            select(DonationDrive).where(
+                DonationDrive.slug == slug,
+                DonationDrive.publication_status.in_(("published", "archived")),
+            )
+        )
+    ).scalar_one_or_none()
+    if drive is None:
+        raise NotFoundError("Donation drive not found.")
+    preview = await _to_public(session, drive, await _event_name(session, drive.event_id))
+    return DonationDriveDetail(
+        **preview.model_dump(),
+        body_json=drive.body_json,
+        images=[_image_out(image) for image in await _images(session, drive.id)],
+    )
 
 
 async def create_donation_drive(
     session: AsyncSession, data: DonationDriveIn, *, actor_id: uuid.UUID
 ) -> DonationDrive:
+    now = datetime.now(UTC)
     drive = DonationDrive(
-        title=data.title, description=data.description, created_by_user_id=actor_id
+        **data.model_dump(exclude={"publication_status"}),
+        slug=await _unique_slug(session, data.title),
+        publication_status=data.publication_status,
+        published_at=now if data.publication_status == "published" else None,
+        archived_at=now if data.publication_status == "archived" else None,
+        created_by_user_id=actor_id,
     )
+    if data.publication_status == "published":
+        _ensure_publishable([])
     session.add(drive)
     await session.flush()
-    for need in data.needs:
-        session.add(DriveNeed(drive_id=drive.id, **need.model_dump()))
     await write_audit(
         session,
         actor_user_id=actor_id,
-        action="donation_drive.create",
+        action=f"donation_drive.{data.publication_status}",
         entity_type="donation_drive",
         entity_id=drive.id,
     )
@@ -137,114 +204,126 @@ async def create_donation_drive(
     return drive
 
 
-async def close_donation_drive(
-    session: AsyncSession, drive_id: uuid.UUID, *, actor_id: uuid.UUID
-) -> None:
+async def update_donation_drive(
+    session: AsyncSession, drive_id: uuid.UUID, data: DonationDriveIn, *, actor_id: uuid.UUID
+) -> DonationDrive:
     drive = await session.get(DonationDrive, drive_id)
     if drive is None:
         raise NotFoundError("Donation drive not found.")
-    drive.status = "closed"
-    drive.closed_at = datetime.now(UTC)
+    for key, value in data.model_dump(exclude={"publication_status"}).items():
+        setattr(drive, key, value)
+    if drive.slug != slug_base(data.title):
+        drive.slug = await _unique_slug(session, data.title, exclude_id=drive.id)
+    now = datetime.now(UTC)
+    if data.publication_status == "published":
+        _ensure_publishable(await _images(session, drive.id))
+        drive.published_at, drive.archived_at = drive.published_at or now, None
+    elif data.publication_status == "archived":
+        drive.archived_at = now
+    drive.publication_status = data.publication_status
     await write_audit(
         session,
         actor_user_id=actor_id,
-        action="donation_drive.close",
+        action=f"donation_drive.{data.publication_status}",
         entity_type="donation_drive",
         entity_id=drive.id,
     )
     await session.commit()
+    return drive
 
 
-# --- donations (mostly walk-in recording here; the public no-account form is
-# out of this pass's CRUD scope, but status transitions are core admin work) --
-
-
-async def list_donations_admin(session: AsyncSession, drive_id: uuid.UUID) -> list[DonationOut]:
-    rows = (
-        (
-            await session.execute(
-                select(Donation)
-                .where(Donation.drive_id == drive_id)
-                .order_by(Donation.created_at.desc())
-            )
-        )
-        .scalars()
-        .all()
+async def add_image(
+    session: AsyncSession, drive_id: uuid.UUID, file: UploadFile, *, actor_id: uuid.UUID
+) -> ArticleImageOut:
+    if await session.get(DonationDrive, drive_id) is None:
+        raise NotFoundError("Donation drive not found.")
+    images = await _images(session, drive_id)
+    if len(images) >= 10:
+        raise ConflictError("An article may contain at most ten images.")
+    image = DonationDriveImage(
+        donation_drive_id=drive_id,
+        file_path=await save_upload(file, subdir="article-media/donation-drives"),
+        sort_order=len(images),
     )
-    return [
-        DonationOut(
-            id=d.id,
-            drive_id=d.drive_id,
-            reference_no=d.reference_no,
-            donor_name=d.donor_name,
-            donor_contact=d.donor_contact,
-            item_name=d.item_name,
-            quantity_pledged=float(d.quantity_pledged),
-            quantity_received=float(d.quantity_received)
-            if d.quantity_received is not None
-            else None,
-            unit=d.unit,
-            status=d.status,
-            is_walk_in=d.is_walk_in,
-            created_at=d.created_at,
-        )
-        for d in rows
-    ]
+    session.add(image)
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="donation_drive.image_add",
+        entity_type="donation_drive",
+        entity_id=drive_id,
+    )
+    await session.commit()
+    return _image_out(image)
 
 
-async def record_walk_in_donation(
+async def patch_image(
     session: AsyncSession,
-    *,
     drive_id: uuid.UUID,
-    drive_need_id: uuid.UUID | None,
-    donor_name: str,
-    donor_contact: str | None,
-    item_name: str,
-    quantity_pledged: float,
-    unit: str,
+    image_id: uuid.UUID,
+    data: ArticleImagePatch,
+    *,
     actor_id: uuid.UUID,
-) -> Donation:
-    donation = Donation(
-        drive_id=drive_id,
-        drive_need_id=drive_need_id,
-        reference_no=_reference_no(),
-        donor_name=donor_name,
-        donor_contact=donor_contact,
-        item_name=item_name,
-        quantity_pledged=quantity_pledged,
-        unit=unit,
-        is_walk_in=True,
+) -> ArticleImageOut:
+    image = await session.get(DonationDriveImage, image_id)
+    if image is None or image.donation_drive_id != drive_id:
+        raise NotFoundError("Article image not found.")
+    if data.alt_text is not None:
+        image.alt_text = data.alt_text
+    if data.caption is not None:
+        image.caption = data.caption
+    if data.is_cover is True:
+        for candidate in await _images(session, drive_id):
+            candidate.is_cover = candidate.id == image.id
+    elif data.is_cover is False:
+        image.is_cover = False
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="donation_drive.image_update",
+        entity_type="donation_drive",
+        entity_id=drive_id,
     )
-    session.add(donation)
+    await session.commit()
+    return _image_out(image)
+
+
+async def order_images(
+    session: AsyncSession, drive_id: uuid.UUID, data: ImageOrderIn, *, actor_id: uuid.UUID
+) -> list[ArticleImageOut]:
+    current = {image.id: image for image in await _images(session, drive_id)}
+    if len(data.image_ids) != len(set(data.image_ids)) or set(data.image_ids) != set(current):
+        raise ConflictError("Image order must include each image exactly once.")
+    for position, image_id in enumerate(data.image_ids):
+        current[image_id].sort_order = position + 100
     await session.flush()
+    for position, image_id in enumerate(data.image_ids):
+        current[image_id].sort_order = position
     await write_audit(
         session,
         actor_user_id=actor_id,
-        action="donation.record_walk_in",
-        entity_type="donation",
-        entity_id=donation.id,
+        action="donation_drive.image_order",
+        entity_type="donation_drive",
+        entity_id=drive_id,
     )
     await session.commit()
-    return donation
+    return [_image_out(current[image_id]) for image_id in data.image_ids]
 
 
-async def update_donation_status(
-    session: AsyncSession, donation_id: uuid.UUID, data: DonationStatusPatch, *, actor_id: uuid.UUID
+async def delete_image(
+    session: AsyncSession, drive_id: uuid.UUID, image_id: uuid.UUID, *, actor_id: uuid.UUID
 ) -> None:
-    donation = await session.get(Donation, donation_id)
-    if donation is None:
-        raise NotFoundError("Donation not found.")
-    donation.status = data.status
-    if data.quantity_received is not None:
-        donation.quantity_received = data.quantity_received
-    donation.status_changed_by_user_id = actor_id
-    donation.status_changed_at = datetime.now(UTC)
+    image = await session.get(DonationDriveImage, image_id)
+    if image is None or image.donation_drive_id != drive_id:
+        raise NotFoundError("Article image not found.")
+    path = Path(settings.upload_dir) / image.file_path
+    await session.delete(image)
     await write_audit(
         session,
         actor_user_id=actor_id,
-        action="donation.status_change",
-        entity_type="donation",
-        entity_id=donation.id,
-        changes={"status": data.status},
+        action="donation_drive.image_delete",
+        entity_type="donation_drive",
+        entity_id=drive_id,
     )
     await session.commit()
+    path.unlink(missing_ok=True)

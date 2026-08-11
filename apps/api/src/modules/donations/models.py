@@ -22,18 +22,17 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
-    Integer,
     Numeric,
     Text,
     func,
     text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.base import Base, UUIDPrimaryKeyMixin
 
-DONATION_DRIVE_STATUSES = ("open", "closed")
 DONATION_STATUSES = ("submitted", "received", "partially_received", "not_fulfilled")
 
 
@@ -46,37 +45,63 @@ class DonationDrive(UUIDPrimaryKeyMixin, Base):
         PGUUID(as_uuid=True), ForeignKey("emergency_event.id", ondelete="SET NULL"), nullable=True
     )
     title: Mapped[str] = mapped_column(Text, nullable=False)
-    description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    status: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'open'"))
-    opened_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
+    slug: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    excerpt: Mapped[str] = mapped_column(Text, nullable=False)
+    body_json: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    publication_status: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'draft'")
     )
-    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    organizer_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    organizer_contact: Mapped[str | None] = mapped_column(Text, nullable=True)
+    drop_off_instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    active_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    active_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("user.id", ondelete="SET NULL"), nullable=True
     )
 
     __table_args__ = (
-        CheckConstraint(f"status IN {DONATION_DRIVE_STATUSES}", name="donation_drive_status_valid"),
+        CheckConstraint(
+            "publication_status IN ('draft', 'published', 'archived')",
+            name="donation_drive_publication_status_valid",
+        ),
     )
 
 
-class DriveNeed(UUIDPrimaryKeyMixin, Base):
-    __tablename__ = "drive_need"
+class DonationDriveImage(UUIDPrimaryKeyMixin, Base):
+    __tablename__ = "donation_drive_image"
 
-    drive_id: Mapped[uuid.UUID] = mapped_column(
-        PGUUID(as_uuid=True), ForeignKey("donation_drive.id", ondelete="CASCADE"), nullable=False
+    donation_drive_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("donation_drive.id", ondelete="CASCADE"),
+        nullable=False,
     )
-    item_name: Mapped[str] = mapped_column(Text, nullable=False)
-    target_quantity: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
-    unit: Mapped[str] = mapped_column(Text, nullable=False)
-    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    file_path: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    alt_text: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    caption: Mapped[str | None] = mapped_column(Text, nullable=True)
+    sort_order: Mapped[int] = mapped_column(nullable=False, server_default=text("0"))
+    is_cover: Mapped[bool] = mapped_column(nullable=False, server_default=text("false"))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("uq_donation_drive_image_sort", "donation_drive_id", "sort_order", unique=True),
+        Index(
+            "uq_donation_drive_image_cover",
+            "donation_drive_id",
+            unique=True,
+            postgresql_where=text("is_cover"),
+        ),
+    )
 
 
 class Donation(UUIDPrimaryKeyMixin, Base):
     """FR-DON-002 … 008. No donor account — identity lives on the row (BRD D-5)."""
 
-    __tablename__ = "donation"
+    __abstract__ = True
 
     drive_id: Mapped[uuid.UUID] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("donation_drive.id", ondelete="CASCADE"), nullable=False

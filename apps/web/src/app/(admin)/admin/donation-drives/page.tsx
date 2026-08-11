@@ -7,11 +7,11 @@ import { Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/common/button";
+import { emptyArticleDocument } from "@/components/features/admin/rich-text-editor";
 import {
   DonationDriveForm,
   type DonationDriveFormValues,
 } from "@/components/features/admin/donation-drive-form";
-import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
 import {
   ResourceTable,
   type ResourceColumn,
@@ -25,14 +25,12 @@ import { useRequireRole } from "@/lib/auth/use-require-role";
 interface DonationDrive {
   id: string;
   title: string;
-  status: "open" | "closed";
-  overall_progress_pct: number;
-  needs: {
-    item_name: string;
-    received_quantity: number;
-    target_quantity: number;
-    unit: string;
-  }[];
+  excerpt: string;
+  published_at: string | null;
+  archived_at: string | null;
+  active_from: string | null;
+  active_until: string | null;
+  needs: { item_name: string }[];
 }
 
 export default function AdminDonationDrivesPage() {
@@ -42,15 +40,29 @@ export default function AdminDonationDrivesPage() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "donation-drives"],
-    queryFn: () => api.get<DonationDrive[]>("/admin/donation-drives").then((r) => r.data),
+    queryFn: () =>
+      api
+        .get<Omit<DonationDrive, "needs">[]>("/admin/donation-drives")
+        .then((r) => r.data.map((drive) => ({ ...drive, needs: [] }))),
   });
 
   const createMutation = useMutation({
     mutationFn: (values: DonationDriveFormValues) =>
       api.post("/admin/donation-drives", {
         title: values.title,
-        description: values.description || null,
-        needs: values.needs.map((n, i) => ({ ...n, sort_order: i })),
+        excerpt: values.description || "",
+        body_json: {
+          ...emptyArticleDocument,
+          content: values.description
+            ? [
+                {
+                  type: "paragraph",
+                  content: [{ type: "text", text: values.description }],
+                },
+              ]
+            : [],
+        },
+        publication_status: "draft",
       }),
     onSuccess: () => {
       toast.success("Donation drive created");
@@ -62,21 +74,13 @@ export default function AdminDonationDrivesPage() {
     },
   });
 
-  const closeMutation = useMutation({
-    mutationFn: (id: string) => api.post(`/admin/donation-drives/${id}/close`),
-    onSuccess: () => {
-      toast.success("Drive closed");
-      queryClient.invalidateQueries({ queryKey: ["admin", "donation-drives"] });
-    },
-  });
-
   const columns: ResourceColumn<DonationDrive>[] = [
     { key: "title", header: "Title" },
-    { key: "status", header: "Status" },
+    { key: "excerpt", header: "Preview" },
     {
-      key: "overall_progress_pct",
-      header: "Progress",
-      render: (row) => `${row.overall_progress_pct}%`,
+      key: "published_at",
+      header: "Status",
+      render: (row) => (row.published_at ? "Published" : "Draft"),
     },
     {
       key: "needs",
@@ -121,16 +125,6 @@ export default function AdminDonationDrivesPage() {
         onRetry={() => refetch()}
         emptyTitle="No donation drives yet"
         getRowKey={(row) => row.id}
-        rowActions={(row) =>
-          row.status === "open" ? (
-            <ConfirmDeleteButton
-              itemLabel={row.title}
-              actionLabel="Close"
-              confirmLabel="Close drive"
-              onConfirm={() => closeMutation.mutate(row.id)}
-            />
-          ) : null
-        }
       />
     </div>
   );

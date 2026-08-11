@@ -1,87 +1,111 @@
-"""HTTP surface for the donations module (FR-DON-*).
-
-Thin by rule: routers validate, delegate to `service.py`, and serialise. They
-never touch the database and never contain business logic (AGENTS.md Section 5).
-Authorization is applied here as a router dependency, from `core/deps.py`.
-"""
+"""HTTP routes for informational donation-drive articles."""
 
 from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 
 from src.core.deps import CurrentUser, require_role
 from src.core.pagination import Page
 from src.db.session import DbSessionDep
+from src.modules.alerts.schemas import ArticleImageOut, ArticleImagePatch, ImageOrderIn
 from src.modules.donations import service
-from src.modules.donations.schemas import (
-    DonationDriveIn,
-    DonationOut,
-    DonationStatusPatch,
-    PublicDonationDrive,
-)
+from src.modules.donations.schemas import DonationDriveDetail, DonationDriveIn, PublicDonationDrive
 
 public_router = APIRouter(tags=["donations"])
 admin_router = APIRouter(tags=["donations"])
 
 
-@public_router.get("/donation-drives", summary="Active donation drives and their progress")
+@public_router.get("/donation-drives")
 async def public_donation_drives(
-    session: DbSessionDep, page: int = 1, size: int = 20, status: str = "open"
+    session: DbSessionDep, page: int = 1, size: int = 20
 ) -> Page[PublicDonationDrive]:
-    return await service.list_donation_drives(session, page=page, size=size, status=status)
+    return await service.list_donation_drives(session, page=page, size=size)
 
 
-@admin_router.get(
-    "/donation-drives",
-    dependencies=[Depends(require_role("admin"))],
-    summary="List all donation drives",
-)
+@public_router.get("/donation-drives/{slug}")
+async def public_donation_drive_detail(slug: str, session: DbSessionDep) -> DonationDriveDetail:
+    return await service.get_drive_by_slug(session, slug)
+
+
+@admin_router.get("/donation-drives", dependencies=[Depends(require_role("admin", "sk"))])
 async def admin_list_donation_drives(session: DbSessionDep) -> list[PublicDonationDrive]:
     return await service.list_donation_drives_admin(session)
 
 
-@admin_router.post(
-    "/donation-drives",
-    dependencies=[Depends(require_role("admin"))],
-    summary="Create a donation drive",
-)
+@admin_router.post("/donation-drives", dependencies=[Depends(require_role("admin", "sk"))])
 async def admin_create_donation_drive(
     body: DonationDriveIn, session: DbSessionDep, user: CurrentUser
-) -> dict[str, str]:
+) -> PublicDonationDrive:
     drive = await service.create_donation_drive(session, body, actor_id=user.id)
-    return {"id": str(drive.id)}
-
-
-@admin_router.post(
-    "/donation-drives/{drive_id}/close",
-    dependencies=[Depends(require_role("admin"))],
-    summary="Close a drive",
-)
-async def admin_close_donation_drive(
-    drive_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
-) -> dict[str, bool]:
-    await service.close_donation_drive(session, drive_id, actor_id=user.id)
-    return {"ok": True}
+    return next(
+        item for item in await service.list_donation_drives_admin(session) if item.id == drive.id
+    )
 
 
 @admin_router.get(
-    "/donation-drives/{drive_id}/donations",
-    dependencies=[Depends(require_role("admin"))],
-    summary="Donations received for a drive",
+    "/donation-drives/{drive_id}", dependencies=[Depends(require_role("admin", "sk"))]
 )
-async def admin_list_donations(drive_id: uuid.UUID, session: DbSessionDep) -> list[DonationOut]:
-    return await service.list_donations_admin(session, drive_id)
+async def admin_donation_drive_detail(
+    drive_id: uuid.UUID, session: DbSessionDep
+) -> DonationDriveDetail:
+    return await service.get_drive(session, drive_id, public=False)
 
 
 @admin_router.patch(
-    "/donations/{donation_id}/status",
-    dependencies=[Depends(require_role("admin"))],
-    summary="Change a donation's status (FR-DON-005/006)",
+    "/donation-drives/{drive_id}", dependencies=[Depends(require_role("admin", "sk"))]
 )
-async def admin_update_donation_status(
-    donation_id: uuid.UUID, body: DonationStatusPatch, session: DbSessionDep, user: CurrentUser
+async def admin_update_donation_drive(
+    drive_id: uuid.UUID, body: DonationDriveIn, session: DbSessionDep, user: CurrentUser
+) -> PublicDonationDrive:
+    drive = await service.update_donation_drive(session, drive_id, body, actor_id=user.id)
+    return next(
+        item for item in await service.list_donation_drives_admin(session) if item.id == drive.id
+    )
+
+
+@admin_router.post(
+    "/donation-drives/{drive_id}/images", dependencies=[Depends(require_role("admin", "sk"))]
+)
+async def admin_add_donation_drive_image(
+    drive_id: uuid.UUID,
+    session: DbSessionDep,
+    user: CurrentUser,
+    file: UploadFile = File(...),  # noqa: B008
+) -> ArticleImageOut:
+    return await service.add_image(session, drive_id, file, actor_id=user.id)
+
+
+@admin_router.patch(
+    "/donation-drives/{drive_id}/images/{image_id}",
+    dependencies=[Depends(require_role("admin", "sk"))],
+)
+async def admin_patch_donation_drive_image(
+    drive_id: uuid.UUID,
+    image_id: uuid.UUID,
+    body: ArticleImagePatch,
+    session: DbSessionDep,
+    user: CurrentUser,
+) -> ArticleImageOut:
+    return await service.patch_image(session, drive_id, image_id, body, actor_id=user.id)
+
+
+@admin_router.put(
+    "/donation-drives/{drive_id}/images/order", dependencies=[Depends(require_role("admin", "sk"))]
+)
+async def admin_order_donation_drive_images(
+    drive_id: uuid.UUID, body: ImageOrderIn, session: DbSessionDep, user: CurrentUser
+) -> list[ArticleImageOut]:
+    return await service.order_images(session, drive_id, body, actor_id=user.id)
+
+
+@admin_router.delete(
+    "/donation-drives/{drive_id}/images/{image_id}",
+    dependencies=[Depends(require_role("admin", "sk"))],
+)
+async def admin_delete_donation_drive_image(
+    drive_id: uuid.UUID, image_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
 ) -> dict[str, bool]:
-    await service.update_donation_status(session, donation_id, body, actor_id=user.id)
+    await service.delete_image(session, drive_id, image_id, actor_id=user.id)
     return {"ok": True}

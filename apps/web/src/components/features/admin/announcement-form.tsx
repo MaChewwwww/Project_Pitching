@@ -18,6 +18,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  emptyArticleDocument,
+  RichTextEditor,
+  type ArticleDocument,
+} from "@/components/features/admin/rich-text-editor";
 import { toDisplayError } from "@/lib/api/client";
 
 /**
@@ -48,12 +53,13 @@ export const announcementFormSchema = z
     severity: z.enum(["info", "warning", "emergency"]).optional(),
     alert_level: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
     title: z.string().min(1, "Required"),
-    body: z.string().min(1, "Required"),
+    excerpt: z.string().max(360, "Keep the summary under 360 characters").default(""),
+    body_json: z.custom<ArticleDocument>(),
     instruction: z.string().optional(),
     is_barangay_wide: z.boolean().default(true),
     area_ids: z.array(z.string()).default([]),
     expires_at: z.string().optional(),
-    publish_now: z.boolean().default(true),
+    publication_status: z.enum(["draft", "published", "archived"]).default("draft"),
   })
   .superRefine((values, ctx) => {
     if (values.kind === "alert" && !values.instruction?.trim()) {
@@ -219,11 +225,24 @@ export function AnnouncementForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="body">Body</Label>
-        <Textarea id="body" aria-invalid={!!errors.body} {...register("body")} />
-        {errors.body ? (
-          <p className="text-danger text-xs">{errors.body.message}</p>
-        ) : null}
+        <Label htmlFor="excerpt">Preview summary</Label>
+        <Textarea id="excerpt" aria-invalid={!!errors.excerpt} {...register("excerpt")} />
+        <p className="text-xs text-neutral-500">Plain text shown in article previews.</p>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label id="article-body-label">Article body</Label>
+        <Controller
+          control={control}
+          name="body_json"
+          render={({ field }) => (
+            <RichTextEditor
+              labelledBy="article-body-label"
+              value={field.value ?? emptyArticleDocument}
+              onChange={field.onChange}
+            />
+          )}
+        />
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -295,21 +314,27 @@ export function AnnouncementForm({
         <Input id="expires_at" type="datetime-local" {...register("expires_at")} />
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-1.5">
         <Controller
           control={control}
-          name="publish_now"
+          name="publication_status"
           render={({ field }) => (
-            <Checkbox
-              id="publish_now"
-              checked={field.value}
-              onCheckedChange={field.onChange}
-            />
+            <Select value={field.value} onValueChange={field.onChange}>
+              <SelectTrigger id="publication_status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">Save as draft</SelectItem>
+                <SelectItem value="published">Publish now</SelectItem>
+                <SelectItem value="archived">Archive</SelectItem>
+              </SelectContent>
+            </Select>
           )}
         />
-        <Label htmlFor="publish_now" className="font-normal">
-          Publish now
-        </Label>
+        <p className="text-xs text-neutral-500">
+          Routine announcements need a cover image before publishing. Alerts remain
+          text-first.
+        </p>
       </div>
 
       <div className="mt-2 flex justify-end gap-2">

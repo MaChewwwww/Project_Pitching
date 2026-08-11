@@ -24,6 +24,7 @@ from sqlalchemy import (
     func,
     text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -55,13 +56,19 @@ class Announcement(UUIDPrimaryKeyMixin, Base):
     severity: Mapped[str | None] = mapped_column(Text, nullable=True)
     alert_level: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)
-    body: Mapped[str] = mapped_column(Text, nullable=False)
+    slug: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    excerpt: Mapped[str] = mapped_column(Text, nullable=False)
+    body_json: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    publication_status: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'draft'")
+    )
     # NOT NULL when kind='alert' — enforced by the CHECK below (FR-ALT-005).
     instruction: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_barangay_wide: Mapped[bool] = mapped_column(nullable=False, server_default=text("true"))
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     deactivated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     issued_by_user_id: Mapped[uuid.UUID] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("user.id", ondelete="RESTRICT"), nullable=False
     )
@@ -82,6 +89,10 @@ class Announcement(UUIDPrimaryKeyMixin, Base):
         # FR-ALT-005: an alert cannot be saved without telling people what to do.
         CheckConstraint(
             "kind <> 'alert' OR instruction IS NOT NULL", name="alert_needs_instruction"
+        ),
+        CheckConstraint(
+            "publication_status IN ('draft', 'published', 'archived')",
+            name="announcement_publication_status_valid",
         ),
         Index(
             "idx_announcement_active",
@@ -104,6 +115,36 @@ class AnnouncementArea(Base):
     )
     area_id: Mapped[uuid.UUID] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("area.id", ondelete="CASCADE"), primary_key=True
+    )
+
+
+class AnnouncementImage(UUIDPrimaryKeyMixin, Base):
+    """Managed article media for a single announcement parent."""
+
+    __tablename__ = "announcement_image"
+
+    announcement_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("announcement.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    file_path: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    alt_text: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    caption: Mapped[str | None] = mapped_column(Text, nullable=True)
+    sort_order: Mapped[int] = mapped_column(nullable=False, server_default=text("0"))
+    is_cover: Mapped[bool] = mapped_column(nullable=False, server_default=text("false"))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("uq_announcement_image_sort", "announcement_id", "sort_order", unique=True),
+        Index(
+            "uq_announcement_image_cover",
+            "announcement_id",
+            unique=True,
+            postgresql_where=text("is_cover"),
+        ),
     )
 
 

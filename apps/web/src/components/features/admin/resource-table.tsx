@@ -72,8 +72,33 @@ export function ResourceTable<T extends object>({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-      <Table>
+    <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-xs">
+      <div className="divide-y divide-neutral-200 sm:hidden">
+        {data.map((row) => (
+          <article key={getRowKey(row)} className="space-y-3 p-4">
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+              {columns.map((col) => (
+                <div key={col.key} className="min-w-0">
+                  <dt className="text-[10px] font-bold tracking-[0.12em] text-neutral-500 uppercase">
+                    {col.header}
+                  </dt>
+                  <dd className="mt-1 text-sm font-medium break-words text-neutral-800">
+                    {col.render
+                      ? col.render(row)
+                      : String((row as Record<string, unknown>)[col.key] ?? "â€”")}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            {rowActions ? (
+              <div className="flex flex-wrap justify-end gap-2 border-t border-neutral-100 pt-3">
+                {rowActions(row)}
+              </div>
+            ) : null}
+          </article>
+        ))}
+      </div>
+      <Table className="hidden sm:table">
         <TableHeader>
           <TableRow>
             {columns.map((col) => (

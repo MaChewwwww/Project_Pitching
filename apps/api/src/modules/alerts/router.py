@@ -9,13 +9,21 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 
 from src.core.deps import CurrentUser, require_role
 from src.core.pagination import Page
 from src.db.session import DbSessionDep
 from src.modules.alerts import service
-from src.modules.alerts.schemas import AlertPromptOut, AnnouncementIn, PublicAnnouncement
+from src.modules.alerts.schemas import (
+    AlertPromptOut,
+    AnnouncementDetail,
+    AnnouncementIn,
+    ArticleImageOut,
+    ArticleImagePatch,
+    ImageOrderIn,
+    PublicAnnouncement,
+)
 
 public_router = APIRouter(tags=["alerts"])
 admin_router = APIRouter(tags=["alerts"])
@@ -39,6 +47,11 @@ async def public_active_alert(session: DbSessionDep) -> PublicAnnouncement | Non
     return await service.get_active_alert(session)
 
 
+@public_router.get("/announcements/{slug}", summary="Published announcement article")
+async def public_announcement_detail(slug: str, session: DbSessionDep) -> AnnouncementDetail:
+    return await service.get_announcement_by_slug(session, slug)
+
+
 # --- admin ----------------------------------------------------------------------
 
 
@@ -51,6 +64,17 @@ async def admin_list_announcements(session: DbSessionDep) -> list[PublicAnnounce
     return await service.list_announcements_admin(session)
 
 
+@admin_router.get(
+    "/announcements/{announcement_id}",
+    dependencies=[Depends(require_role("admin", "sk"))],
+    summary="Announcement editor detail",
+)
+async def admin_announcement_detail(
+    announcement_id: uuid.UUID, session: DbSessionDep
+) -> AnnouncementDetail:
+    return await service.get_announcement_admin(session, announcement_id)
+
+
 @admin_router.post(
     "/announcements",
     dependencies=[Depends(require_role("admin", "sk"))],
@@ -60,6 +84,69 @@ async def admin_create_announcement(
     body: AnnouncementIn, session: DbSessionDep, user: CurrentUser
 ) -> PublicAnnouncement:
     return await service.create_announcement(session, body, actor_id=user.id)
+
+
+@admin_router.patch(
+    "/announcements/{announcement_id}",
+    dependencies=[Depends(require_role("admin", "sk"))],
+    summary="Update an announcement article and lifecycle",
+)
+async def admin_update_announcement(
+    announcement_id: uuid.UUID, body: AnnouncementIn, session: DbSessionDep, user: CurrentUser
+) -> PublicAnnouncement:
+    return await service.update_announcement(session, announcement_id, body, actor_id=user.id)
+
+
+@admin_router.post(
+    "/announcements/{announcement_id}/images",
+    dependencies=[Depends(require_role("admin", "sk"))],
+    summary="Upload an announcement article image",
+)
+async def admin_add_announcement_image(
+    announcement_id: uuid.UUID,
+    session: DbSessionDep,
+    user: CurrentUser,
+    file: UploadFile = File(...),  # noqa: B008
+) -> ArticleImageOut:
+    return await service.add_image(session, announcement_id, file, actor_id=user.id)
+
+
+@admin_router.patch(
+    "/announcements/{announcement_id}/images/{image_id}",
+    dependencies=[Depends(require_role("admin", "sk"))],
+    summary="Edit announcement image metadata",
+)
+async def admin_patch_announcement_image(
+    announcement_id: uuid.UUID,
+    image_id: uuid.UUID,
+    body: ArticleImagePatch,
+    session: DbSessionDep,
+    user: CurrentUser,
+) -> ArticleImageOut:
+    return await service.patch_image(session, announcement_id, image_id, body, actor_id=user.id)
+
+
+@admin_router.put(
+    "/announcements/{announcement_id}/images/order",
+    dependencies=[Depends(require_role("admin", "sk"))],
+    summary="Set complete announcement image order",
+)
+async def admin_order_announcement_images(
+    announcement_id: uuid.UUID, body: ImageOrderIn, session: DbSessionDep, user: CurrentUser
+) -> list[ArticleImageOut]:
+    return await service.order_images(session, announcement_id, body, actor_id=user.id)
+
+
+@admin_router.delete(
+    "/announcements/{announcement_id}/images/{image_id}",
+    dependencies=[Depends(require_role("admin", "sk"))],
+    summary="Delete announcement article image",
+)
+async def admin_delete_announcement_image(
+    announcement_id: uuid.UUID, image_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> dict[str, bool]:
+    await service.delete_image(session, announcement_id, image_id, actor_id=user.id)
+    return {"ok": True}
 
 
 @admin_router.delete(
