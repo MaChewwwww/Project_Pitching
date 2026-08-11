@@ -43,7 +43,7 @@ export default async function AnnouncementsPage({
           <div className="grid gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
             {announcements.items.map((announcement, i) => (
               <Reveal key={announcement.id} delay={(i % 3) as 0 | 1 | 2}>
-                <AnnouncementCard announcement={announcement} />
+                <AnnouncementCard announcement={announcement} clamp />
               </Reveal>
             ))}
           </div>

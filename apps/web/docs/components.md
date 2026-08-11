@@ -164,3 +164,8 @@ nested elements; stacking a squash and a rotation on one node makes both fight.
 `design.md` Section 6 fixes an icon per concept — `Users` for household, `Waves` for river
 level, `LifeBuoy` for rescue. Keep them stable. Users learn icons faster than labels, and
 re-teaching them costs more than a better-looking icon is worth.
+
+## Section headers and article preview cards
+
+- `SectionHeader` action buttons must consistently include `<span className="hidden sm:inline">View All</span>` alongside `ArrowRight` so desktop screens display legible text while small phone views collapse to the icon button.
+- `AnnouncementCard` presents announcements and alerts in a symmetrical, equal-height card container with matching 16:10 cover imagery (or fallback gradient header graphics). Emergency alerts use red accent border-left styling, red badge tags, and callout boxes (`bg-red-50 border-red-200 text-red-950`) rather than solid dark red full-card backgrounds.
