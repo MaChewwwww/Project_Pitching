@@ -215,7 +215,7 @@ export function HazardMapClient({
   showHazardLayer = true,
 }: HazardMapClientProps) {
   const { visible } = useMapLayers();
-  const hazard = useHazardGeoJson(interactive && showHazardLayer ? visible.hazard : false);
+  const hazard = useHazardGeoJson(showHazardLayer ? visible.hazard : false);
 
   React.useEffect(() => {
     ensureRippleStyle();
