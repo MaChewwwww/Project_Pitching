@@ -14,13 +14,11 @@ import {
   Phone,
   Shield,
   Stethoscope,
-  Users,
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/common/card";
 import { EmptyState } from "@/components/common/empty-state";
 import { HotlineList } from "@/components/common/hotline-list";
-import { MeterBar } from "@/components/common/meter-bar";
 import { HazardMap } from "@/components/features/map/hazard-map";
 import {
   Select,
@@ -29,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatNumber, googleMapsDirectionsUrl, osmDirectionsUrl, toTelHref } from "@/lib/format";
+import { googleMapsDirectionsUrl, osmDirectionsUrl, toTelHref } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type {
   AreaBoundaryFeature,
@@ -448,16 +446,9 @@ function FacilityUnifiedCard({ facility }: { facility: UnifiedFacilityItem }) {
   const [lon, lat] = facility.location.coordinates;
   const cfg = FACILITY_TYPES.find((t) => t.type === facility.type) ?? FACILITY_TYPES[0];
   const Icon = cfg.icon;
-  const evac = facility.evacCenter;
 
   const gmapsUrl = googleMapsDirectionsUrl(lon, lat, facility.name);
   const osmUrl = osmDirectionsUrl(lon, lat);
-
-  const evacTone = evac?.is_at_capacity
-    ? "danger"
-    : (evac?.occupancy_pct ?? 0) > 75
-    ? "warning"
-    : "primary";
 
   return (
     <Card
@@ -509,31 +500,6 @@ function FacilityUnifiedCard({ facility }: { facility: UnifiedFacilityItem }) {
             <Phone className="size-3.5 shrink-0 text-emerald-600" />
             <span>{facility.contact_number}</span>
           </a>
-        ) : null}
-
-        {/* Evacuation Center Occupancy (if applicable) */}
-        {evac && evac.capacity != null ? (
-          <div className="flex flex-col gap-2 rounded-xl border border-neutral-100 bg-neutral-50/70 p-3 mt-1">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-overline inline-flex items-center gap-1.5 font-bold tracking-wider text-neutral-600">
-                <Users aria-hidden className="text-emerald-600 size-3.5" />
-                Capacity
-              </span>
-              <span className="text-body-sm tabular font-bold text-neutral-900">
-                {formatNumber(evac.occupancy)}{" "}
-                <span className="font-normal text-neutral-500">
-                  / {formatNumber(evac.capacity)} people
-                </span>
-              </span>
-            </div>
-            <MeterBar
-              value={evac.occupancy}
-              max={evac.capacity}
-              tone={evacTone}
-              label={`Occupancy at ${facility.name}`}
-              valueText={`${evac.occupancy} of ${evac.capacity} people`}
-            />
-          </div>
         ) : null}
 
         {/* Action Buttons */}

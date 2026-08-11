@@ -224,9 +224,11 @@ export function FloodHistoryVisualizer({ events }: FloodHistoryVisualizerProps) 
               <BarChart
                 data={chartData}
                 margin={{ top: 20, right: 20, left: -10, bottom: 25 }}
-                onClick={(state: any) => {
-                  if (state && state.activePayload && state.activePayload.length) {
-                    setSelectedEventId(state.activePayload[0].payload.id);
+                onClick={(state) => {
+                  const chartState = state as { activePayload?: { payload: { id?: string } }[] } | null;
+                  const payload = chartState?.activePayload?.[0]?.payload;
+                  if (payload?.id) {
+                    setSelectedEventId(payload.id);
                   }
                 }}
               >
