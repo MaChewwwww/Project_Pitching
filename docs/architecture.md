@@ -34,15 +34,14 @@ graph TB
         B[Barangay Health Worker]
         A[Barangay Admin / BDRRMC]
         S[SK Officer]
-        P[Public visitor<br/>no account]
-        D[Donor<br/>no account]
+        P[Public visitor / community reader<br/>no account]
     end
 
     SYS[["SAGIP-SJ<br/>Disaster Readiness &<br/>Community Health Platform"]]
 
     subgraph External
         OM[Open-Meteo<br/>weather API]
-        PG[PAGASA FFWS<br/>river level - scraped]
+        PG[PAGASA feeds<br/>river level and TCWS]
         OSM[OpenStreetMap<br/>basemap tiles]
     end
 
@@ -56,10 +55,9 @@ graph TB
     A --> SYS
     S --> SYS
     P --> SYS
-    D --> SYS
 
     SYS -->|scheduled poll| OM
-    SYS -->|scheduled scrape| PG
+    SYS -->|scheduled fetch| PG
     SYS -.->|browser loads directly| OSM
     SYS --> NOAH
     SYS --> PSGC
@@ -83,7 +81,7 @@ graph TB
     Browser([Browser])
 
     subgraph VPS["Docker Compose — one host"]
-        PROXY[proxy · Caddy<br/>:80]
+        PROXY[proxy · Caddy<br/>:80 / :443]
         WEB[web · Next.js<br/>:3000]
         API[api · FastAPI<br/>:8000]
         CRON[cron · Python<br/>no ports]
@@ -105,14 +103,14 @@ graph TB
     CRON -->|httpx| EXT[External sources]
 ```
 
-| Container | Responsibility                                                          | Scaling                    |
-| --------- | ----------------------------------------------------------------------- | -------------------------- |
-| `proxy`   | Single entry point; path routing; static upload serving; TLS if enabled | 1                          |
-| `web`     | Next.js — public site SSR/ISR, portal and console as a client app       | 1                          |
-| `api`     | All business logic, authorization, persistence                          | Gunicorn + Uvicorn workers |
-| `cron`    | Scheduled ingestion and maintenance. **No HTTP surface**                | Exactly 1 — see Section 9  |
-| `db`      | PostgreSQL + PostGIS. Single source of truth                            | 1                          |
-| `uploads` | Incident photos on a bind volume, served by the proxy                   | —                          |
+| Container | Responsibility                                                                          | Scaling                    |
+| --------- | --------------------------------------------------------------------------------------- | -------------------------- |
+| `proxy`   | Single entry point; path routing; static upload serving; staging TLS with HTTP fallback | 1                          |
+| `web`     | Next.js — public site SSR/ISR, portal and console as a client app                       | 1                          |
+| `api`     | All business logic, authorization, persistence                                          | Gunicorn + Uvicorn workers |
+| `cron`    | Scheduled ingestion and maintenance. **No HTTP surface**                                | Exactly 1 — see Section 9  |
+| `db`      | PostgreSQL + PostGIS. Single source of truth                                            | 1                          |
+| `uploads` | Validated incident and article images on a bind volume, served by the proxy             | —                          |
 
 > **Why `cron` is a separate container and not APScheduler inside `api`.** With more than one Gunicorn worker, in-process schedulers fire the same job once per worker — duplicate scrapes, duplicate alerts, duplicate reminders. A dedicated single-replica container makes that impossible by construction rather than by convention.
 
@@ -191,7 +189,6 @@ erDiagram
     HOUSEHOLD ||--o| USER : "headed by"
     HOUSEHOLD ||--o{ VULNERABILITY_ASSESSMENT : scored
     HOUSEHOLD ||--o{ SAFETY_STATUS : "checked in"
-    HOUSEHOLD ||--o{ ASSISTANCE_RECORD : receives
 
     USER ||--o{ AUDIT_LOG : performs
     USER }o--o{ AREA : "assigned to (BHW)"
@@ -201,10 +198,12 @@ erDiagram
 
     EVENT ||--o{ SAFETY_STATUS : during
     EVENT ||--o{ RESCUE_REQUEST : during
-    EVENT ||--o{ DONATION_DRIVE : for
+    EVENT ||--o{ DONATION_DRIVE : may_contextualise
     EVENT ||--o{ INCIDENT_REPORT : during
 
-    DONATION_DRIVE ||--o{ DONATION : receives
+    ANNOUNCEMENT ||--o{ ANNOUNCEMENT_IMAGE : illustrates
+    ACTIVITY ||--o{ ACTIVITY_IMAGE : illustrates
+    DONATION_DRIVE ||--o{ DONATION_DRIVE_IMAGE : illustrates
     EVAC_CENTER ||--o{ EVAC_CHECKIN : records
 ```
 
@@ -241,12 +240,12 @@ erDiagram
 
 **`reading`** — one table for every external measurement.
 
-| Column                                       | Notes                                                     |
-| -------------------------------------------- | --------------------------------------------------------- |
-| `source`                                     | `open_meteo` · `pagasa` · `manual`                        |
+| Column                                       | Notes                                                                                                                |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `source`                                     | `open_meteo` · `pagasa` · `manual`                                                                                   |
 | `metric`                                     | `river_level` · `rainfall` · `temperature` · `humidity` · `heat_index` · `precipitation_probability` · `tcws_signal` |
-| `value`, `unit`, `observed_at`, `fetched_at` | Both timestamps — the gap _is_ the staleness (FR-WX-011)  |
-| `raw`                                        | `JSONB` payload, kept for debugging a broken parser       |
+| `value`, `unit`, `observed_at`, `fetched_at` | Both timestamps — the gap _is_ the staleness (FR-WX-011)                                                             |
+| `raw`                                        | `JSONB` payload, kept for debugging a broken parser                                                                  |
 
 Every reading surfaced to a user carries `source` and `observed_at` (FR-WX-010). A value without an age is never rendered.
 
@@ -289,14 +288,19 @@ GROUP BY h.id;
 
 ### 5.4 Derived vs configured — the distinction the BRD insists on
 
-| Figure                       | Origin                   | Table       |
-| ---------------------------- | ------------------------ | ----------- |
-| Registered households        | `COUNT(*)` at query time | `household` |
-| Registered members           | `COUNT(*)` at query time | `member`    |
-| **Barangay-wide households** | Admin-entered            | `config`    |
-| **Barangay-wide population** | Admin-entered            | `config`    |
+| Figure                        | Origin                                                                               | Table       |
+| ----------------------------- | ------------------------------------------------------------------------------------ | ----------- |
+| Registered households         | `COUNT(*)` at query time                                                             | `household` |
+| Registered members            | `COUNT(*)` at query time                                                             | `member`    |
+| Waterway-proximity demo bands | Self-reported onboarding survey (`very_near`/`near`/`far`), aggregated at query time | `household` |
+| **Barangay-wide households**  | Admin-entered                                                                        | `config`    |
+| **Barangay-wide population**  | Admin-entered                                                                        | `config`    |
 
 Never stored as duplicate columns, never conflated (NFR-DAT-005, FR-ANL-003). Coverage is always presented as _derived over configured_.
+
+The waterway band is the exception to the target geography-derived exposure model: migration
+`0013_waterway_proximity` stores survey data alongside, not derived from, the map pin. Public
+charts must say so until a verified waterway geometry can produce real distance bands.
 
 ---
 
@@ -342,15 +346,17 @@ GET  /public/facilities
 GET  /public/hazard-layers/{period}     GeoJSON, heavily cached
 GET  /public/area-stats                 area-level aggregates only
 GET  /public/donation-drives
-POST /public/donations                  FR-DON-002 — no account
+GET  /public/donation-drives/{slug}     planned — FR-DON-017
 POST /public/rescue-requests            implemented — FR-SAF-009, no account, rate limited
 GET  /public/emergency-events/active    implemented — active emergency event or null
 GET  /public/activities
+GET  /public/activities/{slug}          planned — FR-ACT-012
 GET  /public/guides
 GET  /public/guides/{slug}              FR-PUB-005 — "each card opens the full guide"
 GET  /public/faqs                       FR-PUB-011, FR-PRP-005
 GET  /public/flood-events               FR-WX-013 — flood history, publicly viewable
 GET  /public/announcements/active       FR-PUB-017 — the takeover banner, polled short-cycle
+GET  /public/announcements/{slug}       planned — FR-ALT-015
 GET  /public/areas                      FR-SYS-013 — names/codes for public area filters, no geom
 GET  /public/area-boundaries            FR-MAP-001 — area boundary polygons as GeoJSON
 GET  /public/sirens                     FR-MAP-014 — siren unit locations and status
@@ -358,10 +364,14 @@ GET  /public/sirens                     FR-MAP-014 — siren unit locations and 
 
 > `/public/area-boundaries` and `/public/sirens` were added during the MAP build (FR-MAP-001, FR-MAP-014).
 > `/public/area-boundaries` delivers polygon geometry separately from `/public/areas` (which returns names/stats).
-> `/public/guides/{slug}` is the only detail route the public site needs — everything else is a list, because the landing page is
-> one document rather than a set of drill-downs. `/public/announcements/active` and
-> `/public/areas` were added for the same reason during the FR-PUB-013 close-out;
-> `/public/emergency-events/active` was added during the SAF build (FR-SAF-018/019).
+> Guides, announcements, activities, and donation drives have canonical slug detail routes.
+> Landing sections consume preview DTOs, not full article bodies. The three article routes marked
+> `planned` are approved contracts but are not deployed at commit `8a3eaec`.
+> `/public/announcements/active` remains the short-poll emergency takeover endpoint and never
+> depends on article imagery. `/public/emergency-events/active` was added during the SAF build
+> (FR-SAF-018/019).
+> Register the static `/announcements/active` route before `/announcements/{slug}` so `active`
+> cannot be consumed as a slug.
 >
 > Note also that `/public/weather/current` breaks the plural-noun convention above.
 > Left as-is because it reads better than `/public/weather-readings?latest=true`,
@@ -379,7 +389,6 @@ POST  /me/household/members
 PATCH /me/household/members/{id}
 POST  /me/safety-status            implemented — per member or whole household (FR-SAF-001..007)
 POST  /me/incident-reports          implemented — photo upload + report details (FR-SAF-015)
-GET   /me/assistance
 GET   /me/go-bag
 PUT   /me/go-bag
 ```
@@ -416,7 +425,6 @@ GET   /admin/alert-prompts           threshold breaches awaiting a decision
 POST  /admin/readings                manual river level (FR-WX-007)
 GET   /admin/evacuation-centers
 POST  /admin/evacuation-centers/{id}/checkins
-PATCH /admin/donations/{id}/status
 GET   /admin/analytics/*
 GET   /admin/audit-log
 GET   /admin/config
@@ -436,7 +444,50 @@ PUT   /admin/config/{key}
 GET   /admin/alert-prompts      threshold breaches awaiting a decision (FR-WX-009)
 ```
 
-### 6.4 Two endpoints that are architecturally special
+The deployed donation-drive CRUD still exposes legacy nested `drive_need` data. D-16 retires
+that contract. Later development removes nested needs and the donation/assistance endpoints; it
+does not replace them with another donor, receipt, or household-distribution workflow.
+
+**Planned article media operations — not deployed**
+
+```
+POST   /admin/{announcements|activities|donation-drives}/{id}/images
+PATCH  /admin/{announcements|activities|donation-drives}/{id}/images/{image_id}
+PUT    /admin/{announcements|activities|donation-drives}/{id}/images/order
+DELETE /admin/{announcements|activities|donation-drives}/{id}/images/{image_id}
+```
+
+`POST` is multipart and reuses `core/uploads.py`: JPEG, PNG, or WebP; magic-byte validation;
+5 MB per file; UUID storage names. `PATCH` edits alt text/caption and selects the single cover.
+`PUT .../order` accepts the complete ordered image-ID list and rejects missing, duplicate, or
+foreign IDs. Drafts may have no image. Publication requires exactly one cover, no more than ten
+images, and non-empty alt text for every image.
+
+### 6.4 Shared article contract — planned
+
+Announcements, activities, and donation drives keep separate services, tables, permissions, and
+domain fields. They share an API shape and frontend authoring components; there is no polymorphic
+`article` table. The image entities in Section 5.1 are likewise planned, not deployed.
+This contract traces `FR-ALT-013`–`015`, `FR-ACT-010`–`012`, `FR-DON-015`–`017`, and
+`FR-PUB-019`–`020` back to their permanent BR IDs in `frs_nfrs.md`; emergency-alert behavior
+continues to use `FR-ALT-001`–`011`.
+
+| Field                         | Contract                                                                                                       |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `slug`                        | Unique within the module; canonical public URL; generated from the title with deterministic collision handling |
+| `title`, `excerpt`            | Plain text; both required before publication                                                                   |
+| `body`                        | Validated Tiptap JSON using the configured node/mark allow-list; raw HTML and embedded data URLs are rejected  |
+| `publication_status`          | `draft` · `published` · `archived`; only `published` appears in public lists                                   |
+| `published_at`, `archived_at` | Server-authored lifecycle timestamps                                                                           |
+| `author_user_id`              | Required officer attribution; derived from the authenticated actor                                             |
+| `cover_image`, `images`       | Preview DTOs return the cover; detail DTOs return the complete ordered gallery                                 |
+
+Announcement metadata retains kind, severity, alert level, effective period, instruction, issuer,
+and areas. Activity metadata retains type, schedule, venue, and area. Donation-drive metadata
+contains only optional event, organizer/contact, drop-off instructions, and active dates—never
+targets, pledges, receipts, payments, recipient households, or distribution.
+
+### 6.5 Two endpoints that are architecturally special
 
 **`POST /public/rescue-requests`** (FR-SAF-009) — the one endpoint that must work when nothing else does.
 
@@ -613,12 +664,18 @@ The human step in the middle is the architecture, not a formality.
 
 > **Only the public site benefits from server rendering.** Making the whole app SSR would add auth-on-the-server complexity for zero user-visible gain.
 
+**August 11 staging audit.** The citizen portal currently renders the household summary, safety
+check-in, and incident-report entry points. The admin console exposes the broad module navigation
+and deployed CRUD, but its responsive hierarchy and the three content-authoring workflows still
+need a design pass. This is current-state evidence, not permission to invent the remaining portal
+screens; `frs_nfrs.md` Section 2.1 owns that backlog.
+
 ### 10.2 Structure
 
 ```
 apps/web/src/
 ├── app/
-│   ├── (public)/          landing, guides, hazard map, donate — ISR
+│   ├── (public)/          landing, guides, maps, and article routes — ISR
 │   ├── (auth)/            login, register
 │   ├── (portal)/          resident — CSR, auth-guarded
 │   └── (admin)/           console — CSR, role-guarded
@@ -866,10 +923,10 @@ Two named **profiles**, each its own Compose project from the same `infra/compos
 separate database, volumes, network, and host ports — so they can run on the same machine
 at once without colliding, and testing a feature in one can never corrupt the other:
 
-| Profile     | Purpose                                                           | Runs on                     | Data             | Ports (proxy/web/api/db)  |
-| ----------- | ----------------------------------------------------------------- | --------------------------- | ---------------- | ------------------------- |
-| **staging** | Day-to-day development and feature testing. Safe to break.        | Laptop, Compose             | Seeded synthetic | 8080 / 3000 / 8000 / 5433 |
-| **demo**    | Curated, isolated, for the pitch. Reseed fresh before presenting. | Laptop or VPS, same Compose | Seeded synthetic | 8090 / 3010 / 8010 / 5443 |
+| Profile     | Purpose                                                           | Runs on                                    | Data             | Ports (proxy/web/api/db)                         |
+| ----------- | ----------------------------------------------------------------- | ------------------------------------------ | ---------------- | ------------------------------------------------ |
+| **staging** | Day-to-day development and feature testing. Safe to break.        | Laptop or deployed Azure VPS, same Compose | Seeded synthetic | Local 8080/3000/8000/5433; VPS HTTPS 443/HTTP 80 |
+| **demo**    | Curated, isolated, for the pitch. Reseed fresh before presenting. | Laptop or VPS, same Compose                | Seeded synthetic | 8090 / 3010 / 8010 / 5443                        |
 
 ```bash
 make dev                 # staging — the default profile
@@ -888,8 +945,10 @@ bare `.env.example` / `.env` pair still exists too, for anyone running `docker c
 without the Makefile's profile mechanism — it behaves exactly like the staging profile.
 
 **One Compose file, environment-driven differences, either way.** No separate production
-stack — that is what makes "demo from a laptop" a viable fallback if the VPS dies (T-3). A VPS
-deployment just runs the `demo` profile's `.env` on the server.
+stack — that is what makes "demo from a laptop" a viable fallback if the VPS dies (T-3). The
+reviewed Azure deployment currently runs the `staging` profile as Compose project
+`sagip-staging` and is served at `https://57-155-90-155.sslip.io`; the isolated `demo` profile
+remains available for a curated pitch rehearsal.
 
 ### 13.2 Configuration
 
@@ -992,12 +1051,12 @@ mid-way, or after adding a new seed section that predates a running database.
 
 ## 17. Open Architecture Decisions
 
-| #          | Item                                                                                                                    | Blocked by | Owner                                                                 |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------- |
+| #          | Item                                                                                                                    | Blocked by | Owner                                                                                                                                                                                                                    |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | ~~A-OI-1~~ | ~~Area boundary polygons — the spatial model cannot be seeded without them~~                                            | —          | **Resolved** — approximate boundaries seeded via migration `0011_area_boundaries` (`boundary_source='approximate'`). Official boundaries still preferred when available (BRD OI-3 stays open for the authoritative set). |
-| ~~A-OI-2~~ | ~~San Jose boundary for the clipping step~~                                                                             | —          | **Resolved** — approximate San Jose boundary polygon committed to `dataset/derived/san_jose_boundary.geojson`; used for the 5-yr flood hazard clip. |
-| ~~A-OI-3~~ | ~~Nutrition indicator schema~~                                                                                          | —          | **Resolved: moot.** `nutrition_record` is cut (BRD D-15, closes OI-2) |
-| A-OI-4     | Vulnerability weighting — determines `domain/vulnerability.py`                                                          | BRD OI-18  | PubAd lead                                                            |
-| A-OI-5     | Whether `alert_prompt` needs its own table or is a status on `reading`                                                  | —          | IT lead                                                               |
-| A-OI-6     | Notification delivery: poll vs SSE for the emergency banner. Poll is the default; SSE only if latency proves inadequate | —          | IT lead                                                               |
-| A-OI-7     | Whether `evacuation_checkin` should reference `member` or duplicate the name for unregistered evacuees                  | FR-EVC-005 | IT lead                                                               |
+| ~~A-OI-2~~ | ~~San Jose boundary for the clipping step~~                                                                             | —          | **Resolved** — approximate San Jose boundary polygon committed to `dataset/derived/san_jose_boundary.geojson`; used for the 5-yr flood hazard clip.                                                                      |
+| ~~A-OI-3~~ | ~~Nutrition indicator schema~~                                                                                          | —          | **Resolved: moot.** `nutrition_record` is cut (BRD D-15, closes OI-2)                                                                                                                                                    |
+| A-OI-4     | Vulnerability weighting — determines `domain/vulnerability.py`                                                          | BRD OI-18  | PubAd lead                                                                                                                                                                                                               |
+| ~~A-OI-5~~ | ~~Whether `alert_prompt` needs its own table or is a status on `reading`~~                                              | —          | **Resolved** — the implemented `alert_prompt` table preserves officer review separately from immutable readings (FR-WX-009).                                                                                             |
+| A-OI-6     | Notification delivery: poll vs SSE for the emergency banner. Poll is the default; SSE only if latency proves inadequate | —          | IT lead                                                                                                                                                                                                                  |
+| A-OI-7     | Whether `evacuation_checkin` should reference `member` or duplicate the name for unregistered evacuees                  | FR-EVC-005 | IT lead                                                                                                                                                                                                                  |

@@ -22,7 +22,7 @@
 | Soft delete      | `deleted_at TIMESTAMPTZ NULL`; default queries filter it out             |
 | Enumerations     | `TEXT` + `CHECK` constraint — see below                                  |
 | Booleans         | Prefixed `is_` / `has_`, `NOT NULL DEFAULT false`                        |
-| Money            | Not stored. The platform never handles money (FR-DON-010)                |
+| Money            | Not stored. D-16 removes the entire donor transaction/payment surface.   |
 | Geometry         | `GEOMETRY(<type>, 4326)` — WGS84 throughout, no reprojection anywhere    |
 
 ### Why `TEXT` + `CHECK` rather than native `ENUM`
@@ -192,15 +192,15 @@ Single self-referencing table rather than four — the hierarchy is uniform and 
 
 ### `area` — barangay zones (FR-SYS-013)
 
-| Column           | Type                         | Constraints                      | Notes                           |
-| ---------------- | ---------------------------- | -------------------------------- | ------------------------------- |
-| `id`             | UUID                         | PK                               |                                 |
-| `name`           | TEXT                         | UNIQUE NOT NULL                  | "Area 1", "Area 2", …           |
-| `code`           | TEXT                         | UNIQUE                           | Short code for references       |
-| `geom`           | GEOMETRY(MultiPolygon, 4326) | **NULLABLE**                     | Boundary (BRD OI-3)             |
-| `centroid`       | GEOMETRY(Point, 4326)        |                                  | Generated; used for map labels  |
-| `flood_exposure` | TEXT                         | CHECK: `low` · `medium` · `high` | Precomputed from hazard overlap |
-| `boundary_source`| TEXT                         | CHECK: `official` · `approximate` | Source of boundary polygon (FR-MAP-001/008) |
+| Column            | Type                         | Constraints                       | Notes                                       |
+| ----------------- | ---------------------------- | --------------------------------- | ------------------------------------------- |
+| `id`              | UUID                         | PK                                |                                             |
+| `name`            | TEXT                         | UNIQUE NOT NULL                   | "Area 1", "Area 2", …                       |
+| `code`            | TEXT                         | UNIQUE                            | Short code for references                   |
+| `geom`            | GEOMETRY(MultiPolygon, 4326) | **NULLABLE**                      | Boundary (BRD OI-3)                         |
+| `centroid`        | GEOMETRY(Point, 4326)        |                                   | Generated; used for map labels              |
+| `flood_exposure`  | TEXT                         | CHECK: `low` · `medium` · `high`  | Precomputed from hazard overlap             |
+| `boundary_source` | TEXT                         | CHECK: `official` · `approximate` | Source of boundary polygon (FR-MAP-001/008) |
 
 ```sql
 CREATE INDEX idx_area_geom ON area USING GIST(geom);
@@ -280,25 +280,26 @@ CREATE UNIQUE INDEX idx_hazard_period_level ON flood_hazard(return_period, level
 
 ### `household` (FR-REG-001 … 011)
 
-| Column                                   | Type                  | Constraints                           | Notes                                             |
-| ---------------------------------------- | --------------------- | ------------------------------------- | ------------------------------------------------- |
-| `id`                                     | UUID                  | PK                                    |                                                   |
-| `reference_no`                           | TEXT                  | UNIQUE NOT NULL                       | Generated at creation (FR-REG-006)                |
-| `head_name`                              | TEXT                  | NOT NULL                              |                                                   |
-| `head_user_id`                           | UUID                  | UNIQUE FK → `user` ON DELETE SET NULL | **Null for BHW-created records**                  |
-| `contact_number`                         | TEXT                  |                                       | Nullable (FR-REG-005)                             |
-| `is_unreachable_by_phone`                | BOOLEAN               | NOT NULL DEFAULT false                | Derived on write; feeds capacity scoring          |
-| `area_id`                                | UUID                  | NOT NULL FK → `area`                  |                                                   |
-| `psgc_barangay_code`                     | TEXT                  | FK → `psgc(code)`                     |                                                   |
-| `street_address`                         | TEXT                  |                                       |                                                   |
-| `location`                               | GEOMETRY(Point, 4326) |                                       | Nullable — pin is optional                        |
-| `source`                                 | TEXT                  | NOT NULL CHECK                        | `self` · `bhw` — required for the coverage metric |
-| `created_by_user_id`                     | UUID                  | FK → `user` ON DELETE SET NULL        | The BHW, where applicable (FR-REG-007)            |
-| `verified_at`                            | TIMESTAMPTZ           |                                       |                                                   |
-| `verified_by_user_id`                    | UUID                  | FK → `user`                           |                                                   |
-| `stale_at`                               | TIMESTAMPTZ           |                                       | Set by the daily job (R-2)                        |
-| `merged_into_id`                         | UUID                  | FK → `household`                      | Set when merged as a duplicate                    |
-| `created_at`, `updated_at`, `deleted_at` | TIMESTAMPTZ           |                                       |                                                   |
+| Column                                   | Type                  | Constraints                           | Notes                                                                                          |
+| ---------------------------------------- | --------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `id`                                     | UUID                  | PK                                    |                                                                                                |
+| `reference_no`                           | TEXT                  | UNIQUE NOT NULL                       | Generated at creation (FR-REG-006)                                                             |
+| `head_name`                              | TEXT                  | NOT NULL                              |                                                                                                |
+| `head_user_id`                           | UUID                  | UNIQUE FK → `user` ON DELETE SET NULL | **Null for BHW-created records**                                                               |
+| `contact_number`                         | TEXT                  |                                       | Nullable (FR-REG-005)                                                                          |
+| `is_unreachable_by_phone`                | BOOLEAN               | NOT NULL DEFAULT false                | Derived on write; feeds capacity scoring                                                       |
+| `area_id`                                | UUID                  | NOT NULL FK → `area`                  |                                                                                                |
+| `psgc_barangay_code`                     | TEXT                  | FK → `psgc(code)`                     |                                                                                                |
+| `street_address`                         | TEXT                  |                                       |                                                                                                |
+| `location`                               | GEOMETRY(Point, 4326) |                                       | Nullable — pin is optional                                                                     |
+| `waterway_proximity`                     | TEXT                  |                                       | Nullable self-reported band: `very_near` · `near` · `far`; migration `0013_waterway_proximity` |
+| `source`                                 | TEXT                  | NOT NULL CHECK                        | `self` · `bhw` — required for the coverage metric                                              |
+| `created_by_user_id`                     | UUID                  | FK → `user` ON DELETE SET NULL        | The BHW, where applicable (FR-REG-007)                                                         |
+| `verified_at`                            | TIMESTAMPTZ           |                                       |                                                                                                |
+| `verified_by_user_id`                    | UUID                  | FK → `user`                           |                                                                                                |
+| `stale_at`                               | TIMESTAMPTZ           |                                       | Set by the daily job (R-2)                                                                     |
+| `merged_into_id`                         | UUID                  | FK → `household`                      | Set when merged as a duplicate                                                                 |
+| `created_at`, `updated_at`, `deleted_at` | TIMESTAMPTZ           |                                       |                                                                                                |
 
 ```sql
 CREATE INDEX idx_household_area     ON household(area_id) WHERE deleted_at IS NULL;
@@ -458,18 +459,18 @@ ALTER TABLE feedback ADD CONSTRAINT chk_drafted_requires_review
 
 ### `reading` (FR-WX-001 … 012)
 
-| Column               | Type          | Constraints            | Notes                                                                                                |
-| -------------------- | ------------- | ---------------------- | ---------------------------------------------------------------------------------------------------- |
-| `id`                 | BIGSERIAL     | PK                     | High volume                                                                                          |
-| `source`             | TEXT          | NOT NULL CHECK         | `open_meteo` · `pagasa` · `manual`                                                                   |
+| Column               | Type          | Constraints            | Notes                                                                                                                |
+| -------------------- | ------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `id`                 | BIGSERIAL     | PK                     | High volume                                                                                                          |
+| `source`             | TEXT          | NOT NULL CHECK         | `open_meteo` · `pagasa` · `manual`                                                                                   |
 | `metric`             | TEXT          | NOT NULL CHECK         | `river_level` · `rainfall` · `temperature` · `humidity` · `heat_index` · `precipitation_probability` · `tcws_signal` |
-| `value`              | NUMERIC(10,3) | NOT NULL               |                                                                                                      |
-| `unit`               | TEXT          | NOT NULL               | `m`, `mm`, `°C`, `%`                                                                                 |
-| `station`            | TEXT          |                        | PAGASA station name                                                                                  |
-| `observed_at`        | TIMESTAMPTZ   | NOT NULL               | When the world was measured                                                                          |
-| `fetched_at`         | TIMESTAMPTZ   | NOT NULL DEFAULT now() | When we learned it                                                                                   |
-| `entered_by_user_id` | UUID          | FK → `user`            | Set only for `manual` (FR-WX-007)                                                                    |
-| `raw`                | JSONB         |                        | Original payload, for debugging a broken parser                                                      |
+| `value`              | NUMERIC(10,3) | NOT NULL               |                                                                                                                      |
+| `unit`               | TEXT          | NOT NULL               | `m`, `mm`, `°C`, `%`                                                                                                 |
+| `station`            | TEXT          |                        | PAGASA station name                                                                                                  |
+| `observed_at`        | TIMESTAMPTZ   | NOT NULL               | When the world was measured                                                                                          |
+| `fetched_at`         | TIMESTAMPTZ   | NOT NULL DEFAULT now() | When we learned it                                                                                                   |
+| `entered_by_user_id` | UUID          | FK → `user`            | Set only for `manual` (FR-WX-007)                                                                                    |
+| `raw`                | JSONB         |                        | Original payload, for debugging a broken parser                                                                      |
 
 ```sql
 CREATE INDEX idx_reading_latest ON reading(metric, source, observed_at DESC);
@@ -729,7 +730,13 @@ CREATE INDEX idx_checkin_occupancy ON evac_checkin(evac_center_id)
 
 ---
 
-## 9. Donations & Assistance
+## 9. Donations & Assistance — deployed legacy schema
+
+> **Approved retirement, not yet migrated.** The tables in this section describe the physical
+> schema deployed at commit `8a3eaec`. Stakeholder decision D-16 removes donor transactions,
+> targets/progress, and household assistance from the target product. Keep this section accurate
+> until the later migration removes `drive_need`, `donation`, and `assistance_record`; do not
+> mistake their presence for active product scope.
 
 ### `donation_drive` (FR-DON-001, 009)
 
@@ -762,7 +769,9 @@ CREATE INDEX idx_checkin_occupancy ON evac_checkin(evac_center_id)
 CREATE INDEX idx_donation_drive_status ON donation(drive_id, status);
 ```
 
-> **No donor account, no donor table.** Donor identity lives on the donation row (BRD D-5). Public progress counts `quantity_received`, not `quantity_pledged`, so a drive never appears funded while shelves are empty (FR-DON-004).
+> **Legacy deployed behavior only.** This implementation has no donor account; donor identity
+> lives on the `donation` row and its progress calculation uses `quantity_received`. D-16 retires
+> the entire row and calculation. Do not reproduce them in the Article-CMS migration.
 
 ### `assistance_record` (FR-DON-011 … 014)
 
@@ -778,7 +787,8 @@ CREATE INDEX idx_donation_drive_status ON donation(drive_id, status);
 | `claimed_at`          | TIMESTAMPTZ |                |                                     |
 | `recorded_by_user_id` | UUID        | FK → `user`    |                                     |
 
-> **No foreign key to `donation` or `donation_drive`, deliberately.** FR-DON-014 and BRD D-8: the barangay records what a household received; where the goods came from is out of scope. Adding that link later would pull inventory and allocation into scope with it.
+> **Legacy deployed behavior only.** The table deliberately has no donation foreign key. D-16 now
+> retires the assistance table itself; do not migrate it into the revised citizen portal.
 
 ---
 
@@ -808,6 +818,66 @@ CREATE INDEX idx_donation_drive_status ON donation(drive_id, status);
 ### `training_certificate` (FR-ACT-009)
 
 `id`, `volunteer_id`, `activity_id`, `issued_at`, `certificate_no`.
+
+---
+
+## 10a. Approved Article-CMS Schema Delta — not deployed
+
+This section is an approved migration contract, not a description of the current database.
+When `FR-ALT-013`–`015`, `FR-ACT-010`–`012`, `FR-DON-015`–`017`, and
+`FR-PUB-019`–`020` are implemented, move these fields into the canonical table sections above
+and remove the legacy donation tables in the same code/migration PR. Their permanent BR sources
+remain recorded on the requirement rows in `frs_nfrs.md`.
+
+### Shared additions on three separate parent tables
+
+`announcement`, `activity`, and `donation_drive` remain separate entities. Each gains:
+
+| Column               | Type        | Constraints                      | Notes                                                                                           |
+| -------------------- | ----------- | -------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `slug`               | TEXT        | UNIQUE NOT NULL                  | Unique within its parent table; canonical public route                                          |
+| `excerpt`            | TEXT        | NOT NULL                         | Plain-text preview summary                                                                      |
+| `body_json`          | JSONB       | NOT NULL                         | Validated Tiptap document; replaces the current plain `body`/`description` field after backfill |
+| `publication_status` | TEXT        | NOT NULL DEFAULT `'draft'` CHECK | `draft` · `published` · `archived`                                                              |
+| `published_at`       | TIMESTAMPTZ |                                  | Set by the server on first publication                                                          |
+| `archived_at`        | TIMESTAMPTZ |                                  | Set by the server on archive                                                                    |
+
+Existing actor fields remain authoritative: `announcement.issued_by_user_id`,
+`activity.created_by_user_id`, and `donation_drive.created_by_user_id`. Announcement alert fields
+and area targeting remain unchanged. Activity type, schedule, venue, and area remain unchanged.
+
+`donation_drive` additionally gains `organizer_name`, `organizer_contact`,
+`drop_off_instructions`, `active_from`, and `active_until`; `event_id` stays optional. It does not
+gain item, donor, pledge, quantity, receipt, payment, recipient, or distribution fields.
+
+### Entity-specific image tables
+
+Create `announcement_image`, `activity_image`, and `donation_drive_image`. Each table has the same
+physical shape but a real foreign key to its own parent—no polymorphic `content_type/content_id`
+pair.
+
+| Column        | Type        | Constraints                    | Notes                                                      |
+| ------------- | ----------- | ------------------------------ | ---------------------------------------------------------- |
+| `id`          | UUID        | PK                             |                                                            |
+| `<parent>_id` | UUID        | NOT NULL FK, ON DELETE CASCADE | Parent-specific column                                     |
+| `file_path`   | TEXT        | NOT NULL UNIQUE                | Relative to the uploads volume; UUID filename              |
+| `alt_text`    | TEXT        | NOT NULL                       | Must be non-blank before the parent can publish            |
+| `caption`     | TEXT        |                                | Optional visible caption                                   |
+| `sort_order`  | INTEGER     | NOT NULL                       | Unique per parent                                          |
+| `is_cover`    | BOOLEAN     | NOT NULL DEFAULT false         | Partial unique index enforces at most one cover per parent |
+| `created_at`  | TIMESTAMPTZ | NOT NULL DEFAULT now()         |                                                            |
+
+The service enforces a maximum of ten images and exactly one cover at publication. Uploads accept
+JPEG, PNG, or WebP up to 5 MB, validated by magic bytes. Rich-text JSON cannot contain image nodes,
+raw HTML, data URLs, or arbitrary nodes/marks outside the configured allow-list.
+
+### Later migration order
+
+1. Add nullable article fields and the three image tables.
+2. Backfill deployed seed content into valid Tiptap JSON and deterministic unique slugs.
+3. Make required article fields non-null after the backfill.
+4. Update all readers/writers to the article contract and verify public preview/detail routes.
+5. Drop `drive_need`, `donation`, and `assistance_record`, then remove the legacy subsection above.
 
 ---
 
@@ -844,7 +914,7 @@ CREATE INDEX idx_donation_drive_status ON donation(drive_id, status);
 
 ### `notification` (FR-SYS-011)
 
-`id`, `user_id`, `type` (CHECK: `alert` · `activity_reminder` · `assistance` · `system`), `title`, `body`, `link_path`, `read_at`, `created_at`. (`feedback` was dropped from the set, Aug 2026 — the `feedback` table it notified for is cut.)
+`id`, `user_id`, `type` (CHECK: `alert` · `activity_reminder` · `assistance` · `system`), `title`, `body`, `link_path`, `read_at`, `created_at`. (`feedback` was dropped from the set, Aug 2026 — the `feedback` table it notified for is cut.) The deployed CHECK still accepts the legacy `assistance` value; D-16 prohibits creating those notifications, and the later donation-retirement migration should remove the value.
 
 ```sql
 CREATE INDEX idx_notification_unread ON notification(user_id, created_at DESC) WHERE read_at IS NULL;
@@ -880,16 +950,16 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;      -- fuzzy name matching for duplicat
 
 Loaded by migration, not at runtime (NFR-DAT-007).
 
-| Data            | Source                                                                             | Rows                |
-| --------------- | ---------------------------------------------------------------------------------- | ------------------- |
-| PSGC hierarchy  | Team's PSGC library                                                                | ~42,000             |
-| Barangay areas  | BRD OI-3 — **blocked**                                                             | ~10–20              |
-| Flood hazard    | `dataset/raw/Rizal_Flood_5year.shp` → `dataset/derived/san_jose_flood_5yr.geojson` | 3 (5yr only, today) |
-| Hotlines        | Barangay                                                                           | ~8                  |
-| Facilities      | Barangay — 14 real evacuation centres, rest demo                                   | 21                  |
-| Go-bag items    | NDRRMC standard list                                                               | ~15                 |
-| Config defaults | This document Section 4                                                            | ~12                 |
-| Demo households | Generated, marked synthetic                                                        | ~200                |
+| Data            | Source                                                                                                              | Rows                |
+| --------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| PSGC hierarchy  | Team's PSGC library                                                                                                 | ~42,000             |
+| Barangay areas  | Approximate labelled polygons, migration `0011_area_boundaries`; replace when BRD OI-3 supplies official boundaries | 6                   |
+| Flood hazard    | `dataset/raw/Rizal_Flood_5year.shp` → `dataset/derived/san_jose_flood_5yr.geojson`                                  | 3 (5yr only, today) |
+| Hotlines        | Barangay                                                                                                            | ~8                  |
+| Facilities      | August 11 demo snapshot — 14 researched evacuation centres plus 7 synthetic service facilities                      | 21                  |
+| Go-bag items    | NDRRMC standard list                                                                                                | ~15                 |
+| Config defaults | This document Section 4                                                                                             | ~12                 |
+| Demo households | Generated, marked synthetic                                                                                         | ~200                |
 
 ---
 
@@ -907,11 +977,18 @@ Loaded by migration, not at runtime (NFR-DAT-007).
 
 ## 17. Open Schema Decisions
 
-| #          | Item                                                                  | Blocked by | Owner                                                                                                 |
-| ---------- | --------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------- |
-| ~~S-OI-1~~ | ~~Nutrition indicator columns~~                                       | —          | **Resolved: moot.** `nutrition_record` is cut (BRD D-15, closes OI-2) — no indicator set to finalise. |
-| S-OI-2     | **Area boundary geometry** — nothing spatial can be seeded without it | BRD OI-3   | PubAd lead                                                                                            |
-| S-OI-3     | **Alert threshold values** for `config`                               | BRD OI-4   | PubAd lead                                                                                            |
+| #          | Item                                                                                                                                                                                 | Blocked by | Owner                                                                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------- |
+| ~~S-OI-1~~ | ~~Nutrition indicator columns~~                                                                                                                                                      | —          | **Resolved: moot.** `nutrition_record` is cut (BRD D-15, closes OI-2).                                          |
+| S-OI-2     | Replace the deployed approximate area geometry with an official barangay-provided set when available                                                                                 | BRD OI-3   | PubAd lead                                                                                                      |
+| S-OI-3     | Confirm local alert threshold values for `config`                                                                                                                                    | BRD OI-4   | PubAd lead                                                                                                      |
+| S-OI-4     | Confirm barangay total households for `config`                                                                                                                                       | BRD OI-12  | PubAd lead                                                                                                      |
+| S-OI-5     | Whether `vulnerability_assessment` scores are stored or recomputed on read. Stored remains the default because history matters more than space.                                      | —          | IT lead                                                                                                         |
+| S-OI-6     | Whether `evac_checkin.person_name` should be dropped in favour of always creating an `unregistered_person` row                                                                       | FR-EVC-005 | IT lead                                                                                                         |
+| ~~S-OI-7~~ | ~~Whether `announcement` needs a separate `alert` table~~                                                                                                                            | —          | **Resolved** — retain one table with `kind`; the article additions do not change alert ownership or delivery.   |
+| ~~S-OI-8~~ | ~~Whether forecast data needs a separate table~~                                                                                                                                     | —          | **Resolved** — `forecast` is separate from immutable current readings (Section 6).                              |
+| ~~S-OI-9~~ | ~~How affected areas attach to a flood event~~                                                                                                                                       | —          | **Resolved** — `flood_event_area` mirrors the targeting join; an empty set means unrecorded, not barangay-wide. |
+| S-OI-10    | Whether `evac_center.contact_person` may be shown publicly. `contact_number` is an official line; a named individual remains excluded from the public DTO pending a policy decision. | FR-PUB-014 | PolSci lead                                                                                                     |
 
 > **Interim values seeded, not left null.** `config.alert.threshold_level_{1,2,3}_m` are seeded
 > with the PAGASA FFWS Montalban gauge's own published `alertwl`/`alarmwl`/`criticalwl` values
@@ -921,10 +998,3 @@ Loaded by migration, not at runtime (NFR-DAT-007).
 > confirmation (BRD OI-4)"_. Admin-editable via `PUT /admin/config/{key}` the moment MDRRMO
 > supplies a locally-confirmed figure. OI-4 is not resolved by this — it stays open — but the
 > platform no longer runs on a blank threshold while it waits.
-> | S-OI-4 | **Barangay total households** for `config` | BRD OI-12 | PubAd lead |
-> | S-OI-5 | Whether `vulnerability_assessment` scores are stored or recomputed on read. Stored is the default — history matters more than the space | — | IT lead |
-> | S-OI-6 | Whether `evac_checkin.person_name` should be dropped in favour of always creating an `unregistered_person` row | FR-EVC-005 | IT lead |
-> | S-OI-7 | Whether `announcement` needs a separate `alert` table. Current design uses one table with `kind` — revisit only if the columns diverge | — | IT lead |
-> | ~~S-OI-8~~ | **Resolved: a separate `forecast` table** (Section 6). A `reading.kind` discriminator was rejected — it would make `observed_at` mean two different things and leave every "latest reading" query one missed filter away from rendering a prediction as the current value | Resolved | — |
-> | ~~S-OI-9~~ | **Resolved: `flood_event_area`** (Section 6), mirroring `announcement_area`. Note the semantic difference: an empty set means _unrecorded_, not barangay-wide | Resolved | — |
-> | S-OI-10 | Whether `evac_center.contact_person` may ever be shown publicly. It names an individual, so FR-PUB-014 and NFR-PRV-006 currently exclude it from the public DTO while `contact_number` (an official line) is exposed. The parallel carve-out for `announcement.issued_by_user_id` → `issued_by_name` is already taken, on the grounds that FR-ALT-007 explicitly requires attributing the issuing officer. Whether "officials in official capacity" is a general exception is a policy call, not an engineering one | FR-PUB-014 | PolSci lead |

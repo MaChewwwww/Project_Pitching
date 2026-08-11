@@ -104,12 +104,12 @@ These are not decorative. Each maps to a defined concept in the BRD, and the map
 
 **River alert levels** (BR-3.2)
 
-| Level                     | Meaning         | Colour    | Background |
-| ------------------------- | --------------- | --------- | ---------- |
-| Normal                    | Below threshold | `#15803D` | `#DCFCE7`  |
-| **1 · Prepare**           | Ready to move   | `#B45309` | `#FEF3C7`  |
-| **2 · Evacuate**          | Move now        | `#C2410C` | `#FFEDD5`  |
-| **3 · Forced Evacuation** | Mandatory       | `#B91C1C` | `#FEE2E2`  |
+| Level            | Meaning                                                    | Colour    | Background |
+| ---------------- | ---------------------------------------------------------- | --------- | ---------- |
+| Normal           | Below threshold                                            | `#15803D` | `#DCFCE7`  |
+| **1 · Prepare**  | Ready to move                                              | `#B45309` | `#FEF3C7`  |
+| **2 · Evacuate** | Move now                                                   | `#C2410C` | `#FFEDD5`  |
+| **3 · Critical** | Mandatory action, including forced evacuation when ordered | `#B91C1C` | `#FEE2E2`  |
 
 **Flood hazard** (Project NOAH / LiPAD hazard attribute, tech_stack Section 6)
 
@@ -390,29 +390,29 @@ table tabs textarea toggle tooltip
 
 > **`form` became `field`.** An earlier draft listed `form`. In the current shadcn registry `form` is an empty stub — it was superseded by `field`, which composes with React Hook Form and Zod directly (`FieldError` takes RHF's error objects). Installing `form` silently does nothing, which is worse than failing. `field` also pulls in `input-group`, and `sidebar` pulls in `use-mobile`.
 
-| Primitive                                                                                      | Used by                                                    |
-| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `button`, `input`, `label`, `textarea`, `select`, `checkbox`, `radio-group`, `switch`, `field` | Registration, all admin forms                              |
-| `table`                                                                                        | DataTable                                                  |
-| `badge`                                                                                        | Every status indicator                                     |
-| `card`                                                                                         | Every panel                                                |
-| `avatar`                                                                                       | User identity cells                                        |
-| `dropdown-menu`, `popover`, `hover-card`, `tooltip`                                            | Row actions, filters, info hints                           |
-| `dialog`, `alert-dialog`, `sheet`                                                              | Modals, confirmations, mobile nav                          |
-| `tabs`                                                                                         | Analytics tab row                                          |
-| `sidebar`                                                                                      | Admin shell — shadcn's sidebar handles collapse and mobile |
-| `breadcrumb`                                                                                   | Admin topbar                                               |
-| `pagination`                                                                                   | Table footers                                              |
-| `sonner`                                                                                       | Toasts                                                     |
-| `skeleton`                                                                                     | Loading states                                             |
-| `command`                                                                                      | Global search (⌘K), area pickers                           |
-| `calendar`                                                                                     | Activity scheduling, date filters                          |
-| `chart`                                                                                        | Recharts wrapper for M10                                   |
-| `progress`                                                                                     | Donation drive targets, evacuation occupancy               |
-| `alert`                                                                                        | Inline warnings                                            |
-| `accordion`, `collapsible`                                                                     | FAQs, preparedness guides                                  |
-| `scroll-area`                                                                                  | Long lists                                                 |
-| `separator`                                                                                    | Dividers                                                   |
+| Primitive                                                                                      | Used by                                                     |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `button`, `input`, `label`, `textarea`, `select`, `checkbox`, `radio-group`, `switch`, `field` | Registration, all admin forms                               |
+| `table`                                                                                        | DataTable                                                   |
+| `badge`                                                                                        | Every status indicator                                      |
+| `card`                                                                                         | Every panel                                                 |
+| `avatar`                                                                                       | User identity cells                                         |
+| `dropdown-menu`, `popover`, `hover-card`, `tooltip`                                            | Row actions, filters, info hints                            |
+| `dialog`, `alert-dialog`, `sheet`                                                              | Modals, confirmations, mobile nav                           |
+| `tabs`                                                                                         | Analytics tab row                                           |
+| `sidebar`                                                                                      | Admin shell — shadcn's sidebar handles collapse and mobile  |
+| `breadcrumb`                                                                                   | Admin topbar                                                |
+| `pagination`                                                                                   | Table footers                                               |
+| `sonner`                                                                                       | Toasts                                                      |
+| `skeleton`                                                                                     | Loading states                                              |
+| `command`                                                                                      | Global search (⌘K), area pickers                            |
+| `calendar`                                                                                     | Activity scheduling, date filters                           |
+| `chart`                                                                                        | Recharts wrapper for M10                                    |
+| `progress`                                                                                     | Evacuation occupancy and other bounded operational progress |
+| `alert`                                                                                        | Inline warnings                                             |
+| `accordion`, `collapsible`                                                                     | FAQs, preparedness guides                                   |
+| `scroll-area`                                                                                  | Long lists                                                  |
+| `separator`                                                                                    | Dividers                                                    |
 
 ### 7.2 Custom composites — `components/common/`
 
@@ -451,6 +451,11 @@ These are the app's actual vocabulary. Each is built from primitives above.
 | `Section*Skeleton`               | One `<Suspense fallback>` per landing section, each reproducing its section's real grid so nothing shifts when content streams in. Pairs grey shapes with a `WaterSpinner` — shapes alone cannot distinguish "still loading" from "broken" (FR-PUB-016)                                                                    |
 | `ErrorState`                     | Failure message + retry. Section-level, so one dead feed does not blank the page (BR-0.17)                                                                                                                                                                                                                                 |
 
+> **Known August 11 gap.** Staging uses green/yellow/red freshness colour and a relative timestamp,
+> but the stale state is not consistently named in text. Keep the explicit stale label/icon
+> requirement: colour alone fails NFR-UX-002. This remains later UI work, not a reason to weaken
+> the requirement.
+
 #### Controls
 
 | Component        | Description                                                                                                                                                                        |
@@ -483,15 +488,47 @@ These are the app's actual vocabulary. Each is built from primitives above.
 | `ZoneMap3D`      | React Three Fiber. Extruded area polygons coloured by risk. Orbit controls, click-to-select, `Suspense` fallback      |
 | `MapLegend`      | Shared legend, driven by the domain palettes in Section 3.4                                                           |
 
+**Protected public map views.** These three configurations were finalized on August 11, 2026.
+Do not change their center, zoom, or hazard-layer default while building portal/admin maps.
+
+| Public view         | Route                  | Center `[lat, lon]`   | Zoom    | Hazard overlay |
+| ------------------- | ---------------------- | --------------------- | ------- | -------------- |
+| Landing preview     | `/`                    | `[14.7415, 121.1315]` | `13.38` | Enabled        |
+| Flood Hazard Map    | `/hazard-map`          | `[14.7415, 121.1315]` | `14.25` | Enabled        |
+| Barangay Facilities | `/barangay-facilities` | `[14.7435, 121.1305]` | `14.15` | Disabled       |
+
+Future resident/admin map requirements get isolated views or wrapper components. They must not
+change shared defaults in a way that alters these three public presentations.
+
 **Structure and support**
 
 | Component         | Description                                                                                                                                                                                                                                                                   |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `SectionBoundary` | Wraps one section in an error boundary so a single failed feed degrades that section only (FR-PUB-016). Built on Next's `catchError`. **This, not `error.tsx`, is the mechanism** — a route-level boundary replaces the whole page body, which is the failure BR-0.17 forbids |
-| `MeterBar`        | Zero-JavaScript `role="progressbar"` bar for evacuation occupancy and donation progress. Exists instead of `ui/progress`, which carries `"use client"` and would pull a client boundary into the landing page for a static bar                                                |
+| `MeterBar`        | Zero-JavaScript `role="progressbar"` bar for evacuation occupancy and other bounded operational progress. Exists instead of `ui/progress`, which carries `"use client"` and would pull a client boundary into the landing page for a static bar                               |
 | `Attribution`     | Data credits and legal disclaimers (NFR-LGL-001…005, FR-MAP-008). Licence terms, not footer decoration — the NOAH data is ODC-ODbL                                                                                                                                            |
-| `LogoLockup`      | Logo placeholder while D-OI-2 is open. Inline SVG mark + `APP_NAME` wordmark, with a variant for dark surfaces                                                                                                                                                                |
-| `Reveal`          | Scroll-reveal wrapper for the public site (Section 8). CSS `animation-timeline: view()` behind `@supports`, so no observer and no JavaScript                                                                                                                                  |
+
+#### Article content
+
+Announcements, activities, and donation drives remain separate modules but use the same visual
+authoring and reading patterns. This is the presentation contract for `FR-ALT-013`–`015`,
+`FR-ACT-010`–`012`, `FR-DON-015`–`017`, and `FR-PUB-019`–`020`. Emergency alerts remain
+text-first and do not require media.
+
+| Composite                | Contract                                                                                                                                                                                                                           |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ArticleEditor`          | Client-only Tiptap toolbar limited to H2/H3, paragraph, bold, italic, bullet/ordered list, blockquote, and safe links. No inline image, raw HTML, table, script, iframe, or embed node.                                            |
+| `ArticleMediaManager`    | Upload/reorder gallery, cover selection, alt-text and optional-caption fields, count `n/10`, and per-file validation errors. Drafts may be image-free; Publish stays disabled until exactly one cover and complete alt text exist. |
+| `ArticlePreviewCard`     | 16:9 cover, module/type label, title, excerpt, publication or activity date, and one clear link to the canonical detail page. No carousel in a landing-page card.                                                                  |
+| `ArticleDetail`          | Constrained reading column, full rich body, domain metadata, then ordered gallery. Captions sit directly below their image.                                                                                                        |
+| `PublicationStatusBadge` | `draft`, `published`, and `archived`; text and icon accompany colour.                                                                                                                                                              |
+
+Article galleries use `next/image` with explicit dimensions. Preserve the original file; the UI
+uses `object-fit: cover` only for preview crops. On 360px screens the gallery is one column and the
+editor toolbar wraps without horizontal scrolling. Emergency takeover banners remain text-first
+and never wait for article media.
+| `LogoLockup` | Logo placeholder while D-OI-2 is open. Inline SVG mark + `APP_NAME` wordmark, with a variant for dark surfaces |
+| `Reveal` | Scroll-reveal wrapper for the public site (Section 8). CSS `animation-timeline: view()` behind `@supports`, so no observer and no JavaScript |
 
 ### 7.3 Component specs
 
@@ -546,15 +583,22 @@ White, `lg` radius, `1px` `neutral-200` border, no shadow at rest. `24px` paddin
 
 The same tokens, deliberately different personalities.
 
-|         | Public site                         | Admin console                  |
-| ------- | ----------------------------------- | ------------------------------ |
-| Density | Generous — `48px+` section spacing  | Compact — `24px`               |
-| Radius  | `full` on buttons, `xl` on cards    | `md` on buttons, `lg` on cards |
-| Type    | `body-lg` (17px)                    | `body` (15px)                  |
-| Imagery | 3D illustration, photography        | None — data only               |
-| Colour  | Green gradients, tinted hero panels | White surfaces, green accents  |
-| Motion  | Scroll reveals, carousel            | Minimal — state changes only   |
-| Goal    | Reassure and inform                 | Get work done quickly          |
+|         | Public site                         | Admin console                                                         |
+| ------- | ----------------------------------- | --------------------------------------------------------------------- |
+| Density | Generous — `48px+` section spacing  | Compact — `24px`                                                      |
+| Radius  | `full` on buttons, `xl` on cards    | `md` on buttons, `lg` on cards                                        |
+| Type    | `body-lg` (17px)                    | `body` (15px)                                                         |
+| Imagery | 3D illustration, photography        | Functional previews only — article media management is not decorative |
+| Colour  | Green gradients, tinted hero panels | White surfaces, green accents                                         |
+| Motion  | Scroll reveals, carousel            | Minimal — state changes only                                          |
+| Goal    | Reassure and inform                 | Get work done quickly                                                 |
+
+**Revision backlog, not a screen spec.** The August 11 staging audit found that the citizen
+portal is still a sparse household summary with safety and incident-report actions, while the
+admin console has broad navigation but uneven workflow hierarchy and mobile polish. Preserve the
+verified workflows; define future household editing, alerts, activities, volunteer, go-bag, and
+notification screens with stakeholders before drawing them. The cut assistance tracker must not
+return through the redesign.
 
 ---
 

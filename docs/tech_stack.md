@@ -22,9 +22,10 @@
 | 2D / hazard map          | Leaflet + OpenStreetMap                                                                                        |
 | 3D showpiece map         | Three.js via React Three Fiber                                                                                 |
 | Containerization         | Docker + Docker Compose                                                                                        |
-| Deployment               | Single VPS (public IP, no domain); identical Compose stack runs locally                                        |
-| Reverse proxy            | Caddy — plain HTTP. Optional one-line switch to HTTPS via sslip.io (Section 9)                                 |
+| Deployment               | Azure VPS at `57.155.90.155`; identical Compose stack runs locally                                             |
+| Reverse proxy            | Caddy with HTTPS at `57-155-90-155.sslip.io`; HTTP remains a supported fallback (Section 9)                    |
 | Location & photo capture | Manual by default — draggable map pin, gallery upload. GPS and camera are progressive enhancements (Section 9) |
+| Article editing          | Tiptap StarterKit in the admin client; validated JSON persisted in PostgreSQL `JSONB`                          |
 | Scheduled jobs           | Dedicated cron container                                                                                       |
 | Weather data             | Open-Meteo                                                                                                     |
 | Hazard overlay           | Project NOAH — pre-clipped to San Jose, served as a static file                                                |
@@ -54,13 +55,25 @@
 
 ### UI support
 
-| Tool             | Purpose                                                                                                          |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------- |
-| **Recharts**     | Analytics charts (M10)                                                                                           |
-| **lucide-react** | Icons (ships with shadcn/ui)                                                                                     |
-| **date-fns**     | Date formatting and relative times ("updated 2 hours ago" — needed for BR-3.8 data staleness)                    |
-| **next-intl**    | Filipino/English content (BR-0.19)                                                                               |
-| **Zustand**      | Small amount of global client state — active emergency banner, map layer toggles. Skip if React Context suffices |
+| Tool                                                                                                                   | Purpose                                                                                                                                                                                                       |
+| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Recharts**                                                                                                           | Analytics charts (M10)                                                                                                                                                                                        |
+| **lucide-react**                                                                                                       | Icons (ships with shadcn/ui)                                                                                                                                                                                  |
+| **date-fns**                                                                                                           | Date formatting and relative times ("updated 2 hours ago" — needed for BR-3.8 data staleness)                                                                                                                 |
+| **next-intl**                                                                                                          | Filipino/English content (BR-0.19)                                                                                                                                                                            |
+| **Zustand**                                                                                                            | Small amount of global client state — active emergency banner, map layer toggles. Skip if React Context suffices                                                                                              |
+| **Tiptap** (`@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`, `@tiptap/extension-link`, `@tiptap/static-renderer`) | Constrained rich-text authoring and JSON rendering for announcements, activities, and donation-drive posts. Client-only editor (`immediatelyRender: false`); public pages render the validated JSON document. |
+
+**Article document rule.** Store Tiptap JSON, not submitted HTML. The configured schema allows
+H2/H3, paragraphs, bold, italic, bullet/ordered lists, blockquotes, and safe `http`/`https` links.
+Images are separate managed gallery records, so image nodes, raw HTML, scripts, iframes, embeds,
+and data URLs are rejected. This supports `FR-ALT-013`–`015`, `FR-ACT-010`–`012`,
+`FR-DON-015`–`017`, `FR-PUB-019`–`020`, `NFR-SEC-013`, and `NFR-DAT-008`. It keeps the public
+renderer deterministic and avoids an HTML sanitizer dependency while still giving non-technical
+officers a real rich-text editor. The BR-to-FR mapping remains owned by `frs_nfrs.md`.
+
+> **Approved, not installed at `8a3eaec`.** Add the five Tiptap packages only in the later CMS
+> implementation PR, together with its lockfile and generated API-type changes.
 
 ### Mapping — two libraries, two jobs
 
@@ -183,7 +196,7 @@ Barangay San Jose is a tiny fraction of one province. Do the reduction **offline
 - **Fast.** A few hundred KB loads instantly on a phone (BR-0.16).
 - **Honest.** These are historical model outputs that do not change. Fetching them live would imply a currency they do not have.
 
-**Attribution is mandatory** — ODC-ODbL requires crediting Project NOAH, and any derivative you distribute must carry the same licence. Put it in the map footer and the About section.
+**Attribution is mandatory** — ODC-ODbL requires crediting Project NOAH, and any derivative you distribute must carry the same licence. Keep concise map attribution visible on the map and the complete official disclaimer/data-source block in the site footer and About content.
 
 > **Alternative if you switch to MapLibre later:** the PMTiles files can be streamed directly from HuggingFace with the `pmtiles` protocol plugin, no download at all. Noted for completeness; not the recommended path given Leaflet.
 
@@ -327,9 +340,11 @@ A dedicated **cron container** in the Compose stack, running a small Python scri
 | `cron`  | Scheduled jobs             |
 | `proxy` | Caddy                      |
 
-### Reverse proxy — Caddy (still), configured for HTTP
+### Reverse proxy — Caddy with staging HTTPS
 
-A reverse proxy is needed regardless: one entry point routing `/` to Next.js and `/api` to FastAPI. **Caddy stays the recommendation even without HTTPS** — its config for plain HTTP is about five lines against nginx's thirty, and switching it on later is a one-line change.
+A reverse proxy provides one entry point routing `/` to Next.js, `/api` to FastAPI, and `/uploads`
+to the validated upload volume. Staging now uses Caddy-managed TLS at
+`https://57-155-90-155.sslip.io`; port 80/8080 remains useful for fallback verification.
 
 ```
 :80 {
@@ -356,9 +371,10 @@ Browsers hard-block a few APIs on non-secure origins. This is not configurable �
 
 Nothing in the BRD depends on these — they are conveniences over manual equivalents. The design rule below keeps it that way.
 
-### Design rule: build for HTTP, enhance on HTTPS
+### Design rule: retain manual paths even with HTTPS
 
-**Plain HTTP is the baseline the app must work on.** HTTPS is an optional upgrade that unlocks two conveniences — nothing depends on it.
+**Manual entry is the baseline interaction even though staging is HTTPS.** GPS and direct camera
+capture remain progressive enhancements; a resident may deny permission or use the HTTP fallback.
 
 This is progressive enhancement, and it is the right design regardless of hosting. A large share of residents will decline the location permission prompt even where it works, so a manual path is required either way.
 
@@ -373,22 +389,22 @@ This is progressive enhancement, and it is the right design regardless of hostin
 
 Detect support at runtime rather than assuming: check `window.isSecureContext` and hide the enhancement buttons when it is false, so nobody taps something that cannot work.
 
-### Optional — turning HTTPS on
+### HTTPS deployment — resolved
 
-If you want the enhancements on the public URL, any of these work. **None is required.**
+Staging uses the first option below. The alternatives remain recovery choices, not open product decisions.
 
-| Option                             | Effort                 | Notes                                                                                                                                                                                               |
-| ---------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`sslip.io` + Caddy** _(easiest)_ | ~10 min, **no signup** | `203-0-113-5.sslip.io` resolves to `203.0.113.5` automatically. Put that hostname in the Caddyfile in place of `:80` and Caddy fetches a Let's Encrypt certificate itself. No account, no DNS panel |
-| **DuckDNS + Caddy**                | ~20 min                | Free account and a chosen subdomain. Worth having as a fallback if sslip.io hits certificate rate limits                                                                                            |
-| **Cloudflare Tunnel**              | ~20 min                | `cloudflared` as one more container; no inbound ports needed at all                                                                                                                                 |
-| **Nothing**                        | —                      | Baseline behaviour above. Fully functional                                                                                                                                                          |
+| Option                              | Effort   | Notes                                                                                                    |
+| ----------------------------------- | -------- | -------------------------------------------------------------------------------------------------------- |
+| **`sslip.io` + Caddy** _(deployed)_ | Complete | `57-155-90-155.sslip.io` resolves to the staging VPS and Caddy manages the certificate.                  |
+| **DuckDNS + Caddy**                 | ~20 min  | Free account and a chosen subdomain. Worth having as a fallback if sslip.io hits certificate rate limits |
+| **Cloudflare Tunnel**               | ~20 min  | `cloudflared` as one more container; no inbound ports needed at all                                      |
+| **Nothing**                         | —        | Baseline behaviour above. Fully functional                                                               |
 
 **Note also that `localhost` is a secure context.** If the live demo runs from a laptop — one of your chosen deployment targets — the enhancements are available during the pitch with no setup whatsoever, regardless of how the VPS is configured.
 
 ### VPS sizing
 
-2 vCPU / 4 GB RAM is comfortable (~$10–12/mo); 1 vCPU / 2 GB works if the budget is tight. Hetzner, DigitalOcean, or a local Philippine provider — the last of these gives better latency for barangay users and may matter more than price.
+The prototype is deployed to the selected Azure VPS. Revisit sizing only if monitoring shows memory or CPU pressure; provider selection is closed.
 
 ### Supporting tools
 
@@ -436,15 +452,15 @@ Recording these so they are not revisited without a reason.
 
 ## 12. Open Technical Decisions
 
-| #          | Item                                                                                                                                                                                                                               | Owner                    |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| ~~T-OI-1~~ | _Resolved (Section 7)_ — the legacy FFWS endpoint returns JSON directly; no scraper or PANaHON evaluation needed                                                                                                                   | —                        |
-| T-OI-2     | Obtain the **San Jose boundary polygon** needed to clip the hazard data. Fastest route is OpenStreetMap via Overpass (`admin_level=10`); alternatives are PSA shapefiles or the barangay itself. A bounding box works as a stopgap | IT lead + PubAd lead     |
-| T-OI-7     | _Resolved_ — using BetterGov / NOAH province shapefiles under ODC-ODbL after LiPAD downloads corrupted. Attribution required in the map footer and About section                                                                   | IT lead                  |
-| T-OI-3     | Confirm the **area/zone boundaries** (BRD OI-3) — the 3D map cannot be built without them                                                                                                                                          | PubAd lead, via barangay |
-| T-OI-4     | Decide whether email is needed for password reset, or whether admin-initiated reset is sufficient (Section 5)                                                                                                                      | IT lead                  |
-| T-OI-5     | Choose a VPS provider and region — local Philippine hosting may beat cheaper EU options on latency                                                                                                                                 | IT lead                  |
-| T-OI-6     | **Optional: enable HTTPS via sslip.io (Section 9).** Not required — the app works on plain HTTP by design. Ten minutes if the team wants GPS and camera on the public URL                                                          | IT lead                  |
+| #          | Item                                                                                                                                                                                                                 | Owner                    |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| ~~T-OI-1~~ | _Resolved (Section 7)_ — the legacy FFWS endpoint returns JSON directly; no scraper or PANaHON evaluation needed                                                                                                     | —                        |
+| ~~T-OI-2~~ | ~~Obtain the San Jose boundary polygon needed to clip hazard data~~ — **Resolved** with the committed approximate boundary and derived five-year layer. Replace it only when an official boundary becomes available. | —                        |
+| ~~T-OI-7~~ | _Resolved_ — using BetterGov / NOAH province shapefiles under ODC-ODbL after LiPAD downloads corrupted. Full attribution lives in the site footer/About content and concise attribution remains on each map.         | —                        |
+| T-OI-3     | Confirm an **official area/zone boundary set** to replace the labelled approximate polygons. This no longer blocks the working 2D map.                                                                               | PubAd lead, via barangay |
+| T-OI-4     | Decide whether email is needed for password reset, or whether admin-initiated reset is sufficient (Section 5)                                                                                                        | IT lead                  |
+| ~~T-OI-5~~ | ~~Choose a VPS provider and region~~ — **Resolved** with the deployed Azure VPS at `57.155.90.155`.                                                                                                                  | —                        |
+| ~~T-OI-6~~ | ~~Enable HTTPS via sslip.io~~ — **Resolved** at `https://57-155-90-155.sslip.io`; HTTP remains a supported fallback.                                                                                                 | —                        |
 
 ---
 
@@ -461,3 +477,5 @@ Recording these so they are not revisited without a reason.
 - [ODC Open Database License (ODbL) 1.0](https://opendatacommons.org/licenses/odbl/1.0/)
 - [MDN — Secure contexts, and features restricted to them](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts/features_restricted_to_secure_contexts)
 - [Caddy — reverse proxy quick start](https://caddyserver.com/docs/quick-starts/reverse-proxy)
+- [Tiptap — React integration and SSR guidance](https://tiptap.dev/docs/editor/getting-started/install/react)
+- [Tiptap — JSON persistence](https://tiptap.dev/docs/editor/core-concepts/persistence)

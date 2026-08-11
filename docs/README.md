@@ -41,10 +41,30 @@ on one, check whether it has been resolved — and if you resolve it, update the
 | `design.md`                | Section 13                                                                          |
 | `tech_stack.md`            | Section 12                                                                          |
 
+## Current deployment vs approved next work
+
+The canonical docs distinguish two kinds of truth:
+
+- **Deployed/current** statements describe commit `8a3eaec`, verified on local and staging on
+  August 11, 2026.
+- **Planned/not deployed** statements are approved contracts for later development. The
+  article-CMS additions and donation-schema retirement are in this category.
+
+Do not describe a planned endpoint or column as implemented. `schema.md` remains the physical
+schema record, so its Article-CMS section is explicitly a migration delta until the corresponding
+Alembic work lands.
+
+The August stakeholder decision makes announcements, activities, and donation drives separate
+article modules with shared authoring/media behavior. Donation drives are informational posts
+only: no donor submission, targets/progress, receipt status, payment, distribution, or household
+assistance tracker.
+
 ## Keeping these honest
 
 - A correction to one document usually belongs in others too. Inconsistency between docs is a
   bug, not a cosmetic issue (`AGENTS.md` Section 7).
 - Update the doc in the **same PR** as the code. A doc that lags is a doc that is wrong.
+- A stakeholder-approved documentation pass may lead later code only when planned behavior is
+  labelled explicitly; the implementation PR must then promote those sections to deployed truth.
 - These are read by teammates in PolSci, PubAd, and Nutrition. Prefer the plain explanation over
   the clever one.
