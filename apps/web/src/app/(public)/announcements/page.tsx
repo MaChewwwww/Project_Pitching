@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/common/page-header";
+import { PaginationControls } from "@/components/common/pagination-controls";
 import { Reveal } from "@/components/common/reveal";
 import { AnnouncementCard } from "@/components/features/alerts/announcement-card";
 import { getAnnouncements } from "@/lib/api/public";
@@ -20,8 +21,14 @@ export const metadata: Metadata = {
  * history be publicly viewable, and `AnnouncementCard` marks the inactive ones so
  * an old evacuation order cannot be mistaken for a current one.
  */
-export default async function AnnouncementsPage() {
-  const announcements = await getAnnouncements({ size: 50 });
+export default async function AnnouncementsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const requestedPage = Number((await searchParams).page);
+  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const announcements = await getAnnouncements({ page, size: 9 });
 
   return (
     <>
@@ -48,6 +55,11 @@ export default async function AnnouncementsPage() {
             description="When the barangay posts an advisory or notice, it will appear here."
           />
         )}
+        <PaginationControls
+          page={announcements.page}
+          pages={announcements.pages}
+          pathname="/announcements"
+        />
       </div>
     </>
   );

@@ -20,9 +20,12 @@ import asyncio
 import logging
 import random
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from shutil import copyfile
 
 from sqlalchemy import func, select
 
+from src.core.config import settings
 from src.core.logging import configure_logging
 from src.core.security import hash_password
 
@@ -34,9 +37,9 @@ from src.core.security import hash_password
 from src.db.models_registry import Base  # noqa: F401
 from src.db.session import SessionLocal, engine
 from src.domain.article_document import plain_text_document, slug_base
-from src.modules.activities.models import Activity
-from src.modules.alerts.models import Announcement, AnnouncementArea
-from src.modules.donations.models import DonationDrive
+from src.modules.activities.models import Activity, ActivityImage
+from src.modules.alerts.models import Announcement, AnnouncementArea, AnnouncementImage
+from src.modules.donations.models import DonationDrive, DonationDriveImage
 from src.modules.evacuation.models import EmergencyEvent, EvacCenter
 from src.modules.geo.models import Area, Facility, Hotline
 from src.modules.preparedness.models import Faq, Guide
@@ -1049,6 +1052,196 @@ async def seed_donations(session, users: dict[str, User]) -> None:
     log.info("seeded donation drives", extra={"count": 2})
 
 
+# --- article cover media -------------------------------------------------------
+
+# These are generated fictional documentary photographs.  They are intentionally
+# stored with the demo seed rather than in the web app: public cards receive the
+# same `cover_image` DTO and Caddy-served upload URL as an officer-uploaded image.
+ARTICLE_COVER_DEFS = (
+    (
+        Announcement,
+        AnnouncementImage,
+        "announcement_id",
+        "alert-level-2-evacuate-riverside-areas-now",
+        "alert-level-2-evacuate.png",
+        "Adult residents carrying go-bags toward a covered evacuation centre during heavy rain.",
+        "Fictional demo image: community evacuation preparation during heavy rain.",
+    ),
+    (
+        Announcement,
+        AnnouncementImage,
+        "announcement_id",
+        "classes-suspended-in-all-levels-tomorrow",
+        "classes-suspended.png",
+        "A school caretaker secures learning materials beside rain-soaked classroom windows.",
+        "Fictional demo image: a school prepares during persistent rain.",
+    ),
+    (
+        Announcement,
+        AnnouncementImage,
+        "announcement_id",
+        "riverside-road-impassable-to-all-vehicles",
+        "riverside-road-closure.png",
+        "A community volunteer keeps traffic away from a rain-flooded neighborhood road.",
+        "Fictional demo image: a temporary road closure after heavy rain.",
+    ),
+    (
+        Announcement,
+        AnnouncementImage,
+        "announcement_id",
+        "scheduled-water-interruption-saturday-8-00-am-to-4-00-pm",
+        "water-interruption.png",
+        "A maintenance worker prepares water containers near a neighborhood utility access point.",
+        "Fictional demo image: water maintenance preparation.",
+    ),
+    (
+        Announcement,
+        AnnouncementImage,
+        "announcement_id",
+        "household-registration-now-open-at-the-barangay-hall",
+        "household-registration.png",
+        "A community health worker assists a resident at a registration desk.",
+        "Fictional demo image: household registration assistance.",
+    ),
+    (
+        Announcement,
+        AnnouncementImage,
+        "announcement_id",
+        "free-first-aid-training-limited-slots",
+        "free-first-aid-training.png",
+        "An adult volunteer demonstrates first aid at a community training session.",
+        "Fictional demo image: community first-aid training.",
+    ),
+    (
+        Announcement,
+        AnnouncementImage,
+        "announcement_id",
+        "alert-level-1-prepare-to-evacuate",
+        "alert-level-1-prepare.png",
+        "Residents pack an emergency go-bag beside a rain-streaked window.",
+        "Fictional demo image: a household prepares for heavy rain.",
+    ),
+    (
+        Activity,
+        ActivityImage,
+        "activity_id",
+        "barangay-wide-earthquake-drill",
+        "earthquake-drill.png",
+        "Adult residents practise Duck, Cover and Hold during a community earthquake drill.",
+        "Fictional demo image: earthquake preparedness drill.",
+    ),
+    (
+        Activity,
+        ActivityImage,
+        "activity_id",
+        "basic-first-aid-and-cpr-training",
+        "first-aid-cpr-training.png",
+        "An instructor demonstrates CPR on a practice mannequin at a barangay session.",
+        "Fictional demo image: CPR and first-aid training.",
+    ),
+    (
+        Activity,
+        ActivityImage,
+        "activity_id",
+        "riverbank-clean-up-drive",
+        "riverbank-cleanup.png",
+        "Adult volunteers collect debris beside a riverbank drainage channel.",
+        "Fictional demo image: riverbank clean-up activity.",
+    ),
+    (
+        Activity,
+        ActivityImage,
+        "activity_id",
+        "disaster-preparedness-seminar-for-households",
+        "preparedness-seminar.png",
+        "A facilitator leads residents through a preparedness discussion in a covered hall.",
+        "Fictional demo image: household preparedness seminar.",
+    ),
+    (
+        Activity,
+        ActivityImage,
+        "activity_id",
+        "tree-planting-along-the-riverbank",
+        "tree-planting.png",
+        "Adult volunteers plant native seedlings on a green riverbank.",
+        "Fictional demo image: riverbank tree planting.",
+    ),
+    (
+        DonationDrive,
+        DonationDriveImage,
+        "donation_drive_id",
+        "relief-goods-for-riverside-households",
+        "relief-goods.png",
+        "Volunteers organize relief packs and blankets inside a community hall.",
+        "Fictional demo image: relief goods preparation.",
+    ),
+    (
+        DonationDrive,
+        DonationDriveImage,
+        "donation_drive_id",
+        "go-bag-supplies-for-priority-households",
+        "go-bag-supplies.png",
+        "Volunteers arrange essential go-bag supplies on a community table.",
+        "Fictional demo image: go-bag supply assembly.",
+    ),
+)
+
+
+async def seed_article_cover_media(session) -> None:
+    """Attach bundled demo covers without touching officer-managed media.
+
+    Existing environments already contain seeded parent rows, so this runs even
+    when the main article seed functions correctly no-op.  It only inserts a
+    cover when that parent has no media at all; an officer's image always wins.
+    """
+    source_dir = Path(__file__).parent / "seed_media" / "article-covers"
+    upload_dir = Path(settings.upload_dir) / "article-covers"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    added = 0
+    for (
+        parent_model,
+        image_model,
+        parent_key,
+        slug,
+        filename,
+        alt_text,
+        caption,
+    ) in ARTICLE_COVER_DEFS:
+        parent = (
+            await session.execute(select(parent_model).where(parent_model.slug == slug))
+        ).scalar_one_or_none()
+        if parent is None:
+            continue
+        has_media = (
+            await session.execute(
+                select(image_model.id).where(getattr(image_model, parent_key) == parent.id).limit(1)
+            )
+        ).scalar_one_or_none()
+        if has_media is not None:
+            continue
+
+        source = source_dir / filename
+        target = upload_dir / filename
+        if not source.is_file():
+            raise RuntimeError(f"Missing bundled article cover: {source}")
+        if not target.exists():
+            copyfile(source, target)
+        session.add(
+            image_model(
+                **{parent_key: parent.id},
+                file_path=f"article-covers/{filename}",
+                alt_text=alt_text,
+                caption=caption,
+                sort_order=0,
+                is_cover=True,
+            )
+        )
+        added += 1
+    if added:
+        log.info("seeded article cover media", extra={"count": added})
+
+
 # --- flood events (fixtures/flood-events.ts) -----------------------------------
 
 
@@ -1394,6 +1587,9 @@ async def seed() -> None:
         await session.commit()
 
         await seed_donations(session, users)
+        await session.commit()
+
+        await seed_article_cover_media(session)
         await session.commit()
 
         await seed_flood_events(session, areas)

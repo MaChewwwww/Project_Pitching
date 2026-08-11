@@ -16,30 +16,27 @@ export function DriveCard({
   className?: string;
 }) {
   return (
+    <Link
+      href={`/donation-drives/${drive.slug}` as Route}
+      className="group block h-full rounded-[20px] focus-visible:ring-primary-600 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      aria-label={`Read donation drive: ${drive.title}`}
+    >
     <Card radius="xl" className={cn("h-full overflow-hidden", className)} interactive>
       {drive.cover_image ? (
-        <Link
-          href={`/donation-drives/${drive.slug}` as Route}
-          className="focus-visible:ring-primary-600 relative block aspect-video bg-neutral-100 focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset"
-        >
+        <div className="relative block aspect-video bg-neutral-100">
           <Image
             src={drive.cover_image.url}
             alt={drive.cover_image.alt_text}
             fill
             className="object-cover"
           />
-        </Link>
+        </div>
       ) : null}
       <CardContent className="flex h-full flex-col gap-4">
         <div className="flex flex-col gap-2">
           <span className="text-overline text-primary-700">Collection notice</span>
           <h3 className="text-h3 text-neutral-900">
-            <Link
-              href={`/donation-drives/${drive.slug}` as Route}
-              className="hover:text-primary-700 focus-visible:ring-primary-600 focus-visible:ring-2 focus-visible:outline-none"
-            >
-              {drive.title}
-            </Link>
+            {drive.title}
           </h3>
           <p className="text-body text-neutral-600">{drive.excerpt}</p>
         </div>
@@ -65,5 +62,6 @@ export function DriveCard({
         </div>
       </CardContent>
     </Card>
+    </Link>
   );
 }

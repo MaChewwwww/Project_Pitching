@@ -87,12 +87,13 @@ export function ArticleImageManager({
   }
 
   return (
-    <section className="rounded-xl border border-neutral-200 bg-neutral-50/70 p-4">
+    <section className="rounded-[14px] border border-primary-200 bg-primary-50/40 p-4 shadow-xs">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-h4 text-neutral-900">Article images</h2>
+          <p className="text-overline text-primary-700">Publication checklist</p>
+          <h2 className="mt-1 text-h4 text-neutral-900">Cover & gallery</h2>
           <p className="mt-1 text-sm text-neutral-600">
-            Routine announcements need one cover image and alt text before publication.
+            {images.length}/10 images · Routine articles need one cover with alt text before publication.
           </p>
         </div>
         <Label className="cursor-pointer">
@@ -115,7 +116,7 @@ export function ArticleImageManager({
       </div>
 
       {images.length === 0 ? (
-        <p className="mt-4 text-sm text-neutral-500">No images uploaded yet.</p>
+        <div className="mt-4 rounded-lg border border-dashed border-primary-200 bg-white/70 p-4 text-sm text-neutral-600">No images uploaded yet. Add a wide cover photo first, then save a precise description of what residents can see.</div>
       ) : (
         <ul className="mt-4 grid gap-4 sm:grid-cols-2">
           {images.map((image, index) => (

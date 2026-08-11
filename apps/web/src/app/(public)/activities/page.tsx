@@ -3,6 +3,7 @@ import { CalendarDays } from "lucide-react";
 
 import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/common/page-header";
+import { PaginationControls } from "@/components/common/pagination-controls";
 import { Reveal } from "@/components/common/reveal";
 import { ActivityCard } from "@/components/features/activities/activity-card";
 import { getActivities } from "@/lib/api/public";
@@ -20,11 +21,14 @@ export const metadata: Metadata = {
  * needs an account and arrives with the registry module — this page is the
  * read-only half.
  */
-export default async function ActivitiesPage() {
-  const { items: activities } = await getActivities({ size: 50 });
-
-  const upcoming = activities.filter((a) => a.is_upcoming);
-  const past = activities.filter((a) => !a.is_upcoming);
+export default async function ActivitiesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const requestedPage = Number((await searchParams).page);
+  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const activities = await getActivities({ page, size: 9, upcoming: true });
 
   return (
     <>
@@ -36,9 +40,9 @@ export default async function ActivitiesPage() {
       />
 
       <div className="mx-auto max-w-[1440px] px-4 pt-5 pb-8 md:px-6 md:pt-6 md:pb-12">
-        {upcoming.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 md:gap-6">
-            {upcoming.map((activity, i) => (
+        {activities.items.length > 0 ? (
+          <div className="grid gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
+            {activities.items.map((activity, i) => (
               <Reveal key={activity.id} delay={(i % 2) as 0 | 1}>
                 <ActivityCard activity={activity} />
               </Reveal>
@@ -52,20 +56,7 @@ export default async function ActivitiesPage() {
           />
         )}
 
-        {past.length > 0 ? (
-          <div className="mt-12 border-t border-neutral-200 pt-8">
-            <p className="text-overline mb-4 text-neutral-500">Already happened</p>
-            <div className="grid gap-4 md:grid-cols-2 md:gap-6">
-              {past.map((activity) => (
-                <ActivityCard
-                  key={activity.id}
-                  activity={activity}
-                  className="opacity-70"
-                />
-              ))}
-            </div>
-          </div>
-        ) : null}
+        <PaginationControls page={activities.page} pages={activities.pages} pathname="/activities" />
       </div>
     </>
   );

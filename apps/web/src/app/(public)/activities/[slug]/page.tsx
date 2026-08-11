@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { ArticleDetail } from "@/components/features/public/article-detail";
 import { PageHeader } from "@/components/common/page-header";
 import { getActivity } from "@/lib/api/public";
+import { formatPhtDateTime } from "@/lib/format";
 
 export default async function ActivityArticlePage({
   params,
@@ -21,7 +22,13 @@ export default async function ActivityArticlePage({
           { label: article.title },
         ]}
       />
-      <ArticleDetail body={article.body_json} images={article.images} />
+      <ArticleDetail
+        body={article.body_json}
+        images={article.images}
+        cover={article.cover_image}
+        eyebrow="Community activity"
+        metadata={[formatPhtDateTime(article.starts_at), article.venue ?? "Barangay San Jose"]}
+      />
     </>
   );
 }

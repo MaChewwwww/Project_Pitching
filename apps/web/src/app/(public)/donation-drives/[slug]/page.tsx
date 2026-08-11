@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { ArticleDetail } from "@/components/features/public/article-detail";
 import { PageHeader } from "@/components/common/page-header";
 import { getDonationDrive } from "@/lib/api/public";
+import { formatPhtDateTime } from "@/lib/format";
 
 export default async function DonationDriveArticlePage({
   params,
@@ -21,7 +22,16 @@ export default async function DonationDriveArticlePage({
           { label: article.title },
         ]}
       />
-      <ArticleDetail body={article.body_json} images={article.images} />
+      <ArticleDetail
+        body={article.body_json}
+        images={article.images}
+        cover={article.cover_image}
+        eyebrow="Collection notice"
+        metadata={[
+          article.published_at ? formatPhtDateTime(article.published_at) : "Published notice",
+          article.organizer_name ?? "Barangay San Jose",
+        ]}
+      />
     </>
   );
 }

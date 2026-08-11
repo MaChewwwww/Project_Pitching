@@ -30,19 +30,21 @@ export function ActivityCard({
   className?: string;
 }) {
   return (
-    <Card radius="xl" className={cn("h-full overflow-hidden", className)}>
+    <Link
+      href={`/activities/${activity.slug}` as Route}
+      className="group block h-full rounded-[20px] focus-visible:ring-primary-600 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      aria-label={`Read activity: ${activity.title}`}
+    >
+    <Card radius="xl" className={cn("h-full overflow-hidden", className)} interactive>
       {activity.cover_image ? (
-        <Link
-          href={`/activities/${activity.slug}` as Route}
-          className="focus-visible:ring-primary-600 relative block aspect-video bg-neutral-100 focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset"
-        >
+        <div className="relative block aspect-video bg-neutral-100">
           <Image
             src={activity.cover_image.url}
             alt={activity.cover_image.alt_text}
             fill
             className="object-cover"
           />
-        </Link>
+        </div>
       ) : null}
       <CardContent className="flex h-full gap-4">
         {/* Date block — the reference layout's calendar chip */}
@@ -61,12 +63,7 @@ export function ActivityCard({
           </Badge>
 
           <h3 className="text-h4 text-neutral-900">
-            <Link
-              href={`/activities/${activity.slug}` as Route}
-              className="hover:text-primary-700 focus-visible:ring-primary-600 focus-visible:ring-2 focus-visible:outline-none"
-            >
-              {activity.title}
-            </Link>
+            {activity.title}
           </h3>
 
           {activity.excerpt ? (
@@ -98,5 +95,6 @@ export function ActivityCard({
         </div>
       </CardContent>
     </Card>
+    </Link>
   );
 }

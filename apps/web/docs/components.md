@@ -114,6 +114,17 @@ Tap targets: **44×44 minimum, 48×48 for anything used during an emergency** �
 rescue request, hotline. Where the visual button is smaller, pad the hit area rather than
 enlarging the button.
 
+## Console DataTable and article CMS
+
+`features/admin/resource-table.tsx` is the shared console list surface. It owns search,
+categorical filtering, sortable headings, pagination, empty/loading/error states, and the
+stacked-card small-screen layout. A resource page supplies its columns and actions; it must not
+recreate those controls in a page.
+
+Article creation starts on its own route rather than inside a scrolling dialog. The first save
+creates a draft, then the full editor pairs the form with `ArticleImageManager`. This keeps media
+validation visible without weakening the server-side publication rule.
+
 ## Animation lives in `globals.css`, not in a client component
 
 `WaterSpinner` and the hero illustrations are animated entirely by CSS classes defined in

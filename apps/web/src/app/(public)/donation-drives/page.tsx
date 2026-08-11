@@ -3,6 +3,7 @@ import { HandHeart } from "lucide-react";
 
 import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/common/page-header";
+import { PaginationControls } from "@/components/common/pagination-controls";
 import { Reveal } from "@/components/common/reveal";
 import { DriveCard } from "@/components/features/donations/drive-card";
 import { UTILITY_BAR } from "@/lib/content/site";
@@ -21,8 +22,14 @@ export const metadata: Metadata = {
  * actually achieved. The submission form is FR-DON-002 and needs the API; until
  * then the drop-off details below are what a donor actually acts on.
  */
-export default async function DonationDrivesPage() {
-  const drives = await getDonationDrives({ size: 50 });
+export default async function DonationDrivesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const requestedPage = Number((await searchParams).page);
+  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const drives = await getDonationDrives({ page, size: 9 });
 
   return (
     <>
@@ -35,7 +42,7 @@ export default async function DonationDrivesPage() {
 
       <div className="mx-auto max-w-[1440px] px-4 pt-5 pb-8 md:px-6 md:pt-6 md:pb-12">
         {drives.items.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 md:gap-6">
+          <div className="grid gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
             {drives.items.map((drive, i) => (
               <Reveal key={drive.id} delay={(i % 2) as 0 | 1}>
                 <DriveCard drive={drive} />
@@ -49,6 +56,7 @@ export default async function DonationDrivesPage() {
             description="When the barangay opens a collection, what it needs will be listed here."
           />
         )}
+        <PaginationControls page={drives.page} pages={drives.pages} pathname="/donation-drives" />
 
         <div className="bg-primary-50 border-primary-200 mt-10 rounded-[20px] border p-5 md:p-6">
           <p className="text-overline text-primary-700 mb-2">Where to bring goods</p>

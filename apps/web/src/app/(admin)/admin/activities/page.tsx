@@ -3,25 +3,18 @@
 import * as React from "react";
 import Link from "next/link";
 import type { Route } from "next";
-import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/common/button";
 import { PageHeader } from "@/components/common/page-header";
-import {
-  ActivityForm,
-  type ActivityFormValues,
-} from "@/components/features/admin/activity-form";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
-import { emptyArticleDocument } from "@/components/features/admin/rich-text-editor";
 import {
   ResourceTable,
   type ResourceColumn,
 } from "@/components/features/admin/resource-table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { api, toDisplayError } from "@/lib/api/client";
+import { api } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import { formatPhtDateTime } from "@/lib/format";
 
@@ -35,54 +28,12 @@ interface Activity {
   published_at: string | null;
   archived_at: string | null;
 }
-interface Area {
-  id: string;
-  name: string;
-}
-const emptyValues: ActivityFormValues = {
-  title: "",
-  excerpt: "",
-  body_json: emptyArticleDocument,
-  type: "drill",
-  starts_at: "",
-  ends_at: "",
-  venue: "",
-  area_id: "",
-  publication_status: "draft",
-};
-
 export default function AdminActivitiesPage() {
   useRequireRole("admin", "sk");
-  const router = useRouter();
   const queryClient = useQueryClient();
-  const [createOpen, setCreateOpen] = React.useState(false);
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "activities"],
     queryFn: () => api.get<Activity[]>("/admin/activities").then((r) => r.data),
-  });
-  const { data: areas = [] } = useQuery({
-    queryKey: ["admin", "areas"],
-    queryFn: () => api.get<Area[]>("/admin/areas").then((r) => r.data),
-  });
-  const createMutation = useMutation({
-    mutationFn: (values: ActivityFormValues) =>
-      api.post("/admin/activities", {
-        ...values,
-        starts_at: new Date(values.starts_at).toISOString(),
-        ends_at: values.ends_at ? new Date(values.ends_at).toISOString() : null,
-        venue: values.venue || null,
-        area_id: values.area_id || null,
-        publication_status: "draft",
-      }),
-    onSuccess: (response) => {
-      toast.success("Activity draft created. Add a cover image before publishing.");
-      queryClient.invalidateQueries({ queryKey: ["admin", "activities"] });
-      setCreateOpen(false);
-      router.push(`/admin/activities/${response.data.id}` as Route);
-    },
-    onError: (error) => {
-      throw toDisplayError(error);
-    },
   });
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/activities/${id}`),
@@ -118,29 +69,14 @@ export default function AdminActivitiesPage() {
         titleAccent="activities"
         description="Create the public activity story, then add a cover image and publish when it is ready."
         action={
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Button asChild size="sm">
+            <Link href={"/admin/activities/new" as Route}>
             <Plus aria-hidden className="size-4" />
             New activity
+            </Link>
           </Button>
         }
       />
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create activity draft</DialogTitle>
-          </DialogHeader>
-          <ActivityForm
-            areas={areas}
-            defaultValues={emptyValues}
-            submitLabel="Create draft"
-            showPublication={false}
-            onSubmit={(values) =>
-              createMutation.mutateAsync(values).then(() => undefined)
-            }
-            onCancel={() => setCreateOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
       <ResourceTable
         columns={columns}
         data={data}

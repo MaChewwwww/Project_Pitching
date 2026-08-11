@@ -3,24 +3,16 @@
 import * as React from "react";
 import Link from "next/link";
 import type { Route } from "next";
-import { useRouter } from "next/navigation";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/common/button";
-import { emptyArticleDocument } from "@/components/features/admin/rich-text-editor";
-import {
-  DonationDriveForm,
-  type DonationDriveFormValues,
-} from "@/components/features/admin/donation-drive-form";
 import {
   ResourceTable,
   type ResourceColumn,
 } from "@/components/features/admin/resource-table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { api, toDisplayError } from "@/lib/api/client";
+import { api } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 
 /** Donation drives (FR-DON-001, 009). Admin only. */
@@ -38,50 +30,23 @@ interface DonationDrive {
 
 export default function AdminDonationDrivesPage() {
   useRequireRole("admin");
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const [createOpen, setCreateOpen] = React.useState(false);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "donation-drives"],
     queryFn: () => api.get<DonationDrive[]>("/admin/donation-drives").then((r) => r.data),
   });
 
-  const createMutation = useMutation({
-    mutationFn: (values: DonationDriveFormValues) =>
-      api.post("/admin/donation-drives", {
-        ...values,
-        organizer_name: values.organizer_name || null,
-        organizer_contact: values.organizer_contact || null,
-        drop_off_instructions: values.drop_off_instructions || null,
-        active_from: values.active_from
-          ? new Date(values.active_from).toISOString()
-          : null,
-        active_until: values.active_until
-          ? new Date(values.active_until).toISOString()
-          : null,
-        publication_status: "draft",
-      }),
-    onSuccess: (response) => {
-      toast.success(
-        "Donation notice draft created. Add a cover image before publishing.",
-      );
-      queryClient.invalidateQueries({ queryKey: ["admin", "donation-drives"] });
-      setCreateOpen(false);
-      router.push(`/admin/donation-drives/${response.data.id}` as Route);
-    },
-    onError: (error) => {
-      throw toDisplayError(error);
-    },
-  });
 
-  const columns: ResourceColumn<DonationDrive>[] = [
+  const rows = data?.map((drive) => ({
+    ...drive,
+    status: drive.archived_at ? "Archived" : drive.published_at ? "Published" : "Draft",
+  }));
+  const columns: ResourceColumn<DonationDrive & { status: string }>[] = [
     { key: "title", header: "Title" },
     { key: "excerpt", header: "Preview" },
     {
-      key: "published_at",
+      key: "status",
       header: "Status",
-      render: (row) => (row.published_at ? "Published" : "Draft"),
     },
     {
       key: "drop_off_instructions",
@@ -97,43 +62,18 @@ export default function AdminDonationDrivesPage() {
         titleAccent="drives"
         description="Informational calls for goods only. Donor records, quantities, and payment handling are out of scope."
         action={
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Button asChild size="sm">
+            <Link href={"/admin/donation-drives/new" as Route}>
             <Plus aria-hidden className="size-4" />
             New drive
+            </Link>
           </Button>
         }
       />
 
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create a donation drive</DialogTitle>
-          </DialogHeader>
-          <DonationDriveForm
-            defaultValues={{
-              title: "",
-              excerpt: "",
-              body_json: emptyArticleDocument,
-              organizer_name: "",
-              organizer_contact: "",
-              drop_off_instructions: "",
-              active_from: "",
-              active_until: "",
-              publication_status: "draft",
-            }}
-            submitLabel="Create draft"
-            showPublication={false}
-            onSubmit={async (values) => {
-              await createMutation.mutateAsync(values);
-            }}
-            onCancel={() => setCreateOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
       <ResourceTable
         columns={columns}
-        data={data}
+        data={rows}
         isLoading={isLoading}
         isError={isError}
         onRetry={() => refetch()}
