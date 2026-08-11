@@ -154,6 +154,11 @@ where is Section 6.
   official Philippine government hazard-map convention — not blue. See `design.md` Section
   3.4 for why, and the rule that hazard is always a translucent map fill while alert level is
   always a solid badge, never rendered as the other form.
+- **Do not modify the three finalized public map configurations.** The three public map views —
+  (1) Landing Page map preview (`/`, `center=[14.7415, 121.1315]`, `zoom={13.38}`, hazard overlay enabled),
+  (2) Dedicated Flood Hazard Map (`/hazard-map`, `center=[14.7415, 121.1315]`, `zoom={14.25}`, hazard overlay enabled), and
+  (3) Barangay Facilities Map (`/barangay-facilities`, `center=[14.7435, 121.1305]`, `zoom={14.15}`, hazard overlay disabled) —
+  are finalized. When developing future maps (e.g. inside the admin/resident portal), create isolated map views or components rather than altering the zoom, center, or layer defaults of these three public maps.
 
 ## 6. Documentation — what lives where, and when to update it
 

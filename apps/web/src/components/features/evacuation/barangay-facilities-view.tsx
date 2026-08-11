@@ -124,13 +124,13 @@ export function BarangayFacilitiesView({
   areaBoundaries,
   hotlines,
 }: BarangayFacilitiesViewProps) {
-  // Multi-select checkbox state (initialized with all types enabled)
-  const [selectedTypes, setSelectedTypes] = React.useState<Set<FacilityType>>(
+  // 1. Map Pin Checkbox Filter State (controls Leaflet Map pins ONLY)
+  const [selectedMapTypes, setSelectedMapTypes] = React.useState<Set<FacilityType>>(
     () => new Set(ALL_FACILITY_TYPES)
   );
 
-  const toggleType = React.useCallback((type: FacilityType) => {
-    setSelectedTypes((prev) => {
+  const toggleMapType = React.useCallback((type: FacilityType) => {
+    setSelectedMapTypes((prev) => {
       const next = new Set(prev);
       if (next.has(type)) {
         next.delete(type);
@@ -141,8 +141,8 @@ export function BarangayFacilitiesView({
     });
   }, []);
 
-  const toggleAllTypes = React.useCallback(() => {
-    setSelectedTypes((prev) => {
+  const toggleAllMapTypes = React.useCallback(() => {
+    setSelectedMapTypes((prev) => {
       if (prev.size === ALL_FACILITY_TYPES.length) {
         return new Set();
       } else {
@@ -150,6 +150,9 @@ export function BarangayFacilitiesView({
       }
     });
   }, []);
+
+  // 2. Directory Cards Dropdown Filter State (controls Directory Cards grid ONLY)
+  const [directoryFilter, setDirectoryFilter] = React.useState<string>("all");
 
   // Build unified facility list
   const unifiedItems = React.useMemo(() => {
@@ -193,16 +196,15 @@ export function BarangayFacilitiesView({
     return map;
   }, [unifiedItems]);
 
-  // Filtered facilities based on multi-select checkboxes
-  const filteredItems = React.useMemo(() => {
-    if (selectedTypes.size === ALL_FACILITY_TYPES.length) return unifiedItems;
-    if (selectedTypes.size === 0) return [];
-    return unifiedItems.filter((item) => selectedTypes.has(item.type));
-  }, [unifiedItems, selectedTypes]);
-
-  // Facility markers for map
+  // Map Pins (filtered strictly by selectedMapTypes checkboxes)
   const mapFacilities = React.useMemo(() => {
-    return filteredItems.map((item) => ({
+    const filteredMapItems = selectedMapTypes.size === ALL_FACILITY_TYPES.length
+      ? unifiedItems
+      : selectedMapTypes.size === 0
+      ? []
+      : unifiedItems.filter((item) => selectedMapTypes.has(item.type));
+
+    return filteredMapItems.map((item) => ({
       id: item.id,
       name: item.name,
       type: item.type,
@@ -213,22 +215,13 @@ export function BarangayFacilitiesView({
       area_name: item.area_name,
       capacity: item.evacCenter?.capacity,
     }));
-  }, [filteredItems]);
+  }, [unifiedItems, selectedMapTypes]);
 
-  // Dropdown value indicator
-  const dropdownValue = React.useMemo(() => {
-    if (selectedTypes.size === ALL_FACILITY_TYPES.length) return "all";
-    if (selectedTypes.size === 1) return Array.from(selectedTypes)[0];
-    return "custom";
-  }, [selectedTypes]);
-
-  const handleDropdownSelect = React.useCallback((val: string) => {
-    if (val === "all") {
-      setSelectedTypes(new Set(ALL_FACILITY_TYPES));
-    } else if (val !== "custom") {
-      setSelectedTypes(new Set([val as FacilityType]));
-    }
-  }, []);
+  // Directory Cards (filtered strictly by directoryFilter dropdown)
+  const directoryItems = React.useMemo(() => {
+    if (directoryFilter === "all") return unifiedItems;
+    return unifiedItems.filter((item) => item.type === directoryFilter);
+  }, [unifiedItems, directoryFilter]);
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -260,17 +253,17 @@ export function BarangayFacilitiesView({
                     Facility Overview
                   </span>
                   <span className="text-[10.5px] font-extrabold text-emerald-800 bg-emerald-100/90 border border-emerald-200/80 px-2 py-0.5 rounded-full">
-                    {selectedTypes.size} {selectedTypes.size === 1 ? "type" : "types"} active
+                    {selectedMapTypes.size} {selectedMapTypes.size === 1 ? "type" : "types"} on map
                   </span>
                 </div>
 
                 <div className="flex items-baseline justify-between pt-0.5">
                   <div className="flex flex-col">
                     <span className="text-h2 font-black text-neutral-900 tabular leading-tight">
-                      {filteredItems.length} {filteredItems.length === 1 ? "Facility" : "Facilities"}
+                      {mapFacilities.length} {mapFacilities.length === 1 ? "Facility" : "Facilities"}
                     </span>
                     <span className="text-[11px] font-medium text-neutral-500">
-                      Showing on map & directory
+                      Visible on map
                     </span>
                   </div>
 
@@ -293,17 +286,17 @@ export function BarangayFacilitiesView({
                   </span>
                   <button
                     type="button"
-                    onClick={toggleAllTypes}
+                    onClick={toggleAllMapTypes}
                     className="text-[11px] font-extrabold text-emerald-700 hover:text-emerald-900 hover:underline cursor-pointer"
                   >
-                    {selectedTypes.size === ALL_FACILITY_TYPES.length ? "Deselect All" : "Select All"}
+                    {selectedMapTypes.size === ALL_FACILITY_TYPES.length ? "Deselect All" : "Select All"}
                   </button>
                 </div>
 
                 <div className="flex flex-col gap-1.5 overflow-y-auto pr-0.5">
                   {FACILITY_TYPES.map((cfg) => {
                     const count = countsPerType.get(cfg.type) ?? 0;
-                    const isChecked = selectedTypes.has(cfg.type);
+                    const isChecked = selectedMapTypes.has(cfg.type);
                     const Icon = cfg.icon;
 
                     return (
@@ -315,7 +308,7 @@ export function BarangayFacilitiesView({
                           <input
                             type="checkbox"
                             checked={isChecked}
-                            onChange={() => toggleType(cfg.type)}
+                            onChange={() => toggleMapType(cfg.type)}
                             className="size-3.5 rounded border-neutral-300 text-emerald-600 focus:ring-emerald-500/20 accent-emerald-600 cursor-pointer shrink-0"
                           />
                           <span className={cn("size-2 rounded-full shrink-0", cfg.dot)} />
@@ -341,27 +334,23 @@ export function BarangayFacilitiesView({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-200 pb-3">
           <div>
             <h2 className="text-h2 font-bold text-neutral-900">
-              {selectedTypes.size === ALL_FACILITY_TYPES.length
+              {directoryFilter === "all"
                 ? "All Barangay Facilities"
-                : selectedTypes.size === 1
-                ? (FACILITY_TYPES.find((t) => selectedTypes.has(t.type))?.label ?? "Facilities")
-                : "Filtered Barangay Facilities"}
+                : (FACILITY_TYPES.find((t) => t.type === directoryFilter)?.label ?? "Facilities")}
             </h2>
             <p className="text-caption font-medium text-neutral-500">
-              Showing {filteredItems.length} of {unifiedItems.length} facilities across Barangay San Jose
+              Showing {directoryItems.length} of {unifiedItems.length} facilities across Barangay San Jose
             </p>
           </div>
 
-          {/* Custom Dropdown Selector (Same style as hazard-map page) */}
-          <Select value={dropdownValue} onValueChange={handleDropdownSelect}>
+          {/* Custom Dropdown Selector (Controls Directory Cards Grid ONLY) */}
+          <Select value={directoryFilter} onValueChange={setDirectoryFilter}>
             <SelectTrigger className="inline-flex h-9 w-fit items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all cursor-pointer">
               <Filter aria-hidden className="size-3.5 text-emerald-600 shrink-0" />
               <SelectValue placeholder="Filter Facility Type">
-                {selectedTypes.size === ALL_FACILITY_TYPES.length
+                {directoryFilter === "all"
                   ? `All Facilities (${unifiedItems.length})`
-                  : selectedTypes.size === 1
-                  ? `${FACILITY_TYPES.find((t) => selectedTypes.has(t.type))?.label} (${filteredItems.length})`
-                  : `${selectedTypes.size} Types Selected (${filteredItems.length})`}
+                  : `${FACILITY_TYPES.find((t) => t.type === directoryFilter)?.label} (${directoryItems.length})`}
               </SelectValue>
             </SelectTrigger>
             <SelectContent
@@ -374,7 +363,7 @@ export function BarangayFacilitiesView({
                 value="all"
                 className={cn(
                   "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer my-0.5",
-                  selectedTypes.size === ALL_FACILITY_TYPES.length
+                  directoryFilter === "all"
                     ? "bg-emerald-600 text-white font-bold focus:bg-emerald-600 focus:text-white"
                     : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950"
                 )}
@@ -383,7 +372,7 @@ export function BarangayFacilitiesView({
                 <span
                   className={cn(
                     "text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 tabular-nums ml-auto",
-                    selectedTypes.size === ALL_FACILITY_TYPES.length
+                    directoryFilter === "all"
                       ? "bg-white/25 text-white"
                       : "bg-neutral-100 text-neutral-600"
                   )}
@@ -394,7 +383,7 @@ export function BarangayFacilitiesView({
 
               {FACILITY_TYPES.map((cfg) => {
                 const count = countsPerType.get(cfg.type) ?? 0;
-                const isSelected = selectedTypes.size === 1 && selectedTypes.has(cfg.type);
+                const isSelected = directoryFilter === cfg.type;
                 const Icon = cfg.icon;
 
                 return (
@@ -429,9 +418,9 @@ export function BarangayFacilitiesView({
           </Select>
         </div>
 
-        {filteredItems.length > 0 ? (
+        {directoryItems.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3">
-            {filteredItems.map((item) => (
+            {directoryItems.map((item) => (
               <FacilityUnifiedCard key={item.id} facility={item} />
             ))}
           </div>
@@ -439,7 +428,7 @@ export function BarangayFacilitiesView({
           <EmptyState
             icon={Building2}
             title="No facilities found"
-            description="No facilities match the selected type filters."
+            description="No facilities match the selected directory filter."
           />
         )}
       </section>
