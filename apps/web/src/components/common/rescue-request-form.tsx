@@ -22,32 +22,17 @@ const LocationPicker = dynamic(
   () => import("@/components/features/registry/location-picker"),
   {
     ssr: false,
-    loading: () => <div className="h-72 w-full rounded-lg bg-neutral-100" />,
+    loading: () => <div className="h-64 w-full rounded-xl bg-neutral-100 animate-pulse" />,
   },
 );
 
 const DRAFT_KEY = "rescue-draft";
 
-/**
- * FR-SAF-008/009/017 — no account, no login wall. `LocationPicker` already
- * carries the one-tap "Use my current location" affordance (`use-geolocation`,
- * S1b) as its primary input; the map pin and the free-text note underneath
- * are the fallback the backend's own validator accepts.
- *
- * "Never clears on failure" (design.md 9.6) is why this reuses
- * `useRegistrationDraft` rather than a bare `useForm` — a failed submit here
- * can mean someone is about to lose signal in rising water, and losing what
- * they already typed is the one failure mode this form cannot have.
- */
 const rescueRequestSchema = z
   .object({
     requester_name: z.string().min(1, "Enter your name"),
     contact_number: z.string().optional(),
     description: z.string().min(1, "Describe your situation"),
-    // Kept as a string in the schema (converted to a number only when
-    // building the request payload) — a coerced numeric schema turns an
-    // untouched empty field into `0`, which then fails a `.min(1)` check
-    // that was never meant to apply to "nothing entered".
     people_count: z.string().optional(),
     location: z.object({ lat: z.number(), lng: z.number() }).nullable(),
     location_note: z.string().optional(),
@@ -113,8 +98,6 @@ export function RescueRequestForm() {
       clearOnSuccess();
       setAck(response.data);
     } catch (error) {
-      // Deliberately not `form.reset()` — everything the person already
-      // typed must survive so they can just tap submit again.
       const problem = toDisplayError(error);
       setServerError(
         problem.status === 429
@@ -126,17 +109,25 @@ export function RescueRequestForm() {
 
   if (ack) {
     return (
-      <Card className="border-success-border bg-success-bg">
-        <CardContent className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <ShieldCheck aria-hidden className="text-success size-5" />
-            <p className="text-h4 text-success">Request received</p>
+      <Card radius="xl" className="border-emerald-200 bg-emerald-50/70 shadow-sm flex flex-col h-full">
+        <CardContent className="p-6 flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <div className="grid size-10 place-items-center rounded-xl bg-emerald-600 text-white shrink-0 shadow-sm">
+              <ShieldCheck aria-hidden className="size-5" />
+            </div>
+            <div>
+              <p className="text-h4 font-bold text-emerald-950">Rescue Request Received</p>
+              <p className="text-caption text-emerald-800">Barangay response team has logged your dispatch</p>
+            </div>
           </div>
-          <p className="text-body-sm text-neutral-700">
-            Reference{" "}
-            <span className="font-mono font-semibold">{ack.id.slice(0, 8)}</span> —
-            received {new Date(ack.received_at).toLocaleTimeString()}.
-          </p>
+          <div className="rounded-xl border border-emerald-200/80 bg-white p-4 text-xs text-neutral-800 flex flex-col gap-1.5 shadow-2xs">
+            <p className="font-semibold text-neutral-900">
+              Reference ID: <span className="font-mono font-bold text-emerald-800">{ack.id.slice(0, 8)}</span>
+            </p>
+            <p className="text-neutral-500 text-[11px]">
+              Received at: {new Date(ack.received_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </p>
+          </div>
           <Attribution disclaimer="no-rescue-promise" />
         </CardContent>
       </Card>
@@ -144,106 +135,148 @@ export function RescueRequestForm() {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      noValidate
-      className="flex flex-col gap-4 rounded-[20px] border border-neutral-200 bg-white p-6 shadow-sm"
-    >
-      {hasDraft ? (
-        <div className="border-primary-200 bg-primary-50 flex items-center justify-between gap-3 rounded-lg border p-3">
-          <p className="text-body-sm text-primary-800">
-            Unfinished request saved on this device.
-          </p>
-          <div className="flex gap-2">
-            <Button type="button" size="sm" onClick={resume}>
-              Resume
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={discard}>
-              Discard
+    <Card radius="xl" className="border-neutral-200/90 bg-white shadow-sm flex flex-col h-full overflow-hidden">
+      <CardContent className="p-4 sm:p-5 flex flex-col gap-4 h-full">
+        {/* Form Header */}
+        <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="grid size-9 place-items-center rounded-xl bg-red-50 text-red-600 border border-red-200/60 shrink-0">
+              <LifeBuoy aria-hidden className="size-4.5" />
+            </div>
+            <div>
+              <h2 className="text-h4 font-bold text-neutral-900">Rescue Dispatch Form</h2>
+              <p className="text-caption font-medium text-neutral-500">Submit emergency request to barangay team</p>
+            </div>
+          </div>
+          <span className="text-[10.5px] font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full shrink-0">
+            No Account Needed
+          </span>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4 flex-1">
+          {hasDraft ? (
+            <div className="border-emerald-200 bg-emerald-50/70 flex items-center justify-between gap-3 rounded-xl border p-3">
+              <p className="text-xs font-semibold text-emerald-900">
+                Unfinished request saved on this device.
+              </p>
+              <div className="flex gap-2 shrink-0">
+                <Button type="button" size="sm" onClick={resume} className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs">
+                  Resume
+                </Button>
+                <Button type="button" size="sm" variant="outline" onClick={discard} className="text-xs border-emerald-300 text-emerald-800 hover:bg-emerald-100">
+                  Discard
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          {/* Contact Details Grid */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="requester_name" className="text-xs font-bold text-neutral-700">Your Name *</Label>
+              <Input
+                id="requester_name"
+                placeholder="Full Name"
+                autoComplete="name"
+                className="h-9 text-xs rounded-xl border-neutral-200 focus:border-emerald-500"
+                {...register("requester_name")}
+              />
+              {errors.requester_name ? (
+                <p className="text-danger text-[11px] font-semibold">{errors.requester_name.message}</p>
+              ) : null}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="contact_number" className="text-xs font-bold text-neutral-700">Contact Number (optional)</Label>
+              <Input
+                id="contact_number"
+                type="tel"
+                inputMode="tel"
+                placeholder="09XX-XXX-XXXX"
+                autoComplete="tel"
+                className="h-9 text-xs rounded-xl border-neutral-200 focus:border-emerald-500"
+                {...register("contact_number")}
+              />
+            </div>
+          </div>
+
+          {/* Location Picker */}
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-bold text-neutral-700">Your Location Pin *</Label>
+            <Controller
+              control={control}
+              name="location"
+              render={({ field }) => (
+                <LocationPicker
+                  value={field.value as LatLng | null}
+                  onChange={field.onChange}
+                  caption="Drag the pin, or tap the map, to mark your exact location."
+                />
+              )}
+            />
+          </div>
+
+          {/* Landmark / Location note */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="location_note" className="text-xs font-bold text-neutral-700">Landmark / Location Note</Label>
+            <Input
+              id="location_note"
+              placeholder="e.g. Near Wawa bridge, 2nd floor balcony"
+              className="h-9 text-xs rounded-xl border-neutral-200 focus:border-emerald-500"
+              {...register("location_note")}
+            />
+            {errors.location_note ? (
+              <p className="text-danger text-[11px] font-semibold">{errors.location_note.message}</p>
+            ) : null}
+          </div>
+
+          {/* Situation Description & People Count */}
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <Label htmlFor="description" className="text-xs font-bold text-neutral-700">What&apos;s Happening *</Label>
+              <Textarea
+                id="description"
+                rows={2}
+                placeholder="Describe water level, trapped persons, or medical condition..."
+                className="text-xs rounded-xl border-neutral-200 focus:border-emerald-500 resize-none"
+                {...register("description")}
+              />
+              {errors.description ? (
+                <p className="text-danger text-[11px] font-semibold">{errors.description.message}</p>
+              ) : null}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="people_count" className="text-xs font-bold text-neutral-700">People Needing Rescue</Label>
+              <Input
+                id="people_count"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={99}
+                placeholder="e.g. 3"
+                className="h-9 text-xs rounded-xl border-neutral-200 focus:border-emerald-500"
+                {...register("people_count")}
+              />
+            </div>
+          </div>
+
+          {/* Submit Action Section */}
+          <div className="mt-auto pt-3 border-t border-neutral-100 flex flex-col gap-2">
+            {serverError ? <p className="text-danger text-body-sm font-semibold">{serverError}</p> : null}
+
+            <Button
+              type="submit"
+              variant="emergency"
+              disabled={isSubmitting}
+              className="w-full h-11 text-xs font-extrabold uppercase tracking-wider rounded-xl shadow-md cursor-pointer"
+            >
+              <LifeBuoy aria-hidden className="size-4 shrink-0" />
+              {isSubmitting ? "Sending Request…" : serverError ? "Try Again" : "Send Emergency Rescue Request"}
             </Button>
           </div>
-        </div>
-      ) : null}
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="requester_name">Your name</Label>
-        <Input id="requester_name" autoComplete="name" {...register("requester_name")} />
-        {errors.requester_name ? (
-          <p className="text-danger text-xs">{errors.requester_name.message}</p>
-        ) : null}
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="contact_number">Contact number (optional)</Label>
-        <Input
-          id="contact_number"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          {...register("contact_number")}
-        />
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label>Your location</Label>
-        <Controller
-          control={control}
-          name="location"
-          render={({ field }) => (
-            <LocationPicker
-              value={field.value as LatLng | null}
-              onChange={field.onChange}
-              caption="Drag the pin, or tap the map, to mark where you are."
-            />
-          )}
-        />
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="location_note">Or describe where you are</Label>
-        <Input
-          id="location_note"
-          placeholder="e.g. near the Wawa bridge, second floor"
-          {...register("location_note")}
-        />
-        {errors.location_note ? (
-          <p className="text-danger text-xs">{errors.location_note.message}</p>
-        ) : null}
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="description">What&apos;s happening</Label>
-        <Textarea id="description" rows={3} {...register("description")} />
-        {errors.description ? (
-          <p className="text-danger text-xs">{errors.description.message}</p>
-        ) : null}
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="people_count">People with you (optional)</Label>
-        <Input
-          id="people_count"
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={99}
-          {...register("people_count")}
-        />
-      </div>
-
-      <Attribution disclaimer="no-rescue-promise" short />
-
-      {serverError ? <p className="text-danger text-body-sm">{serverError}</p> : null}
-
-      <Button
-        type="submit"
-        variant="emergency"
-        disabled={isSubmitting}
-        className="mt-2 w-full"
-      >
-        <LifeBuoy aria-hidden className="size-4" />
-        {isSubmitting ? "Sending…" : serverError ? "Try again" : "Send request"}
-      </Button>
-    </form>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
