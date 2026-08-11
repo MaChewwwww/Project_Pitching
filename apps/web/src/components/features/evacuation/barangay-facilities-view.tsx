@@ -240,7 +240,7 @@ export function BarangayFacilitiesView({
             <HazardMap
               className="h-full w-full min-h-[500px]"
               center={[14.7415, 121.1315]}
-              zoom={13.6}
+              zoom={13.25}
               facilities={mapFacilities}
               areaBoundaries={areaBoundaries}
               areaStats={[]}
