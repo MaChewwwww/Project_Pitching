@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { WaterSpinner } from "./water-spinner";
-import { APP_NAME } from "@/lib/brand";
 
 /**
  * Full-screen splash loader component displayed on initial page load / hard refresh.
@@ -58,7 +57,7 @@ export function PageSplashLoader() {
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-600 animate-ping" />
             <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 sm:text-2xl">
-              {APP_NAME} <span className="text-emerald-700">San Jose</span>
+              SAGIP <span className="text-emerald-700">San Jose</span>
             </h1>
           </div>
           <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-500">
