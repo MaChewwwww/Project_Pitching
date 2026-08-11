@@ -16,6 +16,7 @@ from src.core.pagination import Page
 from src.db.session import DbSessionDep
 from src.modules.alerts import service
 from src.modules.alerts.schemas import (
+    AdminAnnouncementDetail,
     AlertPromptOut,
     AnnouncementDetail,
     AnnouncementIn,
@@ -71,7 +72,7 @@ async def admin_list_announcements(session: DbSessionDep) -> list[PublicAnnounce
 )
 async def admin_announcement_detail(
     announcement_id: uuid.UUID, session: DbSessionDep
-) -> AnnouncementDetail:
+) -> AdminAnnouncementDetail:
     return await service.get_announcement_admin(session, announcement_id)
 
 

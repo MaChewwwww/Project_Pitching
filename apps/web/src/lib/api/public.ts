@@ -23,6 +23,9 @@ import { HOTLINES, PRIMARY_HOTLINE } from "@/lib/fixtures/hotlines";
 import { ApiFetchError, serverGet } from "./server";
 import type {
   Page,
+  ActivityDetail,
+  AnnouncementDetail,
+  DonationDriveDetail,
   PublicActivity,
   PublicAnnouncement,
   AreaBoundaryCollection,
@@ -42,11 +45,14 @@ import type {
 } from "./public-types";
 import {
   publicActivityPageSchema,
+  activityDetailSchema,
   publicAnnouncementPageSchema,
   publicAnnouncementSchema,
+  announcementDetailSchema,
   publicAreaSchema,
   publicBarangayStatsSchema,
   publicDonationDrivePageSchema,
+  donationDriveDetailSchema,
   publicEmergencyEventSchema,
   publicEvacCenterPageSchema,
   publicFacilitySchema,
@@ -242,20 +248,57 @@ export async function getActivities(options?: {
   }
 }
 
+export async function getActivity(slug: string): Promise<ActivityDetail | null> {
+  try {
+    return await serverGet(
+      `/public/activities/${encodeURIComponent(slug)}`,
+      activityDetailSchema,
+    );
+  } catch (error) {
+    logDegraded(`/public/activities/${slug}`, error);
+    return null;
+  }
+}
+
+export async function getAnnouncement(slug: string): Promise<AnnouncementDetail | null> {
+  try {
+    return await serverGet(
+      `/public/announcements/${encodeURIComponent(slug)}`,
+      announcementDetailSchema,
+    );
+  } catch (error) {
+    logDegraded(`/public/announcements/${slug}`, error);
+    return null;
+  }
+}
+
 /** `GET /public/donation-drives` */
 export async function getDonationDrives(options?: {
   page?: number;
   size?: number;
-  status?: PublicDonationDrive["status"];
 }): Promise<Page<PublicDonationDrive>> {
-  const { page = 1, size = 20, status = "open" } = options ?? {};
+  const { page = 1, size = 20 } = options ?? {};
   try {
     return await serverGet("/public/donation-drives", publicDonationDrivePageSchema, {
-      searchParams: { page, size, status },
+      searchParams: { page, size },
     });
   } catch (error) {
     logDegraded("/public/donation-drives", error);
     return emptyPage(page, size);
+  }
+}
+
+export async function getDonationDrive(
+  slug: string,
+): Promise<DonationDriveDetail | null> {
+  try {
+    return await serverGet(
+      `/public/donation-drives/${encodeURIComponent(slug)}`,
+      donationDriveDetailSchema,
+    );
+  } catch (error) {
+    logDegraded(`/public/donation-drives/${slug}`, error);
+    return null;
   }
 }
 
@@ -359,20 +402,25 @@ export async function getFloodEvents(options?: {
  */
 export async function getAreaBoundaries(): Promise<AreaBoundaryCollection> {
   try {
-    const data = await serverGet("/public/area-boundaries", z.object({
-      type: z.literal("FeatureCollection"),
-      features: z.array(z.object({
-        type: z.literal("Feature"),
-        properties: z.object({
-          area_id: z.string(),
-          name: z.string(),
-          code: z.string().nullable(),
-          flood_exposure: z.enum(["low", "medium", "high"]).nullable(),
-          boundary_source: z.enum(["official", "approximate"]).nullable(),
-        }),
-        geometry: z.unknown(),
-      })),
-    }));
+    const data = await serverGet(
+      "/public/area-boundaries",
+      z.object({
+        type: z.literal("FeatureCollection"),
+        features: z.array(
+          z.object({
+            type: z.literal("Feature"),
+            properties: z.object({
+              area_id: z.string(),
+              name: z.string(),
+              code: z.string().nullable(),
+              flood_exposure: z.enum(["low", "medium", "high"]).nullable(),
+              boundary_source: z.enum(["official", "approximate"]).nullable(),
+            }),
+            geometry: z.unknown(),
+          }),
+        ),
+      }),
+    );
     return data as AreaBoundaryCollection;
   } catch (error) {
     logDegraded("/public/area-boundaries", error);

@@ -1,4 +1,7 @@
 import * as React from "react";
+import Image from "next/image";
+import Link from "next/link";
+import type { Route } from "next";
 import { MapPin } from "lucide-react";
 
 import { Badge } from "@/components/common/badge";
@@ -27,7 +30,20 @@ export function ActivityCard({
   className?: string;
 }) {
   return (
-    <Card radius="xl" className={cn("h-full", className)}>
+    <Card radius="xl" className={cn("h-full overflow-hidden", className)}>
+      {activity.cover_image ? (
+        <Link
+          href={`/activities/${activity.slug}` as Route}
+          className="focus-visible:ring-primary-600 relative block aspect-video bg-neutral-100 focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset"
+        >
+          <Image
+            src={activity.cover_image.url}
+            alt={activity.cover_image.alt_text}
+            fill
+            className="object-cover"
+          />
+        </Link>
+      ) : null}
       <CardContent className="flex h-full gap-4">
         {/* Date block — the reference layout's calendar chip */}
         <div className="bg-primary-800 flex size-14 shrink-0 flex-col items-center justify-center rounded-md text-white">
@@ -44,10 +60,17 @@ export function ActivityCard({
             {TYPE_LABEL[activity.type]}
           </Badge>
 
-          <h3 className="text-h4 text-neutral-900">{activity.title}</h3>
+          <h3 className="text-h4 text-neutral-900">
+            <Link
+              href={`/activities/${activity.slug}` as Route}
+              className="hover:text-primary-700 focus-visible:ring-primary-600 focus-visible:ring-2 focus-visible:outline-none"
+            >
+              {activity.title}
+            </Link>
+          </h3>
 
-          {activity.description ? (
-            <p className="text-body-sm text-neutral-600">{activity.description}</p>
+          {activity.excerpt ? (
+            <p className="text-body-sm text-neutral-600">{activity.excerpt}</p>
           ) : null}
 
           <div className="mt-1 flex flex-col gap-1">

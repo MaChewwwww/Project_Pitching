@@ -73,6 +73,12 @@ class AnnouncementDetail(PublicAnnouncement):
     images: list[ArticleImageOut]
 
 
+class AdminAnnouncementDetail(AnnouncementDetail):
+    """Editor-only targeting IDs; public readers receive display names only."""
+
+    area_ids: list[uuid.UUID]
+
+
 class AnnouncementIn(BaseModel):
     kind: Literal["announcement", "alert"]
     type: str

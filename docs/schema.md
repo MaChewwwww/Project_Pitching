@@ -559,23 +559,27 @@ CREATE INDEX idx_forecast_upcoming ON forecast(metric, horizon, valid_at);
 > whatever the barangay can reconstruct; the public view says "areas not recorded"
 > rather than implying the whole barangay flooded.
 
-### `announcement` (FR-ALT-001 … 011)
+### `announcement` (FR-ALT-001 … 015)
 
-| Column              | Type        | Constraints           | Notes                                                                                                                                                                  |
-| ------------------- | ----------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`                | UUID        | PK                    |                                                                                                                                                                        |
-| `kind`              | TEXT        | NOT NULL CHECK        | `announcement` · `alert` — one engine, two presentations                                                                                                               |
-| `type`              | TEXT        | NOT NULL CHECK        | `general` · `class_suspension` · `road_closure` · `utility_interruption` · `flood_warning` · `earthquake` · `typhoon` · `heavy_rainfall` · `heat_index` · `evacuation` |
-| `severity`          | TEXT        | CHECK                 | `info` · `warning` · `emergency`                                                                                                                                       |
-| `alert_level`       | SMALLINT    | CHECK IN (1,2,3)      | Only for river alerts                                                                                                                                                  |
-| `title`             | TEXT        | NOT NULL              |                                                                                                                                                                        |
-| `body`              | TEXT        | NOT NULL              |                                                                                                                                                                        |
-| `instruction`       | TEXT        |                       | **Required when `kind = 'alert'`** (FR-ALT-005)                                                                                                                        |
-| `is_barangay_wide`  | BOOLEAN     | NOT NULL DEFAULT true |                                                                                                                                                                        |
-| `published_at`      | TIMESTAMPTZ |                       |                                                                                                                                                                        |
-| `expires_at`        | TIMESTAMPTZ |                       |                                                                                                                                                                        |
-| `deactivated_at`    | TIMESTAMPTZ |                       | FR-ALT-011                                                                                                                                                             |
-| `issued_by_user_id` | UUID        | NOT NULL FK → `user`  | FR-ALT-007 — never null                                                                                                                                                |
+| Column               | Type        | Constraints           | Notes                                                                                                                                                                  |
+| -------------------- | ----------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                 | UUID        | PK                    |                                                                                                                                                                        |
+| `kind`               | TEXT        | NOT NULL CHECK        | `announcement` · `alert` — one engine, two presentations                                                                                                               |
+| `type`               | TEXT        | NOT NULL CHECK        | `general` · `class_suspension` · `road_closure` · `utility_interruption` · `flood_warning` · `earthquake` · `typhoon` · `heavy_rainfall` · `heat_index` · `evacuation` |
+| `severity`           | TEXT        | CHECK                 | `info` · `warning` · `emergency`                                                                                                                                       |
+| `alert_level`        | SMALLINT    | CHECK IN (1,2,3)      | Only for river alerts                                                                                                                                                  |
+| `title`              | TEXT        | NOT NULL              |                                                                                                                                                                        |
+| `slug`               | TEXT        | UNIQUE NOT NULL       | Canonical public route                                                                                                                                                 |
+| `excerpt`            | TEXT        | NOT NULL              | Plain-text article preview                                                                                                                                             |
+| `body_json`          | JSONB       | NOT NULL              | Validated Tiptap document                                                                                                                                              |
+| `publication_status` | TEXT        | NOT NULL CHECK        | `draft` · `published` · `archived`                                                                                                                                     |
+| `instruction`        | TEXT        |                       | **Required when `kind = 'alert'`** (FR-ALT-005)                                                                                                                        |
+| `is_barangay_wide`   | BOOLEAN     | NOT NULL DEFAULT true |                                                                                                                                                                        |
+| `published_at`       | TIMESTAMPTZ |                       |                                                                                                                                                                        |
+| `expires_at`         | TIMESTAMPTZ |                       |                                                                                                                                                                        |
+| `deactivated_at`     | TIMESTAMPTZ |                       | FR-ALT-011                                                                                                                                                             |
+| `archived_at`        | TIMESTAMPTZ |                       | Set when publication is archived                                                                                                                                       |
+| `issued_by_user_id`  | UUID        | NOT NULL FK → `user`  | FR-ALT-007 — never null                                                                                                                                                |
 
 ```sql
 ALTER TABLE announcement ADD CONSTRAINT chk_alert_needs_instruction
@@ -730,65 +734,18 @@ CREATE INDEX idx_checkin_occupancy ON evac_checkin(evac_center_id)
 
 ---
 
-## 9. Donations & Assistance — deployed legacy schema
+## 9. Donation notices
 
-> **Approved retirement, not yet migrated.** The tables in this section describe the physical
-> schema deployed at commit `8a3eaec`. Stakeholder decision D-16 removes donor transactions,
-> targets/progress, and household assistance from the target product. Keep this section accurate
-> until the later migration removes `drive_need`, `donation`, and `assistance_record`; do not
-> mistake their presence for active product scope.
+> Migration `0018_article_cms` removed the former `drive_need`, `donation`, and
+> `assistance_record` tables. Donation notices are informational only: no donor records,
+> quantities, targets, payments, or distribution tracking remain in the product.
 
-### `donation_drive` (FR-DON-001, 009)
+### `donation_drive` (FR-DON-015 … 017)
 
-`id`, `event_id`, `title`, `description`, `status` (CHECK: `open` · `closed`), `opened_at`, `closed_at`, `created_by_user_id`.
-
-### `drive_need`
-
-`id`, `drive_id`, `item_name`, `target_quantity`, `unit`, `sort_order`.
-
-### `donation` (FR-DON-002 … 008)
-
-| Column                      | Type          | Constraints                          | Notes                                                             |
-| --------------------------- | ------------- | ------------------------------------ | ----------------------------------------------------------------- |
-| `id`                        | UUID          | PK                                   |                                                                   |
-| `drive_id`                  | UUID          | NOT NULL FK                          |                                                                   |
-| `drive_need_id`             | UUID          | FK                                   | Nullable — "other" donations                                      |
-| `reference_no`              | TEXT          | UNIQUE NOT NULL                      | Quoted on delivery (FR-DON-003)                                   |
-| `donor_name`                | TEXT          | NOT NULL                             |                                                                   |
-| `donor_contact`             | TEXT          |                                      | Optional                                                          |
-| `item_name`                 | TEXT          | NOT NULL                             |                                                                   |
-| `quantity_pledged`          | NUMERIC(10,2) | NOT NULL                             |                                                                   |
-| `quantity_received`         | NUMERIC(10,2) |                                      | Set at receipt                                                    |
-| `unit`                      | TEXT          | NOT NULL                             |                                                                   |
-| `status`                    | TEXT          | NOT NULL DEFAULT `'submitted'` CHECK | `submitted` · `received` · `partially_received` · `not_fulfilled` |
-| `is_walk_in`                | BOOLEAN       | NOT NULL DEFAULT false               | FR-DON-007                                                        |
-| `status_changed_by_user_id` | UUID          | FK → `user`                          | FR-DON-006                                                        |
-| `status_changed_at`         | TIMESTAMPTZ   |                                      |                                                                   |
-
-```sql
-CREATE INDEX idx_donation_drive_status ON donation(drive_id, status);
-```
-
-> **Legacy deployed behavior only.** This implementation has no donor account; donor identity
-> lives on the `donation` row and its progress calculation uses `quantity_received`. D-16 retires
-> the entire row and calculation. Do not reproduce them in the Article-CMS migration.
-
-### `assistance_record` (FR-DON-011 … 014)
-
-| Column                | Type        | Constraints    | Notes                               |
-| --------------------- | ----------- | -------------- | ----------------------------------- |
-| `id`                  | UUID        | PK             |                                     |
-| `household_id`        | UUID        | NOT NULL FK    |                                     |
-| `event_id`            | UUID        | FK             |                                     |
-| `description`         | TEXT        | NOT NULL       |                                     |
-| `scheduled_at`        | TIMESTAMPTZ |                |                                     |
-| `claim_location`      | TEXT        |                |                                     |
-| `status`              | TEXT        | NOT NULL CHECK | `pending` · `scheduled` · `claimed` |
-| `claimed_at`          | TIMESTAMPTZ |                |                                     |
-| `recorded_by_user_id` | UUID        | FK → `user`    |                                     |
-
-> **Legacy deployed behavior only.** The table deliberately has no donation foreign key. D-16 now
-> retires the assistance table itself; do not migrate it into the revised citizen portal.
+`id`, `event_id` (nullable), `title`, `slug` UNIQUE, `excerpt`, `body_json`,
+`publication_status` (CHECK: `draft` · `published` · `archived`), `published_at`, `archived_at`,
+`organizer_name`, `organizer_contact`, `drop_off_instructions`, `active_from`, `active_until`,
+`created_by_user_id`.
 
 ---
 
@@ -796,7 +753,10 @@ CREATE INDEX idx_donation_drive_status ON donation(drive_id, status);
 
 ### `activity` (FR-ACT-001 … 003)
 
-`id`, `title`, `type` (CHECK: `drill` · `seminar` · `first_aid` · `cleanup` · `tree_planting` · `ngo_program` · `other`), `description`, `starts_at`, `ends_at`, `venue`, `area_id` (nullable), `created_by_user_id`, `is_published`.
+`id`, `title`, `slug` UNIQUE, `excerpt`, `body_json`, `publication_status` (CHECK: `draft` ·
+`published` · `archived`), `published_at`, `archived_at`, `type` (CHECK: `drill` · `seminar` ·
+`first_aid` · `cleanup` · `tree_planting` · `ngo_program` · `other`), `starts_at`, `ends_at`,
+`venue`, `area_id` (nullable), `created_by_user_id`.
 
 ### `activity_attendance` (FR-ACT-004, 007)
 
@@ -821,26 +781,24 @@ CREATE INDEX idx_donation_drive_status ON donation(drive_id, status);
 
 ---
 
-## 10a. Approved Article-CMS Schema Delta — not deployed
+## 10a. Article-CMS schema (migration `0018_article_cms`)
 
-This section is an approved migration contract, not a description of the current database.
-When `FR-ALT-013`–`015`, `FR-ACT-010`–`012`, `FR-DON-015`–`017`, and
-`FR-PUB-019`–`020` are implemented, move these fields into the canonical table sections above
-and remove the legacy donation tables in the same code/migration PR. Their permanent BR sources
-remain recorded on the requirement rows in `frs_nfrs.md`.
+Migration `0018_article_cms` implements `FR-ALT-013`–`015`, `FR-ACT-010`–`012`,
+`FR-DON-015`–`017`, and `FR-PUB-019`–`020`. This section documents the shared physical
+shape that supplements the parent-table summaries above.
 
-### Shared additions on three separate parent tables
+### Shared article fields on three separate parent tables
 
-`announcement`, `activity`, and `donation_drive` remain separate entities. Each gains:
+`announcement`, `activity`, and `donation_drive` remain separate entities. Each has:
 
-| Column               | Type        | Constraints                      | Notes                                                                                           |
-| -------------------- | ----------- | -------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `slug`               | TEXT        | UNIQUE NOT NULL                  | Unique within its parent table; canonical public route                                          |
-| `excerpt`            | TEXT        | NOT NULL                         | Plain-text preview summary                                                                      |
-| `body_json`          | JSONB       | NOT NULL                         | Validated Tiptap document; replaces the current plain `body`/`description` field after backfill |
-| `publication_status` | TEXT        | NOT NULL DEFAULT `'draft'` CHECK | `draft` · `published` · `archived`                                                              |
-| `published_at`       | TIMESTAMPTZ |                                  | Set by the server on first publication                                                          |
-| `archived_at`        | TIMESTAMPTZ |                                  | Set by the server on archive                                                                    |
+| Column               | Type        | Constraints                      | Notes                                                                    |
+| -------------------- | ----------- | -------------------------------- | ------------------------------------------------------------------------ |
+| `slug`               | TEXT        | UNIQUE NOT NULL                  | Unique within its parent table; canonical public route                   |
+| `excerpt`            | TEXT        | NOT NULL                         | Plain-text preview summary                                               |
+| `body_json`          | JSONB       | NOT NULL                         | Validated Tiptap document; plain text was backfilled in migration `0018` |
+| `publication_status` | TEXT        | NOT NULL DEFAULT `'draft'` CHECK | `draft` · `published` · `archived`                                       |
+| `published_at`       | TIMESTAMPTZ |                                  | Set by the server on first publication                                   |
+| `archived_at`        | TIMESTAMPTZ |                                  | Set by the server on archive                                             |
 
 Existing actor fields remain authoritative: `announcement.issued_by_user_id`,
 `activity.created_by_user_id`, and `donation_drive.created_by_user_id`. Announcement alert fields
@@ -852,7 +810,7 @@ gain item, donor, pledge, quantity, receipt, payment, recipient, or distribution
 
 ### Entity-specific image tables
 
-Create `announcement_image`, `activity_image`, and `donation_drive_image`. Each table has the same
+`announcement_image`, `activity_image`, and `donation_drive_image` have the same
 physical shape but a real foreign key to its own parent—no polymorphic `content_type/content_id`
 pair.
 
@@ -871,13 +829,12 @@ The service enforces a maximum of ten images and exactly one cover at publicatio
 JPEG, PNG, or WebP up to 5 MB, validated by magic bytes. Rich-text JSON cannot contain image nodes,
 raw HTML, data URLs, or arbitrary nodes/marks outside the configured allow-list.
 
-### Later migration order
+### Migration execution
 
-1. Add nullable article fields and the three image tables.
-2. Backfill deployed seed content into valid Tiptap JSON and deterministic unique slugs.
-3. Make required article fields non-null after the backfill.
-4. Update all readers/writers to the article contract and verify public preview/detail routes.
-5. Drop `drive_need`, `donation`, and `assistance_record`, then remove the legacy subsection above.
+`0018_article_cms` added nullable fields and image tables, backfilled existing content to valid
+Tiptap JSON and deterministic slugs, made article fields required, then dropped `drive_need`,
+`donation`, and `assistance_record`. Its downgrade recreates the retired tables empty; restore a
+database backup rather than relying on downgrade if retired transaction data is needed.
 
 ---
 

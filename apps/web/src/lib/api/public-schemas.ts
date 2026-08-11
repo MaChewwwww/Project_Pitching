@@ -44,11 +44,13 @@ export const announcementTypeSchema = z.enum([
 
 export const publicAnnouncementSchema = z.object({
   id: z.string(),
+  slug: z.string(),
   kind: z.enum(["announcement", "alert"]),
   type: announcementTypeSchema,
   severity: z.enum(["info", "warning", "emergency"]).nullable(),
   alert_level: z.union([z.literal(1), z.literal(2), z.literal(3)]).nullable(),
   title: z.string(),
+  excerpt: z.string(),
   body: z.string(),
   instruction: z.string().nullable(),
   is_barangay_wide: z.boolean(),
@@ -57,11 +59,38 @@ export const publicAnnouncementSchema = z.object({
   published_at: z.string().nullable(),
   expires_at: z.string().nullable(),
   deactivated_at: z.string().nullable(),
+  archived_at: z.string().nullable(),
   area_names: z.array(z.string()),
   issued_by_name: z.string(),
   is_active: z.boolean(),
+  cover_image: z
+    .object({
+      id: z.string(),
+      url: z.string(),
+      alt_text: z.string(),
+      caption: z.string().nullable(),
+      sort_order: z.number(),
+      is_cover: z.boolean(),
+    })
+    .nullable(),
 });
 export const publicAnnouncementPageSchema = page(publicAnnouncementSchema);
+export const announcementDetailSchema = publicAnnouncementSchema.extend({
+  body_json: z.object({
+    type: z.literal("doc"),
+    content: z.array(z.record(z.string(), z.unknown())),
+  }),
+  images: z.array(
+    z.object({
+      id: z.string(),
+      url: z.string(),
+      alt_text: z.string(),
+      caption: z.string().nullable(),
+      sort_order: z.number(),
+      is_cover: z.boolean(),
+    }),
+  ),
+});
 
 /* --- emergency events (FR-SAF-018) -------------------------------------------- */
 
@@ -182,7 +211,9 @@ export const publicEvacCenterPageSchema = page(publicEvacCenterSchema);
 
 export const publicActivitySchema = z.object({
   id: z.string(),
+  slug: z.string(),
   title: z.string(),
+  excerpt: z.string(),
   type: z.enum([
     "drill",
     "seminar",
@@ -192,42 +223,87 @@ export const publicActivitySchema = z.object({
     "ngo_program",
     "other",
   ]),
-  description: z.string().nullable(),
   starts_at: z.string(),
   ends_at: z.string().nullable(),
   venue: z.string().nullable(),
   area_id: z.string().nullable(),
   area_name: z.string().nullable(),
   is_upcoming: z.boolean(),
+  published_at: z.string().nullable(),
+  archived_at: z.string().nullable(),
+  cover_image: z
+    .object({
+      id: z.string(),
+      url: z.string(),
+      alt_text: z.string(),
+      caption: z.string().nullable(),
+      sort_order: z.number(),
+      is_cover: z.boolean(),
+    })
+    .nullable(),
 });
 export const publicActivityPageSchema = page(publicActivitySchema);
+export const activityDetailSchema = publicActivitySchema.extend({
+  body_json: z.object({
+    type: z.literal("doc"),
+    content: z.array(z.record(z.string(), z.unknown())),
+  }),
+  images: z.array(
+    z.object({
+      id: z.string(),
+      url: z.string(),
+      alt_text: z.string(),
+      caption: z.string().nullable(),
+      sort_order: z.number(),
+      is_cover: z.boolean(),
+    }),
+  ),
+});
 
 /* --- donation drives ---------------------------------------------------------------- */
 
-export const publicDriveNeedSchema = z.object({
-  id: z.string(),
-  item_name: z.string(),
-  target_quantity: z.number(),
-  unit: z.string(),
-  sort_order: z.number(),
-  received_quantity: z.number(),
-  pledged_quantity: z.number(),
-  progress_pct: z.number(),
-});
-
 export const publicDonationDriveSchema = z.object({
   id: z.string(),
+  slug: z.string(),
   title: z.string(),
-  description: z.string().nullable(),
-  status: z.enum(["open", "closed"]),
-  opened_at: z.string(),
-  closed_at: z.string().nullable(),
+  excerpt: z.string(),
   event_id: z.string().nullable(),
   event_name: z.string().nullable(),
-  needs: z.array(publicDriveNeedSchema),
-  overall_progress_pct: z.number(),
+  organizer_name: z.string().nullable(),
+  organizer_contact: z.string().nullable(),
+  drop_off_instructions: z.string().nullable(),
+  active_from: z.string().nullable(),
+  active_until: z.string().nullable(),
+  published_at: z.string().nullable(),
+  archived_at: z.string().nullable(),
+  cover_image: z
+    .object({
+      id: z.string(),
+      url: z.string(),
+      alt_text: z.string(),
+      caption: z.string().nullable(),
+      sort_order: z.number(),
+      is_cover: z.boolean(),
+    })
+    .nullable(),
 });
 export const publicDonationDrivePageSchema = page(publicDonationDriveSchema);
+export const donationDriveDetailSchema = publicDonationDriveSchema.extend({
+  body_json: z.object({
+    type: z.literal("doc"),
+    content: z.array(z.record(z.string(), z.unknown())),
+  }),
+  images: z.array(
+    z.object({
+      id: z.string(),
+      url: z.string(),
+      alt_text: z.string(),
+      caption: z.string().nullable(),
+      sort_order: z.number(),
+      is_cover: z.boolean(),
+    }),
+  ),
+});
 
 /* --- readings / weather ------------------------------------------------------------ */
 

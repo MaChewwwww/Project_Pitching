@@ -1,4 +1,7 @@
 import * as React from "react";
+import Image from "next/image";
+import Link from "next/link";
+import type { Route } from "next";
 import { CalendarClock, MapPin } from "lucide-react";
 
 import { Card, CardContent } from "@/components/common/card";
@@ -51,6 +54,19 @@ export function AnnouncementCard({
         className,
       )}
     >
+      {!isAlert && announcement.cover_image ? (
+        <Link
+          href={`/announcements/${announcement.slug}` as Route}
+          className="focus-visible:ring-primary-600 relative block aspect-video bg-neutral-100 focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset"
+        >
+          <Image
+            src={announcement.cover_image.url}
+            alt={announcement.cover_image.alt_text}
+            fill
+            className="object-cover"
+          />
+        </Link>
+      ) : null}
       <CardContent className="flex h-full flex-col gap-3.5 p-5 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -77,7 +93,12 @@ export function AnnouncementCard({
         </div>
 
         <h3 className="text-h3 group-hover:text-primary-800 leading-snug font-bold text-neutral-900 transition-colors">
-          {announcement.title}
+          <Link
+            href={`/announcements/${announcement.slug}` as Route}
+            className="focus-visible:ring-primary-600 focus-visible:ring-2 focus-visible:outline-none"
+          >
+            {announcement.title}
+          </Link>
         </h3>
 
         <p
@@ -86,7 +107,7 @@ export function AnnouncementCard({
             clamp && "line-clamp-3",
           )}
         >
-          {announcement.body}
+          {announcement.excerpt || announcement.body}
         </p>
 
         {announcement.instruction ? (

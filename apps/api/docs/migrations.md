@@ -80,3 +80,10 @@ is a no-op after the first run. `make seed` is only there for an explicit manual
 
 Do not edit it. Write a new one. Editing a merged migration means anyone who already ran it has
 a database that no longer matches the file, and nothing will tell them.
+
+## Retiring data-bearing tables
+
+Migration `0018_article_cms` removes the former donation and assistance transaction tables under
+D-16. Its downgrade restores their shape but cannot restore retired rows. Take and verify a
+database backup before applying any migration that removes data-bearing tables; use that backup
+for recovery rather than a schema downgrade.

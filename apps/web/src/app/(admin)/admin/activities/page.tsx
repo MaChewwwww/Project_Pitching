@@ -1,141 +1,89 @@
 "use client";
 
+import * as React from "react";
+import Link from "next/link";
+import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { z } from "zod";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/common/button";
-import type { AdminField } from "@/components/features/admin/admin-form";
+import { PageHeader } from "@/components/common/page-header";
+import {
+  ActivityForm,
+  type ActivityFormValues,
+} from "@/components/features/admin/activity-form";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
-import { ResourceFormDialog } from "@/components/features/admin/resource-form-dialog";
+import { emptyArticleDocument } from "@/components/features/admin/rich-text-editor";
 import {
   ResourceTable,
   type ResourceColumn,
 } from "@/components/features/admin/resource-table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import { formatPhtDateTime } from "@/lib/format";
-
-/** Community activities (FR-ACT-001..003). Admin and SK officer. */
 
 interface Activity {
   id: string;
   title: string;
   type: string;
-  description: string | null;
+  excerpt: string;
   starts_at: string;
-  ends_at: string | null;
-  venue: string | null;
-  area_id: string | null;
   area_name: string | null;
-  is_upcoming: boolean;
+  published_at: string | null;
+  archived_at: string | null;
 }
 interface Area {
   id: string;
   name: string;
 }
-
-const activityTypes = [
-  "drill",
-  "seminar",
-  "first_aid",
-  "cleanup",
-  "tree_planting",
-  "ngo_program",
-  "other",
-] as const;
-
-const activitySchema = z.object({
-  title: z.string().min(1, "Required"),
-  type: z.enum(activityTypes),
-  description: z.string().optional().nullable(),
-  starts_at: z.string().min(1, "Required"),
-  ends_at: z.string().optional().nullable(),
-  venue: z.string().optional().nullable(),
-  area_id: z.string().optional().nullable(),
-  is_published: z.boolean().default(true),
-});
-type ActivityFormValues = z.infer<typeof activitySchema>;
+const emptyValues: ActivityFormValues = {
+  title: "",
+  excerpt: "",
+  body_json: emptyArticleDocument,
+  type: "drill",
+  starts_at: "",
+  ends_at: "",
+  venue: "",
+  area_id: "",
+  publication_status: "draft",
+};
 
 export default function AdminActivitiesPage() {
   useRequireRole("admin", "sk");
+  const router = useRouter();
   const queryClient = useQueryClient();
-
+  const [createOpen, setCreateOpen] = React.useState(false);
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "activities"],
     queryFn: () => api.get<Activity[]>("/admin/activities").then((r) => r.data),
   });
-  const { data: areas } = useQuery({
+  const { data: areas = [] } = useQuery({
     queryKey: ["admin", "areas"],
     queryFn: () => api.get<Area[]>("/admin/areas").then((r) => r.data),
   });
-
-  const fields: AdminField[] = [
-    { name: "title", label: "Title", type: "text" },
-    {
-      name: "type",
-      label: "Type",
-      type: "select",
-      options: activityTypes.map((t) => ({ value: t, label: t.replace(/_/g, " ") })),
-    },
-    { name: "description", label: "Description", type: "textarea" },
-    { name: "starts_at", label: "Starts at", type: "datetime-local" },
-    { name: "ends_at", label: "Ends at", type: "datetime-local" },
-    { name: "venue", label: "Venue", type: "text" },
-    {
-      name: "area_id",
-      label: "Area (blank = barangay-wide)",
-      type: "select",
-      options: [
-        { value: "", label: "Barangay-wide" },
-        ...(areas ?? []).map((a) => ({ value: a.id, label: a.name })),
-      ],
-    },
-    { name: "is_published", label: "Published", type: "checkbox" },
-  ];
-
-  const emptyValues: ActivityFormValues = {
-    title: "",
-    type: "drill",
-    description: "",
-    starts_at: "",
-    ends_at: "",
-    venue: "",
-    area_id: "",
-    is_published: true,
-  };
-
-  function normalize(values: ActivityFormValues) {
-    return {
-      ...values,
-      area_id: values.area_id || null,
-      starts_at: new Date(values.starts_at).toISOString(),
-      ends_at: values.ends_at ? new Date(values.ends_at).toISOString() : null,
-    };
-  }
-
   const createMutation = useMutation({
     mutationFn: (values: ActivityFormValues) =>
-      api.post("/admin/activities", normalize(values)),
-    onSuccess: () => {
-      toast.success("Activity created");
+      api.post("/admin/activities", {
+        ...values,
+        starts_at: new Date(values.starts_at).toISOString(),
+        ends_at: values.ends_at ? new Date(values.ends_at).toISOString() : null,
+        venue: values.venue || null,
+        area_id: values.area_id || null,
+        publication_status: "draft",
+      }),
+    onSuccess: (response) => {
+      toast.success("Activity draft created. Add a cover image before publishing.");
       queryClient.invalidateQueries({ queryKey: ["admin", "activities"] });
+      setCreateOpen(false);
+      router.push(`/admin/activities/${response.data.id}` as Route);
     },
     onError: (error) => {
       throw toDisplayError(error);
     },
   });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, values }: { id: string; values: ActivityFormValues }) =>
-      api.patch(`/admin/activities/${id}`, normalize(values)),
-    onSuccess: () => {
-      toast.success("Activity updated");
-      queryClient.invalidateQueries({ queryKey: ["admin", "activities"] });
-    },
-  });
-
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/activities/${id}`),
     onSuccess: () => {
@@ -143,7 +91,6 @@ export default function AdminActivitiesPage() {
       queryClient.invalidateQueries({ queryKey: ["admin", "activities"] });
     },
   });
-
   const columns: ResourceColumn<Activity>[] = [
     { key: "title", header: "Title" },
     { key: "type", header: "Type" },
@@ -157,27 +104,43 @@ export default function AdminActivitiesPage() {
       header: "Area",
       render: (row) => row.area_name ?? "Barangay-wide",
     },
+    {
+      key: "published_at",
+      header: "Status",
+      render: (row) =>
+        row.archived_at ? "Archived" : row.published_at ? "Published" : "Draft",
+    },
   ];
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Community"
         titleAccent="activities"
-        description="Drills, seminars, and community programs shown on the public site."
+        description="Create the public activity story, then add a cover image and publish when it is ready."
         action={
-          <ResourceFormDialog
-            title="Create activity"
-            fields={fields}
-            schema={activitySchema}
-            defaultValues={emptyValues}
-            onSubmit={async (values) => {
-              await createMutation.mutateAsync(values);
-            }}
-          />
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus aria-hidden className="size-4" />
+            New activity
+          </Button>
         }
       />
-
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create activity draft</DialogTitle>
+          </DialogHeader>
+          <ActivityForm
+            areas={areas}
+            defaultValues={emptyValues}
+            submitLabel="Create draft"
+            showPublication={false}
+            onSubmit={(values) =>
+              createMutation.mutateAsync(values).then(() => undefined)
+            }
+            onCancel={() => setCreateOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
       <ResourceTable
         columns={columns}
         data={data}
@@ -188,29 +151,9 @@ export default function AdminActivitiesPage() {
         getRowKey={(row) => row.id}
         rowActions={(row) => (
           <>
-            <ResourceFormDialog
-              title="Edit activity"
-              fields={fields}
-              schema={activitySchema}
-              defaultValues={{
-                title: row.title,
-                type: row.type as (typeof activityTypes)[number],
-                description: row.description ?? "",
-                starts_at: row.starts_at.slice(0, 16),
-                ends_at: row.ends_at ? row.ends_at.slice(0, 16) : "",
-                venue: row.venue ?? "",
-                area_id: row.area_id ?? "",
-                is_published: true,
-              }}
-              onSubmit={async (values) => {
-                await updateMutation.mutateAsync({ id: row.id, values });
-              }}
-              trigger={
-                <Button variant="outline" size="sm">
-                  Edit
-                </Button>
-              }
-            />
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/admin/activities/${row.id}` as Route}>Edit</Link>
+            </Button>
             <ConfirmDeleteButton
               itemLabel={row.title}
               onConfirm={() => deleteMutation.mutate(row.id)}

@@ -65,18 +65,35 @@ export type AnnouncementType =
   | "evacuation";
 
 export type AnnouncementSeverity = "info" | "warning" | "emergency";
+export type PublicationStatus = "draft" | "published" | "archived";
+
+export interface ArticleImage {
+  id: string;
+  url: string;
+  alt_text: string;
+  caption: string | null;
+  sort_order: number;
+  is_cover: boolean;
+}
+
+export interface ArticleDocument {
+  type: "doc";
+  content: Array<Record<string, unknown>>;
+}
 
 /** River alert level. `0` is Normal, which the `announcement` table stores as NULL. */
 export type AlertLevel = 0 | 1 | 2 | 3;
 
 export interface PublicAnnouncement {
   id: string;
+  slug: string;
   kind: AnnouncementKind;
   type: AnnouncementType;
   severity: AnnouncementSeverity | null;
   /** Only ever set for river alerts. */
   alert_level: 1 | 2 | 3 | null;
   title: string;
+  excerpt: string;
   body: string;
   /** NOT NULL when `kind === "alert"` — enforced by `chk_alert_needs_instruction` (FR-ALT-005). */
   instruction: string | null;
@@ -91,6 +108,7 @@ export interface PublicAnnouncement {
   published_at: string | null;
   expires_at: string | null;
   deactivated_at: string | null;
+  archived_at: string | null;
 
   /** derived — `announcement_area` ⋈ `area.name`. Empty means barangay-wide. */
   area_names: string[];
@@ -104,6 +122,12 @@ export interface PublicAnnouncement {
   issued_by_name: string;
   /** derived — published, not expired, not deactivated. */
   is_active: boolean;
+  cover_image: ArticleImage | null;
+}
+
+export interface AnnouncementDetail extends PublicAnnouncement {
+  body_json: ArticleDocument;
+  images: ArticleImage[];
 }
 
 export type EmergencyEventType = "flood" | "earthquake" | "typhoon" | "fire" | "other";
@@ -319,7 +343,6 @@ export interface PortalEvacuationStatusOut {
   history: EvacCheckinOut[];
 }
 
-
 /* ---------------------------------------------------------------------------
    Activities — `activity` (FR-ACT-*, FR-PUB-006)
    --------------------------------------------------------------------------- */
@@ -335,9 +358,10 @@ export type ActivityType =
 
 export interface PublicActivity {
   id: string;
+  slug: string;
   title: string;
+  excerpt: string;
   type: ActivityType;
-  description: string | null;
   starts_at: string;
   ends_at: string | null;
   venue: string | null;
@@ -347,51 +371,45 @@ export interface PublicActivity {
   area_name: string | null;
   /** derived — `starts_at > now`. */
   is_upcoming: boolean;
+  published_at: string | null;
+  archived_at: string | null;
+  cover_image: ArticleImage | null;
+}
+
+export interface ActivityDetail extends PublicActivity {
+  body_json: ArticleDocument;
+  images: ArticleImage[];
 }
 
 /* ---------------------------------------------------------------------------
-   Donation drives — `donation_drive` + `drive_need` (FR-DON-*, FR-PUB-010)
+   Donation notices — `donation_drive` (FR-DON-015 … 017, FR-PUB-010)
 
-   No monetary field exists anywhere below, and none may be added (FR-DON-010).
+   Informational calls for goods only. Donors, quantities, targets, payments,
+   and distribution are deliberately absent (D-16).
    --------------------------------------------------------------------------- */
-
-export type DonationDriveStatus = "open" | "closed";
-
-export interface PublicDriveNeed {
-  id: string;
-  item_name: string;
-  target_quantity: Numeric;
-  unit: string;
-  sort_order: number;
-
-  /**
-   * derived — SUM of `donation.quantity_received` for this need.
-   *
-   * Progress is measured in what actually arrived, never in what was promised.
-   * schema.md Section 9: "a drive never appears funded while shelves are empty."
-   */
-  received_quantity: Numeric;
-  /** derived — SUM of `quantity_pledged`. Secondary information only. */
-  pledged_quantity: Numeric;
-  /** derived — `received / target`, clamped to 0–100. */
-  progress_pct: number;
-}
 
 export interface PublicDonationDrive {
   id: string;
+  slug: string;
   title: string;
-  description: string | null;
-  status: DonationDriveStatus;
-  opened_at: string;
-  closed_at: string | null;
+  excerpt: string;
   event_id: string | null;
 
   /** derived — `emergency_event.name`. */
   event_name: string | null;
-  /** derived — child `drive_need` rows, sorted. */
-  needs: PublicDriveNeed[];
-  /** derived — Σreceived / Σtarget across all needs. */
-  overall_progress_pct: number;
+  organizer_name: string | null;
+  organizer_contact: string | null;
+  drop_off_instructions: string | null;
+  active_from: string | null;
+  active_until: string | null;
+  published_at: string | null;
+  archived_at: string | null;
+  cover_image: ArticleImage | null;
+}
+
+export interface DonationDriveDetail extends PublicDonationDrive {
+  body_json: ArticleDocument;
+  images: ArticleImage[];
 }
 
 /* ---------------------------------------------------------------------------

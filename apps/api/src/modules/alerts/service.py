@@ -18,6 +18,7 @@ from src.core.uploads import save_upload
 from src.domain.article_document import document_plain_text, slug_base
 from src.modules.alerts.models import AlertPrompt, Announcement, AnnouncementArea, AnnouncementImage
 from src.modules.alerts.schemas import (
+    AdminAnnouncementDetail,
     AlertPromptOut,
     AnnouncementDetail,
     AnnouncementIn,
@@ -71,6 +72,20 @@ async def _area_names_by_announcement(
     for announcement_id, name in rows:
         out[announcement_id].append(name)
     return out
+
+
+async def _area_ids_by_announcement(
+    session: AsyncSession, announcement_id: uuid.UUID
+) -> list[uuid.UUID]:
+    return list(
+        (
+            await session.execute(
+                select(AnnouncementArea.area_id).where(
+                    AnnouncementArea.announcement_id == announcement_id
+                )
+            )
+        ).scalars()
+    )
 
 
 def _is_active(a: Announcement, *, now: datetime) -> bool:
@@ -321,7 +336,7 @@ async def list_announcements_admin(session: AsyncSession) -> list[PublicAnnounce
 
 async def get_announcement_admin(
     session: AsyncSession, announcement_id: uuid.UUID
-) -> AnnouncementDetail:
+) -> AdminAnnouncementDetail:
     row = (
         await session.execute(
             select(Announcement, User.full_name)
@@ -332,10 +347,11 @@ async def get_announcement_admin(
     if row is None:
         raise NotFoundError("Announcement not found.")
     preview = (await _to_public(session, [row]))[0]
-    return AnnouncementDetail(
+    return AdminAnnouncementDetail(
         **preview.model_dump(),
         body_json=row[0].body_json,
         images=[_image_out(i) for i in await _images(session, row[0].id)],
+        area_ids=await _area_ids_by_announcement(session, row[0].id),
     )
 
 

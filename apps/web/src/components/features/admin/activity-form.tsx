@@ -23,30 +23,41 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toDisplayError } from "@/lib/api/client";
 
-/** Informational donation notices only (FR-DON-015 … 017, D-16). */
-export const donationDriveFormSchema = z.object({
+const activityTypes = [
+  "drill",
+  "seminar",
+  "first_aid",
+  "cleanup",
+  "tree_planting",
+  "ngo_program",
+  "other",
+] as const;
+
+export const activityFormSchema = z.object({
   title: z.string().min(1, "Required"),
   excerpt: z.string().max(360, "Keep the preview under 360 characters").default(""),
   body_json: z.custom<ArticleDocument>(),
-  organizer_name: z.string().optional(),
-  organizer_contact: z.string().optional(),
-  drop_off_instructions: z.string().optional(),
-  active_from: z.string().optional(),
-  active_until: z.string().optional(),
+  type: z.enum(activityTypes),
+  starts_at: z.string().min(1, "Required"),
+  ends_at: z.string().optional(),
+  venue: z.string().optional(),
+  area_id: z.string().optional(),
   publication_status: z.enum(["draft", "published", "archived"]).default("draft"),
 });
-export type DonationDriveFormValues = z.infer<typeof donationDriveFormSchema>;
+export type ActivityFormValues = z.infer<typeof activityFormSchema>;
 
-export function DonationDriveForm({
+export function ActivityForm({
+  areas,
+  defaultValues,
   onSubmit,
   onCancel,
-  defaultValues,
-  submitLabel = "Save notice",
+  submitLabel = "Save activity",
   showPublication = true,
 }: {
-  onSubmit: (values: DonationDriveFormValues) => Promise<void>;
+  areas: { id: string; name: string }[];
+  defaultValues: ActivityFormValues;
+  onSubmit: (values: ActivityFormValues) => Promise<void>;
   onCancel: () => void;
-  defaultValues: DonationDriveFormValues;
   submitLabel?: string;
   showPublication?: boolean;
 }) {
@@ -56,12 +67,12 @@ export function DonationDriveForm({
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<DonationDriveFormValues>({
-    resolver: zodResolver(donationDriveFormSchema as never),
+  } = useForm<ActivityFormValues>({
+    resolver: zodResolver(activityFormSchema as never),
     defaultValues,
   });
 
-  async function submit(values: DonationDriveFormValues) {
+  async function submit(values: ActivityFormValues) {
     setServerError(null);
     try {
       await onSubmit(values);
@@ -81,25 +92,48 @@ export function DonationDriveForm({
           <span>{serverError}</span>
         </div>
       ) : null}
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="title">Title</Label>
-        <Input id="title" aria-invalid={!!errors.title} {...register("title")} />
-        {errors.title ? (
-          <p className="text-danger text-xs">{errors.title.message}</p>
-        ) : null}
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="title">Title</Label>
+          <Input id="title" aria-invalid={!!errors.title} {...register("title")} />
+          {errors.title ? (
+            <p className="text-danger text-xs">{errors.title.message}</p>
+          ) : null}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="type">Activity type</Label>
+          <Controller
+            control={control}
+            name="type"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger id="type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {activityTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type.replace(/_/g, " ")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </div>
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="excerpt">Preview summary</Label>
         <Textarea id="excerpt" {...register("excerpt")} />
       </div>
       <div className="flex flex-col gap-1.5">
-        <Label id="donation-body-label">Article body</Label>
+        <Label id="activity-body-label">Article body</Label>
         <Controller
           control={control}
           name="body_json"
           render={({ field }) => (
             <RichTextEditor
-              labelledBy="donation-body-label"
+              labelledBy="activity-body-label"
               value={field.value}
               onChange={field.onChange}
             />
@@ -108,26 +142,51 @@ export function DonationDriveForm({
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="organizer_name">Organizer</Label>
-          <Input id="organizer_name" {...register("organizer_name")} />
+          <Label htmlFor="starts_at">Starts at</Label>
+          <Input
+            id="starts_at"
+            type="datetime-local"
+            aria-invalid={!!errors.starts_at}
+            {...register("starts_at")}
+          />
+          {errors.starts_at ? (
+            <p className="text-danger text-xs">{errors.starts_at.message}</p>
+          ) : null}
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="organizer_contact">Organizer contact</Label>
-          <Input id="organizer_contact" {...register("organizer_contact")} />
+          <Label htmlFor="ends_at">Ends at</Label>
+          <Input id="ends_at" type="datetime-local" {...register("ends_at")} />
         </div>
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="drop_off_instructions">Drop-off instructions</Label>
-        <Textarea id="drop_off_instructions" {...register("drop_off_instructions")} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="active_from">Active from</Label>
-          <Input id="active_from" type="datetime-local" {...register("active_from")} />
+          <Label htmlFor="venue">Venue</Label>
+          <Input id="venue" {...register("venue")} />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="active_until">Active until</Label>
-          <Input id="active_until" type="datetime-local" {...register("active_until")} />
+          <Label htmlFor="area_id">Area</Label>
+          <Controller
+            control={control}
+            name="area_id"
+            render={({ field }) => (
+              <Select
+                value={field.value || "all"}
+                onValueChange={(value) => field.onChange(value === "all" ? "" : value)}
+              >
+                <SelectTrigger id="area_id">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Barangay-wide</SelectItem>
+                  {areas.map((area) => (
+                    <SelectItem key={area.id} value={area.id}>
+                      {area.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
         </div>
       </div>
       {showPublication ? (

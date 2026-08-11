@@ -1,6 +1,9 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
@@ -55,6 +58,7 @@ const emptyValues: AnnouncementFormValues = {
 
 export default function AdminAnnouncementsPage() {
   useRequireRole("admin", "sk");
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = React.useState(false);
 
@@ -76,10 +80,11 @@ export default function AdminAnnouncementsPage() {
         alert_level: values.alert_level || null,
         expires_at: values.expires_at ? new Date(values.expires_at).toISOString() : null,
       }),
-    onSuccess: () => {
-      toast.success("Announcement published");
+    onSuccess: (response) => {
+      toast.success("Draft created. Add a cover image before publishing.");
       queryClient.invalidateQueries({ queryKey: ["admin", "announcements"] });
       setCreateOpen(false);
+      router.push(`/admin/announcements/${response.data.id}` as Route);
     },
     onError: (error) => {
       throw toDisplayError(error);
@@ -154,16 +159,21 @@ export default function AdminAnnouncementsPage() {
         onRetry={() => refetch()}
         emptyTitle="No announcements yet"
         getRowKey={(row) => row.id}
-        rowActions={(row) =>
-          row.is_active ? (
-            <ConfirmDeleteButton
-              itemLabel={row.title}
-              actionLabel="Deactivate"
-              confirmLabel="Deactivate"
-              onConfirm={() => deactivateMutation.mutate(row.id)}
-            />
-          ) : null
-        }
+        rowActions={(row) => (
+          <>
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/admin/announcements/${row.id}` as Route}>Edit</Link>
+            </Button>
+            {row.is_active ? (
+              <ConfirmDeleteButton
+                itemLabel={row.title}
+                actionLabel="Deactivate"
+                confirmLabel="Deactivate"
+                onConfirm={() => deactivateMutation.mutate(row.id)}
+              />
+            ) : null}
+          </>
+        )}
       />
     </div>
   );

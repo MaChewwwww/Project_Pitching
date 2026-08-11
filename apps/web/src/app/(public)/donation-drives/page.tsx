@@ -22,24 +22,21 @@ export const metadata: Metadata = {
  * then the drop-off details below are what a donor actually acts on.
  */
 export default async function DonationDrivesPage() {
-  const [open, closed] = await Promise.all([
-    getDonationDrives({ status: "open", size: 50 }),
-    getDonationDrives({ status: "closed", size: 50 }),
-  ]);
+  const drives = await getDonationDrives({ size: 50 });
 
   return (
     <>
       <PageHeader
-        title="Active"
+        title="Donation"
         titleAccent="Donation Drives"
-        description="Progress below counts what has actually arrived, not what was pledged. No account is needed to donate."
+        description="Collection notices, drop-off details, and verified barangay contact information."
         breadcrumb={[{ label: "Home", href: "/" }, { label: "Donation Drives" }]}
       />
 
       <div className="mx-auto max-w-[1440px] px-4 pt-5 pb-8 md:px-6 md:pt-6 md:pb-12">
-        {open.items.length > 0 ? (
+        {drives.items.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 md:gap-6">
-            {open.items.map((drive, i) => (
+            {drives.items.map((drive, i) => (
               <Reveal key={drive.id} delay={(i % 2) as 0 | 1}>
                 <DriveCard drive={drive} />
               </Reveal>
@@ -58,17 +55,6 @@ export default async function DonationDrivesPage() {
           <p className="text-body text-neutral-700">{UTILITY_BAR.address}</p>
           <p className="text-body-sm mt-1 text-neutral-600">{UTILITY_BAR.officeHours}</p>
         </div>
-
-        {closed.items.length > 0 ? (
-          <div className="mt-12 border-t border-neutral-200 pt-8">
-            <p className="text-overline mb-4 text-neutral-500">Closed drives</p>
-            <div className="grid gap-4 md:grid-cols-2 md:gap-6">
-              {closed.items.map((drive) => (
-                <DriveCard key={drive.id} drive={drive} className="opacity-75" />
-              ))}
-            </div>
-          </div>
-        ) : null}
       </div>
     </>
   );
