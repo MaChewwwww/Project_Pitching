@@ -83,21 +83,21 @@ export function AnnouncementCard({
 
   if (announcement.kind === "announcement") {
     badgeLabel = "Announcement";
-    badgeStyle = "bg-emerald-700 text-white";
+    badgeStyle = "bg-emerald-700 text-white font-bold";
     BadgeIcon = Megaphone;
   } else if (announcement.kind === "alert") {
     if (announcement.severity === "info") {
       badgeLabel = "Advisory";
-      badgeStyle = "bg-emerald-600 text-white";
+      badgeStyle = "bg-yellow-400 text-neutral-950 font-bold";
       BadgeIcon = Info;
     } else if (announcement.severity === "warning") {
       badgeLabel = "Warning";
-      badgeStyle = "bg-amber-600 text-white";
+      badgeStyle = "bg-orange-500 text-white font-bold";
       BadgeIcon = TriangleAlert;
     } else {
       // emergency or fallback for alert
       badgeLabel = "Emergency Alert";
-      badgeStyle = "bg-red-600 text-white";
+      badgeStyle = "bg-red-600 text-white font-bold";
       BadgeIcon = TriangleAlert;
     }
   }
