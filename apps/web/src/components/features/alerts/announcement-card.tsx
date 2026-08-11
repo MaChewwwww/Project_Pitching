@@ -65,6 +65,7 @@ export function AnnouncementCard({
             src={announcement.cover_image.url}
             alt={announcement.cover_image.alt_text}
             fill
+            unoptimized
             className="object-cover"
           />
         </div>

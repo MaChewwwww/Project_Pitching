@@ -108,6 +108,7 @@ export function ArticleDetail({
             alt={cover.alt_text}
             width={1600}
             height={900}
+            unoptimized
             priority
             className="aspect-video w-full object-cover"
           />
@@ -139,6 +140,7 @@ export function ArticleDetail({
                   alt={image.alt_text}
                   width={1200}
                   height={800}
+                  unoptimized
                   className="aspect-[3/2] w-full object-cover"
                 />
                 {image.caption ? (

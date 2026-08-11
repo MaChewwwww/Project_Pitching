@@ -28,6 +28,7 @@ export function DriveCard({
             src={drive.cover_image.url}
             alt={drive.cover_image.alt_text}
             fill
+            unoptimized
             className="object-cover"
           />
         </div>

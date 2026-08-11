@@ -129,6 +129,7 @@ export function ArticleImageManager({
                   src={image.url}
                   alt={image.alt_text || "Uploaded article image"}
                   fill
+                  unoptimized
                   className="object-cover"
                 />
               </div>
