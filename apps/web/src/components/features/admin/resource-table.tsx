@@ -114,12 +114,12 @@ export function ResourceTable<T extends object>({
   };
 
   return (
-    <section className="overflow-hidden rounded-[14px] border border-neutral-200 bg-white shadow-xs">
-      <div className="border-b border-neutral-200 bg-neutral-50/70 p-3 sm:p-4">
+    <section className="overflow-hidden rounded-[16px] border border-primary-200/80 bg-white shadow-sm-card">
+      <div className="border-b border-primary-100 bg-gradient-to-r from-primary-50 via-white to-emerald-50/70 p-3 sm:p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <label className="relative block min-w-0 flex-1 lg:max-w-md">
             <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-500" />
-            <input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={searchPlaceholder} className="h-10 w-full rounded-md border border-neutral-300 bg-white pr-9 pl-9 text-sm outline-none transition focus:border-primary-600 focus:ring-2 focus:ring-primary-100" />
+            <input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder={searchPlaceholder} className="h-10 w-full rounded-md border border-primary-200 bg-white/90 pr-9 pl-9 text-sm outline-none transition focus:border-primary-600 focus:ring-2 focus:ring-primary-100" />
             {query ? <button type="button" onClick={() => setQuery("")} className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-neutral-500 hover:bg-neutral-100" aria-label="Clear search"><X className="size-4" /></button> : null}
           </label>
           <div className="flex flex-wrap items-center gap-2">
@@ -130,15 +130,15 @@ export function ResourceTable<T extends object>({
         {filter ? <div className="mt-3 flex items-center gap-2"><span className="text-xs font-semibold text-neutral-500">Active filter</span><button type="button" onClick={() => setFilter("")} className="inline-flex items-center gap-1 rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-800">{filterColumn?.header}: {filter}<X className="size-3" /></button></div> : null}
       </div>
 
-      <div className="divide-y divide-neutral-200 md:hidden">
+      <div className="divide-y divide-primary-100/80 md:hidden">
         {pagedRows.map((row) => <article key={getRowKey(row)} className="space-y-3 p-4"><dl className="grid grid-cols-2 gap-x-4 gap-y-3">{columns.map((column) => <div key={column.key} className="min-w-0"><dt className="text-[10px] font-bold tracking-[0.12em] text-neutral-500 uppercase">{column.header}</dt><dd className="mt-1 text-sm font-medium break-words text-neutral-800">{column.render ? column.render(row) : plainValue((row as Record<string, unknown>)[column.key])}</dd></div>)}</dl>{rowActions ? <div className="flex flex-wrap gap-2 border-t border-neutral-100 pt-3">{rowActions(row)}</div> : null}</article>)}
       </div>
       <Table className="hidden md:table">
-        <TableHeader className="sticky top-0 z-10 bg-white shadow-[0_1px_0_0_var(--color-neutral-200)]"><TableRow>{columns.map((column) => <TableHead key={column.key} className={cn("h-12", column.className)}><button type="button" onClick={() => sort(column.key)} className="inline-flex items-center gap-1.5 font-bold hover:text-primary-700">{column.header}{sortKey === column.key ? sortDirection === "asc" ? <ArrowUpAZ className="size-3.5" /> : <ArrowDownAZ className="size-3.5" /> : null}</button></TableHead>)}{rowActions ? <TableHead className="text-right">Actions</TableHead> : null}</TableRow></TableHeader>
-        <TableBody>{pagedRows.map((row) => <TableRow key={getRowKey(row)}>{columns.map((column) => <TableCell key={column.key} className={column.className}>{column.render ? column.render(row) : plainValue((row as Record<string, unknown>)[column.key])}</TableCell>)}{rowActions ? <TableCell className="text-right"><div className="flex justify-end gap-2">{rowActions(row)}</div></TableCell> : null}</TableRow>)}</TableBody>
+        <TableHeader className="sticky top-0 z-10 bg-primary-900 shadow-[0_1px_0_0_var(--color-primary-800)]"><TableRow>{columns.map((column) => <TableHead key={column.key} className={cn("h-12 text-primary-50", column.className)}><button type="button" onClick={() => sort(column.key)} className="inline-flex items-center gap-1.5 font-bold hover:text-white">{column.header}{sortKey === column.key ? sortDirection === "asc" ? <ArrowUpAZ className="size-3.5" /> : <ArrowDownAZ className="size-3.5" /> : null}</button></TableHead>)}{rowActions ? <TableHead className="text-right text-primary-50">Actions</TableHead> : null}</TableRow></TableHeader>
+        <TableBody>{pagedRows.map((row, index) => <TableRow key={getRowKey(row)} className={cn("transition-colors hover:bg-primary-50/80", index % 2 === 1 && "bg-emerald-50/35")}>{columns.map((column) => <TableCell key={column.key} className={column.className}>{column.render ? column.render(row) : plainValue((row as Record<string, unknown>)[column.key])}</TableCell>)}{rowActions ? <TableCell className="text-right"><div className="flex justify-end gap-2">{rowActions(row)}</div></TableCell> : null}</TableRow>)}</TableBody>
       </Table>
       {rows.length === 0 ? <div className="p-8 text-center text-sm text-neutral-600">No matching records. Try clearing your search or filters.</div> : null}
-      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 bg-neutral-50/60 px-3 py-3 text-sm text-neutral-600 sm:px-4"><span>Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, rows.length)} of {rows.length}</span><div className="flex items-center gap-2"><Button size="sm" variant="outline" disabled={currentPage <= 1} onClick={() => setPage((value) => value - 1)}><ChevronLeft aria-hidden className="size-4" />Previous</Button><span className="tabular-nums">Page {currentPage} of {pages}</span><Button size="sm" variant="outline" disabled={currentPage >= pages} onClick={() => setPage((value) => value + 1)}>Next<ChevronRight aria-hidden className="size-4" /></Button></div></footer>
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-primary-100 bg-primary-50/60 px-3 py-3 text-sm text-primary-900/75 sm:px-4"><span>Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, rows.length)} of {rows.length}</span><div className="flex items-center gap-2"><Button size="sm" variant="outline" disabled={currentPage <= 1} onClick={() => setPage((value) => value - 1)}><ChevronLeft aria-hidden className="size-4" />Previous</Button><span className="tabular-nums">Page {currentPage} of {pages}</span><Button size="sm" variant="outline" disabled={currentPage >= pages} onClick={() => setPage((value) => value + 1)}>Next<ChevronRight aria-hidden className="size-4" /></Button></div></footer>
     </section>
   );
 }

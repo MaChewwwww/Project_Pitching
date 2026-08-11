@@ -2,7 +2,7 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
-import { CalendarClock, MapPin } from "lucide-react";
+import { ArrowUpRight, CalendarClock, MapPin, Megaphone } from "lucide-react";
 
 import { Card, CardContent } from "@/components/common/card";
 import { StatusBadge } from "@/components/common/status-badge";
@@ -47,11 +47,11 @@ export function AnnouncementCard({
     <Card
       radius="xl"
       className={cn(
-        "group card-hover-lift flex h-full flex-col justify-between overflow-hidden transition-all duration-200",
+        "group card-hover-lift relative flex h-full flex-col justify-between overflow-hidden transition-all duration-200",
         isAlert
           ? "border-l-[4px]"
           : "hover:border-primary-300 border border-neutral-200/80",
-        urgent ? "border-l-danger from-danger-bg/40 bg-gradient-to-br to-white" : "",
+        urgent ? "border-l-danger from-danger-bg/45 bg-gradient-to-br to-white" : "",
         isAlert && !urgent
           ? "border-l-warning from-warning-bg/40 bg-gradient-to-br to-white"
           : "",
@@ -68,6 +68,25 @@ export function AnnouncementCard({
             unoptimized
             className="object-cover"
           />
+        </div>
+      ) : null}
+      {isAlert ? (
+        <div className="relative overflow-hidden border-b border-danger/15 bg-danger-bg/55 px-5 py-4">
+          <div className="absolute -top-8 -right-8 size-28 rounded-full border-[14px] border-danger/10" />
+          <div className="relative flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <span className="flex size-9 items-center justify-center rounded-full bg-danger text-white shadow-sm">
+                <Megaphone aria-hidden className="size-4" />
+              </span>
+              <div>
+                <p className="text-overline text-danger font-bold">Barangay emergency bulletin</p>
+                <p className="mt-0.5 text-xs text-neutral-600">Official safety guidance</p>
+              </div>
+            </div>
+            <span className="border-danger/25 bg-white/75 text-danger rounded-full border px-2.5 py-1 text-xs font-bold">
+              L{announcement.alert_level ?? "!"}
+            </span>
+          </div>
         </div>
       ) : null}
       <CardContent className="flex h-full flex-col gap-3.5 p-5 md:p-6">
@@ -137,6 +156,10 @@ export function AnnouncementCard({
             ) : null}
             {" · "}
             {announcement.issued_by_name}
+          </span>
+          <span className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-primary-700 transition-transform duration-200 group-hover:translate-x-1">
+            {isAlert ? "Read full safety bulletin" : "Read announcement"}
+            <ArrowUpRight aria-hidden className="size-4" />
           </span>
         </div>
       </CardContent>

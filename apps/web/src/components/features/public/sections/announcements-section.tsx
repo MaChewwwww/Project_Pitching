@@ -20,7 +20,9 @@ import { getAnnouncements } from "@/lib/api/public";
  */
 
 export async function AnnouncementsSection() {
-  const { items: announcements } = await getAnnouncements({ size: 6 });
+  // The public landing surface is intentionally the three newest published
+  // bulletins. `getAnnouncements` orders by `published_at DESC` server-side.
+  const { items: announcements } = await getAnnouncements({ size: 3 });
 
   if (announcements.length === 0) return null;
 
@@ -42,7 +44,7 @@ export async function AnnouncementsSection() {
       />
 
       <div className="mt-8 grid gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
-        {announcements.slice(0, 3).map((announcement, i) => (
+        {announcements.map((announcement, i) => (
           <Reveal key={announcement.id} delay={(i % 3) as 0 | 1 | 2}>
             <AnnouncementCard announcement={announcement} clamp />
           </Reveal>

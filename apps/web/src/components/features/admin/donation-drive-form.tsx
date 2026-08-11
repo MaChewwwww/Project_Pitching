@@ -71,7 +71,7 @@ export function DonationDriveForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} noValidate className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit(submit)} noValidate className="flex flex-col gap-6">
       {serverError ? (
         <div
           role="alert"
@@ -106,7 +106,7 @@ export function DonationDriveForm({
           )}
         />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-6 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="organizer_name">Organizer</Label>
           <Input id="organizer_name" {...register("organizer_name")} />
@@ -120,7 +120,7 @@ export function DonationDriveForm({
         <Label htmlFor="drop_off_instructions">Drop-off instructions</Label>
         <Textarea id="drop_off_instructions" {...register("drop_off_instructions")} />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-6 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="active_from">Active from</Label>
           <Input id="active_from" type="datetime-local" {...register("active_from")} />

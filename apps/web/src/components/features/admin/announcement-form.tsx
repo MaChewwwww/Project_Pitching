@@ -114,7 +114,7 @@ export function AnnouncementForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} noValidate className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit(submit)} noValidate className="flex flex-col gap-6">
       {serverError ? (
         <div
           role="alert"
@@ -125,7 +125,7 @@ export function AnnouncementForm({
         </div>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-6">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="kind">Kind</Label>
           <Controller
@@ -169,7 +169,7 @@ export function AnnouncementForm({
       </div>
 
       {kind === "alert" ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-6">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="severity">Severity</Label>
             <Controller

@@ -82,7 +82,7 @@ export function ActivityForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} noValidate className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit(submit)} noValidate className="flex flex-col gap-6">
       {serverError ? (
         <div
           role="alert"
@@ -92,7 +92,7 @@ export function ActivityForm({
           <span>{serverError}</span>
         </div>
       ) : null}
-      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
+      <div className="grid gap-6 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="title">Title</Label>
           <Input id="title" aria-invalid={!!errors.title} {...register("title")} />
@@ -140,7 +140,7 @@ export function ActivityForm({
           )}
         />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-6 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="starts_at">Starts at</Label>
           <Input
@@ -158,7 +158,7 @@ export function ActivityForm({
           <Input id="ends_at" type="datetime-local" {...register("ends_at")} />
         </div>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-6 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="venue">Venue</Label>
           <Input id="venue" {...register("venue")} />

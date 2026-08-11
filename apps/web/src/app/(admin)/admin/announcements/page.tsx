@@ -63,11 +63,6 @@ export default function AdminAnnouncementsPage() {
       render: (row) =>
         row.area_names.length > 0 ? row.area_names.join(", ") : "Barangay-wide",
     },
-    {
-      key: "is_active",
-      header: "Status",
-      render: (row) => (row.is_active ? "Active" : "Inactive"),
-    },
   ];
 
   return (

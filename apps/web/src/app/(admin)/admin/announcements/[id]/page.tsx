@@ -99,7 +99,7 @@ export default function AdminAnnouncementEditorPage() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
       <PageHeader
         eyebrow="Article CMS"
         title="Edit"
@@ -114,8 +114,8 @@ export default function AdminAnnouncementEditorPage() {
           </Button>
         }
       />
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_21rem]">
-        <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-xs sm:p-6">
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_26rem]">
+        <div className="rounded-[16px] border border-neutral-200 bg-white p-6 shadow-sm-card sm:p-8">
           <AnnouncementForm
             areas={areas}
             defaultValues={defaultValues}
