@@ -12,7 +12,6 @@ import {
   MapPin,
   Navigation,
   Phone,
-  Search,
   Shield,
   Stethoscope,
   Users,
@@ -23,6 +22,13 @@ import { EmptyState } from "@/components/common/empty-state";
 import { HotlineList } from "@/components/common/hotline-list";
 import { MeterBar } from "@/components/common/meter-bar";
 import { HazardMap } from "@/components/features/map/hazard-map";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatNumber, googleMapsDirectionsUrl, osmDirectionsUrl, toTelHref } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type {
@@ -117,7 +123,6 @@ export function BarangayFacilitiesView({
   hotlines,
 }: BarangayFacilitiesViewProps) {
   const [selectedType, setSelectedType] = React.useState<"all" | FacilityType>("all");
-  const [searchQuery, setSearchQuery] = React.useState("");
 
   // Build unified facility list
   const unifiedItems = React.useMemo(() => {
@@ -171,21 +176,11 @@ export function BarangayFacilitiesView({
     return { totalCenters, openCenters, totalCapacity, totalOccupancy };
   }, [evacCenters]);
 
-  // Filtered facilities
+  // Filtered facilities by type
   const filteredItems = React.useMemo(() => {
-    return unifiedItems.filter((item) => {
-      const matchesType = selectedType === "all" || item.type === selectedType;
-      const q = searchQuery.toLowerCase().trim();
-      const matchesSearch =
-        !q ||
-        item.name.toLowerCase().includes(q) ||
-        (item.address && item.address.toLowerCase().includes(q)) ||
-        (item.area_name && item.area_name.toLowerCase().includes(q)) ||
-        item.type.toLowerCase().includes(q);
-
-      return matchesType && matchesSearch;
-    });
-  }, [unifiedItems, selectedType, searchQuery]);
+    if (selectedType === "all") return unifiedItems;
+    return unifiedItems.filter((item) => item.type === selectedType);
+  }, [unifiedItems, selectedType]);
 
   // Facility markers for map
   const mapFacilities = React.useMemo(() => {
@@ -204,86 +199,6 @@ export function BarangayFacilitiesView({
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
-      {/* Search & Filter Header Bar */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm md:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <Filter className="size-5 text-emerald-700 shrink-0" />
-            <h2 className="text-h3 font-bold text-neutral-900">Filter Facilities</h2>
-            <span className="text-caption font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-0.5 rounded-full border border-emerald-200/80 ml-1">
-              {filteredItems.length} {filteredItems.length === 1 ? "facility" : "facilities"}
-            </span>
-          </div>
-
-          {/* Search box */}
-          <div className="relative min-w-[240px] sm:w-72">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-neutral-400" />
-            <input
-              type="text"
-              placeholder="Search facilities or areas..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-neutral-200 bg-neutral-50/70 pl-9 pr-4 py-2 text-body-sm text-neutral-900 placeholder:text-neutral-400 focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-            />
-          </div>
-        </div>
-
-        {/* Type Filter Buttons */}
-        <div className="flex flex-wrap gap-2 pt-1 border-t border-neutral-100">
-          <button
-            type="button"
-            onClick={() => setSelectedType("all")}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer",
-              selectedType === "all"
-                ? "border-emerald-600 bg-emerald-600 text-white shadow-xs"
-                : "border-neutral-200/90 bg-neutral-50 text-neutral-700 hover:bg-neutral-100"
-            )}
-          >
-            <span>All Facilities</span>
-            <span
-              className={cn(
-                "rounded-full px-1.5 py-0.2 text-[10px] font-extrabold",
-                selectedType === "all" ? "bg-white/20 text-white" : "bg-neutral-200 text-neutral-800"
-              )}
-            >
-              {unifiedItems.length}
-            </span>
-          </button>
-
-          {FACILITY_TYPES.map((cfg) => {
-            const count = countsPerType.get(cfg.type) ?? 0;
-            const isSelected = selectedType === cfg.type;
-            const Icon = cfg.icon;
-
-            return (
-              <button
-                key={cfg.type}
-                type="button"
-                onClick={() => setSelectedType(isSelected ? "all" : cfg.type)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer",
-                  isSelected
-                    ? "border-emerald-600 bg-emerald-600 text-white shadow-xs"
-                    : "border-neutral-200/90 bg-white text-neutral-700 hover:bg-neutral-50"
-                )}
-              >
-                <Icon className={cn("size-3.5 shrink-0", isSelected ? "text-white" : cfg.color)} />
-                <span>{cfg.label}</span>
-                <span
-                  className={cn(
-                    "rounded-full px-1.5 py-0.2 text-[10px] font-extrabold",
-                    isSelected ? "bg-white/20 text-white" : "bg-neutral-100 text-neutral-700"
-                  )}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Main Split Section: Left Column = Map, Right Column = Metrics */}
       <section aria-label="Facilities Map and Metrics Overview">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-6">
@@ -393,15 +308,92 @@ export function BarangayFacilitiesView({
 
       {/* Directory Grid Section */}
       <section className="flex flex-col gap-4 pt-2">
-        <div className="flex items-center justify-between gap-2 border-b border-neutral-200 pb-3">
-          <h2 className="text-h2 font-bold text-neutral-900">
-            {selectedType === "all"
-              ? "All Barangay Facilities"
-              : (FACILITY_TYPES.find((t) => t.type === selectedType)?.label ?? "Facilities")}
-          </h2>
-          <span className="text-caption font-semibold text-neutral-500">
-            Showing {filteredItems.length} of {unifiedItems.length}
-          </span>
+        {/* Section Header: Title on Left, Custom Dropdown Selector on Right */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-200 pb-3">
+          <div>
+            <h2 className="text-h2 font-bold text-neutral-900">
+              {selectedType === "all"
+                ? "All Barangay Facilities"
+                : (FACILITY_TYPES.find((t) => t.type === selectedType)?.label ?? "Facilities")}
+            </h2>
+            <p className="text-caption font-medium text-neutral-500">
+              Showing {filteredItems.length} of {unifiedItems.length} facilities across Barangay San Jose
+            </p>
+          </div>
+
+          {/* Custom Dropdown Selector (Same style as hazard-map page) */}
+          <Select value={selectedType} onValueChange={(val) => setSelectedType(val as "all" | FacilityType)}>
+            <SelectTrigger className="inline-flex h-9 w-fit items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all cursor-pointer">
+              <Filter aria-hidden className="size-3.5 text-emerald-600 shrink-0" />
+              <SelectValue placeholder="Filter Facility Type">
+                {selectedType === "all"
+                  ? `All Facilities (${unifiedItems.length})`
+                  : `${FACILITY_TYPES.find((t) => t.type === selectedType)?.label} (${countsPerType.get(selectedType as FacilityType) ?? 0})`}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              align="end"
+              sideOffset={6}
+              className="z-50 w-56 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md"
+            >
+              <SelectItem
+                value="all"
+                className={cn(
+                  "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer my-0.5",
+                  selectedType === "all"
+                    ? "bg-emerald-600 text-white font-bold focus:bg-emerald-600 focus:text-white"
+                    : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950"
+                )}
+              >
+                <span>All Facilities</span>
+                <span
+                  className={cn(
+                    "text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 tabular-nums ml-auto",
+                    selectedType === "all"
+                      ? "bg-white/25 text-white"
+                      : "bg-neutral-100 text-neutral-600"
+                  )}
+                >
+                  {unifiedItems.length}
+                </span>
+              </SelectItem>
+
+              {FACILITY_TYPES.map((cfg) => {
+                const count = countsPerType.get(cfg.type) ?? 0;
+                const isSelected = selectedType === cfg.type;
+                const Icon = cfg.icon;
+
+                return (
+                  <SelectItem
+                    key={cfg.type}
+                    value={cfg.type}
+                    className={cn(
+                      "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer my-0.5",
+                      isSelected
+                        ? "bg-emerald-600 text-white font-bold focus:bg-emerald-600 focus:text-white"
+                        : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950"
+                    )}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <Icon className={cn("size-3.5 shrink-0", isSelected ? "text-white" : cfg.color)} />
+                      <span className="truncate">{cfg.label}</span>
+                    </div>
+                    <span
+                      className={cn(
+                        "text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 tabular-nums ml-auto",
+                        isSelected
+                          ? "bg-white/25 text-white"
+                          : "bg-neutral-100 text-neutral-600"
+                      )}
+                    >
+                      {count}
+                    </span>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
         </div>
 
         {filteredItems.length > 0 ? (
@@ -414,7 +406,7 @@ export function BarangayFacilitiesView({
           <EmptyState
             icon={Building2}
             title="No facilities found"
-            description="No facilities match the selected type or search filter."
+            description="No facilities match the selected type."
           />
         )}
       </section>
