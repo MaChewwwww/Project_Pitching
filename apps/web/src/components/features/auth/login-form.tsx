@@ -55,7 +55,7 @@ export function LoginForm() {
     <form
       onSubmit={handleSubmit(onSubmit)}
       noValidate
-      className="flex flex-col gap-4 rounded-[20px] border border-neutral-200 bg-white p-6 shadow-sm"
+      className="flex flex-col gap-4"
     >
       {serverError ? (
         <div
