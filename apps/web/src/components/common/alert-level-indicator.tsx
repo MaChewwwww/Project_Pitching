@@ -19,6 +19,10 @@ export interface AlertLevelIndicatorProps {
    * dense contexts, where the prose costs more room than the gauge itself.
    */
   explainMissingThresholds?: boolean;
+  /**
+   * Show the alert level description paragraph. Defaults to true.
+   */
+  showDescription?: boolean;
 }
 
 const SEGMENTS = [
@@ -45,6 +49,13 @@ const SEGMENTS = [
   },
 ];
 
+const ALERT_PARAGRAPHS: Record<AlertLevel, string> = {
+  0: "River water level is currently within safe operating limits. No active flood threat is reported.",
+  1: "Water has reached Alert Level 1 (Prepare at 22.4 m). Families in low-lying areas should prepare Go-Bags and stay alert for BDRRMC notices.",
+  2: "Water has reached Alert Level 2 (Evacuate at 23.0 m). Residents along riverbanks and flood-prone zones are advised to evacuate immediately.",
+  3: "Water has reached Alert Level 3 (Critical at 23.6 m). Mandatory evacuation is in effect across all flood-prone zones. Await emergency BDRRMC rescue teams.",
+};
+
 export function AlertLevelIndicator({
   level,
   currentValueM,
@@ -52,6 +63,7 @@ export function AlertLevelIndicator({
   className,
   onDark = false,
   explainMissingThresholds = true,
+  showDescription = true,
 }: AlertLevelIndicatorProps) {
   const hasThresholds =
     thresholds != null &&
@@ -138,6 +150,18 @@ export function AlertLevelIndicator({
             );
           })}
         </div>
+
+        {/* Active Alert Level Description Paragraph */}
+        {showDescription ? (
+          <p
+            className={cn(
+              "text-caption leading-relaxed pt-0.5",
+              onDark ? "text-neutral-300" : "text-neutral-600"
+            )}
+          >
+            {ALERT_PARAGRAPHS[level] ?? ALERT_PARAGRAPHS[0]}
+          </p>
+        ) : null}
       </div>
 
       {!hasThresholds && explainMissingThresholds ? (
@@ -154,3 +178,5 @@ export function AlertLevelIndicator({
     </div>
   );
 }
+
+

@@ -137,6 +137,7 @@ export function RiverLevelPanel({
             thresholds={river.thresholds}
             onDark={onDark}
             explainMissingThresholds={!compact}
+            showDescription={!compact}
           />
         </div>
 
