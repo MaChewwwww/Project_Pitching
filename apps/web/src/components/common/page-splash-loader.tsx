@@ -18,16 +18,16 @@ export function PageSplashLoader() {
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    // Begin fade-out transition at 1.5s
+    // Begin fade-out transition at 2.6s
     const fadeTimer = setTimeout(() => {
       setFading(true);
-    }, 1500);
+    }, 2600);
 
-    // Unmount and restore scroll at 1.9s
+    // Unmount and restore scroll at 3.0s
     const unmountTimer = setTimeout(() => {
       setMounted(false);
       document.body.style.overflow = originalOverflow;
-    }, 1900);
+    }, 3000);
 
     return () => {
       clearTimeout(fadeTimer);
