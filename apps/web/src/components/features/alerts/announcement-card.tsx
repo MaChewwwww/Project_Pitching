@@ -1,7 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
-import { ArrowUpRight, CalendarClock, MapPin, TriangleAlert } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarClock,
+  Info,
+  MapPin,
+  Megaphone,
+  TriangleAlert,
+  User,
+} from "lucide-react";
 
 import { formatPhtDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -18,12 +26,12 @@ export interface AnnouncementCardProps {
 
 function StoryMeta({
   announcement,
-  isAlert = false,
+  isEmergency = false,
 }: {
   announcement: PublicAnnouncement;
-  isAlert?: boolean;
+  isEmergency?: boolean;
 }) {
-  const iconTone = isAlert ? "text-red-600" : "text-primary-600";
+  const iconTone = isEmergency ? "text-red-600" : "text-primary-600";
 
   return (
     <div className="flex min-w-0 flex-col gap-1 text-xs font-medium text-neutral-500">
@@ -36,33 +44,25 @@ function StoryMeta({
         </span>
       </span>
       <span className="inline-flex items-center gap-1.5 truncate">
-        <CalendarClock aria-hidden className={cn("size-3.5 shrink-0", iconTone)} />
-        {announcement.published_at ? (
-          <time dateTime={announcement.published_at}>
-            {formatPhtDateTime(announcement.published_at)}
-          </time>
-        ) : null}
-        <span aria-hidden className="text-neutral-300">
-          /
-        </span>
+        <User aria-hidden className={cn("size-3.5 shrink-0", iconTone)} />
         <span className="truncate">{announcement.issued_by_name}</span>
       </span>
     </div>
   );
 }
 
-function ContinueMark({ isAlert = false }: { isAlert?: boolean }) {
+function ContinueMark({ isEmergency = false }: { isEmergency?: boolean }) {
   return (
     <span
       aria-hidden
       className={cn(
-        "grid size-9 shrink-0 place-items-center rounded-full border transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5",
-        isAlert
+        "grid size-9 shrink-0 place-items-center rounded-full border transition-all duration-300 group-hover:translate-x-1",
+        isEmergency
           ? "border-red-200 bg-red-50 text-red-700 group-hover:border-red-600 group-hover:bg-red-600 group-hover:text-white"
           : "border-neutral-200 bg-neutral-50 text-neutral-700 group-hover:border-primary-600 group-hover:bg-primary-600 group-hover:text-white",
       )}
     >
-      <ArrowUpRight className="size-4" />
+      <ArrowRight className="size-4" />
     </span>
   );
 }
@@ -73,16 +73,34 @@ export function AnnouncementCard({
   className,
 }: AnnouncementCardProps) {
   const isAlert = announcement.kind === "alert";
+  const isEmergency = isAlert && announcement.severity === "emergency";
   const href = `/announcements/${announcement.slug}` as Route;
   const summary = announcement.excerpt || announcement.body;
 
-  const badgeLabel = isAlert
-    ? announcement.severity === "emergency"
-      ? "Emergency alert"
-      : "Safety alert"
-    : announcement.severity === "warning"
-      ? "Advisory"
-      : "Barangay notice";
+  let badgeLabel = "Announcement";
+  let badgeStyle = "bg-emerald-700 text-white";
+  let BadgeIcon: React.ElementType = Megaphone;
+
+  if (announcement.kind === "announcement") {
+    badgeLabel = "Announcement";
+    badgeStyle = "bg-emerald-700 text-white";
+    BadgeIcon = Megaphone;
+  } else if (announcement.kind === "alert") {
+    if (announcement.severity === "info") {
+      badgeLabel = "Advisory";
+      badgeStyle = "bg-emerald-600 text-white";
+      BadgeIcon = Info;
+    } else if (announcement.severity === "warning") {
+      badgeLabel = "Warning";
+      badgeStyle = "bg-amber-600 text-white";
+      BadgeIcon = TriangleAlert;
+    } else {
+      // emergency or fallback for alert
+      badgeLabel = "Emergency Alert";
+      badgeStyle = "bg-red-600 text-white";
+      BadgeIcon = TriangleAlert;
+    }
+  }
 
   return (
     <Link
@@ -96,8 +114,8 @@ export function AnnouncementCard({
       <article
         className={cn(
           "relative flex h-full flex-col overflow-hidden rounded-[20px] border bg-white transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-black/5",
-          isAlert
-            ? "border-l-4 border-l-red-600 border-t-neutral-200/80 border-r-neutral-200/80 border-b-neutral-200/80 shadow-xs"
+          isEmergency
+            ? "border-red-200/90 hover:border-red-400 shadow-xs"
             : "border-neutral-200/80 hover:border-primary-300 shadow-xs",
         )}
       >
@@ -118,17 +136,14 @@ export function AnnouncementCard({
             <div
               className={cn(
                 "relative flex h-full w-full flex-col justify-between p-4 text-white",
-                isAlert
+                isEmergency
                   ? "bg-gradient-to-br from-red-950 via-rose-900 to-neutral-900"
                   : "bg-gradient-to-br from-primary-950 via-primary-900 to-neutral-900",
               )}
             >
               <div
                 aria-hidden
-                className={cn(
-                  "absolute -right-8 -bottom-10 size-44 rounded-full border-[20px]",
-                  isAlert ? "border-white/10" : "border-white/10",
-                )}
+                className="absolute -right-8 -bottom-10 size-44 rounded-full border-[20px] border-white/10"
               />
               <div className="relative z-10 flex items-center justify-between">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-white/70">
@@ -144,19 +159,26 @@ export function AnnouncementCard({
             </div>
           )}
 
-          {/* Badge Tag Overlay */}
-          <div className="absolute top-3 left-3 z-10">
-            {isAlert ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-md backdrop-blur-xs">
-                <TriangleAlert aria-hidden className="size-3.5 shrink-0" />
-                {badgeLabel}
+          {/* Top Header Overlay: Badge (Left) & Date (Right) */}
+          <div className="absolute top-3 inset-x-3 z-10 flex items-center justify-between gap-2">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold shadow-md backdrop-blur-xs",
+                badgeStyle,
+              )}
+            >
+              <BadgeIcon aria-hidden className="size-3.5 shrink-0" />
+              {badgeLabel}
+            </span>
+
+            {announcement.published_at ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white shadow-xs backdrop-blur-sm">
+                <CalendarClock aria-hidden className="size-3 shrink-0 text-white/80" />
+                <time dateTime={announcement.published_at}>
+                  {formatPhtDateTime(announcement.published_at)}
+                </time>
               </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-800/90 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-xs">
-                <span className="size-1.5 rounded-full bg-primary-300" />
-                {badgeLabel}
-              </span>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -165,7 +187,7 @@ export function AnnouncementCard({
           <h3
             className={cn(
               "font-display text-lg font-bold leading-snug tracking-tight text-neutral-900 transition-colors line-clamp-2",
-              isAlert ? "group-hover:text-red-600" : "group-hover:text-primary-700",
+              isEmergency ? "group-hover:text-red-600" : "group-hover:text-primary-700",
             )}
           >
             {announcement.title}
@@ -192,8 +214,8 @@ export function AnnouncementCard({
 
           {/* Pinned Card Footer */}
           <div className="mt-auto flex items-end justify-between gap-3 pt-5 border-t border-neutral-100">
-            <StoryMeta announcement={announcement} isAlert={isAlert} />
-            <ContinueMark isAlert={isAlert} />
+            <StoryMeta announcement={announcement} isEmergency={isEmergency} />
+            <ContinueMark isEmergency={isEmergency} />
           </div>
         </div>
       </article>
