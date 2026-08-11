@@ -42,33 +42,33 @@ export function PageSplashLoader() {
   return (
     <div
       aria-hidden="true"
-      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-xl transition-all duration-500 ease-in-out select-none ${
+      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-white/95 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-100/70 via-emerald-50/40 to-white backdrop-blur-xl transition-all duration-500 ease-in-out select-none ${
         fading ? "opacity-0 pointer-events-none scale-105" : "opacity-100 scale-100"
       }`}
     >
-      <div className="flex flex-col items-center gap-6 p-6 text-center">
-        {/* Brand Icon Badge with Pulsing Ambient Glow */}
+      <div className="flex flex-col items-center gap-6 rounded-3xl border border-emerald-100/90 bg-white/85 p-8 text-center shadow-2xl shadow-emerald-950/5 backdrop-blur-md sm:p-10">
+        {/* Brand Icon Badge with Pulsing Green Glow */}
         <div className="relative flex items-center justify-center">
-          <div className="absolute -inset-6 rounded-full bg-emerald-500/20 blur-2xl animate-pulse" />
+          <div className="absolute -inset-6 rounded-full bg-emerald-400/25 blur-2xl animate-pulse" />
           <WaterSpinner size="lg" label="Loading application data..." />
         </div>
 
         {/* Brand Title & Subtitle */}
-        <div className="flex flex-col items-center gap-1.5 pt-2">
+        <div className="flex flex-col items-center gap-1.5 pt-1">
           <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping" />
-            <h1 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl">
-              {APP_NAME} <span className="text-emerald-400">San Jose</span>
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-600 animate-ping" />
+            <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 sm:text-2xl">
+              {APP_NAME} <span className="text-emerald-700">San Jose</span>
             </h1>
           </div>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-500">
             Disaster Readiness & Community Health
           </p>
         </div>
 
         {/* Smooth Loading Progress Bar */}
-        <div className="mt-2 h-1.5 w-48 overflow-hidden rounded-full bg-slate-800/80 border border-slate-700/50">
-          <div className="h-full w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-300 animate-splash-progress origin-left rounded-full" />
+        <div className="mt-1 h-1.5 w-52 overflow-hidden rounded-full bg-emerald-100/90 border border-emerald-200/70">
+          <div className="h-full w-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400 animate-splash-progress origin-left rounded-full" />
         </div>
       </div>
     </div>
