@@ -43,6 +43,7 @@ export interface HazardMapProps {
   interactive?: boolean;
   center?: [number, number];
   zoom?: number;
+  showHazardLayer?: boolean;
   className?: string;
 }
 
@@ -54,6 +55,7 @@ export function HazardMap({
   interactive = true,
   center,
   zoom,
+  showHazardLayer = true,
   className,
 }: HazardMapProps) {
   return (
@@ -66,6 +68,7 @@ export function HazardMap({
         interactive={interactive}
         center={center}
         zoom={zoom}
+        showHazardLayer={showHazardLayer}
       />
     </div>
   );

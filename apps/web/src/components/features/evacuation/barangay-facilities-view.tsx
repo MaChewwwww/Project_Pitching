@@ -287,100 +287,68 @@ export function BarangayFacilitiesView({
       {/* Main Split Section: Left Column = Map, Right Column = Metrics */}
       <section aria-label="Facilities Map and Metrics Overview">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-6">
-          {/* LEFT COLUMN: Interactive Leaflet Map */}
-          <div className="relative h-[380px] sm:h-[440px] lg:h-[480px] flex-1 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-xl">
+          {/* LEFT COLUMN: Interactive Leaflet Map (Vertically taller, no flood hazard, no map overlays) */}
+          <div className="relative h-[500px] sm:h-[540px] lg:h-[580px] flex-1 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-xl">
             <HazardMap
-              className="h-full w-full min-h-[380px]"
+              className="h-full w-full min-h-[500px]"
               center={[14.7415, 121.1315]}
-              zoom={13.4}
+              zoom={13.6}
               facilities={mapFacilities}
               areaBoundaries={areaBoundaries}
               areaStats={[]}
               sirens={[]}
+              showHazardLayer={false}
             />
-            {/* Map Overlay Badge */}
-            <div className="absolute left-3 top-3 z-[400] flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-1.5 text-xs font-bold text-white shadow-lg backdrop-blur-md">
-              <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>San Jose Facilities Map ({mapFacilities.length} shown)</span>
-            </div>
-
-            {/* Map Color Legend */}
-            <div className="absolute left-3 bottom-3 z-[400] hidden sm:flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg backdrop-blur-md">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Legend:</span>
-              {FACILITY_TYPES.map((cfg) => (
-                <div key={cfg.type} className="flex items-center gap-1.5">
-                  <span className={cn("size-2.5 rounded-full border border-white/40", cfg.dot)} />
-                  <span className="text-slate-200">{cfg.label}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
-          {/* RIGHT COLUMN: Metrics Sidebar */}
-          <div className="flex flex-col gap-4 lg:w-80 lg:shrink-0">
-            {/* Metric Card 1: Total Registered Facilities */}
-            <Card radius="xl" className="border-neutral-200/90 bg-white shadow-sm">
-              <CardContent className="p-4 flex flex-col gap-2">
-                <span className="text-overline inline-flex items-center gap-1.5 font-bold uppercase text-neutral-500">
-                  <Building2 className="size-4 text-emerald-600" />
-                  Facility Overview
-                </span>
-                <div className="flex items-baseline justify-between">
-                  <span className="text-display-md font-black text-neutral-900 tabular">
-                    {unifiedItems.length}
+          {/* RIGHT COLUMN: Metrics Sidebar (Equal height to map container) */}
+          <div className="flex flex-col gap-3 lg:w-80 lg:shrink-0 lg:h-[580px]">
+            {/* Metric Card 1: Facility & Evacuation Overview */}
+            <Card radius="xl" className="border-neutral-200/90 bg-white shadow-sm shrink-0">
+              <CardContent className="p-3.5 flex flex-col gap-2">
+                <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
+                  <span className="text-overline inline-flex items-center gap-1.5 font-bold uppercase text-neutral-500">
+                    <Building2 className="size-4 text-emerald-600" />
+                    Facility Overview
                   </span>
-                  <span className="text-caption font-semibold text-neutral-600">
-                    across Barangay San Jose
+                  <span className="text-h3 font-black text-neutral-900 tabular">
+                    {unifiedItems.length} <span className="text-caption font-semibold text-neutral-500">total</span>
                   </span>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Metric Card 2: Evacuation Readiness */}
-            {evacStats.totalCenters > 0 && (
-              <Card radius="xl" className="border-emerald-200/90 bg-gradient-to-br from-emerald-50/80 to-teal-50/40 shadow-sm">
-                <CardContent className="p-4 flex flex-col gap-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-overline inline-flex items-center gap-1.5 font-bold uppercase text-emerald-800">
-                      <BedDouble className="size-4 text-emerald-600" />
-                      Evacuation Readiness
-                    </span>
-                    <span className="text-[11px] font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-300/80 px-2 py-0.5 rounded-full">
-                      {evacStats.openCenters} / {evacStats.totalCenters} Open
-                    </span>
-                  </div>
-
-                  <div className="flex items-baseline justify-between pt-1">
+                {evacStats.totalCenters > 0 && (
+                  <div className="flex items-center justify-between pt-0.5">
                     <div className="flex flex-col">
-                      <span className="text-h3 font-black text-emerald-950 tabular">
-                        {formatNumber(evacStats.totalCapacity)}
+                      <span className="text-overline inline-flex items-center gap-1.5 font-bold uppercase text-emerald-800">
+                        <BedDouble className="size-3.5 text-emerald-600" />
+                        Evacuation
                       </span>
-                      <span className="text-caption font-medium text-emerald-800">
-                        Total capacity
+                      <span className="text-caption font-semibold text-neutral-600">
+                        {evacStats.openCenters} of {evacStats.totalCenters} open
                       </span>
                     </div>
 
                     <div className="flex flex-col items-end">
-                      <span className="text-h3 font-black text-emerald-950 tabular">
-                        {formatNumber(evacStats.totalOccupancy)}
+                      <span className="text-body-sm font-black text-emerald-950 tabular">
+                        {formatNumber(evacStats.totalCapacity)}
                       </span>
-                      <span className="text-caption font-medium text-emerald-800">
-                        Current evacuees
+                      <span className="text-[10.5px] font-medium text-emerald-800">
+                        total capacity
                       </span>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                )}
+              </CardContent>
+            </Card>
 
-            {/* Metric Card 3: Facilities per Type List */}
-            <Card radius="xl" className="border-neutral-200/90 bg-white shadow-sm flex-1">
-              <CardContent className="p-4 flex flex-col gap-3">
+            {/* Metric Card 2: Facilities per Type List */}
+            <Card radius="xl" className="border-neutral-200/90 bg-white shadow-sm flex-1 overflow-hidden">
+              <CardContent className="p-3.5 flex flex-col gap-2.5 h-full overflow-y-auto">
                 <span className="text-overline font-bold uppercase tracking-wider text-neutral-500">
                   Facilities per Type
                 </span>
 
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                   {FACILITY_TYPES.map((cfg) => {
                     const count = countsPerType.get(cfg.type) ?? 0;
                     const isSelected = selectedType === cfg.type;
@@ -392,7 +360,7 @@ export function BarangayFacilitiesView({
                         type="button"
                         onClick={() => setSelectedType(isSelected ? "all" : cfg.type)}
                         className={cn(
-                          "flex items-center justify-between rounded-xl px-3 py-2 text-xs transition-all duration-200 cursor-pointer border text-left",
+                          "flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs transition-all duration-200 cursor-pointer border text-left",
                           isSelected
                             ? "border-emerald-500 bg-emerald-50 font-bold text-emerald-950 shadow-2xs"
                             : "border-neutral-100 bg-neutral-50/60 font-medium text-neutral-700 hover:bg-neutral-100/80"
@@ -400,12 +368,12 @@ export function BarangayFacilitiesView({
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <span className={cn("size-2 rounded-full shrink-0", cfg.dot)} />
-                          <Icon className={cn("size-4 shrink-0", cfg.color)} />
-                          <span className="truncate">{cfg.label}</span>
+                          <Icon className={cn("size-3.5 shrink-0", cfg.color)} />
+                          <span className="truncate text-[11.5px]">{cfg.label}</span>
                         </div>
                         <span
                           className={cn(
-                            "rounded-full px-2 py-0.5 text-[11px] font-black tabular shrink-0",
+                            "rounded-full px-2 py-0.2 text-[10.5px] font-black tabular shrink-0",
                             isSelected
                               ? "bg-emerald-600 text-white"
                               : "bg-neutral-200/80 text-neutral-800"
@@ -419,30 +387,6 @@ export function BarangayFacilitiesView({
                 </div>
               </CardContent>
             </Card>
-
-            {/* Quick Emergency Hotlines */}
-            {hotlines.length > 0 && (
-              <Card radius="xl" className="border-red-200/80 bg-red-50/50 shadow-2xs">
-                <CardContent className="p-3.5 flex flex-col gap-2">
-                  <span className="text-overline inline-flex items-center gap-1.5 font-extrabold uppercase text-red-900">
-                    <Phone className="size-3.5 text-red-600" />
-                    Emergency Contacts
-                  </span>
-                  <div className="flex flex-wrap gap-2 pt-0.5">
-                    {hotlines.slice(0, 3).map((h) => (
-                      <a
-                        key={h.id}
-                        href={toTelHref(h.number)}
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-red-950 bg-white border border-red-200 px-2.5 py-1 rounded-lg hover:bg-red-100 transition-colors"
-                      >
-                        <span>{h.label}:</span>
-                        <span className="text-red-700">{h.number}</span>
-                      </a>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
       </section>

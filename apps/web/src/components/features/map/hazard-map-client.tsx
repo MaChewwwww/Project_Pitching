@@ -201,6 +201,7 @@ export interface HazardMapClientProps {
   interactive?: boolean;
   center?: [number, number];
   zoom?: number;
+  showHazardLayer?: boolean;
 }
 
 export function HazardMapClient({
@@ -211,9 +212,10 @@ export function HazardMapClient({
   interactive = true,
   center = BARANGAY_VIEW.center,
   zoom = BARANGAY_VIEW.zoom,
+  showHazardLayer = true,
 }: HazardMapClientProps) {
   const { visible } = useMapLayers();
-  const hazard = useHazardGeoJson(interactive ? visible.hazard : true);
+  const hazard = useHazardGeoJson(interactive && showHazardLayer ? visible.hazard : false);
 
   React.useEffect(() => {
     ensureRippleStyle();
@@ -255,7 +257,7 @@ export function HazardMapClient({
         <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} />
 
         {/* Hazard flood layer — visual background only */}
-        {hazard.status === "ready" && (
+        {showHazardLayer && hazard.status === "ready" && (
           <GeoJSON
             key="hazard"
             data={hazard.data as GeoJSON.GeoJsonObject}
