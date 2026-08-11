@@ -1,16 +1,26 @@
 import { notFound } from "next/navigation";
-import { ArticleDetail } from "@/components/features/public/article-detail";
 import { PageHeader } from "@/components/common/page-header";
-import { getAnnouncement } from "@/lib/api/public";
-import { formatPhtDateTime } from "@/lib/format";
+import { AnnouncementDetailView } from "@/components/features/public/announcement-detail-view";
+import { getAnnouncement, getAnnouncements } from "@/lib/api/public";
 
 export default async function AnnouncementArticlePage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const article = await getAnnouncement((await params).slug);
+  const slug = (await params).slug;
+
+  const [article, recentResponse] = await Promise.all([
+    getAnnouncement(slug),
+    getAnnouncements({ size: 6 }),
+  ]);
+
   if (!article) notFound();
+
+  const recentArticles = (recentResponse?.items || [])
+    .filter((item) => item.id !== article.id)
+    .slice(0, 4);
+
   return (
     <>
       <PageHeader
@@ -22,18 +32,9 @@ export default async function AnnouncementArticlePage({
           { label: article.title },
         ]}
       />
-      <ArticleDetail
-        body={article.body_json}
-        images={article.images}
-        cover={article.cover_image}
-        eyebrow={article.kind === "alert" ? "Emergency alert" : "Barangay advisory"}
-        metadata={[
-          article.published_at
-            ? formatPhtDateTime(article.published_at)
-            : "Published notice",
-          article.issued_by_name,
-          article.area_names.length ? article.area_names.join(", ") : "Barangay-wide",
-        ]}
+      <AnnouncementDetailView
+        article={article}
+        recentArticles={recentArticles}
       />
     </>
   );
