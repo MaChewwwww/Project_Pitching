@@ -11,8 +11,8 @@ export default function LoginPage() {
   return (
     <div className="relative min-h-screen flex flex-col justify-center items-center bg-emerald-950 px-4 py-6 sm:py-12 overflow-hidden selection:bg-emerald-500 selection:text-white">
       {/* Background Ambient Mint & Emerald Glows */}
-      <div className="absolute top-0 left-1/4 size-[500px] rounded-full bg-emerald-500/15 blur-[130px] pointer-events-none animate-pulse" />
-      <div className="absolute bottom-0 right-1/4 size-[500px] rounded-full bg-teal-500/15 blur-[130px] pointer-events-none animate-pulse" />
+      <div className="absolute top-0 left-1/4 size-[500px] rounded-full bg-emerald-600/15 blur-[130px] pointer-events-none animate-pulse" />
+      <div className="absolute bottom-0 right-1/4 size-[500px] rounded-full bg-green-600/10 blur-[130px] pointer-events-none animate-pulse" />
 
       {/* Top Left Fixed Back to Home Button */}
       <Link
@@ -30,9 +30,9 @@ export default function LoginPage() {
 
       {/* Master Auth Card Container */}
       <div className="relative z-10 w-full max-w-4xl rounded-2xl sm:rounded-3xl border border-emerald-700/40 bg-emerald-950/80 shadow-2xl backdrop-blur-2xl overflow-hidden grid lg:grid-cols-12 min-h-[500px] animate-in fade-in zoom-in-95 duration-300">
-        {/* Left Column: Lighter Emerald Brand Hero Panel */}
-        <div className="hidden lg:flex lg:col-span-5 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 p-8 text-white flex-col justify-between relative overflow-hidden border-r border-emerald-500/20 shadow-inner">
-          <div className="absolute -bottom-12 -right-12 size-56 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+        {/* Left Column: Rich Deep Emerald Hero Panel */}
+        <div className="hidden lg:flex lg:col-span-5 bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 p-8 text-white flex-col justify-between relative overflow-hidden border-r border-emerald-700/30 shadow-inner">
+          <div className="absolute -bottom-12 -right-12 size-56 rounded-full bg-emerald-400/10 blur-3xl pointer-events-none" />
 
           {/* Logo & Platform Info */}
           <div className="flex flex-col gap-6 relative z-10">
@@ -41,31 +41,31 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2.5 pt-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 border border-white/30 px-3 py-1 text-[11px] font-extrabold text-white uppercase tracking-wider backdrop-blur-md shadow-xs">
-                <Shield aria-hidden className="size-3.5 text-emerald-200" />
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700/40 border border-emerald-500/40 px-3 py-1 text-[11px] font-extrabold text-emerald-200 uppercase tracking-wider backdrop-blur-md shadow-xs">
+                <Shield aria-hidden className="size-3.5 text-emerald-300" />
                 San Jose Platform
               </span>
               <h2 className="text-2xl font-black text-white leading-tight tracking-tight">
                 Disaster Readiness & Resident Portal
               </h2>
-              <p className="text-xs text-emerald-50 leading-relaxed font-medium">
+              <p className="text-xs text-emerald-100/90 leading-relaxed font-medium">
                 Access official PAGASA flood hazard monitoring, barangay alert levels, and emergency response tools.
               </p>
             </div>
           </div>
 
           {/* Platform Highlights List */}
-          <div className="space-y-3 pt-6 border-t border-white/20 relative z-10">
-            <div className="flex items-center gap-2.5 text-xs text-emerald-50 font-semibold">
-              <CheckCircle2 className="size-4 text-emerald-200 shrink-0" />
+          <div className="space-y-3 pt-6 border-t border-emerald-700/40 relative z-10">
+            <div className="flex items-center gap-2.5 text-xs text-emerald-100 font-semibold">
+              <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
               <span>Project NOAH Hazard GeoJSON Maps</span>
             </div>
-            <div className="flex items-center gap-2.5 text-xs text-emerald-50 font-semibold">
-              <Radio className="size-4 text-emerald-200 shrink-0" />
+            <div className="flex items-center gap-2.5 text-xs text-emerald-100 font-semibold">
+              <Radio className="size-4 text-emerald-400 shrink-0" />
               <span>San Jose Siren Units & Alert Prompts</span>
             </div>
-            <div className="flex items-center gap-2.5 text-xs text-emerald-50 font-semibold">
-              <HeartPulse className="size-4 text-emerald-200 shrink-0" />
+            <div className="flex items-center gap-2.5 text-xs text-emerald-100 font-semibold">
+              <HeartPulse className="size-4 text-emerald-400 shrink-0" />
               <span>Instant Emergency Rescue Requests</span>
             </div>
           </div>
