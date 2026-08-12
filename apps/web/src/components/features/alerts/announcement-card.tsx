@@ -2,19 +2,29 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
 import {
+  Activity,
   ArrowRight,
+  BookX,
   CalendarClock,
+  CloudLightning,
+  CloudRain,
+  DoorOpen,
+  Droplets,
   Info,
   MapPin,
   Megaphone,
   Siren,
+  Tag,
+  Thermometer,
+  TrafficCone,
   TriangleAlert,
   User,
+  Wrench,
 } from "lucide-react";
 
 import { formatPhtDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { PublicAnnouncement } from "@/lib/api/public-types";
+import type { AnnouncementType, PublicAnnouncement } from "@/lib/api/public-types";
 
 type AnnouncementCardVariant = "feed" | "lead" | "support";
 
@@ -79,6 +89,52 @@ function ContinueMark({
       )}
     >
       <ArrowRight className="size-4" />
+    </span>
+  );
+}
+
+
+type CategoryMeta = { label: string; Icon: React.ElementType };
+
+const TYPE_MAP: Record<AnnouncementType, CategoryMeta> = {
+  general:               { label: "General",               Icon: Tag          },
+  class_suspension:      { label: "Class Suspension",      Icon: BookX        },
+  road_closure:          { label: "Road Closure",          Icon: TrafficCone  },
+  utility_interruption:  { label: "Utility Interruption",  Icon: Wrench       },
+  flood_warning:         { label: "Flood Warning",         Icon: Droplets     },
+  earthquake:            { label: "Earthquake",            Icon: Activity     },
+  typhoon:               { label: "Typhoon",               Icon: CloudLightning},
+  heavy_rainfall:        { label: "Heavy Rainfall",        Icon: CloudRain    },
+  heat_index:            { label: "Heat Index",            Icon: Thermometer  },
+  evacuation:            { label: "Evacuation",            Icon: DoorOpen     },
+};
+
+function CategoryChip({
+  announcement,
+}: {
+  announcement: PublicAnnouncement;
+}) {
+  const meta = TYPE_MAP[announcement.type] ?? { label: announcement.type, Icon: Tag };
+  const { label, Icon } = meta;
+
+  const chipStyle =
+    announcement.kind === "announcement"
+      ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+      : announcement.severity === "emergency"
+      ? "text-red-700 bg-red-50 border-red-200"
+      : announcement.severity === "warning"
+      ? "text-orange-700 bg-orange-50 border-orange-200"
+      : "text-amber-700 bg-amber-50 border-amber-200";
+
+  return (
+    <span
+      className={cn(
+        "inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide",
+        chipStyle,
+      )}
+    >
+      <Icon aria-hidden className="size-3 shrink-0" />
+      {label}
     </span>
   );
 }
@@ -260,9 +316,13 @@ export function AnnouncementCard({
           ) : null}
 
           {/* Pinned Card Footer */}
-          <div className="mt-auto flex items-end justify-between gap-3 pt-5 border-t border-neutral-100">
-            <StoryMeta announcement={announcement} />
-            <ContinueMark kind={announcement.kind} severity={announcement.severity} />
+          <div className="mt-auto pt-5 border-t border-neutral-100 flex flex-col gap-3">
+            {/* Category chip */}
+            <CategoryChip announcement={announcement} />
+            <div className="flex items-end justify-between gap-3">
+              <StoryMeta announcement={announcement} />
+              <ContinueMark kind={announcement.kind} severity={announcement.severity} />
+            </div>
           </div>
         </div>
       </article>

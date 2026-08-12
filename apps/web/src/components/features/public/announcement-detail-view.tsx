@@ -2,20 +2,45 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
+  Activity,
   ArrowRight,
+  BookX,
+  CloudLightning,
+  CloudRain,
+  DoorOpen,
+  Droplets,
   Info,
   MapPin,
   Megaphone,
   PhoneCall,
   Siren,
+  Tag,
+  Thermometer,
+  TrafficCone,
   TriangleAlert,
   User,
+  Wrench,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/common/page-header";
 import { formatPhtDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { AnnouncementDetail, PublicAnnouncement } from "@/lib/api/public-types";
+import type { AnnouncementDetail, AnnouncementType, PublicAnnouncement } from "@/lib/api/public-types";
+
+type CategoryMeta = { label: string; Icon: React.ElementType };
+
+const TYPE_MAP: Record<AnnouncementType, CategoryMeta> = {
+  general:               { label: "General",               Icon: Tag           },
+  class_suspension:      { label: "Class Suspension",      Icon: BookX         },
+  road_closure:          { label: "Road Closure",          Icon: TrafficCone   },
+  utility_interruption:  { label: "Utility Interruption",  Icon: Wrench        },
+  flood_warning:         { label: "Flood Warning",         Icon: Droplets      },
+  earthquake:            { label: "Earthquake",            Icon: Activity      },
+  typhoon:               { label: "Typhoon",               Icon: CloudLightning },
+  heavy_rainfall:        { label: "Heavy Rainfall",        Icon: CloudRain     },
+  heat_index:            { label: "Heat Index",            Icon: Thermometer   },
+  evacuation:            { label: "Evacuation",            Icon: DoorOpen      },
+};
 
 function renderChildren(node: Record<string, unknown>, key: string): ReactNode[] {
   const children = Array.isArray(node.content) ? node.content : [];
@@ -230,20 +255,43 @@ export function AnnouncementDetailView({
                   ? "text-orange-600"
                   : "text-amber-600";
               return (
-                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-medium text-neutral-500 -mt-2 -mb-2">
-                  <span className="inline-flex items-center gap-1.5 truncate">
-                    <User aria-hidden className={cn("size-3.5 shrink-0", iconTone)} />
-                    <span className="truncate">{article.issued_by_name}</span>
-                  </span>
+                <div className="flex flex-col gap-2.5 -mt-2 -mb-2">
+                  {/* Category chip */}
+                  {(() => {
+                    const meta = TYPE_MAP[article.type as AnnouncementType] ?? { label: article.type, Icon: Tag };
+                    const { label: catLabel, Icon: CatIcon } = meta;
+                    const chipStyle =
+                      article.kind === "announcement"
+                        ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                        : article.severity === "emergency"
+                        ? "text-red-700 bg-red-50 border-red-200"
+                        : article.severity === "warning"
+                        ? "text-orange-700 bg-orange-50 border-orange-200"
+                        : "text-amber-700 bg-amber-50 border-amber-200";
+                    return (
+                      <span className={cn("inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide", chipStyle)}>
+                        <CatIcon aria-hidden className="size-3 shrink-0" />
+                        {catLabel}
+                      </span>
+                    );
+                  })()}
 
-                  <span className="inline-flex items-center gap-1.5 truncate">
-                    <MapPin aria-hidden className={cn("size-3.5 shrink-0", iconTone)} />
-                    <span className="truncate">
-                      {article.area_names.length > 0
-                        ? article.area_names.join(", ")
-                        : "Barangay-wide"}
+                  {/* Issuer + Area */}
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-medium text-neutral-500">
+                    <span className="inline-flex items-center gap-1.5 truncate">
+                      <User aria-hidden className={cn("size-3.5 shrink-0", iconTone)} />
+                      <span className="truncate">{article.issued_by_name}</span>
                     </span>
-                  </span>
+
+                    <span className="inline-flex items-center gap-1.5 truncate">
+                      <MapPin aria-hidden className={cn("size-3.5 shrink-0", iconTone)} />
+                      <span className="truncate">
+                        {article.area_names.length > 0
+                          ? article.area_names.join(", ")
+                          : "Barangay-wide"}
+                      </span>
+                    </span>
+                  </div>
                 </div>
               );
             })()}
