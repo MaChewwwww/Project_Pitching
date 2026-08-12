@@ -807,7 +807,7 @@ export function AnnouncementForm({
                 type="button"
                 variant="outline"
                 onClick={handleCancelClick}
-                className="h-9 w-full cursor-pointer justify-center rounded-xl border-neutral-300 text-xs font-semibold text-neutral-700 hover:bg-neutral-100"
+                className="h-9 w-full cursor-pointer justify-center rounded-xl border-neutral-800 bg-neutral-800 text-xs font-semibold text-white shadow-sm transition-colors hover:border-neutral-900 hover:bg-neutral-900"
               >
                 Cancel
               </Button>
