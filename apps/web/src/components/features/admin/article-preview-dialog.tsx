@@ -238,7 +238,7 @@ export function ArticlePreviewDialog({
 
       <DialogContent
         /* Remove default overflow — we control it per-section */
-        className="flex max-h-[90vh] w-[92vw] max-w-5xl flex-col gap-0 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-0 shadow-2xl"
+        className="flex max-h-[90vh] w-[92vw] max-w-5xl sm:max-w-5xl flex-col gap-0 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-0 shadow-2xl"
         /* Hide default DialogContent close button — we render our own */
         showCloseButton={false}
       >
