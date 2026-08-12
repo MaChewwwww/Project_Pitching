@@ -157,23 +157,6 @@ function OverviewPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-emerald-200/80 bg-emerald-50/50 px-4 py-3">
-        <div className="flex items-center gap-2.5">
-          <span className="grid size-8 place-items-center rounded-lg bg-emerald-600 text-white">
-            <CloudRain aria-hidden className="size-4" />
-          </span>
-          <div>
-            <p className="text-sm font-bold text-neutral-900">Operational feed</p>
-            <p className="text-caption text-neutral-600">
-              The same cached readings shown to residents on the public weather page.
-            </p>
-          </div>
-        </div>
-        <Badge tone={weather.is_stale || river.is_stale ? "warning" : "success"}>
-          {weather.is_stale || river.is_stale ? "Review stale data" : "Feed current"}
-        </Badge>
-      </div>
-
       <div className="grid gap-4 xl:grid-cols-[1.45fr_0.85fr]">
         <WeatherPanel weather={weather} />
         <RiverLevelPanel river={river} density="compact" />
@@ -502,14 +485,6 @@ export default function AdminReadingsPage() {
         icon={CloudRain}
         title="Weather & Flood Watch"
         description="Monitor the live weather feed, record field readings, and review threshold breaches before issuing public guidance."
-        meta={
-          <div className="text-caption flex flex-wrap items-center gap-2 text-neutral-600">
-            <Badge tone="primary" icon={Gauge}>
-              Operational workspace
-            </Badge>
-            <span>Alerts remain human-issued.</span>
-          </div>
-        }
       />
 
       <Card className="overflow-visible p-2 sm:p-3">
@@ -525,20 +500,13 @@ export default function AdminReadingsPage() {
               <TabIcon icon={Gauge} />
               Overview
             </TabsTrigger>
-            <TabsTrigger
-              value="manual-entry"
-              className="h-11 justify-start gap-2 rounded-lg px-3 text-sm data-active:bg-emerald-50 data-active:text-emerald-900 sm:justify-center"
-            >
-              <TabIcon icon={Plus} />
-              Manual entry
-            </TabsTrigger>
             {canReview ? (
               <TabsTrigger
                 value="threshold-review"
-                className="col-span-2 h-11 justify-start gap-2 rounded-lg px-3 text-sm data-active:bg-emerald-50 data-active:text-emerald-900 sm:col-span-1 sm:justify-center"
+                className="h-11 justify-start gap-2 rounded-lg px-3 text-sm data-active:bg-emerald-50 data-active:text-emerald-900 sm:justify-center"
               >
                 <TabIcon icon={ClipboardCheck} />
-                Threshold review
+                Threshold Review
                 {promptData ? (
                   <span className="ml-0.5 min-w-5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] leading-none font-bold text-amber-900">
                     {promptData.length}
@@ -546,6 +514,17 @@ export default function AdminReadingsPage() {
                 ) : null}
               </TabsTrigger>
             ) : null}
+            <TabsTrigger
+              value="manual-entry"
+              className={
+                canReview
+                  ? "col-span-2 h-11 justify-start gap-2 rounded-lg px-3 text-sm data-active:bg-emerald-50 data-active:text-emerald-900 sm:col-span-1 sm:justify-center"
+                  : "h-11 justify-start gap-2 rounded-lg px-3 text-sm data-active:bg-emerald-50 data-active:text-emerald-900 sm:justify-center"
+              }
+            >
+              <TabIcon icon={Plus} />
+              Manual Entry
+            </TabsTrigger>
           </TabsList>
 
           <div className="mt-4 border-t border-neutral-200 pt-4">
