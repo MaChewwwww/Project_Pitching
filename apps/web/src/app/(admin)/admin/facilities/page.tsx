@@ -7,6 +7,7 @@ import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
 import {
   ResourceTable,
+  plainValue,
   type ResourceColumn,
 } from "@/components/features/admin/resource-table";
 import {
@@ -93,7 +94,7 @@ export default function AdminFacilitiesPage() {
 
   const columns: ResourceColumn<Facility>[] = [
     { key: "name", header: "Name" },
-    { key: "type", header: "Type", render: (row) => row.type.replace(/_/g, " ") },
+    { key: "type", header: "Type", render: (row) => plainValue(row.type) },
     { key: "area", header: "Area", render: (row) => areaName(row.area_id) },
     { key: "address", header: "Address", render: (row) => row.address ?? "—" },
     {

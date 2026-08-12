@@ -70,7 +70,7 @@ export const ADMIN_CATEGORIES: AdminNavCategory[] = [
     title: "Weather & Flood Watch",
     icon: CloudRain,
     items: [
-      { href: "/admin/announcements" as Route, label: "Announcements & Alerts", icon: Megaphone },
+      { href: "/admin/announcements" as Route, label: "Announcements", icon: Megaphone },
       { href: "/admin/alert-prompts" as Route, label: "Alert Prompts", icon: ShieldAlert },
       { href: "/admin/readings" as Route, label: "River & Weather Readings", icon: Droplets },
       { href: "/admin/flood-events" as Route, label: "Flood History", icon: AlertTriangle },

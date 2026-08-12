@@ -39,7 +39,7 @@ const TILES: {
 }[] = [
   {
     href: "/admin/announcements",
-    label: "Announcements & Alerts",
+    label: "Announcements",
     description: "Publish advisories and river alerts (FR-ALT-*)",
     icon: Megaphone,
   },

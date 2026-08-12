@@ -68,7 +68,7 @@ export default function AdminAnnouncementsPage() {
   return (
     <div className="flex flex-col gap-6">
       <AdminPageHeader
-        title="Announcements & Alerts"
+        title="Announcements & Advisories"
         description="Publishing here is the only way a public alert reaches the site — nothing is ever automated (D-4)."
         action={
           <Button

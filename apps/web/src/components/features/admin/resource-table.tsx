@@ -61,11 +61,12 @@ const FILTER_KEYS = new Set([
   "publication_status", "flood_exposure", "category",
 ]);
 
-function plainValue(value: unknown): string {
-  if (Array.isArray(value)) return value.join(", ");
+export function plainValue(value: unknown): string {
+  if (Array.isArray(value)) return value.map((item) => plainValue(item)).join(", ");
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "boolean") return value ? "Active" : "Inactive";
-  return String(value).replaceAll("_", " ");
+  const str = String(value).replaceAll("_", " ");
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 export function ResourceTable<T extends object>({
@@ -189,13 +190,13 @@ export function ResourceTable<T extends object>({
 
   return (
     <section className="border-primary-200/80 shadow-sm-card overflow-hidden rounded-[14px] border bg-white">
-      <div className="border-primary-100 from-primary-50 border-b bg-gradient-to-r via-white to-emerald-50/70 p-3 sm:px-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <label className="relative block min-w-0 flex-1 sm:max-w-xs md:max-w-sm">
+      <div className="border-b border-neutral-100 bg-gradient-to-r from-emerald-50/50 via-white to-teal-50/30 p-3 sm:px-4">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <label className="relative block w-full min-w-0 sm:max-w-xs md:max-w-sm">
             <span className="sr-only">{searchPlaceholder}</span>
             <Search
               aria-hidden
-              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-400"
+              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-neutral-400"
             />
             <input
               value={query}
@@ -204,7 +205,7 @@ export function ResourceTable<T extends object>({
                 setPage(1);
               }}
               placeholder={searchPlaceholder}
-              className="border-neutral-200 focus:border-emerald-600 focus:ring-emerald-500/20 h-9 w-full rounded-full border bg-white/90 pr-9 pl-9 text-sm outline-none transition placeholder:text-neutral-400 focus:ring-2"
+              className="h-9.5 w-full rounded-full border border-neutral-200/90 bg-white/95 pr-9 pl-9.5 text-xs sm:text-sm outline-none transition placeholder:text-neutral-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
             />
             {query ? (
               <button
@@ -218,13 +219,13 @@ export function ResourceTable<T extends object>({
             ) : null}
           </label>
 
-          <div className="flex flex-wrap items-center justify-end gap-2.5 max-sm:w-full max-sm:justify-between">
+          <div className="flex items-center gap-2 max-sm:w-full max-sm:justify-between">
             {isFiltered ? (
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={reset}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 cursor-pointer"
+                className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 cursor-pointer shrink-0"
               >
                 <X aria-hidden className="size-3.5 text-neutral-500 shrink-0" />
                 <span>Reset</span>
@@ -239,7 +240,7 @@ export function ResourceTable<T extends object>({
                   setPage(1);
                 }}
               >
-                <SelectTrigger className="inline-flex h-9 w-fit min-w-[130px] items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all cursor-pointer">
+                <SelectTrigger className="inline-flex h-9 w-fit min-w-[130px] items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all cursor-pointer max-sm:ml-auto">
                   <SlidersHorizontal aria-hidden className="size-3.5 text-emerald-600 shrink-0" />
                   <SelectValue placeholder={`All ${filterColumn.header.toLowerCase()}`}>
                     {!filter
@@ -251,7 +252,7 @@ export function ResourceTable<T extends object>({
                   position="popper"
                   align="end"
                   sideOffset={6}
-                  className="z-50 min-w-44 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md"
+                  className="z-50 min-w-48 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md"
                 >
                   <SelectItem
                     value="ALL_ITEMS"
@@ -309,30 +310,59 @@ export function ResourceTable<T extends object>({
         </div>
       </div>
 
-      <div className="divide-primary-100/80 divide-y md:hidden">
-        {pagedRows.map((row) => (
-          <article key={getRowKey(row)} className="space-y-3 p-4">
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
-              {columns.map((column) => (
-                <div key={column.key} className="min-w-0">
-                  <dt className="text-[10px] font-bold tracking-[0.12em] text-neutral-500 uppercase">
-                    {column.header}
-                  </dt>
-                  <dd className="mt-1 text-sm font-medium break-words text-neutral-800">
-                    {column.render
-                      ? column.render(row)
-                      : plainValue((row as Record<string, unknown>)[column.key])}
-                  </dd>
+      <div className="space-y-3 p-3 bg-neutral-50/60 md:hidden">
+        {pagedRows.map((row) => {
+          const firstCol = columns[0];
+          const remainingCols = columns.slice(1);
+          return (
+            <article
+              key={getRowKey(row)}
+              className="relative overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-4 shadow-2xs space-y-3 transition-all"
+            >
+              {/* Subtle top accent bar */}
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-400" />
+
+              {/* Card Header: Primary Identifier Column */}
+              {firstCol ? (
+                <div className="min-w-0 pr-2">
+                  <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                    {firstCol.header}
+                  </span>
+                  <h3 className="mt-0.5 text-sm font-bold text-neutral-900 leading-snug break-words">
+                    {firstCol.render
+                      ? firstCol.render(row)
+                      : plainValue((row as Record<string, unknown>)[firstCol.key])}
+                  </h3>
                 </div>
-              ))}
-            </dl>
-            {rowActions ? (
-              <div className="border-primary-100/80 flex flex-wrap gap-2 border-t pt-3">
-                {rowActions(row)}
-              </div>
-            ) : null}
-          </article>
-        ))}
+              ) : null}
+
+              {/* Remaining attributes in 2-column key-value grid */}
+              {remainingCols.length > 0 ? (
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-neutral-100 pt-2.5">
+                  {remainingCols.map((column) => (
+                    <div key={column.key} className="min-w-0">
+                      <dt className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                        {column.header}
+                      </dt>
+                      <dd className="mt-0.5 text-xs font-semibold text-neutral-700 break-words">
+                        {column.render
+                          ? column.render(row)
+                          : plainValue((row as Record<string, unknown>)[column.key])}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
+
+              {/* Card Action Footer */}
+              {rowActions ? (
+                <div className="flex flex-wrap items-center justify-end gap-2 border-t border-neutral-100 pt-2.5">
+                  {rowActions(row)}
+                </div>
+              ) : null}
+            </article>
+          );
+        })}
       </div>
 
       <Table className="hidden md:table">
