@@ -25,6 +25,20 @@ export function AnnouncementImageCarousel({
   const [activeIndex, setActiveIndex] = React.useState(coverIndex);
   const [isPaused, setIsPaused] = React.useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = React.useState(false);
+  const [isSplashReady, setIsSplashReady] = React.useState(false);
+
+  React.useEffect(() => {
+    const root = document.documentElement;
+    const markSplashReady = () => setIsSplashReady(true);
+
+    if (root.dataset.splashReady === "true") {
+      markSplashReady();
+    } else {
+      document.addEventListener("splash-ready", markSplashReady, { once: true });
+    }
+
+    return () => document.removeEventListener("splash-ready", markSplashReady);
+  }, []);
 
   React.useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -35,14 +49,16 @@ export function AnnouncementImageCarousel({
   }, []);
 
   React.useEffect(() => {
-    if (orderedImages.length < 2 || isPaused || prefersReducedMotion) return;
+    if (!isSplashReady || orderedImages.length < 2 || isPaused || prefersReducedMotion) {
+      return;
+    }
 
     const interval = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % orderedImages.length);
     }, 3000);
 
     return () => window.clearInterval(interval);
-  }, [isPaused, orderedImages.length, prefersReducedMotion]);
+  }, [isPaused, isSplashReady, orderedImages.length, prefersReducedMotion]);
 
   if (orderedImages.length === 0) return null;
 

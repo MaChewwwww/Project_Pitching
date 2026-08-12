@@ -532,9 +532,9 @@ publication workflow rather than inventing a parallel layout.
 | `RichTextEditor`          | Client-only Tiptap toolbar limited to H2/H3, paragraph, bold, italic, bullet/ordered list, blockquote, and safe links. No inline image, raw HTML, table, script, iframe, or embed node. |
 | `ArticleImageManager`     | Upload/reorder gallery, cover selection, count `n/10`, and per-file validation errors. Drafts may be image-free; Publish stays disabled until exactly one cover exists. Alt text and captions are intentionally not collected. |
 | `AnnouncementCard`        | 16:10 cover (or styled gradient header fallback), kind/severity badge, title, excerpt, PHT timestamp, location, and canonical detail link. Emergency alerts retain high-contrast guidance treatment. |
-| `AnnouncementImageCarousel` | Cover-first ordered media carousel for public announcement details. It auto-advances every three seconds when motion is allowed, pauses during pointer/keyboard interaction, and exposes 44px previous/next controls. |
+| `AnnouncementImageCarousel` | Cover-first ordered media carousel for public announcement details. It waits for the page splash to finish, then auto-advances every three seconds when motion is allowed, pauses during pointer/keyboard interaction, and exposes 44px previous/next controls. |
 | `ArticlePreviewDialog`    | Responsive viewport-bounded admin/form preview with a stable header, 44px close target, and one internal scroll region for long articles and cover images. |
-| `AnnouncementDetailView`  | Constrained announcement reading column with domain metadata and one responsive media carousel. The cover is the initial slide; auto-advance runs every three seconds when motion is allowed, and previous/next controls expose every ordered image. |
+| `AnnouncementDetailView`  | Constrained announcement reading column with domain metadata and one responsive media carousel. The cover is the initial slide; auto-advance starts after the page splash and runs every three seconds when motion is allowed, while previous/next controls expose every ordered image. |
 | `ArticleDetail`           | Constrained reading column, full rich body, domain metadata, then ordered article media for activity and donation-drive detail pages. |
 | `PublicationStatusBadge`  | `draft`, `published`, and `archived`; text and icon accompany colour. |
 

@@ -205,9 +205,9 @@ admin-managed content:
   beside its section heading.
 - Public reading uses `AnnouncementCard`, `AnnouncementDetailView`, and `ArticleDetail`. Announcement
   detail media is one responsive, keyboard-accessible carousel: it starts on the cover, advances
-  every three seconds when motion is allowed, and exposes previous/next controls for every ordered
-  image. There is no separate photo-gallery section. Admin deletion is a deactivation, so public
-  readers never receive a deactivated announcement.
+  every three seconds after the page splash completes (when motion is allowed), and exposes
+  previous/next controls for every ordered image. There is no separate photo-gallery section.
+  Admin deletion is a deactivation, so public readers never receive a deactivated announcement.
 
 This is a reusable portal pattern, not an announcements-only exception. New feature pages should
 reuse these composites or extract a clearly named variant when their domain fields genuinely differ;
