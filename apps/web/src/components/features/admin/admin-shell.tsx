@@ -44,7 +44,7 @@ function ConsoleProfileMenu({
         <button
           type="button"
           className={cn(
-            "group flex items-center gap-2.5 rounded-lg border border-emerald-200/80 bg-white px-2.5 py-1.5 text-left shadow-sm transition-all hover:border-emerald-300 hover:bg-emerald-50/40 focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-2 focus-visible:outline-none",
+            "group flex items-center gap-2.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-2 focus-visible:outline-none",
             compact && "border-white/15 bg-white/10 text-white hover:border-white/25 hover:bg-white/15",
           )}
           aria-label="Open profile menu"
