@@ -50,9 +50,7 @@ const announcementTypes = [
   "heavy_rainfall",
   "heat_index",
   "evacuation",
-] as const;
-
-export const announcementFormSchema = z
+] as const;export const announcementFormSchema = z
   .object({
     kind: z.enum(["announcement", "alert"]),
     type: z.enum(announcementTypes),
@@ -61,7 +59,7 @@ export const announcementFormSchema = z
     excerpt: z.string().max(360, "Keep the summary under 360 characters").default(""),
     body_json: z.custom<ArticleDocument>(),
     instruction: z.string().optional(),
-    is_barangay_wide: z.boolean().default(true),
+    is_barangay_wide: z.boolean().default(false),
     area_ids: z.array(z.string()).default([]),
     publication_status: z.enum(["draft", "published", "archived"]).default("published"),
   })
@@ -71,6 +69,13 @@ export const announcementFormSchema = z
         code: "custom",
         path: ["instruction"],
         message: "An alert cannot be published without an instruction (FR-ALT-005).",
+      });
+    }
+    if (!values.is_barangay_wide && (!values.area_ids || values.area_ids.length === 0)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["area_ids"],
+        message: "Select at least one target area or check Barangay-wide announcement.",
       });
     }
   });
@@ -161,7 +166,7 @@ export function AnnouncementForm({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="kind" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
-                  Type
+                  Type <span className="text-red-500 font-bold ml-0.5">*</span>
                 </Label>
                 <Controller
                   control={control}
@@ -182,7 +187,7 @@ export function AnnouncementForm({
 
               <div className="flex flex-col gap-2">
                 <Label htmlFor="type" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
-                  Category
+                  Category <span className="text-red-500 font-bold ml-0.5">*</span>
                 </Label>
                 <Controller
                   control={control}
@@ -208,7 +213,7 @@ export function AnnouncementForm({
             {kind === "alert" ? (
               <div className="flex flex-col gap-2 rounded-xl bg-amber-50/70 border border-amber-200/80 p-4">
                 <Label htmlFor="severity" className="text-xs font-bold uppercase tracking-wider text-amber-900">
-                  Alert Severity Level
+                  Alert Severity Level <span className="text-red-500 font-bold ml-0.5">*</span>
                 </Label>
                 <Controller
                   control={control}
@@ -231,12 +236,15 @@ export function AnnouncementForm({
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
-                Title
+                Title <span className="text-red-500 font-bold ml-0.5">*</span>
               </Label>
               <Input
                 id="title"
                 placeholder="Enter article title..."
-                className="h-11 rounded-xl border-neutral-200 bg-white font-medium text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                className={cn(
+                  "h-11 rounded-xl border-neutral-200 bg-white font-medium text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs",
+                  errors.title && "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                )}
                 aria-invalid={!!errors.title}
                 {...register("title")}
               />
@@ -261,7 +269,7 @@ export function AnnouncementForm({
 
             <div className="flex flex-col gap-2">
               <Label id="article-body-label" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
-                Article Body
+                Article Body <span className="text-red-500 font-bold ml-0.5">*</span>
               </Label>
               <Controller
                 control={control}
@@ -280,7 +288,7 @@ export function AnnouncementForm({
               <Label htmlFor="instruction" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
                 Action Instruction{" "}
                 {kind === "alert" ? (
-                  <span className="text-red-600 font-bold">(Required for Alerts)</span>
+                  <span className="text-red-600 font-bold">* (Required for Alerts)</span>
                 ) : (
                   <span className="text-neutral-400 font-normal">(Optional)</span>
                 )}
@@ -288,7 +296,10 @@ export function AnnouncementForm({
               <Textarea
                 id="instruction"
                 placeholder="Key action steps for residents (e.g., Prepare 72-hour survival kits now)..."
-                className="min-h-20 rounded-xl border-neutral-200 bg-white text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                className={cn(
+                  "min-h-20 rounded-xl border-neutral-200 bg-white text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs",
+                  errors.instruction && "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                )}
                 aria-invalid={!!errors.instruction}
                 {...register("instruction")}
               />
@@ -321,7 +332,7 @@ export function AnnouncementForm({
                     <button
                       type="button"
                       onClick={removeCover}
-                      className="absolute top-2 right-2 rounded-full bg-red-600 p-1.5 text-white shadow-md hover:bg-red-700 transition-all"
+                      className="absolute top-2 right-2 rounded-full bg-red-600 p-1.5 text-white shadow-md hover:bg-red-700 transition-all cursor-pointer"
                       title="Remove cover photo"
                     >
                       <Trash2 aria-hidden className="size-3.5" />
@@ -368,7 +379,9 @@ export function AnnouncementForm({
           <div className="rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-2xs space-y-4">
             <div className="flex items-center gap-2 border-b border-neutral-100 pb-3">
               <MapPin aria-hidden className="size-4 text-emerald-600" />
-              <h3 className="text-sm font-bold text-neutral-900">Target Location</h3>
+              <h3 className="text-sm font-bold text-neutral-900">
+                Target Location <span className="text-red-500 font-bold ml-0.5">*</span>
+              </h3>
             </div>
 
             <div className="flex items-center gap-3">
@@ -392,13 +405,16 @@ export function AnnouncementForm({
             {!isBarangayWide ? (
               <div className="flex flex-col gap-2 pt-1">
                 <Label className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                  Select Specific Areas
+                  Select Specific Areas <span className="text-red-500 font-bold ml-0.5">*</span>
                 </Label>
                 <Controller
                   control={control}
                   name="area_ids"
                   render={({ field }) => (
-                    <div className="flex flex-wrap gap-2 rounded-xl border border-neutral-200 bg-neutral-50/50 p-3 max-h-48 overflow-y-auto">
+                    <div className={cn(
+                      "flex flex-wrap gap-2 rounded-xl border border-neutral-200 bg-neutral-50/50 p-3 max-h-48 overflow-y-auto",
+                      errors.area_ids && "border-red-500 bg-red-50/30"
+                    )}>
                       {areas.map((area) => {
                         const checked = field.value.includes(area.id);
                         return (
@@ -429,6 +445,9 @@ export function AnnouncementForm({
                     </div>
                   )}
                 />
+                {errors.area_ids ? (
+                  <p className="text-red-600 text-xs font-semibold">{errors.area_ids.message}</p>
+                ) : null}
               </div>
             ) : null}
           </div>

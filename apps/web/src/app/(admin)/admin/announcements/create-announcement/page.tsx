@@ -92,7 +92,7 @@ export default function CreateAnnouncementPage() {
   });
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
       {/* Top Left Navigation Back Button */}
       <div className="flex items-center justify-start">
         <Button

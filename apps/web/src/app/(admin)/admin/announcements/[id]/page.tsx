@@ -40,10 +40,6 @@ interface Area {
   name: string;
 }
 
-function toLocalDateTime(value: string | null): string {
-  return value ? value.slice(0, 16) : "";
-}
-
 export default function AdminAnnouncementEditorPage() {
   useRequireRole("admin", "sk");
   const { id } = useParams<{ id: string }>();

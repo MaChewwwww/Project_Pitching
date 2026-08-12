@@ -326,6 +326,7 @@ async def list_announcements_admin(session: AsyncSession) -> list[PublicAnnounce
         await session.execute(
             select(Announcement, User.full_name)
             .join(User, Announcement.issued_by_user_id == User.id)
+            .where(Announcement.deactivated_at.is_(None))
             .order_by(Announcement.created_at.desc())
         )
     ).all()

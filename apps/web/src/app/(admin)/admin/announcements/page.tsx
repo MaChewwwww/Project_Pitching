@@ -5,16 +5,17 @@ import Link from "next/link";
 import type { Route } from "next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Eye, Pencil, Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
+import { ArticlePreviewDialog } from "@/components/features/admin/article-preview-dialog";
 import {
   ResourceTable,
   type ResourceColumn,
 } from "@/components/features/admin/resource-table";
-import { api } from "@/lib/api/client";
+import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import { formatPhtDateTime } from "@/lib/format";
 
@@ -43,8 +44,11 @@ export default function AdminAnnouncementsPage() {
   const deactivateMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/announcements/${id}`),
     onSuccess: () => {
-      toast.success("Announcement deactivated");
+      toast.success("Announcement deleted");
       queryClient.invalidateQueries({ queryKey: ["admin", "announcements"] });
+    },
+    onError: (error) => {
+      toast.error(toDisplayError(error).detail);
     },
   });
 
@@ -94,19 +98,7 @@ export default function AdminAnnouncementsPage() {
         getRowKey={(row) => row.id}
         rowActions={(row) => (
           <>
-            <Button
-              asChild
-              size="sm"
-              variant="success"
-              className="h-8 rounded-lg border border-emerald-300/80 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 transition-colors px-2.5 gap-1.5 font-semibold text-xs cursor-pointer"
-              title="View article"
-              aria-label="View article"
-            >
-              <Link href={`/announcements/${row.id}` as Route} target="_blank">
-                <Eye aria-hidden className="size-3.5 shrink-0" />
-                <span className="md:hidden">View</span>
-              </Link>
-            </Button>
+            <ArticlePreviewDialog announcementId={row.id} title={row.title} />
 
             <Button
               asChild
