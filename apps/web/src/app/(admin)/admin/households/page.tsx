@@ -8,7 +8,7 @@ import { Merge as MergeIcon, Plus } from "lucide-react";
 
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import {
   ResourceTable,
   type ResourceColumn,
@@ -102,9 +102,8 @@ export default function AdminHouseholdsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Registered"
-        titleAccent="households"
+      <AdminPageHeader
+        title="Registered Households"
         description="Self- and BHW-registered households. Flagged pairs may be the same family registered twice (FR-REG-010)."
         action={
           authUser?.role !== "sk" ? (

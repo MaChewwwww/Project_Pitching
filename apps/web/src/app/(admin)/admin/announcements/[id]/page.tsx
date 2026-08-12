@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
 import { ArticleImageManager } from "@/components/features/admin/article-image-manager";
 import {
@@ -97,10 +97,8 @@ export default function AdminAnnouncementEditorPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
-      <PageHeader
-        eyebrow="Article CMS"
-        title="Edit"
-        titleAccent="announcement"
+      <AdminPageHeader
+        title="Edit Announcement"
         description="Save the story and media separately. Publishing is checked server-side so incomplete articles never reach residents."
         action={
           <Button asChild size="sm" variant="outline">

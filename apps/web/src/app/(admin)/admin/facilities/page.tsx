@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
 import {
   ResourceTable,
@@ -105,9 +105,8 @@ export default function AdminFacilitiesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Barangay"
-        titleAccent="facilities"
+      <AdminPageHeader
+        title="Barangay Facilities"
         description="Evacuation centers, clinics, hospitals, and other facilities shown on the public map."
         action={
           <FacilityFormDialog

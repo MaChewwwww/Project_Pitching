@@ -9,7 +9,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Volume2, VolumeX } from "lucide-react";
 
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
 import {
@@ -311,9 +311,8 @@ export default function AdminSirensPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Siren"
-        titleAccent="units"
+      <AdminPageHeader
+        title="Siren Units"
         description="Manual-trigger siren locations for public map visualization and emergency simulation."
         action={
           <SirenFormDialog

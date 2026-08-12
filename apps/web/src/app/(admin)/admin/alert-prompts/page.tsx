@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
 import {
   ResourceTable,
@@ -63,9 +63,8 @@ export default function AdminAlertPromptsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Alert"
-        titleAccent="prompts"
+      <AdminPageHeader
+        title="Alert Prompts"
         description="A river reading crossed a configured threshold. Acknowledge here, then decide separately whether to publish a public alert."
       />
 

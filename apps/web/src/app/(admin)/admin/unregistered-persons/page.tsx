@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { UserPlus } from "lucide-react";
 
 import { Button } from "@/components/common/button";
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { StatusBadge } from "@/components/common/status-badge";
 import {
   ResourceTable,
@@ -72,9 +72,8 @@ export default function AdminUnregisteredPersonsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Unregistered"
-        titleAccent="persons"
+      <AdminPageHeader
+        title="Unregistered Persons"
         description="People the registry never captured — recorded with a name and a location, nothing else (FR-SAF-012). Kept separate from registered coverage figures everywhere (FR-SAF-013)."
         action={
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

@@ -1,6 +1,5 @@
 "use client";
 
-import { AuthProvider } from "@/lib/auth/auth-context";
 import { AdminGate } from "@/components/features/admin/admin-gate";
 
 /**

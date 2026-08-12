@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
 import type { AdminField } from "@/components/features/admin/admin-form";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
@@ -146,9 +146,8 @@ export default function AdminGuidesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Preparedness"
-        titleAccent="guides"
+      <AdminPageHeader
+        title="Preparedness Guides"
         description="Bilingual hazard guides shown on the public site."
         action={
           <ResourceFormDialog

@@ -114,12 +114,45 @@ Tap targets: **44×44 minimum, 48×48 for anything used during an emergency** �
 rescue request, hotline. Where the visual button is smaller, pad the hit area rather than
 enlarging the button.
 
+## The console has its own header — do not use `PageHeader` there
+
+`common/page-header.tsx` is the **public site's** band: a 44px display title with a gradient
+accent inside a tinted hero. It is sized to be the first thing a resident sees on a marketing
+page. `features/admin/admin-page-header.tsx` is the console equivalent, and the two are
+deliberately not the same component.
+
+The console header is one compact row — route icon, `text-h2` title, one line of context, and
+the primary action — because in the console the header is a label above a worklist, and every
+pixel it spends is a table row an officer cannot see. It takes no `titleAccent` and no
+`eyebrow`: the split-colour title was decoration that forced awkward phrasing ("Register a" /
+"household"), and the eyebrow duplicated what the breadcrumb now states outright. Its icon
+defaults to the sidebar entry for the current route, so a page never restates what the nav
+already knows.
+
+## Console navigation is defined once, in `lib/admin-nav.ts`
+
+The sidebar and the topbar breadcrumb read the same `ADMIN_CATEGORIES` array. That is the point
+of the module — when the sidebar owned the list privately, any route rename would have left the
+breadcrumb showing the old label with nothing to catch it.
+
+`resolveAdminBreadcrumbs()` renders "Barangay Admin → Announcements & Alerts → Edit". A detail
+route's last segment is an opaque UUID, which is noise in a trail, so it reads as the verb the
+page performs instead of the id. The topbar previously showed a static "Barangay San Jose /
+Operations console" lockup, which said the same thing on all 28 screens and so located nobody.
+
 ## Console DataTable and article CMS
 
 `features/admin/resource-table.tsx` is the shared console list surface. It owns search,
 categorical filtering, sortable headings, pagination, empty/loading/error states, and the
 stacked-card small-screen layout. A resource page supplies its columns and actions; it must not
 recreate those controls in a page.
+
+Its chrome is neutral, not green. A console list is scanned for the one row that matters, and
+the earlier gradient toolbar and `primary-900` header competed with the row content for that
+attention — the green is now spent only on sort state and the active filter. Unsorted columns
+carry a dimmed `ChevronsUpDown` so the header reads as sortable before it is clicked, and a
+search that matches nothing renders an `EmptyState` with a reset action rather than a bare line
+of text (NFR-UX-008).
 
 Article creation starts on its own route rather than inside a scrolling dialog. The first save
 creates a draft, then the full editor pairs the form with `ArticleImageManager`. This keeps media

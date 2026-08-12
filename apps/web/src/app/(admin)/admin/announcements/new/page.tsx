@@ -8,7 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/common/button";
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import {
   AnnouncementForm,
   type AnnouncementFormValues,
@@ -57,10 +57,8 @@ export default function NewAnnouncementPage() {
   });
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-      <PageHeader
-        eyebrow="Article CMS"
-        title="Create"
-        titleAccent="announcement"
+      <AdminPageHeader
+        title="Create Announcement"
         description="Start with a clear public story. You will add the cover and publish controls on the next screen."
         action={
           <Button asChild size="sm" variant="outline">

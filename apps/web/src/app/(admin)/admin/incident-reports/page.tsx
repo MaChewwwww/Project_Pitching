@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { IncidentReviewTable } from "@/components/features/safety/incident-review-table";
 import { api } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
@@ -28,9 +28,8 @@ export default function AdminIncidentReportsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Incident"
-        titleAccent="reports"
+      <AdminPageHeader
+        title="Incident Reports"
         description="Reports submitted by residents — flooding, fire, blocked roads, and more."
       />
 

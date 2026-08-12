@@ -6,7 +6,7 @@ import type { Route } from "next";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
 import {
   ResourceTable,
@@ -57,9 +57,8 @@ export default function AdminDonationDrivesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Donation"
-        titleAccent="drives"
+      <AdminPageHeader
+        title="Donation Drives"
         description="Informational calls for goods only. Donor records, quantities, and payment handling are out of scope."
         action={
           <Button asChild size="sm">

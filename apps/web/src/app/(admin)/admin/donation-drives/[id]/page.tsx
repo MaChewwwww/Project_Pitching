@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/common/button";
 import { ErrorState } from "@/components/common/error-state";
 import { ListSkeleton } from "@/components/common/skeletons";
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { ArticleImageManager } from "@/components/features/admin/article-image-manager";
 import {
   DonationDriveForm,
@@ -90,10 +90,8 @@ export default function AdminDonationDriveEditorPage() {
   };
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
-      <PageHeader
-        eyebrow="Article CMS"
-        title="Edit"
-        titleAccent="donation notice"
+      <AdminPageHeader
+        title="Edit Donation Notice"
         description="Describe where and when goods are needed. This screen never records donations or payments."
         action={
           <Button asChild size="sm" variant="outline">

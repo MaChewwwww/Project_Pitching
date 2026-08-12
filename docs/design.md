@@ -428,7 +428,8 @@ These are the app's actual vocabulary. Each is built from primitives above.
 | `PublicNavbar`  | White, `72px`. Logo left, nav centre, Login (filled pill) + Register (outline pill) right. Collapses to a `sheet` on mobile |
 | `AdminSidebar`  | `primary-950`, `256px`. Logo block, nav items, `Support` and `Sign Out` pinned to the bottom — Sign Out in danger red       |
 | `AdminTopbar`   | White, `64px`. Breadcrumb left; mode badge, notification bell with dot, help, settings, user identity right                 |
-| `PageHeader`    | Title + optional description + right-aligned action slot                                                                    |
+| `PageHeader`    | Title + optional description + right-aligned action slot. **Public site only** — the console uses `AdminPageHeader`         |
+| `AdminPageHeader` | The console's header row: route icon + `h2` title + one context line + action slot. Compact on purpose — the console header labels a worklist, so height spent here is a table row an officer cannot see |
 | `SectionHeader` | Tinted rounded-square icon + title + description line. Used at the top of every content card                                |
 | `Footer`        | Barangay info, contacts, socials, hotline, copyright (BR-0.12)                                                              |
 

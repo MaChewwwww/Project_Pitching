@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Card, CardContent } from "@/components/common/card";
 import { AccountedForPanel } from "@/components/features/safety/accounted-for-panel";
 import { api } from "@/lib/api/client";
@@ -26,9 +26,8 @@ export default function AdminSafetyPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Accounted"
-        titleAccent="for"
+      <AdminPageHeader
+        title="Accounted for"
         description="Live registered accounted-for vs. unaccounted, by area, for the currently active emergency event."
       />
 

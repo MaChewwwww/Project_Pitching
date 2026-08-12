@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { AdminForm, type AdminField } from "@/components/features/admin/admin-form";
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
@@ -116,9 +116,8 @@ export default function AdminReadingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="River & weather"
-        titleAccent="readings"
+      <AdminPageHeader
+        title="River & Weather Readings"
         description="Enter a reading directly when the automated PAGASA/Open-Meteo fetch is unavailable."
       />
 

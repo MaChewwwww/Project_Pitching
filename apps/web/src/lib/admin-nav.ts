@@ -1,0 +1,152 @@
+import type { Route } from "next";
+import {
+  Activity,
+  AlertTriangle,
+  BookOpen,
+  Building2,
+  Camera,
+  CloudRain,
+  Droplets,
+  Gift,
+  HelpCircle,
+  Home,
+  LayoutDashboard,
+  LifeBuoy,
+  MapPin,
+  Megaphone,
+  Phone,
+  Settings,
+  ShieldAlert,
+  ShieldCheck,
+  Siren,
+  UserPlus,
+  Users,
+} from "lucide-react";
+
+/**
+ * The console's route map. Owned here rather than in `admin-shell.tsx` because
+ * the sidebar and the topbar breadcrumb must agree on every label — two copies
+ * would drift the moment a page is renamed.
+ */
+
+export interface AdminNavLink {
+  href: Route;
+  label: string;
+  icon: typeof Home;
+}
+
+export interface AdminNavCategory {
+  id: string;
+  title: string;
+  icon: typeof Home;
+  items: AdminNavLink[];
+}
+
+export const ADMIN_ROOT = { href: "/admin" as Route, label: "Barangay Admin", icon: LayoutDashboard };
+
+export const ADMIN_CATEGORIES: AdminNavCategory[] = [
+  {
+    id: "registry",
+    title: "Community Registry",
+    icon: Users,
+    items: [{ href: "/admin/households" as Route, label: "Households & Members", icon: Users }],
+  },
+  {
+    // Second, right after registry, so a walkthrough reads in demo order:
+    // who's registered → what's happening right now.
+    id: "emergency",
+    title: "Emergency Response",
+    icon: ShieldCheck,
+    items: [
+      { href: "/admin/emergency-events" as Route, label: "Emergency Events", icon: Siren },
+      { href: "/admin/safety" as Route, label: "Accounted For", icon: ShieldCheck },
+      { href: "/admin/rescue-requests" as Route, label: "Rescue Queue", icon: LifeBuoy },
+      { href: "/admin/unregistered-persons" as Route, label: "Unregistered Persons", icon: UserPlus },
+      { href: "/admin/incident-reports" as Route, label: "Incident Reports", icon: Camera },
+    ],
+  },
+  {
+    id: "weather",
+    title: "Weather & Flood Watch",
+    icon: CloudRain,
+    items: [
+      { href: "/admin/announcements" as Route, label: "Announcements & Alerts", icon: Megaphone },
+      { href: "/admin/alert-prompts" as Route, label: "Alert Prompts", icon: ShieldAlert },
+      { href: "/admin/readings" as Route, label: "River & Weather Readings", icon: Droplets },
+      { href: "/admin/flood-events" as Route, label: "Flood History", icon: AlertTriangle },
+    ],
+  },
+  {
+    id: "operations",
+    title: "Operations & Facilities",
+    icon: Building2,
+    items: [
+      { href: "/admin/evacuation-centers" as Route, label: "Evacuation Centers", icon: MapPin },
+      { href: "/admin/facilities" as Route, label: "Barangay Facilities", icon: Building2 },
+      { href: "/admin/sirens" as Route, label: "Siren Units", icon: Siren },
+      { href: "/admin/donation-drives" as Route, label: "Donation Drives", icon: Gift },
+      { href: "/admin/hotlines" as Route, label: "Hotlines Directory", icon: Phone },
+    ],
+  },
+  {
+    id: "content",
+    title: "Community & Content",
+    icon: BookOpen,
+    items: [
+      { href: "/admin/activities" as Route, label: "Activities & Programs", icon: Activity },
+      { href: "/admin/guides" as Route, label: "Preparedness Guidelines", icon: BookOpen },
+      { href: "/admin/faqs" as Route, label: "Frequently Asked Questions", icon: HelpCircle },
+    ],
+  },
+  {
+    id: "system",
+    title: "System & Setup",
+    icon: Settings,
+    items: [
+      { href: "/admin/areas" as Route, label: "Barangay Areas / Zones", icon: MapPin },
+      { href: "/admin/config" as Route, label: "Settings & Thresholds", icon: Settings },
+    ],
+  },
+];
+
+/** The nav entry whose href is the longest prefix of `pathname`, if any. */
+export function findAdminNavLink(pathname: string): AdminNavLink | undefined {
+  let best: AdminNavLink | undefined;
+  for (const category of ADMIN_CATEGORIES) {
+    for (const item of category.items) {
+      if (pathname === item.href || pathname.startsWith(`${item.href}/`)) {
+        if (!best || item.href.length > best.href.length) best = item;
+      }
+    }
+  }
+  return best;
+}
+
+export interface AdminCrumb {
+  label: string;
+  href?: Route;
+}
+
+/** Labels for the trailing segment of a nested console route. */
+const LEAF_LABELS: Record<string, string> = { new: "New", edit: "Edit" };
+
+/**
+ * "Barangay Admin → Announcements & Alerts → New". Detail routes carry an
+ * opaque id as their last segment, which is noise in a trail — they read as
+ * "Edit" instead, matching what the page actually does.
+ */
+export function resolveAdminBreadcrumbs(pathname: string): AdminCrumb[] {
+  const crumbs: AdminCrumb[] = [{ label: ADMIN_ROOT.label, href: ADMIN_ROOT.href }];
+  if (pathname === "/admin") return [{ label: ADMIN_ROOT.label }];
+
+  const link = findAdminNavLink(pathname);
+  if (!link) return crumbs;
+
+  const rest = pathname.slice(link.href.length).split("/").filter(Boolean);
+  crumbs.push(rest.length > 0 ? { label: link.label, href: link.href } : { label: link.label });
+
+  for (const segment of rest) {
+    crumbs.push({ label: LEAF_LABELS[segment] ?? "Edit" });
+  }
+  return crumbs;
+}

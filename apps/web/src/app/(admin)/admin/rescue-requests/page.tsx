@@ -4,7 +4,7 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { Card, CardContent } from "@/components/common/card";
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { RescueQueue } from "@/components/features/safety/rescue-queue";
 import { RescueTriageDialog } from "@/components/features/safety/rescue-triage-dialog";
 import {
@@ -59,9 +59,8 @@ export default function AdminRescueRequestsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Rescue"
-        titleAccent="queue"
+      <AdminPageHeader
+        title="Rescue Queue"
         description="Requests for help, ordered by urgency. Anonymous requests are never ranked below registered ones."
       />
 

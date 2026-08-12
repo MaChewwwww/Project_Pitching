@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
 import {
@@ -67,9 +67,8 @@ export default function AdminAnnouncementsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Announcements"
-        titleAccent="& alerts"
+      <AdminPageHeader
+        title="Announcements & Alerts"
         description="Publishing here is the only way a public alert reaches the site — nothing is ever automated (D-4)."
         action={
           <Button asChild size="sm">

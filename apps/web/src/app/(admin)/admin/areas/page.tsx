@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
 import type { AdminField } from "@/components/features/admin/admin-form";
 import { ResourceFormDialog } from "@/components/features/admin/resource-form-dialog";
@@ -83,9 +83,8 @@ export default function AdminAreasPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Barangay"
-        titleAccent="areas"
+      <AdminPageHeader
+        title="Barangay Areas"
         description="Zone names, codes, and flood exposure. New areas cannot be created until the barangay supplies boundary polygons (BRD OI-3)."
       />
 

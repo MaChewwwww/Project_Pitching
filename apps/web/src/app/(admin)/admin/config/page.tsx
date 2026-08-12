@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Pencil } from "lucide-react";
 
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -125,9 +125,8 @@ export default function AdminConfigPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Platform"
-        titleAccent="settings"
+      <AdminPageHeader
+        title="Platform Settings"
         description="Alert thresholds, barangay-wide totals, and staleness windows. Seeded by migration; editable here."
       />
 

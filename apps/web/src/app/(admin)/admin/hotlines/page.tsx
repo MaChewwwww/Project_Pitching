@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
 import type { AdminField } from "@/components/features/admin/admin-form";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
@@ -124,9 +124,8 @@ export default function AdminHotlinesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Emergency"
-        titleAccent="hotlines"
+      <AdminPageHeader
+        title="Emergency Hotlines"
         description="One-tap callable numbers shown on the public site and in the utility bar."
         action={
           <ResourceFormDialog

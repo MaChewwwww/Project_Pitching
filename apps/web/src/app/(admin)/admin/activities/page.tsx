@@ -8,7 +8,7 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/common/button";
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
 import {
   ResourceTable,
@@ -64,9 +64,8 @@ export default function AdminActivitiesPage() {
   ];
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Community"
-        titleAccent="activities"
+      <AdminPageHeader
+        title="Community Activities"
         description="Create the public activity story, then add a cover image and publish when it is ready."
         action={
           <Button asChild size="sm">

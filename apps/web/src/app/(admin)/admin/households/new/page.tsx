@@ -12,7 +12,7 @@ import { AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { HouseholdMemberRepeater } from "@/components/features/admin/household-member-repeater";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -206,9 +206,8 @@ export default function NewHouseholdPage() {
 
   return (
     <div className="flex flex-col gap-6 pb-16">
-      <PageHeader
-        title="Register a"
-        titleAccent="household"
+      <AdminPageHeader
+        title="Register a Household"
         description="One visit, every member, no account attached (FR-REG-002)."
       />
 

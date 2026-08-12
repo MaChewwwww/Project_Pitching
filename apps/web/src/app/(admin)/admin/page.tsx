@@ -11,6 +11,7 @@ import {
   Droplets,
   Gift,
   HelpCircle,
+  LayoutDashboard,
   LifeBuoy,
   MapPin,
   Megaphone,
@@ -22,7 +23,7 @@ import {
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/common/card";
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { api } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { PublicEmergencyEvent } from "@/lib/api/public-types";
@@ -202,10 +203,9 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        eyebrow={`Signed in as ${user?.full_name ?? "…"}`}
-        title="Barangay"
-        titleAccent="admin console"
+      <AdminPageHeader
+        icon={LayoutDashboard}
+        title={`Welcome back, ${user?.full_name?.split(" ")[0] ?? "there"}`}
         description="Manage the content the public site reads live — announcements, weather, facilities, and more."
       />
 

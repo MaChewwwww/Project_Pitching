@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/common/button";
 import { ErrorState } from "@/components/common/error-state";
 import { ListSkeleton } from "@/components/common/skeletons";
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import {
   ActivityForm,
   type ActivityFormValues,
@@ -93,10 +93,8 @@ export default function AdminActivityEditorPage() {
   };
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
-      <PageHeader
-        eyebrow="Article CMS"
-        title="Edit"
-        titleAccent="activity"
+      <AdminPageHeader
+        title="Edit Activity"
         description="Write the public activity story, then add accessible media before publishing."
         action={
           <Button asChild size="sm" variant="outline">

@@ -7,7 +7,7 @@ import { Siren } from "lucide-react";
 
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
-import { PageHeader } from "@/components/common/page-header";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import type { AdminField } from "@/components/features/admin/admin-form";
 import { ResourceFormDialog } from "@/components/features/admin/resource-form-dialog";
 import {
@@ -120,9 +120,8 @@ export default function AdminEmergencyEventsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Emergency"
-        titleAccent="events"
+      <AdminPageHeader
+        title="Emergency Events"
         description="Declaring an event opens the safety check-in, rescue queue, and accounted-for dashboard for it. At most one event is active at a time."
         action={
           <ResourceFormDialog
