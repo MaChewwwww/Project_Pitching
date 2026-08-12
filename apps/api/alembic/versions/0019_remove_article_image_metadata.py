@@ -1,6 +1,6 @@
 """remove article-image alt text and captions.
 
-Revision ID: 0019_remove_article_image_metadata
+Revision ID: 0019_rm_article_image_meta
 Revises: 0018_article_cms
 Create Date: 2026-08-13
 
@@ -15,7 +15,7 @@ import sqlalchemy as sa
 from alembic import op
 
 
-revision: str = "0019_remove_article_image_metadata"
+revision: str = "0019_rm_article_image_meta"
 down_revision: str | None = "0018_article_cms"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

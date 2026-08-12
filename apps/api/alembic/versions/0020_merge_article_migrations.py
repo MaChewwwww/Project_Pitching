@@ -1,7 +1,7 @@
 """merge article CMS migration heads.
 
 Revision ID: 0020_merge_article_migrations
-Revises: 0019_remove_announcement_level, 0019_remove_article_image_metadata
+Revises: 0019_remove_announcement_level, 0019_rm_article_image_meta
 Create Date: 2026-08-13
 
 Refs: FR-ALT-014, FR-PUB-020, NFR-MNT-004
@@ -15,7 +15,7 @@ from collections.abc import Sequence
 revision: str = "0020_merge_article_migrations"
 down_revision: tuple[str, str] = (
     "0019_remove_announcement_level",
-    "0019_remove_article_image_metadata",
+    "0019_rm_article_image_meta",
 )
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
