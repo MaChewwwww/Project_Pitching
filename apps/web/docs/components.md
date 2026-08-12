@@ -180,6 +180,32 @@ The create and edit announcement routes share the same `AnnouncementForm` two-co
 Editing supplies its persistent image manager into the form's native right rail, above targeting and
 publication controls, instead of introducing a second layout beside the form.
 
+### Announcement CMS is the portal authoring pattern
+
+Treat the announcement CMS as the reference composition for future portal CRUD screens. Keep the
+same separation of concerns and visual anatomy when adding activities, donation notices, or other
+admin-managed content:
+
+- `AnnouncementForm` owns the React Hook Form + Zod fields, validation messaging, responsive
+  article-details surface, targeting controls, and publication actions. Create and edit pages supply
+  defaults, API mutations, and (for edit) the persistent media rail rather than duplicating the form.
+- `ArticleImageManager` is the right-rail media pattern: upload, cover selection, reorder, and remove.
+  It intentionally has no alt-text or caption fields; image metadata is not part of the article CMS
+  contract.
+- `RichTextEditor` is the constrained body editor. `ArticlePreviewDialog` is the shared live/admin
+  preview: viewport-bounded, keyboard reachable, with a stable header and one internal scroll region.
+- The page shell is an `AdminPageHeader` followed by a primary white work surface and a right rail
+  for media, targeting, and publishing. On narrow screens the rail stacks below the form, while the
+  compact Type/Category classification row stays usable at 360px and the publication selector stays
+  beside its section heading.
+- Public reading uses `AnnouncementCard` and `ArticleDetail` with the same ordered-gallery and
+  lifecycle semantics. Admin deletion is a deactivation, so public readers never receive a
+  deactivated announcement.
+
+This is a reusable portal pattern, not an announcements-only exception. New feature pages should
+reuse these composites or extract a clearly named variant when their domain fields genuinely differ;
+they should not introduce a second authoring layout or a second publication workflow.
+
 ## Animation lives in `globals.css`, not in a client component
 
 `WaterSpinner` and the hero illustrations are animated entirely by CSS classes defined in

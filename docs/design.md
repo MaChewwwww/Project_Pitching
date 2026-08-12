@@ -425,7 +425,7 @@ These are the app's actual vocabulary. Each is built from primitives above.
 | `PublicShell`   | Utility bar + navbar + content + footer                                                                                     |
 | `AdminShell`    | Sidebar + topbar + content region                                                                                           |
 | `TopUtilityBar` | `primary-950` strip: phone, address, office hours. `36px`, `body-sm`, white                                                 |
-| `PublicNavbar`  | White, `72px`. Logo left, nav centre, Login (filled pill) + Register (outline pill) right. Collapses to a `sheet` on mobile |
+| `PublicNavbar`  | White, `72px`. Logo left, nav centre; guests get Login (filled pill) + Register (outline pill), while signed-in users get one `Return to Portal` action to their role destination. Collapses to a `sheet` on mobile |
 | `AdminSidebar`  | `primary-950`, `256px`. Logo block, nav items, `Support` and `Sign Out` pinned to the bottom — Sign Out in danger red       |
 | `AdminTopbar`   | White, `64px`. Breadcrumb left; mode badge, notification bell with dot, help, settings, user identity right                 |
 | `PageHeader`    | Title + optional description + right-aligned action slot. **Public site only** — the console uses `AdminPageHeader`         |
@@ -516,18 +516,25 @@ authoring and reading patterns. This is the presentation contract for `FR-ALT-01
 `FR-ACT-010`–`012`, `FR-DON-015`–`017`, and `FR-PUB-019`–`020`. Emergency alerts remain
 text-first and do not require media.
 
+The announcement CMS is the reference portal composition: future admin content screens should
+preserve its page-header → primary editor → right-rail anatomy, responsive behaviour, and
+publication workflow rather than inventing a parallel layout.
+
 | Composite                | Contract                                                                                                                                                                                                                           |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ArticleEditor`          | Client-only Tiptap toolbar limited to H2/H3, paragraph, bold, italic, bullet/ordered list, blockquote, and safe links. No inline image, raw HTML, table, script, iframe, or embed node.                                            |
-| `ArticleMediaManager`    | Upload/reorder gallery, cover selection, count `n/10`, and per-file validation errors. Drafts may be image-free; Publish stays disabled until exactly one cover exists. |
-| `ArticlePreviewCard`     | `AnnouncementCard`: 16:10 cover (or styled gradient header fallback), kind/severity badge, title, excerpt, PHT timestamp, location, and canonical detail link. Displays emergency alerts with high-contrast red accent borders, badges, and immediate guidance callouts on a light card background. Landing section uses a symmetrical 3-column equal grid with uniform card heights. |
-| `ArticleDetail`          | Constrained reading column, full rich body, domain metadata, then ordered gallery.                                                                                                        |
-| `PublicationStatusBadge` | `draft`, `published`, and `archived`; text and icon accompany colour.                                                                                                                                                              |
+| `AnnouncementForm`       | Shared create/edit admin surface: constrained Tiptap body, type/category/severity classification, title/excerpt/instruction, targeting, and publication controls. The right rail is media → targeting → publishing; edit injects its persistent media manager. |
+| `RichTextEditor`          | Client-only Tiptap toolbar limited to H2/H3, paragraph, bold, italic, bullet/ordered list, blockquote, and safe links. No inline image, raw HTML, table, script, iframe, or embed node. |
+| `ArticleImageManager`     | Upload/reorder gallery, cover selection, count `n/10`, and per-file validation errors. Drafts may be image-free; Publish stays disabled until exactly one cover exists. Alt text and captions are intentionally not collected. |
+| `AnnouncementCard`        | 16:10 cover (or styled gradient header fallback), kind/severity badge, title, excerpt, PHT timestamp, location, and canonical detail link. Emergency alerts retain high-contrast guidance treatment. |
+| `ArticlePreviewDialog`    | Responsive viewport-bounded admin/form preview with a stable header, 44px close target, and one internal scroll region for long articles and cover images. |
+| `ArticleDetail`           | Constrained reading column, full rich body, domain metadata, then ordered gallery. |
+| `PublicationStatusBadge`  | `draft`, `published`, and `archived`; text and icon accompany colour. |
 
 Article galleries use `next/image` with explicit dimensions. Preserve the original file; the UI
 uses `object-fit: cover` only for preview crops. On 360px screens the gallery is one column and the
-editor toolbar wraps without horizontal scrolling. Emergency takeover banners remain text-first
-and never wait for article media.
+editor toolbar wraps without horizontal scrolling. The announcement form keeps Type and Category in
+one compact row, stacks long-form content below, and moves the right rail below the editor.
+Emergency takeover banners remain text-first and never wait for article media.
 | `LogoLockup` | Logo placeholder while D-OI-2 is open. Inline SVG mark + `APP_NAME` wordmark, with a variant for dark surfaces |
 | `Reveal` | Scroll-reveal wrapper for the public site (Section 8). CSS `animation-timeline: view()` behind `@supports`, so no observer and no JavaScript |
 

@@ -199,3 +199,17 @@ minutes of entered data will stop them using the platform at all (FR-REG-012).
   data-entry tools lose people's trust.
 
 Full offline sync is _not_ in scope (`design.md` D-OI-8). Local drafts are.
+
+## Announcement form state
+
+`AnnouncementForm` is the shared state owner for both create and edit routes. It combines
+React Hook Form + Zod validation with local image items, preview visibility, and destructive-action
+confirmation. The route page owns the server mutation and navigation; edit injects
+`ArticleImageManager` for persisted upload, cover, reorder, and remove operations.
+
+Publication status is one of `draft`, `published`, or `archived`. The form mirrors the server's
+publication checks (for example, alert instructions and the required cover), but the API remains
+authoritative and enforces them server-side. After any admin mutation, invalidate the affected
+announcement query keys so the list, detail, and preview do not show stale data. Deactivation is a
+soft delete: the record remains in history, while public list/detail and active-banner reads exclude
+rows with `deactivated_at`.

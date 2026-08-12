@@ -87,3 +87,13 @@ Migration `0018_article_cms` removes the former donation and assistance transact
 D-16. Its downgrade restores their shape but cannot restore retired rows. Take and verify a
 database backup before applying any migration that removes data-bearing tables; use that backup
 for recovery rather than a schema downgrade.
+
+## Article CMS follow-up migrations
+
+`0019_rm_article_image_meta` removes `alt_text` and `caption` from the announcement, activity, and
+donation-drive image tables. The API and frontend intentionally do not collect those fields; the
+gallery contract is limited to file path, order, cover selection, and timestamps.
+
+`0020_merge_article_migrations` is a no-op merge that joins the article-image metadata head with
+`0019_remove_announcement_level`. Keep the merge revision as the single Alembic head; do not edit
+either parent migration after it has been applied.

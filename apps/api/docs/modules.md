@@ -69,6 +69,23 @@ and writable by an admin appears in both tiers, with **different response schema
 point: the public serializer physically cannot return a contact number, because it has no field
 for one.
 
+## Alerts and announcements
+
+`src/modules/alerts/` is the reference content module for future portal-managed articles. Its
+`router.py` exposes public list/detail/active reads and role-checked admin list/detail/create/update,
+image, ordering, and deactivation operations; `schemas.py` defines separate public and admin DTOs;
+`service.py` owns publication validation, ordered gallery rules, deactivation filtering, and audit
+writes; `models.py` maps the announcement and entity-specific image tables.
+
+The admin DELETE route is deliberately a soft deactivation (`deactivated_at`), never a physical
+delete. Public list, detail, and active-banner queries exclude deactivated rows. Publication status
+is `draft`, `published`, or `archived`; only published rows enter public lists, while article detail
+may expose an archived history entry when it is not deactivated. Image metadata is intentionally
+minimal: file path, order, cover flag, and timestamps—there are no alt-text or caption fields.
+
+When adding another article-like module, mirror this router → schema → service → model split and the
+same public/admin lifecycle instead of coupling a new page directly to persistence.
+
 ## The registry module will get big
 
 36 requirements land in `registry` — it is the module most likely to become a monolith inside

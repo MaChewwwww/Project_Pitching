@@ -16,6 +16,22 @@ its own layout and its own guard.
 > server-side by the API (FR-SYS-006). A guard that only exists in the browser is a guard an
 > attacker skips by calling the endpoint directly.
 
+## Announcement routes and the shared editor
+
+The announcement CMS is the reference route composition for future portal authoring work:
+
+| Route | Responsibility |
+| ----- | -------------- |
+| `/admin/announcements` | Resource list with search, filters, pagination, and row actions |
+| `/admin/announcements/create-announcement` | Supplies create defaults and mutation handlers to `AnnouncementForm` |
+| `/admin/announcements/[id]` | Loads an existing record and supplies edit defaults plus the persistent `ArticleImageManager` |
+
+Create and edit intentionally render the same form surface. Keep route pages thin: they own data
+loading, API mutations, and navigation, while shared composites own field layout, validation,
+responsive behaviour, preview, and media controls. Public `/announcements` and
+`/announcements/[slug]` remain read-only; admin deletion is a soft deactivation and deactivated
+records are excluded from public reads.
+
 ## Rendering strategy, per surface
 
 Chosen per surface rather than globally (`architecture.md` A-12):

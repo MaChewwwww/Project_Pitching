@@ -346,17 +346,17 @@ GET  /public/facilities
 GET  /public/hazard-layers/{period}     GeoJSON, heavily cached
 GET  /public/area-stats                 area-level aggregates only
 GET  /public/donation-drives
-GET  /public/donation-drives/{slug}     planned — FR-DON-017
+GET  /public/donation-drives/{slug}     implemented — FR-DON-017
 POST /public/rescue-requests            implemented — FR-SAF-009, no account, rate limited
 GET  /public/emergency-events/active    implemented — active emergency event or null
 GET  /public/activities
-GET  /public/activities/{slug}          planned — FR-ACT-012
+GET  /public/activities/{slug}          implemented — FR-ACT-012
 GET  /public/guides
 GET  /public/guides/{slug}              FR-PUB-005 — "each card opens the full guide"
 GET  /public/faqs                       FR-PUB-011, FR-PRP-005
 GET  /public/flood-events               FR-WX-013 — flood history, publicly viewable
 GET  /public/announcements/active       FR-PUB-017 — the takeover banner, polled short-cycle
-GET  /public/announcements/{slug}       planned — FR-ALT-015
+GET  /public/announcements/{slug}       implemented — FR-ALT-015
 GET  /public/areas                      FR-SYS-013 — names/codes for public area filters, no geom
 GET  /public/area-boundaries            FR-MAP-001 — area boundary polygons as GeoJSON
 GET  /public/sirens                     FR-MAP-014 — siren unit locations and status
@@ -365,8 +365,8 @@ GET  /public/sirens                     FR-MAP-014 — siren unit locations and 
 > `/public/area-boundaries` and `/public/sirens` were added during the MAP build (FR-MAP-001, FR-MAP-014).
 > `/public/area-boundaries` delivers polygon geometry separately from `/public/areas` (which returns names/stats).
 > Guides, announcements, activities, and donation drives have canonical slug detail routes.
-> Landing sections consume preview DTOs, not full article bodies. The three article routes marked
-> `planned` are approved contracts but are not deployed at commit `8a3eaec`.
+> Landing sections consume preview DTOs, not full article bodies. Article slug routes are deployed;
+> the announcement route is the current reference implementation for the shared contract.
 > `/public/announcements/active` remains the short-poll emergency takeover endpoint and never
 > depends on article imagery. `/public/emergency-events/active` was added during the SAF build
 > (FR-SAF-018/019).
@@ -448,7 +448,7 @@ The deployed donation-drive CRUD still exposes legacy nested `drive_need` data. 
 that contract. Later development removes nested needs and the donation/assistance endpoints; it
 does not replace them with another donor, receipt, or household-distribution workflow.
 
-**Planned article media operations — not deployed**
+**Article media operations**
 
 ```
 POST   /admin/{announcements|activities|donation-drives}/{id}/images
@@ -460,14 +460,22 @@ DELETE /admin/{announcements|activities|donation-drives}/{id}/images/{image_id}
 `POST` is multipart and reuses `core/uploads.py`: JPEG, PNG, or WebP; magic-byte validation;
 5 MB per file; UUID storage names. `PATCH` selects the single cover.
 `PUT .../order` accepts the complete ordered image-ID list and rejects missing, duplicate, or
-foreign IDs. Drafts may have no image. Publication requires exactly one cover, no more than ten
-images and a selected cover image.
+foreign IDs. These operations are deployed for announcements; the same shape is reserved for
+activities and donation drives. Drafts may have no image. Publication requires exactly one cover,
+no more than ten images and a selected cover image.
 
 ### 6.4 Shared article contract — planned
 
+> **Current implementation note (August 2026):** the announcement contract is now deployed,
+> including public slug detail, ordered gallery operations, and soft deactivation. Keep the
+> announcement CMS as the frontend and lifecycle reference when planned activity and donation-drive
+> article routes are brought online. Public reads exclude deactivated announcements; the active-alert
+> endpoint remains text-first and is independent of article imagery.
+
 Announcements, activities, and donation drives keep separate services, tables, permissions, and
 domain fields. They share an API shape and frontend authoring components; there is no polymorphic
-`article` table. The image entities in Section 5.1 are likewise planned, not deployed.
+`article` table. Announcement image entities are deployed; the activity and donation-drive variants
+remain reserved for the next article modules.
 This contract traces `FR-ALT-013`–`015`, `FR-ACT-010`–`012`, `FR-DON-015`–`017`, and
 `FR-PUB-019`–`020` back to their permanent BR IDs in `frs_nfrs.md`; emergency-alert behavior
 continues to use `FR-ALT-001`–`011`.

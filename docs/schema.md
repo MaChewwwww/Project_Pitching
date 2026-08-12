@@ -822,6 +822,10 @@ pair.
 | `is_cover`    | BOOLEAN     | NOT NULL DEFAULT false         | Partial unique index enforces at most one cover per parent |
 | `created_at`  | TIMESTAMPTZ | NOT NULL DEFAULT now()         |                                                            |
 
+> Image records intentionally do not carry `alt_text` or `caption`. Those fields were removed in
+> migration `0019_rm_article_image_meta`; the shared portal gallery only needs ordering, cover
+> selection, and file provenance.
+
 The service enforces a maximum of ten images and exactly one cover at publication. Uploads accept
 JPEG, PNG, or WebP up to 5 MB, validated by magic bytes. Rich-text JSON cannot contain image nodes,
 raw HTML, data URLs, or arbitrary nodes/marks outside the configured allow-list.
