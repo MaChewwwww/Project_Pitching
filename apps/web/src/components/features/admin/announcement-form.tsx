@@ -313,7 +313,7 @@ export function AnnouncementForm({
         </div>
       ) : null}
 
-      <div className={showCoverUpload ? "grid gap-8 xl:grid-cols-[minmax(0,1fr)_22rem]" : "space-y-6"}>
+      <div className={showCoverUpload || mediaPanel ? "grid gap-8 xl:grid-cols-[minmax(0,1fr)_22rem]" : "space-y-6"}>
         {/* Story details column */}
         <div className="space-y-6">
           <div className="rounded-2xl border border-neutral-200/90 bg-white p-6 sm:p-8 shadow-2xs space-y-6">
