@@ -156,6 +156,18 @@ a dimmed `ChevronsUpDown`, so a heading reads as sortable before anyone clicks i
 matching nothing renders an `EmptyState` with a reset action rather than a bare line of text —
 required by Definition of Done item 3 (NFR-UX-008).
 
+**Sorting is a three-state cycle: ascending → descending → unsorted.** The third click matters
+— without it there is no way back to the order the API sent, which is usually most-recent-first
+and so the order an officer wants restored after checking one column. `Reset` clears sorting
+too, but only appears once something is active and also wipes search and filters.
+
+Sort direction uses plain `ArrowUp` / `ArrowDown`. Do **not** use lucide's `ArrowUpAZ` /
+`ArrowDownAZ` here: those glyphs draw the letters "A" and "Z" beside the arrow, which at 14px
+in a table heading renders as an unreadable smudge rather than reading as alphabetical.
+
+Known gap: the `<md` stacked-card layout has no sort control, so sorting is desktop-only on
+small screens. Search and filter both work there.
+
 Article creation starts on its own route rather than inside a scrolling dialog. The first save
 creates a draft, then the full editor pairs the form with `ArticleImageManager`. This keeps media
 validation visible without weakening the server-side publication rule.

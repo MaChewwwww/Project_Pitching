@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import {
-  ArrowDownAZ,
-  ArrowUpAZ,
+  ArrowDown,
+  ArrowUp,
   ChevronLeft,
   ChevronRight,
   ChevronsUpDown,
@@ -154,10 +154,17 @@ export function ResourceTable<T extends object>({
     setSortDirection("asc");
     setPage(1);
   };
+  // Ascending → descending → unsorted. The third click has to return the list
+  // to the order the API sent, which is usually most-recent-first and therefore
+  // the order an officer wants back after checking one column.
   const sort = (key: string) => {
-    if (sortKey === key) setSortDirection((direction) => (direction === "asc" ? "desc" : "asc"));
-    else {
+    if (sortKey !== key) {
       setSortKey(key);
+      setSortDirection("asc");
+    } else if (sortDirection === "asc") {
+      setSortDirection("desc");
+    } else {
+      setSortKey(null);
       setSortDirection("asc");
     }
     setPage(1);
@@ -273,19 +280,26 @@ export function ResourceTable<T extends object>({
                   <button
                     type="button"
                     onClick={() => sort(column.key)}
+                    title={
+                      !sorted
+                        ? `Sort by ${column.header}, A to Z`
+                        : sortDirection === "asc"
+                          ? `Sort by ${column.header}, Z to A`
+                          : `Clear sorting on ${column.header}`
+                    }
                     className="group focus-visible:ring-primary-200 inline-flex items-center gap-1.5 rounded text-[11px] font-bold tracking-[0.08em] uppercase transition-colors hover:text-white focus-visible:ring-2 focus-visible:outline-none"
                   >
                     {column.header}
                     {sorted ? (
                       sortDirection === "asc" ? (
-                        <ArrowUpAZ aria-hidden className="size-3.5 text-white" />
+                        <ArrowUp aria-hidden className="size-3.5 text-white" strokeWidth={2.5} />
                       ) : (
-                        <ArrowDownAZ aria-hidden className="size-3.5 text-white" />
+                        <ArrowDown aria-hidden className="size-3.5 text-white" strokeWidth={2.5} />
                       )
                     ) : (
                       <ChevronsUpDown
                         aria-hidden
-                        className="text-primary-400 group-hover:text-primary-200 size-3.5 transition-colors"
+                        className="text-primary-400/70 group-hover:text-primary-200 size-3.5 transition-colors"
                       />
                     )}
                   </button>
