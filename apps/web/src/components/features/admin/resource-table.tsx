@@ -140,7 +140,7 @@ export function ResourceTable<T extends object>({
   }
   if (!data || data.length === 0) {
     return (
-      <section className="shadow-sm-card rounded-[14px] border border-neutral-200 bg-white">
+      <section className="border-primary-200/80 shadow-sm-card rounded-[14px] border bg-white">
         <EmptyState icon={Inbox} title={emptyTitle} description={emptyDescription} />
       </section>
     );
@@ -164,8 +164,8 @@ export function ResourceTable<T extends object>({
   };
 
   return (
-    <section className="shadow-sm-card overflow-hidden rounded-[14px] border border-neutral-200 bg-white">
-      <div className="border-b border-neutral-200 bg-neutral-50/70 p-3 sm:px-4">
+    <section className="border-primary-200/80 shadow-sm-card overflow-hidden rounded-[14px] border bg-white">
+      <div className="border-primary-100 from-primary-50 border-b bg-gradient-to-r via-white to-emerald-50/70 p-3 sm:px-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <label className="relative block min-w-0 flex-1 lg:max-w-sm">
             <span className="sr-only">{searchPlaceholder}</span>
@@ -180,7 +180,7 @@ export function ResourceTable<T extends object>({
                 setPage(1);
               }}
               placeholder={searchPlaceholder}
-              className="focus:border-primary-600 focus:ring-primary-100 h-9 w-full rounded-md border border-neutral-300 bg-white pr-9 pl-9 text-sm outline-none transition placeholder:text-neutral-400 focus:ring-2"
+              className="border-primary-200 focus:border-primary-600 focus:ring-primary-100 h-9 w-full rounded-md border bg-white/90 pr-9 pl-9 text-sm outline-none transition placeholder:text-neutral-400 focus:ring-2"
             />
             {query ? (
               <button
@@ -196,7 +196,7 @@ export function ResourceTable<T extends object>({
 
           <div className="flex flex-wrap items-center gap-2">
             {filterColumn ? (
-              <label className="focus-within:border-primary-600 focus-within:ring-primary-100 inline-flex h-9 items-center gap-2 rounded-md border border-neutral-300 bg-white px-3 text-sm text-neutral-700 transition focus-within:ring-2">
+              <label className="border-primary-200 focus-within:border-primary-600 focus-within:ring-primary-100 inline-flex h-9 items-center gap-2 rounded-md border bg-white px-3 text-sm text-neutral-700 transition focus-within:ring-2">
                 <SlidersHorizontal aria-hidden className="text-primary-700 size-4 shrink-0" />
                 <span className="sr-only">Filter by {filterColumn.header}</span>
                 <select
@@ -224,7 +224,7 @@ export function ResourceTable<T extends object>({
               </Button>
             ) : null}
 
-            <span className="text-xs font-semibold tabular-nums text-neutral-500">
+            <span className="text-primary-800/80 text-xs font-semibold tabular-nums">
               {rows.length === data.length
                 ? `${data.length} total`
                 : `${rows.length} of ${data.length}`}
@@ -233,7 +233,7 @@ export function ResourceTable<T extends object>({
         </div>
       </div>
 
-      <div className="divide-y divide-neutral-200 md:hidden">
+      <div className="divide-primary-100/80 divide-y md:hidden">
         {pagedRows.map((row) => (
           <article key={getRowKey(row)} className="space-y-3 p-4">
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
@@ -251,7 +251,7 @@ export function ResourceTable<T extends object>({
               ))}
             </dl>
             {rowActions ? (
-              <div className="flex flex-wrap gap-2 border-t border-neutral-100 pt-3">
+              <div className="border-primary-100/80 flex flex-wrap gap-2 border-t pt-3">
                 {rowActions(row)}
               </div>
             ) : null}
@@ -260,32 +260,32 @@ export function ResourceTable<T extends object>({
       </div>
 
       <Table className="hidden md:table">
-        <TableHeader className="bg-neutral-50">
-          <TableRow className="hover:bg-neutral-50">
+        <TableHeader className="bg-primary-900 shadow-[0_1px_0_0_var(--color-primary-800)]">
+          <TableRow className="hover:bg-primary-900 border-primary-800">
             {columns.map((column) => {
               const sorted = sortKey === column.key;
               return (
                 <TableHead
                   key={column.key}
                   aria-sort={sorted ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
-                  className={cn("h-11 px-4 text-neutral-600", column.className)}
+                  className={cn("text-primary-50 h-11 px-4", column.className)}
                 >
                   <button
                     type="button"
                     onClick={() => sort(column.key)}
-                    className="group hover:text-primary-800 focus-visible:ring-ring inline-flex items-center gap-1.5 rounded text-[11px] font-bold tracking-[0.08em] uppercase transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    className="group focus-visible:ring-primary-200 inline-flex items-center gap-1.5 rounded text-[11px] font-bold tracking-[0.08em] uppercase transition-colors hover:text-white focus-visible:ring-2 focus-visible:outline-none"
                   >
                     {column.header}
                     {sorted ? (
                       sortDirection === "asc" ? (
-                        <ArrowUpAZ aria-hidden className="text-primary-700 size-3.5" />
+                        <ArrowUpAZ aria-hidden className="size-3.5 text-white" />
                       ) : (
-                        <ArrowDownAZ aria-hidden className="text-primary-700 size-3.5" />
+                        <ArrowDownAZ aria-hidden className="size-3.5 text-white" />
                       )
                     ) : (
                       <ChevronsUpDown
                         aria-hidden
-                        className="size-3.5 text-neutral-300 transition-colors group-hover:text-neutral-500"
+                        className="text-primary-400 group-hover:text-primary-200 size-3.5 transition-colors"
                       />
                     )}
                   </button>
@@ -293,17 +293,20 @@ export function ResourceTable<T extends object>({
               );
             })}
             {rowActions ? (
-              <TableHead className="h-11 px-4 text-right text-[11px] font-bold tracking-[0.08em] text-neutral-600 uppercase">
+              <TableHead className="text-primary-50 h-11 px-4 text-right text-[11px] font-bold tracking-[0.08em] uppercase">
                 Actions
               </TableHead>
             ) : null}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {pagedRows.map((row) => (
+          {pagedRows.map((row, index) => (
             <TableRow
               key={getRowKey(row)}
-              className="border-neutral-100 transition-colors hover:bg-neutral-50"
+              className={cn(
+                "border-primary-100/80 hover:bg-primary-50/80 transition-colors",
+                index % 2 === 1 && "bg-emerald-50/35",
+              )}
             >
               {columns.map((column) => (
                 <TableCell
@@ -340,7 +343,7 @@ export function ResourceTable<T extends object>({
       ) : null}
 
       {rows.length > 0 ? (
-        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 bg-neutral-50/70 px-3 py-2.5 text-sm text-neutral-600 sm:px-4">
+        <footer className="border-primary-100 bg-primary-50/60 text-primary-900/75 flex flex-wrap items-center justify-between gap-3 border-t px-3 py-2.5 text-sm sm:px-4">
           <span className="tabular-nums">
             Showing {(currentPage - 1) * PAGE_SIZE + 1}–
             {Math.min(currentPage * PAGE_SIZE, rows.length)} of {rows.length}

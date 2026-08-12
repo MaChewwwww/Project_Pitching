@@ -147,12 +147,14 @@ categorical filtering, sortable headings, pagination, empty/loading/error states
 stacked-card small-screen layout. A resource page supplies its columns and actions; it must not
 recreate those controls in a page.
 
-Its chrome is neutral, not green. A console list is scanned for the one row that matters, and
-the earlier gradient toolbar and `primary-900` header competed with the row content for that
-attention — the green is now spent only on sort state and the active filter. Unsorted columns
-carry a dimmed `ChevronsUpDown` so the header reads as sortable before it is clicked, and a
-search that matches nothing renders an `EmptyState` with a reset action rather than a bare line
-of text (NFR-UX-008).
+Its chrome is green — `primary-900` heading band, gradient toolbar, `emerald-50/35` zebra rows.
+A neutral variant was tried and rejected: the console is a green interface throughout, and a
+grey list reads as a foreign component dropped into it. Keep new console surfaces on the green.
+
+Two behaviours are worth preserving if this component is restyled again. Unsorted columns carry
+a dimmed `ChevronsUpDown`, so a heading reads as sortable before anyone clicks it. And a search
+matching nothing renders an `EmptyState` with a reset action rather than a bare line of text —
+required by Definition of Done item 3 (NFR-UX-008).
 
 Article creation starts on its own route rather than inside a scrolling dialog. The first save
 creates a draft, then the full editor pairs the form with `ArticleImageManager`. This keeps media
