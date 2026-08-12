@@ -3527,6 +3527,8 @@ export interface components {
         PublicWeatherCurrent: {
             /** Readings */
             readings: components["schemas"]["PublicReading"][];
+            /** Peak Readings */
+            peak_readings: components["schemas"]["PublicReading"][];
             /** Observed At */
             observed_at: string | null;
             /** Source */
