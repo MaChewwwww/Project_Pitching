@@ -186,6 +186,32 @@ async def record_manual_reading(
     )
     session.add(reading)
     await session.flush()
+
+    # A manual river reading follows the same human-review path as scheduled
+    # readings. Crossing a configured tier creates a deduplicated prompt; it
+    # never creates or publishes a public announcement automatically.
+    if data.metric == "river_level":
+        from src.modules.alerts import service as alerts_service
+
+        thresholds = RiverThresholds(
+            level_1_m=settings.alert_threshold_level_1_m,
+            level_2_m=settings.alert_threshold_level_2_m,
+            level_3_m=settings.alert_threshold_level_3_m,
+        )
+        level = _alert_level(data.value, thresholds)
+        crossed_threshold = {
+            1: thresholds.level_1_m,
+            2: thresholds.level_2_m,
+            3: thresholds.level_3_m,
+        }.get(level)
+        if crossed_threshold is not None:
+            await alerts_service.create_alert_prompt_if_new(
+                session,
+                reading_id=reading.id,
+                level=level,
+                threshold_value=crossed_threshold,
+            )
+
     await write_audit(
         session,
         actor_user_id=actor_id,

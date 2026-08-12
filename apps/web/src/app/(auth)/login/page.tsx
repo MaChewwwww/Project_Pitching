@@ -68,7 +68,7 @@ export default function LoginPage() {
             </div>
             <div className="flex items-center gap-2.5 text-xs text-emerald-100 font-semibold">
               <Radio className="size-4 text-emerald-400 shrink-0" />
-              <span>San Jose Siren Units & Alert Prompts</span>
+              <span>Weather & Flood Watch operations</span>
             </div>
             <div className="flex items-center gap-2.5 text-xs text-emerald-100 font-semibold">
               <HeartPulse className="size-4 text-emerald-400 shrink-0" />

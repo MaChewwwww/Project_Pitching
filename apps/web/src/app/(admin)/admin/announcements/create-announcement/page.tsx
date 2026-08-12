@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import * as React from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -29,7 +30,14 @@ const defaults: AnnouncementFormValues = {
 export default function CreateAnnouncementPage() {
   useRequireRole("admin", "sk");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const client = useQueryClient();
+  const alertIntent = searchParams.get("kind") === "alert";
+
+  const formDefaults = React.useMemo(
+    () => ({ ...defaults, kind: alertIntent ? ("alert" as const) : defaults.kind }),
+    [alertIntent],
+  );
 
   const { data: areas = [] } = useQuery({
     queryKey: ["admin", "areas"],
@@ -72,7 +80,9 @@ export default function CreateAnnouncementPage() {
           }
         } catch {
           // Keep announcement created even if image upload encounters an issue
-          toast.error("Announcement created, but some image uploads encountered an issue.");
+          toast.error(
+            "Announcement created, but some image uploads encountered an issue.",
+          );
         }
       }
 
@@ -96,8 +106,9 @@ export default function CreateAnnouncementPage() {
       />
 
       <AnnouncementForm
+        key={alertIntent ? "alert" : "announcement"}
         areas={areas}
-        defaultValues={defaults}
+        defaultValues={formDefaults}
         showCoverUpload={true}
         onSubmit={async (values, imageItems) => {
           await createMutation.mutateAsync({ values, imageItems });

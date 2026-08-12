@@ -1,35 +1,60 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CloudLightning } from "lucide-react";
-import { z } from "zod";
-import { toast } from "sonner";
-
+import * as React from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  AlertCircle,
+  Check,
+  ChevronRight,
+  CloudLightning,
+  CloudRain,
+  ClipboardCheck,
+  Gauge,
+  Plus,
+  RefreshCw,
+  Waves,
+} from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { z } from "zod";
+
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { AdminForm, type AdminField } from "@/components/features/admin/admin-form";
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
-import { api } from "@/lib/api/client";
+import { Badge } from "@/components/common/badge";
+import { EmptyState } from "@/components/common/empty-state";
+import { ErrorState } from "@/components/common/error-state";
+import { RiverLevelPanel } from "@/components/features/weather/river-level-panel";
+import { WeatherPanel } from "@/components/features/weather/weather-panel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import { formatPhtDateTime } from "@/lib/format";
+import type { PublicRiverLevel, PublicWeatherCurrent } from "@/lib/api/public-types";
 
 /**
- * Manual river/weather reading entry (FR-WX-007) — a first-class source, not a
- * fallback bolted on. When the PAGASA gauge is dry or the scraper is down, a
- * barangay officer types the number in here and every downstream feature
- * (river-level panel, threshold evaluation) keeps working unchanged.
+ * The unified Weather & Flood Watch workspace (FR-WX-*).
+ *
+ * Overview, manual entry, and threshold review belong together operationally:
+ * the officer sees the same cached public feed before deciding whether to add
+ * a manual reading or review a human-issued alert prompt. Flood History stays
+ * as its own record-management route because it has a different lifecycle.
  */
+
+type WeatherWatchTab = "overview" | "manual-entry" | "threshold-review";
+
+interface AlertPrompt {
+  id: string;
+  reading_id: number | null;
+  level: 1 | 2 | 3;
+  threshold_value: number;
+  created_at: string;
+  acknowledged_by_user_id: string | null;
+  acknowledged_at: string | null;
+  resulted_in_announcement_id: string | null;
+}
 
 const metrics = [
   "river_level",
@@ -53,7 +78,10 @@ const fields: AdminField[] = [
     name: "metric",
     label: "Metric",
     type: "select",
-    options: metrics.map((m) => ({ value: m, label: m.replace(/_/g, " ") })),
+    options: metrics.map((metric) => ({
+      value: metric,
+      label: metric.replace(/_/g, " "),
+    })),
   },
   { name: "value", label: "Value", type: "number" },
   { name: "unit", label: "Unit", type: "text", placeholder: "m, mm, °C, %" },
@@ -78,15 +106,90 @@ interface SimulateTyphoonResult {
   highest_alert_level: 0 | 1 | 2 | 3;
 }
 
-export default function AdminReadingsPage() {
-  useRequireRole("admin", "bhw");
+function TabIcon({ icon: Icon }: { icon: typeof Gauge }) {
+  return <Icon aria-hidden className="size-4" />;
+}
+
+function OverviewPanel({
+  weather,
+  river,
+  isLoading,
+  isError,
+  onRetry,
+}: {
+  weather: PublicWeatherCurrent | undefined;
+  river: PublicRiverLevel | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+}) {
+  if (isLoading) {
+    return (
+      <div
+        className="grid gap-4 xl:grid-cols-[1.45fr_0.85fr]"
+        aria-label="Loading weather data"
+      >
+        {["weather", "river"].map((key) => (
+          <Card key={key} className="min-h-[280px] animate-pulse bg-neutral-50">
+            <CardContent className="flex flex-col gap-5">
+              <div className="h-4 w-40 rounded bg-neutral-200" />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="h-20 rounded-xl bg-neutral-200" />
+                <div className="h-20 rounded-xl bg-neutral-200" />
+              </div>
+              <div className="h-32 rounded-xl bg-neutral-200" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (isError || !weather || !river) {
+    return (
+      <ErrorState
+        sectionName="Weather and river data"
+        description="The cached operational feed could not be loaded. Manual entry remains available in the next tab."
+        onRetry={onRetry}
+      />
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-emerald-200/80 bg-emerald-50/50 px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <span className="grid size-8 place-items-center rounded-lg bg-emerald-600 text-white">
+            <CloudRain aria-hidden className="size-4" />
+          </span>
+          <div>
+            <p className="text-sm font-bold text-neutral-900">Operational feed</p>
+            <p className="text-caption text-neutral-600">
+              The same cached readings shown to residents on the public weather page.
+            </p>
+          </div>
+        </div>
+        <Badge tone={weather.is_stale || river.is_stale ? "warning" : "success"}>
+          {weather.is_stale || river.is_stale ? "Review stale data" : "Feed current"}
+        </Badge>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[1.45fr_0.85fr]">
+        <WeatherPanel weather={weather} />
+        <RiverLevelPanel river={river} density="compact" />
+      </div>
+    </div>
+  );
+}
+
+function ManualEntryPanel({
+  canSimulate,
+  onReadingRecorded,
+}: {
+  canSimulate: boolean;
+  onReadingRecorded: () => void;
+}) {
   const queryClient = useQueryClient();
-
-  const { data: river } = useQuery({
-    queryKey: ["public", "river-level"],
-    queryFn: () => api.get("/public/river-level").then((r) => r.data),
-  });
-
   const submitMutation = useMutation({
     mutationFn: (values: ReadingFormValues) =>
       api.post("/admin/readings", {
@@ -95,89 +198,46 @@ export default function AdminReadingsPage() {
           ? new Date(values.observed_at).toISOString()
           : undefined,
       }),
-    onSuccess: () => toast.success("Reading recorded"),
+    onSuccess: () => {
+      toast.success("Reading recorded");
+      queryClient.invalidateQueries({ queryKey: ["admin", "weather-watch"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "alert-prompts"] });
+      onReadingRecorded();
+    },
+    onError: (error) => toast.error(toDisplayError(error).detail),
   });
 
   const simulateMutation = useMutation({
     mutationFn: () =>
       api
         .post<SimulateTyphoonResult>("/admin/readings/simulate-typhoon")
-        .then((r) => r.data),
+        .then((response) => response.data),
     onSuccess: (result) => {
       toast.success(
-        `Simulated typhoon: ${result.readings.length} readings, ` +
-          `${result.alert_prompts_created} alert prompt(s), ` +
-          `highest level ${result.highest_alert_level}.`,
+        `Scenario recorded: ${result.readings.length} readings, ${result.alert_prompts_created} prompt(s) created.`,
       );
-      queryClient.invalidateQueries({ queryKey: ["public", "river-level"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "weather-watch"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "alert-prompts"] });
     },
-    onError: () => toast.error("Could not run the simulation"),
+    onError: (error) => toast.error(toDisplayError(error).detail),
   });
 
   return (
-    <div className="flex flex-col gap-6">
-      <AdminPageHeader
-        title="River & Weather Readings"
-        description="Enter a reading directly when the automated PAGASA/Open-Meteo fetch is unavailable."
-      />
-
-      <Card className="max-w-lg border-dashed">
-        <CardContent className="flex flex-col gap-3">
-          <div>
-            <p className="text-body font-semibold text-neutral-900">Simulate typhoon</p>
-            <p className="text-body-sm text-neutral-500">
-              Demo tool only. Writes a rising sequence of river-level and weather readings
-              and the alert prompts they trigger, so a live pitch does not depend on real
-              weather cooperating. Never publishes a public alert on its own.
-            </p>
+    <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+      <Card>
+        <CardContent className="flex flex-col gap-5">
+          <div className="flex items-start gap-3 border-b border-neutral-200 pb-4">
+            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+              <Plus aria-hidden className="size-4" />
+            </span>
+            <div>
+              <h2 className="text-h3 text-neutral-900">Record a field reading</h2>
+              <p className="text-body-sm text-neutral-600">
+                Use this when a gauge or automated fetch is unavailable. Staff entries are
+                stored beside automated readings with their source and timestamp.
+              </p>
+            </div>
           </div>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="self-start"
-                disabled={simulateMutation.isPending}
-              >
-                <CloudLightning aria-hidden className="size-3.5" />
-                Simulate typhoon
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Simulate a typhoon?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This writes real manual readings and alert prompts to this environment.
-                  Only use it on the demo stack.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => simulateMutation.mutate()}>
-                  Run simulation
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </CardContent>
-      </Card>
-
-      {river?.reading ? (
-        <Card>
-          <CardContent>
-            <p className="text-body-sm text-neutral-500">Latest river level on record</p>
-            <p className="text-h2 text-neutral-900">
-              {river.reading.value} {river.reading.unit}
-              <span className="text-body-sm ml-2 font-normal text-neutral-500">
-                {formatPhtDateTime(river.reading.observed_at)} · {river.reading.source}
-              </span>
-            </p>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <Card className="max-w-lg">
-        <CardContent>
           <AdminForm
             fields={fields}
             schema={readingSchema}
@@ -188,6 +248,329 @@ export default function AdminReadingsPage() {
             }}
           />
         </CardContent>
+      </Card>
+
+      <Card className="h-fit border-amber-200/80 bg-amber-50/35">
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex items-start gap-3">
+            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-amber-100 text-amber-800 ring-1 ring-amber-200">
+              <CloudLightning aria-hidden className="size-4" />
+            </span>
+            <div>
+              <h2 className="text-h3 text-neutral-900">Demo scenario</h2>
+              <p className="text-body-sm text-neutral-700">
+                Admins can write a rising sequence to exercise the gauge and human-review
+                workflow during a presentation. It never publishes an alert automatically.
+              </p>
+            </div>
+          </div>
+          {canSimulate ? (
+            <Button
+              variant="outline"
+              className="w-full justify-center border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
+              disabled={simulateMutation.isPending}
+              onClick={() => simulateMutation.mutate()}
+            >
+              <CloudLightning aria-hidden className="size-4" />
+              {simulateMutation.isPending ? "Recording scenario…" : "Simulate typhoon"}
+            </Button>
+          ) : (
+            <p className="text-caption font-semibold text-amber-900">
+              Demo simulation is available to admins only.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function PromptLevelBadge({ level }: { level: AlertPrompt["level"] }) {
+  const tone = level === 3 ? "danger" : level === 2 ? "orange" : "warning";
+  const label = level === 3 ? "Critical" : level === 2 ? "Evacuate" : "Prepare";
+  return (
+    <Badge tone={tone}>
+      Level {level} · {label}
+    </Badge>
+  );
+}
+
+function ThresholdReviewPanel({
+  isAdmin,
+  onRefresh,
+}: {
+  isAdmin: boolean;
+  onRefresh: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin", "alert-prompts"],
+    queryFn: () =>
+      api.get<AlertPrompt[]>("/admin/alert-prompts").then((response) => response.data),
+    enabled: isAdmin,
+    refetchInterval: 60_000,
+  });
+
+  const acknowledgeMutation = useMutation({
+    mutationFn: (id: string) => api.post(`/admin/alert-prompts/${id}/acknowledge`),
+    onSuccess: () => {
+      toast.success("Prompt acknowledged");
+      queryClient.invalidateQueries({ queryKey: ["admin", "alert-prompts"] });
+    },
+    onError: (error) => toast.error(toDisplayError(error).detail),
+  });
+
+  if (!isAdmin) {
+    return (
+      <Card>
+        <CardContent>
+          <EmptyState
+            icon={ClipboardCheck}
+            size="sm"
+            title="Threshold review is admin-only"
+            description="BHW staff can record field readings. An admin reviews threshold breaches and decides whether to publish a public alert."
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Card className="min-h-[260px] animate-pulse bg-neutral-50">
+        <CardContent className="flex flex-col gap-4">
+          <div className="h-4 w-48 rounded bg-neutral-200" />
+          <div className="h-16 rounded-xl bg-neutral-200" />
+          <div className="h-16 rounded-xl bg-neutral-200" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return <ErrorState sectionName="Threshold review" onRetry={() => void refetch()} />;
+  }
+
+  const prompts = data ?? [];
+  if (prompts.length === 0) {
+    return (
+      <Card>
+        <CardContent>
+          <EmptyState
+            icon={ClipboardCheck}
+            title="No threshold breaches awaiting review"
+            description="When a river reading crosses a configured level, it will appear here for a human decision."
+            action={
+              <Button variant="outline" size="sm" onClick={onRefresh}>
+                <RefreshCw aria-hidden className="size-4" />
+                Refresh feed
+              </Button>
+            }
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-200 pb-4">
+          <div>
+            <h2 className="text-h3 text-neutral-900">Threshold review queue</h2>
+            <p className="text-body-sm text-neutral-600">
+              A prompt records a threshold crossing; it does not publish anything by
+              itself.
+            </p>
+          </div>
+          <Badge tone="warning" icon={AlertCircle}>
+            {prompts.length} awaiting review
+          </Badge>
+        </div>
+
+        <div className="flex flex-col divide-y divide-neutral-200">
+          {prompts.map((prompt) => (
+            <article
+              key={prompt.id}
+              className="flex flex-col gap-4 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-amber-50 text-amber-800 ring-1 ring-amber-200">
+                  <Waves aria-hidden className="size-4" />
+                </span>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <PromptLevelBadge level={prompt.level} />
+                    <span className="text-body-sm font-semibold text-neutral-900">
+                      River threshold crossed at {prompt.threshold_value} m
+                    </span>
+                  </div>
+                  <p className="text-caption mt-1 text-neutral-500">
+                    Detected {formatPhtDateTime(prompt.created_at)}
+                    {prompt.reading_id ? ` · Reading #${prompt.reading_id}` : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={acknowledgeMutation.isPending}
+                  onClick={() => acknowledgeMutation.mutate(prompt.id)}
+                >
+                  <Check aria-hidden className="size-4" />
+                  Acknowledge
+                </Button>
+                <Button asChild size="sm" className="bg-emerald-700 hover:bg-emerald-800">
+                  <Link href="/admin/announcements/create-announcement?kind=alert">
+                    Create alert
+                    <ChevronRight aria-hidden className="size-4" />
+                  </Link>
+                </Button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function AdminReadingsPage() {
+  const { user } = useRequireRole("admin", "bhw");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const canReview = user?.role === "admin" || user?.role === "superadmin";
+  const canSimulate = canReview;
+  const requestedTab = searchParams.get("tab") as WeatherWatchTab | null;
+  const activeTab: WeatherWatchTab =
+    requestedTab === "manual-entry" || (requestedTab === "threshold-review" && canReview)
+      ? requestedTab
+      : "overview";
+
+  const { data: promptData } = useQuery({
+    queryKey: ["admin", "alert-prompts"],
+    queryFn: () =>
+      api.get<AlertPrompt[]>("/admin/alert-prompts").then((response) => response.data),
+    enabled: canReview,
+    refetchInterval: 60_000,
+  });
+
+  const {
+    data: weather,
+    isLoading: weatherLoading,
+    isError: weatherError,
+    refetch: refetchWeather,
+  } = useQuery({
+    queryKey: ["admin", "weather-watch", "weather"],
+    queryFn: () =>
+      api
+        .get<PublicWeatherCurrent>("/public/weather/current")
+        .then((response) => response.data),
+  });
+  const {
+    data: river,
+    isLoading: riverLoading,
+    isError: riverError,
+    refetch: refetchRiver,
+  } = useQuery({
+    queryKey: ["admin", "weather-watch", "river"],
+    queryFn: () =>
+      api.get<PublicRiverLevel>("/public/river-level").then((response) => response.data),
+  });
+
+  const isOverviewLoading = weatherLoading || riverLoading;
+  const isOverviewError = weatherError || riverError;
+
+  function selectTab(tab: string) {
+    if (tab !== "overview" && tab !== "manual-entry" && tab !== "threshold-review")
+      return;
+    if (tab === "threshold-review" && !canReview) return;
+    router.replace(`/admin/readings?tab=${tab}`, { scroll: false });
+  }
+
+  function refreshFeed() {
+    void refetchWeather();
+    void refetchRiver();
+    queryClient.invalidateQueries({ queryKey: ["admin", "alert-prompts"] });
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <AdminPageHeader
+        icon={CloudRain}
+        title="Weather & Flood Watch"
+        description="Monitor the live weather feed, record field readings, and review threshold breaches before issuing public guidance."
+        meta={
+          <div className="text-caption flex flex-wrap items-center gap-2 text-neutral-600">
+            <Badge tone="primary" icon={Gauge}>
+              Operational workspace
+            </Badge>
+            <span>Alerts remain human-issued.</span>
+          </div>
+        }
+      />
+
+      <Card className="overflow-visible p-2 sm:p-3">
+        <Tabs value={activeTab} onValueChange={selectTab} className="w-full">
+          <TabsList
+            variant="line"
+            className="grid h-auto w-full grid-cols-2 gap-1 bg-transparent p-0 sm:grid-cols-3"
+          >
+            <TabsTrigger
+              value="overview"
+              className="h-11 justify-start gap-2 rounded-lg px-3 text-sm data-active:bg-emerald-50 data-active:text-emerald-900 sm:justify-center"
+            >
+              <TabIcon icon={Gauge} />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger
+              value="manual-entry"
+              className="h-11 justify-start gap-2 rounded-lg px-3 text-sm data-active:bg-emerald-50 data-active:text-emerald-900 sm:justify-center"
+            >
+              <TabIcon icon={Plus} />
+              Manual entry
+            </TabsTrigger>
+            {canReview ? (
+              <TabsTrigger
+                value="threshold-review"
+                className="col-span-2 h-11 justify-start gap-2 rounded-lg px-3 text-sm data-active:bg-emerald-50 data-active:text-emerald-900 sm:col-span-1 sm:justify-center"
+              >
+                <TabIcon icon={ClipboardCheck} />
+                Threshold review
+                {promptData ? (
+                  <span className="ml-0.5 min-w-5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] leading-none font-bold text-amber-900">
+                    {promptData.length}
+                  </span>
+                ) : null}
+              </TabsTrigger>
+            ) : null}
+          </TabsList>
+
+          <div className="mt-4 border-t border-neutral-200 pt-4">
+            <TabsContent value="overview" className="mt-0">
+              <OverviewPanel
+                weather={weather}
+                river={river}
+                isLoading={isOverviewLoading}
+                isError={isOverviewError}
+                onRetry={refreshFeed}
+              />
+            </TabsContent>
+            <TabsContent value="manual-entry" className="mt-0">
+              <ManualEntryPanel
+                canSimulate={canSimulate}
+                onReadingRecorded={refreshFeed}
+              />
+            </TabsContent>
+            {canReview ? (
+              <TabsContent value="threshold-review" className="mt-0">
+                <ThresholdReviewPanel isAdmin={canReview} onRefresh={refreshFeed} />
+              </TabsContent>
+            ) : null}
+          </div>
+        </Tabs>
       </Card>
     </div>
   );

@@ -425,8 +425,8 @@ GET   /admin/incident-reports        implemented — list incident reports (FR-S
 PATCH /admin/incident-reports/{id}   implemented — verify or dismiss report
 POST  /admin/alerts
 DELETE /admin/alerts/{id}
-GET   /admin/alert-prompts           threshold breaches awaiting a decision
-POST  /admin/readings                manual river level (FR-WX-007)
+GET   /admin/alert-prompts           threshold breaches awaiting a decision (surfaced in the Weather Watch workspace)
+POST  /admin/readings                manual river/weather reading (FR-WX-007); river crossings create a prompt, never a public alert
 GET   /admin/evacuation-centers
 POST  /admin/evacuation-centers/{id}/checkins
 GET   /admin/analytics/*
@@ -445,7 +445,7 @@ PUT   /admin/config/{key}           legacy/internal settings write (not linked i
 /admin/donation-drives        POST, GET, PATCH        (+ nested drive_need)
 /admin/flood-events            POST, GET, PATCH, DELETE
 /admin/areas                    GET, PATCH             (internal reference data; not linked in the console)
-GET   /admin/alert-prompts      threshold breaches awaiting a decision (FR-WX-009)
+GET   /admin/alert-prompts      threshold breaches awaiting a decision (FR-WX-009; embedded in `/admin/readings`)
 ```
 
 The deployed donation-drive CRUD still exposes legacy nested `drive_need` data. D-16 retires

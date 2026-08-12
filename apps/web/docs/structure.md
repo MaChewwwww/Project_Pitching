@@ -39,6 +39,18 @@ records are excluded from public reads.
 The admin route set intentionally has no `/admin/areas` or `/admin/config` page. Those values are
 reference/service data consumed by operational screens, not standalone console workflows.
 
+## Weather & Flood Watch workspace
+
+`/admin/readings` is the single console entry point for weather operations. Its tabs are `Overview`,
+`Manual entry`, and (admins only) `Threshold review`; the selected tab is retained in the `tab` query
+parameter. `/admin/alert-prompts` is not a route or sidebar destination. `/admin/flood-events` remains
+separate because flood history is an editorial record with its own create/edit lifecycle.
+
+The workspace deliberately reuses the public `WeatherPanel`, `RiverLevelPanel`, `DataFreshness`, and
+`AlertLevelIndicator` components so staff and residents read the same cached measurements. API access
+still enforces the role boundary: BHW may record readings, while only admin/superadmin can review prompts,
+acknowledge them, or run the typhoon demo sequence.
+
 ## Rendering strategy, per surface
 
 Chosen per surface rather than globally (`architecture.md` A-12):

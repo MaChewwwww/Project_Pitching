@@ -214,6 +214,20 @@ This is a reusable portal pattern, not an announcements-only exception. New feat
 reuse these composites or extract a clearly named variant when their domain fields genuinely differ;
 they should not introduce a second authoring layout or a second publication workflow.
 
+### Weather Watch workspace
+
+`/admin/readings` is the weather-specific counterpart to the announcement console pattern. It keeps
+three related jobs in one responsive surface: `Overview` reuses the public weather and river panels,
+`Manual entry` records a first-class staff reading, and `Threshold review` exposes unresolved prompts
+to admins. The tab is addressable with `?tab=overview|manual-entry|threshold-review`, so a review link
+can return an officer to the exact queue they were using.
+
+The public feed remains database-cached and every value keeps its source, observed time, age, stale
+state, and last-known-good behavior. A manual river reading uses the same threshold evaluator as the
+scheduler and may create an `alert_prompt`; it never publishes an announcement. Admins can acknowledge
+the prompt or open the announcement authoring route with Alert preselected. BHW staff can view the feed
+and enter readings but cannot access the review queue or demo simulation.
+
 ## Animation lives in `globals.css`, not in a client component
 
 `WaterSpinner` and the hero illustrations are animated entirely by CSS classes defined in

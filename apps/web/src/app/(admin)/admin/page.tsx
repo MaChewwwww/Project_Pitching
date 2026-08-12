@@ -16,7 +16,6 @@ import {
   MapPin,
   Megaphone,
   Phone,
-  ShieldAlert,
   ShieldCheck,
   Siren,
 } from "lucide-react";
@@ -41,12 +40,6 @@ const TILES: {
     label: "Announcements",
     description: "Publish advisories and river alerts (FR-ALT-*)",
     icon: Megaphone,
-  },
-  {
-    href: "/admin/alert-prompts",
-    label: "Alert Prompts",
-    description: "Threshold breaches awaiting a decision (FR-WX-009)",
-    icon: ShieldAlert,
   },
   {
     href: "/admin/readings",
