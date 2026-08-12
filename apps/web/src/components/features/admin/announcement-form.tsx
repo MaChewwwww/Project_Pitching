@@ -1,10 +1,17 @@
-"use client";
-
 import * as React from "react";
+import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
-import { AlertCircle } from "lucide-react";
+import {
+  AlertCircle,
+  ImagePlus,
+  MapPin,
+  Megaphone,
+  Sparkles,
+  Trash2,
+  Upload,
+} from "lucide-react";
 
 import { Button } from "@/components/common/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -24,13 +31,12 @@ import {
   type ArticleDocument,
 } from "@/components/features/admin/rich-text-editor";
 import { toDisplayError } from "@/lib/api/client";
+import { cn } from "@/lib/utils";
 
 /**
  * Announcement / alert form — special-cased rather than driven by `AdminForm`'s
  * generic field descriptors because it has two things no other resource does:
- * multi-area targeting and a conditionally-required field. The database enforces
- * the same rule with `chk_alert_needs_instruction` (FR-ALT-005) — this validator
- * is what turns that constraint into a field-level error instead of a 422 toast.
+ * multi-area targeting and a conditionally-required field (FR-ALT-005).
  */
 
 const announcementTypes = [
@@ -51,14 +57,13 @@ export const announcementFormSchema = z
     kind: z.enum(["announcement", "alert"]),
     type: z.enum(announcementTypes),
     severity: z.enum(["info", "warning", "emergency"]).optional(),
-    title: z.string().min(1, "Required"),
+    title: z.string().min(1, "Title is required"),
     excerpt: z.string().max(360, "Keep the summary under 360 characters").default(""),
     body_json: z.custom<ArticleDocument>(),
     instruction: z.string().optional(),
     is_barangay_wide: z.boolean().default(true),
     area_ids: z.array(z.string()).default([]),
-    expires_at: z.string().optional(),
-    publication_status: z.enum(["draft", "published", "archived"]).default("draft"),
+    publication_status: z.enum(["draft", "published", "archived"]).default("published"),
   })
   .superRefine((values, ctx) => {
     if (values.kind === "alert" && !values.instruction?.trim()) {
@@ -77,246 +82,400 @@ export function AnnouncementForm({
   defaultValues,
   onSubmit,
   onCancel,
+  showCoverUpload = false,
 }: {
   areas: { id: string; name: string }[];
   defaultValues: AnnouncementFormValues;
-  onSubmit: (values: AnnouncementFormValues) => Promise<void>;
+  onSubmit: (values: AnnouncementFormValues, coverFile?: File | null, coverAltText?: string) => Promise<void>;
   onCancel: () => void;
+  showCoverUpload?: boolean;
 }) {
   const [serverError, setServerError] = React.useState<string | null>(null);
+  const [coverFile, setCoverFile] = React.useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = React.useState<string | null>(null);
+  const [coverAltText, setCoverAltText] = React.useState("");
+
   const {
     register,
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<AnnouncementFormValues>({
-    // Zod's `.default()` fields make the *input* type optional while
-    // `z.infer` (the *output* type `AnnouncementFormValues` uses) requires
-    // them — a known variance mismatch between zodResolver and RHF's generic.
     resolver: zodResolver(announcementFormSchema as never),
     defaultValues,
   });
 
-  // `useWatch` rather than `form.watch()` — the latter returns a function the
-  // React Compiler cannot safely memoize (it skips the whole component when it
-  // sees one), where `useWatch` is a normal subscribed hook.
   const kind = useWatch({ control, name: "kind" });
   const isBarangayWide = useWatch({ control, name: "is_barangay_wide" });
+
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setCoverFile(file);
+    const url = URL.createObjectURL(file);
+    setCoverPreview(url);
+  };
+
+  const removeCover = () => {
+    if (coverPreview) URL.revokeObjectURL(coverPreview);
+    setCoverFile(null);
+    setCoverPreview(null);
+    setCoverAltText("");
+  };
 
   async function submit(values: AnnouncementFormValues) {
     setServerError(null);
     try {
-      await onSubmit(values);
+      await onSubmit(values, coverFile, coverAltText);
     } catch (error) {
       setServerError(toDisplayError(error).detail);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} noValidate className="flex flex-col gap-6">
+    <form onSubmit={handleSubmit(submit)} noValidate className="w-full">
       {serverError ? (
         <div
           role="alert"
-          className="border-danger-border bg-danger-bg text-danger flex items-start gap-2 rounded-md border p-3 text-sm"
+          className="mb-6 border-red-200 bg-red-50 text-red-700 flex items-start gap-2.5 rounded-xl border p-4 text-sm"
         >
-          <AlertCircle aria-hidden className="mt-0.5 size-4 shrink-0" />
+          <AlertCircle aria-hidden className="mt-0.5 size-4 shrink-0 text-red-600" />
           <span>{serverError}</span>
         </div>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-6">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="kind">Kind</Label>
-          <Controller
-            control={control}
-            name="kind"
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="kind" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="announcement">Announcement</SelectItem>
-                  <SelectItem value="alert">Alert</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="type">Type</Label>
-          <Controller
-            control={control}
-            name="type"
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="type" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {announcementTypes.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t.replace(/_/g, " ")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </div>
-      </div>
-
-      {kind === "alert" ? (
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="severity">Severity</Label>
-          <Controller
-            control={control}
-            name="severity"
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="severity" className="w-full">
-                  <SelectValue placeholder="Select severity" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="info">Info</SelectItem>
-                  <SelectItem value="warning">Warning</SelectItem>
-                  <SelectItem value="emergency">Emergency</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </div>
-      ) : null}
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="title">Title</Label>
-        <Input id="title" aria-invalid={!!errors.title} {...register("title")} />
-        {errors.title ? (
-          <p className="text-danger text-xs">{errors.title.message}</p>
-        ) : null}
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="excerpt">Preview summary</Label>
-        <Textarea id="excerpt" aria-invalid={!!errors.excerpt} {...register("excerpt")} />
-        <p className="text-xs text-neutral-500">Plain text shown in article previews.</p>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label id="article-body-label">Article body</Label>
-        <Controller
-          control={control}
-          name="body_json"
-          render={({ field }) => (
-            <RichTextEditor
-              labelledBy="article-body-label"
-              value={field.value ?? emptyArticleDocument}
-              onChange={field.onChange}
-            />
-          )}
-        />
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="instruction">
-          Instruction{" "}
-          {kind === "alert" ? "(required for alerts — FR-ALT-005)" : "(optional)"}
-        </Label>
-        <Textarea
-          id="instruction"
-          aria-invalid={!!errors.instruction}
-          {...register("instruction")}
-        />
-        {errors.instruction ? (
-          <p className="text-danger text-xs">{errors.instruction.message}</p>
-        ) : null}
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Controller
-          control={control}
-          name="is_barangay_wide"
-          render={({ field }) => (
-            <Checkbox
-              id="is_barangay_wide"
-              checked={field.value}
-              onCheckedChange={field.onChange}
-            />
-          )}
-        />
-        <Label htmlFor="is_barangay_wide" className="font-normal">
-          Barangay-wide
-        </Label>
-      </div>
-
-      {!isBarangayWide ? (
-        <div className="flex flex-col gap-1.5">
-          <Label>Target areas</Label>
-          <Controller
-            control={control}
-            name="area_ids"
-            render={({ field }) => (
-              <div className="flex flex-wrap gap-3 rounded-md border border-neutral-200 p-3">
-                {areas.map((area) => {
-                  const checked = field.value.includes(area.id);
-                  return (
-                    <label key={area.id} className="flex items-center gap-1.5 text-sm">
-                      <Checkbox
-                        checked={checked}
-                        onCheckedChange={(c) =>
-                          field.onChange(
-                            c
-                              ? [...field.value, area.id]
-                              : field.value.filter((id) => id !== area.id),
-                          )
-                        }
-                      />
-                      {area.name}
-                    </label>
-                  );
-                })}
+      <div className={showCoverUpload ? "grid gap-8 xl:grid-cols-[minmax(0,1fr)_22rem]" : "space-y-6"}>
+        {/* Story details column */}
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-neutral-200/90 bg-white p-6 sm:p-8 shadow-2xs space-y-6">
+            <div className="flex items-center gap-2.5 border-b border-neutral-100 pb-4">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200/60">
+                <Sparkles aria-hidden className="size-4" />
               </div>
-            )}
-          />
+              <div>
+                <h2 className="text-base font-bold text-neutral-900">Article Details</h2>
+                <p className="text-xs text-neutral-500">Classification, headline, and rich text content</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="kind" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+                  Type
+                </Label>
+                <Controller
+                  control={control}
+                  name="kind"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="kind" className="h-10 rounded-xl border-neutral-200 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="announcement">Announcement</SelectItem>
+                        <SelectItem value="alert">Alert</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="type" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+                  Category
+                </Label>
+                <Controller
+                  control={control}
+                  name="type"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="type" className="h-10 rounded-xl border-neutral-200 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {announcementTypes.map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {t.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            </div>
+
+            {kind === "alert" ? (
+              <div className="flex flex-col gap-2 rounded-xl bg-amber-50/70 border border-amber-200/80 p-4">
+                <Label htmlFor="severity" className="text-xs font-bold uppercase tracking-wider text-amber-900">
+                  Alert Severity Level
+                </Label>
+                <Controller
+                  control={control}
+                  name="severity"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="severity" className="h-10 rounded-xl border-amber-300 bg-white font-semibold text-amber-950">
+                        <SelectValue placeholder="Select severity" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="info">Info</SelectItem>
+                        <SelectItem value="warning">Warning</SelectItem>
+                        <SelectItem value="emergency">Emergency</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            ) : null}
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+                Title
+              </Label>
+              <Input
+                id="title"
+                placeholder="Enter article title..."
+                className="h-11 rounded-xl border-neutral-200 bg-white font-medium text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                aria-invalid={!!errors.title}
+                {...register("title")}
+              />
+              {errors.title ? (
+                <p className="text-red-600 text-xs font-semibold">{errors.title.message}</p>
+              ) : null}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="excerpt" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+                Preview Summary
+              </Label>
+              <Textarea
+                id="excerpt"
+                placeholder="Brief summary shown in public cards..."
+                className="min-h-24 rounded-xl border-neutral-200 bg-white text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                aria-invalid={!!errors.excerpt}
+                {...register("excerpt")}
+              />
+              <p className="text-[11px] font-medium text-neutral-400">Plain text preview shown in article cards (max 360 characters).</p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label id="article-body-label" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+                Article Body
+              </Label>
+              <Controller
+                control={control}
+                name="body_json"
+                render={({ field }) => (
+                  <RichTextEditor
+                    labelledBy="article-body-label"
+                    value={field.value ?? emptyArticleDocument}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="instruction" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+                Action Instruction{" "}
+                {kind === "alert" ? (
+                  <span className="text-red-600 font-bold">(Required for Alerts)</span>
+                ) : (
+                  <span className="text-neutral-400 font-normal">(Optional)</span>
+                )}
+              </Label>
+              <Textarea
+                id="instruction"
+                placeholder="Key action steps for residents (e.g., Prepare 72-hour survival kits now)..."
+                className="min-h-20 rounded-xl border-neutral-200 bg-white text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                aria-invalid={!!errors.instruction}
+                {...register("instruction")}
+              />
+              {errors.instruction ? (
+                <p className="text-red-600 text-xs font-semibold">{errors.instruction.message}</p>
+              ) : null}
+            </div>
+          </div>
         </div>
-      ) : null}
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="expires_at">Expires at (optional)</Label>
-        <Input id="expires_at" type="datetime-local" {...register("expires_at")} />
-      </div>
+        {/* Side Panel: Cover Upload, Targeting & Status */}
+        <div className="space-y-6">
+          {showCoverUpload ? (
+            <div className="rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-2xs space-y-4">
+              <div className="flex items-center gap-2 border-b border-neutral-100 pb-3">
+                <ImagePlus aria-hidden className="size-4 text-emerald-600" />
+                <h3 className="text-sm font-bold text-neutral-900">Cover Photo</h3>
+              </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Controller
-          control={control}
-          name="publication_status"
-          render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger id="publication_status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="draft">Save as draft</SelectItem>
-                <SelectItem value="published">Publish now</SelectItem>
-                <SelectItem value="archived">Archive</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-        />
-        <p className="text-xs text-neutral-500">
-          Routine announcements need a cover image before publishing. Alerts remain
-          text-first.
-        </p>
-      </div>
+              {coverPreview ? (
+                <div className="space-y-3">
+                  <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 shadow-2xs">
+                    <Image
+                      src={coverPreview}
+                      alt={coverAltText || "Cover photo preview"}
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeCover}
+                      className="absolute top-2 right-2 rounded-full bg-red-600 p-1.5 text-white shadow-md hover:bg-red-700 transition-all"
+                      title="Remove cover photo"
+                    >
+                      <Trash2 aria-hidden className="size-3.5" />
+                    </button>
+                    <span className="absolute bottom-2 left-2 rounded-full bg-emerald-600/90 px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
+                      Cover Photo
+                    </span>
+                  </div>
 
-      <div className="mt-2 flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving…" : "Publish"}
-        </Button>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cover-alt" className="text-xs font-bold text-neutral-600">
+                      Alt Text (Accessibility)
+                    </Label>
+                    <Input
+                      id="cover-alt"
+                      value={coverAltText}
+                      onChange={(e) => setCoverAltText(e.target.value)}
+                      placeholder="Describe image for residents..."
+                      className="h-9 rounded-lg border-neutral-200 text-xs"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-emerald-600/30 bg-emerald-50/30 p-6 text-center transition-all hover:border-emerald-600 hover:bg-emerald-50/70 cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="sr-only"
+                    onChange={handleImageSelect}
+                  />
+                  <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 shadow-2xs">
+                    <Upload aria-hidden className="size-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-emerald-950">Upload Cover Photo</p>
+                    <p className="text-[11px] text-neutral-500 mt-0.5">JPEG, PNG, WebP up to 10MB</p>
+                  </div>
+                </label>
+              )}
+            </div>
+          ) : null}
+
+          {/* Location Targeting Card */}
+          <div className="rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-2xs space-y-4">
+            <div className="flex items-center gap-2 border-b border-neutral-100 pb-3">
+              <MapPin aria-hidden className="size-4 text-emerald-600" />
+              <h3 className="text-sm font-bold text-neutral-900">Target Location</h3>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Controller
+                control={control}
+                name="is_barangay_wide"
+                render={({ field }) => (
+                  <Checkbox
+                    id="is_barangay_wide"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    className="data-[state=checked]:bg-emerald-600"
+                  />
+                )}
+              />
+              <Label htmlFor="is_barangay_wide" className="text-xs font-bold text-neutral-800 cursor-pointer">
+                Barangay-wide announcement
+              </Label>
+            </div>
+
+            {!isBarangayWide ? (
+              <div className="flex flex-col gap-2 pt-1">
+                <Label className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+                  Select Specific Areas
+                </Label>
+                <Controller
+                  control={control}
+                  name="area_ids"
+                  render={({ field }) => (
+                    <div className="flex flex-wrap gap-2 rounded-xl border border-neutral-200 bg-neutral-50/50 p-3 max-h-48 overflow-y-auto">
+                      {areas.map((area) => {
+                        const checked = field.value.includes(area.id);
+                        return (
+                          <label
+                            key={area.id}
+                            className={cn(
+                              "flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-semibold cursor-pointer transition-all",
+                              checked
+                                ? "border-emerald-600 bg-emerald-50 text-emerald-950 shadow-2xs"
+                                : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300"
+                            )}
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(c) =>
+                                field.onChange(
+                                  c
+                                    ? [...field.value, area.id]
+                                    : field.value.filter((id) => id !== area.id),
+                                )
+                              }
+                              className="size-3.5 data-[state=checked]:bg-emerald-600"
+                            />
+                            <span>{area.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                />
+              </div>
+            ) : null}
+          </div>
+
+          {/* Publication Status Card */}
+          <div className="rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-2xs space-y-4">
+            <div className="flex items-center gap-2 border-b border-neutral-100 pb-3">
+              <Megaphone aria-hidden className="size-4 text-emerald-600" />
+              <h3 className="text-sm font-bold text-neutral-900">Publishing Status</h3>
+            </div>
+
+            <Controller
+              control={control}
+              name="publication_status"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="publication_status" className="h-10 rounded-xl border-neutral-200 font-medium">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="published">Publish Now</SelectItem>
+                    <SelectItem value="draft">Save as Draft</SelectItem>
+                    <SelectItem value="archived">Archive</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+
+            <div className="flex flex-col gap-2.5 pt-2">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="h-10 w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-900/15 hover:shadow-lg transition-all cursor-pointer justify-center"
+              >
+                {isSubmitting ? "Saving..." : "Publish Announcement"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                className="h-9 w-full rounded-xl border-neutral-300 text-neutral-700 hover:bg-neutral-100 cursor-pointer justify-center text-xs font-semibold"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </form>
   );

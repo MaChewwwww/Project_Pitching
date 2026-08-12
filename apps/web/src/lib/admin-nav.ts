@@ -127,8 +127,11 @@ export interface AdminCrumb {
   href?: Route;
 }
 
-/** Labels for the trailing segment of a nested console route. */
-const LEAF_LABELS: Record<string, string> = { new: "New", edit: "Edit" };
+const LEAF_LABELS: Record<string, string> = {
+  new: "Create Announcement",
+  "create-announcement": "Create Announcement",
+  edit: "Edit",
+};
 
 /**
  * "Barangay Admin → Announcements & Alerts → New". Detail routes carry an

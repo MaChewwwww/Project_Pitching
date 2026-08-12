@@ -65,7 +65,6 @@ export default function AdminAnnouncementEditorPage() {
         ...values,
         instruction: values.instruction || null,
         severity: values.severity || null,
-        expires_at: values.expires_at ? new Date(values.expires_at).toISOString() : null,
       }),
     onSuccess: () => {
       toast.success("Announcement saved");
@@ -91,7 +90,6 @@ export default function AdminAnnouncementEditorPage() {
     instruction: data.instruction ?? "",
     is_barangay_wide: data.is_barangay_wide,
     area_ids: data.area_ids,
-    expires_at: toLocalDateTime(data.expires_at),
     publication_status: data.publication_status,
   };
 

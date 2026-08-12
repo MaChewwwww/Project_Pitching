@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Pencil, Plus } from "lucide-react";
+import { Eye, Pencil, Plus } from "lucide-react";
 
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
@@ -50,8 +50,8 @@ export default function AdminAnnouncementsPage() {
 
   const columns: ResourceColumn<Announcement>[] = [
     { key: "title", header: "Title" },
-    { key: "kind", header: "Kind" },
-    { key: "type", header: "Type" },
+    { key: "kind", header: "Type" },
+    { key: "type", header: "Category" },
     {
       key: "published_at",
       header: "Published",
@@ -76,7 +76,7 @@ export default function AdminAnnouncementsPage() {
             size="sm"
             className="h-10 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-md shadow-emerald-900/15 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] transition-all px-4 gap-2 border border-emerald-600/30 max-sm:w-full max-sm:justify-center cursor-pointer"
           >
-            <Link href={"/admin/announcements/new" as Route}>
+            <Link href={"/admin/announcements/create-announcement" as Route}>
               <Plus aria-hidden className="size-4 stroke-[2.5]" />
               <span>New article</span>
             </Link>
@@ -97,24 +97,37 @@ export default function AdminAnnouncementsPage() {
             <Button
               asChild
               size="sm"
+              variant="success"
+              className="h-8 rounded-lg border border-emerald-300/80 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 transition-colors px-2.5 gap-1.5 font-semibold text-xs cursor-pointer"
+              title="View article"
+              aria-label="View article"
+            >
+              <Link href={`/announcements/${row.id}` as Route} target="_blank">
+                <Eye aria-hidden className="size-3.5 shrink-0" />
+                <span className="md:hidden">View</span>
+              </Link>
+            </Button>
+
+            <Button
+              asChild
+              size="sm"
               variant="warning"
               className="h-8 rounded-lg border border-amber-300/80 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 transition-colors px-2.5 gap-1.5 font-semibold text-xs cursor-pointer"
-              title="Edit"
-              aria-label="Edit"
+              title="Edit article"
+              aria-label="Edit article"
             >
               <Link href={`/admin/announcements/${row.id}` as Route}>
                 <Pencil aria-hidden className="size-3.5 shrink-0" />
                 <span className="md:hidden">Edit</span>
               </Link>
             </Button>
-            {row.is_active ? (
-              <ConfirmDeleteButton
-                itemLabel={row.title}
-                actionLabel="Deactivate"
-                confirmLabel="Deactivate"
-                onConfirm={() => deactivateMutation.mutate(row.id)}
-              />
-            ) : null}
+
+            <ConfirmDeleteButton
+              itemLabel={row.title}
+              actionLabel="Delete"
+              confirmLabel="Delete"
+              onConfirm={() => deactivateMutation.mutate(row.id)}
+            />
           </>
         )}
       />
