@@ -255,43 +255,32 @@ export function AnnouncementDetailView({
                   ? "text-orange-600"
                   : "text-amber-600";
               return (
-                <div className="flex flex-col gap-2.5 -mt-2 -mb-2">
-                  {/* Category chip */}
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-medium text-neutral-500 -mt-2 -mb-2">
+                  {/* Category */}
                   {(() => {
                     const meta = TYPE_MAP[article.type as AnnouncementType] ?? { label: article.type, Icon: Tag };
                     const { label: catLabel, Icon: CatIcon } = meta;
-                    const chipStyle =
-                      article.kind === "announcement"
-                        ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-                        : article.severity === "emergency"
-                        ? "text-red-700 bg-red-50 border-red-200"
-                        : article.severity === "warning"
-                        ? "text-orange-700 bg-orange-50 border-orange-200"
-                        : "text-amber-700 bg-amber-50 border-amber-200";
                     return (
-                      <span className={cn("inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide", chipStyle)}>
-                        <CatIcon aria-hidden className="size-3 shrink-0" />
-                        {catLabel}
+                      <span className="inline-flex items-center gap-1.5 truncate">
+                        <CatIcon aria-hidden className={cn("size-3.5 shrink-0", iconTone)} />
+                        <span className="truncate">{catLabel}</span>
                       </span>
                     );
                   })()}
 
-                  {/* Issuer + Area */}
-                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-medium text-neutral-500">
-                    <span className="inline-flex items-center gap-1.5 truncate">
-                      <User aria-hidden className={cn("size-3.5 shrink-0", iconTone)} />
-                      <span className="truncate">{article.issued_by_name}</span>
-                    </span>
+                  <span className="inline-flex items-center gap-1.5 truncate">
+                    <User aria-hidden className={cn("size-3.5 shrink-0", iconTone)} />
+                    <span className="truncate">{article.issued_by_name}</span>
+                  </span>
 
-                    <span className="inline-flex items-center gap-1.5 truncate">
-                      <MapPin aria-hidden className={cn("size-3.5 shrink-0", iconTone)} />
-                      <span className="truncate">
-                        {article.area_names.length > 0
-                          ? article.area_names.join(", ")
-                          : "Barangay-wide"}
-                      </span>
+                  <span className="inline-flex items-center gap-1.5 truncate">
+                    <MapPin aria-hidden className={cn("size-3.5 shrink-0", iconTone)} />
+                    <span className="truncate">
+                      {article.area_names.length > 0
+                        ? article.area_names.join(", ")
+                        : "Barangay-wide"}
                     </span>
-                  </div>
+                  </span>
                 </div>
               );
             })()}
