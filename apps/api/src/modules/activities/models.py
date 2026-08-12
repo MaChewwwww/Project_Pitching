@@ -71,8 +71,6 @@ class ActivityImage(UUIDPrimaryKeyMixin, Base):
         PGUUID(as_uuid=True), ForeignKey("activity.id", ondelete="CASCADE"), nullable=False
     )
     file_path: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
-    alt_text: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
-    caption: Mapped[str | None] = mapped_column(Text, nullable=True)
     sort_order: Mapped[int] = mapped_column(nullable=False, server_default=text("0"))
     is_cover: Mapped[bool] = mapped_column(nullable=False, server_default=text("false"))
     created_at: Mapped[datetime] = mapped_column(

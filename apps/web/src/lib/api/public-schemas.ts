@@ -66,8 +66,6 @@ export const publicAnnouncementSchema = z.object({
     .object({
       id: z.string(),
       url: z.string(),
-      alt_text: z.string(),
-      caption: z.string().nullable(),
       sort_order: z.number(),
       is_cover: z.boolean(),
     })
@@ -83,8 +81,6 @@ export const announcementDetailSchema = publicAnnouncementSchema.extend({
     z.object({
       id: z.string(),
       url: z.string(),
-      alt_text: z.string(),
-      caption: z.string().nullable(),
       sort_order: z.number(),
       is_cover: z.boolean(),
     }),
@@ -234,8 +230,6 @@ export const publicActivitySchema = z.object({
     .object({
       id: z.string(),
       url: z.string(),
-      alt_text: z.string(),
-      caption: z.string().nullable(),
       sort_order: z.number(),
       is_cover: z.boolean(),
     })
@@ -251,8 +245,6 @@ export const activityDetailSchema = publicActivitySchema.extend({
     z.object({
       id: z.string(),
       url: z.string(),
-      alt_text: z.string(),
-      caption: z.string().nullable(),
       sort_order: z.number(),
       is_cover: z.boolean(),
     }),
@@ -279,8 +271,6 @@ export const publicDonationDriveSchema = z.object({
     .object({
       id: z.string(),
       url: z.string(),
-      alt_text: z.string(),
-      caption: z.string().nullable(),
       sort_order: z.number(),
       is_cover: z.boolean(),
     })
@@ -296,8 +286,6 @@ export const donationDriveDetailSchema = publicDonationDriveSchema.extend({
     z.object({
       id: z.string(),
       url: z.string(),
-      alt_text: z.string(),
-      caption: z.string().nullable(),
       sort_order: z.number(),
       is_cover: z.boolean(),
     }),

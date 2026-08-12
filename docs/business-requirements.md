@@ -445,7 +445,7 @@ described as a GIS-calculated distance.
 | BR-4.8  | Alerts are delivered as in-platform and website notifications                                                                                                 | M        |
 | BR-4.9  | The alert system is designed so additional delivery channels can be added later without redesign — see _Future Integrations_ below                            | S        |
 | BR-4.1a | Routine announcements support an excerpt, constrained rich-text body, draft/published/archived lifecycle, and a canonical public article page                 | M        |
-| BR-4.1b | A published routine announcement has one cover image and may have up to ten ordered gallery images; alt text is required and captions are optional            | M        |
+| BR-4.1b | A published routine announcement has one cover image and may have up to ten ordered gallery images            | M        |
 | BR-4.1c | Emergency alerts retain instruction, area targeting, issuer attribution, and takeover behavior; their banner remains text-first and never depends on an image | M        |
 
 **Future integrations — not developed in this project, in any form:**
@@ -518,7 +518,7 @@ Added after review: the emergency modules assumed everyone involved is in the re
 | ID                              | Requirement                                                                                                                                                                                       | Priority |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | BR-7.1                          | Admins and SK officers can publish a donation-drive article with title, excerpt, constrained rich-text body, organizer/contact, drop-off instructions, optional emergency event, and active dates | M        |
-| BR-7.1a                         | A published post has one cover image and may have up to ten ordered gallery images; alt text is required and captions are optional                                                                | M        |
+| BR-7.1a                         | A published post has one cover image and may have up to ten ordered gallery images                                                                | M        |
 | BR-7.1b                         | Drafts are private, published posts are public during their active period, and archived posts remain available at their canonical slug                                                            | M        |
 | BR-7.1c                         | Public previews link to the full article; all instructions are readable without an account                                                                                                        | M        |
 | ~~BR-7.2 / 7.2a / 7.2b~~        | ~~Public donor submission, donor contact capture, and reference number~~ — **retired by D-16**                                                                                                    | —        |
@@ -542,7 +542,7 @@ Added after review: the emergency modules assumed everyone involved is in the re
 | BR-8.6  | Volunteers can be assigned to tasks during an emergency                                                                                          | C        |
 | BR-8.7  | Training certificates are issued and tracked                                                                                                     | C        |
 | BR-8.1a | Activities use an article body with excerpt and draft/published/archived lifecycle while retaining type, schedule, venue, and area               | M        |
-| BR-8.1b | A published activity has one cover image and may have up to ten ordered gallery images with required alt text and optional captions              | M        |
+| BR-8.1b | A published activity has one cover image and may have up to ten ordered gallery images              | M        |
 
 ### M9 · Preparedness Hub
 

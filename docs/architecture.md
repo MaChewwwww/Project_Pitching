@@ -458,10 +458,10 @@ DELETE /admin/{announcements|activities|donation-drives}/{id}/images/{image_id}
 ```
 
 `POST` is multipart and reuses `core/uploads.py`: JPEG, PNG, or WebP; magic-byte validation;
-5 MB per file; UUID storage names. `PATCH` edits alt text/caption and selects the single cover.
+5 MB per file; UUID storage names. `PATCH` selects the single cover.
 `PUT .../order` accepts the complete ordered image-ID list and rejects missing, duplicate, or
 foreign IDs. Drafts may have no image. Publication requires exactly one cover, no more than ten
-images, and non-empty alt text for every image.
+images and a selected cover image.
 
 ### 6.4 Shared article contract — planned
 

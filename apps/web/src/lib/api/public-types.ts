@@ -70,8 +70,6 @@ export type PublicationStatus = "draft" | "published" | "archived";
 export interface ArticleImage {
   id: string;
   url: string;
-  alt_text: string;
-  caption: string | null;
   sort_order: number;
   is_cover: boolean;
 }

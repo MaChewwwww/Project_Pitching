@@ -7,15 +7,14 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/common/button";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, toDisplayError } from "@/lib/api/client";
 import type { ArticleImage } from "@/lib/api/public-types";
 
 /**
  * Article media is deliberately separate from the editorial form: an article
- * must first exist so uploads have a stable parent, and publish validation can
- * then enforce cover and alt-text requirements on the server.
+ * must first exist so uploads have a stable parent and cover selection stays
+ * available without interrupting article editing.
  */
 export function ArticleImageManager({
   resource,
@@ -29,8 +28,6 @@ export function ArticleImageManager({
   onChanged: () => void;
 }) {
   const [isUploading, setIsUploading] = React.useState(false);
-  const [altText, setAltText] = React.useState<Record<string, string>>({});
-  const [caption, setCaption] = React.useState<Record<string, string>>({});
 
   async function upload(file: File) {
     setIsUploading(true);
@@ -40,7 +37,7 @@ export function ArticleImageManager({
       await api.post(`/admin/${resource}/${articleId}/images`, data, {
         headers: { "Content-Type": undefined },
       });
-      toast.success("Image uploaded. Add alt text before publishing.");
+      toast.success("Image uploaded.");
       onChanged();
     } catch (error) {
       toast.error(toDisplayError(error).detail);
@@ -52,7 +49,7 @@ export function ArticleImageManager({
   async function saveImage(image: ArticleImage, patch: Record<string, unknown>) {
     try {
       await api.patch(`/admin/${resource}/${articleId}/images/${image.id}`, patch);
-      toast.success("Image details saved");
+      toast.success("Cover image updated");
       onChanged();
     } catch (error) {
       toast.error(toDisplayError(error).detail);
@@ -87,13 +84,15 @@ export function ArticleImageManager({
   }
 
   return (
-    <section className="rounded-[14px] border border-primary-200 bg-primary-50/40 p-4 shadow-xs">
+    <section className="space-y-4 rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-2xs">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-overline text-primary-700">Publication checklist</p>
-          <h2 className="mt-1 text-h4 text-neutral-900">Cover & gallery</h2>
+          <div className="flex items-center gap-2">
+            <ImagePlus aria-hidden className="size-4 text-emerald-600" />
+            <h2 className="text-sm font-bold text-neutral-900">Article Media & Photos</h2>
+          </div>
           <p className="mt-1 text-sm text-neutral-600">
-            {images.length}/10 images · Routine articles need one cover with alt text before publication.
+            {images.length}/10 images · Choose one cover photo for the article.
           </p>
         </div>
         <Label className="cursor-pointer">
@@ -116,9 +115,9 @@ export function ArticleImageManager({
       </div>
 
       {images.length === 0 ? (
-        <div className="mt-4 rounded-lg border border-dashed border-primary-200 bg-white/70 p-4 text-sm text-neutral-600">No images uploaded yet. Add a wide cover photo first, then save a precise description of what residents can see.</div>
+        <div className="rounded-xl border-2 border-dashed border-emerald-600/30 bg-emerald-50/30 p-6 text-center text-sm text-neutral-600">No images uploaded yet. Add a wide cover photo to lead the article.</div>
       ) : (
-        <ul className="mt-4 grid gap-4 sm:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-4">
           {images.map((image, index) => (
             <li
               key={image.id}
@@ -127,7 +126,7 @@ export function ArticleImageManager({
               <div className="relative aspect-video bg-neutral-100">
                 <Image
                   src={image.url}
-                  alt={image.alt_text || "Uploaded article image"}
+                  alt=""
                   fill
                   unoptimized
                   className="object-cover"
@@ -161,45 +160,7 @@ export function ArticleImageManager({
                     </Button>
                   </span>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor={`alt-${image.id}`}>Alt text</Label>
-                  <Input
-                    id={`alt-${image.id}`}
-                    defaultValue={image.alt_text}
-                    onChange={(event) =>
-                      setAltText((current) => ({
-                        ...current,
-                        [image.id]: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor={`caption-${image.id}`}>Caption (optional)</Label>
-                  <Input
-                    id={`caption-${image.id}`}
-                    defaultValue={image.caption ?? ""}
-                    onChange={(event) =>
-                      setCaption((current) => ({
-                        ...current,
-                        [image.id]: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      void saveImage(image, {
-                        alt_text: altText[image.id] ?? image.alt_text,
-                        caption: caption[image.id] ?? image.caption,
-                      })
-                    }
-                  >
-                    Save details
-                  </Button>
                   <Button
                     size="sm"
                     variant={image.is_cover ? "primary" : "outline"}
@@ -209,7 +170,7 @@ export function ArticleImageManager({
                     {image.is_cover ? "Cover image" : "Set as cover"}
                   </Button>
                   <ConfirmDeleteButton
-                    itemLabel={image.alt_text || "this image"}
+                    itemLabel="this image"
                     actionLabel="Remove"
                     confirmLabel="Remove image"
                     onConfirm={() => void deleteImage(image)}

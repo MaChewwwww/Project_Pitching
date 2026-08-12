@@ -749,7 +749,7 @@ export function AnnouncementForm({
       {/* Form Live Preview Modal */}
       <Dialog open={formPreviewOpen} onOpenChange={setFormPreviewOpen}>
         <DialogContent
-          className="flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[52rem] flex-col gap-0 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-0 shadow-xl sm:max-h-[calc(100dvh-2rem)] sm:w-[calc(100vw-2rem)]"
+          className="flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[52rem] flex-col gap-0 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-0 shadow-xl sm:max-h-[calc(100dvh-2rem)] sm:w-[calc(100vw-2rem)] md:min-w-[42rem]"
           showCloseButton={false}
         >
           <DialogHeader className="shrink-0 border-b border-neutral-100 bg-neutral-50/80 px-4 py-3 sm:px-6 sm:py-4">

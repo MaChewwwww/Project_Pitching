@@ -30,15 +30,11 @@ PublicationStatus = Literal["draft", "published", "archived"]
 class ArticleImageOut(BaseModel):
     id: uuid.UUID
     url: str
-    alt_text: str
-    caption: str | None
     sort_order: int
     is_cover: bool
 
 
 class ArticleImagePatch(BaseModel):
-    alt_text: str | None = None
-    caption: str | None = None
     is_cover: bool | None = None
 
 

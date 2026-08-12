@@ -178,7 +178,7 @@ export function AnnouncementCard({
             <>
               <Image
                 src={announcement.cover_image.url}
-                alt={announcement.cover_image.alt_text}
+                alt=""
                 fill
                 unoptimized
                 className="object-cover transition-transform duration-500 group-hover:scale-105"

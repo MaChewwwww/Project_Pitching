@@ -26,7 +26,7 @@ export function DriveCard({
         <div className="relative block aspect-video bg-neutral-100">
           <Image
             src={drive.cover_image.url}
-            alt={drive.cover_image.alt_text}
+            alt=""
             fill
             unoptimized
             className="object-cover"

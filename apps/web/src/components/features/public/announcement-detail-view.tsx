@@ -290,7 +290,7 @@ export function AnnouncementDetailView({
               <figure className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 shadow-sm-card">
                 <Image
                   src={cover.url}
-                  alt={cover.alt_text}
+                  alt=""
                   width={1600}
                   height={900}
                   unoptimized
@@ -371,17 +371,12 @@ export function AnnouncementDetailView({
                     >
                       <Image
                         src={image.url}
-                        alt={image.alt_text}
+                        alt=""
                         width={1200}
                         height={800}
                         unoptimized
                         className="aspect-[3/2] w-full object-cover"
                       />
-                      {image.caption ? (
-                        <figcaption className="p-3 text-xs text-neutral-600">
-                          {image.caption}
-                        </figcaption>
-                      ) : null}
                     </figure>
                   ))}
                 </div>
@@ -438,7 +433,7 @@ export function AnnouncementDetailView({
                             {recent.cover_image ? (
                               <Image
                                 src={recent.cover_image.url}
-                                alt={recent.cover_image.alt_text}
+                                alt=""
                                 fill
                                 unoptimized
                                 className="object-cover transition-transform duration-300 group-hover:scale-105"

@@ -35,8 +35,6 @@ def _image_out(image: AnnouncementImage) -> ArticleImageOut:
     return ArticleImageOut(
         id=image.id,
         url=f"/uploads/{image.file_path}",
-        alt_text=image.alt_text,
-        caption=image.caption,
         sort_order=image.sort_order,
         is_cover=image.is_cover,
     )
@@ -163,8 +161,6 @@ def _ensure_publishable(a: Announcement, images: list[AnnouncementImage]) -> Non
         raise ConflictError("An article may contain at most ten images.")
     if len(covers) != 1:
         raise ConflictError("A published announcement needs exactly one cover image.")
-    if any(not image.alt_text.strip() for image in images):
-        raise ConflictError("Add meaningful alt text to every image before publishing.")
 
 
 async def list_announcements(
@@ -392,10 +388,6 @@ async def patch_image(
     image = await session.get(AnnouncementImage, image_id)
     if image is None or image.announcement_id != announcement_id:
         raise NotFoundError("Article image not found.")
-    if data.alt_text is not None:
-        image.alt_text = data.alt_text
-    if data.caption is not None:
-        image.caption = data.caption
     if data.is_cover is True:
         for candidate in await _images(session, announcement_id):
             candidate.is_cover = candidate.id == image.id

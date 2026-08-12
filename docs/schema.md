@@ -818,8 +818,6 @@ pair.
 | `id`          | UUID        | PK                             |                                                            |
 | `<parent>_id` | UUID        | NOT NULL FK, ON DELETE CASCADE | Parent-specific column                                     |
 | `file_path`   | TEXT        | NOT NULL UNIQUE                | Relative to the uploads volume; UUID filename              |
-| `alt_text`    | TEXT        | NOT NULL                       | Must be non-blank before the parent can publish            |
-| `caption`     | TEXT        |                                | Optional visible caption                                   |
 | `sort_order`  | INTEGER     | NOT NULL                       | Unique per parent                                          |
 | `is_cover`    | BOOLEAN     | NOT NULL DEFAULT false         | Partial unique index enforces at most one cover per parent |
 | `created_at`  | TIMESTAMPTZ | NOT NULL DEFAULT now()         |                                                            |

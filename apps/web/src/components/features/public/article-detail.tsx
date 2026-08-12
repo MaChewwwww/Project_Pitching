@@ -105,14 +105,13 @@ export function ArticleDetail({
         <figure className="mb-9 overflow-hidden rounded-[20px] border border-neutral-200 bg-neutral-100 shadow-sm-card">
           <Image
             src={cover.url}
-            alt={cover.alt_text}
+            alt=""
             width={1600}
             height={900}
             unoptimized
             priority
             className="aspect-video w-full object-cover"
           />
-          {cover.caption ? <figcaption className="px-5 py-3 text-sm text-neutral-600">{cover.caption}</figcaption> : null}
         </figure>
       ) : null}
       {eyebrow || metadata?.length ? (
@@ -137,17 +136,12 @@ export function ArticleDetail({
               >
                 <Image
                   src={image.url}
-                  alt={image.alt_text}
+                  alt=""
                   width={1200}
                   height={800}
                   unoptimized
                   className="aspect-[3/2] w-full object-cover"
                 />
-                {image.caption ? (
-                  <figcaption className="px-4 py-3 text-sm text-neutral-600">
-                    {image.caption}
-                  </figcaption>
-                ) : null}
               </figure>
             ))}
           </div>

@@ -40,7 +40,7 @@ export function ActivityCard({
         <div className="relative block aspect-video bg-neutral-100">
           <Image
             src={activity.cover_image.url}
-            alt={activity.cover_image.alt_text}
+            alt=""
             fill
             unoptimized
             className="object-cover"

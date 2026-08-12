@@ -201,7 +201,7 @@ Do not convert this audit into invented portal screens. New target workflows req
 | FR-PUB-017 | Emergency alert takeover         | Active alert renders above all content, sticky, non-dismissible while active                                                                               | BR-0.18                    | M   | ◐      | —   |
 | FR-PUB-018 | Empty sections hidden            | Sections with no content are not rendered as empty shells                                                                                                  | BR-0.20                    | S   | ◐      | —   |
 | FR-PUB-019 | Public article detail pages      | Announcement, activity, and donation-drive previews link to canonical slug detail pages with full rich content and ordered gallery                         | BR-0.3a, BR-0.6a, BR-0.10a | M   | ◐      | —   |
-| FR-PUB-020 | Article image accessibility      | Cover and gallery images have meaningful alt text; captions are displayed when supplied; publication is blocked when required media metadata is incomplete | BR-4.1b, BR-7.1a, BR-8.1b  | M   | ◐      | —   |
+| FR-PUB-020 | Article image presentation       | Cover and gallery images preserve their selected order; publication is blocked until the required cover image is set | BR-4.1b, BR-7.1a, BR-8.1b  | M   | ◐      | —   |
 
 > **FR-PUB-013 is closed.** Every section listed above reads through
 > `apps/web/src/lib/api/public.ts`, which calls the real API (Zod-parsed against
@@ -436,7 +436,7 @@ Do not convert this audit into invented portal screens. New target workflows req
 | FR-ALT-011 | Deactivate an alert                        | Admin ends an active alert; takeover banner clears                                                                                                                                                 | BR-4.3                  | M   | ◐      | —   |
 | FR-ALT-012 | Siren simulation, trigger & audio playback | Triggering a siren pin emits expanding radial soundwave ripples/vibrations on the map pin AND synthesizes/plays a siren audio alarm on the machine via Web Audio API                               | BR-3.4, BR-4.11         | S   | ☐      | —   |
 | FR-ALT-013 | Announcement article authoring             | Routine announcements support slug, excerpt, constrained rich-text body, draft/published/archived lifecycle, and author attribution; alerts retain their required instruction and targeting fields | BR-4.1a, BR-4.6         | M   | ◐      | —   |
-| FR-ALT-014 | Announcement image gallery                 | A published routine announcement has one cover image and may have up to ten ordered images with required alt text and optional captions; emergency banners remain text-first                       | BR-4.1b, BR-4.1c        | M   | ◐      | —   |
+| FR-ALT-014 | Announcement image gallery                 | A published routine announcement has one cover image and may have up to ten ordered images; emergency banners remain text-first                       | BR-4.1b, BR-4.1c        | M   | ◐      | —   |
 | FR-ALT-015 | Announcement preview and detail            | Public and portal feeds show previews that link to the canonical article; alert history remains publicly viewable and emergency takeover behavior is unchanged                                     | BR-0.3a, BR-4.5, BR-4.8 | M   | ◐      | —   |
 
 ---
@@ -510,7 +510,7 @@ Do not convert this audit into invented portal screens. New target workflows req
 | ~~FR-DON-012~~ | ~~Record assistance per household~~      | **Cut, Aug 2026** — household assistance tracking is outside the revised prototype                                                                                                                            | ~~BR-7.6a~~         | —   | ✕      | —   |
 | ~~FR-DON-013~~ | ~~Resident assistance status~~           | **Cut, Aug 2026** — the resident portal will not expose an assistance tracker                                                                                                                                 | ~~BR-7.6b~~         | —   | ✕      | —   |
 | ~~FR-DON-014~~ | ~~Assistance decoupled from donations~~  | **Cut, Aug 2026** with the assistance tracker                                                                                                                                                                 | ~~BR-7.6c~~         | —   | ✕      | —   |
-| FR-DON-015     | Donation-drive image gallery             | A published post has one cover image and may have up to ten ordered images with required alt text and optional captions                                                                                       | BR-7.1a             | M   | ◐      | —   |
+| FR-DON-015     | Donation-drive image gallery             | A published post has one cover image and may have up to ten ordered images                                                                                       | BR-7.1a             | M   | ◐      | —   |
 | FR-DON-016     | Donation-drive publication lifecycle     | Drafts are private; published posts appear during their active period; archived posts remain available by canonical slug                                                                                      | BR-7.1b             | M   | ◐      | —   |
 | FR-DON-017     | Donation-drive preview and detail        | Public previews link to full article pages; organizer/contact and drop-off instructions are visible without an account                                                                                        | BR-0.10a, BR-7.1c   | M   | ◐      | —   |
 
@@ -530,7 +530,7 @@ Do not convert this audit into invented portal screens. New target workflows req
 | FR-ACT-008 | Volunteer task assignment   | Volunteers assigned to tasks during an emergency                                                                                                           | BR-8.6          | C   | ☐      | —   |
 | FR-ACT-009 | Training certificates       | Issued and tracked per volunteer                                                                                                                           | BR-8.7          | C   | ☐      | —   |
 | FR-ACT-010 | Activity article authoring  | Activity records include slug, excerpt, constrained rich-text body, and draft/published/archived lifecycle while retaining type, schedule, venue, and area | BR-8.1a         | M   | ◐      | —   |
-| FR-ACT-011 | Activity image gallery      | A published activity has one cover image and may have up to ten ordered images with required alt text and optional captions                                | BR-8.1b         | M   | ◐      | —   |
+| FR-ACT-011 | Activity image gallery      | A published activity has one cover image and may have up to ten ordered images                                | BR-8.1b         | M   | ◐      | —   |
 | FR-ACT-012 | Activity preview and detail | Public and portal previews link to the canonical article detail; attendance and volunteer workflows remain separate                                        | BR-0.6a, BR-8.2 | M   | ◐      | —   |
 
 ---
@@ -644,7 +644,7 @@ Do not convert this audit into invented portal screens. New target workflows req
 | NFR-UX-008 | Every screen has defined loading, empty, and error states                                                                 | 100%                                                       | ☐      |
 | NFR-UX-009 | Destructive actions require confirmation                                                                                  | Always                                                     | ☐      |
 | NFR-UX-010 | Form errors identify the field and the fix, in plain language                                                             | Always                                                     | ☐      |
-| NFR-UX-011 | Article publication is blocked until the cover and every gallery image have meaningful alt text; captions remain optional | Announcement, activity, and donation-drive CMS             | ☐      |
+| NFR-UX-011 | Article publication is blocked until exactly one cover image is selected | Announcement, activity, and donation-drive CMS             | ☐      |
 
 ### 15.6 Compatibility — `CMP`
 

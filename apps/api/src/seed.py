@@ -1196,8 +1196,8 @@ async def seed_article_cover_media(session) -> None:
         parent_key,
         slug,
         filename,
-        alt_text,
-        caption,
+        _,
+        _,
     ) in ARTICLE_COVER_DEFS:
         parent = (
             await session.execute(select(parent_model).where(parent_model.slug == slug))
@@ -1222,8 +1222,6 @@ async def seed_article_cover_media(session) -> None:
             image_model(
                 **{parent_key: parent.id},
                 file_path=f"article-covers/{filename}",
-                alt_text=alt_text,
-                caption=caption,
                 sort_order=0,
                 is_cover=True,
             )
