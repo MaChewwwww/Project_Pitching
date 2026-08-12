@@ -1,13 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
-import { Button } from "@/components/common/button";
 import { ArticleImageManager } from "@/components/features/admin/article-image-manager";
 import {
   AnnouncementForm,
@@ -90,30 +87,18 @@ export default function AdminAnnouncementEditorPage() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
+    <div className="flex w-full flex-col gap-6">
       <AdminPageHeader
         title="Edit Announcement"
-        description="Save the story and media separately. Publishing is checked server-side so incomplete articles never reach residents."
-        action={
-          <Button asChild size="sm" variant="outline">
-            <Link href="/admin/announcements">
-              <ArrowLeft aria-hidden className="size-4" />
-              Back to announcements
-            </Link>
-          </Button>
-        }
+        description="Update the announcement content, audience, publication status, and media."
       />
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_26rem]">
-        <div className="shadow-sm-card rounded-[16px] border border-neutral-200 bg-white p-6 sm:p-8">
-          <AnnouncementForm
-            areas={areas}
-            defaultValues={defaultValues}
-            onSubmit={(values) =>
-              updateMutation.mutateAsync(values).then(() => undefined)
-            }
-            onCancel={() => router.push("/admin/announcements")}
-          />
-        </div>
+        <AnnouncementForm
+          areas={areas}
+          defaultValues={defaultValues}
+          onSubmit={(values) => updateMutation.mutateAsync(values).then(() => undefined)}
+          onCancel={() => router.push("/admin/announcements")}
+        />
         <ArticleImageManager
           resource="announcements"
           articleId={data.id}

@@ -238,12 +238,12 @@ export function ArticlePreviewDialog({
 
       <DialogContent
         /* Remove default overflow — we control it per-section */
-        className="flex max-h-[90vh] w-fit min-w-80 max-w-[90vw] sm:max-w-[90vw] flex-col gap-0 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-0 shadow-2xl"
+        className="flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[52rem] flex-col gap-0 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-0 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:w-[calc(100vw-2rem)]"
         /* Hide default DialogContent close button — we render our own */
         showCloseButton={false}
       >
         {/* ── Sticky Header (never scrolls) ─────────────────────────────── */}
-        <div className="shrink-0 border-b border-neutral-100 bg-white px-6 py-4">
+        <div className="shrink-0 border-b border-neutral-100 bg-white px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex min-w-0 flex-1 flex-col gap-2">
               {/* Badges row */}
@@ -279,7 +279,7 @@ export function ArticlePreviewDialog({
               </div>
 
               {/* Title */}
-              <DialogTitle className="text-xl font-bold leading-snug tracking-tight text-neutral-900">
+              <DialogTitle className="text-base font-bold leading-snug tracking-tight text-neutral-900 sm:text-xl">
                 {data?.title || title}
               </DialogTitle>
             </div>
@@ -288,7 +288,7 @@ export function ArticlePreviewDialog({
             <DialogClose asChild>
               <button
                 type="button"
-                className="mt-0.5 grid size-8 shrink-0 cursor-pointer place-items-center rounded-full border border-neutral-200 bg-neutral-50 text-neutral-500 transition-all hover:border-neutral-300 hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-full border border-neutral-200 bg-neutral-50 text-neutral-500 transition-all hover:border-neutral-300 hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:mt-0.5"
                 aria-label="Close preview"
               >
                 <X className="size-4" />
@@ -305,7 +305,7 @@ export function ArticlePreviewDialog({
               <p className="text-sm font-medium text-neutral-500">Loading preview…</p>
             </div>
           ) : data ? (
-            <div className="space-y-6 p-6 sm:p-8">
+            <div className="space-y-5 p-4 sm:space-y-6 sm:p-6">
               {/* Cover Image */}
               {coverImage ? (
                 <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 shadow-xs">
@@ -322,7 +322,7 @@ export function ArticlePreviewDialog({
               {/* Meta Row */}
               <div
                 className={cn(
-                  "flex flex-wrap items-center gap-x-5 gap-y-1.5 rounded-xl border px-4 py-3 text-xs font-medium",
+                  "flex flex-col items-start gap-2 rounded-xl border px-3.5 py-3 text-xs font-medium sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5 sm:gap-y-1.5 sm:px-4",
                   accentTone.bg,
                   accentTone.border,
                   accentTone.text,
@@ -352,7 +352,7 @@ export function ArticlePreviewDialog({
               {data.instruction ? (
                 <div
                   className={cn(
-                    "rounded-xl border p-4 space-y-1",
+                    "space-y-1 rounded-xl border p-3.5 sm:p-4",
                     data.severity === "emergency"
                       ? "border-red-200 bg-red-50 text-red-950"
                       : data.severity === "warning"
@@ -390,7 +390,7 @@ export function ArticlePreviewDialog({
 
               {/* Excerpt */}
               {data.excerpt ? (
-                <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-5 py-4">
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3.5 sm:px-5 sm:py-4">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
                     Summary
                   </p>
@@ -405,7 +405,7 @@ export function ArticlePreviewDialog({
                 <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-neutral-400">
                   Full Article
                 </p>
-                <div className="rounded-xl border border-neutral-100 bg-neutral-50/50 px-5 py-4">
+                <div className="rounded-xl border border-neutral-100 bg-neutral-50/50 px-4 py-3.5 sm:px-5 sm:py-4">
                   <RenderArticleBody doc={data.body_json} />
                 </div>
               </div>

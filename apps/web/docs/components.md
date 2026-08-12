@@ -172,6 +172,13 @@ Article creation starts on its own route rather than inside a scrolling dialog. 
 creates a draft, then the full editor pairs the form with `ArticleImageManager`. This keeps media
 validation visible without weakening the server-side publication rule.
 
+Both admin announcement previews use a viewport-bounded dialog with a fixed header and one
+internal scroll area. This preserves the title and 44px close target on a short mobile viewport
+while leaving long articles and cover images fully readable.
+
+The create and edit announcement routes share the same page rhythm and `AnnouncementForm` surface;
+editing adds only the persistent image manager needed for existing media.
+
 ## Animation lives in `globals.css`, not in a client component
 
 `WaterSpinner` and the hero illustrations are animated entirely by CSS classes defined in

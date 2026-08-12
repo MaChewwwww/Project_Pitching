@@ -15,6 +15,7 @@ import {
   Star,
   Trash2,
   Upload,
+  X,
 } from "lucide-react";
 
 import { Button } from "@/components/common/button";
@@ -33,6 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -746,24 +748,35 @@ export function AnnouncementForm({
 
       {/* Form Live Preview Modal */}
       <Dialog open={formPreviewOpen} onOpenChange={setFormPreviewOpen}>
-        <DialogContent className="max-w-5xl sm:max-w-5xl w-[92vw] max-h-[90vh] overflow-y-auto rounded-2xl p-0 gap-0 border border-neutral-200 bg-white shadow-xl">
-          <DialogHeader className="p-5 border-b border-neutral-100 bg-neutral-50/80">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold tracking-wider uppercase bg-amber-500 text-white px-2.5 py-0.5 rounded-full">
-                Form Live Preview
-              </span>
-              {type ? (
-                <span className="text-[10px] font-bold tracking-wider uppercase bg-neutral-200 text-neutral-800 px-2 py-0.5 rounded-full">
-                  {type.replace(/_/g, " ")}
-                </span>
-              ) : null}
+        <DialogContent
+          className="flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[52rem] flex-col gap-0 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-0 shadow-xl sm:max-h-[calc(100dvh-2rem)] sm:w-[calc(100vw-2rem)]"
+          showCloseButton={false}
+        >
+          <DialogHeader className="shrink-0 border-b border-neutral-100 bg-neutral-50/80 px-4 py-3 sm:px-6 sm:py-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-amber-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Form Live Preview</span>
+                  {type ? (
+                    <span className="rounded-full bg-neutral-200 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-800">
+                      {type.replace(/_/g, " ")}
+                    </span>
+                  ) : null}
+                </div>
+                <DialogTitle className="mt-2 text-base font-bold leading-snug text-neutral-900 sm:text-lg">
+                  {title || "Untitled Article"}
+                </DialogTitle>
+              </div>
+              <DialogClose asChild>
+                <button type="button" className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-full border border-neutral-200 bg-white text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" aria-label="Close preview">
+                  <X className="size-4" />
+                </button>
+              </DialogClose>
             </div>
-            <DialogTitle className="text-lg font-bold text-neutral-900 mt-2">
-              {title || "Untitled Article"}
-            </DialogTitle>
           </DialogHeader>
 
-          <div className="p-6 sm:p-8 space-y-6">
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="space-y-5 p-4 sm:space-y-6 sm:p-6">
             {(() => {
               const coverImageItem = imageItems.find((img) => img.isCover) || imageItems[0];
               if (!coverImageItem) return null;
@@ -780,7 +793,7 @@ export function AnnouncementForm({
               );
             })()}
 
-            <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-500 border-b border-neutral-100 pb-4">
+            <div className="flex flex-col items-start gap-2 border-b border-neutral-100 pb-4 text-xs text-neutral-500 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
               <span className="flex items-center gap-1.5">
                 <Calendar className="size-3.5 text-emerald-600" />
                 Draft / Live Form Preview
@@ -796,7 +809,7 @@ export function AnnouncementForm({
             </div>
 
             {instruction ? (
-              <div className="rounded-xl border border-amber-300 bg-amber-50/80 p-4 text-amber-950 space-y-1">
+              <div className="space-y-1 rounded-xl border border-amber-300 bg-amber-50/80 p-3.5 text-amber-950 sm:p-4">
                 <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-amber-900">
                   <AlertTriangle className="size-4 text-amber-600 shrink-0" />
                   <span>Required Action Instruction</span>
@@ -806,7 +819,7 @@ export function AnnouncementForm({
             ) : null}
 
             {excerpt ? (
-              <div className="bg-neutral-50 rounded-xl p-4 border border-neutral-200/80">
+              <div className="rounded-xl border border-neutral-200/80 bg-neutral-50 p-3.5 sm:p-4">
                 <p className="text-sm font-medium text-neutral-700 italic">
                   &ldquo;{excerpt}&rdquo;
                 </p>
@@ -818,6 +831,7 @@ export function AnnouncementForm({
                 Article Body Content
               </h4>
               <RenderArticleBody doc={bodyJson} />
+            </div>
             </div>
           </div>
         </DialogContent>
