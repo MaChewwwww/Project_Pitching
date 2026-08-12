@@ -39,10 +39,15 @@ export function EmergencyAlertBanner({
   hotlines,
 }: EmergencyAlertBannerProps) {
   // An alert banner is only displayed within 24 hours after publishing.
-  const nowTimestamp = React.useMemo(() => Date.now(), []);
+  const nowTimestamp = React.useSyncExternalStore(
+    () => () => {},
+    () => Date.now(),
+    () => 0
+  );
+
   const activeAlert = React.useMemo(() => {
     if (!alert || !alert.is_active) return null;
-    if (!alert.published_at) return alert;
+    if (!alert.published_at || nowTimestamp === 0) return alert;
     const pubDate = new Date(alert.published_at).getTime();
     if (isNaN(pubDate)) return alert;
     const diffMs = nowTimestamp - pubDate;
