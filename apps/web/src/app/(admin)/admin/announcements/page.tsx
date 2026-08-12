@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
@@ -68,7 +68,7 @@ export default function AdminAnnouncementsPage() {
   return (
     <div className="flex flex-col gap-6">
       <AdminPageHeader
-        title="Announcements & Advisories"
+        title="Alerts & Advisories"
         description="Publishing here is the only way a public alert reaches the site — nothing is ever automated (D-4)."
         action={
           <Button
@@ -94,8 +94,18 @@ export default function AdminAnnouncementsPage() {
         getRowKey={(row) => row.id}
         rowActions={(row) => (
           <>
-            <Button asChild size="sm" variant="outline">
-              <Link href={`/admin/announcements/${row.id}` as Route}>Edit</Link>
+            <Button
+              asChild
+              size="sm"
+              variant="warning"
+              className="h-8 rounded-lg border border-amber-300/80 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 transition-colors px-2.5 gap-1.5 font-semibold text-xs cursor-pointer"
+              title="Edit"
+              aria-label="Edit"
+            >
+              <Link href={`/admin/announcements/${row.id}` as Route}>
+                <Pencil aria-hidden className="size-3.5 shrink-0" />
+                <span className="md:hidden">Edit</span>
+              </Link>
             </Button>
             {row.is_active ? (
               <ConfirmDeleteButton

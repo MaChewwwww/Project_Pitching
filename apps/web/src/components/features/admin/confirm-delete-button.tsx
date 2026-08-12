@@ -34,9 +34,14 @@ export function ConfirmDeleteButton({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="danger" size="sm">
-          <Trash2 aria-hidden className="size-3.5" />
-          {actionLabel}
+        <Button
+          size="sm"
+          className="h-8 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors px-2.5 gap-1.5 font-semibold text-xs cursor-pointer"
+          title={actionLabel}
+          aria-label={actionLabel}
+        >
+          <Trash2 aria-hidden className="size-3.5 shrink-0" />
+          <span className="md:hidden">{actionLabel}</span>
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>

@@ -3,7 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { Pencil } from "lucide-react";
+
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
+import { Button } from "@/components/common/button";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
 import {
   ResourceTable,
@@ -148,12 +151,16 @@ export default function AdminFacilitiesPage() {
                 await updateMutation.mutateAsync({ id: row.id, values });
               }}
               trigger={
-                <button
-                  type="button"
-                  className="inline-flex items-center rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 shadow-sm hover:bg-neutral-50"
+                <Button
+                  size="sm"
+                  variant="warning"
+                  className="h-8 rounded-lg border border-amber-300/80 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 transition-colors px-2.5 gap-1.5 font-semibold text-xs cursor-pointer"
+                  title="Edit facility"
+                  aria-label="Edit facility"
                 >
-                  Edit
-                </button>
+                  <Pencil aria-hidden className="size-3.5 shrink-0" />
+                  <span className="md:hidden">Edit</span>
+                </Button>
               }
             />
             <ConfirmDeleteButton

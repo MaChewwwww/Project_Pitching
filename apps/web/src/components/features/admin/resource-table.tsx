@@ -69,6 +69,16 @@ export function plainValue(value: unknown): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+function formatAllFilterLabel(header: string): string {
+  const h = header.toLowerCase().trim();
+  if (h === "kind") return "All Kinds";
+  if (h === "type") return "All Types";
+  if (h === "status") return "All Statuses";
+  if (h === "category") return "All Categories";
+  if (h.endsWith("s")) return `All ${header}`;
+  return `All ${header}s`;
+}
+
 export function ResourceTable<T extends object>({
   columns,
   data,
@@ -242,9 +252,9 @@ export function ResourceTable<T extends object>({
               >
                 <SelectTrigger className="inline-flex h-9 w-fit min-w-[130px] items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all cursor-pointer max-sm:ml-auto">
                   <SlidersHorizontal aria-hidden className="size-3.5 text-emerald-600 shrink-0" />
-                  <SelectValue placeholder={`All ${filterColumn.header.toLowerCase()}`}>
+                  <SelectValue placeholder={formatAllFilterLabel(filterColumn.header)}>
                     {!filter
-                      ? `All ${filterColumn.header.toLowerCase()}`
+                      ? formatAllFilterLabel(filterColumn.header)
                       : filter}
                   </SelectValue>
                 </SelectTrigger>
@@ -263,7 +273,7 @@ export function ResourceTable<T extends object>({
                         : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950"
                     )}
                   >
-                    <span className="truncate">All {filterColumn.header.toLowerCase()}</span>
+                    <span className="truncate">{formatAllFilterLabel(filterColumn.header)}</span>
                     <span
                       className={cn(
                         "text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 tabular-nums ml-auto",
@@ -356,7 +366,7 @@ export function ResourceTable<T extends object>({
 
               {/* Card Action Footer */}
               {rowActions ? (
-                <div className="flex flex-wrap items-center justify-end gap-2 border-t border-neutral-100 pt-2.5">
+                <div className="flex flex-wrap items-center justify-center gap-2 border-t border-neutral-100 pt-2.5 w-full">
                   {rowActions(row)}
                 </div>
               ) : null}

@@ -35,6 +35,10 @@ const appButton = cva(
         ghost:
           "bg-transparent text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900",
         danger: "bg-danger text-white hover:bg-danger-hover",
+        warning:
+          "border border-amber-300/80 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-900",
+        success:
+          "border border-emerald-300/80 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900",
         // The pulse is motion-safe: under prefers-reduced-motion the ring remains
         // and the animation stops, so the emphasis survives without the movement.
         emergency:
@@ -61,6 +65,8 @@ const BASE_VARIANT = {
   outline: "outline",
   ghost: "ghost",
   danger: "destructive",
+  warning: "outline",
+  success: "outline",
   emergency: "destructive",
 } as const;
 
