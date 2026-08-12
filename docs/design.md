@@ -226,11 +226,13 @@ shadcn/ui convention, HSL triplets. Drop into `globals.css`.
 
 | Role                                             | Font                  | Why                                                                                                      |
 | ------------------------------------------------ | --------------------- | -------------------------------------------------------------------------------------------------------- |
-| **Display** — page titles, hero, stat numbers    | **Plus Jakarta Sans** | Geometric and confident, matching the reference headlines. Free, on Google Fonts, has the weights needed |
-| **UI/Body** — everything else                    | **Inter**             | The most legible screen typeface at small sizes; excellent tabular figures                               |
-| **Mono** — reference numbers, coordinates, codes | **JetBrains Mono**    | Only where character disambiguation matters                                                              |
+| **Display** — page titles, hero, stat numbers    | **Plus Jakarta Sans** when available | Geometric and confident, matching the reference headlines; system fallback keeps builds self-contained |
+| **UI/Body** — everything else                    | **Inter** when available              | The most legible screen typeface at small sizes; excellent tabular figures                              |
+| **Mono** — reference numbers, coordinates, codes | **JetBrains Mono** when available     | Only where character disambiguation matters                                                             |
 
-Load through `next/font` with `display: "swap"` and subset to `latin`.
+Use CSS font stacks with these families first and system fallbacks after them. Do not make the
+production build fetch fonts from a CDN: the staging build must remain reproducible when external
+font hosts are unavailable.
 
 ### Scale
 

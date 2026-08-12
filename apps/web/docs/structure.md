@@ -16,6 +16,10 @@ its own layout and its own guard.
 > server-side by the API (FR-SYS-006). A guard that only exists in the browser is a guard an
 > attacker skips by calling the endpoint directly.
 
+The root layout uses CSS font stacks rather than `next/font/google`. This keeps production image
+builds independent of external font hosts; the branded families are preferred when installed and
+system fallbacks preserve the hierarchy otherwise.
+
 ## Announcement routes and the shared editor
 
 The announcement CMS is the reference route composition for future portal authoring work:

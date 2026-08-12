@@ -18,10 +18,14 @@
 
 @theme inline {
   /* --- fonts (design.md Section 4) --------------------------------------- */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-jakarta), var(--font-inter), ui-sans-serif, sans-serif;
-  --font-heading: var(--font-jakarta), var(--font-inter), ui-sans-serif, sans-serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  /* CSS stacks keep the production build self-contained. next/font/google is
+     intentionally not used because staging builds must not depend on a font
+     CDN being reachable. If the branded families are installed, they win;
+     otherwise the system fallbacks preserve the same hierarchy. */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", ui-sans-serif, sans-serif;
+  --font-heading: "Plus Jakarta Sans", "Inter", ui-sans-serif, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   /* --- radius (design.md Section 5) -------------------------------------- */
   --radius-sm: 6px;
