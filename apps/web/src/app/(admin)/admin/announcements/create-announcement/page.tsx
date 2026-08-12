@@ -20,7 +20,7 @@ const defaults: AnnouncementFormValues = {
   excerpt: "",
   body_json: emptyArticleDocument,
   instruction: "",
-  is_barangay_wide: true,
+  is_barangay_wide: false,
   area_ids: [],
   publication_status: "published",
 };

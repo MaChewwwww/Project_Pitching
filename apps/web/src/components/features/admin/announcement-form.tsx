@@ -5,6 +5,9 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import {
   AlertCircle,
+  AlertTriangle,
+  Calendar,
+  Eye,
   ImagePlus,
   MapPin,
   Megaphone,
@@ -27,6 +30,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -60,13 +69,15 @@ const announcementTypes = [
   "heavy_rainfall",
   "heat_index",
   "evacuation",
-] as const;export const announcementFormSchema = z
+] as const;
+
+export const announcementFormSchema = z
   .object({
     kind: z.enum(["announcement", "alert"]),
     type: z.enum(announcementTypes),
     severity: z.enum(["info", "warning", "emergency"]).optional(),
     title: z.string().min(1, "Title is required"),
-    excerpt: z.string().max(360, "Keep the summary under 360 characters").default(""),
+    excerpt: z.string().min(1, "Preview Summary is required").max(360, "Keep the summary under 360 characters"),
     body_json: z.custom<ArticleDocument>(),
     instruction: z.string().optional(),
     is_barangay_wide: z.boolean().default(false),
@@ -92,6 +103,63 @@ const announcementTypes = [
 
 export type AnnouncementFormValues = z.infer<typeof announcementFormSchema>;
 
+function RenderArticleBody({ doc }: { doc: ArticleDocument }) {
+  if (!doc || !doc.content || !Array.isArray(doc.content)) {
+    return <p className="text-sm text-neutral-500 italic">No detailed content provided.</p>;
+  }
+
+  return (
+    <div className="prose prose-emerald max-w-none text-sm text-neutral-800 leading-relaxed space-y-4">
+      {doc.content.map((block, idx) => {
+        if (block.type === "paragraph") {
+          const textContent = Array.isArray(block.content)
+            ? block.content.map((c: Record<string, unknown>) => (c.text as string) || "").join("")
+            : "";
+          return <p key={idx} className="my-2">{textContent}</p>;
+        }
+        if (block.type === "heading") {
+          const textContent = Array.isArray(block.content)
+            ? block.content.map((c: Record<string, unknown>) => (c.text as string) || "").join("")
+            : "";
+          const level = block.attrs && typeof block.attrs === "object" ? (block.attrs as Record<string, unknown>).level : 2;
+          if (level === 2) return <h2 key={idx} className="text-lg font-bold text-neutral-900 mt-4 mb-2">{textContent}</h2>;
+          return <h3 key={idx} className="text-base font-bold text-neutral-900 mt-3 mb-1.5">{textContent}</h3>;
+        }
+        if (block.type === "bulletList") {
+          return (
+            <ul key={idx} className="list-disc pl-5 space-y-1 my-2">
+              {Array.isArray(block.content) &&
+                block.content.map((li: Record<string, unknown>, liIdx: number) => {
+                  const liText = Array.isArray(li.content)
+                    ? li.content
+                        .flatMap((p: Record<string, unknown>) =>
+                          Array.isArray(p.content)
+                            ? p.content.map((c: Record<string, unknown>) => (c.text as string) || "")
+                            : []
+                        )
+                        .join("")
+                    : "";
+                  return <li key={liIdx}>{liText}</li>;
+                })}
+            </ul>
+          );
+        }
+        if (block.type === "blockquote") {
+          const quoteText = Array.isArray(block.content)
+            ? block.content.map((c: Record<string, unknown>) => (c.text as string) || "").join("")
+            : "";
+          return (
+            <blockquote key={idx} className="border-l-4 border-emerald-500 pl-4 py-1 italic bg-emerald-50/50 rounded-r-lg my-3">
+              {quoteText}
+            </blockquote>
+          );
+        }
+        return null;
+      })}
+    </div>
+  );
+}
+
 export function AnnouncementForm({
   areas,
   defaultValues,
@@ -110,6 +178,7 @@ export function AnnouncementForm({
   const [coverPreview, setCoverPreview] = React.useState<string | null>(null);
   const [coverAltText, setCoverAltText] = React.useState("");
   const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false);
+  const [formPreviewOpen, setFormPreviewOpen] = React.useState(false);
 
   const {
     register,
@@ -143,7 +212,15 @@ export function AnnouncementForm({
   };
 
   const kind = useWatch({ control, name: "kind" });
+  const type = useWatch({ control, name: "type" });
+  const title = useWatch({ control, name: "title" });
+  const excerpt = useWatch({ control, name: "excerpt" });
+  const instruction = useWatch({ control, name: "instruction" });
+  const bodyJson = useWatch({ control, name: "body_json" });
   const isBarangayWide = useWatch({ control, name: "is_barangay_wide" });
+  const areaIds = useWatch({ control, name: "area_ids" });
+
+  const selectedAreaNames = areas.filter((a) => (areaIds || []).includes(a.id)).map((a) => a.name);
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -208,7 +285,7 @@ export function AnnouncementForm({
                       <SelectTrigger id="kind" className="h-10 rounded-xl border-neutral-200 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
                         <SelectItem value="announcement">Announcement</SelectItem>
                         <SelectItem value="alert">Alert</SelectItem>
                       </SelectContent>
@@ -229,7 +306,7 @@ export function AnnouncementForm({
                       <SelectTrigger id="type" className="h-10 rounded-xl border-neutral-200 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
                         {announcementTypes.map((t) => (
                           <SelectItem key={t} value={t}>
                             {t.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
@@ -255,7 +332,7 @@ export function AnnouncementForm({
                       <SelectTrigger id="severity" className="h-10 rounded-xl border-amber-300 bg-white font-semibold text-amber-950">
                         <SelectValue placeholder="Select severity" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
                         <SelectItem value="info">Info</SelectItem>
                         <SelectItem value="warning">Warning</SelectItem>
                         <SelectItem value="emergency">Emergency</SelectItem>
@@ -287,16 +364,23 @@ export function AnnouncementForm({
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="excerpt" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
-                Preview Summary
+                Preview Summary <span className="text-red-500 font-bold ml-0.5">*</span>
               </Label>
               <Textarea
                 id="excerpt"
                 placeholder="Brief summary shown in public cards..."
-                className="min-h-24 rounded-xl border-neutral-200 bg-white text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                className={cn(
+                  "min-h-24 rounded-xl border-neutral-200 bg-white text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs",
+                  errors.excerpt && "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                )}
                 aria-invalid={!!errors.excerpt}
                 {...register("excerpt")}
               />
-              <p className="text-[11px] font-medium text-neutral-400">Plain text preview shown in article cards (max 360 characters).</p>
+              {errors.excerpt ? (
+                <p className="text-red-600 text-xs font-semibold">{errors.excerpt.message}</p>
+              ) : (
+                <p className="text-[11px] font-medium text-neutral-400">Plain text preview shown in article cards (max 360 characters).</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-2">
@@ -430,7 +514,7 @@ export function AnnouncementForm({
                 )}
               />
               <Label htmlFor="is_barangay_wide" className="text-xs font-bold text-neutral-800 cursor-pointer">
-                Barangay-wide announcement
+                Barangay-Wide Announcement
               </Label>
             </div>
 
@@ -499,7 +583,7 @@ export function AnnouncementForm({
                   <SelectTrigger id="publication_status" className="h-10 rounded-xl border-neutral-200 font-medium">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
                     <SelectItem value="published">Publish Now</SelectItem>
                     <SelectItem value="draft">Save as Draft</SelectItem>
                     <SelectItem value="archived">Archive</SelectItem>
@@ -510,11 +594,20 @@ export function AnnouncementForm({
 
             <div className="flex flex-col gap-2.5 pt-2">
               <Button
+                type="button"
+                variant="warning"
+                onClick={() => setFormPreviewOpen(true)}
+                className="h-10 w-full rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-md shadow-amber-900/15 hover:shadow-lg transition-all cursor-pointer justify-center gap-2"
+              >
+                <Eye className="size-4 shrink-0" />
+                <span>Preview</span>
+              </Button>
+              <Button
                 type="submit"
                 disabled={isSubmitting}
                 className="h-10 w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-900/15 hover:shadow-lg transition-all cursor-pointer justify-center"
               >
-                {isSubmitting ? "Saving..." : "Publish Announcement"}
+                {isSubmitting ? "Saving..." : "Create"}
               </Button>
               <Button
                 type="button"
@@ -552,6 +645,81 @@ export function AnnouncementForm({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Form Live Preview Modal */}
+      <Dialog open={formPreviewOpen} onOpenChange={setFormPreviewOpen}>
+        <DialogContent className="max-w-5xl sm:max-w-5xl w-[92vw] max-h-[90vh] overflow-y-auto rounded-2xl p-0 gap-0 border border-neutral-200 bg-white shadow-xl">
+          <DialogHeader className="p-5 border-b border-neutral-100 bg-neutral-50/80">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold tracking-wider uppercase bg-amber-500 text-white px-2.5 py-0.5 rounded-full">
+                Form Live Preview
+              </span>
+              {type ? (
+                <span className="text-[10px] font-bold tracking-wider uppercase bg-neutral-200 text-neutral-800 px-2 py-0.5 rounded-full">
+                  {type.replace(/_/g, " ")}
+                </span>
+              ) : null}
+            </div>
+            <DialogTitle className="text-lg font-bold text-neutral-900 mt-2">
+              {title || "Untitled Article"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="p-6 sm:p-8 space-y-6">
+            {coverPreview ? (
+              <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 shadow-2xs">
+                <Image
+                  src={coverPreview}
+                  alt={coverAltText || title || "Cover photo preview"}
+                  fill
+                  unoptimized
+                  className="object-cover"
+                />
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-500 border-b border-neutral-100 pb-4">
+              <span className="flex items-center gap-1.5">
+                <Calendar className="size-3.5 text-emerald-600" />
+                Draft / Live Form Preview
+              </span>
+              <span className="flex items-center gap-1.5">
+                <MapPin className="size-3.5 text-emerald-600" />
+                {isBarangayWide
+                  ? "Barangay-Wide"
+                  : selectedAreaNames.length > 0
+                  ? selectedAreaNames.join(", ")
+                  : "Targeted Areas"}
+              </span>
+            </div>
+
+            {instruction ? (
+              <div className="rounded-xl border border-amber-300 bg-amber-50/80 p-4 text-amber-950 space-y-1">
+                <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-amber-900">
+                  <AlertTriangle className="size-4 text-amber-600 shrink-0" />
+                  <span>Required Action Instruction</span>
+                </div>
+                <p className="text-sm font-semibold pl-6">{instruction}</p>
+              </div>
+            ) : null}
+
+            {excerpt ? (
+              <div className="bg-neutral-50 rounded-xl p-4 border border-neutral-200/80">
+                <p className="text-sm font-medium text-neutral-700 italic">
+                  &ldquo;{excerpt}&rdquo;
+                </p>
+              </div>
+            ) : null}
+
+            <div>
+              <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">
+                Article Body Content
+              </h4>
+              <RenderArticleBody doc={bodyJson} />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }

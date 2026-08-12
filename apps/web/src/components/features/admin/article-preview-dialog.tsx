@@ -123,7 +123,7 @@ export function ArticlePreviewDialog({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl p-0 gap-0 border border-neutral-200 bg-white shadow-xl">
+      <DialogContent className="max-w-5xl sm:max-w-5xl w-[92vw] max-h-[90vh] overflow-y-auto rounded-2xl p-0 gap-0 border border-neutral-200 bg-white shadow-xl">
         <DialogHeader className="p-5 border-b border-neutral-100 bg-neutral-50/80">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold tracking-wider uppercase bg-emerald-600 text-white px-2.5 py-0.5 rounded-full">
