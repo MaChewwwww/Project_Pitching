@@ -9,11 +9,10 @@ import { WaterSpinner } from "./water-spinner";
  * to initialize cleanly before fading out gracefully.
  */
 export function PageSplashLoader() {
-  const [mounted, setMounted] = React.useState(false);
+  const [mounted, setMounted] = React.useState(true);
   const [fading, setFading] = React.useState(false);
 
   React.useEffect(() => {
-    setMounted(true);
     // Lock scroll during splash load
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
