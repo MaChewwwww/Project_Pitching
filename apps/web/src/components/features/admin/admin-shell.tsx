@@ -49,7 +49,12 @@ function ConsoleProfileMenu({
           )}
           aria-label="Open profile menu"
         >
-          <span className="grid size-8 place-items-center rounded-full bg-emerald-700 text-xs font-bold text-white ring-2 ring-emerald-100">
+          <span
+            className={cn(
+              "grid size-8 place-items-center rounded-full bg-emerald-700 text-xs font-bold text-white ring-2 ring-emerald-100",
+              compact && "size-7 text-[11px] ring-1 ring-emerald-100",
+            )}
+          >
             {initial}
           </span>
           {!compact ? (

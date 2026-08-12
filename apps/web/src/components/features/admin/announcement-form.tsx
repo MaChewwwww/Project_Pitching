@@ -306,7 +306,7 @@ export function AnnouncementForm({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-2 gap-4 sm:gap-5 xl:grid-cols-3">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="kind" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
                   Type <span className="text-red-500 font-bold ml-0.5">*</span>
@@ -638,27 +638,29 @@ export function AnnouncementForm({
 
           {/* Publication Status Card */}
           <div className="rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-2xs space-y-4">
-            <div className="flex items-center gap-2 border-b border-neutral-100 pb-3">
-              <Megaphone aria-hidden className="size-4 text-emerald-600" />
-              <h3 className="text-sm font-bold text-neutral-900">Publishing Status</h3>
-            </div>
+            <div className="flex items-center justify-between gap-3 border-b border-neutral-100 pb-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <Megaphone aria-hidden className="size-4 shrink-0 text-emerald-600" />
+                <h3 className="truncate text-sm font-bold text-neutral-900">Publishing Status</h3>
+              </div>
 
-            <Controller
-              control={control}
-              name="publication_status"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger id="publication_status" className="h-10 rounded-lg border-emerald-200/80 font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
-                    <SelectItem value="published">Publish Now</SelectItem>
-                    <SelectItem value="draft">Save as Draft</SelectItem>
-                    <SelectItem value="archived">Archive</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
+              <Controller
+                control={control}
+                name="publication_status"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="publication_status" className="h-10 w-auto min-w-[8.5rem] shrink-0 rounded-lg border-emerald-200/80 font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent align="end" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
+                      <SelectItem value="published">Publish Now</SelectItem>
+                      <SelectItem value="draft">Save as Draft</SelectItem>
+                      <SelectItem value="archived">Archive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
 
             <div className="flex flex-col gap-2.5 pt-2">
               <Button
