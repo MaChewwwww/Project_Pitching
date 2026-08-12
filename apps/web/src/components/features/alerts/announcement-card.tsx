@@ -26,12 +26,17 @@ export interface AnnouncementCardProps {
 
 function StoryMeta({
   announcement,
-  isEmergency = false,
 }: {
   announcement: PublicAnnouncement;
-  isEmergency?: boolean;
 }) {
-  const iconTone = isEmergency ? "text-red-600" : "text-primary-600";
+  const iconTone =
+    announcement.severity === "emergency"
+      ? "text-red-600"
+      : announcement.severity === "warning"
+      ? "text-orange-600"
+      : announcement.severity === "info"
+      ? "text-yellow-600"
+      : "text-emerald-700";
 
   return (
     <div className="flex min-w-0 flex-col gap-1 text-xs font-medium text-neutral-500">
@@ -51,15 +56,19 @@ function StoryMeta({
   );
 }
 
-function ContinueMark({ isEmergency = false }: { isEmergency?: boolean }) {
+function ContinueMark({ severity }: { severity?: string | null }) {
   return (
     <span
       aria-hidden
       className={cn(
         "grid size-9 shrink-0 place-items-center rounded-full border transition-all duration-300 group-hover:translate-x-1",
-        isEmergency
+        severity === "emergency"
           ? "border-red-200 bg-red-50 text-red-700 group-hover:border-red-600 group-hover:bg-red-600 group-hover:text-white"
-          : "border-neutral-200 bg-neutral-50 text-neutral-700 group-hover:border-primary-600 group-hover:bg-primary-600 group-hover:text-white",
+          : severity === "warning"
+          ? "border-orange-200 bg-orange-50 text-orange-700 group-hover:border-orange-600 group-hover:bg-orange-600 group-hover:text-white"
+          : severity === "info"
+          ? "border-yellow-300 bg-yellow-50 text-yellow-800 group-hover:border-yellow-500 group-hover:bg-yellow-500 group-hover:text-neutral-950"
+          : "border-neutral-200 bg-neutral-50 text-neutral-700 group-hover:border-emerald-600 group-hover:bg-emerald-600 group-hover:text-white",
       )}
     >
       <ArrowRight className="size-4" />
@@ -73,7 +82,6 @@ export function AnnouncementCard({
   className,
 }: AnnouncementCardProps) {
   const isAlert = announcement.kind === "alert";
-  const isEmergency = isAlert && announcement.severity === "emergency";
   const href = `/announcements/${announcement.slug}` as Route;
   const summary = announcement.excerpt || announcement.body;
 
@@ -246,8 +254,8 @@ export function AnnouncementCard({
 
           {/* Pinned Card Footer */}
           <div className="mt-auto flex items-end justify-between gap-3 pt-5 border-t border-neutral-100">
-            <StoryMeta announcement={announcement} isEmergency={isEmergency} />
-            <ContinueMark isEmergency={isEmergency} />
+            <StoryMeta announcement={announcement} />
+            <ContinueMark severity={announcement.severity} />
           </div>
         </div>
       </article>

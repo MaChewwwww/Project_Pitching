@@ -105,7 +105,6 @@ export function AnnouncementDetailView({
   recentArticles,
 }: AnnouncementDetailViewProps) {
   const isAlert = article.kind === "alert";
-  const isEmergency = isAlert && article.severity === "emergency";
   const cover = article.cover_image;
   const gallery = (article.images || []).filter((img) => img.id !== cover?.id);
 
@@ -173,33 +172,33 @@ export function AnnouncementDetailView({
           {/* Left Main Article Column */}
           <article className="flex flex-col gap-6 lg:col-span-8">
             {/* Header Metadata Bar: Author & Location */}
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-medium text-neutral-500 -mt-2 -mb-2">
-              <span className="inline-flex items-center gap-1.5 truncate">
-                <User
-                  aria-hidden
-                  className={cn(
-                    "size-3.5 shrink-0",
-                    isEmergency ? "text-red-600" : "text-primary-600",
-                  )}
-                />
-                <span className="truncate">{article.issued_by_name}</span>
-              </span>
+            {(() => {
+              const iconTone =
+                article.severity === "emergency"
+                  ? "text-red-600"
+                  : article.severity === "warning"
+                  ? "text-orange-600"
+                  : article.severity === "info"
+                  ? "text-yellow-600"
+                  : "text-emerald-700";
+              return (
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-medium text-neutral-500 -mt-2 -mb-2">
+                  <span className="inline-flex items-center gap-1.5 truncate">
+                    <User aria-hidden className={cn("size-3.5 shrink-0", iconTone)} />
+                    <span className="truncate">{article.issued_by_name}</span>
+                  </span>
 
-              <span className="inline-flex items-center gap-1.5 truncate">
-                <MapPin
-                  aria-hidden
-                  className={cn(
-                    "size-3.5 shrink-0",
-                    isEmergency ? "text-red-600" : "text-primary-600",
-                  )}
-                />
-                <span className="truncate">
-                  {article.area_names.length > 0
-                    ? article.area_names.join(", ")
-                    : "Barangay-wide"}
-                </span>
-              </span>
-            </div>
+                  <span className="inline-flex items-center gap-1.5 truncate">
+                    <MapPin aria-hidden className={cn("size-3.5 shrink-0", iconTone)} />
+                    <span className="truncate">
+                      {article.area_names.length > 0
+                        ? article.area_names.join(", ")
+                        : "Barangay-wide"}
+                    </span>
+                  </span>
+                </div>
+              );
+            })()}
 
             {/* Cover Media */}
             {cover ? (

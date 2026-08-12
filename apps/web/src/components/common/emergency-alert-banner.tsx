@@ -56,8 +56,6 @@ export function EmergencyAlertBanner({
 
   if (!activeAlert && !emergencyEvent) return null;
 
-  // Severity determines the urgency palette (info = Yellow, warning = Orange, emergency = Red).
-  const severity = activeAlert?.severity || (emergencyEvent ? "emergency" : "info");
   const levelText = activeAlert?.severity ?? "Active";
 
   const title = activeAlert
