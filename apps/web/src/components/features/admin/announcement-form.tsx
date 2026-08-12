@@ -327,7 +327,7 @@ export function AnnouncementForm({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="kind" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
                   Type <span className="text-red-500 font-bold ml-0.5">*</span>
@@ -348,6 +348,45 @@ export function AnnouncementForm({
                   )}
                 />
               </div>
+
+              {kind === "alert" ? (
+                <div className={cn("flex flex-col gap-2 rounded-xl border p-3 transition-colors", activeSeverityStyle.container)}>
+                  <Label htmlFor="severity" className={cn("text-xs font-bold uppercase tracking-wider", activeSeverityStyle.label)}>
+                    Alert Severity Level <span className="text-red-500 font-bold ml-0.5">*</span>
+                  </Label>
+                  <Controller
+                    control={control}
+                    name="severity"
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger id="severity" className={cn("h-10 rounded-xl", activeSeverityStyle.trigger)}>
+                          <SelectValue placeholder="Select severity" />
+                        </SelectTrigger>
+                        <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
+                          <SelectItem
+                            value="info"
+                            className="focus:bg-yellow-100 focus:text-yellow-900 data-[state=checked]:bg-yellow-100 data-[state=checked]:text-yellow-900 font-semibold text-yellow-900 cursor-pointer"
+                          >
+                            Info (Yellow)
+                          </SelectItem>
+                          <SelectItem
+                            value="warning"
+                            className="focus:bg-orange-100 focus:text-orange-900 data-[state=checked]:bg-orange-100 data-[state=checked]:text-orange-900 font-semibold text-orange-900 cursor-pointer"
+                          >
+                            Warning (Orange)
+                          </SelectItem>
+                          <SelectItem
+                            value="emergency"
+                            className="focus:bg-red-100 focus:text-red-900 data-[state=checked]:bg-red-100 data-[state=checked]:text-red-900 font-semibold text-red-900 cursor-pointer"
+                          >
+                            Emergency (Red)
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              ) : null}
 
               <div className="flex flex-col gap-2">
                 <Label htmlFor="type" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
@@ -373,45 +412,6 @@ export function AnnouncementForm({
                 />
               </div>
             </div>
-
-            {kind === "alert" ? (
-              <div className={cn("flex flex-col gap-2 rounded-xl p-4 border transition-colors", activeSeverityStyle.container)}>
-                <Label htmlFor="severity" className={cn("text-xs font-bold uppercase tracking-wider", activeSeverityStyle.label)}>
-                  Alert Severity Level <span className="text-red-500 font-bold ml-0.5">*</span>
-                </Label>
-                <Controller
-                  control={control}
-                  name="severity"
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger id="severity" className={cn("h-10 rounded-xl", activeSeverityStyle.trigger)}>
-                        <SelectValue placeholder="Select severity" />
-                      </SelectTrigger>
-                      <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
-                        <SelectItem
-                          value="info"
-                          className="focus:bg-yellow-100 focus:text-yellow-900 data-[state=checked]:bg-yellow-100 data-[state=checked]:text-yellow-900 font-semibold text-yellow-900 cursor-pointer"
-                        >
-                          Info (Yellow)
-                        </SelectItem>
-                        <SelectItem
-                          value="warning"
-                          className="focus:bg-orange-100 focus:text-orange-900 data-[state=checked]:bg-orange-100 data-[state=checked]:text-orange-900 font-semibold text-orange-900 cursor-pointer"
-                        >
-                          Warning (Orange)
-                        </SelectItem>
-                        <SelectItem
-                          value="emergency"
-                          className="focus:bg-red-100 focus:text-red-900 data-[state=checked]:bg-red-100 data-[state=checked]:text-red-900 font-semibold text-red-900 cursor-pointer"
-                        >
-                          Emergency (Red)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-            ) : null}
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
