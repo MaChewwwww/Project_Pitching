@@ -328,30 +328,6 @@ export function AnnouncementForm({
                 />
               </div>
 
-              {kind === "alert" ? (
-                <div className="flex flex-col gap-2 rounded-xl border border-neutral-200 bg-neutral-50/50 p-3 transition-colors">
-                  <Label htmlFor="severity" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
-                    Alert Severity Level <span className="text-red-500 font-bold ml-0.5">*</span>
-                  </Label>
-                  <Controller
-                    control={control}
-                    name="severity"
-                    render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger id="severity" className="h-10 rounded-xl border-neutral-200 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
-                          <SelectValue placeholder="Select severity" />
-                        </SelectTrigger>
-                        <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
-                          <SelectItem value="info">Info</SelectItem>
-                          <SelectItem value="warning">Warning</SelectItem>
-                          <SelectItem value="emergency">Emergency</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </div>
-              ) : null}
-
               <div className="flex flex-col gap-2">
                 <Label htmlFor="type" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
                   Category <span className="text-red-500 font-bold ml-0.5">*</span>
@@ -375,6 +351,30 @@ export function AnnouncementForm({
                   )}
                 />
               </div>
+
+              {kind === "alert" ? (
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="severity" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+                    Alert Severity Level <span className="text-red-500 font-bold ml-0.5">*</span>
+                  </Label>
+                  <Controller
+                    control={control}
+                    name="severity"
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger id="severity" className="h-10 rounded-xl border-neutral-200 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
+                          <SelectValue placeholder="Select severity" />
+                        </SelectTrigger>
+                        <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
+                          <SelectItem value="info">Info</SelectItem>
+                          <SelectItem value="warning">Warning</SelectItem>
+                          <SelectItem value="emergency">Emergency</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              ) : null}
             </div>
 
             <div className="flex flex-col gap-2">
