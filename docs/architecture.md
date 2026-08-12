@@ -249,10 +249,11 @@ erDiagram
 
 Every reading surfaced to a user carries `source` and `observed_at` (FR-WX-010). A value without an age is never rendered.
 
-**`config`** — typed key/value for service-owned settings: barangay population and household
-totals, alert thresholds, and staleness windows. It keeps FR-ANL-002 out of the codebase and
-preserves the distinction between configured totals and registered counts. It is not a user-facing
-console page; deployment-owned application settings remain environment-driven.
+**`config`** — legacy typed key/value records retained for migration compatibility. Runtime
+services read barangay totals, alert thresholds, and staleness windows from `core.config`, whose
+values are supplied by the deployment environment. This keeps FR-ANL-002 out of the codebase and
+preserves the distinction between configured totals and registered counts without a user-facing
+setup page.
 
 ### 5.3 Spatial model
 
@@ -969,6 +970,8 @@ All configuration is environment variables, loaded through `pydantic-settings`.
 ENVIRONMENT, DATABASE_URL, JWT_SECRET, ACCESS_TOKEN_MINUTES, REFRESH_TOKEN_DAYS,
 COOKIE_SECURE, CORS_ORIGINS, OPEN_METEO_LAT, OPEN_METEO_LON,
 PAGASA_STATION, SCRAPE_INTERVAL_MINUTES, STALE_THRESHOLD_MINUTES,
+BARANGAY_TOTAL_POPULATION, BARANGAY_TOTAL_HOUSEHOLDS,
+ALERT_THRESHOLD_LEVEL_1_M, ALERT_THRESHOLD_LEVEL_2_M, ALERT_THRESHOLD_LEVEL_3_M,
 UPLOAD_DIR, MAX_UPLOAD_MB, LOG_LEVEL, DEMO_MODE,
 PROXY_PORT, WEB_PORT, API_PORT, DB_PORT
 ```

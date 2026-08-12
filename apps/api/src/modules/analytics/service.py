@@ -4,8 +4,9 @@ Services own the transaction and may query their own module's models. A service
 never imports another module's `models.py` — cross-module access goes through
 the owning service (AGENTS.md Section 5).
 
-`analytics` composes `geo`, `config`, `evacuation`, and `registry` **services** —
-never their `models.py` — because nothing here owns data of its own.
+`analytics` composes `geo`, `evacuation`, and `registry` **services** and reads the
+deployment-owned denominator from `core.config` — never another module's `models.py` —
+because nothing here owns data of its own.
 """
 
 from __future__ import annotations
@@ -15,8 +16,8 @@ from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.config import settings
 from src.modules.analytics.schemas import FloodExposure, PublicAreaStat, PublicBarangayStats
-from src.modules.config import service as config_service
 from src.modules.evacuation import service as evacuation_service
 from src.modules.geo import service as geo_service
 from src.modules.registry import service as registry_service
@@ -76,11 +77,8 @@ async def get_area_stats(session: AsyncSession) -> PublicBarangayStats:
 
     total_households, total_members = await registry_service.total_counts(session)
 
-    configured_totals = await config_service.get_values(
-        session, ["barangay.total_households", "barangay.total_population"]
-    )
-    configured_total_households = configured_totals.get("barangay.total_households")
-    configured_total_population = configured_totals.get("barangay.total_population")
+    configured_total_households = settings.barangay_total_households
+    configured_total_population = settings.barangay_total_population
 
     # FR-ANL-003: coverage is only ever presented against a real denominator.
     coverage_pct = (

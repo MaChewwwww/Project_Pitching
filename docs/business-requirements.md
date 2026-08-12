@@ -114,6 +114,12 @@ A web platform with three faces:
 2. **Resident portal** — for registered households. Household and member profiles, alerts, safety check-in, rescue requests, incident reports, go-bag checklist, activities, and notifications. The August 2026 stakeholder revision removed household assistance status from scope (D-16).
 3. **Barangay admin console** — for barangay officials, BDRRMC, BHWs, and SK. Registry management, assisted registration, map and facility configuration, alerts, evacuation center operations, donation-drive publishing, activities, analytics.
 
+**August 13, 2026 implementation revision:** the admin console does not expose a generic System
+& Setup area. Seeded boundaries remain reference data, and configurable totals/thresholds are
+supplied through the deployment environment rather than an officer-facing settings page. The
+underlying business needs in BR-1.40, BR-3.3, and BR-10.1a remain; only their maintenance surface
+changed.
+
 ### 4.2 Out of Scope
 
 All eleven module areas remain represented, but the exclusions below retire specific historical requirements. `frs_nfrs.md` Section 2 is the implementation-level complete list.

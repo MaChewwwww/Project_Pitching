@@ -14,9 +14,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.audit import write_audit
+from src.core.config import settings
 from src.core.errors import NotFoundError
 from src.core.pagination import Page, page_meta
-from src.modules.config import service as config_service
 from src.modules.weather.models import FloodEvent, FloodEventArea, Forecast, Reading
 from src.modules.weather.schemas import (
     FloodEventIn,
@@ -35,9 +35,8 @@ CURRENT_METRICS = ("temperature", "rainfall", "humidity", "heat_index")
 DEFAULT_STALE_MINUTES = 45
 
 
-async def _stale_after_minutes(session: AsyncSession) -> int:
-    value = await config_service.get_value(session, "reading.stale_after_minutes")
-    return int(value) if value is not None else DEFAULT_STALE_MINUTES
+def _stale_after_minutes() -> int:
+    return settings.stale_threshold_minutes or DEFAULT_STALE_MINUTES
 
 
 def _to_public(r: Reading, *, stale_after_minutes: int, now: datetime) -> PublicReading:
@@ -68,7 +67,7 @@ async def _latest_reading(session: AsyncSession, metric: str) -> Reading | None:
 
 
 async def get_weather_current(session: AsyncSession) -> PublicWeatherCurrent:
-    stale_after = await _stale_after_minutes(session)
+    stale_after = _stale_after_minutes()
     now = datetime.now(UTC)
 
     readings: list[PublicReading] = []
@@ -133,16 +132,17 @@ def _alert_level(value: float | None, thresholds: RiverThresholds | None) -> int
 
 
 async def get_river_level(session: AsyncSession) -> PublicRiverLevel:
-    stale_after = await _stale_after_minutes(session)
+    stale_after = _stale_after_minutes()
     now = datetime.now(UTC)
 
     row = await _latest_reading(session, "river_level")
     reading = _to_public(row, stale_after_minutes=stale_after, now=now) if row else None
 
-    raw_thresholds = await config_service.get_values(
-        session,
-        ["alert.threshold_level_1_m", "alert.threshold_level_2_m", "alert.threshold_level_3_m"],
-    )
+    raw_thresholds = {
+        "alert.threshold_level_1_m": settings.alert_threshold_level_1_m,
+        "alert.threshold_level_2_m": settings.alert_threshold_level_2_m,
+        "alert.threshold_level_3_m": settings.alert_threshold_level_3_m,
+    }
     has_any = any(v is not None for v in raw_thresholds.values())
     thresholds = (
         RiverThresholds(
@@ -167,7 +167,7 @@ async def get_river_level(session: AsyncSession) -> PublicRiverLevel:
 
 
 async def reading_to_public(session: AsyncSession, reading: Reading) -> PublicReading:
-    stale_after = await _stale_after_minutes(session)
+    stale_after = _stale_after_minutes()
     return _to_public(reading, stale_after_minutes=stale_after, now=datetime.now(UTC))
 
 
@@ -215,17 +215,14 @@ async def simulate_typhoon(session: AsyncSession, *, actor_id: uuid.UUID) -> Sim
     """
     from src.modules.alerts import service as alerts_service
 
-    raw_thresholds = await config_service.get_values(
-        session,
-        ["alert.threshold_level_1_m", "alert.threshold_level_2_m", "alert.threshold_level_3_m"],
-    )
-    level_1 = raw_thresholds.get("alert.threshold_level_1_m")
-    level_2 = raw_thresholds.get("alert.threshold_level_2_m")
-    level_3 = raw_thresholds.get("alert.threshold_level_3_m")
+    level_1 = settings.alert_threshold_level_1_m
+    level_2 = settings.alert_threshold_level_2_m
+    level_3 = settings.alert_threshold_level_3_m
     if level_1 is None or level_2 is None or level_3 is None:
         raise NotFoundError(
-            "River alert thresholds are not fully configured yet — set them under "
-            "Settings before simulating a typhoon (schema.md S-OI-3)."
+            "River alert thresholds are not fully configured yet — set "
+            "ALERT_THRESHOLD_LEVEL_1_M/2_M/3_M in the deployment environment "
+            "before simulating a typhoon (schema.md S-OI-3)."
         )
 
     now = datetime.now(UTC)
@@ -298,7 +295,7 @@ async def simulate_typhoon(session: AsyncSession, *, actor_id: uuid.UUID) -> Sim
     )
     await session.commit()
 
-    stale_after = await _stale_after_minutes(session)
+    stale_after = _stale_after_minutes()
     public_readings = [
         _to_public(r, stale_after_minutes=stale_after, now=datetime.now(UTC)) for r in readings
     ]

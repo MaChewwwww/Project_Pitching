@@ -1,6 +1,8 @@
-"""Admin-editable configuration and PSGC address reference data.
+"""Legacy configuration records and PSGC address reference data.
 
-Covers FR-SYS-010 and FR-SYS-012 (schema.md Section 4).
+Covers FR-SYS-010 and FR-SYS-012 (schema.md Section 4). Runtime operational
+values are now read from the deployment environment; the config table remains
+for migration compatibility and historical reference data.
 """
 
 from __future__ import annotations
@@ -19,7 +21,7 @@ PSGC_LEVELS = ("region", "province", "city", "barangay")
 
 
 class Config(Base):
-    """Typed key/value settings (FR-SYS-010, FR-ANL-002).
+    """Legacy typed key/value settings (FR-SYS-010, FR-ANL-002).
 
     This table is why FR-ANL-002 and FR-ANL-003 stay honest. Barangay-wide totals
     live here as *configuration*; registered counts are always `COUNT(*)`. Two

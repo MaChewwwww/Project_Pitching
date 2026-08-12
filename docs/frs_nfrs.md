@@ -155,9 +155,9 @@ Do not convert this audit into invented portal screens. New target workflows req
 System & Setup category. `/admin/areas` was a misleading editing surface because the seeded
 boundaries are reference geometry, not officer-managed content; `/admin/config` was likewise
 removed as a workflow. Area records and operational configuration remain service/data contracts
-used by maps, targeting, analytics, and weather. Deployment-owned application settings belong in
-the environment profile, while seeded values continue to be maintained through migrations until
-the remaining configuration contract is revisited.
+used by maps, targeting, analytics, and weather. Runtime operational values now belong in the
+environment profile; the old config rows remain only for migration compatibility until the
+remaining configuration contract is retired.
 
 ---
 
@@ -174,7 +174,7 @@ the remaining configuration contract is revisited.
 | FR-SYS-007 | BHW area scoping                             | A BHW can read/write only households in their assigned areas; cross-area access returns 403                                                                                                                                                             | BR-1.44          | M   | ◐      | —   |
 | FR-SYS-008 | Audit log of state-changing actions          | Actor, action, target, timestamp recorded and queryable by admin                                                                                                                                                                                        | BR-1.45, BR-4.6  | M   | ◐      | —   |
 | FR-SYS-009 | Admin can manage users                       | List, search, filter, view, activate/deactivate, change role                                                                                                                                                                                            | BRD 5.1          | M   | ☐      | —   |
-| FR-SYS-010 | Configuration store                          | Admin-editable settings: barangay totals, alert thresholds, hotlines, facility list                                                                                                                                                                     | BR-3.3, BR-10.1a | M   | ◐      | —   |
+| FR-SYS-010 | Configuration store                          | Deployment-configured barangay totals and alert thresholds, with hotlines and facilities owned by their operational modules                                                                                                                                 | BR-3.3, BR-10.1a | M   | ◐      | —   |
 | FR-SYS-011 | In-app notification centre                   | Notifications listed, unread count shown, mark-as-read                                                                                                                                                                                                  | BR-1.18, BR-8.3  | S   | ☐      | —   |
 | FR-SYS-012 | Reference data: PSGC                         | PSGC hierarchy loaded at migration; cascading region→province→city→barangay select                                                                                                                                                                      | BR-1.3           | M   | ☐      | —   |
 | FR-SYS-013 | Reference data: barangay areas               | Areas/zones seeded with names and boundary polygons; used across REG, MAP, ANL                                                                                                                                                                          | BR-1.3, OI-3     | M   | ◐      | —   |
@@ -413,7 +413,7 @@ the remaining configuration contract is revisited.
 | FR-WX-003 | Open-Meteo integration                    | Scheduled fetch, cached; never called per page view                                                                             | Tech Stack 7 | M   | ◐      | —   |
 | FR-WX-004 | River level display                       | Current reading shown with unit and station name                                                                                | BR-3.2       | M   | ◐      | —   |
 | FR-WX-005 | Three-tier alert mapping                  | Reading mapped to Normal / 1 Prepare / 2 Evacuate / 3 Critical; the operational instruction may still require forced evacuation | BR-3.2       | M   | ◐      | —   |
-| FR-WX-006 | Configurable thresholds                   | Admin edits the metre values for each tier                                                                                      | BR-3.3       | M   | ◐      | —   |
+| FR-WX-006 | Configurable thresholds                   | Deployment profile supplies the metre values for each tier; changing the environment changes the evaluator                                                                                   | BR-3.3       | M   | ◐      | —   |
 | FR-WX-007 | Manual river level entry                  | Admin can enter the current reading directly; used when automated retrieval is unavailable                                      | Tech Stack 7 | M   | ◐      | —   |
 | FR-WX-008 | PAGASA retrieval adapter                  | Isolated behind one interface; failure does not break the module                                                                | Tech Stack 7 | S   | ◐      | —   |
 | FR-WX-009 | Threshold breach prompts BDRRMC           | Crossing a tier creates an actionable prompt. **Never auto-publishes a public alert**                                           | BR-3.4       | M   | ◐      | —   |
@@ -564,7 +564,7 @@ the remaining configuration contract is revisited.
 | ID             | Requirement                      | Acceptance criteria                                                                                                  | Src         | Pri | Status | PR  |
 | -------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------- | --- | ------ | --- |
 | FR-ANL-001     | Operations dashboard             | Registered households/members, high-risk and flood-prone counts, affected families, active emergencies, open rescues | BR-10.1     | M   | ☐      | —   |
-| FR-ANL-002     | Configured totals as denominator | Barangay-wide figures admin-set and stored separately                                                                | BR-10.1a    | M   | ◐      | —   |
+| FR-ANL-002     | Configured totals as denominator | Barangay-wide figures supplied through deployment configuration and kept separate                                                                | BR-10.1a    | M   | ◐      | —   |
 | FR-ANL-003     | Coverage always visible          | Registered counts always presented against the configured total                                                      | BR-10.1b    | M   | ◐      | —   |
 | ~~FR-ANL-004~~ | ~~Nutrition summary by area~~    | **Cut, Aug 2026** — BR-10.2 is cut, no nutrition status is recorded                                                  | BR-10.2     | —   | ✕      | —   |
 | FR-ANL-005     | Affected families per event      | Tracked and reportable                                                                                               | BR-10.3     | M   | ☐      | —   |

@@ -4,9 +4,9 @@ Services own the transaction and may query their own module's models. A service
 never imports another module's `models.py` — cross-module access goes through
 the owning service (AGENTS.md Section 5).
 
-This is the one module every other module is allowed to read from freely (via the
-functions below, never via `Config` directly) — `config` is deliberately the
-platform's shared, admin-editable settings store (schema.md Section 4).
+This is retained for migration compatibility and the legacy internal endpoint.
+Runtime operational values are loaded from `core.config` and environment profiles;
+feature services should not use this table as their source of truth.
 """
 
 from __future__ import annotations

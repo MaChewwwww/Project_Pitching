@@ -9,8 +9,9 @@ the BDRRMC to review; a public alert requires a named officer calling
 formality (architecture.md D-4, A-10). Do not "simplify" it by auto-publishing,
 even for demo convenience.
 
-Thresholds are configuration, not constants — they live in `config` under
-`alert.threshold_level_{1,2,3}_m` and are set by the barangay (BRD OI-4).
+Thresholds are configuration, not constants — they are supplied through the
+deployment environment as `ALERT_THRESHOLD_LEVEL_{1,2,3}_M` and are set by the
+barangay (BRD OI-4).
 """
 
 from __future__ import annotations

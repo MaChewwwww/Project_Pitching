@@ -67,9 +67,10 @@ other reason.
 ## Seed data
 
 Reference data is loaded **by migration**, not at runtime (NFR-DAT-007) — `0001_foundation`
-seeds the `config` defaults and area reference rows this way. Open items are inserted as SQL
-`null` rather than guessed: a wrong alert threshold is worse than an obviously missing one.
-These values are service/deployment data; the admin console has no standalone setup editor.
+seeds the legacy `config` defaults and area reference rows this way. Runtime operational values
+are now supplied by the environment profile (`BARANGAY_TOTAL_*`, `ALERT_THRESHOLD_LEVEL_*_M`,
+and `STALE_THRESHOLD_MINUTES`). Open items remain SQL `null` in the legacy table rather than
+being guessed: a wrong alert threshold is worse than an obviously missing one.
 
 Demo data is different. It goes through `src/seed.py`, is explicitly marked synthetic, and
 **does load automatically** — right after migration, on every API container start

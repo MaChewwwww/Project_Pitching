@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
+        env_ignore_empty=True,
         extra="ignore",
         case_sensitive=False,
     )
@@ -55,6 +56,16 @@ class Settings(BaseSettings):
 
     # A reading older than this renders as stale (FR-WX-011).
     stale_threshold_minutes: int = 45
+
+    # --- barangay operational configuration -------------------------------
+    # These values used to be edited through the retired /admin/config screen.
+    # Keep them in the deployment profile so a profile change is explicit and
+    # reproducible across local, staging, and demo environments.
+    barangay_total_population: int | None = 143031
+    barangay_total_households: int | None = None
+    alert_threshold_level_1_m: float | None = 22.40
+    alert_threshold_level_2_m: float | None = 23.00
+    alert_threshold_level_3_m: float | None = 23.60
 
     # --- uploads ------------------------------------------------------------
     upload_dir: str = "/uploads"

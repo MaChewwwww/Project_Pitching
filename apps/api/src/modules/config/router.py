@@ -1,7 +1,9 @@
-"""HTTP surface for the config module (FR-SYS-010, FR-SYS-012).
+"""Legacy HTTP surface for the config table (FR-SYS-010, FR-SYS-012).
 
 Thin by rule: routers validate, delegate to `service.py`, and serialise. They
 never touch the database and never contain business logic (AGENTS.md Section 5).
+Runtime weather and analytics values come from the deployment environment; this
+endpoint is retained only for compatibility with existing internal tooling.
 Authorization is applied here as a router dependency, from `core/deps.py`.
 """
 
@@ -20,7 +22,7 @@ admin_router = APIRouter(tags=["config"])
 @admin_router.get(
     "/config",
     dependencies=[Depends(require_role("admin"))],
-    summary="List all admin-editable settings",
+    summary="List legacy internal settings",
 )
 async def admin_list_config(session: DbSessionDep) -> list[ConfigEntryOut]:
     rows = await service.list_all(session)
@@ -31,7 +33,7 @@ async def admin_list_config(session: DbSessionDep) -> list[ConfigEntryOut]:
 
 
 @admin_router.put(
-    "/config/{key}", dependencies=[Depends(require_role("admin"))], summary="Edit a setting"
+    "/config/{key}", dependencies=[Depends(require_role("admin"))], summary="Edit a legacy setting"
 )
 async def admin_set_config(
     key: str, body: ConfigValuePatch, session: DbSessionDep, user: CurrentUser

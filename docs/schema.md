@@ -179,9 +179,9 @@ weather.latitude / .longitude
 
 > **This table is why FR-ANL-002 and FR-ANL-003 stay honest.** Barangay-wide totals live here as
 > configuration; registered counts are always `COUNT(*)`. Two different things, two different
-> mechanisms, never one column. The admin console does not expose a setup editor for this table;
-> seeded values are maintained through migrations and deployment-owned settings are environment
-> configuration.
+> mechanisms, never one column. Runtime services now read these values from the deployment
+> environment (`BARANGAY_TOTAL_*` and `ALERT_THRESHOLD_LEVEL_*_M`); this table remains for
+> migration compatibility and is not a console setup editor.
 
 ### `psgc` — address reference (FR-SYS-012)
 
@@ -480,7 +480,7 @@ ALTER TABLE feedback ADD CONSTRAINT chk_drafted_requires_review
 CREATE INDEX idx_reading_latest ON reading(metric, source, observed_at DESC);
 ```
 
-> **Two timestamps, and the gap between them is the staleness.** `observed_at` is what the reading describes; `fetched_at` is when we got it. FR-WX-011 computes staleness at read time against `config.reading.stale_after_minutes`. A value is never rendered without its age.
+> **Two timestamps, and the gap between them is the staleness.** `observed_at` is what the reading describes; `fetched_at` is when we got it. FR-WX-011 computes staleness at read time against `STALE_THRESHOLD_MINUTES`. A value is never rendered without its age.
 
 > **`manual` is a first-class source, not a fallback flag.** An admin-entered river level writes the same row shape with full attribution, so every downstream feature keeps working when the scraper dies mid-storm.
 
@@ -518,7 +518,7 @@ CREATE INDEX idx_forecast_upcoming ON forecast(metric, horizon, valid_at);
 > series that replaces the previous one for the same `valid_at`, which is what the
 > unique index above enforces via upsert. Forecasts have no `station`, are never
 > `manual` (FR-WX-007 is about observations), and are never subject to
-> `config.reading.stale_after_minutes`.
+> `STALE_THRESHOLD_MINUTES`.
 
 ### `alert_prompt` (FR-WX-009)
 
@@ -952,8 +952,9 @@ Loaded by migration, not at runtime (NFR-DAT-007).
 | ~~S-OI-9~~ | ~~How affected areas attach to a flood event~~                                                                                                                                       | —          | **Resolved** — `flood_event_area` mirrors the targeting join; an empty set means unrecorded, not barangay-wide. |
 | S-OI-10    | Whether `evac_center.contact_person` may be shown publicly. `contact_number` is an official line; a named individual remains excluded from the public DTO pending a policy decision. | FR-PUB-014 | PolSci lead                                                                                                     |
 
-> **Interim values seeded, not left null.** `config.alert.threshold_level_{1,2,3}_m` are seeded
-> with the PAGASA FFWS Montalban gauge's own published `alertwl`/`alarmwl`/`criticalwl` values
+> **Interim values are profile defaults, not left unset.** `ALERT_THRESHOLD_LEVEL_{1,2,3}_M`
+> defaults mirror the PAGASA FFWS Montalban gauge's own published
+> `alertwl`/`alarmwl`/`criticalwl` values
 > (22.40 / 23.00 / 23.60 m — confirmed live at `GET /water/map_list.do`, `tech_stack.md` §7).
 > These are the gauge operator's own numbers, not an invented guess, and the `description`
 > column says so explicitly: _"PAGASA Montalban gauge published value — pending MDRRMO
