@@ -137,28 +137,28 @@ export function ArticleImageManager({
                       </button>
                     )}
                   </div>
-                  <div className="absolute right-2 bottom-2 z-10 flex rounded-full bg-emerald-600 p-0.5 shadow-md">
+                  <div className="absolute right-2 bottom-2 z-10 flex rounded-full bg-emerald-500/80 p-0.5 shadow-md backdrop-blur-sm">
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
-                      className="size-7 rounded-full px-0 text-white hover:bg-emerald-700 hover:text-white"
+                      className="size-6 rounded-full px-0 text-neutral-950 hover:bg-emerald-600/80 hover:text-neutral-950"
                       disabled={index === 0}
                       aria-label="Move image earlier"
                       onClick={() => void moveImage(image.id, -1)}
                     >
-                      <ArrowUp aria-hidden className="size-3.5" />
+                      <ArrowUp aria-hidden className="size-3" />
                     </Button>
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
-                      className="size-7 rounded-full px-0 text-white hover:bg-emerald-700 hover:text-white"
+                      className="size-6 rounded-full px-0 text-neutral-950 hover:bg-emerald-600/80 hover:text-neutral-950"
                       disabled={index === images.length - 1}
                       aria-label="Move image later"
                       onClick={() => void moveImage(image.id, 1)}
                     >
-                      <ArrowDown aria-hidden className="size-3.5" />
+                      <ArrowDown aria-hidden className="size-3" />
                     </Button>
                   </div>
                 </div>
