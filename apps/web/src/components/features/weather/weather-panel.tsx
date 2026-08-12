@@ -187,29 +187,32 @@ export function WeatherPanel({
               <div
                 key={reading.id}
                 className={cn(
-                  "flex min-w-0 flex-col gap-1 rounded-xl border p-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm sm:p-3.5",
+                  "flex min-w-0 flex-col gap-1 rounded-xl border p-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm sm:p-3",
                   orderClass[reading.metric],
                   meta.bg,
                 )}
               >
-                <span className="text-overline inline-flex items-center gap-1.5 font-bold text-neutral-600 uppercase">
-                  <Icon aria-hidden className={cn("size-4", meta.color)} />
-                  {meta.label}
-                </span>
-                {hasPeak ? (
-                  <div className="grid min-h-10 grid-cols-[minmax(0,1fr)_auto] grid-rows-2 items-center gap-x-2">
-                    <div className="row-span-2 flex min-w-0 items-center rounded-lg bg-white/75 px-2 py-1 ring-1 ring-black/5">
-                      <span className="tabular sm:text-h2 block truncate text-xl font-black text-neutral-950">
-                        {reading.value}
-                        <span className="sm:text-body ml-1 text-sm font-normal text-neutral-500">
-                          {reading.unit}
-                        </span>
-                      </span>
-                    </div>
-                    <span className="text-caption min-w-0 border-l border-black/10 pl-2 font-semibold whitespace-nowrap text-neutral-500 sm:pl-3">
-                      Peak Today
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-overline inline-flex min-w-0 items-center gap-1.5 font-bold text-neutral-600 uppercase">
+                    <Icon aria-hidden className={cn("size-4", meta.color)} />
+                    {meta.label}
+                  </span>
+                  {hasPeak ? (
+                    <span className="text-caption shrink-0 font-semibold text-neutral-500">
+                      <span className="hidden sm:inline">Peak Today</span>
+                      <span className="sm:hidden">Peak</span>
                     </span>
-                    <span className="tabular sm:text-h3 min-w-0 border-l border-black/10 pl-2 text-lg font-bold whitespace-nowrap text-neutral-800 sm:pl-3">
+                  ) : null}
+                </div>
+                {hasPeak ? (
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2">
+                    <span className="tabular sm:text-h2 min-w-0 truncate text-xl font-black text-neutral-950">
+                      {reading.value}
+                      <span className="sm:text-body ml-1 text-sm font-normal text-neutral-500">
+                        {reading.unit}
+                      </span>
+                    </span>
+                    <span className="tabular sm:text-h3 border-l border-black/10 pl-2 text-lg font-bold whitespace-nowrap text-neutral-800 sm:pl-3">
                       {peak ? peak.value : "—"}
                       {peak ? (
                         <span className="sm:text-body ml-1 text-sm font-normal text-neutral-500">
