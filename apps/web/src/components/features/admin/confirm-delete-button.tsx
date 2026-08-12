@@ -25,23 +25,30 @@ export function ConfirmDeleteButton({
   itemLabel,
   actionLabel = "Delete",
   confirmLabel = "Delete",
+  className,
+  iconOnly = false,
 }: {
   onConfirm: () => void;
   itemLabel: string;
   actionLabel?: string;
   confirmLabel?: string;
+  className?: string;
+  iconOnly?: boolean;
 }) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button
           size="sm"
-          className="h-8 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors px-2.5 gap-1.5 font-semibold text-xs cursor-pointer"
+          className={
+            className ??
+            "h-8 rounded-lg border border-red-200 bg-red-50 px-2.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 hover:text-red-700 cursor-pointer"
+          }
           title={actionLabel}
           aria-label={actionLabel}
         >
           <Trash2 aria-hidden className="size-3.5 shrink-0" />
-          <span className="md:hidden">{actionLabel}</span>
+          {!iconOnly ? <span className="md:hidden">{actionLabel}</span> : null}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>

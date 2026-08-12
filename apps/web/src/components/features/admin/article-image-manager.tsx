@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { ArrowDown, ArrowUp, ImagePlus, Star } from "lucide-react";
+import { ArrowDown, ArrowUp, ImagePlus, Star, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/common/button";
@@ -46,9 +46,9 @@ export function ArticleImageManager({
     }
   }
 
-  async function saveImage(image: ArticleImage, patch: Record<string, unknown>) {
+  async function setCover(image: ArticleImage) {
     try {
-      await api.patch(`/admin/${resource}/${articleId}/images/${image.id}`, patch);
+      await api.patch(`/admin/${resource}/${articleId}/images/${image.id}`, { is_cover: true });
       toast.success("Cover image updated");
       onChanged();
     } catch (error) {
@@ -85,55 +85,60 @@ export function ArticleImageManager({
 
   return (
     <section className="space-y-4 rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-2xs">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <ImagePlus aria-hidden className="size-4 text-emerald-600" />
-            <h2 className="text-sm font-bold text-neutral-900">Article Media & Photos</h2>
-          </div>
-          <p className="mt-1 text-sm text-neutral-600">
-            {images.length}/10 images · Choose one cover photo for the article.
-          </p>
+      <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+        <div className="flex items-center gap-2">
+          <ImagePlus aria-hidden className="size-4 text-emerald-600" />
+          <h2 className="text-sm font-bold text-neutral-900">Article Media & Photos</h2>
         </div>
-        <Label className="cursor-pointer">
-          <input
-            className="sr-only"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            disabled={isUploading || images.length >= 10}
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void upload(file);
-              event.currentTarget.value = "";
-            }}
-          />
-          <span className="bg-primary-700 hover:bg-primary-800 inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-semibold text-white">
-            <ImagePlus aria-hidden className="size-4" />
-            {isUploading ? "Uploading…" : "Upload image"}
+        {images.length > 0 ? (
+          <span className="text-xs font-semibold text-neutral-500">
+            {images.length} {images.length === 1 ? "photo" : "photos"}
           </span>
-        </Label>
+        ) : null}
       </div>
 
       {images.length === 0 ? (
-        <div className="rounded-xl border-2 border-dashed border-emerald-600/30 bg-emerald-50/30 p-6 text-center text-sm text-neutral-600">No images uploaded yet. Add a wide cover photo to lead the article.</div>
+        <UploadControl isUploading={isUploading} upload={upload} />
       ) : (
-        <ul className="grid grid-cols-1 gap-4">
-          {images.map((image, index) => (
-            <li
-              key={image.id}
-              className="overflow-hidden rounded-lg border border-neutral-200 bg-white"
-            >
-              <div className="relative aspect-video bg-neutral-100">
-                <Image
-                  src={image.url}
-                  alt=""
-                  fill
-                  unoptimized
-                  className="object-cover"
-                />
-              </div>
-              <div className="space-y-3 p-3">
-                <div className="flex items-center justify-between text-xs font-semibold tracking-wide text-neutral-500 uppercase">
+        <div className="space-y-4">
+          <ul className="grid grid-cols-1 gap-3">
+            {images.map((image, index) => (
+              <li key={image.id} className="space-y-2">
+                <div
+                  className={`relative aspect-video w-full overflow-hidden rounded-xl border bg-neutral-100 shadow-2xs transition-all ${
+                    image.is_cover
+                      ? "border-emerald-500 ring-2 ring-emerald-500/20"
+                      : "border-neutral-200"
+                  }`}
+                >
+                  <Image src={image.url} alt="" fill unoptimized className="object-cover" />
+                  <ConfirmDeleteButton
+                    itemLabel="this image"
+                    actionLabel="Remove photo"
+                    confirmLabel="Remove image"
+                    iconOnly
+                    className="absolute top-2 right-2 z-10 size-8 rounded-full bg-red-600 p-0 text-white shadow-md transition-all hover:bg-red-700 cursor-pointer"
+                    onConfirm={() => void deleteImage(image)}
+                  />
+                  <div className="absolute bottom-2 left-2 z-10">
+                    {image.is_cover ? (
+                      <span className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-bold text-white shadow-xs">
+                        <Star aria-hidden className="size-3 fill-white" />
+                        Cover Photo
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => void setCover(image)}
+                        className="flex cursor-pointer items-center gap-1 rounded-full bg-neutral-900/85 px-2.5 py-1 text-[11px] font-bold text-white shadow-xs transition-colors hover:bg-emerald-600"
+                      >
+                        <Star aria-hidden className="size-3" />
+                        Set as Cover
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between px-1 text-xs font-semibold tracking-wide text-neutral-500 uppercase">
                   <span>Gallery position {index + 1}</span>
                   <span className="flex gap-1">
                     <Button
@@ -160,27 +165,57 @@ export function ArticleImageManager({
                     </Button>
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant={image.is_cover ? "primary" : "outline"}
-                    onClick={() => void saveImage(image, { is_cover: !image.is_cover })}
-                  >
-                    <Star aria-hidden className="size-3.5" />
-                    {image.is_cover ? "Cover image" : "Set as cover"}
-                  </Button>
-                  <ConfirmDeleteButton
-                    itemLabel="this image"
-                    actionLabel="Remove"
-                    confirmLabel="Remove image"
-                    onConfirm={() => void deleteImage(image)}
-                  />
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+          {images.length < 10 ? (
+            <UploadControl compact isUploading={isUploading} upload={upload} />
+          ) : null}
+        </div>
       )}
     </section>
+  );
+}
+
+function UploadControl({
+  isUploading,
+  upload,
+  compact = false,
+}: {
+  isUploading: boolean;
+  upload: (file: File) => Promise<void>;
+  compact?: boolean;
+}) {
+  return (
+    <Label
+      className={
+        compact
+          ? "flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-600/40 bg-emerald-50/40 px-4 py-2.5 text-center transition-all hover:border-emerald-600 hover:bg-emerald-50/70"
+          : "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-emerald-600/30 bg-emerald-50/30 p-6 text-center transition-all hover:border-emerald-600 hover:bg-emerald-50/70"
+      }
+    >
+      <input
+        className="sr-only"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        disabled={isUploading}
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) void upload(file);
+          event.currentTarget.value = "";
+        }}
+      />
+      {compact ? (
+        <Upload aria-hidden className="size-4 text-emerald-700" />
+      ) : (
+        <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 shadow-2xs">
+          <Upload aria-hidden className="size-5" />
+        </div>
+      )}
+      <span className={compact ? "text-xs font-bold text-emerald-950" : "text-sm font-bold text-emerald-950"}>
+        {isUploading ? "Uploading…" : compact ? "Add More Photos" : "Upload photos"}
+      </span>
+      {!compact ? <span className="text-xs text-neutral-600">Add a wide cover photo to lead the article.</span> : null}
+    </Label>
   );
 }
