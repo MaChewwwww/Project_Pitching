@@ -176,6 +176,7 @@ export function AnnouncementForm({
   onSubmit,
   onCancel,
   showCoverUpload = false,
+  mediaPanel,
 }: {
   areas: { id: string; name: string }[];
   defaultValues: AnnouncementFormValues;
