@@ -223,7 +223,6 @@ export function AnnouncementForm({
 
   const kind = useWatch({ control, name: "kind" });
   const type = useWatch({ control, name: "type" });
-  const severity = useWatch({ control, name: "severity" });
   const title = useWatch({ control, name: "title" });
   const excerpt = useWatch({ control, name: "excerpt" });
   const instruction = useWatch({ control, name: "instruction" });
@@ -232,26 +231,6 @@ export function AnnouncementForm({
   const areaIds = useWatch({ control, name: "area_ids" });
 
   const selectedAreaNames = areas.filter((a) => (areaIds || []).includes(a.id)).map((a) => a.name);
-
-  const severityStyles = {
-    info: {
-      container: "bg-yellow-50/80 border-yellow-300",
-      label: "text-yellow-900",
-      trigger: "border-yellow-300 bg-white font-semibold text-yellow-950 focus:border-yellow-500 focus:ring-yellow-500/20",
-    },
-    warning: {
-      container: "bg-orange-50/80 border-orange-300",
-      label: "text-orange-900",
-      trigger: "border-orange-300 bg-white font-semibold text-orange-950 focus:border-orange-500 focus:ring-orange-500/20",
-    },
-    emergency: {
-      container: "bg-red-50/80 border-red-300",
-      label: "text-red-900",
-      trigger: "border-red-300 bg-white font-semibold text-red-950 focus:border-red-500 focus:ring-red-500/20",
-    },
-  };
-
-  const activeSeverityStyle = severity ? severityStyles[severity] : severityStyles.info;
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -341,8 +320,8 @@ export function AnnouncementForm({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
-                        <SelectItem value="announcement">Announcement</SelectItem>
                         <SelectItem value="alert">Alert</SelectItem>
+                        <SelectItem value="announcement">Advisory</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -350,8 +329,8 @@ export function AnnouncementForm({
               </div>
 
               {kind === "alert" ? (
-                <div className={cn("flex flex-col gap-2 rounded-xl border p-3 transition-colors", activeSeverityStyle.container)}>
-                  <Label htmlFor="severity" className={cn("text-xs font-bold uppercase tracking-wider", activeSeverityStyle.label)}>
+                <div className="flex flex-col gap-2 rounded-xl border border-neutral-200 bg-neutral-50/50 p-3 transition-colors">
+                  <Label htmlFor="severity" className="text-xs font-bold uppercase tracking-wider text-neutral-600">
                     Alert Severity Level <span className="text-red-500 font-bold ml-0.5">*</span>
                   </Label>
                   <Controller
@@ -359,28 +338,13 @@ export function AnnouncementForm({
                     name="severity"
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger id="severity" className={cn("h-10 rounded-xl", activeSeverityStyle.trigger)}>
+                        <SelectTrigger id="severity" className="h-10 rounded-xl border-neutral-200 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
                           <SelectValue placeholder="Select severity" />
                         </SelectTrigger>
                         <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
-                          <SelectItem
-                            value="info"
-                            className="focus:bg-yellow-100 focus:text-yellow-900 data-[state=checked]:bg-yellow-100 data-[state=checked]:text-yellow-900 font-semibold text-yellow-900 cursor-pointer"
-                          >
-                            Info (Yellow)
-                          </SelectItem>
-                          <SelectItem
-                            value="warning"
-                            className="focus:bg-orange-100 focus:text-orange-900 data-[state=checked]:bg-orange-100 data-[state=checked]:text-orange-900 font-semibold text-orange-900 cursor-pointer"
-                          >
-                            Warning (Orange)
-                          </SelectItem>
-                          <SelectItem
-                            value="emergency"
-                            className="focus:bg-red-100 focus:text-red-900 data-[state=checked]:bg-red-100 data-[state=checked]:text-red-900 font-semibold text-red-900 cursor-pointer"
-                          >
-                            Emergency (Red)
-                          </SelectItem>
+                          <SelectItem value="info">Info</SelectItem>
+                          <SelectItem value="warning">Warning</SelectItem>
+                          <SelectItem value="emergency">Emergency</SelectItem>
                         </SelectContent>
                       </Select>
                     )}
