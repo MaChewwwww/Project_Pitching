@@ -193,7 +193,8 @@ admin-managed content:
 
 - `AnnouncementForm` owns the React Hook Form + Zod fields, validation messaging, responsive
   article-details surface, targeting controls, and publication actions. Create and edit pages supply
-  defaults, API mutations, and (for edit) the persistent media rail rather than duplicating the form.
+  defaults, API mutations, the context-appropriate Create/Update action label, and (for edit) the
+  persistent media rail rather than duplicating the form.
 - `ArticleImageManager` is the right-rail media pattern: upload, cover selection, reorder, and remove.
   It intentionally has no alt-text or caption fields; image metadata is not part of the article CMS
   contract.

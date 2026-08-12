@@ -95,6 +95,7 @@ export default function AdminAnnouncementEditorPage() {
       <AnnouncementForm
         areas={areas}
         defaultValues={defaultValues}
+        submitLabel="Update"
         onSubmit={(values) => updateMutation.mutateAsync(values).then(() => undefined)}
         onCancel={() => router.push("/admin/announcements")}
         mediaPanel={
