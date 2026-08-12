@@ -72,6 +72,7 @@ class AdminAnnouncementDetail(AnnouncementDetail):
     """Editor-only targeting IDs; public readers receive display names only."""
 
     area_ids: list[uuid.UUID]
+    publication_status: PublicationStatus
 
 
 class AnnouncementIn(BaseModel):

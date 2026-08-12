@@ -120,7 +120,7 @@ export function ArticleImageManager({
                     className="absolute top-2 right-2 z-10 size-8 rounded-full bg-red-600 p-0 text-white shadow-md transition-all hover:bg-red-700 cursor-pointer"
                     onConfirm={() => void deleteImage(image)}
                   />
-                  <div className="absolute bottom-2 left-2 z-10">
+                  <div className="absolute top-2 left-2 z-10">
                     {image.is_cover ? (
                       <span className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-bold text-white shadow-xs">
                         <Star aria-hidden className="size-3 fill-white" />
@@ -137,33 +137,30 @@ export function ArticleImageManager({
                       </button>
                     )}
                   </div>
-                </div>
-                <div className="flex items-center justify-between px-1 text-xs font-semibold tracking-wide text-neutral-500 uppercase">
-                  <span>Gallery position {index + 1}</span>
-                  <span className="flex gap-1">
+                  <div className="absolute right-2 bottom-2 z-10 flex rounded-full bg-emerald-600 p-0.5 shadow-md">
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
-                      className="size-8 px-0"
+                      className="size-7 rounded-full px-0 text-white hover:bg-emerald-700 hover:text-white"
                       disabled={index === 0}
                       aria-label="Move image earlier"
                       onClick={() => void moveImage(image.id, -1)}
                     >
-                      <ArrowUp aria-hidden className="size-4" />
+                      <ArrowUp aria-hidden className="size-3.5" />
                     </Button>
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
-                      className="size-8 px-0"
+                      className="size-7 rounded-full px-0 text-white hover:bg-emerald-700 hover:text-white"
                       disabled={index === images.length - 1}
                       aria-label="Move image later"
                       onClick={() => void moveImage(image.id, 1)}
                     >
-                      <ArrowDown aria-hidden className="size-4" />
+                      <ArrowDown aria-hidden className="size-3.5" />
                     </Button>
-                  </span>
+                  </div>
                 </div>
               </li>
             ))}
