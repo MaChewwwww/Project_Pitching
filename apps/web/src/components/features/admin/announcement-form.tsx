@@ -18,6 +18,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -99,16 +109,38 @@ export function AnnouncementForm({
   const [coverFile, setCoverFile] = React.useState<File | null>(null);
   const [coverPreview, setCoverPreview] = React.useState<string | null>(null);
   const [coverAltText, setCoverAltText] = React.useState("");
+  const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false);
 
   const {
     register,
     control,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<AnnouncementFormValues>({
     resolver: zodResolver(announcementFormSchema as never),
     defaultValues,
   });
+
+  const hasUnsavedChanges = isDirty || !!coverFile;
+
+  React.useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  const handleCancelClick = () => {
+    if (hasUnsavedChanges) {
+      setCancelDialogOpen(true);
+    } else {
+      onCancel();
+    }
+  };
 
   const kind = useWatch({ control, name: "kind" });
   const isBarangayWide = useWatch({ control, name: "is_barangay_wide" });
@@ -487,7 +519,7 @@ export function AnnouncementForm({
               <Button
                 type="button"
                 variant="outline"
-                onClick={onCancel}
+                onClick={handleCancelClick}
                 className="h-9 w-full rounded-xl border-neutral-300 text-neutral-700 hover:bg-neutral-100 cursor-pointer justify-center text-xs font-semibold"
               >
                 Cancel
@@ -496,6 +528,30 @@ export function AnnouncementForm({
           </div>
         </div>
       </div>
+
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent className="rounded-2xl bg-white border border-neutral-200">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-bold text-neutral-900">
+              Discard Unsaved Changes?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-neutral-600">
+              Are you sure you want to cancel? Any unsaved announcement details will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 pt-2">
+            <AlertDialogCancel className="h-9 rounded-xl text-xs font-semibold cursor-pointer">
+              Keep Editing
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={onCancel}
+              className="h-9 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs cursor-pointer shadow-sm"
+            >
+              Discard Changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </form>
   );
 }

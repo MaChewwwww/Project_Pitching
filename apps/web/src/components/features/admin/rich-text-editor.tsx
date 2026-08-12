@@ -183,7 +183,7 @@ export function RichTextEditor({
           <Quote className="size-4" />
         </ToolButton>
         <ToolButton label="Insert / Edit Link" active={editor.isActive("link")} onClick={openLinkDialog}>
-          <Link2 className="size-4 text-emerald-700" />
+          <Link2 className="size-4" />
         </ToolButton>
       </div>
       <EditorContent editor={editor} aria-labelledby={labelledBy} />

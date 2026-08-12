@@ -1,12 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/common/button";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import {
   AnnouncementForm,
@@ -93,21 +90,6 @@ export default function CreateAnnouncementPage() {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      {/* Top Left Navigation Back Button */}
-      <div className="flex items-center justify-start">
-        <Button
-          asChild
-          size="sm"
-          variant="ghost"
-          className="h-9 rounded-full px-3.5 text-xs font-bold text-neutral-700 hover:text-emerald-800 hover:bg-emerald-50 border border-neutral-200/80 bg-white shadow-2xs transition-all cursor-pointer gap-2"
-        >
-          <Link href="/admin/announcements">
-            <ArrowLeft aria-hidden className="size-4 text-emerald-600 shrink-0" />
-            <span>Back to announcements</span>
-          </Link>
-        </Button>
-      </div>
-
       <AdminPageHeader
         title="Create Announcement"
         description="Publish an alert or advisory for Barangay San Jose residents."
