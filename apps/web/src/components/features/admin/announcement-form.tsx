@@ -7,7 +7,6 @@ import {
   AlertCircle,
   AlertTriangle,
   Calendar,
-  Eye,
   Images,
   MapPin,
   Megaphone,
@@ -669,7 +668,6 @@ export function AnnouncementForm({
                 onClick={() => setFormPreviewOpen(true)}
                 className="h-10 w-full rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-md shadow-amber-900/15 hover:shadow-lg transition-all cursor-pointer justify-center gap-2"
               >
-                <Eye className="size-4 shrink-0" />
                 <span>Preview</span>
               </Button>
               <Button

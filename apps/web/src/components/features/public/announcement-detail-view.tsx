@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 
 import { PageHeader } from "@/components/common/page-header";
+import { AnnouncementImageCarousel } from "@/components/features/public/announcement-image-carousel";
 import { formatPhtDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { AnnouncementDetail, AnnouncementType, PublicAnnouncement } from "@/lib/api/public-types";
@@ -183,7 +184,7 @@ export function AnnouncementDetailView({
 }: AnnouncementDetailViewProps) {
   const isAlert = article.kind === "alert";
   const cover = article.cover_image ?? article.images[0] ?? null;
-  const gallery = (article.images || []).filter((img) => img.id !== cover?.id);
+  const articleImages = article.images?.length ? article.images : cover ? [cover] : [];
 
   let badgeLabel = "Announcement";
   let badgeStyle = "bg-emerald-700 text-white font-bold";
@@ -285,20 +286,13 @@ export function AnnouncementDetailView({
               );
             })()}
 
-            {/* Cover Media */}
-            {cover ? (
-              <figure className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 shadow-sm-card">
-                <Image
-                  src={cover.url}
-                  alt=""
-                  width={1600}
-                  height={900}
-                  unoptimized
-                  priority
-                  className="aspect-[16/9] w-full object-cover"
-                />
-
-              </figure>
+            {/* Ordered article media carousel. The cover is the initial slide. */}
+            {articleImages.length > 0 ? (
+              <AnnouncementImageCarousel
+                key={article.id}
+                images={articleImages}
+                title={article.title}
+              />
             ) : null}
 
             {/* Immediate Guidance Callout Box */}
@@ -354,34 +348,6 @@ export function AnnouncementDetailView({
               )}
             </div>
 
-            {/* Additional Gallery Images */}
-            {gallery.length > 0 ? (
-              <section
-                aria-label="Article gallery"
-                className="mt-8 border-t border-neutral-200/80 pt-8"
-              >
-                <h3 className="mb-4 text-h3 font-bold text-neutral-900">
-                  Photo Gallery
-                </h3>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {gallery.map((image) => (
-                    <figure
-                      key={image.id}
-                      className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-xs"
-                    >
-                      <Image
-                        src={image.url}
-                        alt=""
-                        width={1200}
-                        height={800}
-                        unoptimized
-                        className="aspect-[3/2] w-full object-cover"
-                      />
-                    </figure>
-                  ))}
-                </div>
-              </section>
-            ) : null}
           </article>
 
           {/* Right Sidebar Column */}

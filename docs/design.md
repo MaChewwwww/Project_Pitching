@@ -532,14 +532,18 @@ publication workflow rather than inventing a parallel layout.
 | `RichTextEditor`          | Client-only Tiptap toolbar limited to H2/H3, paragraph, bold, italic, bullet/ordered list, blockquote, and safe links. No inline image, raw HTML, table, script, iframe, or embed node. |
 | `ArticleImageManager`     | Upload/reorder gallery, cover selection, count `n/10`, and per-file validation errors. Drafts may be image-free; Publish stays disabled until exactly one cover exists. Alt text and captions are intentionally not collected. |
 | `AnnouncementCard`        | 16:10 cover (or styled gradient header fallback), kind/severity badge, title, excerpt, PHT timestamp, location, and canonical detail link. Emergency alerts retain high-contrast guidance treatment. |
+| `AnnouncementImageCarousel` | Cover-first ordered media carousel for public announcement details. It auto-advances every three seconds when motion is allowed, pauses during pointer/keyboard interaction, and exposes 44px previous/next controls. |
 | `ArticlePreviewDialog`    | Responsive viewport-bounded admin/form preview with a stable header, 44px close target, and one internal scroll region for long articles and cover images. |
-| `ArticleDetail`           | Constrained reading column, full rich body, domain metadata, then ordered gallery. |
+| `AnnouncementDetailView`  | Constrained announcement reading column with domain metadata and one responsive media carousel. The cover is the initial slide; auto-advance runs every three seconds when motion is allowed, and previous/next controls expose every ordered image. |
+| `ArticleDetail`           | Constrained reading column, full rich body, domain metadata, then ordered article media for activity and donation-drive detail pages. |
 | `PublicationStatusBadge`  | `draft`, `published`, and `archived`; text and icon accompany colour. |
 
-Article galleries use `next/image` with explicit dimensions. Preserve the original file; the UI
-uses `object-fit: cover` only for preview crops. On 360px screens the gallery is one column and the
-editor toolbar wraps without horizontal scrolling. The announcement form keeps Type and Category in
-one compact row, stacks long-form content below, and moves the right rail below the editor.
+Article media uses `next/image` with explicit dimensions. Preserve the original file; the UI uses
+`object-fit: cover` only for preview crops. Announcement detail keeps all ordered images in one
+fixed-aspect carousel, while activity and donation-drive details retain their ordered media layout.
+On 360px screens the editor toolbar wraps without horizontal scrolling. The announcement form keeps
+Type and Category in one compact row, stacks long-form content below, and moves the right rail below
+the editor.
 Emergency takeover banners remain text-first and never wait for article media.
 | `LogoLockup` | Logo placeholder while D-OI-2 is open. Inline SVG mark + `APP_NAME` wordmark, with a variant for dark surfaces |
 | `Reveal` | Scroll-reveal wrapper for the public site (Section 8). CSS `animation-timeline: view()` behind `@supports`, so no observer and no JavaScript |

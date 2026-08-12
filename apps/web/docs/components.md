@@ -203,9 +203,11 @@ admin-managed content:
   for media, targeting, and publishing. On narrow screens the rail stacks below the form, while the
   compact Type/Category classification row stays usable at 360px and the publication selector stays
   beside its section heading.
-- Public reading uses `AnnouncementCard` and `ArticleDetail` with the same ordered-gallery and
-  lifecycle semantics. Admin deletion is a deactivation, so public readers never receive a
-  deactivated announcement.
+- Public reading uses `AnnouncementCard`, `AnnouncementDetailView`, and `ArticleDetail`. Announcement
+  detail media is one responsive, keyboard-accessible carousel: it starts on the cover, advances
+  every three seconds when motion is allowed, and exposes previous/next controls for every ordered
+  image. There is no separate photo-gallery section. Admin deletion is a deactivation, so public
+  readers never receive a deactivated announcement.
 
 This is a reusable portal pattern, not an announcements-only exception. New feature pages should
 reuse these composites or extract a clearly named variant when their domain fields genuinely differ;
@@ -255,4 +257,4 @@ re-teaching them costs more than a better-looking icon is worth.
 
 - `SectionHeader` action buttons must consistently include `<span className="hidden sm:inline">View All</span>` alongside `ArrowRight` so desktop screens display legible text while small phone views collapse to the icon button.
 - `AnnouncementCard` presents announcements and alerts in a symmetrical, equal-height card container with matching 16:10 cover imagery (or fallback gradient header graphics). Badges render at top-left ("Announcement", "Advisory", "Warning", "Emergency Alert") and PHT dates render at top-right over the header image. Author attribution in the footer uses a `User` icon. Emergency alerts feature a high-contrast `<ImmediateGuidance />` callout box (`bg-red-50 border-red-200 text-red-950`) without asymmetric side borders.
-- `AnnouncementDetailView` presents announcement detail pages in a space-maximizing 2-column layout (`lg:grid-cols-12`): main article content on the left (`lg:col-span-8`) and a Recent Announcements sidebar on the right (`lg:col-span-4`) with compact article previews and an emergency hotline callout.
+- `AnnouncementDetailView` presents announcement detail pages in a space-maximizing 2-column layout (`lg:grid-cols-12`): main article content on the left (`lg:col-span-8`) with the ordered media carousel and a Recent Announcements sidebar on the right (`lg:col-span-4`) with compact article previews and an emergency hotline callout.
