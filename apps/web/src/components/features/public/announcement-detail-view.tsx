@@ -297,11 +297,7 @@ export function AnnouncementDetailView({
                   priority
                   className="aspect-[16/9] w-full object-cover"
                 />
-                {cover.caption ? (
-                  <figcaption className="border-t border-neutral-100 bg-neutral-50/80 px-5 py-3 text-xs font-medium text-neutral-600">
-                    {cover.caption}
-                  </figcaption>
-                ) : null}
+
               </figure>
             ) : null}
 
