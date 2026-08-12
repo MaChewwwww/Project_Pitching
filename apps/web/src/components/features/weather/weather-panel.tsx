@@ -48,7 +48,7 @@ const METRIC_META: Record<
     bg: "bg-indigo-50/70 border-indigo-200/60",
   },
   heat_index: {
-    label: "Today's Heat Index",
+    label: "Heat Index",
     icon: Wind,
     color: "text-orange-600",
     bg: "bg-orange-50/70 border-orange-200/60",
@@ -187,7 +187,7 @@ export function WeatherPanel({
               <div
                 key={reading.id}
                 className={cn(
-                  "flex min-w-0 flex-col gap-1.5 rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm sm:p-3.5",
+                  "flex min-w-0 flex-col gap-1 rounded-xl border p-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm sm:p-3.5",
                   orderClass[reading.metric],
                   meta.bg,
                 )}
@@ -197,36 +197,31 @@ export function WeatherPanel({
                   {meta.label}
                 </span>
                 {hasPeak ? (
-                  <div className="flex items-end justify-between gap-2">
-                    <div className="min-w-0 rounded-lg bg-white/75 px-2 py-1.5 ring-1 ring-black/5">
-                      <span className="text-caption block font-semibold text-neutral-500">
-                        Current
-                      </span>
-                      <span className="text-h2 tabular block truncate font-black text-neutral-950">
+                  <div className="grid min-h-10 grid-cols-[minmax(0,1fr)_auto] grid-rows-2 items-center gap-x-2">
+                    <div className="row-span-2 flex min-w-0 items-center rounded-lg bg-white/75 px-2 py-1 ring-1 ring-black/5">
+                      <span className="tabular sm:text-h2 block truncate text-xl font-black text-neutral-950">
                         {reading.value}
-                        <span className="text-body ml-1 font-normal text-neutral-500">
+                        <span className="sm:text-body ml-1 text-sm font-normal text-neutral-500">
                           {reading.unit}
                         </span>
                       </span>
                     </div>
-                    <div className="min-w-0 border-l border-black/10 pl-2 text-right sm:pl-3">
-                      <span className="text-caption block font-semibold whitespace-nowrap text-neutral-500">
-                        Peak today
-                      </span>
-                      <span className="text-h3 tabular block truncate font-bold text-neutral-800">
-                        {peak ? peak.value : "—"}
-                        {peak ? (
-                          <span className="text-body ml-1 font-normal text-neutral-500">
-                            {peak.unit}
-                          </span>
-                        ) : null}
-                      </span>
-                    </div>
+                    <span className="text-caption min-w-0 border-l border-black/10 pl-2 font-semibold whitespace-nowrap text-neutral-500 sm:pl-3">
+                      Peak Today
+                    </span>
+                    <span className="tabular sm:text-h3 min-w-0 border-l border-black/10 pl-2 text-lg font-bold whitespace-nowrap text-neutral-800 sm:pl-3">
+                      {peak ? peak.value : "—"}
+                      {peak ? (
+                        <span className="sm:text-body ml-1 text-sm font-normal text-neutral-500">
+                          {peak.unit}
+                        </span>
+                      ) : null}
+                    </span>
                   </div>
                 ) : (
-                  <span className="text-h2 tabular font-black text-neutral-900">
+                  <span className="tabular sm:text-h2 text-xl font-black text-neutral-900">
                     {reading.value}
-                    <span className="text-body ml-1 font-normal text-neutral-500">
+                    <span className="sm:text-body ml-1 text-sm font-normal text-neutral-500">
                       {reading.unit}
                     </span>
                   </span>
