@@ -182,6 +182,7 @@ export function AnnouncementForm({
   onSubmit: (values: AnnouncementFormValues, imageItems: ImageFileItem[]) => Promise<void>;
   onCancel: () => void;
   showCoverUpload?: boolean;
+  mediaPanel?: React.ReactNode;
 }) {
   const [serverError, setServerError] = React.useState<string | null>(null);
   const [imageItems, setImageItems] = React.useState<ImageFileItem[]>([]);
@@ -589,6 +590,8 @@ export function AnnouncementForm({
                 </label>
               )}
             </div>
+          ) : mediaPanel ? (
+            mediaPanel
           ) : null}
 
           {/* Location Targeting Card */}

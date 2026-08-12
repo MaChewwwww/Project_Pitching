@@ -92,20 +92,20 @@ export default function AdminAnnouncementEditorPage() {
         title="Edit Announcement"
         description="Update the announcement content, audience, publication status, and media."
       />
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_26rem]">
-        <AnnouncementForm
-          areas={areas}
-          defaultValues={defaultValues}
-          onSubmit={(values) => updateMutation.mutateAsync(values).then(() => undefined)}
-          onCancel={() => router.push("/admin/announcements")}
-        />
-        <ArticleImageManager
-          resource="announcements"
-          articleId={data.id}
-          images={data.images}
-          onChanged={() => queryClient.invalidateQueries({ queryKey })}
-        />
-      </div>
+      <AnnouncementForm
+        areas={areas}
+        defaultValues={defaultValues}
+        onSubmit={(values) => updateMutation.mutateAsync(values).then(() => undefined)}
+        onCancel={() => router.push("/admin/announcements")}
+        mediaPanel={
+          <ArticleImageManager
+            resource="announcements"
+            articleId={data.id}
+            images={data.images}
+            onChanged={() => queryClient.invalidateQueries({ queryKey })}
+          />
+        }
+      />
     </div>
   );
 }

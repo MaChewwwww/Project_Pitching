@@ -176,8 +176,9 @@ Both admin announcement previews use a viewport-bounded dialog with a fixed head
 internal scroll area. This preserves the title and 44px close target on a short mobile viewport
 while leaving long articles and cover images fully readable.
 
-The create and edit announcement routes share the same page rhythm and `AnnouncementForm` surface;
-editing adds only the persistent image manager needed for existing media.
+The create and edit announcement routes share the same `AnnouncementForm` two-column surface.
+Editing supplies its persistent image manager into the form's native right rail, above targeting and
+publication controls, instead of introducing a second layout beside the form.
 
 ## Animation lives in `globals.css`, not in a client component
 
