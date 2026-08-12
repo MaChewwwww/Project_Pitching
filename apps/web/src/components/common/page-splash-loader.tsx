@@ -13,6 +13,9 @@ export function PageSplashLoader() {
   const [fading, setFading] = React.useState(false);
 
   React.useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.splashReady = "false";
+
     // Lock scroll during splash load
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -24,6 +27,8 @@ export function PageSplashLoader() {
 
     // Unmount and restore scroll at 3.0s
     const unmountTimer = setTimeout(() => {
+      root.dataset.splashReady = "true";
+      document.dispatchEvent(new Event("splash-ready"));
       setMounted(false);
       document.body.style.overflow = originalOverflow;
     }, 3000);
@@ -31,6 +36,7 @@ export function PageSplashLoader() {
     return () => {
       clearTimeout(fadeTimer);
       clearTimeout(unmountTimer);
+      delete root.dataset.splashReady;
       document.body.style.overflow = originalOverflow;
     };
   }, []);

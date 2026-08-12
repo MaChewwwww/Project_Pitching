@@ -39,30 +39,48 @@ export function Reveal({
     const element = ref.current;
     if (!element) return;
 
-    // Check if element is already inside the viewport on initial render
-    const rect = element.getBoundingClientRect();
-    if (rect.top < window.innerHeight && rect.bottom > 0) {
-      requestAnimationFrame(() => setIsRevealed(true));
-      return;
+    let cancelled = false;
+    let observer: IntersectionObserver | null = null;
+
+    const start = () => {
+      if (cancelled) return;
+
+      // Check if element is already inside the viewport on initial render.
+      const rect = element.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        requestAnimationFrame(() => {
+          if (!cancelled) setIsRevealed(true);
+        });
+        return;
+      }
+
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setIsRevealed(true);
+            observer?.unobserve(entry.target);
+          }
+        },
+        {
+          threshold: 0.05,
+          rootMargin: "0px 0px -30px 0px",
+        },
+      );
+
+      observer.observe(element);
+    };
+
+    const onSplashReady = () => start();
+    if (document.documentElement.dataset.splashReady === "true") {
+      start();
+    } else {
+      document.addEventListener("splash-ready", onSplashReady, { once: true });
     }
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsRevealed(true);
-          observer.unobserve(entry.target);
-        }
-      },
-      {
-        threshold: 0.05,
-        rootMargin: "0px 0px -30px 0px",
-      },
-    );
-
-    observer.observe(element);
-
     return () => {
-      observer.disconnect();
+      cancelled = true;
+      document.removeEventListener("splash-ready", onSplashReady);
+      observer?.disconnect();
     };
   }, []);
 

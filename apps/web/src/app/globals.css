@@ -508,6 +508,16 @@
     .page-enter {
       animation: page-enter 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
     }
+
+    /* The public shell shows a three-second splash on a hard load. Keep the
+       page's own entrance choreography paused beneath it so residents see the
+       motion after the loader, not while it is hidden behind the overlay. */
+    html:not([data-splash-ready="true"]) #main .page-enter,
+    html:not([data-splash-ready="true"]) #main .hero-in,
+    html:not([data-splash-ready="true"]) #main .chip-pop,
+    html:not([data-splash-ready="true"]) #main .hero-sleek-cascade {
+      animation-play-state: paused !important;
+    }
   }
 
   /* Hero illustration motion.
@@ -1119,4 +1129,3 @@
     animation: splash-progress 2.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 }
-

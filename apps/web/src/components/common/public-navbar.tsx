@@ -42,6 +42,7 @@ import { Button } from "./button";
 import { LanguageToggle } from "./language-toggle";
 import { LogoLockup } from "./logo";
 import { LOGIN_HREF, REGISTER_HREF, NAV_GROUPS, type NavItem } from "@/lib/content/site";
+import { useAuth } from "@/lib/auth/auth-context";
 import { cn } from "@/lib/utils";
 import type { PublicHotline } from "@/lib/api/public-types";
 
@@ -105,6 +106,10 @@ export interface PublicNavbarProps {
 export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
   const [open, setOpen] = React.useState(false);
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  const accountHref = user?.role === "head" ? "/portal" : "/admin";
+  const accountLabel = user?.role === "head" ? "Open portal" : "Open admin";
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -257,25 +262,36 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
             </a>
           ) : null}
 
-          <Button asChild pill size="md" className="hidden sm:inline-flex">
-            <Link href={LOGIN_HREF}>
-              <LogIn aria-hidden className="size-4" />
-              Login
-            </Link>
-          </Button>
+          {user ? (
+            <Button asChild pill size="md" className="hidden sm:inline-flex">
+              <Link href={accountHref}>
+                <ArrowRight aria-hidden className="size-4" />
+                {accountLabel}
+              </Link>
+            </Button>
+          ) : (
+            <>
+              <Button asChild pill size="md" className="hidden sm:inline-flex">
+                <Link href={LOGIN_HREF}>
+                  <LogIn aria-hidden className="size-4" />
+                  Login
+                </Link>
+              </Button>
 
-          <Button
-            asChild
-            variant="outline"
-            pill
-            size="md"
-            className="hidden lg:inline-flex"
-          >
-            <Link href={REGISTER_HREF}>
-              <UserPlus aria-hidden className="size-4" />
-              Register
-            </Link>
-          </Button>
+              <Button
+                asChild
+                variant="outline"
+                pill
+                size="md"
+                className="hidden lg:inline-flex"
+              >
+                <Link href={REGISTER_HREF}>
+                  <UserPlus aria-hidden className="size-4" />
+                  Register
+                </Link>
+              </Button>
+            </>
+          )}
 
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger
@@ -313,18 +329,29 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
 
                 <div className="mt-auto flex flex-col gap-2 border-t border-neutral-200 p-4">
                   <LanguageToggle fullWidth className="w-full sm:hidden" />
-                  <Button asChild pill size="lg" className="w-full sm:hidden">
-                    <Link href={LOGIN_HREF} onClick={() => setOpen(false)}>
-                      <LogIn aria-hidden className="size-4" />
-                      Login
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" pill size="lg" className="w-full">
-                    <Link href={REGISTER_HREF} onClick={() => setOpen(false)}>
-                      <UserPlus aria-hidden className="size-4" />
-                      Register
-                    </Link>
-                  </Button>
+                  {user ? (
+                    <Button asChild pill size="lg" className="w-full">
+                      <Link href={accountHref} onClick={() => setOpen(false)}>
+                        <ArrowRight aria-hidden className="size-4" />
+                        {accountLabel}
+                      </Link>
+                    </Button>
+                  ) : (
+                    <>
+                      <Button asChild pill size="lg" className="w-full sm:hidden">
+                        <Link href={LOGIN_HREF} onClick={() => setOpen(false)}>
+                          <LogIn aria-hidden className="size-4" />
+                          Login
+                        </Link>
+                      </Button>
+                      <Button asChild variant="outline" pill size="lg" className="w-full">
+                        <Link href={REGISTER_HREF} onClick={() => setOpen(false)}>
+                          <UserPlus aria-hidden className="size-4" />
+                          Register
+                        </Link>
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </SheetContent>

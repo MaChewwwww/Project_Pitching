@@ -42,6 +42,7 @@ export function StatBandAnimator({
     if (!el) return;
 
     let cancelled = false;
+    let observer: IntersectionObserver | null = null;
 
     const reveal = () => {
       // Double-rAF: first rAF waits for the next frame (hidden state painted),
@@ -53,21 +54,32 @@ export function StatBandAnimator({
       });
     };
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          observer.disconnect();
-          reveal();
-        }
-      },
-      { threshold: 0.1 },
-    );
+    const start = () => {
+      if (cancelled) return;
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            observer?.disconnect();
+            reveal();
+          }
+        },
+        { threshold: 0.1 },
+      );
 
-    observer.observe(el);
+      observer.observe(el);
+    };
+
+    const onSplashReady = () => start();
+    if (document.documentElement.dataset.splashReady === "true") {
+      start();
+    } else {
+      document.addEventListener("splash-ready", onSplashReady, { once: true });
+    }
 
     return () => {
       cancelled = true;
-      observer.disconnect();
+      document.removeEventListener("splash-ready", onSplashReady);
+      observer?.disconnect();
     };
   }, []);
 
