@@ -8,10 +8,11 @@ import {
   AlertTriangle,
   Calendar,
   Eye,
-  ImagePlus,
+  Images,
   MapPin,
   Megaphone,
   Sparkles,
+  Star,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -160,6 +161,13 @@ function RenderArticleBody({ doc }: { doc: ArticleDocument }) {
   );
 }
 
+export interface ImageFileItem {
+  id: string;
+  file: File;
+  previewUrl: string;
+  isCover: boolean;
+}
+
 export function AnnouncementForm({
   areas,
   defaultValues,
@@ -169,14 +177,12 @@ export function AnnouncementForm({
 }: {
   areas: { id: string; name: string }[];
   defaultValues: AnnouncementFormValues;
-  onSubmit: (values: AnnouncementFormValues, coverFile?: File | null, coverAltText?: string) => Promise<void>;
+  onSubmit: (values: AnnouncementFormValues, imageItems: ImageFileItem[]) => Promise<void>;
   onCancel: () => void;
   showCoverUpload?: boolean;
 }) {
   const [serverError, setServerError] = React.useState<string | null>(null);
-  const [coverFile, setCoverFile] = React.useState<File | null>(null);
-  const [coverPreview, setCoverPreview] = React.useState<string | null>(null);
-  const [coverAltText, setCoverAltText] = React.useState("");
+  const [imageItems, setImageItems] = React.useState<ImageFileItem[]>([]);
   const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false);
   const [formPreviewOpen, setFormPreviewOpen] = React.useState(false);
 
@@ -190,7 +196,7 @@ export function AnnouncementForm({
     defaultValues,
   });
 
-  const hasUnsavedChanges = isDirty || !!coverFile;
+  const hasUnsavedChanges = isDirty || imageItems.length > 0;
 
   React.useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -223,24 +229,48 @@ export function AnnouncementForm({
   const selectedAreaNames = areas.filter((a) => (areaIds || []).includes(a.id)).map((a) => a.name);
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setCoverFile(file);
-    const url = URL.createObjectURL(file);
-    setCoverPreview(url);
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    setImageItems((prev) => {
+      const hasExistingCover = prev.some((item) => item.isCover);
+      const newItems: ImageFileItem[] = files.map((file, index) => ({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}-${index}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        isCover: !hasExistingCover && index === 0,
+      }));
+      return [...prev, ...newItems];
+    });
+
+    event.target.value = "";
   };
 
-  const removeCover = () => {
-    if (coverPreview) URL.revokeObjectURL(coverPreview);
-    setCoverFile(null);
-    setCoverPreview(null);
-    setCoverAltText("");
+  const setCoverImage = (id: string) => {
+    setImageItems((prev) =>
+      prev.map((item) => ({
+        ...item,
+        isCover: item.id === id,
+      }))
+    );
+  };
+
+  const removeImage = (id: string) => {
+    setImageItems((prev) => {
+      const target = prev.find((item) => item.id === id);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      const filtered = prev.filter((item) => item.id !== id);
+      if (target?.isCover && filtered.length > 0) {
+        filtered[0].isCover = true;
+      }
+      return filtered;
+    });
   };
 
   async function submit(values: AnnouncementFormValues) {
     setServerError(null);
     try {
-      await onSubmit(values, coverFile, coverAltText);
+      await onSubmit(values, imageItems);
     } catch (error) {
       setServerError(toDisplayError(error).detail);
     }
@@ -430,51 +460,83 @@ export function AnnouncementForm({
         <div className="space-y-6">
           {showCoverUpload ? (
             <div className="rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-2xs space-y-4">
-              <div className="flex items-center gap-2 border-b border-neutral-100 pb-3">
-                <ImagePlus aria-hidden className="size-4 text-emerald-600" />
-                <h3 className="text-sm font-bold text-neutral-900">Cover Photo</h3>
+              <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <Images aria-hidden className="size-4 text-emerald-600" />
+                  <h3 className="text-sm font-bold text-neutral-900">Article Media & Photos</h3>
+                </div>
+                {imageItems.length > 0 ? (
+                  <span className="text-xs font-semibold text-neutral-500">
+                    {imageItems.length} {imageItems.length === 1 ? "photo" : "photos"}
+                  </span>
+                ) : null}
               </div>
 
-              {coverPreview ? (
-                <div className="space-y-3">
-                  <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 shadow-2xs">
-                    <Image
-                      src={coverPreview}
-                      alt={coverAltText || "Cover photo preview"}
-                      fill
-                      unoptimized
-                      className="object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={removeCover}
-                      className="absolute top-2 right-2 rounded-full bg-red-600 p-1.5 text-white shadow-md hover:bg-red-700 transition-all cursor-pointer"
-                      title="Remove cover photo"
-                    >
-                      <Trash2 aria-hidden className="size-3.5" />
-                    </button>
-                    <span className="absolute bottom-2 left-2 rounded-full bg-emerald-600/90 px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
-                      Cover Photo
-                    </span>
+              {imageItems.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-3">
+                    {imageItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className={cn(
+                          "relative aspect-video w-full overflow-hidden rounded-xl border bg-neutral-100 shadow-2xs transition-all",
+                          item.isCover ? "border-emerald-500 ring-2 ring-emerald-500/20" : "border-neutral-200"
+                        )}
+                      >
+                        <Image
+                          src={item.previewUrl}
+                          alt="Uploaded article photo"
+                          fill
+                          unoptimized
+                          className="object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(item.id)}
+                          className="absolute top-2 right-2 rounded-full bg-red-600 p-1.5 text-white shadow-md hover:bg-red-700 transition-all cursor-pointer z-10"
+                          title="Remove photo"
+                        >
+                          <Trash2 aria-hidden className="size-3.5" />
+                        </button>
+
+                        <div className="absolute bottom-2 left-2 flex items-center gap-2 z-10">
+                          {item.isCover ? (
+                            <span className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-bold text-white shadow-xs">
+                              <Star aria-hidden className="size-3 fill-white" />
+                              Cover Photo
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setCoverImage(item.id)}
+                              className="flex items-center gap-1 rounded-full bg-neutral-900/85 hover:bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-xs transition-colors cursor-pointer"
+                            >
+                              <Star aria-hidden className="size-3" />
+                              Set as Cover
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="cover-alt" className="text-xs font-bold text-neutral-600">
-                      Alt Text (Accessibility)
-                    </Label>
-                    <Input
-                      id="cover-alt"
-                      value={coverAltText}
-                      onChange={(e) => setCoverAltText(e.target.value)}
-                      placeholder="Describe image for residents..."
-                      className="h-9 rounded-lg border-neutral-200 text-xs"
+                  <label className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-600/40 bg-emerald-50/40 py-2.5 px-4 text-center transition-all hover:border-emerald-600 hover:bg-emerald-50/70 cursor-pointer">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      onChange={handleImageSelect}
                     />
-                  </div>
+                    <Upload aria-hidden className="size-4 text-emerald-700" />
+                    <span className="text-xs font-bold text-emerald-950">Add More Photos</span>
+                  </label>
                 </div>
               ) : (
                 <label className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-emerald-600/30 bg-emerald-50/30 p-6 text-center transition-all hover:border-emerald-600 hover:bg-emerald-50/70 cursor-pointer">
                   <input
                     type="file"
+                    multiple
                     accept="image/jpeg,image/png,image/webp"
                     className="sr-only"
                     onChange={handleImageSelect}
@@ -483,8 +545,8 @@ export function AnnouncementForm({
                     <Upload aria-hidden className="size-5" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-emerald-950">Upload Cover Photo</p>
-                    <p className="text-[11px] text-neutral-500 mt-0.5">JPEG, PNG, WebP up to 10MB</p>
+                    <p className="text-xs font-bold text-emerald-950">Upload Article Photos</p>
+                    <p className="text-[11px] text-neutral-500 mt-0.5">Select multiple JPEG, PNG, WebP images</p>
                   </div>
                 </label>
               )}
@@ -666,17 +728,21 @@ export function AnnouncementForm({
           </DialogHeader>
 
           <div className="p-6 sm:p-8 space-y-6">
-            {coverPreview ? (
-              <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 shadow-2xs">
-                <Image
-                  src={coverPreview}
-                  alt={coverAltText || title || "Cover photo preview"}
-                  fill
-                  unoptimized
-                  className="object-cover"
-                />
-              </div>
-            ) : null}
+            {(() => {
+              const coverImageItem = imageItems.find((img) => img.isCover) || imageItems[0];
+              if (!coverImageItem) return null;
+              return (
+                <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 shadow-2xs">
+                  <Image
+                    src={coverImageItem.previewUrl}
+                    alt={title || "Cover photo preview"}
+                    fill
+                    unoptimized
+                    className="object-cover"
+                  />
+                </div>
+              );
+            })()}
 
             <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-500 border-b border-neutral-100 pb-4">
               <span className="flex items-center gap-1.5">

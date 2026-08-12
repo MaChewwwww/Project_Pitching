@@ -8,6 +8,7 @@ import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import {
   AnnouncementForm,
   type AnnouncementFormValues,
+  type ImageFileItem,
 } from "@/components/features/admin/announcement-form";
 import { emptyArticleDocument } from "@/components/features/admin/rich-text-editor";
 import { api, toDisplayError } from "@/lib/api/client";
@@ -39,12 +40,10 @@ export default function CreateAnnouncementPage() {
   const createMutation = useMutation({
     mutationFn: async ({
       values,
-      coverFile,
-      coverAltText,
+      imageItems,
     }: {
       values: AnnouncementFormValues;
-      coverFile?: File | null;
-      coverAltText?: string;
+      imageItems: ImageFileItem[];
     }) => {
       // 1. Create announcement
       const res = await api.post<{ id: string }>("/admin/announcements", {
@@ -54,25 +53,26 @@ export default function CreateAnnouncementPage() {
       });
       const id = res.data.id;
 
-      // 2. Upload cover image if selected directly in create form
-      if (coverFile && id) {
+      // 2. Upload images sequentially
+      if (imageItems.length > 0 && id) {
         try {
-          const formData = new FormData();
-          formData.append("file", coverFile);
-          const imgRes = await api.post<{ id: string }>(
-            `/admin/announcements/${id}/images`,
-            formData,
-            { headers: { "Content-Type": undefined } },
-          );
-          if (imgRes.data?.id) {
-            await api.patch(`/admin/announcements/${id}/images/${imgRes.data.id}`, {
-              is_cover: true,
-              alt_text: coverAltText || values.title,
-            });
+          for (const item of imageItems) {
+            const formData = new FormData();
+            formData.append("file", item.file);
+            const imgRes = await api.post<{ id: string }>(
+              `/admin/announcements/${id}/images`,
+              formData,
+              { headers: { "Content-Type": undefined } },
+            );
+            if (item.isCover && imgRes.data?.id) {
+              await api.patch(`/admin/announcements/${id}/images/${imgRes.data.id}`, {
+                is_cover: true,
+              });
+            }
           }
         } catch {
-          // Keep announcement created even if image upload fails
-          toast.error("Announcement created, but cover image upload encountered an issue.");
+          // Keep announcement created even if image upload encounters an issue
+          toast.error("Announcement created, but some image uploads encountered an issue.");
         }
       }
 
@@ -99,8 +99,8 @@ export default function CreateAnnouncementPage() {
         areas={areas}
         defaultValues={defaults}
         showCoverUpload={true}
-        onSubmit={async (values, coverFile, coverAltText) => {
-          await createMutation.mutateAsync({ values, coverFile, coverAltText });
+        onSubmit={async (values, imageItems) => {
+          await createMutation.mutateAsync({ values, imageItems });
         }}
         onCancel={() => router.push("/admin/announcements")}
       />
