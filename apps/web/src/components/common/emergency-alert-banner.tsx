@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Phone, TriangleAlert } from "lucide-react";
+import { Info, Phone, Siren, TriangleAlert } from "lucide-react";
 
 import {
   Dialog,
@@ -28,7 +28,9 @@ export interface EmergencyAlertBannerProps {
    * generic evacuation banner rather than showing nothing (NFR-AVL-004).
    */
   emergencyEvent?: PublicEmergencyEvent | null;
+  /** Primary hotline fallback if `hotlines` array is unsupplied. */
   primaryHotline?: PublicHotline;
+  /** Array of active hotlines from public query. */
   hotlines?: PublicHotline[];
 }
 
@@ -38,7 +40,7 @@ export function EmergencyAlertBanner({
   primaryHotline,
   hotlines,
 }: EmergencyAlertBannerProps) {
-  // An alert banner is only displayed within 24 hours after publishing.
+  // Pure client-side timestamp store to prevent hydration mismatches
   const nowTimestamp = React.useSyncExternalStore(
     () => () => {},
     () => Date.now(),
@@ -46,7 +48,7 @@ export function EmergencyAlertBanner({
   );
 
   const activeAlert = React.useMemo(() => {
-    if (!alert || !alert.is_active) return null;
+    if (!alert) return null;
     if (!alert.published_at || nowTimestamp === 0) return alert;
     const pubDate = new Date(alert.published_at).getTime();
     if (isNaN(pubDate)) return alert;
@@ -56,7 +58,11 @@ export function EmergencyAlertBanner({
 
   if (!activeAlert && !emergencyEvent) return null;
 
+  const severity = activeAlert?.severity || (emergencyEvent ? "emergency" : "info");
   const levelText = activeAlert?.severity ?? "Active";
+
+  const BannerIcon =
+    severity === "info" ? Info : severity === "warning" ? TriangleAlert : Siren;
 
   const title = activeAlert
     ? activeAlert.title
@@ -76,7 +82,7 @@ export function EmergencyAlertBanner({
       } · ${activeAlert.issued_by_name}`
     : `Barangay-wide · Declared ${new Date(emergencyEvent!.started_at).toLocaleString()}`;
 
-  const availableHotlines =
+  const availableHotlines: PublicHotline[] =
     hotlines && hotlines.length > 0 ? hotlines : primaryHotline ? [primaryHotline] : [];
 
   return (
@@ -84,13 +90,25 @@ export function EmergencyAlertBanner({
       role="alert"
       aria-live="assertive"
       aria-atomic="true"
-      className="border-b border-red-700 bg-gradient-to-r from-red-700 via-red-600 to-rose-700 text-white shadow-md relative z-20 opacity-100"
+      className={cn(
+        "border-b shadow-md transition-all relative z-20 opacity-100",
+        severity === "info"
+          ? "bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 border-amber-500 text-amber-950"
+          : severity === "warning"
+          ? "bg-gradient-to-r from-orange-500 via-amber-600 to-orange-600 border-orange-700 text-white"
+          : "bg-gradient-to-r from-red-700 via-red-600 to-rose-700 border-red-800 text-white"
+      )}
     >
       <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-6">
         {/* Left / Center Content */}
         <div className="flex min-w-0 flex-1 items-center gap-3.5">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/20 text-white shadow-xs">
-            <TriangleAlert
+          <span
+            className={cn(
+              "grid size-10 shrink-0 place-items-center rounded-xl shadow-xs",
+              severity === "info" ? "bg-amber-950/15 text-amber-950" : "bg-white/20 text-white"
+            )}
+          >
+            <BannerIcon
               aria-hidden
               className="size-5 motion-safe:animate-pulse"
               strokeWidth={2.5}
@@ -103,17 +121,34 @@ export function EmergencyAlertBanner({
                 {title}
               </span>
               {!/level/i.test(title) ? (
-                <span className="text-overline shrink-0 rounded-md border border-white/30 bg-white/20 px-2 py-0.5 font-bold tracking-wider text-white uppercase">
+                <span
+                  className={cn(
+                    "text-overline shrink-0 rounded-md border px-2 py-0.5 font-bold tracking-wider uppercase",
+                    severity === "info"
+                      ? "border-amber-950/30 bg-amber-950 text-white"
+                      : "border-white/30 bg-white/20 text-white"
+                  )}
+                >
                   {levelText}
                 </span>
               ) : null}
-              <span className="text-caption hidden font-medium text-white/80 lg:inline-block">
+              <span
+                className={cn(
+                  "text-caption hidden font-medium lg:inline-block",
+                  severity === "info" ? "text-amber-950/80" : "text-white/80"
+                )}
+              >
                 • {meta}
               </span>
             </div>
 
             {instruction ? (
-              <p className="text-body-sm line-clamp-1 leading-snug font-medium text-white/95">
+              <p
+                className={cn(
+                  "text-body-sm line-clamp-1 leading-snug font-medium",
+                  severity === "info" ? "text-amber-950 font-semibold" : "text-white/95"
+                )}
+              >
                 {instruction}
               </p>
             ) : null}
@@ -130,7 +165,11 @@ export function EmergencyAlertBanner({
                   className={cn(
                     "inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 sm:w-auto",
                     "text-label shadow-sm-card font-bold transition-all duration-200 hover:scale-105 focus-visible:ring-3 focus-visible:outline-none",
-                    "bg-white text-red-700 hover:bg-neutral-100 focus-visible:ring-white/50"
+                    severity === "info"
+                      ? "bg-amber-950 text-white hover:bg-black focus-visible:ring-amber-950/50"
+                      : severity === "warning"
+                      ? "bg-white text-orange-700 hover:bg-neutral-100 focus-visible:ring-white/50"
+                      : "bg-white text-red-700 hover:bg-neutral-100 focus-visible:ring-white/50"
                   )}
                 >
                   <Phone aria-hidden className="size-4" strokeWidth={2.5} />

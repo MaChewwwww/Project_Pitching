@@ -7,6 +7,7 @@ import {
   Info,
   MapPin,
   Megaphone,
+  Siren,
   TriangleAlert,
   User,
 } from "lucide-react";
@@ -30,13 +31,13 @@ function StoryMeta({
   announcement: PublicAnnouncement;
 }) {
   const iconTone =
-    announcement.severity === "emergency"
+    announcement.kind === "announcement"
+      ? "text-emerald-600"
+      : announcement.severity === "emergency"
       ? "text-red-500"
       : announcement.severity === "warning"
       ? "text-orange-500"
-      : announcement.severity === "info"
-      ? "text-amber-500"
-      : "text-emerald-600";
+      : "text-amber-500";
 
   return (
     <div className="flex min-w-0 flex-col gap-1 text-xs font-medium text-neutral-500">
@@ -56,19 +57,25 @@ function StoryMeta({
   );
 }
 
-function ContinueMark({ severity }: { severity?: string | null }) {
+function ContinueMark({
+  kind,
+  severity,
+}: {
+  kind: "announcement" | "alert";
+  severity?: string | null;
+}) {
   return (
     <span
       aria-hidden
       className={cn(
         "grid size-9 shrink-0 place-items-center rounded-full border transition-all duration-300 group-hover:translate-x-1",
-        severity === "emergency"
+        kind === "announcement"
+          ? "border-neutral-200 bg-neutral-50 text-neutral-600 group-hover:border-emerald-600 group-hover:bg-emerald-600 group-hover:text-white"
+          : severity === "emergency"
           ? "border-red-200 bg-red-50 text-red-600 group-hover:border-red-600 group-hover:bg-red-600 group-hover:text-white"
           : severity === "warning"
           ? "border-orange-200 bg-orange-50 text-orange-600 group-hover:border-orange-500 group-hover:bg-orange-500 group-hover:text-white"
-          : severity === "info"
-          ? "border-amber-200 bg-amber-50 text-amber-600 group-hover:border-amber-500 group-hover:bg-amber-500 group-hover:text-white"
-          : "border-neutral-200 bg-neutral-50 text-neutral-600 group-hover:border-emerald-600 group-hover:bg-emerald-600 group-hover:text-white",
+          : "border-amber-200 bg-amber-50 text-amber-600 group-hover:border-amber-500 group-hover:bg-amber-500 group-hover:text-white",
       )}
     >
       <ArrowRight className="size-4" />
@@ -106,7 +113,7 @@ export function AnnouncementCard({
       // emergency or fallback for alert
       badgeLabel = "Emergency Alert";
       badgeStyle = "bg-red-600 text-white font-bold";
-      BadgeIcon = TriangleAlert;
+      BadgeIcon = Siren;
     }
   }
 
@@ -122,13 +129,13 @@ export function AnnouncementCard({
       <article
         className={cn(
           "relative flex h-full flex-col overflow-hidden rounded-[20px] border bg-white transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-black/5",
-          announcement.severity === "emergency"
+          announcement.kind === "announcement"
+            ? "border-neutral-200/80 hover:border-emerald-600 shadow-xs"
+            : announcement.severity === "emergency"
             ? "border-red-200/90 hover:border-red-400 shadow-xs"
             : announcement.severity === "warning"
             ? "border-orange-200/90 hover:border-orange-400 shadow-xs"
-            : announcement.severity === "info"
-            ? "border-yellow-200/90 hover:border-yellow-400 shadow-xs"
-            : "border-neutral-200/80 hover:border-emerald-600 shadow-xs",
+            : "border-yellow-200/90 hover:border-yellow-400 shadow-xs",
         )}
       >
         {/* Cover Image Header (Symmetrical aspect ratio) */}
@@ -148,13 +155,13 @@ export function AnnouncementCard({
             <div
               className={cn(
                 "relative flex h-full w-full flex-col justify-between p-4 text-white",
-                announcement.severity === "emergency"
+                announcement.kind === "announcement"
+                  ? "bg-gradient-to-br from-emerald-950 via-emerald-900 to-neutral-900"
+                  : announcement.severity === "emergency"
                   ? "bg-gradient-to-br from-red-950 via-rose-900 to-neutral-900"
                   : announcement.severity === "warning"
                   ? "bg-gradient-to-br from-amber-950 via-orange-900 to-neutral-900"
-                  : announcement.severity === "info"
-                  ? "bg-gradient-to-br from-amber-900 via-yellow-800 to-neutral-900"
-                  : "bg-gradient-to-br from-emerald-950 via-emerald-900 to-neutral-900",
+                  : "bg-gradient-to-br from-amber-900 via-yellow-800 to-neutral-900",
               )}
             >
               <div
@@ -203,13 +210,13 @@ export function AnnouncementCard({
           <h3
             className={cn(
               "font-display text-lg font-bold leading-snug tracking-tight text-neutral-900 transition-colors line-clamp-2",
-              announcement.severity === "emergency"
+              announcement.kind === "announcement"
+                ? "group-hover:text-emerald-700"
+                : announcement.severity === "emergency"
                 ? "group-hover:text-red-600"
                 : announcement.severity === "warning"
                 ? "group-hover:text-orange-600"
-                : announcement.severity === "info"
-                ? "group-hover:text-yellow-700"
-                : "group-hover:text-emerald-700",
+                : "group-hover:text-amber-700",
             )}
           >
             {announcement.title}
@@ -255,7 +262,7 @@ export function AnnouncementCard({
           {/* Pinned Card Footer */}
           <div className="mt-auto flex items-end justify-between gap-3 pt-5 border-t border-neutral-100">
             <StoryMeta announcement={announcement} />
-            <ContinueMark severity={announcement.severity} />
+            <ContinueMark kind={announcement.kind} severity={announcement.severity} />
           </div>
         </div>
       </article>

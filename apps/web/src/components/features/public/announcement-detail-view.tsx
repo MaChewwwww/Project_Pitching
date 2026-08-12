@@ -7,6 +7,7 @@ import {
   MapPin,
   Megaphone,
   PhoneCall,
+  Siren,
   TriangleAlert,
   User,
 } from "lucide-react";
@@ -29,49 +30,77 @@ function renderText(node: Record<string, unknown>, key: string): ReactNode {
   for (const mark of marks as Array<Record<string, unknown>>) {
     if (mark.type === "bold") value = <strong key={`${key}-bold`}>{value}</strong>;
     if (mark.type === "italic") value = <em key={`${key}-italic`}>{value}</em>;
-    if (mark.type === "link") {
-      const href = (mark.attrs as Record<string, unknown> | undefined)?.href;
-      if (typeof href === "string" && /^https?:\/\//.test(href)) {
-        value = (
-          <a
-            key={`${key}-link`}
-            href={href}
-            target="_blank"
-            rel="noreferrer"
-            className="text-primary-700 underline underline-offset-2 hover:text-primary-800"
-          >
-            {value}
-          </a>
-        );
-      }
+    if (mark.type === "underline") value = <u key={`${key}-underline`}>{value}</u>;
+    if (mark.type === "strike") value = <s key={`${key}-strike`}>{value}</s>;
+    if (mark.type === "code")
+      value = (
+        <code
+          key={`${key}-code`}
+          className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-xs text-neutral-800"
+        >
+          {value}
+        </code>
+      );
+    if (mark.type === "link" && typeof mark.attrs === "object" && mark.attrs !== null) {
+      const href = typeof (mark.attrs as { href?: unknown }).href === "string" ? (mark.attrs as { href: string }).href : "#";
+      value = (
+        <a
+          key={`${key}-link`}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary-700 underline underline-offset-4 hover:text-primary-800"
+        >
+          {value}
+        </a>
+      );
     }
   }
   return value;
 }
 
 function renderNode(node: Record<string, unknown>, key: string): ReactNode {
-  switch (node.type) {
-    case "text":
-      return renderText(node, key);
-    case "heading":
-      return (node.attrs as Record<string, unknown> | undefined)?.level === 3 ? (
-        <h3 key={key} className="text-h3 mt-8 font-bold text-neutral-900">
+  const type = typeof node.type === "string" ? node.type : "";
+  switch (type) {
+    case "doc":
+      return <div key={key}>{renderChildren(node, key)}</div>;
+    case "paragraph":
+      return (
+        <p key={key} className="my-4 leading-relaxed text-neutral-700">
           {renderChildren(node, key)}
-        </h3>
-      ) : (
-        <h2 key={key} className="text-h2 mt-10 font-bold text-neutral-900">
-          {renderChildren(node, key)}
+        </p>
+      );
+    case "heading": {
+      const attrs = typeof node.attrs === "object" && node.attrs !== null ? node.attrs : {};
+      const level = typeof (attrs as { level?: unknown }).level === "number" ? (attrs as { level: number }).level : 2;
+      const children = renderChildren(node, key);
+      if (level === 1)
+        return (
+          <h1 key={key} className="mt-8 mb-4 text-2xl font-bold text-neutral-900">
+            {children}
+          </h1>
+        );
+      if (level === 3)
+        return (
+          <h3 key={key} className="mt-4 mb-2 text-lg font-semibold text-neutral-900">
+            {children}
+          </h3>
+        );
+      return (
+        <h2 key={key} className="mt-6 mb-3 text-xl font-bold text-neutral-900">
+          {children}
         </h2>
       );
+    }
     case "bulletList":
       return (
-        <ul key={key} className="text-body-lg ml-5 list-disc space-y-2 text-neutral-700">
+        <ul key={key} className="my-4 list-disc space-y-1 pl-6 text-neutral-700">
           {renderChildren(node, key)}
         </ul>
       );
     case "orderedList":
       return (
-        <ol key={key} className="text-body-lg ml-5 list-decimal space-y-2 text-neutral-700">
+        <ol key={key} className="my-4 list-decimal space-y-1 pl-6 text-neutral-700">
           {renderChildren(node, key)}
         </ol>
       );
@@ -81,17 +110,40 @@ function renderNode(node: Record<string, unknown>, key: string): ReactNode {
       return (
         <blockquote
           key={key}
-          className="my-6 border-l-4 border-primary-500 bg-primary-50/70 p-4 text-body-lg text-neutral-800 rounded-r-xl"
+          className="my-4 border-l-4 border-emerald-600 bg-emerald-50/50 py-2 pr-4 pl-4 italic text-neutral-700"
         >
           {renderChildren(node, key)}
         </blockquote>
       );
-    default:
+    case "codeBlock":
       return (
-        <p key={key} className="text-body-lg leading-relaxed text-neutral-700">
-          {renderChildren(node, key)}
-        </p>
+        <pre
+          key={key}
+          className="my-4 overflow-x-auto rounded-xl bg-neutral-900 p-4 font-mono text-xs text-neutral-100"
+        >
+          <code>{renderChildren(node, key)}</code>
+        </pre>
       );
+    case "horizontalRule":
+      return <hr key={key} className="my-6 border-neutral-200" />;
+    case "image": {
+      const attrs = typeof node.attrs === "object" && node.attrs !== null ? node.attrs : {};
+      const src = typeof (attrs as { src?: unknown }).src === "string" ? (attrs as { src: string }).src : "";
+      const alt = typeof (attrs as { alt?: unknown }).alt === "string" ? (attrs as { alt: string }).alt : "";
+      if (!src) return null;
+      return (
+        <figure key={key} className="my-6 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100">
+          <div className="relative aspect-video w-full">
+            <Image src={src} alt={alt} fill unoptimized className="object-cover" />
+          </div>
+          {alt ? (
+            <figcaption className="p-2 text-center text-xs text-neutral-500">{alt}</figcaption>
+          ) : null}
+        </figure>
+      );
+    }
+    default:
+      return renderChildren(node, key);
   }
 }
 
@@ -105,7 +157,7 @@ export function AnnouncementDetailView({
   recentArticles,
 }: AnnouncementDetailViewProps) {
   const isAlert = article.kind === "alert";
-  const cover = article.cover_image;
+  const cover = article.cover_image ?? article.images[0] ?? null;
   const gallery = (article.images || []).filter((img) => img.id !== cover?.id);
 
   let badgeLabel = "Announcement";
@@ -128,7 +180,7 @@ export function AnnouncementDetailView({
     } else {
       badgeLabel = "Emergency Alert";
       badgeStyle = "bg-red-600 text-white font-bold";
-      BadgeIcon = TriangleAlert;
+      BadgeIcon = Siren;
     }
   }
 
@@ -144,7 +196,6 @@ export function AnnouncementDetailView({
         ]}
         action={
           <div className="flex flex-col items-start sm:items-end justify-center gap-2.5 shrink-0 sm:self-center">
-            {/* Badge Chip */}
             <span
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold shadow-2xs shrink-0 tracking-wide",
@@ -155,7 +206,6 @@ export function AnnouncementDetailView({
               {badgeLabel}
             </span>
 
-            {/* Date Chip */}
             {article.published_at ? (
               <span className="inline-flex items-center rounded-full border border-slate-200/90 bg-white/95 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-2xs backdrop-blur-md shrink-0">
                 <time dateTime={article.published_at}>
@@ -169,18 +219,16 @@ export function AnnouncementDetailView({
 
       <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-6 md:py-10">
         <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
-          {/* Left Main Article Column */}
           <article className="flex flex-col gap-6 lg:col-span-8">
-            {/* Header Metadata Bar: Author & Location */}
             {(() => {
               const iconTone =
-                article.severity === "emergency"
+                article.kind === "announcement"
+                  ? "text-emerald-600"
+                  : article.severity === "emergency"
                   ? "text-red-600"
                   : article.severity === "warning"
                   ? "text-orange-600"
-                  : article.severity === "info"
-                  ? "text-yellow-600"
-                  : "text-emerald-700";
+                  : "text-amber-600";
               return (
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-medium text-neutral-500 -mt-2 -mb-2">
                   <span className="inline-flex items-center gap-1.5 truncate">
