@@ -131,7 +131,7 @@ export function RichTextEditor({
   };
 
   return (
-    <div className="focus-within:ring-emerald-600/30 overflow-hidden rounded-xl border border-neutral-300 bg-white focus-within:ring-2 shadow-2xs">
+    <div className="focus-within:ring-emerald-600/30 overflow-hidden rounded-lg border border-emerald-200/80 bg-white focus-within:ring-2 shadow-2xs">
       <div className="flex flex-wrap gap-1 border-b border-neutral-200 bg-neutral-50 p-1.5">
         <ToolButton
           label="Bold"

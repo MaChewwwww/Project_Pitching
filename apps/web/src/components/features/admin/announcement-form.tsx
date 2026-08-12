@@ -316,7 +316,7 @@ export function AnnouncementForm({
                   name="kind"
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger id="kind" className="h-10 rounded-xl border-neutral-200 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
+                      <SelectTrigger id="kind" className="h-10 rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
@@ -337,7 +337,7 @@ export function AnnouncementForm({
                   name="type"
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger id="type" className="h-10 rounded-xl border-neutral-200 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
+                      <SelectTrigger id="type" className="h-10 rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
@@ -362,7 +362,7 @@ export function AnnouncementForm({
                     name="severity"
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger id="severity" className="h-10 rounded-xl border-neutral-200 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
+                        <SelectTrigger id="severity" className="h-10 rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
                           <SelectValue placeholder="Select severity" />
                         </SelectTrigger>
                         <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
@@ -385,7 +385,7 @@ export function AnnouncementForm({
                 id="title"
                 placeholder="Enter article title..."
                 className={cn(
-                  "h-11 rounded-xl border-neutral-200 bg-white font-medium text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs",
+                  "h-11 rounded-lg border-emerald-200/80 bg-white font-medium text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs",
                   errors.title && "border-red-500 focus:border-red-500 focus:ring-red-500/20"
                 )}
                 aria-invalid={!!errors.title}
@@ -404,7 +404,7 @@ export function AnnouncementForm({
                 id="excerpt"
                 placeholder="Brief summary shown in public cards..."
                 className={cn(
-                  "min-h-24 rounded-xl border-neutral-200 bg-white text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs",
+                  "min-h-24 rounded-lg border-emerald-200/80 bg-white text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs",
                   errors.excerpt && "border-red-500 focus:border-red-500 focus:ring-red-500/20"
                 )}
                 aria-invalid={!!errors.excerpt}
@@ -447,7 +447,7 @@ export function AnnouncementForm({
                 id="instruction"
                 placeholder="Key action steps for residents (e.g., Prepare 72-hour survival kits now)..."
                 className={cn(
-                  "min-h-20 rounded-xl border-neutral-200 bg-white text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs",
+                  "min-h-20 rounded-lg border-emerald-200/80 bg-white text-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs",
                   errors.instruction && "border-red-500 focus:border-red-500 focus:ring-red-500/20"
                 )}
                 aria-invalid={!!errors.instruction}
@@ -648,7 +648,7 @@ export function AnnouncementForm({
               name="publication_status"
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger id="publication_status" className="h-10 rounded-xl border-neutral-200 font-medium">
+                  <SelectTrigger id="publication_status" className="h-10 rounded-lg border-emerald-200/80 font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">

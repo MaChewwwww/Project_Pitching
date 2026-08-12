@@ -149,7 +149,8 @@ export function resolveAdminBreadcrumbs(pathname: string): AdminCrumb[] {
   crumbs.push(rest.length > 0 ? { label: link.label, href: link.href } : { label: link.label });
 
   for (const segment of rest) {
-    crumbs.push({ label: LEAF_LABELS[segment] ?? "Edit" });
+    const label = link.href === "/admin/announcements" ? "Edit Announcement" : LEAF_LABELS[segment] ?? "Edit";
+    crumbs.push({ label });
   }
   return crumbs;
 }
