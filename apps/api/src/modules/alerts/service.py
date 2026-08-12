@@ -169,7 +169,10 @@ async def list_announcements(
     stmt = (
         select(Announcement, User.full_name)
         .join(User, Announcement.issued_by_user_id == User.id)
-        .where(Announcement.publication_status == "published")
+        .where(
+            Announcement.publication_status == "published",
+            Announcement.deactivated_at.is_(None),
+        )
         .order_by(Announcement.published_at.desc())
     )
     if kind:
@@ -189,6 +192,7 @@ async def get_announcement_by_slug(session: AsyncSession, slug: str) -> Announce
             .where(
                 Announcement.slug == slug,
                 Announcement.publication_status.in_(("published", "archived")),
+                Announcement.deactivated_at.is_(None),
             )
         )
     ).one_or_none()
