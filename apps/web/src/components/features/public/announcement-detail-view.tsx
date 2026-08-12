@@ -3,7 +3,6 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   ArrowRight,
-  CalendarClock,
   Info,
   MapPin,
   Megaphone,
@@ -15,12 +14,7 @@ import {
 import { PageHeader } from "@/components/common/page-header";
 import { formatPhtDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type {
-  AnnouncementDetail,
-  ArticleDocument,
-  ArticleImage,
-  PublicAnnouncement,
-} from "@/lib/api/public-types";
+import type { AnnouncementDetail, PublicAnnouncement } from "@/lib/api/public-types";
 
 function renderChildren(node: Record<string, unknown>, key: string): ReactNode[] {
   const children = Array.isArray(node.content) ? node.content : [];
@@ -207,196 +201,196 @@ export function AnnouncementDetailView({
               </span>
             </div>
 
-          {/* Cover Media */}
-          {cover ? (
-            <figure className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 shadow-sm-card">
-              <Image
-                src={cover.url}
-                alt={cover.alt_text}
-                width={1600}
-                height={900}
-                unoptimized
-                priority
-                className="aspect-[16/9] w-full object-cover"
-              />
-              {cover.caption ? (
-                <figcaption className="border-t border-neutral-100 bg-neutral-50/80 px-5 py-3 text-xs font-medium text-neutral-600">
-                  {cover.caption}
-                </figcaption>
-              ) : null}
-            </figure>
-          ) : null}
+            {/* Cover Media */}
+            {cover ? (
+              <figure className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 shadow-sm-card">
+                <Image
+                  src={cover.url}
+                  alt={cover.alt_text}
+                  width={1600}
+                  height={900}
+                  unoptimized
+                  priority
+                  className="aspect-[16/9] w-full object-cover"
+                />
+                {cover.caption ? (
+                  <figcaption className="border-t border-neutral-100 bg-neutral-50/80 px-5 py-3 text-xs font-medium text-neutral-600">
+                    {cover.caption}
+                  </figcaption>
+                ) : null}
+              </figure>
+            ) : null}
 
-          {/* Immediate Guidance Callout for Emergency Alerts */}
-          {isAlert && article.instruction ? (
-            <div className="rounded-xl border border-red-200 bg-red-50/90 p-5 text-red-950 shadow-xs">
-              <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-700">
-                <TriangleAlert className="size-4 shrink-0 text-red-600" />
-                <span>Immediate Guidance</span>
-              </div>
-              <p className="text-base font-semibold leading-relaxed text-red-950">
-                {article.instruction}
-              </p>
-            </div>
-          ) : null}
-
-          {/* Rich Text Body */}
-          <div className="space-y-5 text-neutral-800">
-            {article.body_json?.content ? (
-              article.body_json.content.map((node, index) =>
-                renderNode(node as Record<string, unknown>, `body-${index}`),
-              )
-            ) : (
-              <p className="text-body-lg leading-relaxed text-neutral-700">
-                {article.body}
-              </p>
-            )}
-          </div>
-
-          {/* Additional Gallery Images */}
-          {gallery.length > 0 ? (
-            <section
-              aria-label="Article gallery"
-              className="mt-8 border-t border-neutral-200/80 pt-8"
-            >
-              <h3 className="mb-4 text-h3 font-bold text-neutral-900">
-                Photo Gallery
-              </h3>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {gallery.map((image) => (
-                  <figure
-                    key={image.id}
-                    className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-xs"
-                  >
-                    <Image
-                      src={image.url}
-                      alt={image.alt_text}
-                      width={1200}
-                      height={800}
-                      unoptimized
-                      className="aspect-[3/2] w-full object-cover"
-                    />
-                    {image.caption ? (
-                      <figcaption className="p-3 text-xs text-neutral-600">
-                        {image.caption}
-                      </figcaption>
-                    ) : null}
-                  </figure>
-                ))}
-              </div>
-            </section>
-          ) : null}
-        </article>
-
-        {/* Right Sidebar Column */}
-        <aside className="lg:col-span-4">
-          <div className="sticky top-24 space-y-6">
-            {/* Recent Announcements Card */}
-            <div className="rounded-2xl border border-neutral-200/90 bg-white p-5 md:p-6 shadow-xs">
-              <div className="mb-4 flex items-center justify-between border-b border-neutral-100 pb-3.5">
-                <h3 className="inline-flex items-center gap-2 font-display text-base font-bold text-neutral-900">
-                  <Megaphone className="size-4 text-primary-600" />
-                  Recent Announcements
-                </h3>
-                <Link
-                  href="/announcements"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-primary-700 transition-colors hover:text-primary-800"
-                >
-                  View all <ArrowRight className="size-3" />
-                </Link>
-              </div>
-
-              {recentArticles.length > 0 ? (
-                <div className="flex flex-col divide-y divide-neutral-100">
-                  {recentArticles.map((recent) => {
-                    const isRecentAlert = recent.kind === "alert";
-                    let itemBadge = "Announcement";
-                    let itemBadgeColor = "text-emerald-700 bg-emerald-50";
-
-                    if (isRecentAlert) {
-                      if (recent.severity === "emergency") {
-                        itemBadge = "Emergency Alert";
-                        itemBadgeColor = "text-red-700 bg-red-50";
-                      } else if (recent.severity === "warning") {
-                        itemBadge = "Warning";
-                        itemBadgeColor = "text-orange-700 bg-orange-50";
-                      } else {
-                        itemBadge = "Advisory";
-                        itemBadgeColor = "text-amber-800 bg-amber-50";
-                      }
-                    }
-
-                    return (
-                      <Link
-                        key={recent.id}
-                        href={`/announcements/${recent.slug}`}
-                        className="group flex items-start gap-3.5 py-3.5 first:pt-0 last:pb-0 transition-colors"
-                      >
-                        {/* Thumbnail */}
-                        <div className="relative aspect-[16/10] w-20 shrink-0 overflow-hidden rounded-md bg-neutral-100">
-                          {recent.cover_image ? (
-                            <Image
-                              src={recent.cover_image.url}
-                              alt={recent.cover_image.alt_text}
-                              fill
-                              unoptimized
-                              className="object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-950 to-neutral-900 text-white">
-                              <Megaphone className="size-4 opacity-70" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex min-w-0 flex-1 flex-col gap-1">
-                          <span
-                            className={cn(
-                              "w-fit rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
-                              itemBadgeColor,
-                            )}
-                          >
-                            {itemBadge}
-                          </span>
-                          <h4 className="line-clamp-2 text-xs font-bold leading-snug text-neutral-900 transition-colors group-hover:text-primary-700">
-                            {recent.title}
-                          </h4>
-                          {recent.published_at ? (
-                            <span className="mt-0.5 text-[11px] font-medium text-neutral-400">
-                              {formatPhtDateTime(recent.published_at)}
-                            </span>
-                          ) : null}
-                        </div>
-                      </Link>
-                    );
-                  })}
+            {/* Immediate Guidance Callout for Emergency Alerts */}
+            {isAlert && article.instruction ? (
+              <div className="rounded-xl border border-red-200 bg-red-50/90 p-5 text-red-950 shadow-xs">
+                <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-700">
+                  <TriangleAlert className="size-4 shrink-0 text-red-600" />
+                  <span>Immediate Guidance</span>
                 </div>
-              ) : (
-                <p className="text-xs text-neutral-500">No other notices found.</p>
-              )}
-
-              {/* Emergency Hotline Quick Box */}
-              <div className="mt-5 rounded-2xl bg-gradient-to-br from-primary-950 via-primary-900 to-neutral-900 p-4 text-white shadow-xs">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary-300">
-                  <PhoneCall className="size-3.5 shrink-0" />
-                  <span>Emergency Assistance</span>
-                </div>
-                <p className="mt-1.5 text-xs leading-relaxed text-white/80">
-                  Need immediate help? Reach Barangay San Jose operations center.
+                <p className="text-base font-semibold leading-relaxed text-red-950">
+                  {article.instruction}
                 </p>
-                <a
-                  href="tel:0285550100"
-                  className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary-600 px-3.5 py-2 text-xs font-bold text-white transition-colors hover:bg-primary-500"
-                >
-                  Call (02) 8555-0100
-                </a>
+              </div>
+            ) : null}
+
+            {/* Rich Text Body */}
+            <div className="space-y-5 text-neutral-800">
+              {article.body_json?.content ? (
+                article.body_json.content.map((node, index) =>
+                  renderNode(node as Record<string, unknown>, `body-${index}`),
+                )
+              ) : (
+                <p className="text-body-lg leading-relaxed text-neutral-700">
+                  {article.body}
+                </p>
+              )}
+            </div>
+
+            {/* Additional Gallery Images */}
+            {gallery.length > 0 ? (
+              <section
+                aria-label="Article gallery"
+                className="mt-8 border-t border-neutral-200/80 pt-8"
+              >
+                <h3 className="mb-4 text-h3 font-bold text-neutral-900">
+                  Photo Gallery
+                </h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {gallery.map((image) => (
+                    <figure
+                      key={image.id}
+                      className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-xs"
+                    >
+                      <Image
+                        src={image.url}
+                        alt={image.alt_text}
+                        width={1200}
+                        height={800}
+                        unoptimized
+                        className="aspect-[3/2] w-full object-cover"
+                      />
+                      {image.caption ? (
+                        <figcaption className="p-3 text-xs text-neutral-600">
+                          {image.caption}
+                        </figcaption>
+                      ) : null}
+                    </figure>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </article>
+
+          {/* Right Sidebar Column */}
+          <aside className="lg:col-span-4">
+            <div className="sticky top-24 space-y-6">
+              {/* Recent Announcements Card */}
+              <div className="rounded-2xl border border-neutral-200/90 bg-white p-5 md:p-6 shadow-xs">
+                <div className="mb-4 flex items-center justify-between border-b border-neutral-100 pb-3.5">
+                  <h3 className="inline-flex items-center gap-2 font-display text-base font-bold text-neutral-900">
+                    <Megaphone className="size-4 text-primary-600" />
+                    Recent Announcements
+                  </h3>
+                  <Link
+                    href="/announcements"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-primary-700 transition-colors hover:text-primary-800"
+                  >
+                    View All <ArrowRight className="size-3" />
+                  </Link>
+                </div>
+
+                {recentArticles.length > 0 ? (
+                  <div className="flex flex-col divide-y divide-neutral-100">
+                    {recentArticles.map((recent) => {
+                      const isRecentAlert = recent.kind === "alert";
+                      let itemBadge = "Announcement";
+                      let itemBadgeColor = "text-emerald-700 bg-emerald-50";
+
+                      if (isRecentAlert) {
+                        if (recent.severity === "emergency") {
+                          itemBadge = "Emergency Alert";
+                          itemBadgeColor = "text-red-700 bg-red-50";
+                        } else if (recent.severity === "warning") {
+                          itemBadge = "Warning";
+                          itemBadgeColor = "text-orange-700 bg-orange-50";
+                        } else {
+                          itemBadge = "Advisory";
+                          itemBadgeColor = "text-amber-800 bg-amber-50";
+                        }
+                      }
+
+                      return (
+                        <Link
+                          key={recent.id}
+                          href={`/announcements/${recent.slug}`}
+                          className="group flex items-start gap-3.5 py-3.5 first:pt-0 last:pb-0 transition-colors"
+                        >
+                          {/* Thumbnail */}
+                          <div className="relative aspect-[16/10] w-20 shrink-0 overflow-hidden rounded-md bg-neutral-100">
+                            {recent.cover_image ? (
+                              <Image
+                                src={recent.cover_image.url}
+                                alt={recent.cover_image.alt_text}
+                                fill
+                                unoptimized
+                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-950 to-neutral-900 text-white">
+                                <Megaphone className="size-4 opacity-70" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex min-w-0 flex-1 flex-col gap-1">
+                            <span
+                              className={cn(
+                                "w-fit rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                                itemBadgeColor,
+                              )}
+                            >
+                              {itemBadge}
+                            </span>
+                            <h4 className="line-clamp-2 text-xs font-bold leading-snug text-neutral-900 transition-colors group-hover:text-primary-700">
+                              {recent.title}
+                            </h4>
+                            {recent.published_at ? (
+                              <span className="mt-0.5 text-[11px] font-medium text-neutral-400">
+                                {formatPhtDateTime(recent.published_at)}
+                              </span>
+                            ) : null}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-neutral-500">No other notices found.</p>
+                )}
+
+                {/* Emergency Hotline Quick Box */}
+                <div className="mt-5 rounded-2xl bg-gradient-to-br from-primary-950 via-primary-900 to-neutral-900 p-4 text-white shadow-xs">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary-300">
+                    <PhoneCall className="size-3.5 shrink-0" />
+                    <span>Emergency Assistance</span>
+                  </div>
+                  <p className="mt-1.5 text-xs leading-relaxed text-white/80">
+                    Need immediate help? Reach Barangay San Jose operations center.
+                  </p>
+                  <a
+                    href="tel:0285550100"
+                    className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary-600 px-3.5 py-2 text-xs font-bold text-white transition-colors hover:bg-primary-500"
+                  >
+                    Call (02) 8555-0100
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
-        </aside>
+          </aside>
+        </div>
       </div>
-    </div>
-  </>
-);
+    </>
+  );
 }
