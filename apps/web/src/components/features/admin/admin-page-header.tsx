@@ -45,21 +45,29 @@ export function AdminPageHeader({
   return (
     <header
       className={cn(
-        "border-primary-100 shadow-sm-card rounded-[14px] border bg-white px-4 py-4 sm:px-5",
+        "relative overflow-hidden rounded-2xl border border-emerald-950/10 bg-gradient-to-br from-white via-emerald-50/20 to-teal-50/30 p-5 sm:p-6 shadow-sm transition-all duration-200",
         className,
       )}
     >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex min-w-0 items-start gap-3">
+      {/* Decorative ambient background blur */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-12 -right-12 size-48 rounded-full bg-emerald-500/10 blur-3xl"
+      />
+
+      <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-start gap-3.5">
           {Icon ? (
-            <span className="bg-primary-50 border-primary-100 mt-0.5 grid size-9 shrink-0 place-items-center rounded-[10px] border">
-              <Icon aria-hidden className="text-primary-700 size-4.5" />
+            <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-700/20 ring-4 ring-emerald-500/10 transition-transform duration-200 hover:scale-105">
+              <Icon aria-hidden className="size-5" />
             </span>
           ) : null}
           <div className="min-w-0">
-            <h1 className="text-h2 tracking-tight text-neutral-900">{title}</h1>
+            <h1 className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl font-sans">
+              {title}
+            </h1>
             {description ? (
-              <p className="text-body-sm mt-1 max-w-3xl leading-relaxed text-neutral-600">
+              <p className="mt-1 max-w-3xl text-xs sm:text-sm leading-relaxed text-neutral-600 font-normal">
                 {description}
               </p>
             ) : null}
@@ -67,12 +75,14 @@ export function AdminPageHeader({
         </div>
 
         {action ? (
-          <div className="flex shrink-0 flex-wrap items-center gap-2 max-sm:w-full">{action}</div>
+          <div className="flex shrink-0 items-center gap-2 max-sm:w-full max-sm:pt-2 max-sm:border-t max-sm:border-neutral-200/50">
+            {action}
+          </div>
         ) : null}
       </div>
 
       {meta ? (
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-neutral-100 pt-3">
+        <div className="relative z-10 mt-4 flex flex-wrap items-center gap-2 border-t border-emerald-950/10 pt-3">
           {meta}
         </div>
       ) : null}

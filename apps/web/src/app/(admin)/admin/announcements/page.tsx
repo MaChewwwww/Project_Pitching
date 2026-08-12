@@ -71,10 +71,14 @@ export default function AdminAnnouncementsPage() {
         title="Announcements & Alerts"
         description="Publishing here is the only way a public alert reaches the site — nothing is ever automated (D-4)."
         action={
-          <Button asChild size="sm">
+          <Button
+            asChild
+            size="sm"
+            className="h-10 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-md shadow-emerald-900/15 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] transition-all px-4 gap-2 border border-emerald-600/30 max-sm:w-full max-sm:justify-center cursor-pointer"
+          >
             <Link href={"/admin/announcements/new" as Route}>
-            <Plus aria-hidden className="size-4" />
-            New article
+              <Plus aria-hidden className="size-4 stroke-[2.5]" />
+              <span>New article</span>
             </Link>
           </Button>
         }
