@@ -31,12 +31,12 @@ function StoryMeta({
 }) {
   const iconTone =
     announcement.severity === "emergency"
-      ? "text-red-600"
+      ? "text-red-500"
       : announcement.severity === "warning"
-      ? "text-orange-600"
+      ? "text-orange-500"
       : announcement.severity === "info"
-      ? "text-yellow-600"
-      : "text-emerald-700";
+      ? "text-amber-500"
+      : "text-emerald-600";
 
   return (
     <div className="flex min-w-0 flex-col gap-1 text-xs font-medium text-neutral-500">
@@ -63,12 +63,12 @@ function ContinueMark({ severity }: { severity?: string | null }) {
       className={cn(
         "grid size-9 shrink-0 place-items-center rounded-full border transition-all duration-300 group-hover:translate-x-1",
         severity === "emergency"
-          ? "border-red-200 bg-red-50 text-red-700 group-hover:border-red-600 group-hover:bg-red-600 group-hover:text-white"
+          ? "border-red-200 bg-red-50 text-red-600 group-hover:border-red-600 group-hover:bg-red-600 group-hover:text-white"
           : severity === "warning"
-          ? "border-orange-200 bg-orange-50 text-orange-700 group-hover:border-orange-600 group-hover:bg-orange-600 group-hover:text-white"
+          ? "border-orange-200 bg-orange-50 text-orange-600 group-hover:border-orange-500 group-hover:bg-orange-500 group-hover:text-white"
           : severity === "info"
-          ? "border-yellow-300 bg-yellow-50 text-yellow-800 group-hover:border-yellow-500 group-hover:bg-yellow-500 group-hover:text-neutral-950"
-          : "border-neutral-200 bg-neutral-50 text-neutral-700 group-hover:border-emerald-600 group-hover:bg-emerald-600 group-hover:text-white",
+          ? "border-amber-200 bg-amber-50 text-amber-600 group-hover:border-amber-500 group-hover:bg-amber-500 group-hover:text-white"
+          : "border-neutral-200 bg-neutral-50 text-neutral-600 group-hover:border-emerald-600 group-hover:bg-emerald-600 group-hover:text-white",
       )}
     >
       <ArrowRight className="size-4" />
