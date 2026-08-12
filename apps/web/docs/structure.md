@@ -42,14 +42,18 @@ reference/service data consumed by operational screens, not standalone console w
 ## Weather & Flood Watch workspace
 
 `/admin/readings` is the single console entry point for weather operations. Its tabs are `Overview`,
-`Manual entry`, and (admins only) `Threshold review`; the selected tab is retained in the `tab` query
-parameter. `/admin/alert-prompts` is not a route or sidebar destination. `/admin/flood-events` remains
-separate because flood history is an editorial record with its own create/edit lifecycle.
+`Threshold Review`, and (admins only) `Manual Entry`; the selected tab is retained in the `tab` query
+parameter. `/admin/alert-prompts` is not a route or sidebar destination. Threshold prompts remain in
+the review queue after acknowledgement; only unacknowledged prompts can be deleted as false positives.
+`/admin/flood-events` remains separate because flood history is an editorial record with its own
+create/edit lifecycle.
 
 The workspace deliberately reuses the public `WeatherPanel`, `RiverLevelPanel`, `DataFreshness`, and
 `AlertLevelIndicator` components so staff and residents read the same cached measurements. API access
 still enforces the role boundary: BHW may record readings, while only admin/superadmin can review prompts,
-acknowledge them, or run the typhoon demo sequence.
+acknowledge or delete unacknowledged prompts, or run the typhoon demo sequence.
+The current heat-index reading is the highest observed value for the current Asia/Manila calendar day,
+falling back to the latest known value just after midnight until a new reading arrives.
 
 ## Rendering strategy, per surface
 

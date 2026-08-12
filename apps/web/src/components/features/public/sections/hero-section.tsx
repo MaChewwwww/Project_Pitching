@@ -1,6 +1,14 @@
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, BedDouble, CloudRain, MapPin, ShieldCheck, Thermometer, Waves } from "lucide-react";
+import {
+  ArrowRight,
+  BedDouble,
+  CloudRain,
+  MapPin,
+  ShieldCheck,
+  Thermometer,
+  Waves,
+} from "lucide-react";
 
 import { Button } from "@/components/common/button";
 import { Logo3DPlaceholder } from "../illustrations/logo-3d-placeholder";
@@ -20,8 +28,12 @@ export async function HeroSection() {
   const tempReading = weather.readings.find((r) => r.metric === "temperature");
   const heatIndexReading = weather.readings.find((r) => r.metric === "heat_index");
   const rainReading = weather.readings.find((r) => r.metric === "rainfall");
-  const rainChanceForecast = weather.forecast.find((f) => f.metric === "precipitation_probability");
-  const rainChanceValue = rainChanceForecast ? Math.round(rainChanceForecast.value) : undefined;
+  const rainChanceForecast = weather.forecast.find(
+    (f) => f.metric === "precipitation_probability",
+  );
+  const rainChanceValue = rainChanceForecast
+    ? Math.round(rainChanceForecast.value)
+    : undefined;
 
   const chips = [
     {
@@ -118,27 +130,29 @@ export async function HeroSection() {
             {chips.map((chip, idx) => (
               <li
                 key={chip.row1}
-                className="chip-pop hero-chip shadow-sm-card inline-flex cursor-pointer items-center justify-between gap-3 rounded-full border border-neutral-200/90 bg-white py-1.5 pr-4 pl-2 transition-all hover:border-primary-300 hover:shadow-md sm:py-2 sm:pr-4.5 sm:pl-2.5"
+                className="chip-pop hero-chip shadow-sm-card hover:border-primary-300 inline-flex cursor-pointer items-center justify-between gap-3 rounded-full border border-neutral-200/90 bg-white py-1.5 pr-4 pl-2 transition-all hover:shadow-md sm:py-2 sm:pr-4.5 sm:pl-2.5"
                 style={{ "--chip-delay": `${360 + idx * 90}ms` } as React.CSSProperties}
               >
                 {/* Left Icon occupying full 2-row height */}
                 <span className="hero-chip-icon bg-primary-100 text-primary-700 flex size-8 shrink-0 items-center justify-center rounded-full sm:size-9">
-                  <chip.icon aria-hidden className="size-4 sm:size-4.5" strokeWidth={2.2} />
+                  <chip.icon
+                    aria-hidden
+                    className="size-4 sm:size-4.5"
+                    strokeWidth={2.2}
+                  />
                 </span>
 
                 {/* Column 1: Row 1 Text & Row 2 Text */}
                 <div className="flex flex-col justify-center leading-none">
-                  <span className="text-xs font-bold text-neutral-900">
-                    {chip.row1}
-                  </span>
-                  <span className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+                  <span className="text-xs font-bold text-neutral-900">{chip.row1}</span>
+                  <span className="mt-0.5 text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
                     {chip.row2}
                   </span>
                 </div>
 
                 {/* Column 2: Number occupies both rows */}
                 <div className="flex items-center justify-center border-l border-neutral-200/80 pl-2.5">
-                  <span className="text-base font-bold tracking-tight text-neutral-800 tabular sm:text-lg">
+                  <span className="tabular text-base font-bold tracking-tight text-neutral-800 sm:text-lg">
                     {chip.value}
                   </span>
                 </div>
@@ -153,22 +167,27 @@ export async function HeroSection() {
           style={{ "--hi-delay": "100ms" } as React.CSSProperties}
         >
           {/* Top-Centered Live Weather Floating Metric Pills */}
-          <div className="absolute top-3 inset-x-3 z-20 flex flex-wrap items-center justify-center gap-2 md:top-4 md:inset-x-4">
+          <div className="absolute inset-x-3 top-3 z-20 flex flex-wrap items-center justify-center gap-2 md:inset-x-4 md:top-4">
             {/* Temperature & Heat Index Pill */}
             <div className="flex items-center gap-2.5 rounded-2xl border border-white/20 bg-black/40 px-3.5 py-2 text-white shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-black/55">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-300 border border-amber-400/20">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-amber-400/20 bg-amber-500/20 text-amber-300">
                 <Thermometer className="size-4" />
               </div>
               <div className="flex flex-col leading-none">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-200/90">
+                <span className="text-[10px] font-extrabold tracking-wider text-amber-200/90 uppercase">
                   Temperature &amp; Heat Index
                 </span>
                 <div className="mt-0.5 flex items-baseline gap-1.5">
-                  <span className="text-sm font-black text-white tabular">
-                    {tempReading ? `${tempReading.value}${tempReading.unit || "°C"}` : "27.4°C"}
+                  <span className="tabular text-sm font-black text-white">
+                    {tempReading
+                      ? `${tempReading.value}${tempReading.unit || "°C"}`
+                      : "27.4°C"}
                   </span>
-                  <span className="text-[11px] font-bold text-amber-300/90 tabular">
-                    Feels {heatIndexReading ? `${heatIndexReading.value}${heatIndexReading.unit || "°C"}` : "31°C"}
+                  <span className="tabular text-[11px] font-bold text-amber-300/90">
+                    Peak heat{" "}
+                    {heatIndexReading
+                      ? `${heatIndexReading.value}${heatIndexReading.unit || "°C"}`
+                      : "31°C"}
                   </span>
                 </div>
               </div>
@@ -176,18 +195,18 @@ export async function HeroSection() {
 
             {/* Chance of Rain & Rainfall Pill */}
             <div className="flex items-center gap-2.5 rounded-2xl border border-white/20 bg-black/40 px-3.5 py-2 text-white shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-black/55">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-sky-500/20 text-sky-300 border border-sky-400/20">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-sky-400/20 bg-sky-500/20 text-sky-300">
                 <CloudRain className="size-4" />
               </div>
               <div className="flex flex-col leading-none">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-200/90">
+                <span className="text-[10px] font-extrabold tracking-wider text-sky-200/90 uppercase">
                   Rain Chance
                 </span>
                 <div className="mt-0.5 flex items-baseline gap-1.5">
-                  <span className="text-sm font-black text-white tabular">
+                  <span className="tabular text-sm font-black text-white">
                     {rainChanceValue !== undefined ? `${rainChanceValue}%` : "65%"}
                   </span>
-                  <span className="text-[11px] font-bold text-sky-200/90 tabular">
+                  <span className="tabular text-[11px] font-bold text-sky-200/90">
                     {rainReading ? `${rainReading.value} ${rainReading.unit}` : "12.6 mm"}
                   </span>
                 </div>
@@ -196,25 +215,25 @@ export async function HeroSection() {
 
             {/* River Level & Alert Pill */}
             <div className="flex items-center gap-2.5 rounded-2xl border border-white/20 bg-black/40 px-3.5 py-2 text-white shadow-xl backdrop-blur-md transition-all duration-200 hover:bg-black/55">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-400/20">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-emerald-400/20 bg-emerald-500/20 text-emerald-300">
                 <Waves className="size-4" />
               </div>
               <div className="flex flex-col leading-none">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-200/90">
+                <span className="text-[10px] font-extrabold tracking-wider text-emerald-200/90 uppercase">
                   River Level
                 </span>
                 <div className="mt-0.5 flex items-baseline gap-1.5">
-                  <span className="text-sm font-black text-white tabular">
-                    {river.reading ? `${river.reading.value} ${river.reading.unit}` : "23.1 m"}
+                  <span className="tabular text-sm font-black text-white">
+                    {river.reading
+                      ? `${river.reading.value} ${river.reading.unit}`
+                      : "23.1 m"}
                   </span>
                   {river.alert_level > 0 ? (
-                    <span className="rounded bg-amber-500/90 px-1.5 py-0.5 text-[9px] font-black uppercase text-white">
+                    <span className="rounded bg-amber-500/90 px-1.5 py-0.5 text-[9px] font-black text-white uppercase">
                       Lvl {river.alert_level}
                     </span>
                   ) : (
-                    <span className="text-[10px] font-bold text-emerald-300">
-                      Normal
-                    </span>
+                    <span className="text-[10px] font-bold text-emerald-300">Normal</span>
                   )}
                 </div>
               </div>

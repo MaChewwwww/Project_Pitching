@@ -74,8 +74,9 @@ for one.
 `src/modules/alerts/` is the reference content module for future portal-managed articles. Its
 `router.py` exposes public list/detail/active reads and role-checked admin list/detail/create/update,
 image, ordering, and deactivation operations; `schemas.py` defines separate public and admin DTOs;
-`service.py` owns publication validation, ordered gallery rules, deactivation filtering, and audit
-writes; `models.py` maps the announcement and entity-specific image tables.
+`service.py` owns publication validation, ordered gallery rules, deactivation filtering, threshold
+prompt acknowledgement/deletion rules, and audit writes; `models.py` maps the announcement,
+prompt, and entity-specific image tables.
 
 The admin DELETE route is deliberately a soft deactivation (`deactivated_at`), never a physical
 delete. Public list, detail, and active-banner queries exclude deactivated rows. Publication status

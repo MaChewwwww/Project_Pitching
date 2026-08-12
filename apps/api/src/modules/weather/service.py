@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,6 +34,7 @@ from src.modules.weather.schemas import (
 CURRENT_METRICS = ("temperature", "rainfall", "humidity", "heat_index")
 
 DEFAULT_STALE_MINUTES = 45
+LOCAL_WEATHER_ZONE = ZoneInfo("Asia/Manila")
 
 
 def _stale_after_minutes() -> int:
@@ -66,13 +68,41 @@ async def _latest_reading(session: AsyncSession, metric: str) -> Reading | None:
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
+async def _highest_reading_today(
+    session: AsyncSession, metric: str, *, now: datetime
+) -> Reading | None:
+    """Return today's peak metric using the barangay's local calendar day."""
+    local_start = now.astimezone(LOCAL_WEATHER_ZONE).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    stmt = (
+        select(Reading)
+        .where(
+            Reading.metric == metric,
+            Reading.observed_at >= local_start.astimezone(UTC),
+            Reading.observed_at <= now,
+        )
+        .order_by(Reading.value.desc(), Reading.observed_at.desc())
+        .limit(1)
+    )
+    return (await session.execute(stmt)).scalar_one_or_none()
+
+
 async def get_weather_current(session: AsyncSession) -> PublicWeatherCurrent:
     stale_after = _stale_after_minutes()
     now = datetime.now(UTC)
 
     readings: list[PublicReading] = []
     for metric in CURRENT_METRICS:
-        row = await _latest_reading(session, metric)
+        row = (
+            await _highest_reading_today(session, metric, now=now)
+            if metric == "heat_index"
+            else await _latest_reading(session, metric)
+        )
+        # Keep the last known heat index visible just after midnight, before a
+        # new local-day observation has been ingested.
+        if row is None:
+            row = await _latest_reading(session, metric)
         if row is not None:
             readings.append(_to_public(row, stale_after_minutes=stale_after, now=now))
 

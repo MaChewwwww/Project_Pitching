@@ -26,6 +26,7 @@ import { Card, CardContent } from "@/components/common/card";
 import { Badge } from "@/components/common/badge";
 import { EmptyState } from "@/components/common/empty-state";
 import { ErrorState } from "@/components/common/error-state";
+import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
 import { RiverLevelPanel } from "@/components/features/weather/river-level-panel";
 import { WeatherPanel } from "@/components/features/weather/weather-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -80,7 +81,7 @@ const fields: AdminField[] = [
     type: "select",
     options: metrics.map((metric) => ({
       value: metric,
-      label: metric.replace(/_/g, " "),
+      label: metric.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
     })),
   },
   { name: "value", label: "Value", type: "number" },
@@ -157,6 +158,14 @@ function OverviewPanel({
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="border-b border-neutral-200 pb-3">
+        <h2 className="text-h3 text-neutral-900">Weather &amp; River Level</h2>
+        <p className="text-body-sm text-neutral-600">
+          Monitor real-time weather metrics and the DOST-PAGASA Montalban river gauge.
+          These cached readings are the same ones shown to San Jose residents on the
+          public weather page.
+        </p>
+      </div>
       <div className="grid gap-4 xl:grid-cols-[1.45fr_0.85fr]">
         <WeatherPanel weather={weather} />
         <RiverLevelPanel river={river} density="compact" />
@@ -289,7 +298,9 @@ function ThresholdReviewPanel({
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "alert-prompts"],
     queryFn: () =>
-      api.get<AlertPrompt[]>("/admin/alert-prompts").then((response) => response.data),
+      api
+        .get<AlertPrompt[]>("/admin/alert-prompts?unresolved_only=false")
+        .then((response) => response.data),
     enabled: isAdmin,
     refetchInterval: 60_000,
   });
@@ -298,6 +309,15 @@ function ThresholdReviewPanel({
     mutationFn: (id: string) => api.post(`/admin/alert-prompts/${id}/acknowledge`),
     onSuccess: () => {
       toast.success("Prompt acknowledged");
+      queryClient.invalidateQueries({ queryKey: ["admin", "alert-prompts"] });
+    },
+    onError: (error) => toast.error(toDisplayError(error).detail),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/admin/alert-prompts/${id}`),
+    onSuccess: () => {
+      toast.success("Prompt deleted");
       queryClient.invalidateQueries({ queryKey: ["admin", "alert-prompts"] });
     },
     onError: (error) => toast.error(toDisplayError(error).detail),
@@ -335,6 +355,7 @@ function ThresholdReviewPanel({
   }
 
   const prompts = data ?? [];
+  const pendingCount = prompts.filter((prompt) => !prompt.acknowledged_at).length;
   if (prompts.length === 0) {
     return (
       <Card>
@@ -366,8 +387,10 @@ function ThresholdReviewPanel({
               itself.
             </p>
           </div>
-          <Badge tone="warning" icon={AlertCircle}>
-            {prompts.length} awaiting review
+          <Badge tone={pendingCount > 0 ? "warning" : "success"} icon={AlertCircle}>
+            {pendingCount > 0
+              ? `${pendingCount} awaiting review`
+              : "All prompts reviewed"}
           </Badge>
         </div>
 
@@ -389,7 +412,9 @@ function ThresholdReviewPanel({
                     </span>
                   </div>
                   <p className="text-caption mt-1 text-neutral-500">
-                    Detected {formatPhtDateTime(prompt.created_at)}
+                    {prompt.acknowledged_at
+                      ? `Acknowledged ${formatPhtDateTime(prompt.acknowledged_at)}`
+                      : `Detected ${formatPhtDateTime(prompt.created_at)}`}
                     {prompt.reading_id ? ` · Reading #${prompt.reading_id}` : ""}
                   </p>
                 </div>
@@ -398,18 +423,35 @@ function ThresholdReviewPanel({
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={acknowledgeMutation.isPending}
+                  disabled={
+                    Boolean(prompt.acknowledged_at) || acknowledgeMutation.isPending
+                  }
                   onClick={() => acknowledgeMutation.mutate(prompt.id)}
                 >
                   <Check aria-hidden className="size-4" />
-                  Acknowledge
+                  {prompt.acknowledged_at ? "Acknowledged" : "Acknowledge"}
                 </Button>
-                <Button asChild size="sm" className="bg-emerald-700 hover:bg-emerald-800">
-                  <Link href="/admin/announcements/create-announcement?kind=alert">
-                    Create alert
-                    <ChevronRight aria-hidden className="size-4" />
-                  </Link>
-                </Button>
+                {!prompt.acknowledged_at ? (
+                  <ConfirmDeleteButton
+                    itemLabel="this threshold prompt"
+                    actionLabel="Delete false prompt"
+                    onConfirm={() => deleteMutation.mutate(prompt.id)}
+                  />
+                ) : null}
+                {prompt.resulted_in_announcement_id ? (
+                  <Badge tone="success">Alert created</Badge>
+                ) : (
+                  <Button
+                    asChild
+                    size="sm"
+                    className="bg-emerald-700 hover:bg-emerald-800"
+                  >
+                    <Link href="/admin/announcements/create-announcement?kind=alert">
+                      Create alert
+                      <ChevronRight aria-hidden className="size-4" />
+                    </Link>
+                  </Button>
+                )}
               </div>
             </article>
           ))}
@@ -435,10 +477,14 @@ export default function AdminReadingsPage() {
   const { data: promptData } = useQuery({
     queryKey: ["admin", "alert-prompts"],
     queryFn: () =>
-      api.get<AlertPrompt[]>("/admin/alert-prompts").then((response) => response.data),
+      api
+        .get<AlertPrompt[]>("/admin/alert-prompts?unresolved_only=false")
+        .then((response) => response.data),
     enabled: canReview,
     refetchInterval: 60_000,
   });
+  const pendingPromptCount =
+    promptData?.filter((prompt) => !prompt.acknowledged_at).length ?? 0;
 
   const {
     data: weather,
@@ -507,9 +553,9 @@ export default function AdminReadingsPage() {
               >
                 <TabIcon icon={ClipboardCheck} />
                 Threshold Review
-                {promptData ? (
+                {pendingPromptCount > 0 ? (
                   <span className="ml-0.5 min-w-5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] leading-none font-bold text-amber-900">
-                    {promptData.length}
+                    {pendingPromptCount}
                   </span>
                 ) : null}
               </TabsTrigger>

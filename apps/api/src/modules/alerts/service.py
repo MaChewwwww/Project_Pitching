@@ -498,6 +498,8 @@ async def acknowledge_alert_prompt(
     prompt = await session.get(AlertPrompt, prompt_id)
     if prompt is None:
         raise NotFoundError("Alert prompt not found.")
+    if prompt.acknowledged_at is not None:
+        raise ConflictError("Alert prompt is already acknowledged.")
     prompt.acknowledged_by_user_id, prompt.acknowledged_at = actor_id, datetime.now(UTC)
     prompt.resulted_in_announcement_id = resulted_in_announcement_id
     await write_audit(
@@ -507,4 +509,23 @@ async def acknowledge_alert_prompt(
         entity_type="alert_prompt",
         entity_id=prompt.id,
     )
+    await session.commit()
+
+
+async def delete_alert_prompt(
+    session: AsyncSession, prompt_id: uuid.UUID, *, actor_id: uuid.UUID
+) -> None:
+    prompt = await session.get(AlertPrompt, prompt_id)
+    if prompt is None:
+        raise NotFoundError("Alert prompt not found.")
+    if prompt.acknowledged_at is not None:
+        raise ConflictError("Acknowledged alert prompts cannot be deleted.")
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="alert_prompt.delete",
+        entity_type="alert_prompt",
+        entity_id=prompt.id,
+    )
+    await session.delete(prompt)
     await session.commit()

@@ -165,7 +165,7 @@ async def admin_deactivate_announcement(
 @admin_router.get(
     "/alert-prompts",
     dependencies=[Depends(require_role("admin"))],
-    summary="Threshold breaches awaiting a decision (FR-WX-009)",
+    summary="Threshold prompt history, optionally unresolved-only (FR-WX-009)",
 )
 async def admin_list_alert_prompts(
     session: DbSessionDep, unresolved_only: bool = True
@@ -190,4 +190,16 @@ async def admin_acknowledge_alert_prompt(
         actor_id=user.id,
         resulted_in_announcement_id=resulted_in_announcement_id,
     )
+    return {"ok": True}
+
+
+@admin_router.delete(
+    "/alert-prompts/{prompt_id}",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Delete an unacknowledged false-positive threshold prompt",
+)
+async def admin_delete_alert_prompt(
+    prompt_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> dict[str, bool]:
+    await service.delete_alert_prompt(session, prompt_id, actor_id=user.id)
     return {"ok": True}

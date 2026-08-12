@@ -342,7 +342,7 @@ Splitting by tier rather than by resource means a public endpoint cannot acciden
 
 ```
 GET  /public/announcements
-GET  /public/weather/current
+GET  /public/weather/current       current metrics (today's local-day peak for heat index) and forecast
 GET  /public/river-level
 GET  /public/evacuation-centers
 GET  /public/hotlines
@@ -425,7 +425,9 @@ GET   /admin/incident-reports        implemented — list incident reports (FR-S
 PATCH /admin/incident-reports/{id}   implemented — verify or dismiss report
 POST  /admin/alerts
 DELETE /admin/alerts/{id}
-GET   /admin/alert-prompts           threshold breaches awaiting a decision (surfaced in the Weather Watch workspace)
+GET   /admin/alert-prompts           threshold prompt history, optionally unresolved-only (surfaced in the Weather Watch workspace)
+POST  /admin/alert-prompts/{id}/acknowledge  record the human review decision
+DELETE /admin/alert-prompts/{id}     remove an unacknowledged false-positive prompt
 POST  /admin/readings                manual river/weather reading (FR-WX-007); river crossings create a prompt, never a public alert
 GET   /admin/evacuation-centers
 POST  /admin/evacuation-centers/{id}/checkins
@@ -445,7 +447,9 @@ PUT   /admin/config/{key}           legacy/internal settings write (not linked i
 /admin/donation-drives        POST, GET, PATCH        (+ nested drive_need)
 /admin/flood-events            POST, GET, PATCH, DELETE
 /admin/areas                    GET, PATCH             (internal reference data; not linked in the console)
-GET   /admin/alert-prompts      threshold breaches awaiting a decision (FR-WX-009; embedded in `/admin/readings`)
+GET   /admin/alert-prompts      threshold prompt history with optional unresolved filter (FR-WX-009; embedded in `/admin/readings`)
+POST  /admin/alert-prompts/{id}/acknowledge  keep the reviewed prompt in history
+DELETE /admin/alert-prompts/{id}  delete only an unacknowledged false-positive prompt
 ```
 
 The deployed donation-drive CRUD still exposes legacy nested `drive_need` data. D-16 retires
