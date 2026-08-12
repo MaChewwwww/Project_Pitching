@@ -342,7 +342,7 @@ Splitting by tier rather than by resource means a public endpoint cannot acciden
 
 ```
 GET  /public/announcements
-GET  /public/weather/current       current metrics (today's local-day peak for heat index) and forecast
+GET  /public/weather/current       current metrics, today's rainfall/heat-index peaks, and forecast
 GET  /public/river-level
 GET  /public/evacuation-centers
 GET  /public/hotlines

@@ -150,6 +150,7 @@ export async function getWeatherCurrent(): Promise<PublicWeatherCurrent> {
     logDegraded("/public/weather/current", error);
     return {
       readings: [],
+      peak_readings: [],
       observed_at: null,
       source: null,
       is_stale: false,

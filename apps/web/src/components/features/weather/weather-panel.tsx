@@ -13,11 +13,7 @@ import {
 import { Card, CardContent } from "@/components/common/card";
 import { DataFreshness } from "@/components/common/data-freshness";
 import { cn } from "@/lib/utils";
-import type {
-  PublicReading,
-  PublicWeatherCurrent,
-  ReadingMetric,
-} from "@/lib/api/public-types";
+import type { PublicWeatherCurrent, ReadingMetric } from "@/lib/api/public-types";
 
 /**
  * Current conditions and dual-metric hourly forecast (FR-PUB-004, FR-WX-001/002).
@@ -152,9 +148,18 @@ export function WeatherPanel({
 
   const hourlyForecast = Array.from(hourlyMap.values()).slice(0, 6);
   const peakRainfall = Math.max(...hourlyForecast.map((f) => f.rainfall), 1);
-  const standardReadings = weather.readings.filter(
-    (r) => r.metric !== "tcws_signal" && r.metric !== "river_level",
+  const readingsByMetric = new Map(
+    weather.readings.map((reading) => [reading.metric, reading]),
   );
+  const peaksByMetric = new Map(
+    weather.peak_readings.map((reading) => [reading.metric, reading]),
+  );
+  const standardReadings = (
+    ["temperature", "rainfall", "humidity", "heat_index"] as const
+  ).flatMap((metric) => {
+    const reading = readingsByMetric.get(metric);
+    return reading ? [{ reading, peak: peaksByMetric.get(metric) }] : [];
+  });
 
   return (
     <Card
@@ -166,15 +171,24 @@ export function WeatherPanel({
     >
       <CardContent className="flex h-full flex-col gap-4">
         {/* Metric Cards Grid */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {standardReadings.map((reading: PublicReading) => {
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-[0.82fr_0.82fr_1.18fr_1.18fr]">
+          {standardReadings.map(({ reading, peak }) => {
             const meta = METRIC_META[reading.metric];
             const Icon = meta.icon;
+            const orderClass: Partial<Record<ReadingMetric, string>> = {
+              temperature: "order-1 xl:order-1",
+              rainfall: "order-2 xl:order-3",
+              humidity: "order-3 xl:order-2",
+              heat_index: "order-4 xl:order-4",
+            };
+            const hasPeak =
+              reading.metric === "rainfall" || reading.metric === "heat_index";
             return (
               <div
                 key={reading.id}
                 className={cn(
-                  "flex flex-col gap-1.5 rounded-xl border p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm",
+                  "flex min-w-0 flex-col gap-1.5 rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm sm:p-3.5",
+                  orderClass[reading.metric],
                   meta.bg,
                 )}
               >
@@ -182,12 +196,41 @@ export function WeatherPanel({
                   <Icon aria-hidden className={cn("size-4", meta.color)} />
                   {meta.label}
                 </span>
-                <span className="text-h2 tabular font-black text-neutral-900">
-                  {reading.value}
-                  <span className="text-body ml-1 font-normal text-neutral-500">
-                    {reading.unit}
+                {hasPeak ? (
+                  <div className="flex items-end justify-between gap-2">
+                    <div className="min-w-0 rounded-lg bg-white/75 px-2 py-1.5 ring-1 ring-black/5">
+                      <span className="text-caption block font-semibold text-neutral-500">
+                        Current
+                      </span>
+                      <span className="text-h2 tabular block truncate font-black text-neutral-950">
+                        {reading.value}
+                        <span className="text-body ml-1 font-normal text-neutral-500">
+                          {reading.unit}
+                        </span>
+                      </span>
+                    </div>
+                    <div className="min-w-0 border-l border-black/10 pl-2 text-right sm:pl-3">
+                      <span className="text-caption block font-semibold whitespace-nowrap text-neutral-500">
+                        Peak today
+                      </span>
+                      <span className="text-h3 tabular block truncate font-bold text-neutral-800">
+                        {peak ? peak.value : "—"}
+                        {peak ? (
+                          <span className="text-body ml-1 font-normal text-neutral-500">
+                            {peak.unit}
+                          </span>
+                        ) : null}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <span className="text-h2 tabular font-black text-neutral-900">
+                    {reading.value}
+                    <span className="text-body ml-1 font-normal text-neutral-500">
+                      {reading.unit}
+                    </span>
                   </span>
-                </span>
+                )}
               </div>
             );
           })}

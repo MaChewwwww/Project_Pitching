@@ -26,7 +26,7 @@ export async function HeroSection() {
   ]);
 
   const tempReading = weather.readings.find((r) => r.metric === "temperature");
-  const heatIndexReading = weather.readings.find((r) => r.metric === "heat_index");
+  const heatIndexPeak = weather.peak_readings.find((r) => r.metric === "heat_index");
   const rainReading = weather.readings.find((r) => r.metric === "rainfall");
   const rainChanceForecast = weather.forecast.find(
     (f) => f.metric === "precipitation_probability",
@@ -185,8 +185,8 @@ export async function HeroSection() {
                   </span>
                   <span className="tabular text-[11px] font-bold text-amber-300/90">
                     Peak heat{" "}
-                    {heatIndexReading
-                      ? `${heatIndexReading.value}${heatIndexReading.unit || "°C"}`
+                    {heatIndexPeak
+                      ? `${heatIndexPeak.value}${heatIndexPeak.unit || "°C"}`
                       : "31°C"}
                   </span>
                 </div>

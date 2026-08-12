@@ -468,6 +468,8 @@ export interface PublicForecastPoint {
 export interface PublicWeatherCurrent {
   /** The latest reading per metric. */
   readings: PublicReading[];
+  /** Today's highest observed rainfall and heat-index readings. */
+  peak_readings: PublicReading[];
   /**
    * derived — the representative observation time for the set.
    *

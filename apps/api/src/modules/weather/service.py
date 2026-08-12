@@ -94,17 +94,15 @@ async def get_weather_current(session: AsyncSession) -> PublicWeatherCurrent:
 
     readings: list[PublicReading] = []
     for metric in CURRENT_METRICS:
-        row = (
-            await _highest_reading_today(session, metric, now=now)
-            if metric == "heat_index"
-            else await _latest_reading(session, metric)
-        )
-        # Keep the last known heat index visible just after midnight, before a
-        # new local-day observation has been ingested.
-        if row is None:
-            row = await _latest_reading(session, metric)
+        row = await _latest_reading(session, metric)
         if row is not None:
             readings.append(_to_public(row, stale_after_minutes=stale_after, now=now))
+
+    peak_readings: list[PublicReading] = []
+    for metric in ("rainfall", "heat_index"):
+        row = await _highest_reading_today(session, metric, now=now)
+        if row is not None:
+            peak_readings.append(_to_public(row, stale_after_minutes=stale_after, now=now))
 
     forecast_rows = (
         (
@@ -133,7 +131,12 @@ async def get_weather_current(session: AsyncSession) -> PublicWeatherCurrent:
 
     if not readings:
         return PublicWeatherCurrent(
-            readings=[], observed_at=None, source=None, is_stale=False, forecast=forecast
+            readings=[],
+            peak_readings=peak_readings,
+            observed_at=None,
+            source=None,
+            is_stale=False,
+            forecast=forecast,
         )
 
     observed_at = max(r.observed_at for r in readings)
@@ -142,6 +145,7 @@ async def get_weather_current(session: AsyncSession) -> PublicWeatherCurrent:
     source = max(set(sources), key=sources.count)
     return PublicWeatherCurrent(
         readings=readings,
+        peak_readings=peak_readings,
         observed_at=observed_at,
         source=source,
         is_stale=any(r.is_stale for r in readings),

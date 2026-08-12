@@ -52,6 +52,7 @@ class PublicForecastPoint(BaseModel):
 
 class PublicWeatherCurrent(BaseModel):
     readings: list[PublicReading]
+    peak_readings: list[PublicReading]
     observed_at: datetime | None
     source: ReadingSource | None
     is_stale: bool

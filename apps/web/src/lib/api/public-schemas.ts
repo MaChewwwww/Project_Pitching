@@ -327,6 +327,7 @@ export const publicForecastPointSchema = z.object({
 
 export const publicWeatherCurrentSchema = z.object({
   readings: z.array(publicReadingSchema),
+  peak_readings: z.array(publicReadingSchema),
   observed_at: z.string().nullable(),
   source: publicReadingSchema.shape.source.nullable(),
   is_stale: z.boolean(),

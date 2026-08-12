@@ -52,8 +52,9 @@ The workspace deliberately reuses the public `WeatherPanel`, `RiverLevelPanel`, 
 `AlertLevelIndicator` components so staff and residents read the same cached measurements. API access
 still enforces the role boundary: BHW may record readings, while only admin/superadmin can review prompts,
 acknowledge or delete unacknowledged prompts, or run the typhoon demo sequence.
-The current heat-index reading is the highest observed value for the current Asia/Manila calendar day,
-falling back to the latest known value just after midnight until a new reading arrives.
+The weather panel shows the latest current reading for each metric. It also shows today's highest
+observed rainfall and heat-index readings from the Asia/Manila calendar day; a peak stays blank until
+that day has a matching observation.
 
 ## Rendering strategy, per surface
 
