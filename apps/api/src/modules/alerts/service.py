@@ -89,13 +89,16 @@ async def _area_ids_by_announcement(
 
 
 def _is_active(a: Announcement, *, now: datetime) -> bool:
-    return (
+    if not (
         a.kind == "alert"
         and a.publication_status == "published"
         and a.published_at is not None
         and a.deactivated_at is None
         and (a.expires_at is None or a.expires_at > now)
-    )
+    ):
+        return False
+    # Only active if published within the last 24 hours (86,400 seconds)
+    return (now - a.published_at).total_seconds() <= 86400
 
 
 async def _to_public(

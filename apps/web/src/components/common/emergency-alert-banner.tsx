@@ -38,7 +38,17 @@ export function EmergencyAlertBanner({
   primaryHotline,
   hotlines,
 }: EmergencyAlertBannerProps) {
-  const activeAlert = alert && alert.is_active ? alert : null;
+  // An alert banner is only displayed within 24 hours after publishing.
+  const nowTimestamp = React.useMemo(() => Date.now(), []);
+  const activeAlert = React.useMemo(() => {
+    if (!alert || !alert.is_active) return null;
+    if (!alert.published_at) return alert;
+    const pubDate = new Date(alert.published_at).getTime();
+    if (isNaN(pubDate)) return alert;
+    const diffMs = nowTimestamp - pubDate;
+    return diffMs >= 0 && diffMs <= 24 * 60 * 60 * 1000 ? alert : null;
+  }, [alert, nowTimestamp]);
+
   if (!activeAlert && !emergencyEvent) return null;
 
   // Severity determines the urgency palette (info = Yellow, warning = Orange, emergency = Red).
