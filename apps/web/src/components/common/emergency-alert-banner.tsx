@@ -86,24 +86,12 @@ export function EmergencyAlertBanner({
       role="alert"
       aria-live="assertive"
       aria-atomic="true"
-      className={cn(
-        "border-b shadow-md transition-all relative z-20 opacity-100",
-        severity === "info"
-          ? "bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 border-amber-500 text-amber-950"
-          : severity === "warning"
-          ? "bg-gradient-to-r from-orange-500 via-amber-600 to-orange-600 border-orange-700 text-white"
-          : "bg-gradient-to-r from-red-700 via-red-600 to-rose-700 border-red-800 text-white"
-      )}
+      className="border-b border-red-700 bg-gradient-to-r from-red-700 via-red-600 to-rose-700 text-white shadow-md relative z-20 opacity-100"
     >
       <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-6">
         {/* Left / Center Content */}
         <div className="flex min-w-0 flex-1 items-center gap-3.5">
-          <span
-            className={cn(
-              "grid size-10 shrink-0 place-items-center rounded-xl shadow-xs",
-              severity === "info" ? "bg-amber-950/15 text-amber-950" : "bg-white/20 text-white"
-            )}
-          >
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/20 text-white shadow-xs">
             <TriangleAlert
               aria-hidden
               className="size-5 motion-safe:animate-pulse"
@@ -117,34 +105,17 @@ export function EmergencyAlertBanner({
                 {title}
               </span>
               {!/level/i.test(title) ? (
-                <span
-                  className={cn(
-                    "text-overline shrink-0 rounded-md border px-2 py-0.5 font-bold tracking-wider uppercase",
-                    severity === "info"
-                      ? "border-amber-900/30 bg-amber-950 text-white"
-                      : "border-white/25 bg-white/25 text-white"
-                  )}
-                >
+                <span className="text-overline shrink-0 rounded-md border border-white/30 bg-white/20 px-2 py-0.5 font-bold tracking-wider text-white uppercase">
                   {levelText}
                 </span>
               ) : null}
-              <span
-                className={cn(
-                  "text-caption hidden font-medium lg:inline-block",
-                  severity === "info" ? "text-amber-900/80" : "text-white/80"
-                )}
-              >
+              <span className="text-caption hidden font-medium text-white/80 lg:inline-block">
                 • {meta}
               </span>
             </div>
 
             {instruction ? (
-              <p
-                className={cn(
-                  "text-body-sm line-clamp-1 leading-snug font-medium",
-                  severity === "info" ? "text-amber-950 font-semibold" : "text-white/95"
-                )}
-              >
+              <p className="text-body-sm line-clamp-1 leading-snug font-medium text-white/95">
                 {instruction}
               </p>
             ) : null}
@@ -161,9 +132,7 @@ export function EmergencyAlertBanner({
                   className={cn(
                     "inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 sm:w-auto",
                     "text-label shadow-sm-card font-bold transition-all duration-200 hover:scale-105 focus-visible:ring-3 focus-visible:outline-none",
-                    severity === "info"
-                      ? "bg-amber-950 text-white hover:bg-black focus-visible:ring-amber-950/50"
-                      : "bg-neutral-900 text-white hover:bg-black focus-visible:ring-white/50"
+                    "bg-white text-red-700 hover:bg-neutral-100 focus-visible:ring-white/50"
                   )}
                 >
                   <Phone aria-hidden className="size-4" strokeWidth={2.5} />
