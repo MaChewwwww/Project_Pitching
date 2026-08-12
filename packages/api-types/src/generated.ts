@@ -840,7 +840,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Threshold breaches awaiting a decision (FR-WX-009) */
+        /** Threshold prompt history, optionally unresolved-only (FR-WX-009) */
         get: operations["admin_list_alert_prompts_api_v1_admin_alert_prompts_get"];
         put?: never;
         post?: never;
@@ -862,6 +862,23 @@ export interface paths {
         /** Acknowledge a threshold breach — publishing an alert is a separate, explicit act */
         post: operations["admin_acknowledge_alert_prompt_api_v1_admin_alert_prompts__prompt_id__acknowledge_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/alert-prompts/{prompt_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an unacknowledged false-positive threshold prompt */
+        delete: operations["admin_delete_alert_prompt_api_v1_admin_alert_prompts__prompt_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1329,7 +1346,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all admin-editable settings */
+        /** List legacy internal settings */
         get: operations["admin_list_config_api_v1_admin_config_get"];
         put?: never;
         post?: never;
@@ -1347,7 +1364,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Edit a setting */
+        /** Edit a legacy setting */
         put: operations["admin_set_config_api_v1_admin_config__key__put"];
         post?: never;
         delete?: never;
@@ -1750,6 +1767,11 @@ export interface components {
             images: components["schemas"]["ArticleImageOut"][];
             /** Area Ids */
             area_ids: string[];
+            /**
+             * Publication Status
+             * @enum {string}
+             */
+            publication_status: "draft" | "published" | "archived";
         };
         /** AlertPromptOut */
         AlertPromptOut: {
@@ -1968,10 +1990,6 @@ export interface components {
             id: string;
             /** Url */
             url: string;
-            /** Alt Text */
-            alt_text: string;
-            /** Caption */
-            caption: string | null;
             /** Sort Order */
             sort_order: number;
             /** Is Cover */
@@ -1979,10 +1997,6 @@ export interface components {
         };
         /** ArticleImagePatch */
         ArticleImagePatch: {
-            /** Alt Text */
-            alt_text?: string | null;
-            /** Caption */
-            caption?: string | null;
             /** Is Cover */
             is_cover?: boolean | null;
         };
@@ -5543,6 +5557,39 @@ export interface operations {
             query?: {
                 resulted_in_announcement_id?: string | null;
             };
+            header?: never;
+            path: {
+                prompt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_delete_alert_prompt_api_v1_admin_alert_prompts__prompt_id__delete: {
+        parameters: {
+            query?: never;
             header?: never;
             path: {
                 prompt_id: string;
