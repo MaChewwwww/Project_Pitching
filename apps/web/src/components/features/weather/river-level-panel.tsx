@@ -74,47 +74,59 @@ export function RiverLevelPanel({
       className={cn(
         "h-full border border-neutral-200/80 shadow-sm transition-all duration-300 hover:shadow-md",
         compact && "[--card-spacing:--spacing(4)]",
-        className
+        className,
       )}
     >
-      <CardContent className={cn("flex h-full flex-col justify-between gap-5", compact ? "gap-2.5" : "gap-5")}>
+      <CardContent
+        className={cn(
+          "flex h-full flex-col justify-between gap-5",
+          compact ? "gap-2.5" : "gap-5",
+        )}
+      >
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-2">
             <span
               className={cn(
-                "text-overline inline-flex items-center gap-1.5 font-bold uppercase tracking-wider",
-                onDark ? "text-primary-300" : "text-emerald-800"
+                "text-overline inline-flex items-center gap-1.5 font-bold tracking-wider uppercase",
+                onDark ? "text-primary-300" : "text-emerald-800",
               )}
             >
-              <Waves aria-hidden className="size-4 text-emerald-600 animate-pulse" />
+              <Waves aria-hidden className="size-4 animate-pulse text-emerald-600" />
               River Level Gauge
             </span>
-            <StatusBadge kind="alert" level={river.alert_level} className="shrink-0 shadow-xs" />
+            <StatusBadge
+              kind="alert"
+              level={river.alert_level}
+              className="shrink-0 shadow-xs"
+            />
           </div>
 
           {/* Dynamic Measurement Banner matching active alert stage */}
           <div
             className={cn(
               "flex items-baseline gap-2 rounded-2xl border p-4 transition-all duration-300",
-              onDark ? "border-white/10 bg-white/10" : theme.bg
+              onDark ? "border-white/10 bg-white/10" : theme.bg,
             )}
           >
             <span
               className={cn(
                 "tabular font-black tracking-tight",
                 compact ? "text-display-md" : "text-display-lg",
-                onDark ? "text-white" : theme.val
+                onDark ? "text-white" : theme.val,
               )}
             >
               {reading.value}
             </span>
             <span
-              className={cn("text-h2 font-bold", onDark ? "text-primary-200" : theme.unit)}
+              className={cn(
+                "text-h2 font-bold",
+                onDark ? "text-primary-200" : theme.unit,
+              )}
             >
               {reading.unit}
             </span>
             {reading.station ? (
-              <span className="ml-auto text-caption font-semibold text-neutral-500 max-sm:hidden">
+              <span className="text-caption ml-auto font-semibold text-neutral-500 max-sm:hidden">
                 {reading.station}
               </span>
             ) : null}
@@ -124,7 +136,7 @@ export function RiverLevelPanel({
             <p
               className={cn(
                 "text-caption border-warning-border bg-warning-bg/60 rounded-xl border p-2.5 font-medium",
-                onDark ? "text-neutral-800" : "text-neutral-700"
+                onDark ? "text-neutral-800" : "text-neutral-700",
               )}
             >
               Showing the last reading we received. The gauge has not reported since.
@@ -137,11 +149,16 @@ export function RiverLevelPanel({
             thresholds={river.thresholds}
             onDark={onDark}
             explainMissingThresholds={!compact}
-            showDescription={!compact}
+            showDescription
           />
         </div>
 
-        <div className={cn("mt-auto flex flex-col pt-2 border-t border-neutral-100", compact ? "gap-1 pt-0.5" : "gap-2")}>
+        <div
+          className={cn(
+            "mt-auto flex flex-col border-t border-neutral-100 pt-2",
+            compact ? "gap-1 pt-0.5" : "gap-2",
+          )}
+        >
           <DataFreshness
             observedAt={reading.observed_at}
             source={reading.source}

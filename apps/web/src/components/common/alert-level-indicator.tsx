@@ -36,14 +36,16 @@ const SEGMENTS = [
   {
     level: 2 as const,
     label: "Evacuate",
-    activeCard: "border-orange-400 bg-orange-50/90 text-orange-950 shadow-2xs ring-1 ring-orange-300/50",
+    activeCard:
+      "border-orange-400 bg-orange-50/90 text-orange-950 shadow-2xs ring-1 ring-orange-300/50",
     icon: AlertTriangle,
     key: "level_2_m" as const,
   },
   {
     level: 3 as const,
     label: "Critical",
-    activeCard: "border-red-500 bg-red-50/90 text-red-950 shadow-xs ring-1 ring-red-400/50",
+    activeCard:
+      "border-red-500 bg-red-50/90 text-red-950 shadow-xs ring-1 ring-red-400/50",
     icon: ShieldAlert,
     key: "level_3_m" as const,
   },
@@ -79,10 +81,10 @@ export function AlertLevelIndicator({
       {/* Unified Gauge Stage Container */}
       <div
         className={cn(
-          "flex flex-col gap-3 rounded-2xl border p-3.5 transition-all duration-300 shadow-2xs",
+          "flex flex-col gap-3 rounded-2xl border p-3.5 shadow-2xs transition-all duration-300",
           onDark
             ? "border-white/15 bg-gradient-to-b from-slate-900/80 to-slate-950/60"
-            : "border-neutral-200/90 bg-gradient-to-b from-slate-50/90 via-white to-slate-50/50"
+            : "border-neutral-200/90 bg-gradient-to-b from-slate-50/90 via-white to-slate-50/50",
         )}
         role="img"
         aria-label={
@@ -92,9 +94,9 @@ export function AlertLevelIndicator({
         }
       >
         {/* Continuous Multi-Color Gauge Track */}
-        <div className="relative w-full h-2.5 rounded-full bg-neutral-200/80 overflow-hidden">
+        <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-neutral-200/80">
           <div
-            className="h-full rounded-full transition-all duration-700 ease-out bg-gradient-to-r from-amber-400 via-orange-500 to-red-600"
+            className="h-full rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 transition-all duration-700 ease-out"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
@@ -110,34 +112,43 @@ export function AlertLevelIndicator({
               <div
                 key={segment.level}
                 className={cn(
-                  "flex flex-col justify-between gap-2 rounded-xl border p-2.5 transition-all duration-300 min-h-[68px]",
+                  "flex min-h-[68px] flex-col justify-between gap-2 rounded-xl border p-2.5 transition-all duration-300",
                   reached
                     ? segment.activeCard
                     : onDark
-                    ? "border-white/10 bg-white/5 text-neutral-400"
-                    : "border-neutral-200/60 bg-white/70 text-neutral-400"
+                      ? "border-white/10 bg-white/5 text-neutral-400"
+                      : "border-neutral-200/60 bg-white/70 text-neutral-400",
                 )}
               >
                 {/* Stage Header */}
-                <div className="flex items-center justify-between gap-1 w-full overflow-hidden">
-                  <span className="text-[10px] sm:text-[10.5px] font-extrabold uppercase tracking-tight whitespace-nowrap">
+                <div className="flex w-full items-center justify-between gap-1 overflow-hidden">
+                  <span className="text-[10px] font-extrabold tracking-tight whitespace-nowrap uppercase sm:text-[10.5px]">
                     {segment.label}
                   </span>
-                  {reached ? (
-                    <Icon className={cn("size-3.5 shrink-0 ml-auto text-current", isCurrent && "animate-pulse")} />
-                  ) : null}
+                  <Icon
+                    className={cn(
+                      "ml-auto size-3.5 shrink-0",
+                      reached
+                        ? "text-current"
+                        : onDark
+                          ? "text-neutral-500"
+                          : "text-neutral-300",
+                      isCurrent && "animate-pulse",
+                    )}
+                    aria-hidden
+                  />
                 </div>
 
                 {/* Threshold Height Value */}
                 {hasThresholds ? (
-                  <div className="flex items-baseline justify-between gap-1 w-full border-t border-neutral-200/50 pt-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 shrink-0">
+                  <div className="flex w-full items-baseline justify-between gap-1 border-t border-neutral-200/50 pt-1.5">
+                    <span className="shrink-0 text-[10px] font-semibold tracking-wider text-neutral-400 uppercase">
                       Height
                     </span>
                     <span
                       className={cn(
-                        "text-body tabular font-black tracking-tight ml-auto",
-                        reached ? "text-neutral-950" : "text-neutral-400"
+                        "text-body tabular ml-auto font-black tracking-tight",
+                        reached ? "text-neutral-950" : "text-neutral-400",
                       )}
                     >
                       {thresholds?.[segment.key] != null
@@ -155,8 +166,8 @@ export function AlertLevelIndicator({
         {showDescription ? (
           <p
             className={cn(
-              "text-caption leading-relaxed pt-0.5",
-              onDark ? "text-neutral-300" : "text-neutral-600"
+              "text-caption pt-0.5 leading-relaxed",
+              onDark ? "text-neutral-300" : "text-neutral-600",
             )}
           >
             {ALERT_PARAGRAPHS[level] ?? ALERT_PARAGRAPHS[0]}
@@ -168,7 +179,7 @@ export function AlertLevelIndicator({
         <p
           className={cn(
             "text-caption italic",
-            onDark ? "text-primary-100/70" : "text-neutral-500"
+            onDark ? "text-primary-100/70" : "text-neutral-500",
           )}
         >
           Threshold heights for this station are pending confirmation from the Rodriguez
@@ -178,5 +189,3 @@ export function AlertLevelIndicator({
     </div>
   );
 }
-
-
