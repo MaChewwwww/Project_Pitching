@@ -350,6 +350,7 @@ async def get_announcement_admin(
         body_json=row[0].body_json,
         images=[_image_out(i) for i in await _images(session, row[0].id)],
         area_ids=await _area_ids_by_announcement(session, row[0].id),
+        publication_status=row[0].publication_status,
     )
 
 
