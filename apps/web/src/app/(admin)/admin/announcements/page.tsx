@@ -73,7 +73,7 @@ export default function AdminAnnouncementsPage() {
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         title="Alerts & Advisories"
-        description="Publishing here is the only way a public alert reaches the site — nothing is ever automated (D-4)."
+        description="Create and manage alerts, advisories, and public announcements for Barangay San Jose."
         action={
           <Button
             asChild
