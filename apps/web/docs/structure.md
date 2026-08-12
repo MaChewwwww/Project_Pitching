@@ -32,6 +32,9 @@ responsive behaviour, preview, and media controls. Public `/announcements` and
 `/announcements/[slug]` remain read-only; admin deletion is a soft deactivation and deactivated
 records are excluded from public reads.
 
+The admin route set intentionally has no `/admin/areas` or `/admin/config` page. Those values are
+reference/service data consumed by operational screens, not standalone console workflows.
+
 ## Rendering strategy, per surface
 
 Chosen per surface rather than globally (`architecture.md` A-12):

@@ -7,7 +7,7 @@ import { AdminShell } from "./admin-shell";
 
 /**
  * Base gate for the whole `(admin)` route group — any staff role may enter the
- * console; individual screens (e.g. `/admin/config`) call `useRequireRole`
+ * console; individual screens call `useRequireRole`
  * again with a narrower list. Convenience only (FR-SYS-006) — see
  * `use-require-role.ts`.
  */

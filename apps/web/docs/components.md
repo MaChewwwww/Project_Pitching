@@ -135,6 +135,11 @@ The sidebar and the topbar breadcrumb read the same `ADMIN_CATEGORIES` array. Th
 of the module — when the sidebar owned the list privately, any route rename would have left the
 breadcrumb showing the old label with nothing to catch it.
 
+The category list intentionally excludes System & Setup. `/admin/areas` and `/admin/config` are
+not authoring screens: area boundaries are seeded reference geometry, and operational settings
+are service/deployment data. Feature pages may still read those API seams when they need area
+options or configured thresholds.
+
 `resolveAdminBreadcrumbs()` renders "Barangay Admin → Announcements & Alerts → Edit". A detail
 route's last segment is an opaque UUID, which is noise in a trail, so it reads as the verb the
 page performs instead of the id. The topbar previously showed a static "Barangay San Jose /

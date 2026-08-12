@@ -282,6 +282,10 @@ Body and below do **not** shrink on mobile. Only display and heading sizes scale
 | Between cards      | `16px`                      | `32px`                              |
 | Between sections   | `32px`                      | `48px`                              |
 
+The admin sidebar is an operational navigation surface, not a database browser. It intentionally
+has no System & Setup category: seeded area boundaries and service configuration are internal
+data seams, while deployment-owned settings belong in the environment profile.
+
 Full responsive behaviour in Section 9.3.
 
 ### Radius

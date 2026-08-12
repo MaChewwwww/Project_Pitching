@@ -15,7 +15,6 @@ import {
   MapPin,
   Megaphone,
   Phone,
-  Settings,
   ShieldAlert,
   ShieldCheck,
   Siren,
@@ -96,15 +95,6 @@ export const ADMIN_CATEGORIES: AdminNavCategory[] = [
       { href: "/admin/activities" as Route, label: "Activities & Programs", icon: Activity },
       { href: "/admin/guides" as Route, label: "Preparedness Guidelines", icon: BookOpen },
       { href: "/admin/faqs" as Route, label: "Frequently Asked Questions", icon: HelpCircle },
-    ],
-  },
-  {
-    id: "system",
-    title: "System & Setup",
-    icon: Settings,
-    items: [
-      { href: "/admin/areas" as Route, label: "Barangay Areas / Zones", icon: MapPin },
-      { href: "/admin/config" as Route, label: "Settings & Thresholds", icon: Settings },
     ],
   },
 ];

@@ -249,7 +249,10 @@ erDiagram
 
 Every reading surfaced to a user carries `source` and `observed_at` (FR-WX-010). A value without an age is never rendered.
 
-**`config`** — typed key/value for admin-editable settings: barangay population and household totals, alert thresholds, staleness windows. Keeps FR-ANL-002 out of the codebase and in the hands of the barangay.
+**`config`** — typed key/value for service-owned settings: barangay population and household
+totals, alert thresholds, and staleness windows. It keeps FR-ANL-002 out of the codebase and
+preserves the distinction between configured totals and registered counts. It is not a user-facing
+console page; deployment-owned application settings remain environment-driven.
 
 ### 5.3 Spatial model
 
@@ -427,8 +430,8 @@ GET   /admin/evacuation-centers
 POST  /admin/evacuation-centers/{id}/checkins
 GET   /admin/analytics/*
 GET   /admin/audit-log
-GET   /admin/config
-PUT   /admin/config/{key}
+GET   /admin/config                 legacy/internal settings read (not linked in the console)
+PUT   /admin/config/{key}           legacy/internal settings write (not linked in the console)
 
 # content CRUD — the barangay information layer (FR-PUB-013 close-out)
 /admin/announcements        POST, GET, PATCH, DELETE (deactivate — FR-ALT-011)
@@ -440,7 +443,7 @@ PUT   /admin/config/{key}
 /admin/facilities            POST, GET, PATCH, DELETE
 /admin/donation-drives        POST, GET, PATCH        (+ nested drive_need)
 /admin/flood-events            POST, GET, PATCH, DELETE
-/admin/areas                    GET, PATCH             (creation blocked on BRD OI-3)
+/admin/areas                    GET, PATCH             (internal reference data; not linked in the console)
 GET   /admin/alert-prompts      threshold breaches awaiting a decision (FR-WX-009)
 ```
 

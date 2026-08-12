@@ -205,7 +205,7 @@ async def simulate_typhoon(session: AsyncSession, *, actor_id: uuid.UUID) -> Sim
     job). It is FR-WX-007 manual entry, called several times in a row: four
     real `reading` rows, `source='manual'`, rising through Alert Levels 1, 2,
     and 3 relative to whatever thresholds are actually configured right now —
-    never hardcoded absolute values, so an admin edit to `/admin/config`
+    never hardcoded absolute values, so a change to the service-owned configuration
     changes what "crossing a tier" means here too. See tech_stack.md Section 7
     (follow-up note) for why this replaced FR-WX-016 as the plan.
 

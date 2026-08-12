@@ -161,7 +161,7 @@ CREATE INDEX idx_audit_actor   ON audit_log(actor_user_id, created_at DESC);
 | -------------------- | ----------- | ---------------------- | ------------------------------------------------------ |
 | `key`                | TEXT        | PK                     | `barangay.total_households`, `alert.threshold_level_1` |
 | `value`              | JSONB       | NOT NULL               | Typed on read by Pydantic                              |
-| `description`        | TEXT        |                        | Shown in the admin UI                                  |
+| `description`        | TEXT        |                        | Seed metadata for service consumers                    |
 | `updated_by_user_id` | UUID        | FK → `user`            |                                                        |
 | `updated_at`         | TIMESTAMPTZ | NOT NULL DEFAULT now() |                                                        |
 
@@ -177,7 +177,11 @@ reading.stale_after_minutes      45
 weather.latitude / .longitude
 ```
 
-> **This table is why FR-ANL-002 and FR-ANL-003 stay honest.** Barangay-wide totals live here as configuration; registered counts are always `COUNT(*)`. Two different things, two different mechanisms, never one column.
+> **This table is why FR-ANL-002 and FR-ANL-003 stay honest.** Barangay-wide totals live here as
+> configuration; registered counts are always `COUNT(*)`. Two different things, two different
+> mechanisms, never one column. The admin console does not expose a setup editor for this table;
+> seeded values are maintained through migrations and deployment-owned settings are environment
+> configuration.
 
 ### `psgc` — address reference (FR-SYS-012)
 
@@ -953,6 +957,7 @@ Loaded by migration, not at runtime (NFR-DAT-007).
 > (22.40 / 23.00 / 23.60 m — confirmed live at `GET /water/map_list.do`, `tech_stack.md` §7).
 > These are the gauge operator's own numbers, not an invented guess, and the `description`
 > column says so explicitly: _"PAGASA Montalban gauge published value — pending MDRRMO
-> confirmation (BRD OI-4)"_. Admin-editable via `PUT /admin/config/{key}` the moment MDRRMO
+> confirmation (BRD OI-4)"_. The console no longer exposes a setup editor; update the
+> service/deployment configuration through the controlled maintenance path when MDRRMO
 > supplies a locally-confirmed figure. OI-4 is not resolved by this — it stays open — but the
 > platform no longer runs on a blank threshold while it waits.

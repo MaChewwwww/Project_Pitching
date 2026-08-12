@@ -151,6 +151,14 @@ This is an evidence-backed backlog, not a new screen specification. Staging at c
 
 Do not convert this audit into invented portal screens. New target workflows require a stakeholder decision and permanent FR IDs first.
 
+**Console setup surface revision (August 13, 2026).** The admin sidebar no longer exposes a
+System & Setup category. `/admin/areas` was a misleading editing surface because the seeded
+boundaries are reference geometry, not officer-managed content; `/admin/config` was likewise
+removed as a workflow. Area records and operational configuration remain service/data contracts
+used by maps, targeting, analytics, and weather. Deployment-owned application settings belong in
+the environment profile, while seeded values continue to be maintained through migrations until
+the remaining configuration contract is revisited.
+
 ---
 
 ## 3. Platform Foundation — `SYS`

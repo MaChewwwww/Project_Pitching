@@ -16,7 +16,6 @@ import {
   MapPin,
   Megaphone,
   Phone,
-  Settings,
   ShieldAlert,
   ShieldCheck,
   Siren,
@@ -102,18 +101,6 @@ const TILES: {
     label: "Donation Drives",
     description: "What the barangay is collecting",
     icon: Gift,
-  },
-  {
-    href: "/admin/areas",
-    label: "Areas",
-    description: "Barangay zone names and exposure",
-    icon: MapPin,
-  },
-  {
-    href: "/admin/config",
-    label: "Settings",
-    description: "Thresholds and barangay totals",
-    icon: Settings,
   },
   {
     href: "/admin/emergency-events",
