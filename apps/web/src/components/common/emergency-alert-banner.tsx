@@ -87,12 +87,12 @@ export function EmergencyAlertBanner({
       aria-live="assertive"
       aria-atomic="true"
       className={cn(
-        "border-b shadow-sm transition-colors relative z-20 opacity-100",
+        "border-b shadow-md transition-all relative z-20 opacity-100",
         severity === "info"
-          ? "bg-amber-400 border-amber-500 text-amber-950"
+          ? "bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 border-amber-500 text-amber-950"
           : severity === "warning"
-          ? "bg-orange-500 border-orange-600 text-white"
-          : "bg-red-600 border-red-700 text-white"
+          ? "bg-gradient-to-r from-orange-500 via-amber-600 to-orange-600 border-orange-700 text-white"
+          : "bg-gradient-to-r from-red-700 via-red-600 to-rose-700 border-red-800 text-white"
       )}
     >
       <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-6">
