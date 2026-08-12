@@ -44,12 +44,12 @@ function ConsoleProfileMenu({
         <button
           type="button"
           className={cn(
-            "group hover:border-primary-300 hover:bg-primary-50 focus-visible:ring-primary-600 flex items-center gap-2 rounded-md border border-neutral-200 bg-white p-1.5 text-left shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+            "group flex items-center gap-2.5 rounded-lg border border-emerald-200/80 bg-white px-2.5 py-1.5 text-left shadow-sm transition-all hover:border-emerald-300 hover:bg-emerald-50/40 focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-2 focus-visible:outline-none",
             compact && "border-white/15 bg-white/10 text-white hover:border-white/25 hover:bg-white/15",
           )}
           aria-label="Open profile menu"
         >
-          <span className="bg-primary-700 grid size-8 place-items-center rounded-full text-xs font-bold text-white">
+          <span className="grid size-8 place-items-center rounded-full bg-emerald-700 text-xs font-bold text-white ring-2 ring-emerald-100">
             {initial}
           </span>
           {!compact ? (
@@ -57,7 +57,7 @@ function ConsoleProfileMenu({
               <span className="block max-w-36 truncate text-xs font-bold text-neutral-900">
                 {user?.full_name ?? "Barangay staff"}
               </span>
-              <span className="text-primary-700 block text-[10px] font-semibold tracking-wide uppercase">
+              <span className="block text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">
                 {user?.role ?? "staff"}
               </span>
             </span>
@@ -65,18 +65,23 @@ function ConsoleProfileMenu({
           <ChevronDown
             aria-hidden
             className={cn(
-              "size-3.5 text-neutral-500 transition-transform group-data-[state=open]:rotate-180",
+              "size-4 text-neutral-400 transition-transform group-data-[state=open]:rotate-180",
               compact && "text-primary-100",
             )}
           />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-60 rounded-lg border border-neutral-200 p-1.5 shadow-lg">
-        <DropdownMenuLabel className="px-2.5 py-2">
-          <span className="block truncate text-sm font-bold text-neutral-900">
-            {user?.full_name ?? "Barangay staff"}
+      <DropdownMenuContent align="end" className="w-64 rounded-xl border border-emerald-100 bg-white p-1.5 shadow-lg shadow-emerald-950/10">
+        <DropdownMenuLabel className="flex items-center gap-2.5 px-2.5 py-2.5">
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-emerald-700 text-xs font-bold text-white ring-2 ring-emerald-100">
+            {initial}
           </span>
-          <span className="mt-0.5 block truncate text-xs font-normal text-neutral-500">{user?.email}</span>
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-bold text-neutral-900">
+              {user?.full_name ?? "Barangay staff"}
+            </span>
+            <span className="mt-0.5 block truncate text-xs font-normal text-neutral-500">{user?.email}</span>
+          </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild className="gap-2 px-2.5 py-2 text-sm font-semibold">
@@ -219,7 +224,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-neutral-100">
       <aside className="bg-primary-950 text-primary-50 hidden w-64 shrink-0 flex-col lg:flex">
-        <div className="flex items-center justify-between gap-2 border-b border-white/10 px-4 py-4">
+        <div className="flex items-center gap-2.5 border-b border-white/10 px-4 py-4">
           <div className="flex min-w-0 items-center gap-2.5">
             <LogoLockup size={32} variant="mark" onDark />
             <span className="flex min-w-0 flex-col">
@@ -231,9 +236,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </span>
             </span>
           </div>
-          <span className="border-primary-300/20 bg-primary-800 text-primary-100 shrink-0 rounded border px-2 py-0.5 font-mono text-[10px] font-bold uppercase">
-            Admin
-          </span>
         </div>
 
         <ConsoleNav />
@@ -273,7 +275,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <SheetTitle className="sr-only">Console navigation</SheetTitle>
                 <div className="flex items-center gap-2.5 border-b border-white/10 px-4 py-4">
                   <LogoLockup size={32} variant="mark" onDark />
-                  <span className="text-body-sm font-bold text-white">SAGIP-SJ Admin</span>
+                  <span className="text-body-sm font-bold text-white">SAGIP-SJ</span>
                 </div>
                 <ConsoleNav onNavigate={() => setMobileNavOpen(false)} />
               </SheetContent>
