@@ -114,9 +114,13 @@ export function AnnouncementCard({
       <article
         className={cn(
           "relative flex h-full flex-col overflow-hidden rounded-[20px] border bg-white transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-black/5",
-          isEmergency
+          announcement.severity === "emergency"
             ? "border-red-200/90 hover:border-red-400 shadow-xs"
-            : "border-neutral-200/80 hover:border-primary-300 shadow-xs",
+            : announcement.severity === "warning"
+            ? "border-orange-200/90 hover:border-orange-400 shadow-xs"
+            : announcement.severity === "info"
+            ? "border-yellow-200/90 hover:border-yellow-400 shadow-xs"
+            : "border-neutral-200/80 hover:border-emerald-600 shadow-xs",
         )}
       >
         {/* Cover Image Header (Symmetrical aspect ratio) */}
@@ -136,9 +140,13 @@ export function AnnouncementCard({
             <div
               className={cn(
                 "relative flex h-full w-full flex-col justify-between p-4 text-white",
-                isEmergency
+                announcement.severity === "emergency"
                   ? "bg-gradient-to-br from-red-950 via-rose-900 to-neutral-900"
-                  : "bg-gradient-to-br from-primary-950 via-primary-900 to-neutral-900",
+                  : announcement.severity === "warning"
+                  ? "bg-gradient-to-br from-amber-950 via-orange-900 to-neutral-900"
+                  : announcement.severity === "info"
+                  ? "bg-gradient-to-br from-amber-900 via-yellow-800 to-neutral-900"
+                  : "bg-gradient-to-br from-emerald-950 via-emerald-900 to-neutral-900",
               )}
             >
               <div
@@ -150,7 +158,7 @@ export function AnnouncementCard({
                   Official Notice
                 </span>
                 {isAlert ? (
-                  <TriangleAlert className="size-5 text-red-400 opacity-80" />
+                  <TriangleAlert className="size-5 text-amber-400 opacity-80" />
                 ) : null}
               </div>
               <div className="relative z-10 font-display text-sm font-semibold tracking-tight text-white/90">
@@ -187,7 +195,13 @@ export function AnnouncementCard({
           <h3
             className={cn(
               "font-display text-lg font-bold leading-snug tracking-tight text-neutral-900 transition-colors line-clamp-2",
-              isEmergency ? "group-hover:text-red-600" : "group-hover:text-primary-700",
+              announcement.severity === "emergency"
+                ? "group-hover:text-red-600"
+                : announcement.severity === "warning"
+                ? "group-hover:text-orange-600"
+                : announcement.severity === "info"
+                ? "group-hover:text-yellow-700"
+                : "group-hover:text-emerald-700",
             )}
           >
             {announcement.title}
@@ -202,10 +216,28 @@ export function AnnouncementCard({
             {summary}
           </p>
 
-          {/* Immediate Guidance Callout Box for Emergency Alerts */}
+          {/* Immediate Guidance Callout Box */}
           {isAlert && announcement.instruction ? (
-            <div className="mt-3.5 rounded-xl border border-red-200/90 bg-red-50/80 p-3 text-xs leading-relaxed text-red-950 shadow-xs">
-              <span className="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-red-700">
+            <div
+              className={cn(
+                "mt-3.5 rounded-xl p-3 text-xs leading-relaxed shadow-xs border",
+                announcement.severity === "info"
+                  ? "border-yellow-300 bg-yellow-50 text-yellow-950"
+                  : announcement.severity === "warning"
+                  ? "border-orange-300 bg-orange-50 text-orange-950"
+                  : "border-red-300 bg-red-50 text-red-950"
+              )}
+            >
+              <span
+                className={cn(
+                  "mb-0.5 block text-[10px] font-bold uppercase tracking-wider",
+                  announcement.severity === "info"
+                    ? "text-yellow-800"
+                    : announcement.severity === "warning"
+                    ? "text-orange-800"
+                    : "text-red-700"
+                )}
+              >
                 Immediate Guidance
               </span>
               <p className="font-medium line-clamp-2">{announcement.instruction}</p>

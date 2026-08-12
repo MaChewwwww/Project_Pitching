@@ -41,11 +41,8 @@ export function EmergencyAlertBanner({
   const activeAlert = alert && alert.is_active ? alert : null;
   if (!activeAlert && !emergencyEvent) return null;
 
-  // Severity determines the urgency palette; river conditions remain in the
-  // dedicated weather surfaces rather than being copied into an alert article.
-  // An active event with no announcement is always urgent — a declared
-  // emergency with no advisory yet is not a "prepare" state.
-  const urgent = activeAlert ? activeAlert.severity === "emergency" : true;
+  // Severity determines the urgency palette (info = Yellow, warning = Orange, emergency = Red).
+  const severity = activeAlert?.severity || (emergencyEvent ? "emergency" : "info");
   const levelText = activeAlert?.severity ?? "Active";
 
   const title = activeAlert
@@ -75,10 +72,12 @@ export function EmergencyAlertBanner({
       aria-live="assertive"
       aria-atomic="true"
       className={cn(
-        "border-b shadow-sm transition-colors",
-        urgent
-          ? "border-danger-hover from-danger to-danger bg-gradient-to-r via-red-600 text-white"
-          : "border-warning/30 from-warning-bg to-warning-bg bg-gradient-to-r via-amber-500/10 text-neutral-900",
+        "border-b shadow-sm transition-colors relative z-20 opacity-100",
+        severity === "info"
+          ? "bg-amber-400 border-amber-500 text-amber-950"
+          : severity === "warning"
+          ? "bg-orange-500 border-orange-600 text-white"
+          : "bg-red-600 border-red-700 text-white"
       )}
     >
       <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-6">
@@ -86,8 +85,8 @@ export function EmergencyAlertBanner({
         <div className="flex min-w-0 flex-1 items-center gap-3.5">
           <span
             className={cn(
-              "grid size-10 shrink-0 place-items-center rounded-xl shadow-xs backdrop-blur-md",
-              urgent ? "bg-white/20 text-white" : "bg-warning/20 text-warning-hover",
+              "grid size-10 shrink-0 place-items-center rounded-xl shadow-xs",
+              severity === "info" ? "bg-amber-950/15 text-amber-950" : "bg-white/20 text-white"
             )}
           >
             <TriangleAlert
@@ -106,9 +105,9 @@ export function EmergencyAlertBanner({
                 <span
                   className={cn(
                     "text-overline shrink-0 rounded-md border px-2 py-0.5 font-bold tracking-wider uppercase",
-                    urgent
-                      ? "border-white/20 bg-white/25 text-white"
-                      : "bg-warning border-warning-hover text-white",
+                    severity === "info"
+                      ? "border-amber-900/30 bg-amber-950 text-white"
+                      : "border-white/25 bg-white/25 text-white"
                   )}
                 >
                   {levelText}
@@ -117,7 +116,7 @@ export function EmergencyAlertBanner({
               <span
                 className={cn(
                   "text-caption hidden font-medium lg:inline-block",
-                  urgent ? "text-white/75" : "text-neutral-600",
+                  severity === "info" ? "text-amber-900/80" : "text-white/80"
                 )}
               >
                 • {meta}
@@ -128,7 +127,7 @@ export function EmergencyAlertBanner({
               <p
                 className={cn(
                   "text-body-sm line-clamp-1 leading-snug font-medium",
-                  urgent ? "text-white/90" : "text-neutral-700",
+                  severity === "info" ? "text-amber-950 font-semibold" : "text-white/95"
                 )}
               >
                 {instruction}
@@ -147,9 +146,9 @@ export function EmergencyAlertBanner({
                   className={cn(
                     "inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 sm:w-auto",
                     "text-label shadow-sm-card font-bold transition-all duration-200 hover:scale-105 focus-visible:ring-3 focus-visible:outline-none",
-                    urgent
-                      ? "text-danger bg-white hover:bg-white/95 focus-visible:ring-white/50"
-                      : "bg-danger hover:bg-danger-hover focus-visible:ring-danger/40 text-white",
+                    severity === "info"
+                      ? "bg-amber-950 text-white hover:bg-black focus-visible:ring-amber-950/50"
+                      : "bg-neutral-900 text-white hover:bg-black focus-visible:ring-white/50"
                   )}
                 >
                   <Phone aria-hidden className="size-4" strokeWidth={2.5} />

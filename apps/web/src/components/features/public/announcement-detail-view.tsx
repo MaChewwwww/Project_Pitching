@@ -221,14 +221,41 @@ export function AnnouncementDetailView({
               </figure>
             ) : null}
 
-            {/* Immediate Guidance Callout for Emergency Alerts */}
+            {/* Immediate Guidance Callout Box */}
             {isAlert && article.instruction ? (
-              <div className="rounded-xl border border-red-200 bg-red-50/90 p-5 text-red-950 shadow-xs">
-                <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-700">
-                  <TriangleAlert className="size-4 shrink-0 text-red-600" />
+              <div
+                className={cn(
+                  "rounded-xl border p-5 shadow-xs",
+                  article.severity === "info"
+                    ? "border-yellow-300 bg-yellow-50 text-yellow-950"
+                    : article.severity === "warning"
+                    ? "border-orange-300 bg-orange-50 text-orange-950"
+                    : "border-red-300 bg-red-50 text-red-950"
+                )}
+              >
+                <div
+                  className={cn(
+                    "mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider",
+                    article.severity === "info"
+                      ? "text-yellow-800"
+                      : article.severity === "warning"
+                      ? "text-orange-800"
+                      : "text-red-700"
+                  )}
+                >
+                  <TriangleAlert
+                    className={cn(
+                      "size-4 shrink-0",
+                      article.severity === "info"
+                        ? "text-amber-600"
+                        : article.severity === "warning"
+                        ? "text-orange-600"
+                        : "text-red-600"
+                    )}
+                  />
                   <span>Immediate Guidance</span>
                 </div>
-                <p className="text-base font-semibold leading-relaxed text-red-950">
+                <p className="text-base font-semibold leading-relaxed">
                   {article.instruction}
                 </p>
               </div>
