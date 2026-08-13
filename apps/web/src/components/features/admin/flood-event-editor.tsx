@@ -339,37 +339,80 @@ export function FloodEventEditorDialog({
                     <Controller
                       control={control}
                       name="area_ids"
-                      render={({ field }) => (
-                        <div className="mt-4 flex max-h-56 flex-col gap-2 overflow-y-auto pr-1">
-                          {areas.map((area) => {
-                            const checked = field.value.includes(area.id);
-                            return (
-                              <label
-                                key={area.id}
-                                className={cn(
-                                  "flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors",
-                                  checked
-                                    ? "border-emerald-500 bg-emerald-50 text-emerald-950"
-                                    : "border-neutral-200 bg-white text-neutral-700 hover:border-emerald-300 hover:bg-emerald-50/40",
-                                )}
-                              >
-                                <Checkbox
-                                  checked={checked}
-                                  onCheckedChange={(next) =>
-                                    field.onChange(
-                                      next
-                                        ? [...field.value, area.id]
-                                        : field.value.filter((id) => id !== area.id),
-                                    )
-                                  }
-                                  className="data-[state=checked]:bg-emerald-600"
-                                />
-                                {area.name}
-                              </label>
-                            );
-                          })}
-                        </div>
-                      )}
+                      render={({ field }) => {
+                        const selectedAreaIds = field.value ?? [];
+                        const isBarangayWide =
+                          areas.length > 0 &&
+                          areas.every((area) => selectedAreaIds.includes(area.id));
+
+                        return (
+                          <>
+                            <label
+                              className={cn(
+                                "mt-4 flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 transition-colors",
+                                isBarangayWide
+                                  ? "border-emerald-500 bg-emerald-50 text-emerald-950"
+                                  : "border-neutral-200 bg-neutral-50/50 text-neutral-800 hover:border-emerald-300 hover:bg-emerald-50/40",
+                              )}
+                            >
+                              <Checkbox
+                                checked={isBarangayWide}
+                                onCheckedChange={(next) =>
+                                  field.onChange(next ? areas.map((area) => area.id) : [])
+                                }
+                                disabled={areas.length === 0}
+                                className="mt-0.5 shrink-0 data-[state=checked]:bg-emerald-600"
+                              />
+                              <span className="flex flex-col gap-0.5">
+                                <span className="text-sm font-bold">
+                                  Barangay-Wide Flood
+                                </span>
+                                <span className="text-xs font-normal text-neutral-500">
+                                  Select when the entire barangay was affected.
+                                </span>
+                              </span>
+                            </label>
+
+                            {isBarangayWide ? (
+                              <p className="mt-3 rounded-lg bg-emerald-50/70 px-3 py-2 text-xs text-emerald-800">
+                                All barangay areas are included in this record.
+                              </p>
+                            ) : (
+                              <div className="mt-4 flex flex-col gap-2">
+                                {areas.map((area) => {
+                                  const checked = selectedAreaIds.includes(area.id);
+                                  return (
+                                    <label
+                                      key={area.id}
+                                      className={cn(
+                                        "flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors",
+                                        checked
+                                          ? "border-emerald-500 bg-emerald-50 text-emerald-950"
+                                          : "border-neutral-200 bg-white text-neutral-700 hover:border-emerald-300 hover:bg-emerald-50/40",
+                                      )}
+                                    >
+                                      <Checkbox
+                                        checked={checked}
+                                        onCheckedChange={(next) =>
+                                          field.onChange(
+                                            next
+                                              ? [...selectedAreaIds, area.id]
+                                              : selectedAreaIds.filter(
+                                                  (id) => id !== area.id,
+                                                ),
+                                          )
+                                        }
+                                        className="data-[state=checked]:bg-emerald-600"
+                                      />
+                                      {area.name}
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </>
+                        );
+                      }}
                     />
                   ) : null}
                 </section>

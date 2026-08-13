@@ -239,8 +239,14 @@ insights rail from the same in-memory view, so comparisons never present a secon
 Weather Watch belongs in the insights heading because it is a companion live-data destination, not a
 table filter. `FloodEventEditorDialog` is the domain form because the generic resource dialog cannot
 restore the optional many-area history relationship; its responsive two-column layout collapses to a
-single scrollable form on small screens. Auto-synced records retain their Emergency Event link and
-must not expose a delete action; the API enforces the same rule.
+single scrollable form on small screens. The areas card includes a `Barangay-Wide Flood` shortcut
+that selects every available area; individual choices remain available when the shortcut is off, and
+the list uses the dialog's single scroll surface rather than a nested scrollbar. Auto-synced records
+retain their Emergency Event link and must not expose a delete action; the API enforces the same rule.
+The insights rail keeps its scorecard and charts on the same filtered event set: peak bars use the
+18m/21m severity bands, displacement bars omit missing counts, and the area-reach chart ranks the
+areas mentioned most often. Each chart carries a visible legend, an empty state, and a text summary
+for keyboard and screen-reader users.
 
 ### Portal splash loading
 

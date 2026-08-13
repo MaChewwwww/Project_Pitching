@@ -101,7 +101,7 @@ export default function AdminFloodEventsPage() {
           </div>
           <span className="text-caption text-neutral-500">
             {event.area_names.length
-              ? `Areas: ${event.area_names.join(", ")}`
+              ? event.area_names.join(", ")
               : "Affected areas not recorded"}
           </span>
         </div>
@@ -148,6 +148,14 @@ export default function AdminFloodEventsPage() {
         .map(String),
     [events],
   );
+  const yearCounts = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const event of events) {
+      const eventYear = String(new Date(event.started_at).getFullYear());
+      counts[eventYear] = (counts[eventYear] ?? 0) + 1;
+    }
+    return counts;
+  }, [events]);
   const activeYear = year === "all" || years.includes(year) ? year : "all";
   const filteredEvents = React.useMemo(
     () =>
@@ -210,16 +218,45 @@ export default function AdminFloodEventsPage() {
                 sideOffset={6}
                 className="z-50 min-w-40 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg"
               >
-                <SelectItem value="all" className="cursor-pointer rounded-lg text-xs">
-                  All years
+                <SelectItem
+                  value="all"
+                  className={`my-0.5 flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                    activeYear === "all"
+                      ? "bg-emerald-600 font-bold text-white focus:bg-emerald-600 focus:text-white"
+                      : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950"
+                  }`}
+                >
+                  <span className="truncate">All years</span>
+                  <span
+                    className={`ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                      activeYear === "all"
+                        ? "bg-white/25 text-white"
+                        : "bg-neutral-100 text-neutral-600"
+                    }`}
+                  >
+                    {events.length}
+                  </span>
                 </SelectItem>
                 {years.map((availableYear) => (
                   <SelectItem
                     key={availableYear}
                     value={availableYear}
-                    className="cursor-pointer rounded-lg text-xs"
+                    className={`my-0.5 flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                      activeYear === availableYear
+                        ? "bg-emerald-600 font-bold text-white focus:bg-emerald-600 focus:text-white"
+                        : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950"
+                    }`}
                   >
-                    {availableYear}
+                    <span className="truncate">{availableYear}</span>
+                    <span
+                      className={`ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                        activeYear === availableYear
+                          ? "bg-white/25 text-white"
+                          : "bg-neutral-100 text-neutral-600"
+                      }`}
+                    >
+                      {yearCounts[availableYear] ?? 0}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
