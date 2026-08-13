@@ -24,6 +24,7 @@ class MemberIn(BaseModel):
     full_name: str = Field(min_length=1)
     birth_date: date | None = None
     sex: Literal["male", "female"] | None = None
+    contact_number: str | None = None
     relationship_to_head: str | None = None
     is_child: bool = False
     is_senior: bool = False
@@ -98,11 +99,17 @@ class HouseholdCreateBhw(BaseModel):
 
     @model_validator(mode="after")
     def _assisted_members_are_complete(self) -> HouseholdCreateBhw:
+        if self.head_member.birth_date is None:
+            raise ValueError("head_member.birth_date is required")
+        if self.head_member.sex is None:
+            raise ValueError("head_member.sex is required")
         for index, member in enumerate(self.members):
             if member.birth_date is None:
                 raise ValueError(f"members[{index}].birth_date is required")
             if not member.relationship_to_head:
                 raise ValueError(f"members[{index}].relationship_to_head is required")
+            if member.sex is None:
+                raise ValueError(f"members[{index}].sex is required")
         return self
 
 
@@ -119,6 +126,7 @@ class MemberOut(BaseModel):
     full_name: str
     birth_date: date | None
     sex: str | None
+    contact_number: str | None
     relationship_to_head: str | None
     is_head: bool
     is_child: bool
@@ -147,6 +155,7 @@ class MemberUpdate(BaseModel):
     full_name: str = Field(min_length=1)
     birth_date: date | None = None
     sex: Literal["male", "female"] | None = None
+    contact_number: str | None = None
     relationship_to_head: str | None = None
     is_child: bool = False
     is_senior: bool = False

@@ -14,6 +14,7 @@ const EMPTY: MemberValues = {
   full_name: "",
   birth_date: null,
   sex: null,
+  contact_number: null,
   relationship_to_head: "",
   is_child: false,
   is_senior: false,
@@ -31,6 +32,7 @@ function fromMember(member?: Partial<MemberValues> | MemberOut | RegistryMemberO
     full_name: member?.full_name ?? "",
     birth_date: member?.birth_date ?? null,
     sex: member?.sex === "male" || member?.sex === "female" ? member.sex : null,
+    contact_number: member?.contact_number ?? null,
     is_child: member?.is_child ?? false,
     is_senior: member?.is_senior ?? false,
     is_pwd: member?.is_pwd ?? false,
@@ -78,6 +80,7 @@ export function RegistryMemberForm({
         ...values,
         full_name: values.full_name.trim(),
         birth_date: values.birth_date || null,
+        contact_number: values.contact_number?.trim() || null,
         relationship_to_head: values.relationship_to_head || null,
         chronic_condition_note: values.chronic_condition_note || null,
       });
@@ -118,6 +121,10 @@ export function RegistryMemberForm({
           <select id="sex" value={values.sex ?? ""} onChange={(event) => set("sex", (event.target.value || null) as MemberValues["sex"])} className="mt-1.5 h-10 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
             <option value="">Not recorded</option><option value="female">Female</option><option value="male">Male</option>
           </select>
+        </div>
+        <div>
+          <Label htmlFor="contact_number">Contact number (optional)</Label>
+          <Input id="contact_number" type="tel" value={values.contact_number ?? ""} onChange={(event) => set("contact_number", event.target.value || null)} className="mt-1.5" placeholder="09XX XXX XXXX" />
         </div>
         <div className="sm:col-span-2">
           <Label htmlFor="relationship_to_head">Relationship to head</Label>

@@ -327,6 +327,7 @@ CREATE INDEX idx_household_head_name_trgm ON household USING GIN(head_name gin_t
 | `full_name`                              | TEXT        | NOT NULL                                    |                                         |
 | `birth_date`                             | DATE        |                                             | Age derived, never stored               |
 | `sex`                                    | TEXT        | CHECK: `male` · `female`                    |                                         |
+| `contact_number`                         | TEXT        |                                             | Optional citizen contact number         |
 | `relationship_to_head`                   | TEXT        |                                             | FR-REG-023                              |
 | `is_head`                                | BOOLEAN     | NOT NULL DEFAULT false                      | Exactly one per household               |
 | `is_child`                               | BOOLEAN     | NOT NULL DEFAULT false                      | Derived from `birth_date` where present |

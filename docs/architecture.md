@@ -420,6 +420,10 @@ POST  /admin/members/{id}/promote    implemented — create a household from an 
 POST  /admin/households/{id}/vulnerability-override
 GET   /admin/households/{id}/duplicates implemented — fresh duplicate candidates for merge review
 POST  /admin/households/merge        implemented (FR-REG-010)
+
+The assisted-registration payload requires the household head's birthday and sex, accepts optional
+contact numbers for added members, and requires each added member's birthday, sex, and relationship;
+those members are created in the same transaction and appear in the registered citizen directory.
 GET   /admin/emergency-events        implemented — list events (FR-SAF-018/019)
 POST  /admin/emergency-events        implemented — declare an event
 POST  /admin/emergency-events/{id}/end implemented — end active event

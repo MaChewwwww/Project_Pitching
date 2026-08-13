@@ -185,6 +185,7 @@ def _member_out(member: Member) -> MemberOut:
         full_name=member.full_name,
         birth_date=member.birth_date,
         sex=member.sex,
+        contact_number=member.contact_number,
         relationship_to_head=member.relationship_to_head,
         is_head=member.is_head,
         is_child=member.is_child,
@@ -215,6 +216,11 @@ def _new_member(
         full_name=data.full_name,
         birth_date=data.birth_date,
         sex=data.sex,
+        contact_number=(
+            data.contact_number.strip()
+            if data.contact_number and data.contact_number.strip()
+            else None
+        ),
         relationship_to_head=data.relationship_to_head,
         is_head=is_head,
         is_child=is_child,
@@ -970,6 +976,11 @@ async def update_member(
     member.full_name = body.full_name
     member.birth_date = body.birth_date
     member.sex = body.sex
+    member.contact_number = (
+        body.contact_number.strip()
+        if body.contact_number and body.contact_number.strip()
+        else None
+    )
     member.relationship_to_head = body.relationship_to_head
     member.is_child, member.is_senior = (
         _derive_age_flags(body.birth_date) if body.birth_date else (body.is_child, body.is_senior)

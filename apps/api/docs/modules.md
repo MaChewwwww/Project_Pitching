@@ -111,6 +111,10 @@ Household references are displayed and generated as `M-SJ-000-000` Household Num
 sequence remains database-backed and race-safe; the seed loader reserves its synthetic range before
 the first live registration.
 
+The BHW household endpoint creates every added member as an active citizen in the same transaction.
+The household head's birthday and sex, plus each added member's birthday, sex, and relationship, are
+required; member contact numbers remain optional and are returned in the enriched citizen directory.
+
 All profile mutations go through `registry/service.py` and write an audit event. BHW requests are
 restricted to assigned areas for both the source and destination of a transfer. A linked resident head
 cannot be moved, demoted, archived, or renamed through the registry; a registry-managed head must be

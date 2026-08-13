@@ -278,11 +278,14 @@ primary work surface with identity and head details on the left, while the right
 required street address, map pin, and waterway-proximity survey together. The survey exposes the
 same very-near/near/far flood-risk bands used during resident onboarding. The member repeater stays
 under the household details card in the left column so adding a member expands that column in place;
-the map and survey rail is sticky beneath the console header with a bounded internal scroll on desktop,
+the map and survey rail is sticky beneath the console header without introducing a second scrollbar,
 and stacks normally on small screens. The action bar stays fixed to the viewport while the form reserves
-bottom space for it. Every added member requires a name, birth date, and relationship to the head; vulnerability
-flags remain optional because they record what the BHW knows. Contact number is optional;
-the API normalizes a missing number to the `No Contact Number` review state automatically.
+bottom space for it. The household head requires a birthday and sex; every added member requires a name,
+birth date, sex, and relationship to the head;
+their contact number is optional and is carried into the Registered Citizens directory. The create action
+opens a confirmation review before saving, then the API duplicate check flags possible matches in the
+household list. Vulnerability flags remain optional because they record what the BHW knows. Household
+contact number is optional; the API normalizes a missing number to the `No Contact Number` review state automatically.
 
 ### Portal splash loading
 

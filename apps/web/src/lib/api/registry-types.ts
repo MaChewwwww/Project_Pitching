@@ -8,6 +8,7 @@ export interface MemberIn {
   full_name: string;
   birth_date: string | null;
   sex: "male" | "female" | null;
+  contact_number: string | null;
   relationship_to_head: string | null;
   is_child: boolean;
   is_senior: boolean;
@@ -60,6 +61,7 @@ export interface MemberOut {
   full_name: string;
   birth_date: string | null;
   sex: string | null;
+  contact_number: string | null;
   relationship_to_head: string | null;
   is_head: boolean;
   is_child: boolean;
@@ -120,6 +122,7 @@ export interface MemberUpdate {
   full_name: string;
   birth_date: string | null;
   sex: "male" | "female" | null;
+  contact_number: string | null;
   relationship_to_head: string | null;
   is_child: boolean;
   is_senior: boolean;

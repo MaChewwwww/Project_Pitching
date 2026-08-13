@@ -96,6 +96,7 @@ class Member(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
     full_name: Mapped[str] = mapped_column(Text, nullable=False)
     birth_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     sex: Mapped[str | None] = mapped_column(Text, nullable=True)
+    contact_number: Mapped[str | None] = mapped_column(Text, nullable=True)
     relationship_to_head: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_head: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     is_child: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))

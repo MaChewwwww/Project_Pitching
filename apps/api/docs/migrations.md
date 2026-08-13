@@ -103,3 +103,7 @@ either parent migration after it has been applied.
 `M-SJ-000-000` Household Number format, then advances `household_reference_no_seq` past the
 rewritten rows. It is a data migration, so review the generated identifiers before applying it to
 an environment with non-demo registry data.
+
+`0022_member_contact_number` adds the nullable contact field used by registered citizen profiles.
+Existing members remain valid with no contact number; new BHW member entries carry the optional
+value into the citizen directory.

@@ -34,6 +34,7 @@ export const emptyMemberValues = {
   full_name: "",
   birth_date: "",
   sex: undefined as "male" | "female" | undefined,
+  contact_number: "",
   relationship_to_head: "",
   is_child: false,
   is_senior: false,
@@ -118,14 +119,24 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
 
           <CollapsibleContent className="flex flex-col gap-4 border-t border-emerald-100 p-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor={`members.${i}.full_name`}>Full Name <span className="text-red-600">*</span></Label>
+              <Label htmlFor={`members.${i}.full_name`}>
+                Full Name <span className="text-red-600">*</span>
+              </Label>
               <Controller
                 control={control}
                 name={`members.${i}.full_name` as never}
                 render={({ field: f, fieldState }) => (
                   <>
-                    <Input id={`members.${i}.full_name`} aria-invalid={!!fieldState.error} className="h-10 rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20" {...f} value={f.value ?? ""} />
-                    {fieldState.error ? <p className="text-danger text-xs">{fieldState.error.message}</p> : null}
+                    <Input
+                      id={`members.${i}.full_name`}
+                      aria-invalid={!!fieldState.error}
+                      className="h-10 rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                      {...f}
+                      value={f.value ?? ""}
+                    />
+                    {fieldState.error ? (
+                      <p className="text-danger text-xs">{fieldState.error.message}</p>
+                    ) : null}
                   </>
                 )}
               />
@@ -133,7 +144,9 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor={`members.${i}.birth_date`}>Birth Date <span className="text-red-600">*</span></Label>
+                <Label htmlFor={`members.${i}.birth_date`}>
+                  Birth Date <span className="text-red-600">*</span>
+                </Label>
                 <Controller
                   control={control}
                   name={`members.${i}.birth_date` as never}
@@ -147,8 +160,61 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
                         {...f}
                         value={f.value ?? ""}
                       />
-                      {fieldState.error ? <p className="text-danger text-xs">{fieldState.error.message}</p> : null}
+                      {fieldState.error ? (
+                        <p className="text-danger text-xs">{fieldState.error.message}</p>
+                      ) : null}
                     </>
+                  )}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={`members.${i}.sex`}>
+                  Sex <span className="text-red-600">*</span>
+                </Label>
+                <Controller
+                  control={control}
+                  name={`members.${i}.sex` as never}
+                  render={({ field: f, fieldState }) => (
+                    <>
+                      <Select value={f.value ?? ""} onValueChange={f.onChange}>
+                        <SelectTrigger
+                          id={`members.${i}.sex`}
+                          aria-invalid={!!fieldState.error}
+                          className="h-10 w-full rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                        >
+                          <SelectValue placeholder="Select sex" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="male">Male</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {fieldState.error ? (
+                        <p className="text-danger text-xs">{fieldState.error.message}</p>
+                      ) : null}
+                    </>
+                  )}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={`members.${i}.contact_number`}>
+                  Contact Number{" "}
+                  <span className="font-normal text-neutral-400">(Optional)</span>
+                </Label>
+                <Controller
+                  control={control}
+                  name={`members.${i}.contact_number` as never}
+                  render={({ field: f }) => (
+                    <Input
+                      id={`members.${i}.contact_number`}
+                      type="tel"
+                      placeholder="09XX XXX XXXX"
+                      className="h-10 rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                      {...f}
+                      value={f.value ?? ""}
+                    />
                   )}
                 />
               </div>
@@ -162,7 +228,11 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
                   render={({ field: f, fieldState }) => (
                     <>
                       <Select value={f.value ?? ""} onValueChange={f.onChange}>
-                        <SelectTrigger id={`members.${i}.relationship_to_head`} aria-invalid={!!fieldState.error} className="h-10 w-full rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
+                        <SelectTrigger
+                          id={`members.${i}.relationship_to_head`}
+                          aria-invalid={!!fieldState.error}
+                          className="h-10 w-full rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                        >
                           <SelectValue placeholder="Select Relationship" />
                         </SelectTrigger>
                         <SelectContent>
@@ -173,7 +243,9 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
                           ))}
                         </SelectContent>
                       </Select>
-                      {fieldState.error ? <p className="text-danger text-xs">{fieldState.error.message}</p> : null}
+                      {fieldState.error ? (
+                        <p className="text-danger text-xs">{fieldState.error.message}</p>
+                      ) : null}
                     </>
                   )}
                 />

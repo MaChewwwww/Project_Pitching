@@ -3096,6 +3096,8 @@ export interface components {
             birth_date?: string | null;
             /** Sex */
             sex?: ("male" | "female") | null;
+            /** Contact Number */
+            contact_number?: string | null;
             /** Relationship To Head */
             relationship_to_head?: string | null;
             /**
@@ -3149,6 +3151,8 @@ export interface components {
             birth_date: string | null;
             /** Sex */
             sex: string | null;
+            /** Contact Number */
+            contact_number: string | null;
             /** Relationship To Head */
             relationship_to_head: string | null;
             /** Is Head */
@@ -3236,6 +3240,8 @@ export interface components {
             birth_date?: string | null;
             /** Sex */
             sex?: ("male" | "female") | null;
+            /** Contact Number */
+            contact_number?: string | null;
             /** Relationship To Head */
             relationship_to_head?: string | null;
             /**
@@ -4025,6 +4031,8 @@ export interface components {
             birth_date: string | null;
             /** Sex */
             sex: string | null;
+            /** Contact Number */
+            contact_number: string | null;
             /** Relationship To Head */
             relationship_to_head: string | null;
             /** Is Head */
