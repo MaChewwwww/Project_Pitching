@@ -45,6 +45,19 @@ def test_bhw_creation_requires_address_and_map_pin():
     }
 
 
+def test_bhw_member_requires_birth_date_and_relationship():
+    with pytest.raises(ValidationError, match=r"members\[0\].birth_date is required"):
+        HouseholdCreateBhw(
+            head_name="BHW Member Required Test",
+            area_id=uuid.uuid4(),
+            street_address="12 Sampaguita St.",
+            latitude=14.735593,
+            longitude=121.130018,
+            head_member=MemberIn(full_name="BHW Member Required Test"),
+            members=[MemberIn(full_name="Other Member")],
+        )
+
+
 async def test_bhw_creation_derives_missing_contact_as_unreachable(session, demo_users):
     area = await get_area(session)
     result = await service.create_household_bhw(

@@ -43,10 +43,10 @@ interface Area {
 }
 
 const memberSchema = z.object({
-  full_name: z.string().min(1, "Required"),
-  birth_date: z.string().optional(),
+  full_name: z.string().trim().min(1, "Enter the member's full name"),
+  birth_date: z.string().min(1, "Enter the member's birth date"),
   sex: z.enum(["male", "female"]).optional(),
-  relationship_to_head: z.string().optional(),
+  relationship_to_head: z.string().min(1, "Select the relationship to the head"),
   is_child: z.boolean(),
   is_senior: z.boolean(),
   is_pwd: z.boolean(),
@@ -63,6 +63,8 @@ const bhwFormSchema = z.object({
   area_id: z.string().min(1, "Select an area"),
   street_address: z.string().trim().min(1, "Enter the household address"),
   waterway_proximity: z.enum(["very_near", "near", "far"], {
+    message: "Select the household's proximity to a waterway",
+  }).optional().refine((value) => Boolean(value), {
     message: "Select the household's proximity to a waterway",
   }),
   head_birth_date: z.string().optional(),
@@ -85,7 +87,7 @@ const emptyValues: BhwFormValues = {
   contact_number: "",
   area_id: "",
   street_address: "",
-  waterway_proximity: "far",
+  waterway_proximity: undefined,
   head_birth_date: "",
   head_sex: undefined,
   head_is_pwd: false,
@@ -126,6 +128,8 @@ const WATERWAY_OPTIONS = [
 
 const formFieldClassName =
   "h-10 rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20";
+const formCheckboxClassName =
+  "border-emerald-300 data-checked:border-emerald-600 data-checked:bg-emerald-600 data-checked:text-white focus-visible:ring-emerald-500/30";
 
 /** FR-REG-002/003/004/024/025 — one BHW-assisted household visit. */
 export default function NewHouseholdPage() {
@@ -268,9 +272,9 @@ export default function NewHouseholdPage() {
               </div>
 
               <fieldset className="grid gap-2 sm:grid-cols-2">
-                <legend className="mb-1 text-xs font-semibold text-neutral-600">Does Any of This Apply to the Head?</legend>
+                <legend className="mb-1 text-sm leading-none font-medium text-neutral-950">Does Any of This Apply to the Head?</legend>
                 {([ ["head_is_pwd", "PWD"], ["head_is_pregnant", "Pregnant"], ["head_is_lactating", "Lactating"], ["head_has_chronic_condition", "Chronic condition"], ["head_is_bedridden", "Bedridden / mobility-limited"] ] as const).map(([name, label]) => (
-                  <label key={name} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-neutral-700 hover:bg-emerald-50/60"><Controller control={control} name={name} render={({ field }) => <Checkbox id={name} checked={field.value} onCheckedChange={field.onChange} />} /><span>{label}</span></label>
+                  <label key={name} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-neutral-700 hover:bg-emerald-50/60"><Controller control={control} name={name} render={({ field }) => <Checkbox id={name} className={formCheckboxClassName} checked={field.value} onCheckedChange={field.onChange} />} /><span>{label}</span></label>
                 ))}
               </fieldset>
             </CardContent>
@@ -358,7 +362,7 @@ export default function NewHouseholdPage() {
         </aside>
 
         {hasMembers ? (
-          <Card className="relative z-0 lg:col-span-12 lg:col-start-1 border-emerald-200/80 bg-white">
+          <Card className="lg:col-span-7 border-emerald-200/80 bg-white">
             <CardContent className="space-y-5 p-4 sm:p-5">
               <div className="flex items-start gap-3 border-b border-neutral-100 pb-4">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700"><Users aria-hidden className="size-4" /></span>
@@ -370,7 +374,6 @@ export default function NewHouseholdPage() {
         ) : null}
 
         <div className="lg:col-span-12 mt-1 flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-neutral-500">Fields marked <span className="font-bold text-red-600">*</span> are required.</p>
           <div className="flex flex-wrap justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => router.push("/admin/households")} className="rounded-xl">Cancel</Button>
             <Button type="button" variant="outline" onClick={() => reset(emptyValues)} className="rounded-xl">Clear form</Button>

@@ -27,6 +27,9 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
+const memberCheckboxClassName =
+  "border-emerald-300 data-checked:border-emerald-600 data-checked:bg-emerald-600 data-checked:text-white focus-visible:ring-emerald-500/30";
+
 export const emptyMemberValues = {
   full_name: "",
   birth_date: "",
@@ -115,53 +118,63 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
 
           <CollapsibleContent className="flex flex-col gap-4 border-t border-emerald-100 p-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor={`members.${i}.full_name`}>Full Name</Label>
+              <Label htmlFor={`members.${i}.full_name`}>Full Name <span className="text-red-600">*</span></Label>
               <Controller
                 control={control}
                 name={`members.${i}.full_name` as never}
-                render={({ field: f }) => (
-                  <Input id={`members.${i}.full_name`} className="h-10 rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20" {...f} value={f.value ?? ""} />
+                render={({ field: f, fieldState }) => (
+                  <>
+                    <Input id={`members.${i}.full_name`} aria-invalid={!!fieldState.error} className="h-10 rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20" {...f} value={f.value ?? ""} />
+                    {fieldState.error ? <p className="text-danger text-xs">{fieldState.error.message}</p> : null}
+                  </>
                 )}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor={`members.${i}.birth_date`}>Birth Date</Label>
+                <Label htmlFor={`members.${i}.birth_date`}>Birth Date <span className="text-red-600">*</span></Label>
                 <Controller
                   control={control}
                   name={`members.${i}.birth_date` as never}
-                  render={({ field: f }) => (
-                    <Input
-                      id={`members.${i}.birth_date`}
-                      type="date"
-                      className="h-10 rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
-                      {...f}
-                      value={f.value ?? ""}
-                    />
+                  render={({ field: f, fieldState }) => (
+                    <>
+                      <Input
+                        id={`members.${i}.birth_date`}
+                        type="date"
+                        aria-invalid={!!fieldState.error}
+                        className="h-10 rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                        {...f}
+                        value={f.value ?? ""}
+                      />
+                      {fieldState.error ? <p className="text-danger text-xs">{fieldState.error.message}</p> : null}
+                    </>
                   )}
                 />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor={`members.${i}.relationship_to_head`}>
-                  Relationship to Head
+                  Relationship to Head <span className="text-red-600">*</span>
                 </Label>
                 <Controller
                   control={control}
                   name={`members.${i}.relationship_to_head` as never}
-                  render={({ field: f }) => (
-                    <Select value={f.value ?? ""} onValueChange={f.onChange}>
-                      <SelectTrigger id={`members.${i}.relationship_to_head`} className="h-10 w-full rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
-                        <SelectValue placeholder="Select Relationship" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {RELATIONSHIP_OPTIONS.map((relationship) => (
-                          <SelectItem key={relationship} value={relationship}>
-                            {relationship}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  render={({ field: f, fieldState }) => (
+                    <>
+                      <Select value={f.value ?? ""} onValueChange={f.onChange}>
+                        <SelectTrigger id={`members.${i}.relationship_to_head`} aria-invalid={!!fieldState.error} className="h-10 w-full rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
+                          <SelectValue placeholder="Select Relationship" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {RELATIONSHIP_OPTIONS.map((relationship) => (
+                            <SelectItem key={relationship} value={relationship}>
+                              {relationship}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {fieldState.error ? <p className="text-danger text-xs">{fieldState.error.message}</p> : null}
+                    </>
                   )}
                 />
               </div>
@@ -169,8 +182,7 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
 
             <fieldset className="flex flex-wrap gap-x-4 gap-y-2">
               <legend className="text-caption mb-1 w-full text-neutral-500">
-                Vulnerability Flags — Tick What&apos;s Known; Exact Birth Date Is Not
-                Required
+                Vulnerability Flags — Tick What&apos;s Known
               </legend>
               {VULNERABILITY_FLAGS.map(([name, label]) => (
                 <div key={name} className="flex items-center gap-2">
@@ -180,6 +192,7 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
                     render={({ field: f }) => (
                       <Checkbox
                         id={`members.${i}.${name}`}
+                        className={memberCheckboxClassName}
                         checked={!!f.value}
                         onCheckedChange={f.onChange}
                       />

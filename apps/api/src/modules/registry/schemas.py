@@ -96,6 +96,15 @@ class HouseholdCreateBhw(BaseModel):
             raise ValueError("Street address is required")
         return value
 
+    @model_validator(mode="after")
+    def _assisted_members_are_complete(self) -> HouseholdCreateBhw:
+        for index, member in enumerate(self.members):
+            if member.birth_date is None:
+                raise ValueError(f"members[{index}].birth_date is required")
+            if not member.relationship_to_head:
+                raise ValueError(f"members[{index}].relationship_to_head is required")
+        return self
+
 
 class DuplicateCandidate(BaseModel):
     household_id: uuid.UUID

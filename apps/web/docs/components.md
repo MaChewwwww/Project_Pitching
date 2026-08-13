@@ -276,9 +276,10 @@ the resident can still add the precise house number, street, or purok.
 `/admin/households/new` is the BHW-assisted creation workspace. It uses the announcement-style
 primary work surface with identity and head details on the left, while the right rail keeps the
 required street address, map pin, and waterway-proximity survey together. The survey exposes the
-same very-near/near/far flood-risk bands used during resident onboarding. The member repeater starts
-under the household details card, then spans the workspace below both columns as soon as a member is
-added so its fields stay wide instead of becoming a narrow nested panel. Contact number is optional;
+same very-near/near/far flood-risk bands used during resident onboarding. The member repeater stays
+under the household details card in the left column so adding a member does not stretch the map and
+survey rail. Every added member requires a name, birth date, and relationship to the head; vulnerability
+flags remain optional because they record what the BHW knows. Contact number is optional;
 the API normalizes a missing number to the `No Contact Number` review state automatically.
 
 ### Portal splash loading
