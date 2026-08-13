@@ -201,7 +201,11 @@ export function resolveAdminBreadcrumbs(pathname: string): AdminCrumb[] {
                 ? "Household Details"
                 : (LEAF_LABELS[segment] ?? "Edit Household")
           : (LEAF_LABELS[segment] ?? "Edit");
-    crumbs.push({ label });
+    const href =
+      link.href === "/admin/households" && index === 0 && rest.length > 1
+        ? `${link.href}/${segment}`
+        : undefined;
+    crumbs.push({ label, href: href as Route | undefined });
   }
   return crumbs;
 }

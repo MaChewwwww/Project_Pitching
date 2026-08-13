@@ -47,6 +47,8 @@ export interface LocationPickerProps {
   value: LatLng | null;
   onChange: (value: LatLng) => void;
   className?: string;
+  /** Render a saved pin without allowing the viewer to move it. */
+  readOnly?: boolean;
   /** Overrides the helper caption under the map — the default assumes a
    * household pin, which reads wrong on non-registration callers (e.g. the
    * public rescue form). */
@@ -99,6 +101,7 @@ export default function LocationPicker({
   value,
   onChange,
   className,
+  readOnly = false,
   caption = "Drag the pin, or tap the map, to mark your household's location.",
   onResolve,
   restrictToBarangay = false,
@@ -113,7 +116,7 @@ export default function LocationPicker({
   const place = React.useCallback(
     (next: LatLng) => {
       onChange(next);
-      if (!onResolve && !restrictToBarangay && !onBoundaryViolation) return;
+      if (readOnly || (!onResolve && !restrictToBarangay && !onBoundaryViolation)) return;
       const requestId = ++placeRequestRef.current;
       void api
         .get<PointResolution>("/public/areas/resolve-point", {
@@ -142,14 +145,14 @@ export default function LocationPicker({
         })
         .catch(() => undefined);
     },
-    [onBoundaryViolation, onChange, onResolve, restrictToBarangay],
+    [onBoundaryViolation, onChange, onResolve, readOnly, restrictToBarangay],
   );
 
   React.useEffect(() => {
-    if (geo.fix) place({ lat: geo.fix.lat, lng: geo.fix.lng });
+    if (!readOnly && geo.fix) place({ lat: geo.fix.lat, lng: geo.fix.lng });
     // `onChange` is a stable RHF `field.onChange` at every call site — same
     // rationale as `use-registration-draft.ts`'s `form` dependency omission.
-  }, [geo.fix, place]);
+  }, [geo.fix, place, readOnly]);
 
   return (
     <div className={className}>
@@ -161,52 +164,62 @@ export default function LocationPicker({
           scrollWheelZoom={false}
         >
           <TileLayer attribution={OSM_TILE_ATTRIBUTION} url={OSM_TILE_URL} />
-          <ClickToPlace onChange={place} />
-          <FlyToFix fix={geo.fix} />
-          <Marker
-            ref={markerRef}
-            position={center}
-            draggable
-            eventHandlers={{
-              dragend: () => {
-                const marker = markerRef.current;
-                if (!marker) return;
-                const pos = marker.getLatLng();
-                place({ lat: pos.lat, lng: pos.lng });
-              },
-            }}
-          />
+          {!readOnly ? <ClickToPlace onChange={place} /> : null}
+          {!readOnly ? <FlyToFix fix={geo.fix} /> : null}
+          {value ? (
+            <Marker
+              ref={markerRef}
+              position={center}
+              draggable={!readOnly}
+              eventHandlers={
+                readOnly
+                  ? undefined
+                  : {
+                      dragend: () => {
+                        const marker = markerRef.current;
+                        if (!marker) return;
+                        const pos = marker.getLatLng();
+                        place({ lat: pos.lat, lng: pos.lng });
+                      },
+                    }
+              }
+            />
+          ) : null}
         </MapContainer>
       </div>
 
-      <div className="mt-2 flex flex-col-reverse gap-1.5 sm:flex-row-reverse sm:items-center sm:justify-between">
-        {geo.isSecureContext && geo.isSupported ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="sm:ml-auto"
-            disabled={geo.status === "locating"}
-            onClick={geo.locate}
-          >
-            <LocateFixed aria-hidden className="size-3.5" />
-            {geo.status === "locating" ? "Locating…" : "Use My Current Location"}
-          </Button>
-        ) : (
-          <p className="text-caption text-neutral-500">
-            {geo.isSecureContext
-              ? "This browser can't get your location — drag the pin instead."
-              : "Location access needs a secure (https) connection — drag the pin instead."}
-          </p>
-        )}
+      {!readOnly ? (
+        <div className="mt-2 flex flex-col-reverse gap-1.5 sm:flex-row-reverse sm:items-center sm:justify-between">
+          {geo.isSecureContext && geo.isSupported ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="sm:ml-auto"
+              disabled={geo.status === "locating"}
+              onClick={geo.locate}
+            >
+              <LocateFixed aria-hidden className="size-3.5" />
+              {geo.status === "locating" ? "Locating…" : "Use My Current Location"}
+            </Button>
+          ) : (
+            <p className="text-caption text-neutral-500">
+              {geo.isSecureContext
+                ? "This browser can't get your location — drag the pin instead."
+                : "Location access needs a secure (https) connection — drag the pin instead."}
+            </p>
+          )}
 
-        <p className="text-caption text-neutral-500">{caption}</p>
-      </div>
+          <p className="text-caption text-neutral-500">{caption}</p>
+        </div>
+      ) : (
+        <p className="text-caption mt-2 text-neutral-500">{caption}</p>
+      )}
 
-      {geo.errorMessage ? (
+      {!readOnly && geo.errorMessage ? (
         <p className="text-caption text-danger mt-1">{geo.errorMessage}</p>
       ) : null}
-      {geo.accuracyNote ? (
+      {!readOnly && geo.accuracyNote ? (
         <p className="text-caption mt-1 text-neutral-500">{geo.accuracyNote}</p>
       ) : null}
 

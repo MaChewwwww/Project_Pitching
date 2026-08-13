@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  ArrowLeft,
   Archive,
   BellRing,
   CircleAlert,
@@ -31,6 +31,11 @@ import type {
   HouseholdActivityOut,
   HouseholdDetailOut,
 } from "@/lib/api/registry-types";
+
+const LocationPicker = dynamic(
+  () => import("@/components/features/registry/location-picker"),
+  { ssr: false, loading: () => <div className="h-64 rounded-xl bg-neutral-100" /> },
+);
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(
@@ -146,18 +151,12 @@ export default function HouseholdDetailPage() {
           : "neutral";
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 pb-10">
+    <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-4 pb-10">
       <AdminPageHeader
         title={household.reference_no}
         description={`${household.head_name} · ${household.area_name ?? "Area not recorded"}`}
         action={
           <div className="flex flex-wrap justify-end gap-2">
-            <Button asChild size="sm" variant="outline">
-              <Link href="/admin/households">
-                <ArrowLeft aria-hidden className="size-4" />
-                Back
-              </Link>
-            </Button>
             <Button asChild size="sm" variant="outline">
               <Link href={`/admin/households/${id}/edit`}>
                 <Pencil aria-hidden className="size-4" />
@@ -181,7 +180,7 @@ export default function HouseholdDetailPage() {
         }
       />
 
-      <section className="grid gap-4 lg:grid-cols-12">
+      <section className="grid items-start gap-4 lg:grid-cols-12">
         <Card className="border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white lg:col-span-7">
           <CardContent className="p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -271,17 +270,26 @@ export default function HouseholdDetailPage() {
               </span>
             </div>
             {household.location ? (
-              <p className="mt-3 text-xs text-emerald-700">
-                Map pin recorded inside Barangay San Jose.
-              </p>
+              <LocationPicker
+                className="mt-4"
+                value={{
+                  lat: household.location.coordinates[1],
+                  lng: household.location.coordinates[0],
+                }}
+                onChange={() => undefined}
+                readOnly
+                caption="Saved household location inside Barangay San Jose."
+              />
             ) : (
-              <p className="mt-3 text-xs text-amber-700">No map pin recorded.</p>
+              <div className="mt-4 grid min-h-40 place-items-center rounded-xl border border-dashed border-amber-200 bg-amber-50/60 px-4 text-center text-sm text-amber-800">
+                No map pin recorded for this household.
+              </div>
             )}
           </CardContent>
         </Card>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-12">
+      <section className="grid items-start gap-4 lg:grid-cols-12">
         <Card className="lg:col-span-7">
           <CardContent className="p-5">
             <div className="flex items-center justify-between gap-3">

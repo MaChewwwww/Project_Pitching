@@ -131,7 +131,10 @@ already knows.
 
 ## Console navigation is defined once, in `lib/admin-nav.ts`
 
-The sidebar and the topbar breadcrumb read the same `ADMIN_CATEGORIES` array. That is the point
+The sidebar and the topbar breadcrumb read the same `ADMIN_CATEGORIES` array. Every category starts
+open after a reload so the complete console navigation is visible; officers can still collapse a group
+temporarily. On desktop the sidebar is viewport-sticky and does not create a second scroll container.
+That is the point
 of the module — when the sidebar owned the list privately, any route rename would have left the
 breadcrumb showing the old label with nothing to catch it.
 
@@ -273,11 +276,15 @@ households remain protected by the server and surface the conflict as feedback.
 matching area and derive the initial waterway-proximity band from the static flood layer after a map
 click, drag, or GPS fix; it never invents a street address, so the user enters the precise house number,
 street, or subdivision. Household forms show a blocking error dialog for pins outside Barangay San Jose.
+The `readOnly` variant renders a saved coordinate and marker for household detail pages without
+geolocation, drag, or click behavior.
 
 `/admin/households/[id]/edit` reuses the creation workspace with the current household and citizen
 data prefilled. One save updates the household, head profile, existing members, and new members together;
 removal remains an admin-only confirmed archive. The detail page shows only linked safety, evacuation,
 rescue, and resident-head incident report records, keeping unfinished operational modules factual.
+The detail layout uses the full console width, keeps the saved map beside the household record, and
+omits a redundant back action because the breadcrumb provides the return path.
 
 `/admin/households/new` is the BHW-assisted creation workspace. It uses the announcement-style
 primary work surface with identity and head details on the left, while the right rail keeps the

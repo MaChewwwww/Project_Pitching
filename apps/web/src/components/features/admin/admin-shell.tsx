@@ -119,9 +119,11 @@ function useIsActive() {
 function ConsoleNav({ onNavigate }: { onNavigate?: () => void }) {
   const isActive = useIsActive();
 
-  // Every category open by default; a category the officer collapses stays
-  // collapsed unless the route moves into it.
-  const [openCategories, setOpenCategories] = React.useState<Record<string, boolean>>({});
+  // Keep the full navigation visible after every reload. Officers can still
+  // collapse a group temporarily when they need more room on a short screen.
+  const [openCategories, setOpenCategories] = React.useState<Record<string, boolean>>(
+    () => Object.fromEntries(ADMIN_CATEGORIES.map((category) => [category.id, true])),
+  );
 
   return (
     <nav className="flex-1 space-y-2 px-3 py-4">
