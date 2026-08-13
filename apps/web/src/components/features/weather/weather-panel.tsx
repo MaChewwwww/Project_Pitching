@@ -183,8 +183,14 @@ function chartBarHeight(metric: ForecastMetricTab, value: number, peak: number) 
 
 function severityTooltipClasses(metric: ForecastMetricTab) {
   return metric === "rain"
-    ? { accent: "border-sky-400", icon: "bg-sky-500/15 text-sky-300" }
-    : { accent: "border-orange-400", icon: "bg-orange-500/15 text-orange-300" };
+    ? {
+        accent: "border-sky-200 bg-sky-50 text-sky-950",
+        icon: "bg-sky-100 text-sky-700",
+      }
+    : {
+        accent: "border-orange-200 bg-orange-50 text-orange-950",
+        icon: "bg-orange-100 text-orange-700",
+      };
 }
 
 function formatForecastLabel(validAt: string, horizon: ForecastHorizon) {
@@ -485,13 +491,15 @@ export function WeatherPanel({
                         : heatSeverity(item.heatIndex);
                     const SeverityIcon = severity.icon;
                     const tooltipTheme = severityTooltipClasses(forecastMetric);
-                    const chartValueLabel =
+                    const barLabel =
+                      forecastMetric === "rain" ? `${item.rainfall} mm` : null;
+                    const detailLabel =
                       forecastMetric === "rain"
-                        ? `${Math.round(item.probability)}% · ${item.rainfall} mm`
+                        ? `${Math.round(item.probability)}% chance`
                         : `${item.heatIndex} °C`;
                     const tooltip =
                       forecastMetric === "rain"
-                        ? `${severity.label}: ${Math.round(item.probability)}% rain chance${item.rainfall > 0 ? `, ${item.rainfall} mm expected` : ""}.`
+                        ? `${severity.label}: ${Math.round(item.probability)}% rain chance${item.rainfall > 0 ? `; ${item.rainfall} mm is expected` : ""}.`
                         : `${severity.label}: heat index is expected to reach ${item.heatIndex} °C.`;
 
                     return (
@@ -504,13 +512,11 @@ export function WeatherPanel({
                             className="group flex h-full min-w-[44px] flex-1 cursor-help flex-col items-center justify-between rounded-xl p-1 transition-all duration-200 hover:-translate-y-1 hover:bg-white/80 hover:shadow-sm focus-visible:-translate-y-1 focus-visible:bg-white/80 focus-visible:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-600 sm:min-w-0 sm:p-1.5"
                           >
                             <div className="flex w-full flex-1 flex-col items-center justify-end gap-1 py-1">
-                              <span className="tabular inline-flex items-center gap-1 text-[10px] font-semibold whitespace-nowrap text-neutral-600 opacity-80 group-hover:opacity-100 group-focus-visible:opacity-100 sm:text-[11px]">
-                                <SeverityIcon
-                                  aria-hidden
-                                  className={cn("size-3", severity.color)}
-                                />
-                                {chartValueLabel}
-                              </span>
+                              {barLabel ? (
+                                <span className="tabular text-[10px] font-semibold whitespace-nowrap text-neutral-600 opacity-80 group-hover:opacity-100 group-focus-visible:opacity-100 sm:text-[11px]">
+                                  {barLabel}
+                                </span>
+                              ) : null}
                               <div
                                 className={cn(
                                   "w-full max-w-[24px] rounded-t-md shadow-xs transition-all duration-300 sm:max-w-[28px]",
@@ -526,13 +532,20 @@ export function WeatherPanel({
                             <span className="text-caption text-[10px] font-bold whitespace-nowrap text-neutral-700 sm:text-[11px]">
                               {formatForecastLabel(item.validAt, forecastHorizon)}
                             </span>
+                            <span className="tabular inline-flex items-center gap-1 text-[10px] font-semibold whitespace-nowrap text-neutral-600 sm:text-[11px]">
+                              <SeverityIcon
+                                aria-hidden
+                                className={cn("size-3", severity.color)}
+                              />
+                              {detailLabel}
+                            </span>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent
                           side="top"
                           sideOffset={8}
                           className={cn(
-                            "max-w-60 border-l-4 bg-neutral-950 p-2.5 leading-relaxed whitespace-normal shadow-xl",
+                            "max-w-60 border-l-4 p-2.5 leading-relaxed whitespace-normal shadow-lg",
                             tooltipTheme.accent,
                           )}
                         >
@@ -546,9 +559,7 @@ export function WeatherPanel({
                               <SeverityIcon aria-hidden className="size-3.5" />
                             </span>
                             <span>
-                              <span className="block font-bold text-white">
-                                {severity.label}
-                              </span>
+                              <span className="block font-bold">{severity.label}</span>
                               {tooltip}
                             </span>
                           </span>
