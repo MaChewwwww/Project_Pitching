@@ -77,9 +77,9 @@ export default function AdminHouseholdsPage() {
       render: (row) => (
         <div className="min-w-44">
           <p className="font-bold text-neutral-900">{row.reference_no}</p>
-          <Badge tone={row.source === "self" ? "success" : "neutral"}>
+          <p className={row.source === "self" ? "mt-0.5 text-xs font-semibold text-emerald-700" : "mt-0.5 text-xs font-semibold text-orange-700"}>
             {row.source === "self" ? "Self-Registered" : "BHW-Assisted"}
-          </Badge>
+          </p>
         </div>
       ),
     },
