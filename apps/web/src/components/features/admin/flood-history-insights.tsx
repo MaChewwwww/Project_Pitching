@@ -17,7 +17,6 @@ import {
   Activity,
   BarChart3,
   Building2,
-  Clock3,
   ExternalLink,
   Gauge,
   Layers3,
@@ -298,19 +297,6 @@ export function FloodHistoryInsights({
               tone="violet"
             />
           </div>
-
-          <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-semibold text-neutral-600">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/70 px-2.5 py-1.5 shadow-2xs">
-              <Layers3 aria-hidden className="size-3.5 text-emerald-600" />
-              {insights.areaCount} area{insights.areaCount === 1 ? "" : "s"} referenced
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/70 px-2.5 py-1.5 shadow-2xs">
-              <Clock3 aria-hidden className="size-3.5 text-indigo-600" />
-              {insights.ongoingCount
-                ? `${insights.ongoingCount} ongoing`
-                : "No ongoing events"}
-            </span>
-          </div>
         </section>
       ) : null}
 
@@ -327,13 +313,6 @@ export function FloodHistoryInsights({
             insights.recordPeak ? `${formatMeters(insights.recordPeak.value)} m` : "—"
           }
           summaryLabel={insights.recordPeak ? "highest" : "no peaks"}
-          legend={
-            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
-              <LegendDot color={PEAK_THRESHOLDS.watch.color} label="Moderate · <18m" />
-              <LegendDot color={PEAK_THRESHOLDS.severe.color} label="Severe · 18m+" />
-              <LegendDot color={PEAK_THRESHOLDS.extreme.color} label="Extreme · 21m+" />
-            </div>
-          }
           referenceLines={[
             {
               value: PEAK_THRESHOLDS.severe.min,
@@ -362,13 +341,6 @@ export function FloodHistoryInsights({
           }
           summaryLabel={
             insights.totalDisplaced == null ? "no counts" : "households total"
-          }
-          legend={
-            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
-              <LegendDot color={DISPLACEMENT_COLORS[0]} label="Lower impact" />
-              <LegendDot color={DISPLACEMENT_COLORS[1]} label="Mid impact" />
-              <LegendDot color={DISPLACEMENT_COLORS[3]} label="Highest impact" />
-            </div>
           }
         />
       ) : null}
@@ -416,15 +388,6 @@ function MetricTile({
   );
 }
 
-function LegendDot({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-[10px] font-medium text-neutral-500">
-      <span className="size-2 rounded-full" style={{ backgroundColor: color }} />
-      {label}
-    </span>
-  );
-}
-
 function ChartCard({
   title,
   eyebrow,
@@ -435,7 +398,6 @@ function ChartCard({
   icon: Icon,
   summary,
   summaryLabel,
-  legend,
   referenceLines,
 }: {
   title: string;
@@ -447,7 +409,6 @@ function ChartCard({
   icon: typeof Gauge;
   summary: string;
   summaryLabel: string;
-  legend: React.ReactNode;
   referenceLines?: Array<{ value: number; label: string; color: string }>;
 }) {
   return (
@@ -579,9 +540,6 @@ function ChartCard({
           ) : (
             <EmptyChart description={empty} />
           )}
-        </div>
-        <div className="border-t border-neutral-100 bg-neutral-50/50 px-4 py-3 sm:px-5">
-          {legend}
         </div>
       </CardContent>
     </Card>
