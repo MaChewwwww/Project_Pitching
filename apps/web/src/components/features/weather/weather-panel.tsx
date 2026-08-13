@@ -171,6 +171,22 @@ function metricSeverity(metric: ReadingMetric, value: number) {
   return null;
 }
 
+function chartBarHeight(metric: ForecastMetricTab, value: number, peak: number) {
+  if (metric === "rain") return Math.max(12, (value / peak) * 100);
+
+  // Heat index values live in a narrow band, so scaling from zero disguises
+  // meaningful changes. The Caution threshold anchors the visual baseline.
+  const baseline = 27;
+  const ceiling = Math.max(peak, 33);
+  return Math.max(12, Math.min(100, ((value - baseline) / (ceiling - baseline)) * 100));
+}
+
+function severityTooltipClasses(metric: ForecastMetricTab) {
+  return metric === "rain"
+    ? { accent: "border-sky-400", icon: "bg-sky-500/15 text-sky-300" }
+    : { accent: "border-orange-400", icon: "bg-orange-500/15 text-orange-300" };
+}
+
 function formatForecastLabel(validAt: string, horizon: ForecastHorizon) {
   return new Intl.DateTimeFormat("en-PH", {
     timeZone: "Asia/Manila",
@@ -281,6 +297,9 @@ export function WeatherPanel({
               };
               const hasPeak =
                 reading.metric === "rainfall" || reading.metric === "heat_index";
+              const summaryTooltipTheme = severityTooltipClasses(
+                reading.metric === "rainfall" ? "rain" : "heat",
+              );
               const card = (
                 <div
                   className={cn(
@@ -342,11 +361,29 @@ export function WeatherPanel({
                   <TooltipContent
                     side="top"
                     sideOffset={8}
-                    className="max-w-60 leading-relaxed whitespace-normal"
+                    className={cn(
+                      "max-w-60 border-l-4 bg-neutral-950 p-2.5 leading-relaxed whitespace-normal shadow-xl",
+                      summaryTooltipTheme.accent,
+                    )}
                   >
-                    <span className="font-bold">{severity.label}.</span> Current{" "}
-                    {meta.label.toLowerCase()} is {reading.value} {reading.unit}
-                    {peak ? `; today’s peak is ${peak.value} ${peak.unit}.` : "."}
+                    <span className="flex gap-2">
+                      <span
+                        className={cn(
+                          "mt-0.5 grid size-6 shrink-0 place-items-center rounded-md",
+                          summaryTooltipTheme.icon,
+                        )}
+                      >
+                        <Icon aria-hidden className="size-3.5" />
+                      </span>
+                      <span>
+                        <span className="block font-bold text-white">
+                          {severity.label}
+                        </span>
+                        Current {meta.label.toLowerCase()} is {reading.value}{" "}
+                        {reading.unit}
+                        {peak ? `; Today’s peak is ${peak.value} ${peak.unit}.` : "."}
+                      </span>
+                    </span>
                   </TooltipContent>
                 </Tooltip>
               );
@@ -441,20 +478,21 @@ export function WeatherPanel({
                   forecastSeries.map((item) => {
                     const chartValue =
                       forecastMetric === "rain" ? item.rainfall : item.heatIndex;
-                    const heightPct = Math.max(12, (chartValue / barPeak) * 100);
+                    const heightPct = chartBarHeight(forecastMetric, chartValue, barPeak);
                     const severity =
                       forecastMetric === "rain"
                         ? rainSeverity(item.rainfall)
                         : heatSeverity(item.heatIndex);
                     const SeverityIcon = severity.icon;
+                    const tooltipTheme = severityTooltipClasses(forecastMetric);
                     const chartValueLabel =
                       forecastMetric === "rain"
-                        ? `${Math.round(item.probability)}%`
+                        ? `${Math.round(item.probability)}% · ${item.rainfall} mm`
                         : `${item.heatIndex} °C`;
                     const tooltip =
                       forecastMetric === "rain"
                         ? `${severity.label}: ${Math.round(item.probability)}% rain chance${item.rainfall > 0 ? `, ${item.rainfall} mm expected` : ""}.`
-                        : `${severity.label}: heat index expected to reach ${item.heatIndex} °C.`;
+                        : `${severity.label}: heat index is expected to reach ${item.heatIndex} °C.`;
 
                     return (
                       <Tooltip key={item.validAt}>
@@ -493,10 +531,27 @@ export function WeatherPanel({
                         <TooltipContent
                           side="top"
                           sideOffset={8}
-                          className="max-w-60 leading-relaxed whitespace-normal"
+                          className={cn(
+                            "max-w-60 border-l-4 bg-neutral-950 p-2.5 leading-relaxed whitespace-normal shadow-xl",
+                            tooltipTheme.accent,
+                          )}
                         >
-                          <span className="block font-bold">{severity.label}</span>
-                          {tooltip}
+                          <span className="flex gap-2">
+                            <span
+                              className={cn(
+                                "mt-0.5 grid size-6 shrink-0 place-items-center rounded-md",
+                                tooltipTheme.icon,
+                              )}
+                            >
+                              <SeverityIcon aria-hidden className="size-3.5" />
+                            </span>
+                            <span>
+                              <span className="block font-bold text-white">
+                                {severity.label}
+                              </span>
+                              {tooltip}
+                            </span>
+                          </span>
                         </TooltipContent>
                       </Tooltip>
                     );

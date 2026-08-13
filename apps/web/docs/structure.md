@@ -58,9 +58,11 @@ that day has a matching observation. Its forecast strip keeps the announcement-s
 for the hourly/daily horizon and uses Rain Chance and Heat Index tabs. Hourly includes the current
 hour; Daily includes today and shows that day's maximum apparent temperature as the heat-index proxy.
 The rain bars scale to expected rainfall rather than probability so a 100% chance does not flatten
-the chart; probability, severity, and the metric-specific guidance remain available through the
-keyboard-reachable tooltip. The current Rainfall and Heat Index cards use the same severity icon
-and explanation pattern.
+the chart; probability, millimetres, severity, and the metric-specific guidance remain available
+through the keyboard-reachable tooltip. Tooltips use the same rain/heat accent and severity icon as
+their source control. The current Rainfall and Heat Index cards use the same severity icon and
+explanation pattern. Heat bars are scaled from the 27°C Caution boundary rather than zero so the
+narrow but important day-to-day range remains visible.
 
 ## Rendering strategy, per surface
 
