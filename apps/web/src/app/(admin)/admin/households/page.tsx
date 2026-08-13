@@ -9,8 +9,9 @@ import { Eye, Merge as MergeIcon, Pencil, Plus, UserRoundSearch } from "lucide-r
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
+import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
 import { HouseholdRegistrySummary } from "@/components/features/admin/registry-summary";
-import { ResourceTable, type ResourceColumn } from "@/components/features/admin/resource-table";
+import { ResourceTable, type ResourceColumn, type ResourceFilterChoice } from "@/components/features/admin/resource-table";
 import {
   Dialog,
   DialogContent,
@@ -23,12 +24,43 @@ import { api, toDisplayError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import type { DuplicateCandidate, HouseholdOut, RegistrySummary } from "@/lib/api/registry-types";
+import type { PublicBarangayStats, FloodExposure } from "@/lib/api/public-types";
 
 function titleCaseWords(value: string | null | undefined): string {
   if (!value) return "—";
   return value
     .replaceAll("_", " ")
     .replace(/\b\p{L}/gu, (letter) => letter.toLocaleUpperCase());
+}
+
+function householdFilterChoices(rows: HouseholdOut[]): ResourceFilterChoice<HouseholdOut>[] {
+  const areas = new Map<string, string>();
+  let hasPossibleDuplicate = false;
+  let hasNoContactNumber = false;
+  for (const row of rows) {
+    areas.set(row.area_id, titleCaseWords(row.area_name));
+    hasPossibleDuplicate ||= row.has_possible_duplicate;
+    hasNoContactNumber ||= !row.contact_number;
+  }
+  return [
+    ...[...areas.entries()]
+      .sort((left, right) => left[1].localeCompare(right[1], undefined, { numeric: true }))
+      .map(([areaId, label]) => ({
+        value: `area:${areaId}`,
+        label,
+        matches: (row: HouseholdOut) => row.area_id === areaId,
+      })),
+    ...(hasPossibleDuplicate ? [{
+      value: "review:possible-duplicate",
+      label: "Possible Duplicate",
+      matches: (row: HouseholdOut) => row.has_possible_duplicate,
+    }] : []),
+    ...(hasNoContactNumber ? [{
+      value: "review:no-contact-number",
+      label: "No Contact Number",
+      matches: (row: HouseholdOut) => !row.contact_number,
+    }] : []),
+  ];
 }
 
 export default function AdminHouseholdsPage() {
@@ -50,6 +82,15 @@ export default function AdminHouseholdsPage() {
     queryKey: ["admin", "registry-summary"],
     queryFn: () => api.get<RegistrySummary>("/admin/households/summary").then((r) => r.data),
   });
+  const { data: areaStats } = useQuery({
+    queryKey: ["public", "area-stats"],
+    queryFn: () => api.get<PublicBarangayStats>("/public/area-stats").then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
+  const areaRisk = React.useMemo(
+    () => new Map(areaStats?.areas.map((area) => [area.area_id, area.flood_exposure] as const)),
+    [areaStats],
+  );
 
   const mergeMutation = useMutation({
     mutationFn: (body: { kept_household_id: string; merged_household_id: string }) =>
@@ -59,6 +100,17 @@ export default function AdminHouseholdsPage() {
       queryClient.invalidateQueries({ queryKey: ["admin", "households"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "registry-summary"] });
       setMergeTarget(null);
+    },
+    onError: (error) => toast.error(toDisplayError(error).detail),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (householdId: string) => api.delete(`/admin/households/${householdId}`),
+    onSuccess: () => {
+      toast.success("Household deleted");
+      queryClient.invalidateQueries({ queryKey: ["admin", "households"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "registry-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["public", "area-stats"] });
     },
     onError: (error) => toast.error(toDisplayError(error).detail),
   });
@@ -95,17 +147,34 @@ export default function AdminHouseholdsPage() {
         </div>
       ),
     },
-    { key: "area_name", header: "Area", render: (row) => titleCaseWords(row.area_name) },
     {
       key: "member_count",
       header: "Members",
       render: (row) => <span className="font-semibold tabular-nums">{row.member_count}</span>,
     },
+    { key: "area_name", header: "Area", render: (row) => titleCaseWords(row.area_name) },
+    {
+      key: "flood_exposure",
+      header: "Flood Risk",
+      filterable: false,
+      filterValue: (row) => areaRisk.get(row.area_id) ?? "not_recorded",
+      render: (row) => {
+        const risk = areaRisk.get(row.area_id) as FloodExposure | null | undefined;
+        if (!risk) return <span className="text-xs text-neutral-400">Not Recorded</span>;
+        const tone = risk === "high" ? "danger" : risk === "medium" ? "warning" : "success";
+        return <Badge tone={tone}>{titleCaseWords(risk)}</Badge>;
+      },
+    },
     {
       key: "has_possible_duplicate",
       header: "Review",
-      filterValue: (row) => row.has_possible_duplicate ? "Possible Duplicates Only" : "No Duplicate Flag",
-      render: (row) => (row.has_possible_duplicate ? <Badge tone="warning">Possible duplicate</Badge> : <span className="text-xs text-neutral-400">—</span>),
+      render: (row) => {
+        const reviewItems = [
+          row.has_possible_duplicate ? <Badge key="duplicate" tone="warning">Possible Duplicate</Badge> : null,
+          !row.contact_number ? <Badge key="contact" tone="orange">No Contact Number</Badge> : null,
+        ].filter(Boolean);
+        return reviewItems.length ? <div className="flex flex-wrap gap-1.5">{reviewItems}</div> : <span className="text-xs text-neutral-400">—</span>;
+      },
     },
   ];
 
@@ -144,6 +213,8 @@ export default function AdminHouseholdsPage() {
         emptyDescription="Start the registry with a BHW-assisted household record."
         getRowKey={(row) => row.id}
         searchPlaceholder="Search household number, head, or area"
+        filterChoices={householdFilterChoices}
+        filterAllLabel="All Areas & Reviews"
         rowActions={(row) => (
           <div className="flex flex-wrap justify-end gap-1.5">
             <Button
@@ -193,6 +264,15 @@ export default function AdminHouseholdsPage() {
                   <DialogFooter />
                 </DialogContent>
               </Dialog>
+            ) : null}
+            {user?.role === "admin" ? (
+              <ConfirmDeleteButton
+                itemLabel={row.reference_no}
+                actionLabel="Delete"
+                confirmLabel="Delete"
+                iconOnly
+                onConfirm={() => deleteMutation.mutate(row.id)}
+              />
             ) : null}
           </div>
         )}

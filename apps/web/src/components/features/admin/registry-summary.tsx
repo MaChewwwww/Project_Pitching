@@ -11,14 +11,6 @@ import {
   Users,
   UserRoundCheck,
 } from "lucide-react";
-import {
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
-
 import { Card, CardContent } from "@/components/common/card";
 import type { RegistrySummary } from "@/lib/api/registry-types";
 
@@ -144,32 +136,6 @@ function areaLabel(value: string): string {
   return value.replace(/\b\p{L}/gu, (letter) => letter.toLocaleUpperCase());
 }
 
-function DistributionTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: Array<{
-    name?: string;
-    value?: number;
-    payload?: { area: string; householdShare?: number; citizenShare?: number };
-  }>;
-}) {
-  if (!active || !payload?.length) return null;
-  const item = payload[0];
-  const isCitizen = item.name === "citizens";
-  const share = isCitizen ? item.payload?.citizenShare : item.payload?.householdShare;
-  return (
-    <div className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs shadow-lg">
-      <p className="font-bold text-neutral-900">{areaLabel(item.payload?.area ?? "Area")}</p>
-      <p className="mt-1 text-neutral-600">
-        {isCitizen ? "Citizens" : "Households"}: {item.value?.toLocaleString() ?? 0}
-        {share != null ? ` (${share}%)` : ""}
-      </p>
-    </div>
-  );
-}
-
 export function HouseholdRegistrySummary({ summary }: { summary?: RegistrySummary }) {
   if (!summary) return null;
 
@@ -213,7 +179,7 @@ export function HouseholdRegistrySummary({ summary }: { summary?: RegistrySummar
                   {summary.households.toLocaleString()}
                 </p>
                 <p className="mt-1 text-xs text-neutral-500">
-                  {summary.self_registered_households} self · {summary.bhw_assisted_households} BHW-assisted
+                  {summary.self_registered_households} Self-Registered · {summary.bhw_assisted_households} BHW-Assisted
                 </p>
               </div>
               <div className="pl-4">
@@ -225,16 +191,10 @@ export function HouseholdRegistrySummary({ summary }: { summary?: RegistrySummar
               </div>
             </div>
 
-            <div className="mt-5 flex items-center gap-3 rounded-xl border border-emerald-200/70 bg-white/70 px-3 py-2.5">
-              <Users aria-hidden className="size-4 shrink-0 text-emerald-700" />
-              <p className="text-xs leading-relaxed text-neutral-600">
-                {totalCitizens.toLocaleString()} citizens distributed across {totalHouseholds.toLocaleString()} active household records.
-              </p>
-            </div>
           </CardContent>
         </Card>
 
-        <Card className="h-full overflow-hidden border-violet-200/80 bg-gradient-to-br from-violet-50/70 via-white to-amber-50/40">
+        <Card className="order-3 h-full overflow-hidden border-violet-200/80 bg-gradient-to-br from-violet-50/70 via-white to-amber-50/40">
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-start gap-3">
               <span className="flex size-8 items-center justify-center rounded-xl bg-violet-600 text-white shadow-sm">
@@ -274,13 +234,13 @@ export function HouseholdRegistrySummary({ summary }: { summary?: RegistrySummar
             </div>
           </CardContent>
         </Card>
-        <Card className="h-full overflow-hidden border-sky-200/80 bg-gradient-to-br from-white via-white to-sky-50/45">
+        <Card className="order-2 h-full overflow-hidden border-sky-200/80 bg-gradient-to-br from-white via-white to-sky-50/45">
         <CardContent className="p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="flex items-center gap-2 text-sm font-bold text-neutral-950">
                 <MapPinned aria-hidden className="size-4 text-sky-700" />
-                Distribution by Area
+                Population by Area
               </p>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500">
                 <span className="inline-flex items-center gap-1 font-semibold text-neutral-600">
@@ -297,45 +257,44 @@ export function HouseholdRegistrySummary({ summary }: { summary?: RegistrySummar
           </div>
 
           {hasDistribution ? (
-            <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(130px,0.85fr)_1fr] sm:items-center">
-              <div
-                className="relative mx-auto h-44 w-full min-w-0 max-w-[190px]"
-                role="img"
-                aria-label="Household and citizen distribution donut chart"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={areas} dataKey="households" nameKey="area" innerRadius={57} outerRadius={77} paddingAngle={2} stroke="#ffffff" strokeWidth={3}>
-                      {areas.map((area) => <Cell key={`households-${area.id}`} fill={area.color} />)}
-                    </Pie>
-                    <Pie data={areas} dataKey="citizens" nameKey="area" innerRadius={38} outerRadius={53} paddingAngle={2} stroke="#ffffff" strokeWidth={3}>
-                      {areas.map((area) => <Cell key={`citizens-${area.id}`} fill={area.color} fillOpacity={0.58} />)}
-                    </Pie>
-                    <Tooltip content={<DistributionTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                  <p className="text-xl font-bold tracking-tight text-neutral-950 tabular-nums">{summary.households.toLocaleString()}</p>
-                  <p className="text-[10px] font-bold tracking-[0.12em] text-neutral-500 uppercase">Households</p>
-                  <p className="mt-0.5 text-[10px] font-semibold text-sky-700 tabular-nums">{summary.citizens.toLocaleString()} citizens</p>
-                </div>
+            <div
+              className="mt-3 space-y-2.5"
+              role="img"
+              aria-label="Household and citizen distribution by area"
+            >
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 px-1 text-[10px] font-bold tracking-[0.1em] text-neutral-400 uppercase">
+                <span>Area</span>
+                <span className="text-right text-emerald-700">Households</span>
+                <span className="text-right text-sky-700">Citizens</span>
               </div>
-              <div className="space-y-2 text-xs">
-                <p className="font-bold text-neutral-800">Area mix</p>
-                <div className="space-y-1.5">
-                  {areas.map((area) => (
-                    <div key={area.id} className="flex min-w-0 items-center gap-2">
-                      <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: area.color }} />
-                      <span className="min-w-0 flex-1 truncate font-semibold text-neutral-700">{areaLabel(area.name)}</span>
-                      <span className="shrink-0 text-[10px] font-semibold text-neutral-500 tabular-nums">
-                        {area.households} H ({area.householdShare}%) · {area.citizens} C ({area.citizenShare}%)
+              <div className="space-y-2">
+                {areas.map((area) => (
+                  <div key={area.id} className="rounded-xl border border-neutral-200/80 bg-white/75 px-3 py-2">
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 text-[11px]">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: area.color }} />
+                        <span className="truncate font-bold text-neutral-800">{areaLabel(area.name)}</span>
+                      </div>
+                      <span className="text-right font-semibold text-neutral-600 tabular-nums">
+                        {area.households} <span className="text-emerald-700">({area.householdShare}%)</span>
+                      </span>
+                      <span className="text-right font-semibold text-neutral-600 tabular-nums">
+                        {area.citizens} <span className="text-sky-700">({area.citizenShare}%)</span>
                       </span>
                     </div>
-                  ))}
-                </div>
+                    <div className="mt-1.5 grid gap-1">
+                      <div className="h-1 overflow-hidden rounded-full bg-emerald-100" aria-hidden="true">
+                        <div className="h-full rounded-full bg-emerald-500 transition-[width]" style={{ width: `${area.householdShare}%` }} />
+                      </div>
+                      <div className="h-1 overflow-hidden rounded-full bg-sky-100" aria-hidden="true">
+                        <div className="h-full rounded-full bg-sky-500 transition-[width]" style={{ width: `${area.citizenShare}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <p className="sr-only sm:col-span-2">
-                Area distribution: {areas.map((area) => `${areaLabel(area.name)} has ${area.households} households and ${area.citizens} citizens`).join("; ")}.
+              <p className="sr-only">
+                Area distribution: {areas.map((area) => `${areaLabel(area.name)} has ${area.households} households (${area.householdShare} percent) and ${area.citizens} citizens (${area.citizenShare} percent)`).join("; ")}.
               </p>
             </div>
           ) : (

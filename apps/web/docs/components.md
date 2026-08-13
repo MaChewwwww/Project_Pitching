@@ -259,8 +259,14 @@ with the resident head editor at `/portal/household/edit` so field validation an
 protections do not drift between roles.
 
 The household route layers `HouseholdRegistrySummary` above its worklist: two compact review cards
-and a two-ring area distribution chart keep household and citizen coverage together without changing
+and a paired area comparison keep household and citizen coverage together without changing
 the citizen route's summary surface before its own redesign.
+
+The household worklist keeps the operational scan order (`Household Number`, `Head of household`,
+`Members`, `Area`, `Flood Risk`, `Review`, `Actions`). Flood Risk is the selected area's precomputed
+exposure class; it is displayed as context, not as a household-specific assessment.
+Admin rows also expose a confirmed Delete action backed by the archive endpoint; account-linked
+households remain protected by the server and surface the conflict as feedback.
 
 `LocationPicker` accepts an optional boundary resolver callback. Registry forms use it to select the
 matching area and suggest a coarse Barangay San Jose address label after a map click, drag, or GPS fix;

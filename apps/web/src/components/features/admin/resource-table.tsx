@@ -49,6 +49,14 @@ export interface ResourceColumn<T> {
   filterable?: boolean;
   /** Optional display value used by the shared filter without adding a column. */
   filterValue?: (row: T) => unknown;
+  /** Optional multiple categorical values for rows that can match more than one filter. */
+  filterValues?: (row: T) => string[];
+}
+
+export interface ResourceFilterChoice<T> {
+  value: string;
+  label: string;
+  matches: (row: T) => boolean;
 }
 
 export interface ResourceTableProps<T> {
@@ -62,6 +70,9 @@ export interface ResourceTableProps<T> {
   rowActions?: (row: T) => React.ReactNode;
   /** Optional action aligned to the right of the search toolbar. */
   toolbarAction?: React.ReactNode;
+  /** Optional cross-column choices for a worklist that needs one shared filter menu. */
+  filterChoices?: (data: T[]) => ResourceFilterChoice<T>[];
+  filterAllLabel?: string;
   getRowKey: (row: T) => string;
   searchPlaceholder?: string;
 }
@@ -86,6 +97,11 @@ function columnFilterValue<T>(column: ResourceColumn<T>, row: T): unknown {
   return column.filterValue
     ? column.filterValue(row)
     : (row as Record<string, unknown>)[column.key];
+}
+
+function columnFilterValues<T>(column: ResourceColumn<T>, row: T): string[] {
+  if (column.filterValues) return column.filterValues(row).map(plainValue);
+  return [plainValue(columnFilterValue(column, row))];
 }
 
 export function plainValue(value: unknown): string {
@@ -116,6 +132,8 @@ export function ResourceTable<T extends object>({
   emptyDescription,
   rowActions,
   toolbarAction,
+  filterChoices,
+  filterAllLabel,
   getRowKey,
   searchPlaceholder = "Search this list",
 }: ResourceTableProps<T>) {
@@ -125,11 +143,16 @@ export function ResourceTable<T extends object>({
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc");
   const [page, setPage] = React.useState(1);
 
+  const customFilterChoices = React.useMemo(
+    () => (filterChoices && data ? filterChoices(data) : []),
+    [data, filterChoices],
+  );
+
   const filterColumn = React.useMemo(() => {
     if (!data?.length) return undefined;
     return columns.find((column) => {
       if (column.filterable === false || !FILTER_KEYS.has(column.key)) return false;
-      const values = new Set(data.map((row) => plainValue(columnFilterValue(column, row))));
+      const values = new Set(data.flatMap((row) => columnFilterValues(column, row)));
       return values.size > 1 && values.size <= 8;
     });
   }, [columns, data]);
@@ -139,24 +162,36 @@ export function ResourceTable<T extends object>({
       filterColumn && data
         ? [
             ...new Set(
-              data.map((row) =>
-                plainValue(columnFilterValue(filterColumn, row)),
-              ),
+              data.flatMap((row) => columnFilterValues(filterColumn, row)),
             ),
           ].sort()
         : [],
     [data, filterColumn],
   );
 
+  const filterChoice = React.useMemo(
+    () => customFilterChoices.find((choice) => choice.value === filter),
+    [customFilterChoices, filter],
+  );
+
   const filterValueCounts = React.useMemo(() => {
+    if (customFilterChoices.length && data) {
+      return Object.fromEntries(
+        customFilterChoices.map((choice) => [
+          choice.value,
+          data.filter((row) => choice.matches(row)).length,
+        ]),
+      );
+    }
     if (!filterColumn || !data) return {};
     const counts: Record<string, number> = { __all__: data.length };
     for (const row of data) {
-      const val = plainValue(columnFilterValue(filterColumn, row));
-      counts[val] = (counts[val] ?? 0) + 1;
+      for (const val of columnFilterValues(filterColumn, row)) {
+        counts[val] = (counts[val] ?? 0) + 1;
+      }
     }
     return counts;
-  }, [data, filterColumn]);
+  }, [customFilterChoices, data, filterColumn]);
 
   const rows = React.useMemo(() => {
     const lowered = query.trim().toLocaleLowerCase();
@@ -167,10 +202,9 @@ export function ResourceTable<T extends object>({
         columns.some((column) =>
           plainValue(record[column.key]).toLocaleLowerCase().includes(lowered),
         );
-      const matchesFilter =
-        !filter ||
-        !filterColumn ||
-        plainValue(columnFilterValue(filterColumn, row)) === filter;
+      const matchesFilter = customFilterChoices.length
+        ? !filterChoice || filterChoice.matches(row)
+        : !filter || !filterColumn || columnFilterValues(filterColumn, row).includes(filter);
       return matchesQuery && matchesFilter;
     });
     if (!sortKey) return next;
@@ -184,7 +218,7 @@ export function ResourceTable<T extends object>({
       );
       return sortDirection === "asc" ? compared : -compared;
     });
-  }, [columns, data, filter, filterColumn, query, sortDirection, sortKey]);
+  }, [columns, customFilterChoices, data, filter, filterChoice, filterColumn, query, sortDirection, sortKey]);
 
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const currentPage = Math.min(page, pages);
@@ -278,7 +312,7 @@ export function ResourceTable<T extends object>({
 
             {toolbarAction}
 
-            {filterColumn ? (
+            {filterColumn || customFilterChoices.length ? (
               <Select
                 value={filter || "ALL_ITEMS"}
                 onValueChange={(val) => {
@@ -291,8 +325,8 @@ export function ResourceTable<T extends object>({
                     aria-hidden
                     className="size-3.5 shrink-0 text-emerald-600"
                   />
-                  <SelectValue placeholder={formatAllFilterLabel(filterColumn.header)}>
-                    {!filter ? formatAllFilterLabel(filterColumn.header) : filter}
+                  <SelectValue placeholder={filterAllLabel ?? (filterColumn ? formatAllFilterLabel(filterColumn.header) : "All Filters")}>
+                    {!filter ? (filterAllLabel ?? (filterColumn ? formatAllFilterLabel(filterColumn.header) : "All Filters")) : (filterChoice?.label ?? filter)}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent
@@ -311,7 +345,7 @@ export function ResourceTable<T extends object>({
                     )}
                   >
                     <span className="truncate">
-                      {formatAllFilterLabel(filterColumn.header)}
+                      {filterAllLabel ?? (filterColumn ? formatAllFilterLabel(filterColumn.header) : "All Filters")}
                     </span>
                     <span
                       className={cn(
@@ -321,10 +355,12 @@ export function ResourceTable<T extends object>({
                           : "bg-neutral-100 text-neutral-600",
                       )}
                     >
-                      {filterValueCounts.__all__ ?? 0}
+                      {filterValueCounts.__all__ ?? data.length}
                     </span>
                   </SelectItem>
-                  {filterValues.map((value) => {
+                  {(customFilterChoices.length
+                    ? customFilterChoices.map((choice) => ({ value: choice.value, label: choice.label }))
+                    : filterValues.map((value) => ({ value, label: value }))).map(({ value, label }) => {
                     const isSelected = filter === value;
                     const count = filterValueCounts[value] ?? 0;
                     return (
@@ -338,7 +374,7 @@ export function ResourceTable<T extends object>({
                             : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950",
                         )}
                       >
-                        <span className="truncate">{value}</span>
+                        <span className="truncate">{label}</span>
                         <span
                           className={cn(
                             "ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
