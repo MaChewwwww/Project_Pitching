@@ -7,7 +7,11 @@ import { DataFreshness } from "@/components/common/data-freshness";
 import { EmptyState } from "@/components/common/empty-state";
 import { StatusBadge } from "@/components/common/status-badge";
 import { cn } from "@/lib/utils";
-import type { AlertLevel, PublicRiverLevel } from "@/lib/api/public-types";
+import type {
+  AlertLevel,
+  PublicRiverLevel,
+  PublicWeatherCurrent,
+} from "@/lib/api/public-types";
 
 /**
  * River level and the current alert level (FR-WX-004/005/010/011/012).
@@ -36,13 +40,36 @@ const MEASUREMENT_THEME: Record<AlertLevel, { bg: string; unit: string; val: str
   },
 };
 
+function getRainfallAdvisory(weather?: PublicWeatherCurrent) {
+  const hourlyRain = weather?.forecast
+    .filter((point) => point.horizon === "hourly" && point.metric === "rainfall")
+    .sort((a, b) => new Date(a.valid_at).getTime() - new Date(b.valid_at).getTime())
+    .slice(0, 6)
+    .map((point) => Number(point.value))
+    .filter(Number.isFinite);
+
+  if (!hourlyRain?.length) return null;
+
+  const currentRain = hourlyRain[0] ?? 0;
+  const peakRain = Math.max(...hourlyRain);
+  if (peakRain <= 0) return null;
+
+  if (peakRain >= Math.max(0.5, currentRain * 1.25)) {
+    return `Rain is forecast to strengthen over the next few hours, with up to ${peakRain} mm expected in an hour. River levels may rise after sustained rainfall; households in low-lying areas should monitor BDRRMC notices and be ready to move early.`;
+  }
+
+  return `Up to ${peakRain} mm of rain is forecast in the next few hours. Continued rainfall can raise river levels, so households in low-lying areas should keep monitoring BDRRMC notices.`;
+}
+
 export function RiverLevelPanel({
   river,
+  weather,
   className,
   onDark = false,
   density = "full",
 }: {
   river: PublicRiverLevel;
+  weather?: PublicWeatherCurrent;
   className?: string;
   onDark?: boolean;
   density?: "full" | "compact";
@@ -51,6 +78,7 @@ export function RiverLevelPanel({
   const usingFallback = river.reading == null && river.last_known_good != null;
   const compact = density === "compact";
   const theme = MEASUREMENT_THEME[river.alert_level] ?? MEASUREMENT_THEME[0];
+  const rainfallAdvisory = getRainfallAdvisory(weather);
 
   if (!reading) {
     return (
@@ -150,6 +178,7 @@ export function RiverLevelPanel({
             onDark={onDark}
             explainMissingThresholds={!compact}
             showDescription
+            weatherAdvisory={rainfallAdvisory}
           />
         </div>
 

@@ -168,7 +168,7 @@ function OverviewPanel({
       </div>
       <div className="grid gap-4 xl:grid-cols-[1.45fr_0.85fr]">
         <WeatherPanel weather={weather} />
-        <RiverLevelPanel river={river} density="compact" />
+        <RiverLevelPanel river={river} weather={weather} density="compact" />
       </div>
     </div>
   );

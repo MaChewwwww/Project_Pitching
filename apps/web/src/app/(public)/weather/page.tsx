@@ -39,14 +39,16 @@ export default async function WeatherPage() {
       <div className="mx-auto flex max-w-[1440px] flex-col gap-6 px-4 pt-5 pb-8 md:gap-10 md:px-6 md:pt-6 md:pb-12">
         <div className="grid gap-4 md:gap-6 lg:grid-cols-[2fr_1fr]">
           <WeatherPanel weather={weather} />
-          <RiverLevelPanel river={river} />
+          <RiverLevelPanel river={river} weather={weather} />
         </div>
 
         <section>
-          <div className="flex flex-col gap-1 mb-6">
+          <div className="mb-6 flex flex-col gap-1">
             <h2 className="text-h2 text-neutral-900">Past flood events</h2>
             <p className="text-body text-neutral-600">
-              Explore historical river peak levels, household displacement figures, and affected areas from past flood events in Barangay San Jose. Live metrics and event logs update automatically during active flood emergencies.
+              Explore historical river peak levels, household displacement figures, and
+              affected areas from past flood events in Barangay San Jose. Live metrics and
+              event logs update automatically during active flood emergencies.
             </p>
           </div>
 

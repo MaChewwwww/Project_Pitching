@@ -495,8 +495,8 @@ export function WeatherPanel({
                       forecastMetric === "rain" ? `${item.rainfall} mm` : null;
                     const detailLabel =
                       forecastMetric === "rain"
-                        ? `${Math.round(item.probability)}% chance`
-                        : `${item.heatIndex} °C`;
+                        ? `${Math.round(item.probability)}%`
+                        : `${item.heatIndex}°`;
                     const tooltip =
                       forecastMetric === "rain"
                         ? `${severity.label}: ${Math.round(item.probability)}% rain chance${item.rainfall > 0 ? `; ${item.rainfall} mm is expected` : ""}.`
@@ -552,7 +552,7 @@ export function WeatherPanel({
                           <span className="flex gap-2">
                             <span
                               className={cn(
-                                "mt-0.5 grid size-6 shrink-0 place-items-center rounded-md",
+                                "grid size-6 shrink-0 place-items-center self-center rounded-md",
                                 tooltipTheme.icon,
                               )}
                             >

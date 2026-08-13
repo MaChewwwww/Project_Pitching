@@ -24,11 +24,11 @@ system fallbacks preserve the hierarchy otherwise.
 
 The announcement CMS is the reference route composition for future portal authoring work:
 
-| Route | Responsibility |
-| ----- | -------------- |
-| `/admin/announcements` | Resource list with search, filters, pagination, and row actions |
-| `/admin/announcements/create-announcement` | Supplies create defaults and mutation handlers to `AnnouncementForm` |
-| `/admin/announcements/[id]` | Loads an existing record and supplies edit defaults plus the persistent `ArticleImageManager` |
+| Route                                      | Responsibility                                                                                |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `/admin/announcements`                     | Resource list with search, filters, pagination, and row actions                               |
+| `/admin/announcements/create-announcement` | Supplies create defaults and mutation handlers to `AnnouncementForm`                          |
+| `/admin/announcements/[id]`                | Loads an existing record and supplies edit defaults plus the persistent `ArticleImageManager` |
 
 Create and edit intentionally render the same form surface. Keep route pages thin: they own data
 loading, API mutations, and navigation, while shared composites own field layout, validation,
@@ -62,7 +62,10 @@ the chart; probability, millimetres, severity, and the metric-specific guidance 
 through the keyboard-reachable tooltip. Tooltips use the same rain/heat accent and severity icon as
 their source control. The current Rainfall and Heat Index cards use the same severity icon and
 explanation pattern. Heat bars are scaled from the 27°C Caution boundary rather than zero so the
-narrow but important day-to-day range remains visible.
+narrow but important day-to-day range remains visible. The river gauge keeps its human-issued alert
+level separate from the forecast, but adds a clearly labelled cached rainfall outlook when hourly
+rain is expected. It only advises that continued or strengthening rain may raise water levels; it
+never changes the gauge's alert state.
 
 ## Rendering strategy, per surface
 
