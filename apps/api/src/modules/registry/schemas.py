@@ -80,7 +80,6 @@ class HouseholdCreateBhw(BaseModel):
 
     head_name: str = Field(min_length=1)
     contact_number: str | None = None
-    is_unreachable_by_phone: bool = False
     area_id: uuid.UUID
     street_address: str | None = None
     waterway_proximity: Literal["very_near", "near", "far"] | None = None

@@ -274,11 +274,12 @@ matching area and suggest a coarse Barangay San Jose address label after a map c
 the resident can still add the precise house number, street, or purok.
 
 `/admin/households/new` is the BHW-assisted creation workspace. It uses the announcement-style
-primary work surface with a responsive detail column and operational right rail: household and
-location capture stay together, while the required waterway-proximity survey exposes the same
-very-near/near/far flood-risk bands used during resident onboarding. The member repeater spans the
-workspace below both columns so a complete household can be captured in one visit without a nested
-dialog or a second submission.
+primary work surface with identity and head details on the left, while the right rail keeps the
+map-assisted address capture and required waterway-proximity survey together. The survey exposes
+the same very-near/near/far flood-risk bands used during resident onboarding. The member repeater
+spans the workspace below both columns so adding a member keeps the fields wide and never forces a
+narrow nested panel. Contact number is optional; the API normalizes a missing number to the
+`No Contact Number` review state automatically.
 
 ### Portal splash loading
 

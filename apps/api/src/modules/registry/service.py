@@ -540,12 +540,16 @@ async def create_household_bhw(
     if body.latitude is not None and body.longitude is not None:
         location = func.ST_SetSRID(func.ST_MakePoint(body.longitude, body.latitude), 4326)
 
+    contact_number = (
+        body.contact_number.strip() if body.contact_number and body.contact_number.strip() else None
+    )
+
     household = Household(
         reference_no=await _next_reference_no(session),
         head_name=body.head_name,
         head_user_id=None,
-        contact_number=body.contact_number,
-        is_unreachable_by_phone=body.is_unreachable_by_phone,
+        contact_number=contact_number,
+        is_unreachable_by_phone=contact_number is None,
         area_id=area.id,
         street_address=body.street_address,
         waterway_proximity=body.waterway_proximity,

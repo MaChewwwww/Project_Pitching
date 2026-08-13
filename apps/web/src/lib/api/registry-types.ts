@@ -46,7 +46,6 @@ export interface HouseholdCreateSelf {
 export interface HouseholdCreateBhw {
   head_name: string;
   contact_number: string | null;
-  is_unreachable_by_phone: boolean;
   area_id: string;
   street_address: string | null;
   waterway_proximity?: "very_near" | "near" | "far" | null;

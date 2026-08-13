@@ -186,19 +186,13 @@ fields per member; this pairing is what keeps it manageable.
   the difference between a usable form and a hostile one.
 - Single column, always. Sticky footer for the primary action.
 
-### Draft persistence is not optional
+### Household form state
 
-A BHW filling a long household form in an alley **will** lose signal mid-form, and losing twenty
-minutes of entered data will stop them using the platform at all (FR-REG-012).
+A BHW filling a long household form in an alley can lose signal mid-form. The household form
+does not persist or restore local drafts: it starts fresh on each visit. A failed submit leaves
+the in-memory values intact so the officer can retry, and the API remains authoritative.
 
-- Persist form state to `localStorage` as they type, keyed by draft ID. Restore with a clear
-  "Resume draft?" prompt.
-- Queue the submit and retry rather than failing outright: "Saved locally — will upload when
-  connected."
-- **Never clear the form on a failed submit.** This is the single most common way field
-  data-entry tools lose people's trust.
-
-Full offline sync is _not_ in scope (`design.md` D-OI-8). Local drafts are.
+Full offline sync and local household drafts are out of scope (`design.md` D-OI-8).
 
 ## Announcement form state
 

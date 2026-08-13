@@ -1882,7 +1882,9 @@ export interface components {
             is_upcoming: boolean;
             cover_image?: components["schemas"]["ArticleImageOut"] | null;
             /** Body Json */
-            body_json: Record<string, never>;
+            body_json: {
+                [key: string]: unknown;
+            };
             /** Images */
             images: components["schemas"]["ArticleImageOut"][];
         };
@@ -1896,7 +1898,9 @@ export interface components {
              */
             excerpt: string;
             /** Body Json */
-            body_json?: Record<string, never>;
+            body_json?: {
+                [key: string]: unknown;
+            };
             /**
              * Type
              * @enum {string}
@@ -1967,7 +1971,9 @@ export interface components {
             is_active: boolean;
             cover_image?: components["schemas"]["ArticleImageOut"] | null;
             /** Body Json */
-            body_json: Record<string, never>;
+            body_json: {
+                [key: string]: unknown;
+            };
             /** Images */
             images: components["schemas"]["ArticleImageOut"][];
             /** Area Ids */
@@ -2089,7 +2095,9 @@ export interface components {
             is_active: boolean;
             cover_image?: components["schemas"]["ArticleImageOut"] | null;
             /** Body Json */
-            body_json: Record<string, never>;
+            body_json: {
+                [key: string]: unknown;
+            };
             /** Images */
             images: components["schemas"]["ArticleImageOut"][];
         };
@@ -2112,7 +2120,9 @@ export interface components {
              */
             excerpt: string;
             /** Body Json */
-            body_json?: Record<string, never>;
+            body_json?: {
+                [key: string]: unknown;
+            };
             /** Instruction */
             instruction?: string | null;
             /**
@@ -2327,7 +2337,9 @@ export interface components {
             archived_at: string | null;
             cover_image?: components["schemas"]["ArticleImageOut"] | null;
             /** Body Json */
-            body_json: Record<string, never>;
+            body_json: {
+                [key: string]: unknown;
+            };
             /** Images */
             images: components["schemas"]["ArticleImageOut"][];
         };
@@ -2341,7 +2353,9 @@ export interface components {
              */
             excerpt: string;
             /** Body Json */
-            body_json?: Record<string, never>;
+            body_json?: {
+                [key: string]: unknown;
+            };
             /** Event Id */
             event_id?: string | null;
             /** Organizer Name */
@@ -2745,11 +2759,6 @@ export interface components {
             head_name: string;
             /** Contact Number */
             contact_number?: string | null;
-            /**
-             * Is Unreachable By Phone
-             * @default false
-             */
-            is_unreachable_by_phone: boolean;
             /**
              * Area Id
              * Format: uuid
@@ -4077,7 +4086,9 @@ export interface components {
             /** Bhw Assisted Households */
             bhw_assisted_households: number;
             /** Areas */
-            areas: Record<string, never>[];
+            areas: {
+                [key: string]: unknown;
+            }[];
         };
         /**
          * RescueRequestAck

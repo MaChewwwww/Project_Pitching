@@ -18,6 +18,13 @@ import {
 } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 export const emptyMemberValues = {
@@ -45,6 +52,16 @@ const VULNERABILITY_FLAGS = [
   ["is_bedridden", "Bedridden / mobility-limited"],
 ] as const;
 
+const RELATIONSHIP_OPTIONS = [
+  "Spouse",
+  "Child",
+  "Parent",
+  "Sibling",
+  "Grandparent",
+  "Grandchild",
+  "Others",
+] as const;
+
 /**
  * The "member repeater" `design.md` line 638 specifies for BHW-assisted
  * registration (FR-REG-024/025): one collapsible card per member, one open at
@@ -69,14 +86,14 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
 
   return (
     <div className="flex flex-col gap-3">
-      <Label>Other household members</Label>
+      <Label>Other Household Members</Label>
 
       {fields.map((field, i) => (
         <Collapsible
           key={field.id}
           open={openIndex === i}
           onOpenChange={(open) => setOpenIndex(open ? i : null)}
-          className="rounded-lg border border-neutral-200"
+          className="rounded-lg border border-emerald-200/80 bg-white"
         >
           <CollapsibleTrigger
             className={cn(
@@ -96,21 +113,21 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
             />
           </CollapsibleTrigger>
 
-          <CollapsibleContent className="flex flex-col gap-4 border-t border-neutral-200 p-4">
+          <CollapsibleContent className="flex flex-col gap-4 border-t border-emerald-100 p-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor={`members.${i}.full_name`}>Full name</Label>
+              <Label htmlFor={`members.${i}.full_name`}>Full Name</Label>
               <Controller
                 control={control}
                 name={`members.${i}.full_name` as never}
                 render={({ field: f }) => (
-                  <Input id={`members.${i}.full_name`} {...f} value={f.value ?? ""} />
+                  <Input id={`members.${i}.full_name`} className="h-10 rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20" {...f} value={f.value ?? ""} />
                 )}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor={`members.${i}.birth_date`}>Birth date</Label>
+                <Label htmlFor={`members.${i}.birth_date`}>Birth Date</Label>
                 <Controller
                   control={control}
                   name={`members.${i}.birth_date` as never}
@@ -118,6 +135,7 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
                     <Input
                       id={`members.${i}.birth_date`}
                       type="date"
+                      className="h-10 rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
                       {...f}
                       value={f.value ?? ""}
                     />
@@ -126,18 +144,24 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor={`members.${i}.relationship_to_head`}>
-                  Relationship to head
+                  Relationship to Head
                 </Label>
                 <Controller
                   control={control}
                   name={`members.${i}.relationship_to_head` as never}
                   render={({ field: f }) => (
-                    <Input
-                      id={`members.${i}.relationship_to_head`}
-                      placeholder="e.g. Child, Spouse"
-                      {...f}
-                      value={f.value ?? ""}
-                    />
+                    <Select value={f.value ?? ""} onValueChange={f.onChange}>
+                      <SelectTrigger id={`members.${i}.relationship_to_head`} className="h-10 w-full rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
+                        <SelectValue placeholder="Select Relationship" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {RELATIONSHIP_OPTIONS.map((relationship) => (
+                          <SelectItem key={relationship} value={relationship}>
+                            {relationship}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
                 />
               </div>
@@ -145,8 +169,8 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
 
             <fieldset className="flex flex-wrap gap-x-4 gap-y-2">
               <legend className="text-caption mb-1 w-full text-neutral-500">
-                Vulnerability flags — tick what&apos;s known; exact birth date is not
-                required
+                Vulnerability Flags — Tick What&apos;s Known; Exact Birth Date Is Not
+                Required
               </legend>
               {VULNERABILITY_FLAGS.map(([name, label]) => (
                 <div key={name} className="flex items-center gap-2">

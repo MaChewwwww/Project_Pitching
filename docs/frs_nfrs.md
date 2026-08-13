@@ -265,7 +265,7 @@ remaining configuration contract is retired.
 | FR-REG-009 | Head can edit household and members    | All edits versioned and auditable                                                          | BR-1.8          | S   | ☐      | —   |
 | FR-REG-010 | Duplicate detection and merge          | Likely duplicates flagged on name + birthdate + area; admin can merge, preserving history  | BR-1.9          | M   | ◐      | —   |
 | FR-REG-011 | Verification flag                      | Admin marks a household verified; unverified records still count and still receive alerts  | BR-1.10         | S   | ◐      | —   |
-| FR-REG-012 | Registration draft persistence         | Form state saved locally as typed; resume prompt on return; never cleared on failed submit | Design 9.6      | S   | ◐      | —   |
+| ~~FR-REG-012~~ | ~~Registration draft persistence~~ | **Cut, Aug 2026** — the BHW form starts fresh on each visit; local draft persistence is not part of the operator workflow | Design 9.6 | — | ✕ | — |
 
 ### 5.2 Household members
 
