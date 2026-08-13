@@ -5,6 +5,7 @@ import {
   ClipboardCheck,
   Home,
   MapPinned,
+  Phone,
   PhoneOff,
   Users,
   UserRoundCheck,
@@ -144,21 +145,25 @@ function areaLabel(value: string): string {
 export function HouseholdRegistrySummary({
   summary,
   riskCounts,
+  noContactHouseholds,
 }: {
   summary?: RegistrySummary;
   riskCounts?: FloodRiskCounts;
+  noContactHouseholds?: number;
 }) {
   if (!summary) return null;
 
   const average = summary.average_household_size?.toFixed(1) ?? "—";
   const totalHouseholds = summary.areas.reduce((total, area) => total + area.households, 0);
   const totalCitizens = summary.areas.reduce((total, area) => total + area.citizens, 0);
-  const areas = summary.areas.map((area, index) => ({
-    ...area,
-    color: AREA_COLORS[index % AREA_COLORS.length],
-    householdShare: totalHouseholds ? Math.round((area.households / totalHouseholds) * 100) : 0,
-    citizenShare: totalCitizens ? Math.round((area.citizens / totalCitizens) * 100) : 0,
-  }));
+  const areas = [...summary.areas]
+    .sort((left, right) => left.name.localeCompare(right.name, undefined, { numeric: true, sensitivity: "base" }))
+    .map((area, index) => ({
+      ...area,
+      color: AREA_COLORS[index % AREA_COLORS.length],
+      householdShare: totalHouseholds ? Math.round((area.households / totalHouseholds) * 100) : 0,
+      citizenShare: totalCitizens ? Math.round((area.citizens / totalCitizens) * 100) : 0,
+    }));
   const hasDistribution = areas.some((area) => area.households > 0 || area.citizens > 0);
 
   return (
@@ -203,30 +208,30 @@ export function HouseholdRegistrySummary({
             </div>
 
             <div className="mt-5 grid grid-cols-3 divide-x divide-emerald-200/80 border-t border-emerald-100/80 pt-3" aria-label="Households by flood risk">
-              <div className="pr-3">
-                <p className="flex items-start gap-1.5 text-[9px] font-bold leading-tight tracking-[0.06em] text-neutral-500 uppercase sm:text-[10px]">
-                  <span className="mt-0.5 size-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden />
-                  No. of Low Flood Risk
+              <div className="flex items-center justify-between gap-2 pr-3">
+                <p className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-[9px] font-semibold text-neutral-500 sm:text-[10px]">
+                  <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden />
+                  Low Flood Risk
                 </p>
-                <p className="mt-1.5 text-lg font-bold text-emerald-700 tabular-nums">
+                <p className="shrink-0 text-lg font-bold text-emerald-700 tabular-nums">
                   {riskCounts ? riskCounts.low.toLocaleString() : "—"}
                 </p>
               </div>
-              <div className="px-3">
-                <p className="flex items-start gap-1.5 text-[9px] font-bold leading-tight tracking-[0.06em] text-neutral-500 uppercase sm:text-[10px]">
-                  <span className="mt-0.5 size-1.5 shrink-0 rounded-full bg-amber-500" aria-hidden />
-                  No. of Medium Flood Risk
+              <div className="flex items-center justify-between gap-2 px-3">
+                <p className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-[9px] font-semibold text-neutral-500 sm:text-[10px]">
+                  <span className="size-1.5 shrink-0 rounded-full bg-amber-500" aria-hidden />
+                  Medium Flood Risk
                 </p>
-                <p className="mt-1.5 text-lg font-bold text-amber-700 tabular-nums">
+                <p className="shrink-0 text-lg font-bold text-amber-700 tabular-nums">
                   {riskCounts ? riskCounts.medium.toLocaleString() : "—"}
                 </p>
               </div>
-              <div className="pl-3">
-                <p className="flex items-start gap-1.5 text-[9px] font-bold leading-tight tracking-[0.06em] text-neutral-500 uppercase sm:text-[10px]">
-                  <span className="mt-0.5 size-1.5 shrink-0 rounded-full bg-rose-500" aria-hidden />
-                  No. of High Flood Risk
+              <div className="flex items-center justify-between gap-2 pl-3">
+                <p className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-[9px] font-semibold text-neutral-500 sm:text-[10px]">
+                  <span className="size-1.5 shrink-0 rounded-full bg-rose-500" aria-hidden />
+                  High Flood Risk
                 </p>
-                <p className="mt-1.5 text-lg font-bold text-rose-700 tabular-nums">
+                <p className="shrink-0 text-lg font-bold text-rose-700 tabular-nums">
                   {riskCounts ? riskCounts.high.toLocaleString() : "—"}
                 </p>
               </div>
@@ -272,6 +277,18 @@ export function HouseholdRegistrySummary({
                 </div>
                 <span className="text-2xl font-bold text-amber-700 tabular-nums">{summary.unreachable_households}</span>
               </div>
+              <div className="flex items-center justify-between gap-3 px-3.5 py-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex size-7 items-center justify-center rounded-lg bg-orange-100 text-orange-700">
+                    <Phone aria-hidden className="size-3.5" />
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold text-neutral-800">No Contact Number</p>
+                    <p className="text-[11px] text-neutral-500">Households missing phone details</p>
+                  </div>
+                </div>
+                <span className="text-2xl font-bold text-orange-700 tabular-nums">{noContactHouseholds ?? "—"}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -309,27 +326,26 @@ export function HouseholdRegistrySummary({
                   </p>
                 </div>
                 </div>
-                <div className="mt-1 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[10px] font-semibold text-neutral-500" aria-label="Chart ring legend">
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="size-2 rounded-full bg-sky-700" aria-hidden />
-                    Outer ring: Households
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="size-2 rounded-full bg-sky-300 ring-1 ring-sky-700/30" aria-hidden />
-                    Inner ring: Citizens
-                  </span>
-                </div>
               </div>
               <div className="space-y-1.5 text-[11px]">
                 {areas.map((area) => (
                   <div key={area.id} className="flex min-w-0 items-center gap-2">
                     <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: area.color }} />
                     <span className="min-w-0 flex-1 truncate font-bold text-neutral-800">{areaLabel(area.name)}</span>
-                    <span className="shrink-0 text-right text-[10px] font-semibold text-neutral-500 tabular-nums sm:text-[11px]">
-                      {area.households} Households ({area.householdShare}%) · {area.citizens} Citizens ({area.citizenShare}%)
+                    <span className="shrink-0 text-right text-[10px] text-neutral-500 tabular-nums sm:text-[11px]">
+                      <span className="font-bold text-neutral-800">{area.households}</span>{" "}
+                      <span className="font-semibold">Households ({area.householdShare}%)</span>{" "}
+                      <span aria-hidden className="px-1">|</span>{" "}
+                      <span className="font-bold text-neutral-800">{area.citizens}</span>{" "}
+                      <span className="font-semibold">Citizens ({area.citizenShare}%)</span>
                     </span>
                   </div>
                 ))}
+              </div>
+              <div className="sm:col-span-2 flex flex-nowrap items-center justify-center gap-x-4 whitespace-nowrap text-[10px] font-semibold text-neutral-500" aria-label="Chart ring legend">
+                <span>Outer ring: Households</span>
+                <span aria-hidden>|</span>
+                <span>Inner ring: Citizens</span>
               </div>
               <p className="sr-only">
                 Area distribution: {areas.map((area) => `${areaLabel(area.name)} has ${area.households} households (${area.householdShare} percent) and ${area.citizens} citizens (${area.citizenShare} percent)`).join("; ")}.

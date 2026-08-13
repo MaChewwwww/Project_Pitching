@@ -258,7 +258,7 @@ keep management beside the data, while `RegistryHouseholdForm` and `RegistryMemb
 with the resident head editor at `/portal/household/edit` so field validation and account-linked
 protections do not drift between roles.
 
-The household route layers `HouseholdRegistrySummary` above its worklist: two compact review cards,
+The household route layers `HouseholdRegistrySummary` above its worklist: a three-item review queue,
 a three-column low/medium/high flood-risk household count row, and a compact two-ring population pie
 keep household and citizen coverage together without changing the citizen route's summary surface
 before its own redesign.
