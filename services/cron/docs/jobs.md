@@ -4,7 +4,7 @@
 
 | Job                       | Cadence                | Writes               | Requirement |
 | ------------------------- | ---------------------- | -------------------- | ----------- |
-| `fetch_weather`           | every 20 min           | `reading`            | FR-WX-003   |
+| `fetch_weather`           | every 20 min           | `reading`, `forecast` | FR-WX-003   |
 | `fetch_river_level`       | every 15 min           | `reading`            | FR-WX-008   |
 | `fetch_tcws_signal`       | every 30 min           | `reading`            | FR-WX-008   |
 | `evaluate_thresholds`     | after each river fetch | `alert_prompt`       | FR-WX-009   |
@@ -14,6 +14,11 @@
 
 Daily jobs are scheduled in **PHT**, because "02:00" means 02:00 in the barangay. Everything is
 still _stored_ in UTC (NFR-DAT-003).
+
+`fetch_weather` writes Open-Meteo hourly precipitation chance, rainfall, and apparent-temperature
+outlooks plus daily precipitation totals, maximum rain chance, and maximum apparent temperature for
+the next seven days. `forecast.horizon` keeps the two series separate for the public weather panel;
+the API returns the current hour and today rather than dropping them at the time boundary.
 
 > All six are currently stubs that log and return. The scheduling, logging, and failure
 > isolation around them is real; the bodies land with their FRs.

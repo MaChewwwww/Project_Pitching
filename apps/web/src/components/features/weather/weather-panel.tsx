@@ -1,19 +1,36 @@
+"use client";
+
 import * as React from "react";
 import {
   AlertTriangle,
   Clock,
+  CloudDrizzle,
+  CloudLightning,
   CloudRain,
   Droplets,
   ShieldAlert,
+  SunMedium,
   Thermometer,
+  ThermometerSun,
   Umbrella,
   Wind,
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/common/card";
 import { DataFreshness } from "@/components/common/data-freshness";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import type { PublicWeatherCurrent, ReadingMetric } from "@/lib/api/public-types";
+import type {
+  PublicForecastPoint,
+  PublicWeatherCurrent,
+  ReadingMetric,
+} from "@/lib/api/public-types";
 
 /**
  * Current conditions and dual-metric hourly forecast (FR-PUB-004, FR-WX-001/002).
@@ -119,6 +136,62 @@ const TCWS_META: Record<
   },
 };
 
+type ForecastMetricTab = "rain" | "heat";
+type ForecastHorizon = "hourly" | "daily";
+
+function rainSeverity(rainfall: number) {
+  if (rainfall >= 7.6) {
+    return { label: "Heavy Rain", icon: CloudLightning, color: "text-indigo-700" };
+  }
+  if (rainfall >= 2.5) {
+    return { label: "Moderate Rain", icon: CloudRain, color: "text-sky-700" };
+  }
+  return { label: "Light Rain", icon: CloudDrizzle, color: "text-sky-600" };
+}
+
+function heatSeverity(heatIndex: number) {
+  if (heatIndex >= 42) {
+    return { label: "Danger", icon: AlertTriangle, color: "text-red-700" };
+  }
+  if (heatIndex >= 33) {
+    return { label: "Extreme Caution", icon: ThermometerSun, color: "text-orange-700" };
+  }
+  return { label: "Caution", icon: SunMedium, color: "text-amber-700" };
+}
+
+function formatForecastLabel(validAt: string, horizon: ForecastHorizon) {
+  return new Intl.DateTimeFormat("en-PH", {
+    timeZone: "Asia/Manila",
+    ...(horizon === "hourly" ? { hour: "numeric", hour12: true } : { weekday: "short" }),
+  }).format(new Date(validAt));
+}
+
+function buildForecastSeries(
+  points: PublicForecastPoint[],
+  metric: ForecastMetricTab,
+  horizon: ForecastHorizon,
+) {
+  const byTime = new Map<
+    string,
+    { validAt: string; rainfall: number; probability: number; heatIndex: number }
+  >();
+  for (const point of points) {
+    if (point.horizon !== horizon) continue;
+    const current = byTime.get(point.valid_at) ?? {
+      validAt: point.valid_at,
+      rainfall: 0,
+      probability: 0,
+      heatIndex: 0,
+    };
+    if (point.metric === "rainfall") current.rainfall = point.value;
+    if (point.metric === "precipitation_probability") current.probability = point.value;
+    if (point.metric === "heat_index") current.heatIndex = point.value;
+    byTime.set(point.valid_at, current);
+  }
+
+  return Array.from(byTime.values()).slice(0, horizon === "hourly" ? 6 : 7);
+}
+
 export function WeatherPanel({
   weather,
   className,
@@ -126,28 +199,23 @@ export function WeatherPanel({
   weather: PublicWeatherCurrent;
   className?: string;
 }) {
+  const [forecastMetric, setForecastMetric] = React.useState<ForecastMetricTab>("rain");
+  const [forecastHorizon, setForecastHorizon] = React.useState<ForecastHorizon>("hourly");
   const tcwsReading = weather.readings.find((r) => r.metric === "tcws_signal");
   const signalLevel = tcwsReading ? Math.round(Number(tcwsReading.value)) : 0;
   const tcwsInfo = TCWS_META[signalLevel] || TCWS_META[0];
 
-  // Pair forecast array by valid_at timestamp to display both rainfall (mm) and rain chance (%)
-  const hourlyMap = new Map<
-    string,
-    { timeIso: string; rainfall: number; probability: number }
-  >();
-  for (const point of weather.forecast) {
-    const key = point.valid_at;
-    const existing = hourlyMap.get(key) || { timeIso: key, rainfall: 0, probability: 0 };
-    if (point.metric === "rainfall") {
-      existing.rainfall = point.value;
-    } else if (point.metric === "precipitation_probability") {
-      existing.probability = Math.round(point.value);
-    }
-    hourlyMap.set(key, existing);
-  }
-
-  const hourlyForecast = Array.from(hourlyMap.values()).slice(0, 6);
-  const peakRainfall = Math.max(...hourlyForecast.map((f) => f.rainfall), 1);
+  const forecastSeries = buildForecastSeries(
+    weather.forecast,
+    forecastMetric,
+    forecastHorizon,
+  );
+  const chartPeak = Math.max(
+    ...forecastSeries.map((point) =>
+      forecastMetric === "rain" ? point.probability : point.heatIndex,
+    ),
+    1,
+  );
   const readingsByMetric = new Map(
     weather.readings.map((reading) => [reading.metric, reading]),
   );
@@ -234,62 +302,133 @@ export function WeatherPanel({
           })}
         </div>
 
-        {/* Dual-Metric Hourly Prediction & Chance of Rain Strip */}
+        {/* Forecast strip: metric tabs, horizon selector, and severity-aware chart */}
         <div className="flex flex-col gap-3 rounded-2xl border border-sky-100 bg-gradient-to-b from-sky-50/50 to-indigo-50/20 p-3.5 sm:p-4">
           <div className="flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap">
-            <span className="text-overline inline-flex items-center gap-1.5 font-bold tracking-wider text-sky-900 uppercase">
-              <Umbrella className="size-4 shrink-0 text-sky-600" />
-              <span className="truncate">Hourly Prediction &amp; Rain Chance</span>
-            </span>
-            <span className="text-caption inline-flex shrink-0 items-center gap-1 rounded-md border border-sky-200/60 bg-sky-100/90 px-2 py-0.5 font-bold text-sky-800 shadow-2xs">
-              <Clock className="size-3 text-sky-600" />
-              Next 18 Hours
-            </span>
+            <div
+              className="inline-flex rounded-lg border border-sky-200/70 bg-white/70 p-1 shadow-2xs"
+              role="tablist"
+              aria-label="Forecast metric"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={forecastMetric === "rain"}
+                onClick={() => setForecastMetric("rain")}
+                className={cn(
+                  "text-caption inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600",
+                  forecastMetric === "rain"
+                    ? "bg-sky-600 text-white shadow-xs"
+                    : "text-sky-900 hover:bg-sky-100/80",
+                )}
+              >
+                <Umbrella aria-hidden className="size-3.5" />
+                Rain Chance
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={forecastMetric === "heat"}
+                onClick={() => setForecastMetric("heat")}
+                className={cn(
+                  "text-caption inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600",
+                  forecastMetric === "heat"
+                    ? "bg-orange-600 text-white shadow-xs"
+                    : "text-sky-900 hover:bg-orange-50",
+                )}
+              >
+                <ThermometerSun aria-hidden className="size-3.5" />
+                Heat Index
+              </button>
+            </div>
+            <Select
+              value={forecastHorizon}
+              onValueChange={(value) => setForecastHorizon(value as ForecastHorizon)}
+            >
+              <SelectTrigger className="h-8 rounded-lg border-sky-200/80 bg-white font-semibold text-sky-900 focus:border-sky-600 focus:ring-2 focus:ring-sky-500/20">
+                <Clock aria-hidden className="size-3.5 text-sky-600" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent
+                align="end"
+                className="w-[var(--radix-select-trigger-width)] min-w-32"
+              >
+                <SelectItem value="hourly">Hourly</SelectItem>
+                <SelectItem value="daily">Daily</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="-mx-1 scrollbar-none overflow-x-auto px-1 pt-2 sm:mx-0 sm:px-0">
             <div className="flex h-36 min-w-[310px] items-end gap-1.5 sm:min-w-0 sm:gap-2">
-              {hourlyForecast.map((item, i) => {
-                const hour = new Intl.DateTimeFormat("en-PH", {
-                  timeZone: "Asia/Manila",
-                  hour: "numeric",
-                  hour12: true,
-                }).format(new Date(item.timeIso));
+              {forecastSeries.length === 0 ? (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-sky-200 bg-white/45 px-4 text-center">
+                  <CloudRain aria-hidden className="size-5 text-sky-500" />
+                  <span className="text-caption font-semibold text-sky-900">
+                    {forecastHorizon === "daily"
+                      ? "Daily outlook is being refreshed."
+                      : "Hourly outlook is being refreshed."}
+                  </span>
+                </div>
+              ) : (
+                forecastSeries.map((item) => {
+                  const chartValue =
+                    forecastMetric === "rain" ? item.probability : item.heatIndex;
+                  const heightPct = Math.max(12, (chartValue / chartPeak) * 100);
+                  const severity =
+                    forecastMetric === "rain"
+                      ? rainSeverity(item.rainfall)
+                      : heatSeverity(item.heatIndex);
+                  const SeverityIcon = severity.icon;
+                  const chartValueLabel =
+                    forecastMetric === "rain"
+                      ? `${Math.round(item.probability)}%`
+                      : `${item.heatIndex} °C`;
+                  const tooltip =
+                    forecastMetric === "rain"
+                      ? `${severity.label}: ${Math.round(item.probability)}% rain chance${item.rainfall > 0 ? `, ${item.rainfall} mm expected` : ""}.`
+                      : `${severity.label}: heat index expected to reach ${item.heatIndex} °C.`;
 
-                const heightPct = Math.max(12, (item.rainfall / peakRainfall) * 100);
+                  return (
+                    <div
+                      key={item.validAt}
+                      tabIndex={0}
+                      role="img"
+                      aria-label={`${formatForecastLabel(item.validAt, forecastHorizon)}: ${tooltip}`}
+                      className="group relative flex h-full min-w-[44px] flex-1 cursor-default flex-col items-center justify-between rounded-xl p-1 transition-all duration-200 hover:-translate-y-1 hover:bg-white/80 hover:shadow-sm focus-visible:-translate-y-1 focus-visible:bg-white/80 focus-visible:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-600 sm:min-w-0 sm:p-1.5"
+                    >
+                      <div className="flex w-full flex-1 flex-col items-center justify-end gap-1 py-1">
+                        <span className="tabular inline-flex items-center gap-1 text-[10px] font-semibold whitespace-nowrap text-neutral-600 opacity-80 group-hover:opacity-100 group-focus-visible:opacity-100 sm:text-[11px]">
+                          <SeverityIcon
+                            aria-hidden
+                            className={cn("size-3", severity.color)}
+                          />
+                          {chartValueLabel}
+                        </span>
+                        <div
+                          className={cn(
+                            "w-full max-w-[24px] rounded-t-md shadow-xs transition-all duration-300 sm:max-w-[28px]",
+                            forecastMetric === "rain"
+                              ? "bg-gradient-to-t from-sky-500 via-sky-400 to-indigo-400 group-hover:from-sky-600 group-hover:to-indigo-500"
+                              : "bg-gradient-to-t from-amber-500 via-orange-400 to-red-400 group-hover:from-amber-600 group-hover:to-red-500",
+                          )}
+                          style={{ height: `${heightPct}%` }}
+                          aria-hidden
+                        />
+                      </div>
 
-                return (
-                  <div
-                    key={`${item.timeIso}-${i}`}
-                    className="group flex h-full min-w-[44px] flex-1 flex-col items-center justify-between rounded-xl p-1 transition-all duration-200 hover:-translate-y-1 hover:bg-white/80 hover:shadow-sm sm:min-w-0 sm:p-1.5"
-                  >
-                    {/* Rainfall Visual Bar & Value (TOP) */}
-                    <div className="flex w-full flex-1 flex-col items-center justify-end gap-1 py-1">
-                      <span className="tabular text-[10px] font-semibold whitespace-nowrap text-neutral-600 opacity-80 group-hover:opacity-100 sm:text-[11px]">
-                        {item.rainfall} mm
+                      <span className="text-caption text-[10px] font-bold whitespace-nowrap text-neutral-700 sm:text-[11px]">
+                        {formatForecastLabel(item.validAt, forecastHorizon)}
                       </span>
-                      <div
-                        className="w-full max-w-[24px] rounded-t-md bg-gradient-to-t from-sky-500 via-sky-400 to-indigo-400 shadow-xs transition-all duration-300 group-hover:from-sky-600 group-hover:to-indigo-500 sm:max-w-[28px]"
-                        style={{ height: `${heightPct}%` }}
-                        aria-hidden
-                      />
-                    </div>
 
-                    {/* Hour Label (MIDDLE) */}
-                    <span className="text-caption text-[10px] font-bold whitespace-nowrap text-neutral-700 sm:text-[11px]">
-                      {hour}
-                    </span>
-
-                    {/* Rain Chance % Badge (BOTTOM - below hour label) */}
-                    <div className="mt-1 flex flex-col items-center gap-0.5">
-                      <span className="inline-flex items-center gap-0.5 rounded-full border border-sky-200/60 bg-sky-100/90 px-1.5 py-0.5 text-[9px] font-black whitespace-nowrap text-sky-800 sm:text-[10px]">
-                        <Droplets className="size-2 text-sky-600 sm:size-2.5" />
-                        {item.probability}%
-                      </span>
+                      <div className="pointer-events-none absolute bottom-[calc(100%+0.35rem)] left-1/2 z-20 w-44 -translate-x-1/2 rounded-lg border border-neutral-200 bg-neutral-950 px-2.5 py-2 text-left text-[11px] leading-snug font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
+                        <span className="mb-0.5 block font-bold">{severity.label}</span>
+                        {tooltip}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

@@ -44,8 +44,9 @@ class OpenMeteoSource:
             "latitude": self.latitude,
             "longitude": self.longitude,
             "current": ",".join([*CURRENT_FIELDS, "apparent_temperature"]),
-            "hourly": "precipitation,precipitation_probability",
-            "forecast_days": 2,
+            "hourly": "precipitation,precipitation_probability,apparent_temperature",
+            "daily": "precipitation_sum,precipitation_probability_max,apparent_temperature_max",
+            "forecast_days": 7,
             "timezone": "UTC",
         }
         with httpx.Client(
@@ -96,7 +97,7 @@ class OpenMeteoSource:
         return readings
 
     def fetch_forecast(self) -> list[dict[str, Any]]:
-        """Hourly rainfall + precipitation probability, next 48h (FR-WX-002).
+        """Hourly and daily rain/heat-index outlooks for the next seven days.
 
         Returns plain dicts rather than a typed dataclass — `forecast` has no
         counterpart in `reading` shape (schema.md Section 6 explains why they are
@@ -104,27 +105,48 @@ class OpenMeteoSource:
         straight from these.
         """
         payload = self._get()
+        points: list[dict[str, Any]] = []
         hourly = payload.get("hourly", {})
-        times = hourly.get("time", [])
-        rainfall = hourly.get("precipitation", [])
-        probability = hourly.get("precipitation_probability", [])
+        hourly_fields = (
+            ("precipitation", "rainfall", "mm"),
+            ("precipitation_probability", "precipitation_probability", "%"),
+            ("apparent_temperature", "heat_index", "Â°C"),
+        )
+        for i, timestamp in enumerate(hourly.get("time", [])):
+            valid_at = datetime.fromisoformat(timestamp).replace(tzinfo=UTC)
+            for field, metric, unit in hourly_fields:
+                values = hourly.get(field, [])
+                if i < len(values) and values[i] is not None:
+                    points.append(
+                        {
+                            "metric": metric,
+                            "value": values[i],
+                            "unit": unit,
+                            "valid_at": valid_at,
+                            "horizon": "hourly",
+                        }
+                    )
 
-        points = []
-        for i, t in enumerate(times):
-            valid_at = datetime.fromisoformat(t).replace(tzinfo=UTC)
-            if i < len(rainfall) and rainfall[i] is not None:
-                points.append(
-                    {"metric": "rainfall", "value": rainfall[i], "unit": "mm", "valid_at": valid_at}
-                )
-            if i < len(probability) and probability[i] is not None:
-                points.append(
-                    {
-                        "metric": "precipitation_probability",
-                        "value": probability[i],
-                        "unit": "%",
-                        "valid_at": valid_at,
-                    }
-                )
+        daily = payload.get("daily", {})
+        daily_fields = (
+            ("precipitation_sum", "rainfall", "mm"),
+            ("precipitation_probability_max", "precipitation_probability", "%"),
+            ("apparent_temperature_max", "heat_index", "Â°C"),
+        )
+        for i, timestamp in enumerate(daily.get("time", [])):
+            valid_at = datetime.fromisoformat(timestamp).replace(tzinfo=UTC)
+            for field, metric, unit in daily_fields:
+                values = daily.get(field, [])
+                if i < len(values) and values[i] is not None:
+                    points.append(
+                        {
+                            "metric": metric,
+                            "value": values[i],
+                            "unit": unit,
+                            "valid_at": valid_at,
+                            "horizon": "daily",
+                        }
+                    )
         return points
 
     def health(self) -> SourceHealth:

@@ -54,7 +54,9 @@ still enforces the role boundary: BHW may record readings, while only admin/supe
 acknowledge or delete unacknowledged prompts, or run the typhoon demo sequence.
 The weather panel shows the latest current reading for each metric. It also shows today's highest
 observed rainfall and heat-index readings from the Asia/Manila calendar day; a peak stays blank until
-that day has a matching observation.
+that day has a matching observation. Its forecast strip keeps the announcement-style select control
+for the hourly/daily horizon and uses Rain Chance and Heat Index tabs. Hourly includes the current
+hour; Daily includes today and shows that day's maximum apparent temperature as the heat-index proxy.
 
 ## Rendering strategy, per surface
 

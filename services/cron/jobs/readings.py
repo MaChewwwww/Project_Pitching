@@ -75,7 +75,9 @@ def fetch_weather() -> None:
                 _UPSERT_FORECAST,
                 {
                     "source": "open_meteo", "metric": point["metric"], "value": point["value"],
-                    "unit": point["unit"], "valid_at": point["valid_at"], "horizon": "hourly",
+                    "unit": point["unit"],
+                    "valid_at": point["valid_at"],
+                    "horizon": point["horizon"],
                 },
             )
 

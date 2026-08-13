@@ -11,7 +11,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.audit import write_audit
@@ -104,13 +104,23 @@ async def get_weather_current(session: AsyncSession) -> PublicWeatherCurrent:
         if row is not None:
             peak_readings.append(_to_public(row, stale_after_minutes=stale_after, now=now))
 
+    current_hour = now.replace(minute=0, second=0, microsecond=0)
+    # Open-Meteo daily points are calendar-day values. Use the barangay's local
+    # date so the Daily view includes "today" through the UTC/PHT boundary.
+    local_day = now.astimezone(LOCAL_WEATHER_ZONE).date()
+    current_day = datetime.combine(local_day, datetime.min.time(), tzinfo=UTC)
     forecast_rows = (
         (
             await session.execute(
                 select(Forecast)
-                .where(Forecast.valid_at > now)
-                .order_by(Forecast.valid_at)
-                .limit(48)
+                .where(
+                    or_(
+                        (Forecast.horizon == "hourly") & (Forecast.valid_at >= current_hour),
+                        (Forecast.horizon == "daily") & (Forecast.valid_at >= current_day),
+                    )
+                )
+                .order_by(Forecast.horizon, Forecast.valid_at, Forecast.metric)
+                .limit(600)
             )
         )
         .scalars()

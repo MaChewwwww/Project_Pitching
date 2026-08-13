@@ -342,7 +342,7 @@ Splitting by tier rather than by resource means a public endpoint cannot acciden
 
 ```
 GET  /public/announcements
-GET  /public/weather/current       current metrics, today's rainfall/heat-index peaks, and forecast
+GET  /public/weather/current       current metrics, today's rainfall/heat-index peaks, and cached hourly/daily forecast
 GET  /public/river-level
 GET  /public/evacuation-centers
 GET  /public/hotlines
@@ -635,7 +635,7 @@ Single-replica `cron` container. Jobs are plain Python functions invoked by the 
 
 | Job                       | Cadence                | Writes               | Requirement |
 | ------------------------- | ---------------------- | -------------------- | ----------- |
-| `fetch_weather`           | 20 min                 | `reading`            | FR-WX-003   |
+| `fetch_weather`           | 20 min                 | `reading`, `forecast` | FR-WX-003   |
 | `fetch_river_level`       | 15 min                 | `reading`            | FR-WX-008   |
 | `fetch_tcws_signal`       | 30 min                 | `reading`            | FR-WX-008   |
 | `evaluate_thresholds`     | after each river fetch | `alert_prompt`       | FR-WX-009   |
