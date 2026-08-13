@@ -52,9 +52,14 @@ const LocationPicker = dynamic(
 const onboardingSchema = z
   .object({
     street_address: z.string().optional(),
-    waterway_proximity: z.enum(["very_near", "near", "far"], {
-      message: "Kailangang piliin ang kalapitan sa daanan ng tubig",
-    }),
+    waterway_proximity: z
+      .enum(["very_near", "near", "far"], {
+        message: "Kailangang piliin ang kalapitan sa daanan ng tubig",
+      })
+      .optional()
+      .refine((value) => Boolean(value), {
+        message: "Kailangang piliin ang kalapitan sa daanan ng tubig",
+      }),
     area_id: z.string().min(1, "Select your area"),
     contact_number: z.string().optional(),
     is_unreachable_by_phone: z.boolean(),
@@ -84,7 +89,7 @@ type OnboardingFormValues = z.infer<typeof onboardingSchema>;
 
 const emptyValues: OnboardingFormValues = {
   street_address: "",
-  waterway_proximity: "far",
+  waterway_proximity: undefined,
   area_id: "",
   contact_number: "",
   is_unreachable_by_phone: false,
@@ -115,7 +120,6 @@ export default function OnboardingPage() {
     register,
     handleSubmit,
     watch,
-    getValues,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<OnboardingFormValues>({
@@ -187,9 +191,7 @@ export default function OnboardingPage() {
 
             {/* ── PSGC address hierarchy — pre-filled, read-only ── */}
             <div className="flex flex-col gap-3">
-              <p className="text-body-sm font-semibold text-neutral-700">
-                Address
-              </p>
+              <p className="text-body-sm font-semibold text-neutral-700">Address</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="psgc_region" className="text-xs text-neutral-500">
@@ -200,7 +202,7 @@ export default function OnboardingPage() {
                     value="Region IV-A (CALABARZON)"
                     readOnly
                     tabIndex={-1}
-                    className="cursor-default select-none bg-neutral-50 text-neutral-500"
+                    className="cursor-default bg-neutral-50 text-neutral-500 select-none"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -212,7 +214,7 @@ export default function OnboardingPage() {
                     value="Rizal"
                     readOnly
                     tabIndex={-1}
-                    className="cursor-default select-none bg-neutral-50 text-neutral-500"
+                    className="cursor-default bg-neutral-50 text-neutral-500 select-none"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -224,7 +226,7 @@ export default function OnboardingPage() {
                     value="Rodriguez (Montalban)"
                     readOnly
                     tabIndex={-1}
-                    className="cursor-default select-none bg-neutral-50 text-neutral-500"
+                    className="cursor-default bg-neutral-50 text-neutral-500 select-none"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -236,28 +238,34 @@ export default function OnboardingPage() {
                     value="San Jose"
                     readOnly
                     tabIndex={-1}
-                    className="cursor-default select-none bg-neutral-50 text-neutral-500"
+                    className="cursor-default bg-neutral-50 text-neutral-500 select-none"
                   />
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="street_address">
                   House no. / Street / Purok{" "}
-                  <span className="text-neutral-400 font-normal">(optional)</span>
+                  <span className="font-normal text-neutral-400">(optional)</span>
                 </Label>
-                <Input id="street_address" type="text" {...register("street_address")} placeholder="e.g. 12 Sampaguita St., Purok 3" />
+                <Input
+                  id="street_address"
+                  type="text"
+                  {...register("street_address")}
+                  placeholder="e.g. 12 Sampaguita St., Purok 3"
+                />
               </div>
             </div>
 
             {/* ── PROXIMITY FROM A WATERWAY (E.G. RIVERS, CREEKS)? ── */}
-            <div className="rounded-xl border border-neutral-300 bg-neutral-50/50 p-4 flex flex-col gap-3">
+            <div className="flex flex-col gap-3 rounded-xl border border-neutral-300 bg-neutral-50/50 p-4">
               <div className="flex flex-col gap-1">
-                <Label className="text-body-sm font-black uppercase tracking-wide text-neutral-900 flex items-center justify-between">
+                <Label className="text-body-sm flex items-center justify-between font-black tracking-wide text-neutral-900 uppercase">
                   <span>
-                    PROXIMITY FROM A WATERWAY (E.G. RIVERS, CREEKS)?: <span className="text-red-500">*</span>
+                    PROXIMITY FROM A WATERWAY (E.G. RIVERS, CREEKS)?:{" "}
+                    <span className="text-red-500">*</span>
                   </span>
                 </Label>
-                <p className="text-sm italic text-neutral-700 font-serif">
+                <p className="font-serif text-sm text-neutral-700 italic">
                   Gaano ka kalapit sa daanan ng tubig (Halimbawa: Ilog, Creek)?
                 </p>
               </div>
@@ -270,7 +278,8 @@ export default function OnboardingPage() {
                     {[
                       {
                         value: "very_near",
-                        label: "Very Near: 1 km below (Sobrang Lapit: Isang kilometro pababa)",
+                        label:
+                          "Very Near: 1 km below (Sobrang Lapit: Isang kilometro pababa)",
                         badge: "High Risk Classification",
                         badgeColor: "bg-red-100 text-red-700 border-red-200",
                       },
@@ -282,7 +291,8 @@ export default function OnboardingPage() {
                       },
                       {
                         value: "far",
-                        label: "Far: 6 km o higit pa (Malayo: Anim na kilometro o higit pa)",
+                        label:
+                          "Far: 6 km o higit pa (Malayo: Anim na kilometro o higit pa)",
                         badge: "Low Risk Classification",
                         badgeColor: "bg-emerald-100 text-emerald-700 border-emerald-200",
                       },
@@ -292,10 +302,10 @@ export default function OnboardingPage() {
                         <label
                           key={opt.value}
                           className={cn(
-                            "flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all duration-150",
+                            "flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-all duration-150",
                             selected
                               ? "border-emerald-600 bg-emerald-50/70 shadow-2xs"
-                              : "border-neutral-200 bg-white hover:bg-neutral-50"
+                              : "border-neutral-200 bg-white hover:bg-neutral-50",
                           )}
                         >
                           <input
@@ -304,11 +314,18 @@ export default function OnboardingPage() {
                             value={opt.value}
                             checked={selected}
                             onChange={() => field.onChange(opt.value)}
-                            className="mt-0.5 size-4 accent-emerald-600 cursor-pointer shrink-0"
+                            className="mt-0.5 size-4 shrink-0 cursor-pointer accent-emerald-600"
                           />
-                          <div className="flex flex-col gap-0.5 text-xs text-neutral-800 font-medium">
-                            <span className="font-semibold text-neutral-900">{opt.label}</span>
-                            <span className={cn("text-[10px] font-bold w-fit px-1.5 py-0.2 rounded border mt-0.5", opt.badgeColor)}>
+                          <div className="flex flex-col gap-0.5 text-xs font-medium text-neutral-800">
+                            <span className="font-semibold text-neutral-900">
+                              {opt.label}
+                            </span>
+                            <span
+                              className={cn(
+                                "py-0.2 mt-0.5 w-fit rounded border px-1.5 text-[10px] font-bold",
+                                opt.badgeColor,
+                              )}
+                            >
                               {opt.badge}
                             </span>
                           </div>
@@ -355,18 +372,39 @@ export default function OnboardingPage() {
               <LocationPicker
                 value={location}
                 onChange={setLocation}
+                restrictToBarangay
+                onBoundaryViolation={() => {
+                  setLocation(null);
+                  setValue("area_id", "", { shouldValidate: true });
+                  setValue("waterway_proximity", undefined, {
+                    shouldValidate: true,
+                  });
+                  setLocationHint("Choose a pin inside Barangay San Jose.");
+                }}
                 onResolve={(resolution: PointResolution) => {
                   if (!resolution.within_barangay || !resolution.area_id) {
+                    setLocation(null);
+                    setValue("area_id", "", { shouldValidate: true });
+                    setValue("waterway_proximity", undefined, {
+                      shouldValidate: true,
+                    });
                     setLocationHint("Choose a pin inside Barangay San Jose.");
                     return;
                   }
                   setValue("area_id", resolution.area_id, { shouldValidate: true });
-                  const currentAddress = getValues("street_address");
-                  if (!currentAddress || currentAddress.startsWith("Area ")) {
-                    setValue("street_address", resolution.address_label ?? "");
-                  }
+                  setValue(
+                    "waterway_proximity",
+                    resolution.waterway_proximity ?? undefined,
+                    {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    },
+                  );
+                  const proximityNote = resolution.waterway_proximity
+                    ? "Flood proximity was set from the hazard map."
+                    : "Select waterway proximity manually because the hazard layer is unavailable.";
                   setLocationHint(
-                    `${resolution.area_name} selected. The address label is approximate; add a house number or purok if known.`,
+                    `${resolution.area_name} selected. ${proximityNote} Enter the specific house number, street, or subdivision if known.`,
                   );
                 }}
               />
@@ -443,11 +481,11 @@ export default function OnboardingPage() {
               </legend>
               {(
                 [
-                  ["is_pwd", "Person with disability"],
+                  ["is_pwd", "Person With Disability"],
                   ["is_pregnant", "Pregnant"],
                   ["is_lactating", "Lactating"],
-                  ["has_chronic_condition", "Chronic condition on regular medication"],
-                  ["is_bedridden", "Bedridden or mobility-limited"],
+                  ["has_chronic_condition", "Chronic Condition On Regular Medication"],
+                  ["is_bedridden", "Bedridden Or Mobility-Limited"],
                 ] as const
               ).map(([name, label]) => (
                 <div key={name} className="flex items-center gap-2">

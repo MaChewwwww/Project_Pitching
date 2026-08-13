@@ -28,8 +28,95 @@ export interface HazardFeatureCollection {
     type: "Feature";
     /** `Var` is NOAH's hazard-level column: 1 Low, 2 Medium, 3 High. */
     properties: { Var?: number; hazard_level?: string; depth?: string } | null;
-    geometry: unknown;
+    geometry: HazardGeometry | null;
   }[];
+}
+
+type Coordinate = readonly [number, number];
+type Ring = readonly Coordinate[];
+type PolygonCoordinates = readonly Ring[];
+type MultiPolygonCoordinates = readonly PolygonCoordinates[];
+
+interface HazardGeometry {
+  type: "Polygon" | "MultiPolygon";
+  coordinates: PolygonCoordinates | MultiPolygonCoordinates;
+}
+
+export type WaterwayProximity = "very_near" | "near" | "far";
+
+let hazardDataPromise: Promise<HazardFeatureCollection | null> | null = null;
+
+/** Load the static hazard layer once for point-based pin resolution. */
+export function loadHazardGeoJson(): Promise<HazardFeatureCollection | null> {
+  if (!hazardDataPromise) {
+    hazardDataPromise = fetch(HAZARD_GEOJSON_URL)
+      .then((response) => {
+        if (!response.ok) throw new Error(`${response.status}`);
+        return response.json() as Promise<HazardFeatureCollection>;
+      })
+      .then((data) => (Array.isArray(data?.features) ? data : null))
+      .catch(() => null);
+  }
+  return hazardDataPromise;
+}
+
+function pointInRing(point: Coordinate, ring: Ring): boolean {
+  let inside = false;
+  const [x, y] = point;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    const crosses = yi > y !== yj > y;
+    if (crosses && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function pointInPolygon(point: Coordinate, polygon: PolygonCoordinates): boolean {
+  const [outer, ...holes] = polygon;
+  return Boolean(
+    outer &&
+    pointInRing(point, outer) &&
+    holes.every((hole) => !pointInRing(point, hole)),
+  );
+}
+
+function pointInGeometry(point: Coordinate, geometry: HazardGeometry | null): boolean {
+  if (!geometry) return false;
+  if (geometry.type === "Polygon") {
+    return pointInPolygon(point, geometry.coordinates as PolygonCoordinates);
+  }
+  return (geometry.coordinates as MultiPolygonCoordinates).some((polygon) =>
+    pointInPolygon(point, polygon),
+  );
+}
+
+/**
+ * Translate the mapped flood-depth band into the registry's proximity default.
+ * This is an operational default, not a replacement for field observation:
+ * high/medium/low mapped exposure become very_near/near/far respectively.
+ * A loaded layer with no intersecting polygon is treated as far; an unavailable
+ * layer returns null so the form can require a manual selection.
+ */
+export function waterwayProximityForPoint(
+  data: HazardFeatureCollection | null,
+  latitude: number,
+  longitude: number,
+): WaterwayProximity | null {
+  if (!data) return null;
+
+  let highestLevel = 0;
+  for (const feature of data.features) {
+    if (!pointInGeometry([longitude, latitude], feature.geometry)) continue;
+    const level = Number(feature.properties?.Var ?? 0);
+    if (level > highestLevel) highestLevel = level;
+  }
+
+  if (highestLevel >= 3) return "very_near";
+  if (highestLevel === 2) return "near";
+  return "far";
 }
 
 export type HazardLoadState =

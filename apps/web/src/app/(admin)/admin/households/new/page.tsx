@@ -220,7 +220,6 @@ export default function NewHouseholdPage() {
   const [locationHintIsError, setLocationHintIsError] = React.useState(false);
   const [confirmationOpen, setConfirmationOpen] = React.useState(false);
   const [pendingValues, setPendingValues] = React.useState<BhwFormValues | null>(null);
-  const generatedAddressRef = React.useRef<string | null>(null);
 
   const { data: allAreas } = useQuery({
     queryKey: ["admin", "areas"],
@@ -468,8 +467,8 @@ export default function NewHouseholdPage() {
                     ["head_is_pwd", "PWD"],
                     ["head_is_pregnant", "Pregnant"],
                     ["head_is_lactating", "Lactating"],
-                    ["head_has_chronic_condition", "Chronic condition"],
-                    ["head_is_bedridden", "Bedridden / mobility-limited"],
+                    ["head_has_chronic_condition", "Chronic Condition"],
+                    ["head_is_bedridden", "Bedridden / Mobility-Limited"],
                   ] as const
                 ).map(([name, label]) => (
                   <label
@@ -497,20 +496,6 @@ export default function NewHouseholdPage() {
 
           <Card className="border-emerald-200/80 bg-white">
             <CardContent className="space-y-5 p-4 sm:p-5">
-              <div className="flex items-start gap-3 border-b border-neutral-100 pb-4">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-                  <Users aria-hidden className="size-4" />
-                </span>
-                <div>
-                  <h2 className="text-base font-bold text-neutral-950">
-                    Household Members
-                  </h2>
-                  <p className="mt-0.5 text-xs text-neutral-500">
-                    Add every member available during this visit. You can add more than
-                    one.
-                  </p>
-                </div>
-              </div>
               <HouseholdMemberRepeater control={control} />
             </CardContent>
           </Card>
@@ -528,7 +513,8 @@ export default function NewHouseholdPage() {
                     Address and Map Pin
                   </h2>
                   <p className="mt-0.5 text-xs text-neutral-500">
-                    Pin the home to suggest its area and a coarse address label.
+                    Pin the home to confirm its area, then enter the specific address
+                    below.
                   </p>
                 </div>
               </div>
@@ -571,36 +557,41 @@ export default function NewHouseholdPage() {
                     <LocationPicker
                       value={field.value}
                       onChange={field.onChange}
+                      restrictToBarangay
+                      onBoundaryViolation={() => {
+                        field.onChange(null);
+                        setValue("area_id", "", { shouldValidate: true });
+                        setValue("waterway_proximity", undefined, {
+                          shouldValidate: true,
+                        });
+                        setLocationHintIsError(true);
+                        setLocationHint("Choose a pin inside Barangay San Jose.");
+                      }}
                       onResolve={(resolution: PointResolution) => {
                         if (!resolution.within_barangay || !resolution.area_id) {
                           setValue("area_id", "", { shouldValidate: true });
+                          setValue("waterway_proximity", undefined, {
+                            shouldValidate: true,
+                          });
                           setLocationHintIsError(true);
-                          if (
-                            form.getValues("street_address") ===
-                            generatedAddressRef.current
-                          ) {
-                            setValue("street_address", "", { shouldValidate: true });
-                            generatedAddressRef.current = null;
-                          }
                           setLocationHint("Choose a pin inside Barangay San Jose.");
                           return;
                         }
                         setLocationHintIsError(false);
                         setValue("area_id", resolution.area_id, { shouldValidate: true });
-                        const currentAddress = form.getValues("street_address");
-                        const canUseResolvedAddress =
-                          !currentAddress.trim() ||
-                          currentAddress === generatedAddressRef.current ||
-                          currentAddress.startsWith("Area ");
-                        if (resolution.address_label && canUseResolvedAddress) {
-                          generatedAddressRef.current = resolution.address_label;
-                          setValue("street_address", resolution.address_label, {
+                        setValue(
+                          "waterway_proximity",
+                          resolution.waterway_proximity ?? undefined,
+                          {
                             shouldDirty: true,
                             shouldValidate: true,
-                          });
-                        }
+                          },
+                        );
+                        const proximityNote = resolution.waterway_proximity
+                          ? "Flood proximity was set from the hazard map."
+                          : "Select waterway proximity manually because the hazard layer is unavailable.";
                         setLocationHint(
-                          `${resolution.area_name} selected. The address field was filled with an approximate area address; add the house number, street, or subdivision if known.`,
+                          `${resolution.area_name} selected. ${proximityNote} Enter the specific house number, street, or subdivision below.`,
                         );
                       }}
                     />
@@ -653,7 +644,8 @@ export default function NewHouseholdPage() {
                     Waterway Proximity <span className="text-red-600">*</span>
                   </h2>
                   <p className="mt-0.5 text-xs text-neutral-500">
-                    How close is the home to a river, creek, or other waterway?
+                    Set from the flood hazard map after pinning; adjust if field
+                    observation differs.
                   </p>
                 </div>
               </div>

@@ -59,6 +59,8 @@ class Household(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
         Text, ForeignKey("psgc.code", ondelete="SET NULL"), nullable=True
     )
     street_address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Seeded from the static flood hazard map in registration UIs; nullable when
+    # the layer is unavailable, and editable when field observation differs.
     waterway_proximity: Mapped[str | None] = mapped_column(Text, nullable=True)
     location: Mapped[object | None] = mapped_column(
         Geometry(geometry_type="POINT", srid=4326, spatial_index=False), nullable=True

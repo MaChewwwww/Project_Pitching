@@ -270,8 +270,9 @@ Admin rows also expose a confirmed Delete action backed by the archive endpoint;
 households remain protected by the server and surface the conflict as feedback.
 
 `LocationPicker` accepts an optional boundary resolver callback. Registry forms use it to select the
-matching area and suggest a coarse Barangay San Jose address label after a map click, drag, or GPS fix;
-the resident can still add the precise house number, street, or purok.
+matching area and derive the initial waterway-proximity band from the static flood layer after a map
+click, drag, or GPS fix; it never invents a street address, so the user enters the precise house number,
+street, or subdivision. Household forms show a blocking error dialog for pins outside Barangay San Jose.
 
 `/admin/households/new` is the BHW-assisted creation workspace. It uses the announcement-style
 primary work surface with identity and head details on the left, while the right rail keeps the

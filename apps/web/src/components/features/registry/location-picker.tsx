@@ -10,6 +10,19 @@ import { Button } from "@/components/common/button";
 import { api } from "@/lib/api/client";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { BARANGAY_VIEW, OSM_TILE_ATTRIBUTION, OSM_TILE_URL } from "@/lib/map";
+import {
+  loadHazardGeoJson,
+  waterwayProximityForPoint,
+  type WaterwayProximity,
+} from "@/lib/hazard-geojson";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 // Default-icon fixup, shared with the hazard map. Import for the side effect.
 import "@/lib/leaflet-setup";
 
@@ -38,8 +51,12 @@ export interface LocationPickerProps {
    * household pin, which reads wrong on non-registration callers (e.g. the
    * public rescue form). */
   caption?: string;
-  /** Boundary-derived area and coarse address suggestion for registry forms. */
+  /** Boundary-derived area context; exact street address is entered by the user. */
   onResolve?: (resolution: PointResolution) => void;
+  /** Show a blocking error when a household pin is outside San Jose. */
+  restrictToBarangay?: boolean;
+  /** Let a form clear or reject an invalid outside-boundary pin. */
+  onBoundaryViolation?: () => void;
 }
 
 export interface PointResolution {
@@ -48,7 +65,10 @@ export interface PointResolution {
   within_barangay: boolean;
   area_id: string | null;
   area_name: string | null;
+  /** Reserved for API compatibility; no street-level address is inferred. */
   address_label: string | null;
+  /** Default derived from the static flood hazard layer when available. */
+  waterway_proximity?: WaterwayProximity | null;
 }
 
 function ClickToPlace({ onChange }: { onChange: (value: LatLng) => void }) {
@@ -81,23 +101,48 @@ export default function LocationPicker({
   className,
   caption = "Drag the pin, or tap the map, to mark your household's location.",
   onResolve,
+  restrictToBarangay = false,
+  onBoundaryViolation,
 }: LocationPickerProps) {
   const center = value ?? { lat: BARANGAY_VIEW.center[0], lng: BARANGAY_VIEW.center[1] };
   const markerRef = React.useRef<L.Marker>(null);
+  const placeRequestRef = React.useRef(0);
   const geo = useGeolocation();
+  const [boundaryDialogOpen, setBoundaryDialogOpen] = React.useState(false);
 
   const place = React.useCallback(
     (next: LatLng) => {
       onChange(next);
-      if (!onResolve) return;
+      if (!onResolve && !restrictToBarangay && !onBoundaryViolation) return;
+      const requestId = ++placeRequestRef.current;
       void api
         .get<PointResolution>("/public/areas/resolve-point", {
           params: { latitude: next.lat, longitude: next.lng },
         })
-        .then((response) => onResolve(response.data))
+        .then(async (response) => {
+          if (requestId !== placeRequestRef.current) return;
+          const resolution = response.data;
+          if (!resolution.within_barangay) {
+            if (restrictToBarangay) setBoundaryDialogOpen(true);
+            onBoundaryViolation?.();
+            onResolve?.({ ...resolution, waterway_proximity: null });
+            return;
+          }
+
+          const hazardData = await loadHazardGeoJson();
+          if (requestId !== placeRequestRef.current) return;
+          onResolve?.({
+            ...resolution,
+            waterway_proximity: waterwayProximityForPoint(
+              hazardData,
+              resolution.latitude,
+              resolution.longitude,
+            ),
+          });
+        })
         .catch(() => undefined);
     },
-    [onChange, onResolve],
+    [onBoundaryViolation, onChange, onResolve, restrictToBarangay],
   );
 
   React.useEffect(() => {
@@ -136,23 +181,23 @@ export default function LocationPicker({
 
       <div className="mt-2 flex flex-col-reverse gap-1.5 sm:flex-row-reverse sm:items-center sm:justify-between">
         {geo.isSecureContext && geo.isSupported ? (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="sm:ml-auto"
-          disabled={geo.status === "locating"}
-          onClick={geo.locate}
-        >
-          <LocateFixed aria-hidden className="size-3.5" />
-          {geo.status === "locating" ? "Locating…" : "Use My Current Location"}
-        </Button>
-      ) : (
-        <p className="text-caption text-neutral-500">
-          {geo.isSecureContext
-            ? "This browser can't get your location — drag the pin instead."
-            : "Location access needs a secure (https) connection — drag the pin instead."}
-        </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="sm:ml-auto"
+            disabled={geo.status === "locating"}
+            onClick={geo.locate}
+          >
+            <LocateFixed aria-hidden className="size-3.5" />
+            {geo.status === "locating" ? "Locating…" : "Use My Current Location"}
+          </Button>
+        ) : (
+          <p className="text-caption text-neutral-500">
+            {geo.isSecureContext
+              ? "This browser can't get your location — drag the pin instead."
+              : "Location access needs a secure (https) connection — drag the pin instead."}
+          </p>
         )}
 
         <p className="text-caption text-neutral-500">{caption}</p>
@@ -165,6 +210,24 @@ export default function LocationPicker({
         <p className="text-caption mt-1 text-neutral-500">{geo.accuracyNote}</p>
       ) : null}
 
+      <Dialog open={boundaryDialogOpen} onOpenChange={setBoundaryDialogOpen}>
+        <DialogContent className="max-w-md border-red-200">
+          <DialogHeader>
+            <DialogTitle className="text-red-800">
+              Location outside Barangay San Jose
+            </DialogTitle>
+            <DialogDescription>
+              That location is outside the Barangay San Jose boundary. Choose a point
+              inside the barangay to continue this household registration.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" onClick={() => setBoundaryDialogOpen(false)}>
+              Choose another location
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

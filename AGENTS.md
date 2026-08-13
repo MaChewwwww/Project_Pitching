@@ -67,6 +67,13 @@ Full detail: `frs_nfrs.md` Section 1. Summary:
 - **`frs_nfrs.md`'s Status/PR columns must be updated in the same PR that implements the
   requirement.** A requirement is not done if the tracking doc doesn't move with it.
 
+### Pre-publish check
+
+- Before creating a commit, pushing a branch, or deploying to staging, run the affected
+  project's lint command (normally `make lint` or the unit's equivalent) and resolve all
+  lint errors. Linting is the required pre-publish check; run typechecks or tests as needed
+  for the task, but do not make them a blanket prerequisite for every commit, push, or deploy.
+
 ## 3. Definition of Done
 
 From `frs_nfrs.md` Section 1.4. A requirement is not `✅` until all of these hold:

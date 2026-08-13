@@ -58,13 +58,14 @@ class PublicArea(BaseModel):
 
 
 class PointResolution(BaseModel):
-    """Boundary-derived location context; no external geocoder is queried."""
+    """Boundary-derived location context; exact addresses are entered by users."""
 
     latitude: float
     longitude: float
     within_barangay: bool
     area_id: uuid.UUID | None = None
     area_name: str | None = None
+    # Kept for response compatibility; no street-level address is inferred.
     address_label: str | None = None
 
 
@@ -171,4 +172,3 @@ class SirenIn(BaseModel):
 
 class SirenOut(PublicSiren):
     pass
-

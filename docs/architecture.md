@@ -296,15 +296,16 @@ GROUP BY h.id;
 | ----------------------------- | ------------------------------------------------------------------------------------ | ----------- |
 | Registered households         | `COUNT(*)` at query time                                                             | `household` |
 | Registered members            | `COUNT(*)` at query time                                                             | `member`    |
-| Waterway-proximity demo bands | Self-reported onboarding survey (`very_near`/`near`/`far`), aggregated at query time | `household` |
+| Waterway-proximity demo bands | Static flood-hazard map default (`very_near`/`near`/`far`), editable by field observation, aggregated at query time | `household` |
 | **Barangay-wide households**  | Admin-entered                                                                        | `config`    |
 | **Barangay-wide population**  | Admin-entered                                                                        | `config`    |
 
 Never stored as duplicate columns, never conflated (NFR-DAT-005, FR-ANL-003). Coverage is always presented as _derived over configured_.
 
-The waterway band is the exception to the target geography-derived exposure model: migration
-`0013_waterway_proximity` stores survey data alongside, not derived from, the map pin. Public
-charts must say so until a verified waterway geometry can produce real distance bands.
+The waterway band is an operational proxy, not a measured distance: the registration map translates
+the intersecting NOAH flood-depth band into a default (`high` → `very_near`, `medium` → `near`,
+`low`/no mapped polygon → `far`) and leaves staff/residents able to correct it from field observation.
+Public charts should not present it as a precise river-distance measurement.
 
 ---
 
@@ -1086,8 +1087,9 @@ mid-way, or after adding a new seed section that predates a running database.
 ### Map pin resolution
 
 `GET /public/areas/resolve-point` performs a boundary-inclusive PostGIS lookup for a map pin and
-returns the matching area plus a coarse address label. It intentionally does not call an external
-reverse-geocoder on the request path; registry writes validate that a selected area agrees with the
+returns the matching area. It intentionally does not infer a street-level address or call an external
+reverse-geocoder on the request path; the registry form leaves the specific house number, street, and
+subdivision for the user to enter. Registry writes validate that a selected area agrees with the
 boundary result.
 
 ## 17. Open Architecture Decisions

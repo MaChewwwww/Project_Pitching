@@ -7,7 +7,7 @@ import {
   type Control,
   type FieldValues,
 } from "react-hook-form";
-import { ChevronDown, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Plus, Trash2, Users } from "lucide-react";
 
 import { Button } from "@/components/common/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -52,8 +52,8 @@ const VULNERABILITY_FLAGS = [
   ["is_pwd", "PWD"],
   ["is_pregnant", "Pregnant"],
   ["is_lactating", "Lactating"],
-  ["has_chronic_condition", "Chronic condition"],
-  ["is_bedridden", "Bedridden / mobility-limited"],
+  ["has_chronic_condition", "Chronic Condition"],
+  ["is_bedridden", "Bedridden / Mobility-Limited"],
 ] as const;
 
 const RELATIONSHIP_OPTIONS = [
@@ -90,7 +90,33 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
 
   return (
     <div className="flex flex-col gap-3">
-      <Label>Other Household Members</Label>
+      <div className="flex flex-col gap-3 border-b border-neutral-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+            <Users aria-hidden className="size-4" />
+          </span>
+          <div>
+            <h2 className="text-base font-bold text-neutral-950">Household Members</h2>
+            <p className="mt-0.5 text-xs text-neutral-500">
+              Add every member available during this visit. You can add more than one.
+            </p>
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="shrink-0 self-start sm:self-center"
+          onClick={() => {
+            append(emptyMemberValues as never);
+            setOpenIndex(fields.length);
+          }}
+        >
+          <Plus aria-hidden className="size-4" />
+          Add member
+        </Button>
+      </div>
 
       {fields.map((field, i) => (
         <Collapsible
@@ -99,23 +125,39 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
           onOpenChange={(open) => setOpenIndex(open ? i : null)}
           className="rounded-lg border border-emerald-200/80 bg-white"
         >
-          <CollapsibleTrigger
-            className={cn(
-              "flex w-full items-center justify-between gap-2 rounded-lg px-4 py-3 text-left",
-              "hover:bg-neutral-50",
-            )}
-          >
-            <span className="text-body-sm font-semibold text-neutral-800">
-              Member {i + 1} of {fields.length}
-            </span>
-            <ChevronDown
-              aria-hidden
-              className={cn(
-                "size-4 text-neutral-500 transition-transform",
-                openIndex === i && "rotate-180",
-              )}
-            />
-          </CollapsibleTrigger>
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg px-4 py-2.5 hover:bg-neutral-50">
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-2 text-left focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-2 focus-visible:outline-none"
+              >
+                <span className="text-body-sm font-semibold text-neutral-800">
+                  Member {i + 1} of {fields.length}
+                </span>
+                <ChevronDown
+                  aria-hidden
+                  className={cn(
+                    "size-4 text-neutral-500 transition-transform",
+                    openIndex === i && "rotate-180",
+                  )}
+                />
+              </button>
+            </CollapsibleTrigger>
+
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              className="shrink-0"
+              onClick={() => {
+                remove(i);
+                setOpenIndex(null);
+              }}
+            >
+              <Trash2 aria-hidden className="size-3.5" />
+              Remove member
+            </Button>
+          </div>
 
           <CollapsibleContent className="flex flex-col gap-4 border-t border-emerald-100 p-4">
             <div className="flex flex-col gap-1.5">
@@ -276,37 +318,9 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
                 </div>
               ))}
             </fieldset>
-
-            <Button
-              type="button"
-              variant="danger"
-              size="sm"
-              className="self-start"
-              onClick={() => {
-                remove(i);
-                setOpenIndex(null);
-              }}
-            >
-              <Trash2 aria-hidden className="size-3.5" />
-              Remove member
-            </Button>
           </CollapsibleContent>
         </Collapsible>
       ))}
-
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="self-start"
-        onClick={() => {
-          append(emptyMemberValues as never);
-          setOpenIndex(fields.length);
-        }}
-      >
-        <Plus aria-hidden className="size-4" />
-        Add member
-      </Button>
     </div>
   );
 }

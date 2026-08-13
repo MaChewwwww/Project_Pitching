@@ -178,10 +178,10 @@ async def resolve_point(
 ) -> PointResolution:
     """Resolve a pin against the seeded barangay boundaries.
 
-    The address is intentionally a coarse, boundary-derived label. A precise
-    street address would require a reverse-geocoding provider on the request
-    path, which this system does not permit and which would be unreliable for
-    dense informal addresses.
+    This endpoint only confirms the barangay/area boundary. It does not infer
+    a street-level address: the map has no authoritative house-number dataset,
+    and the request path must not call an external reverse-geocoding provider.
+    Callers should leave the address field for the user to enter.
     """
     area = await area_for_point(session, latitude, longitude)
     if area is None:
@@ -196,7 +196,6 @@ async def resolve_point(
         within_barangay=True,
         area_id=area.id,
         area_name=area.name,
-        address_label=f"{area.name}, Barangay San Jose, Rodriguez, Rizal",
     )
 
 
