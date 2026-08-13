@@ -247,6 +247,11 @@ remaining configuration contract is retired.
 
 ### 5.1 Household registration
 
+> **Registry workspace update (Aug 2026).** The implementation now includes resident household/member
+> editing, admin/BHW household and citizen directories, area-scoped CRUD, transfer and registry-managed
+> head replacement, archive actions, and resident self-service at `/portal/household/edit`. These rows
+> remain `◐` until peer review evidence is recorded; account-linked heads remain lifecycle-protected.
+
 | ID         | Requirement                            | Acceptance criteria                                                                        | Src             | Pri | Status | PR  |
 | ---------- | -------------------------------------- | ------------------------------------------------------------------------------------------ | --------------- | --- | ------ | --- |
 | FR-REG-001 | Self-registration as head of household | Creates household record + head's own member profile in one flow                           | BR-1.1          | M   | ◐      | —   |
@@ -315,7 +320,7 @@ remaining configuration contract is retired.
 >   household created through either flow is verified immediately. The
 >   trade-off: a self-registered head who lies about their own household is
 >   just as "verified" as a genuine one; there is no independent check. The
->   ~200 `HH-SEED-*` rows predate this and remain unverified (`verified_at`
+>   ~200 synthetic `M-SJ-000-001`…`M-SJ-000-200` rows predate this and remain unverified (`verified_at`
 >   is `NULL`), since they were never touched by either creation path.
 > - **FR-REG-020 is BHW-complete, self-registration-partial.** A BHW adds
 >   unlimited members via the repeater in one visit. A self-registered head
@@ -426,6 +431,13 @@ remaining configuration contract is retired.
 | FR-WX-016 | Demo/simulation mode                      | Seeded scenario can drive readings on a scripted timeline for the pitch                                                         | Tech Stack 7 | S   | ☐      | —   |
 
 ---
+
+> **FR-WX-013 review note (Aug 13, 2026).** The deployed implementation now covers
+> admin create/list/update/delete for manual flood records, exact area selection
+> restoration, protected Emergency Event-linked records, public/admin response
+> separation, responsive history management, and filtered insights. The status stays
+> `◐` until peer review is recorded; the implementation and follow-up UI refinements
+> are in commits `f7d8485` through `2a506e0`.
 
 ## 8. Alerts & Announcements — `ALT`
 
@@ -786,6 +798,14 @@ Requirements that cannot start until an open item is resolved.
 ## 18. Change Log
 
 > Change-log status symbols record what was claimed at that time. Section 1.6 is the current status source; the August MAP `✅` entries were later reclassified to `◐` because peer-review evidence is not recorded.
+
+> **Aug 13, 2026 documentation audit.** Reviewed the last 24 hours of weather,
+> flood-history, announcement, portal-loading, and configuration commits. The
+> affected root and local guidance now reflects the `/admin/weather-readings` route,
+> river-history/simulation endpoints, FR-WX-013 admin/public DTO separation and
+> lifecycle protection, the Barangay-Wide Flood area-association shortcut, and the
+> responsive flood-history scorecard/chart layout. No requirement was marked done
+> without peer-review evidence.
 
 | Date         | Version | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | By  |
 | ------------ | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |

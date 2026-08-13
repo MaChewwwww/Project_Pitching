@@ -14,6 +14,7 @@ import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { HouseholdMemberRepeater } from "@/components/features/admin/household-member-repeater";
+import type { PointResolution } from "@/components/features/registry/location-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -113,6 +114,7 @@ export default function NewHouseholdPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [serverError, setServerError] = React.useState<string | null>(null);
+  const [locationHint, setLocationHint] = React.useState<string | null>(null);
 
   const { data: allAreas } = useQuery({
     queryKey: ["admin", "areas"],
@@ -135,6 +137,7 @@ export default function NewHouseholdPage() {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = form;
 
@@ -344,9 +347,25 @@ export default function NewHouseholdPage() {
                 control={control}
                 name="location"
                 render={({ field }) => (
-                  <LocationPicker value={field.value} onChange={field.onChange} />
+                  <LocationPicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    onResolve={(resolution: PointResolution) => {
+                      if (!resolution.within_barangay || !resolution.area_id) {
+                        setLocationHint("Choose a pin inside Barangay San Jose.");
+                        return;
+                      }
+                      setValue("area_id", resolution.area_id, { shouldValidate: true });
+                      const currentAddress = form.getValues("street_address");
+                      if (!currentAddress || currentAddress.startsWith("Area ")) {
+                        setValue("street_address", resolution.address_label ?? "");
+                      }
+                      setLocationHint(`${resolution.area_name} selected. The address label is approximate; add a house number or purok if known.`);
+                    }}
+                  />
                 )}
               />
+              {locationHint ? <p className="text-xs text-neutral-500">{locationHint}</p> : null}
             </div>
 
             <h2 className="text-h4 mt-2 text-neutral-900">Head&apos;s profile</h2>

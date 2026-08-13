@@ -87,6 +87,42 @@ minimal: file path, order, cover flag, and timestamps—there are no alt-text or
 When adding another article-like module, mirror this router → schema → service → model split and the
 same public/admin lifecycle instead of coupling a new page directly to persistence.
 
+## Weather and flood-history lifecycle
+
+`src/modules/weather/` owns both the cached weather/readings surface and FR-WX-013 flood history.
+Keep the public and admin flood-event serializers separate: `PublicFloodEvent` exposes the
+resident-safe history, while `AdminFloodEvent` adds `area_ids` so the editor can restore the exact
+many-to-many selection. The admin service replaces `flood_event_area` links in one transaction when
+an event is edited; an empty selection means that the extent was not recorded.
+
+Emergency Event-linked flood records are lifecycle-owned by the emergency module. Admins may edit
+their historical context, but the weather service rejects deletion with a conflict; manual records
+delete their area links and emit the `flood_event.delete` audit action. Keep the authorization and
+404/409 behavior in the router/service contract when changing this flow.
+
+## Registry workspaces and lifecycle
+
+The admin registry has two read models: household rows (`GET /admin/households`) and enriched citizen
+rows (`GET /admin/members`). Detail serializers include household context so the web console does not
+need a second PII join. The summary endpoint is area-scoped and derives counts at request time; no
+coverage totals are stored.
+
+Household references are displayed and generated as `M-SJ-000-000` Household Numbers. The registry
+sequence remains database-backed and race-safe; the seed loader reserves its synthetic range before
+the first live registration.
+
+All profile mutations go through `registry/service.py` and write an audit event. BHW requests are
+restricted to assigned areas for both the source and destination of a transfer. A linked resident head
+cannot be moved, demoted, archived, or renamed through the registry; a registry-managed head must be
+replaced with `POST /admin/members/{id}/make-head` before archive or transfer. `POST /admin/members/{id}/promote`
+creates a new BHW-assisted household while retaining the member UUID and downstream history.
+
+Household map pins resolve through `GET /public/areas/resolve-point`, which checks the PostGIS
+boundaries and returns the matching area plus a coarse Barangay San Jose address label. It does not
+call an external reverse-geocoder. Registry writes reject pins outside San Jose or pins whose
+selected area disagrees with the boundary match; synthetic seed households use a point on their
+assigned area polygon for the same reason.
+
 ## The registry module will get big
 
 36 requirements land in `registry` — it is the module most likely to become a monolith inside

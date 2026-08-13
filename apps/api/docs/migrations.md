@@ -98,3 +98,8 @@ gallery contract is limited to file path, order, cover selection, and timestamps
 `0020_merge_article_migrations` is a no-op merge that joins the article-image metadata head with
 `0019_remove_announcement_level`. Keep the merge revision as the single Alembic head; do not edit
 either parent migration after it has been applied.
+
+`0021_household_number_format` rewrites existing household references into the canonical
+`M-SJ-000-000` Household Number format, then advances `household_reference_no_seq` past the
+rewritten rows. It is a data migration, so review the generated identifiers before applying it to
+an environment with non-demo registry data.

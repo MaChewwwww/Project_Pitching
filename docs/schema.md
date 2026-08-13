@@ -287,7 +287,7 @@ CREATE UNIQUE INDEX idx_hazard_period_level ON flood_hazard(return_period, level
 | Column                                   | Type                  | Constraints                           | Notes                                                                                          |
 | ---------------------------------------- | --------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `id`                                     | UUID                  | PK                                    |                                                                                                |
-| `reference_no`                           | TEXT                  | UNIQUE NOT NULL                       | Generated at creation (FR-REG-006)                                                             |
+| `reference_no`                           | TEXT                  | UNIQUE NOT NULL                       | Household Number in `M-SJ-000-000` format, generated at creation (FR-REG-006)                  |
 | `head_name`                              | TEXT                  | NOT NULL                              |                                                                                                |
 | `head_user_id`                           | UUID                  | UNIQUE FK → `user` ON DELETE SET NULL | **Null for BHW-created records**                                                               |
 | `contact_number`                         | TEXT                  |                                       | Nullable (FR-REG-005)                                                                          |
@@ -562,6 +562,10 @@ CREATE INDEX idx_forecast_upcoming ON forecast(metric, horizon, valid_at);
 > barangay-wide.** Historical events predate the platform and their extent is
 > whatever the barangay can reconstruct; the public view says "areas not recorded"
 > rather than implying the whole barangay flooded.
+>
+> The admin editor's **Barangay-Wide Flood** shortcut records every currently
+> available area in this join table. It does not add a flag or change the public
+> contract; an empty set remains the explicit "not recorded" state.
 
 ### `announcement` (FR-ALT-001 … 015)
 

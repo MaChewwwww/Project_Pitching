@@ -1,0 +1,48 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { ArrowLeft, ArrowRightLeft, Archive, Crown, Home, UserRound } from "lucide-react";
+
+import { Badge } from "@/components/common/badge";
+import { Button } from "@/components/common/button";
+import { Card, CardContent } from "@/components/common/card";
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
+import { RegistryMemberForm } from "@/components/features/admin/registry-member-form";
+import { api, toDisplayError } from "@/lib/api/client";
+import { useAuth } from "@/lib/auth/auth-context";
+import { useRequireRole } from "@/lib/auth/use-require-role";
+import type { HouseholdOut, MemberUpdate, RegistryMemberOut } from "@/lib/api/registry-types";
+import type { HouseholdDetailOut } from "@/lib/api/registry-types";
+
+export default function EditCitizenPage() {
+  useRequireRole("admin", "bhw");
+  const { user } = useAuth();
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const client = useQueryClient();
+  const [destination, setDestination] = React.useState("");
+  const [relationship, setRelationship] = React.useState("member");
+  const memberQuery = useQuery({ queryKey: ["admin", "citizen", id], queryFn: () => api.get<RegistryMemberOut>(`/admin/members/${id}`).then((r) => r.data) });
+  const householdsQuery = useQuery({ queryKey: ["admin", "households", "transfer-options"], queryFn: () => api.get<{ items: HouseholdOut[] }>("/admin/households", { params: { size: 1000 } }).then((r) => r.data.items) });
+  const areasQuery = useQuery({ queryKey: ["admin", "areas"], queryFn: () => api.get<Array<{ id: string; name: string }>>("/admin/areas").then((r) => r.data) });
+  const member = memberQuery.data;
+  const save = useMutation({ mutationFn: (body: MemberUpdate) => api.patch(`/admin/members/${id}`, body), onSuccess: () => { toast.success("Citizen profile saved"); client.invalidateQueries({ queryKey: ["admin", "citizen", id] }); client.invalidateQueries({ queryKey: ["admin", "citizens"] }); router.push("/admin/citizens"); }, onError: (error) => { throw new Error(toDisplayError(error).detail); } });
+  const transfer = useMutation({ mutationFn: () => api.post(`/admin/members/${id}/transfer`, { household_id: destination, relationship_to_head: relationship }), onSuccess: () => { toast.success("Citizen transferred"); client.invalidateQueries({ queryKey: ["admin", "citizen", id] }); client.invalidateQueries({ queryKey: ["admin", "citizens"] }); setDestination(""); }, onError: (error) => toast.error(toDisplayError(error).detail) });
+  const makeHead = useMutation({ mutationFn: () => api.post(`/admin/members/${id}/make-head`), onSuccess: () => { toast.success("Citizen is now the household head"); client.invalidateQueries({ queryKey: ["admin", "citizen", id] }); client.invalidateQueries({ queryKey: ["admin", "households"] }); }, onError: (error) => toast.error(toDisplayError(error).detail) });
+  const archive = useMutation({ mutationFn: () => api.delete(`/admin/members/${id}`), onSuccess: () => { toast.success("Citizen archived"); router.push("/admin/citizens"); }, onError: (error) => toast.error(toDisplayError(error).detail) });
+  const [promotion, setPromotion] = React.useState({ area_id: "", contact_number: "", is_unreachable_by_phone: false });
+  const promote = useMutation({ mutationFn: () => api.post<HouseholdDetailOut>(`/admin/members/${id}/promote`, { ...promotion, contact_number: promotion.contact_number || null, street_address: null, waterway_proximity: null, latitude: null, longitude: null }), onSuccess: (result) => { toast.success("New household created"); router.push(`/admin/households/${result.data.id}`); }, onError: (error) => toast.error(toDisplayError(error).detail) });
+
+  if (memberQuery.isLoading) return <div className="flex min-h-64 items-center justify-center text-sm text-neutral-500">Loading citizen…</div>;
+  if (!member) return <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">Citizen not found.</div>;
+
+  const linkedHead = Boolean(member.is_head && member.household_head_user_id);
+  const otherHouseholds = (householdsQuery.data ?? []).filter((household) => household.id !== member.household_id);
+  const confirmArchive = () => { if (window.confirm(`Archive ${member.full_name}? This removes the active profile from registry lists.`)) archive.mutate(); };
+
+  return <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 pb-10"><AdminPageHeader title={`Edit citizen`} description={`${member.full_name} · ${member.household_reference_no} · ${member.area_name}`} action={<div className="flex flex-wrap gap-2"><Button asChild size="sm" variant="outline"><Link href="/admin/citizens"><ArrowLeft aria-hidden className="size-4" />Back to citizens</Link></Button><Button asChild size="sm" variant="outline"><Link href={`/admin/households/${member.household_id}`}><Home aria-hidden className="size-4" />View household</Link></Button>{user?.role === "admin" && !member.is_head ? <Button size="sm" variant="danger" onClick={confirmArchive} disabled={archive.isPending}><Archive aria-hidden className="size-4" />Archive</Button> : null}</div>} meta={<div className="flex flex-wrap gap-2"><Badge tone={member.is_head ? "success" : "neutral"}>{member.is_head ? "Household head" : "Household member"}</Badge>{linkedHead ? <Badge tone="warning">Account-linked protection</Badge> : null}</div>} /><div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]"><Card><CardContent><RegistryMemberForm initial={member} protectedName={linkedHead} onSubmit={(values) => save.mutateAsync(values).then(() => undefined)} onCancel={() => router.push("/admin/citizens")} /></CardContent></Card><div className="space-y-5"><Card><CardContent className="space-y-4"><div><p className="flex items-center gap-2 text-sm font-bold text-neutral-900"><ArrowRightLeft aria-hidden className="size-4 text-emerald-700" />Transfer to another household</p><p className="mt-1 text-xs leading-relaxed text-neutral-500">The citizen ID and downstream safety history stay intact. Account-linked heads cannot be moved.</p></div><select value={destination} onChange={(event) => setDestination(event.target.value)} disabled={linkedHead || transfer.isPending} className="h-10 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm"><option value="">Choose destination household</option>{otherHouseholds.map((household) => <option key={household.id} value={household.id}>{household.reference_no} · {household.head_name}</option>)}</select><input value={relationship} onChange={(event) => setRelationship(event.target.value)} disabled={linkedHead || transfer.isPending} className="h-10 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm" placeholder="Relationship to new head" /><Button type="button" variant="outline" disabled={linkedHead || !destination || transfer.isPending} onClick={() => transfer.mutate()}><ArrowRightLeft aria-hidden className="size-4" />{transfer.isPending ? "Transferring…" : "Transfer citizen"}</Button></CardContent></Card><Card><CardContent className="space-y-4"><div><p className="flex items-center gap-2 text-sm font-bold text-neutral-900"><Crown aria-hidden className="size-4 text-amber-600" />Head lifecycle</p><p className="mt-1 text-xs leading-relaxed text-neutral-500">Replace a registry-managed head before archive or transfer. A resident account remains the source of truth for a linked head.</p></div>{member.is_head ? <p className="rounded-lg bg-neutral-50 p-3 text-sm text-neutral-600">{linkedHead ? "This head is protected by a resident account." : "This is the current registry head."}</p> : <Button type="button" variant="outline" onClick={() => makeHead.mutate()} disabled={makeHead.isPending || Boolean(member.household_head_user_id)}><UserRound aria-hidden className="size-4" />{makeHead.isPending ? "Assigning…" : "Make household head"}</Button>}</CardContent></Card>{!member.is_head ? <Card><CardContent className="space-y-4"><div><p className="text-sm font-bold text-neutral-900">Create a new household</p><p className="mt-1 text-xs leading-relaxed text-neutral-500">Promote this adult while retaining their citizen ID and downstream history.</p></div><select value={promotion.area_id} onChange={(event) => setPromotion((value) => ({ ...value, area_id: event.target.value }))} className="h-10 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm"><option value="">Choose area</option>{(areasQuery.data ?? []).map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}</select><input value={promotion.contact_number} onChange={(event) => setPromotion((value) => ({ ...value, contact_number: event.target.value }))} className="h-10 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm" placeholder="Contact number" /><label className="flex items-center gap-2 text-xs text-neutral-600"><input type="checkbox" checked={promotion.is_unreachable_by_phone} onChange={(event) => setPromotion((value) => ({ ...value, is_unreachable_by_phone: event.target.checked }))} className="size-4 accent-emerald-600" /> No reliable phone number</label><Button type="button" variant="outline" disabled={!promotion.area_id || promote.isPending} onClick={() => promote.mutate()}><Crown aria-hidden className="size-4" />{promote.isPending ? "Creating…" : "Promote to household head"}</Button></CardContent></Card> : null}</div></div></div>;
+}

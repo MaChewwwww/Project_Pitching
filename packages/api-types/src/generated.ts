@@ -186,6 +186,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/areas/resolve-point": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resolve a map pin to its barangay area */
+        get: operations["public_resolve_point_api_v1_public_areas_resolve_point_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/area-boundaries": {
         parameters: {
             query?: never;
@@ -531,7 +548,43 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        /** Update the caller's own household */
+        patch: operations["update_my_household_api_v1_me_household_patch"];
+        trace?: never;
+    };
+    "/api/v1/me/household/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a member to the caller's household */
+        post: operations["add_my_member_api_v1_me_household_members_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/household/members/{member_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Archive a member in the caller's household */
+        delete: operations["archive_my_member_api_v1_me_household_members__member_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a member in the caller's household */
+        patch: operations["update_my_member_api_v1_me_household_members__member_id__patch"];
         trace?: never;
     };
     "/api/v1/me/safety": {
@@ -1409,6 +1462,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/households/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin Registry Summary */
+        get: operations["admin_registry_summary_api_v1_admin_households_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/households/{household_id}/duplicates": {
         parameters: {
             query?: never;
@@ -1426,6 +1496,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/households/{household_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin Get Household */
+        get: operations["admin_get_household_api_v1_admin_households__household_id__get"];
+        put?: never;
+        post?: never;
+        /** Admin Archive Household */
+        delete: operations["admin_archive_household_api_v1_admin_households__household_id__delete"];
+        options?: never;
+        head?: never;
+        /** Admin Update Household */
+        patch: operations["admin_update_household_api_v1_admin_households__household_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/households/{household_id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Admin Add Member */
+        post: operations["admin_add_member_api_v1_admin_households__household_id__members_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/households/merge": {
         parameters: {
             query?: never;
@@ -1437,6 +1543,93 @@ export interface paths {
         put?: never;
         /** Merge a flagged duplicate into another household (FR-REG-010) */
         post: operations["admin_merge_households_api_v1_admin_households_merge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin List Members */
+        get: operations["admin_list_members_api_v1_admin_members_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/{member_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin Get Member */
+        get: operations["admin_get_member_api_v1_admin_members__member_id__get"];
+        put?: never;
+        post?: never;
+        /** Admin Archive Member */
+        delete: operations["admin_archive_member_api_v1_admin_members__member_id__delete"];
+        options?: never;
+        head?: never;
+        /** Admin Update Member */
+        patch: operations["admin_update_member_api_v1_admin_members__member_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/members/{member_id}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Admin Transfer Member */
+        post: operations["admin_transfer_member_api_v1_admin_members__member_id__transfer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/{member_id}/promote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Admin Promote Member */
+        post: operations["admin_promote_member_api_v1_admin_members__member_id__promote_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/members/{member_id}/make-head": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Admin Make Head */
+        post: operations["admin_make_head_api_v1_admin_members__member_id__make_head_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2617,6 +2810,63 @@ export interface components {
             contact_number?: string | null;
             head_member: components["schemas"]["HeadMemberIn"];
         };
+        /** HouseholdDetailOut */
+        HouseholdDetailOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reference No */
+            reference_no: string;
+            /** Head Name */
+            head_name: string;
+            /** Head User Id */
+            head_user_id: string | null;
+            /** Contact Number */
+            contact_number: string | null;
+            /** Is Unreachable By Phone */
+            is_unreachable_by_phone: boolean;
+            /**
+             * Area Id
+             * Format: uuid
+             */
+            area_id: string;
+            /** Area Name */
+            area_name?: string | null;
+            /** Street Address */
+            street_address: string | null;
+            /** Waterway Proximity */
+            waterway_proximity?: string | null;
+            location: components["schemas"]["GeoJsonPoint"] | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "self" | "bhw";
+            /** Verified At */
+            verified_at: string | null;
+            /**
+             * Has Possible Duplicate
+             * @default false
+             */
+            has_possible_duplicate: boolean;
+            /**
+             * Member Count
+             * @default 0
+             */
+            member_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Members
+             * @default []
+             */
+            members: components["schemas"]["MemberOut"][];
+        };
         /** HouseholdMergeRequest */
         HouseholdMergeRequest: {
             /**
@@ -2696,6 +2946,31 @@ export interface components {
             reference_no: string;
             /** Members */
             members: components["schemas"]["MemberSafetyOut"][];
+        };
+        /** HouseholdUpdate */
+        HouseholdUpdate: {
+            /** Head Name */
+            head_name?: string | null;
+            /** Contact Number */
+            contact_number?: string | null;
+            /**
+             * Is Unreachable By Phone
+             * @default false
+             */
+            is_unreachable_by_phone: boolean;
+            /**
+             * Area Id
+             * Format: uuid
+             */
+            area_id: string;
+            /** Street Address */
+            street_address?: string | null;
+            /** Waterway Proximity */
+            waterway_proximity?: ("very_near" | "near" | "far") | null;
+            /** Latitude */
+            latitude?: number | null;
+            /** Longitude */
+            longitude?: number | null;
         };
         /** ImageOrderIn */
         ImageOrderIn: {
@@ -2886,6 +3161,29 @@ export interface components {
             /** Is Bedridden */
             is_bedridden: boolean;
         };
+        /** MemberPromoteIn */
+        MemberPromoteIn: {
+            /**
+             * Area Id
+             * Format: uuid
+             */
+            area_id: string;
+            /** Contact Number */
+            contact_number?: string | null;
+            /**
+             * Is Unreachable By Phone
+             * @default false
+             */
+            is_unreachable_by_phone: boolean;
+            /** Street Address */
+            street_address?: string | null;
+            /** Waterway Proximity */
+            waterway_proximity?: ("very_near" | "near" | "far") | null;
+            /** Latitude */
+            latitude?: number | null;
+            /** Longitude */
+            longitude?: number | null;
+        };
         /** MemberSafetyOut */
         MemberSafetyOut: {
             /**
@@ -2910,6 +3208,64 @@ export interface components {
             set_by_name: string | null;
             /** Vulnerability Flags */
             vulnerability_flags: string[];
+        };
+        /** MemberTransferIn */
+        MemberTransferIn: {
+            /**
+             * Household Id
+             * Format: uuid
+             */
+            household_id: string;
+            /** Relationship To Head */
+            relationship_to_head: string;
+        };
+        /** MemberUpdate */
+        MemberUpdate: {
+            /** Full Name */
+            full_name: string;
+            /** Birth Date */
+            birth_date?: string | null;
+            /** Sex */
+            sex?: ("male" | "female") | null;
+            /** Relationship To Head */
+            relationship_to_head?: string | null;
+            /**
+             * Is Child
+             * @default false
+             */
+            is_child: boolean;
+            /**
+             * Is Senior
+             * @default false
+             */
+            is_senior: boolean;
+            /**
+             * Is Pwd
+             * @default false
+             */
+            is_pwd: boolean;
+            /**
+             * Is Pregnant
+             * @default false
+             */
+            is_pregnant: boolean;
+            /**
+             * Is Lactating
+             * @default false
+             */
+            is_lactating: boolean;
+            /**
+             * Has Chronic Condition
+             * @default false
+             */
+            has_chronic_condition: boolean;
+            /** Chronic Condition Note */
+            chronic_condition_note?: string | null;
+            /**
+             * Is Bedridden
+             * @default false
+             */
+            is_bedridden: boolean;
         };
         /** MySafetyOut */
         MySafetyOut: {
@@ -3046,6 +3402,19 @@ export interface components {
             /** Pages */
             pages: number;
         };
+        /** Page[RegistryMemberOut] */
+        Page_RegistryMemberOut_: {
+            /** Items */
+            items: components["schemas"]["RegistryMemberOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
+        };
         /** Page[RescueRequestOut] */
         Page_RescueRequestOut_: {
             /** Items */
@@ -3071,6 +3440,24 @@ export interface components {
             size: number;
             /** Pages */
             pages: number;
+        };
+        /**
+         * PointResolution
+         * @description Boundary-derived location context; no external geocoder is queried.
+         */
+        PointResolution: {
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Within Barangay */
+            within_barangay: boolean;
+            /** Area Id */
+            area_id?: string | null;
+            /** Area Name */
+            area_name?: string | null;
+            /** Address Label */
+            address_label?: string | null;
         };
         /** PortalEvacuationStatusOut */
         PortalEvacuationStatusOut: {
@@ -3612,6 +3999,85 @@ export interface components {
             password: string;
             /** Full Name */
             full_name: string;
+        };
+        /**
+         * RegistryMemberOut
+         * @description Admin/resident directory row enriched with household context.
+         */
+        RegistryMemberOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Full Name */
+            full_name: string;
+            /** Birth Date */
+            birth_date: string | null;
+            /** Sex */
+            sex: string | null;
+            /** Relationship To Head */
+            relationship_to_head: string | null;
+            /** Is Head */
+            is_head: boolean;
+            /** Is Child */
+            is_child: boolean;
+            /** Is Senior */
+            is_senior: boolean;
+            /** Is Pwd */
+            is_pwd: boolean;
+            /** Is Pregnant */
+            is_pregnant: boolean;
+            /** Is Lactating */
+            is_lactating: boolean;
+            /** Has Chronic Condition */
+            has_chronic_condition: boolean;
+            /** Chronic Condition Note */
+            chronic_condition_note: string | null;
+            /** Is Bedridden */
+            is_bedridden: boolean;
+            /**
+             * Household Id
+             * Format: uuid
+             */
+            household_id: string;
+            /** Household Reference No */
+            household_reference_no: string;
+            /** Household Head Name */
+            household_head_name: string;
+            /** Household Head User Id */
+            household_head_user_id: string | null;
+            /**
+             * Area Id
+             * Format: uuid
+             */
+            area_id: string;
+            /** Area Name */
+            area_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** RegistrySummary */
+        RegistrySummary: {
+            /** Households */
+            households: number;
+            /** Citizens */
+            citizens: number;
+            /** Average Household Size */
+            average_household_size: number | null;
+            /** Unreachable Households */
+            unreachable_households: number;
+            /** Possible Duplicates */
+            possible_duplicates: number;
+            /** Self Registered Households */
+            self_registered_households: number;
+            /** Bhw Assisted Households */
+            bhw_assisted_households: number;
+            /** Areas */
+            areas: Record<string, never>[];
         };
         /**
          * RescueRequestAck
@@ -4206,6 +4672,38 @@ export interface operations {
             };
         };
     };
+    public_resolve_point_api_v1_public_areas_resolve_point_get: {
+        parameters: {
+            query: {
+                latitude: number;
+                longitude: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PointResolution"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     public_area_boundaries_api_v1_public_area_boundaries_get: {
         parameters: {
             query?: never;
@@ -4732,7 +5230,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HouseholdOut"] | null;
+                    "application/json": components["schemas"]["HouseholdDetailOut"] | null;
                 };
             };
         };
@@ -4757,6 +5255,140 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HouseholdCreateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_my_household_api_v1_me_household_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_my_member_api_v1_me_household_members_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistryMemberOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_my_member_api_v1_me_household_members__member_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_my_member_api_v1_me_household_members__member_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistryMemberOut"];
                 };
             };
             /** @description Validation Error */
@@ -7032,6 +7664,9 @@ export interface operations {
                 page?: number;
                 size?: number;
                 flagged?: boolean;
+                query?: string | null;
+                area_id?: string | null;
+                source?: string | null;
             };
             header?: never;
             path?: never;
@@ -7092,6 +7727,26 @@ export interface operations {
             };
         };
     };
+    admin_registry_summary_api_v1_admin_households_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistrySummary"];
+                };
+            };
+        };
+    };
     admin_household_duplicates_api_v1_admin_households__household_id__duplicates_get: {
         parameters: {
             query?: never;
@@ -7110,6 +7765,140 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DuplicateCandidate"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_get_household_api_v1_admin_households__household_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                household_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_archive_household_api_v1_admin_households__household_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                household_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_household_api_v1_admin_households__household_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                household_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_add_member_api_v1_admin_households__household_id__members_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                household_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistryMemberOut"];
                 };
             };
             /** @description Validation Error */
@@ -7143,6 +7932,242 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HouseholdOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_members_api_v1_admin_members_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                query?: string | null;
+                area_id?: string | null;
+                head_only?: boolean;
+                vulnerable?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_RegistryMemberOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_get_member_api_v1_admin_members__member_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistryMemberOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_archive_member_api_v1_admin_members__member_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_member_api_v1_admin_members__member_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistryMemberOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_transfer_member_api_v1_admin_members__member_id__transfer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberTransferIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistryMemberOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_promote_member_api_v1_admin_members__member_id__promote_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberPromoteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_make_head_api_v1_admin_members__member_id__make_head_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdDetailOut"];
                 };
             };
             /** @description Validation Error */

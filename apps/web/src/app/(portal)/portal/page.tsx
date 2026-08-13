@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Camera, ShieldCheck } from "lucide-react";
+import { Camera, Pencil, ShieldCheck } from "lucide-react";
 
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/common/card";
 import { PageHeader } from "@/components/common/page-header";
 import { api } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
-import type { HouseholdOut } from "@/lib/api/registry-types";
+import type { HouseholdDetailOut } from "@/lib/api/registry-types";
 import { PortalEvacuationStatusCard } from "@/components/features/portal/portal-evacuation-status-card";
 
 /**
@@ -24,7 +24,7 @@ export default function PortalDashboardPage() {
   const { user } = useAuth();
   const { data: household, isLoading } = useQuery({
     queryKey: ["me", "household"],
-    queryFn: () => api.get<HouseholdOut | null>("/me/household").then((r) => r.data),
+    queryFn: () => api.get<HouseholdDetailOut | null>("/me/household").then((r) => r.data),
   });
 
   if (isLoading || !household) {
@@ -47,7 +47,7 @@ export default function PortalDashboardPage() {
         <CardContent className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-body-sm text-neutral-500">Reference number</p>
+              <p className="text-body-sm text-neutral-500">Household Number</p>
               <p className="text-h3 tabular text-neutral-900">{household.reference_no}</p>
             </div>
             {household.verified_at ? (
@@ -86,6 +86,13 @@ export default function PortalDashboardPage() {
       </Card>
 
       <PortalEvacuationStatusCard />
+
+      <Button asChild variant="outline">
+        <Link href="/portal/household/edit">
+          <Pencil aria-hidden className="size-4" />
+          Edit household details
+        </Link>
+      </Button>
 
       <Button asChild variant="outline">
         <Link href="/portal/safety">

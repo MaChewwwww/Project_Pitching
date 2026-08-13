@@ -115,6 +115,86 @@ class MemberOut(BaseModel):
     is_bedridden: bool
 
 
+class RegistryMemberOut(MemberOut):
+    """Admin/resident directory row enriched with household context."""
+
+    household_id: uuid.UUID
+    household_reference_no: str
+    household_head_name: str
+    household_head_user_id: uuid.UUID | None
+    area_id: uuid.UUID
+    area_name: str
+    created_at: datetime
+
+
+class MemberUpdate(BaseModel):
+    full_name: str = Field(min_length=1)
+    birth_date: date | None = None
+    sex: Literal["male", "female"] | None = None
+    relationship_to_head: str | None = None
+    is_child: bool = False
+    is_senior: bool = False
+    is_pwd: bool = False
+    is_pregnant: bool = False
+    is_lactating: bool = False
+    has_chronic_condition: bool = False
+    chronic_condition_note: str | None = None
+    is_bedridden: bool = False
+
+
+class HouseholdUpdate(BaseModel):
+    head_name: str | None = Field(default=None, min_length=1)
+    contact_number: str | None = None
+    is_unreachable_by_phone: bool = False
+    area_id: uuid.UUID
+    street_address: str | None = None
+    waterway_proximity: Literal["very_near", "near", "far"] | None = None
+    latitude: float | None = Field(None, ge=-90, le=90)
+    longitude: float | None = Field(None, ge=-180, le=180)
+
+    @model_validator(mode="after")
+    def _contact_number_required_unless_unreachable(self) -> HouseholdUpdate:
+        if not self.is_unreachable_by_phone and not self.contact_number:
+            raise ValueError(
+                "Contact number is required unless the household is flagged unreachable by phone."
+            )
+        return self
+
+
+class RegistrySummary(BaseModel):
+    households: int
+    citizens: int
+    average_household_size: float | None
+    unreachable_households: int
+    possible_duplicates: int
+    self_registered_households: int
+    bhw_assisted_households: int
+    areas: list[dict[str, object]]
+
+
+class MemberTransferIn(BaseModel):
+    household_id: uuid.UUID
+    relationship_to_head: str = Field(min_length=1)
+
+
+class MemberPromoteIn(BaseModel):
+    area_id: uuid.UUID
+    contact_number: str | None = None
+    is_unreachable_by_phone: bool = False
+    street_address: str | None = None
+    waterway_proximity: Literal["very_near", "near", "far"] | None = None
+    latitude: float | None = Field(None, ge=-90, le=90)
+    longitude: float | None = Field(None, ge=-180, le=180)
+
+    @model_validator(mode="after")
+    def _contact_number_required_unless_unreachable(self) -> MemberPromoteIn:
+        if not self.is_unreachable_by_phone and not self.contact_number:
+            raise ValueError(
+                "Contact number is required unless the household is flagged unreachable by phone."
+            )
+        return self
+
+
 class HouseholdOut(BaseModel):
     id: uuid.UUID
     reference_no: str
@@ -132,6 +212,10 @@ class HouseholdOut(BaseModel):
     has_possible_duplicate: bool = False
     member_count: int = 0
     created_at: datetime
+
+
+class HouseholdDetailOut(HouseholdOut):
+    members: list[MemberOut] = []
 
 
 class HouseholdCreateResponse(BaseModel):

@@ -7,6 +7,7 @@ import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-lea
 import { LocateFixed } from "lucide-react";
 
 import { Button } from "@/components/common/button";
+import { api } from "@/lib/api/client";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { BARANGAY_VIEW, OSM_TILE_ATTRIBUTION, OSM_TILE_URL } from "@/lib/map";
 // Default-icon fixup, shared with the hazard map. Import for the side effect.
@@ -37,6 +38,17 @@ export interface LocationPickerProps {
    * household pin, which reads wrong on non-registration callers (e.g. the
    * public rescue form). */
   caption?: string;
+  /** Boundary-derived area and coarse address suggestion for registry forms. */
+  onResolve?: (resolution: PointResolution) => void;
+}
+
+export interface PointResolution {
+  latitude: number;
+  longitude: number;
+  within_barangay: boolean;
+  area_id: string | null;
+  area_name: string | null;
+  address_label: string | null;
 }
 
 function ClickToPlace({ onChange }: { onChange: (value: LatLng) => void }) {
@@ -68,17 +80,31 @@ export default function LocationPicker({
   onChange,
   className,
   caption = "Drag the pin, or tap the map, to mark your household's location.",
+  onResolve,
 }: LocationPickerProps) {
   const center = value ?? { lat: BARANGAY_VIEW.center[0], lng: BARANGAY_VIEW.center[1] };
   const markerRef = React.useRef<L.Marker>(null);
   const geo = useGeolocation();
 
+  const place = React.useCallback(
+    (next: LatLng) => {
+      onChange(next);
+      if (!onResolve) return;
+      void api
+        .get<PointResolution>("/public/areas/resolve-point", {
+          params: { latitude: next.lat, longitude: next.lng },
+        })
+        .then((response) => onResolve(response.data))
+        .catch(() => undefined);
+    },
+    [onChange, onResolve],
+  );
+
   React.useEffect(() => {
-    if (geo.fix) onChange({ lat: geo.fix.lat, lng: geo.fix.lng });
+    if (geo.fix) place({ lat: geo.fix.lat, lng: geo.fix.lng });
     // `onChange` is a stable RHF `field.onChange` at every call site — same
     // rationale as `use-registration-draft.ts`'s `form` dependency omission.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [geo.fix]);
+  }, [geo.fix, place]);
 
   return (
     <div className={className}>
@@ -90,7 +116,7 @@ export default function LocationPicker({
           scrollWheelZoom={false}
         >
           <TileLayer attribution={OSM_TILE_ATTRIBUTION} url={OSM_TILE_URL} />
-          <ClickToPlace onChange={onChange} />
+          <ClickToPlace onChange={place} />
           <FlyToFix fix={geo.fix} />
           <Marker
             ref={markerRef}
@@ -101,7 +127,7 @@ export default function LocationPicker({
                 const marker = markerRef.current;
                 if (!marker) return;
                 const pos = marker.getLatLng();
-                onChange({ lat: pos.lat, lng: pos.lng });
+                place({ lat: pos.lat, lng: pos.lng });
               },
             }}
           />

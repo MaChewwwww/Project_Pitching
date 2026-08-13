@@ -41,7 +41,7 @@ reference/service data consumed by operational screens, not standalone console w
 
 ## Weather & Flood Watch workspace
 
-`/admin/readings` is the single console entry point for weather operations. Its tabs are `Overview`,
+`/admin/weather-readings` is the single console entry point for weather operations. Its tabs are `Overview`,
 `Threshold Review`, and (admins only) `Manual Entry`; the selected tab is retained in the `tab` query
 parameter. `/admin/alert-prompts` is not a route or sidebar destination. Threshold prompts remain in
 the review queue after acknowledgement; only unacknowledged prompts can be deleted as false positives.
@@ -52,6 +52,17 @@ The workspace deliberately reuses the public `WeatherPanel`, `RiverLevelPanel`, 
 `AlertLevelIndicator` components so staff and residents read the same cached measurements. API access
 still enforces the role boundary: BHW may record readings, while only admin/superadmin can review prompts,
 acknowledge or delete unacknowledged prompts, or run the typhoon demo sequence.
+
+## Community registry workspaces
+
+The registry is split into `/admin/households` (the household ledger) and `/admin/citizens` (the active
+citizen directory). Both reuse `ResourceTable` and the scoped coverage summary. Detail routes keep
+roster actions beside the record: `/admin/households/[id]` manages household details and roster actions,
+while `/admin/citizens/[id]/edit` manages profile flags, transfer, head replacement, and archive.
+
+Resident heads use `/portal/household/edit` for the same household/member fields through the `/me` API.
+Account-linked heads remain protected from name, move, demotion, and archive operations; the server
+enforces this policy for both console and portal requests.
 The weather panel shows the latest current reading for each metric. It also shows today's highest
 observed rainfall and heat-index readings from the Asia/Manila calendar day; a peak stays blank until
 that day has a matching observation. Its forecast strip keeps the announcement-style select control

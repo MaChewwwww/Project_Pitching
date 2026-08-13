@@ -29,7 +29,10 @@ import type {
   HouseholdCreateResponse,
   HouseholdCreateSelf,
 } from "@/lib/api/registry-types";
-import type { LatLng } from "@/components/features/registry/location-picker";
+import type {
+  LatLng,
+  PointResolution,
+} from "@/components/features/registry/location-picker";
 import { cn } from "@/lib/utils";
 
 const LocationPicker = dynamic(
@@ -99,6 +102,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [location, setLocation] = React.useState<LatLng | null>(null);
+  const [locationHint, setLocationHint] = React.useState<string | null>(null);
   const [serverError, setServerError] = React.useState<string | null>(null);
 
   const { data: areas } = useQuery({
@@ -111,6 +115,8 @@ export default function OnboardingPage() {
     register,
     handleSubmit,
     watch,
+    getValues,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
@@ -346,7 +352,27 @@ export default function OnboardingPage() {
 
             <div className="flex flex-col gap-1.5">
               <Label>Your location</Label>
-              <LocationPicker value={location} onChange={setLocation} />
+              <LocationPicker
+                value={location}
+                onChange={setLocation}
+                onResolve={(resolution: PointResolution) => {
+                  if (!resolution.within_barangay || !resolution.area_id) {
+                    setLocationHint("Choose a pin inside Barangay San Jose.");
+                    return;
+                  }
+                  setValue("area_id", resolution.area_id, { shouldValidate: true });
+                  const currentAddress = getValues("street_address");
+                  if (!currentAddress || currentAddress.startsWith("Area ")) {
+                    setValue("street_address", resolution.address_label ?? "");
+                  }
+                  setLocationHint(
+                    `${resolution.area_name} selected. The address label is approximate; add a house number or purok if known.`,
+                  );
+                }}
+              />
+              {locationHint ? (
+                <p className="text-xs text-neutral-500">{locationHint}</p>
+              ) : null}
             </div>
 
             <div className="flex flex-col gap-1.5">

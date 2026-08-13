@@ -91,6 +91,62 @@ export interface HouseholdOut {
   created_at: string;
 }
 
+export interface HouseholdDetailOut extends HouseholdOut {
+  members: MemberOut[];
+}
+
+export interface RegistryMemberOut extends MemberOut {
+  household_id: string;
+  household_reference_no: string;
+  household_head_name: string;
+  household_head_user_id: string | null;
+  area_id: string;
+  area_name: string;
+  created_at: string;
+}
+
+export interface HouseholdUpdate {
+  head_name?: string | null;
+  contact_number: string | null;
+  is_unreachable_by_phone: boolean;
+  area_id: string;
+  street_address: string | null;
+  waterway_proximity?: "very_near" | "near" | "far" | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface MemberUpdate {
+  full_name: string;
+  birth_date: string | null;
+  sex: "male" | "female" | null;
+  relationship_to_head: string | null;
+  is_child: boolean;
+  is_senior: boolean;
+  is_pwd: boolean;
+  is_pregnant: boolean;
+  is_lactating: boolean;
+  has_chronic_condition: boolean;
+  chronic_condition_note: string | null;
+  is_bedridden: boolean;
+}
+
+export interface RegistrySummary {
+  households: number;
+  citizens: number;
+  average_household_size: number | null;
+  unreachable_households: number;
+  possible_duplicates: number;
+  self_registered_households: number;
+  bhw_assisted_households: number;
+  areas: Array<{
+    id: string;
+    name: string;
+    households: number;
+    citizens: number;
+  }>;
+}
+
 export interface DuplicateCandidate {
   household_id: string;
   reference_no: string;

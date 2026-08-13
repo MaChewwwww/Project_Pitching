@@ -219,7 +219,7 @@ they should not introduce a second authoring layout or a second publication work
 
 ### Weather Watch workspace
 
-`/admin/readings` is the weather-specific counterpart to the announcement console pattern. It keeps
+`/admin/weather-readings` is the weather-specific counterpart to the announcement console pattern. It keeps
 three related jobs in one responsive surface: `Overview` reuses the public weather and river panels,
 `Manual entry` records a first-class staff reading, and `Threshold review` exposes unresolved prompts
 to admins. The tab is addressable with `?tab=overview|manual-entry|threshold-review`, so a review link
@@ -248,6 +248,19 @@ The insights rail keeps its scorecard and charts on the same filtered event set:
 areas mentioned most often. Each chart carries an empty state, direct labels, and a text summary
 for keyboard and screen-reader users; hover tooltips provide the detailed comparison. On desktop, the scorecard sits above the event table in the
 left column while the comparison charts form the right rail; the columns stack on small screens.
+
+### Community registry workspace
+
+The registry uses two console routes, `/admin/households` and `/admin/citizens`, backed by the same
+area-scoped summary query. `RegistrySummaryRibbon` is a plain coverage surface rather than a
+dashboard-only chart: every figure is derived from the active rows officers can access. Detail pages
+keep management beside the data, while `RegistryHouseholdForm` and `RegistryMemberForm` are shared
+with the resident head editor at `/portal/household/edit` so field validation and account-linked
+protections do not drift between roles.
+
+`LocationPicker` accepts an optional boundary resolver callback. Registry forms use it to select the
+matching area and suggest a coarse Barangay San Jose address label after a map click, drag, or GPS fix;
+the resident can still add the precise house number, street, or purok.
 
 ### Portal splash loading
 

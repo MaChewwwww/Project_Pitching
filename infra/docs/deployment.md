@@ -99,7 +99,7 @@ risk under that decision.
 What covers it: FR-WX-012 (last-known-good with visible age) and FR-WX-007 (manual entry) mean
 a PAGASA outage degrades to a stale-but-labelled number, never a blank panel. And for the
 moment in the pitch that needs a river actually rising on cue, use the **Simulate typhoon**
-button on `/admin/readings` — it writes a real, rising sequence of river-level readings (crossing
+button on `/admin/weather-readings` — it writes a real, rising sequence of river-level readings (crossing
 Alert Levels 1, 2, and 3 against the configured thresholds) and creates the matching
 `alert_prompt`s immediately, without waiting for a real flood or a live gauge to cooperate. It
 is a manual `source='manual'` entry like any other FR-WX-007 reading — clearly attributed,

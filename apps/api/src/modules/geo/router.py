@@ -22,6 +22,7 @@ from src.modules.geo.schemas import (
     FacilityOut,
     HotlineIn,
     HotlineOut,
+    PointResolution,
     PublicArea,
     PublicFacility,
     PublicHotline,
@@ -55,6 +56,17 @@ async def public_facilities(session: DbSessionDep, type: str | None = None) -> l
 async def public_areas(session: DbSessionDep) -> list[PublicArea]:
     areas = await service.list_areas(session)
     return [service.area_to_public(a) for a in areas]
+
+
+@public_router.get(
+    "/areas/resolve-point",
+    response_model=PointResolution,
+    summary="Resolve a map pin to its barangay area",
+)
+async def public_resolve_point(
+    latitude: float, longitude: float, session: DbSessionDep
+) -> PointResolution:
+    return await service.resolve_point(session, latitude=latitude, longitude=longitude)
 
 
 @public_router.get(

@@ -42,6 +42,7 @@ from src.modules.preparedness.router import admin_router as preparedness_admin_r
 from src.modules.preparedness.router import public_router as preparedness_public_router
 from src.modules.registry.router import admin_router as registry_admin_router
 from src.modules.registry.router import me_router as registry_me_router
+from src.modules.registry.router import members_admin_router as registry_members_admin_router
 from src.modules.safety.router import admin_router as safety_admin_router
 from src.modules.safety.router import me_router as safety_me_router
 from src.modules.safety.router import public_router as safety_public_router
@@ -158,6 +159,7 @@ admin_router.include_router(donations_admin_router)
 admin_router.include_router(weather_admin_router)
 admin_router.include_router(config_admin_router)
 admin_router.include_router(registry_admin_router)
+admin_router.include_router(registry_members_admin_router)
 admin_router.include_router(safety_admin_router)
 
 me_router.include_router(registry_me_router)

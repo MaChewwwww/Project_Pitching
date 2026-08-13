@@ -28,15 +28,23 @@ from src.modules.geo import service as geo_service
 from src.modules.geo.models import Area  # join-only, same precedent as alerts/service.py
 from src.modules.geo.service import point_to_geojson
 from src.modules.registry.models import Household, HouseholdMerge, Member
+from src.modules.registry.reference import format_household_number
 from src.modules.registry.schemas import (
     DuplicateCandidate,
     HouseholdCreateBhw,
     HouseholdCreateResponse,
     HouseholdCreateSelf,
+    HouseholdDetailOut,
     HouseholdMergeRequest,
     HouseholdOut,
+    HouseholdUpdate,
     MemberIn,
     MemberOut,
+    MemberPromoteIn,
+    MemberTransferIn,
+    MemberUpdate,
+    RegistryMemberOut,
+    RegistrySummary,
 )
 from src.modules.users import service as users_service
 
@@ -133,9 +141,10 @@ async def _next_reference_no(session: AsyncSession) -> str:
     """Atomic and race-safe — `nextval()` on a bare sequence, not tied to any
     column's own identity, so it can be read ahead of the INSERT. Gaps on
     rollback are fine; only uniqueness matters (`household.reference_no` is
-    UNIQUE NOT NULL). Prefixed distinctly from seed data's `HH-SEED-*` rows."""
+    UNIQUE NOT NULL). The sequence is rendered as the `M-SJ-000-000` Household
+    Number format shared with the demo seed."""
     value = (await session.execute(select(func.nextval("household_reference_no_seq")))).scalar_one()
-    return f"HH-{datetime.now(UTC).year}-{value:06d}"
+    return format_household_number(value)
 
 
 async def _location_geojson(session: AsyncSession, household_id: uuid.UUID):
@@ -149,6 +158,25 @@ async def _location_geojson(session: AsyncSession, household_id: uuid.UUID):
         )
     ).scalar_one()
     return point_to_geojson(geojson)
+
+
+async def _validate_pin_area(
+    session: AsyncSession,
+    *,
+    latitude: float | None,
+    longitude: float | None,
+    area_id: uuid.UUID,
+) -> None:
+    """Keep the stored area and pin consistent with the boundary data."""
+    if latitude is None or longitude is None:
+        return
+    matched = await geo_service.area_for_point(session, latitude, longitude)
+    if matched is None:
+        raise ConflictError("Place the household pin within Barangay San Jose.")
+    if matched.id != area_id:
+        raise ConflictError(
+            f"This pin is inside {matched.name}; choose that area or move the pin."
+        )
 
 
 def _member_out(member: Member) -> MemberOut:
@@ -225,6 +253,64 @@ async def _household_out(
         has_possible_duplicate=has_possible_duplicate,
         member_count=member_count,
         created_at=household.created_at,
+    )
+
+
+def _member_directory_out(
+    member: Member,
+    *,
+    household: Household,
+    area_name: str,
+) -> RegistryMemberOut:
+    return RegistryMemberOut(
+        **_member_out(member).model_dump(),
+        household_id=household.id,
+        household_reference_no=household.reference_no,
+        household_head_name=household.head_name,
+        household_head_user_id=household.head_user_id,
+        area_id=household.area_id,
+        area_name=area_name,
+        created_at=member.created_at,
+    )
+
+
+async def _members_for_household(session: AsyncSession, household_id: uuid.UUID) -> list[MemberOut]:
+    members = (
+        (
+            await session.execute(
+                select(Member)
+                .where(Member.household_id == household_id, Member.deleted_at.is_(None))
+                .order_by(Member.is_head.desc(), Member.full_name.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [_member_out(member) for member in members]
+
+
+async def _household_detail_out(
+    session: AsyncSession,
+    household: Household,
+    *,
+    area_name: str | None,
+    has_possible_duplicate: bool = False,
+) -> HouseholdDetailOut:
+    base = await _household_out(
+        session,
+        household,
+        area_name=area_name,
+        has_possible_duplicate=has_possible_duplicate,
+        member_count=await session.scalar(
+            select(func.count(Member.id)).where(
+                Member.household_id == household.id, Member.deleted_at.is_(None)
+            )
+        )
+        or 0,
+    )
+    return HouseholdDetailOut(
+        **base.model_dump(),
+        members=await _members_for_household(session, household.id),
     )
 
 
@@ -366,6 +452,12 @@ async def create_household_self(
 
     area = await geo_service.get_area_or_404(session, body.area_id)
     account = await users_service.get_user_or_404(session, user.id)
+    await _validate_pin_area(
+        session,
+        latitude=body.latitude,
+        longitude=body.longitude,
+        area_id=area.id,
+    )
 
     location = None
     if body.latitude is not None and body.longitude is not None:
@@ -437,6 +529,12 @@ async def create_household_bhw(
         raise PermissionDeniedError("You can only register households in your assigned area.")
 
     area = await geo_service.get_area_or_404(session, body.area_id)
+    await _validate_pin_area(
+        session,
+        latitude=body.latitude,
+        longitude=body.longitude,
+        area_id=area.id,
+    )
 
     location = None
     if body.latitude is not None and body.longitude is not None:
@@ -512,7 +610,7 @@ async def create_household_bhw(
 
 async def get_household_or_404(session: AsyncSession, household_id: uuid.UUID) -> Household:
     """For other modules (safety) that need the ORM row itself, not the DTO —
-    `get_household_for_user` below returns `HouseholdOut | None`, which loses
+    `get_household_for_user` below returns a DTO, which loses
     the columns a join needs. Same precedent as `geo.get_area_or_404`."""
     household = await session.get(Household, household_id)
     if household is None or household.deleted_at is not None:
@@ -525,13 +623,13 @@ async def household_for_user_id(session: AsyncSession, user_id: uuid.UUID) -> Ho
     Exposed for safety's `/me/safety-status` — same reasoning as
     `get_household_or_404` above."""
     return await session.scalar(
-        select(Household).where(
-            Household.head_user_id == user_id, Household.deleted_at.is_(None)
-        )
+        select(Household).where(Household.head_user_id == user_id, Household.deleted_at.is_(None))
     )
 
 
-async def get_household_for_user(session: AsyncSession, user_id: uuid.UUID) -> HouseholdOut | None:
+async def get_household_for_user(
+    session: AsyncSession, user_id: uuid.UUID
+) -> HouseholdDetailOut | None:
     """`GET /me/household` — `None` drives the onboarding redirect."""
     row = (
         await session.execute(
@@ -552,12 +650,15 @@ async def get_household_for_user(session: AsyncSession, user_id: uuid.UUID) -> H
         )
     ).scalar_one()
 
-    return await _household_out(
+    base = await _household_out(
         session,
         household,
         area_name=area_name,
         has_possible_duplicate=False,
         member_count=member_count,
+    )
+    return HouseholdDetailOut(
+        **base.model_dump(), members=await _members_for_household(session, household.id)
     )
 
 
@@ -568,6 +669,9 @@ async def list_households(
     page: int = 1,
     size: int = 20,
     flagged: bool = False,
+    query: str | None = None,
+    area_id: uuid.UUID | None = None,
+    source: Literal["self", "bhw"] | None = None,
 ) -> Page[HouseholdOut]:
     member_count_subq = (
         select(func.count(Member.id))
@@ -586,8 +690,15 @@ async def list_households(
     stmt = apply_area_scope(stmt, user, Household.area_id)
     if flagged:
         stmt = stmt.where(has_dup)
+    if query:
+        term = f"%{query.strip()}%"
+        stmt = stmt.where(or_(Household.reference_no.ilike(term), Household.head_name.ilike(term)))
+    if area_id:
+        stmt = stmt.where(Household.area_id == area_id)
+    if source:
+        stmt = stmt.where(Household.source == source)
 
-    total = len((await session.execute(stmt)).all())
+    total = (await session.execute(select(func.count()).select_from(stmt.subquery()))).scalar_one()
     rows = (await session.execute(stmt.limit(size).offset((page - 1) * size))).all()
 
     items = [
@@ -601,6 +712,540 @@ async def list_households(
         for household, area_name, member_count, has_duplicate in rows
     ]
     return Page[HouseholdOut](items=items, **page_meta(total, page, size))
+
+
+async def get_household_detail(
+    session: AsyncSession,
+    *,
+    household_id: uuid.UUID,
+    user: AuthenticatedUser,
+) -> HouseholdDetailOut:
+    row = (
+        await session.execute(
+            select(Household, Area.name)
+            .join(Area, Household.area_id == Area.id)
+            .where(Household.id == household_id, Household.deleted_at.is_(None))
+        )
+    ).one_or_none()
+    if row is None:
+        raise NotFoundError("Household not found.")
+    household, area_name = row
+    if user.is_area_scoped and household.area_id not in user.assigned_area_ids:
+        raise PermissionDeniedError("You can only access households in your assigned areas.")
+    duplicate_candidates = await find_duplicate_candidates(session, household)
+    return await _household_detail_out(
+        session,
+        household,
+        area_name=area_name,
+        has_possible_duplicate=bool(duplicate_candidates),
+    )
+
+
+async def get_registry_summary(
+    session: AsyncSession, *, user: AuthenticatedUser
+) -> RegistrySummary:
+    base = select(Household).where(Household.deleted_at.is_(None))
+    base = apply_area_scope(base, user, Household.area_id)
+    rows = (await session.execute(base)).scalars().all()
+    household_ids = [row.id for row in rows]
+    member_total = 0
+    if household_ids:
+        member_total = (
+            await session.execute(
+                select(func.count(Member.id)).where(
+                    Member.household_id.in_(household_ids), Member.deleted_at.is_(None)
+                )
+            )
+        ).scalar_one()
+    possible_duplicates = 0
+    for row in rows:
+        if await session.scalar(
+            select(func.count())
+            .select_from(Household)
+            .where(
+                Household.id != row.id,
+                Household.deleted_at.is_(None),
+                Household.merged_into_id.is_(None),
+                Household.area_id == row.area_id,
+                func.similarity(Household.head_name, row.head_name)
+                > DUPLICATE_NAME_SIMILARITY_THRESHOLD,
+            )
+        ):
+            possible_duplicates += 1
+    counts = {}
+    for row in rows:
+        counts.setdefault(
+            row.area_id,
+            {"id": row.area_id, "name": None, "households": 0, "citizens": 0},
+        )
+        counts[row.area_id]["households"] += 1
+        name = await session.scalar(select(Area.name).where(Area.id == row.area_id))
+        counts[row.area_id]["name"] = name
+    if household_ids:
+        member_rows = (
+            await session.execute(
+                select(Household.area_id, func.count(Member.id))
+                .join(Member, Member.household_id == Household.id)
+                .where(
+                    Household.id.in_(household_ids),
+                    Household.deleted_at.is_(None),
+                    Member.deleted_at.is_(None),
+                )
+                .group_by(Household.area_id)
+            )
+        ).all()
+        for area, count in member_rows:
+            counts[area]["citizens"] = count
+    return RegistrySummary(
+        households=len(rows),
+        citizens=member_total,
+        average_household_size=round(member_total / len(rows), 1) if rows else None,
+        unreachable_households=sum(row.is_unreachable_by_phone for row in rows),
+        possible_duplicates=possible_duplicates,
+        self_registered_households=sum(row.source == "self" for row in rows),
+        bhw_assisted_households=sum(row.source == "bhw" for row in rows),
+        areas=list(counts.values()),
+    )
+
+
+async def update_household(
+    session: AsyncSession,
+    *,
+    household_id: uuid.UUID,
+    body: HouseholdUpdate,
+    actor: AuthenticatedUser,
+    resident: bool = False,
+) -> HouseholdDetailOut:
+    household = await get_household_or_404(session, household_id)
+    if actor.is_area_scoped and household.area_id not in actor.assigned_area_ids:
+        raise PermissionDeniedError("You can only update households in your assigned areas.")
+    if resident and household.head_user_id != actor.id:
+        raise PermissionDeniedError("You can only update your own household.")
+    if (
+        household.head_user_id is not None
+        and body.head_name
+        and body.head_name != household.head_name
+    ):
+        raise ConflictError("The linked household head's name is managed by their account.")
+    if household.head_user_id is not None and body.area_id != household.area_id:
+        raise ConflictError("An account-linked household head cannot be moved by the registry.")
+    area = await geo_service.get_area_or_404(session, body.area_id)
+    if actor.is_area_scoped and area.id not in actor.assigned_area_ids:
+        raise PermissionDeniedError("You can only move households within your assigned areas.")
+    await _validate_pin_area(
+        session,
+        latitude=body.latitude,
+        longitude=body.longitude,
+        area_id=area.id,
+    )
+    household.head_name = household.head_name if resident or not body.head_name else body.head_name
+    household.contact_number = body.contact_number
+    household.is_unreachable_by_phone = body.is_unreachable_by_phone
+    household.area_id = area.id
+    household.street_address = body.street_address
+    household.waterway_proximity = body.waterway_proximity
+    if body.latitude is None or body.longitude is None:
+        household.location = None
+    else:
+        household.location = func.ST_SetSRID(func.ST_MakePoint(body.longitude, body.latitude), 4326)
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="household.update",
+        entity_type="household",
+        entity_id=household.id,
+        changes={"area_id": str(area.id), "source": household.source},
+    )
+    await session.commit()
+    return await get_household_detail(session, household_id=household.id, user=actor)
+
+
+async def list_members(
+    session: AsyncSession,
+    *,
+    user: AuthenticatedUser,
+    page: int = 1,
+    size: int = 20,
+    query: str | None = None,
+    area_id: uuid.UUID | None = None,
+    head_only: bool = False,
+    vulnerable: bool = False,
+) -> Page[RegistryMemberOut]:
+    stmt = (
+        select(Member, Household, Area.name)
+        .join(Household, Member.household_id == Household.id)
+        .join(Area, Household.area_id == Area.id)
+        .where(Member.deleted_at.is_(None), Household.deleted_at.is_(None))
+        .order_by(Member.created_at.desc())
+    )
+    stmt = apply_area_scope(stmt, user, Household.area_id)
+    if query:
+        term = f"%{query.strip()}%"
+        stmt = stmt.where(
+            or_(
+                Member.full_name.ilike(term),
+                Household.reference_no.ilike(term),
+                Household.head_name.ilike(term),
+            )
+        )
+    if area_id:
+        stmt = stmt.where(Household.area_id == area_id)
+    if head_only:
+        stmt = stmt.where(Member.is_head.is_(True))
+    if vulnerable:
+        stmt = stmt.where(
+            or_(
+                Member.is_child.is_(True),
+                Member.is_senior.is_(True),
+                Member.is_pwd.is_(True),
+                Member.is_pregnant.is_(True),
+                Member.is_lactating.is_(True),
+                Member.has_chronic_condition.is_(True),
+                Member.is_bedridden.is_(True),
+            )
+        )
+    total = (await session.execute(select(func.count()).select_from(stmt.subquery()))).scalar_one()
+    rows = (await session.execute(stmt.limit(size).offset((page - 1) * size))).all()
+    items = [
+        _member_directory_out(member, household=household, area_name=area_name)
+        for member, household, area_name in rows
+    ]
+    return Page[RegistryMemberOut](items=items, **page_meta(total, page, size))
+
+
+async def get_member(
+    session: AsyncSession, *, member_id: uuid.UUID, user: AuthenticatedUser
+) -> RegistryMemberOut:
+    row = (
+        await session.execute(
+            select(Member, Household, Area.name)
+            .join(Household, Member.household_id == Household.id)
+            .join(Area, Household.area_id == Area.id)
+            .where(
+                Member.id == member_id,
+                Member.deleted_at.is_(None),
+                Household.deleted_at.is_(None),
+            )
+        )
+    ).one_or_none()
+    if row is None:
+        raise NotFoundError("Citizen not found.")
+    member, household, area_name = row
+    if user.is_area_scoped and household.area_id not in user.assigned_area_ids:
+        raise PermissionDeniedError("You can only view citizens in your assigned areas.")
+    return _member_directory_out(member, household=household, area_name=area_name)
+
+
+async def update_member(
+    session: AsyncSession,
+    *,
+    member_id: uuid.UUID,
+    body: MemberUpdate,
+    actor: AuthenticatedUser,
+    resident: bool = False,
+) -> RegistryMemberOut:
+    row = (
+        await session.execute(
+            select(Member, Household, Area.name)
+            .join(Household, Member.household_id == Household.id)
+            .join(Area, Household.area_id == Area.id)
+            .where(
+                Member.id == member_id, Member.deleted_at.is_(None), Household.deleted_at.is_(None)
+            )
+        )
+    ).one_or_none()
+    if row is None:
+        raise NotFoundError("Citizen not found.")
+    member, household, area_name = row
+    if actor.is_area_scoped and household.area_id not in actor.assigned_area_ids:
+        raise PermissionDeniedError("You can only update citizens in your assigned areas.")
+    if resident and household.head_user_id != actor.id:
+        raise PermissionDeniedError("You can only update citizens in your own household.")
+    if member.is_head and household.head_user_id is not None and body.full_name != member.full_name:
+        raise ConflictError("The linked household head's name is managed by their account.")
+    member.full_name = body.full_name
+    member.birth_date = body.birth_date
+    member.sex = body.sex
+    member.relationship_to_head = body.relationship_to_head
+    member.is_child, member.is_senior = (
+        _derive_age_flags(body.birth_date) if body.birth_date else (body.is_child, body.is_senior)
+    )
+    member.is_pwd = body.is_pwd
+    member.is_pregnant = body.is_pregnant
+    member.is_lactating = body.is_lactating
+    member.has_chronic_condition = body.has_chronic_condition
+    member.chronic_condition_note = body.chronic_condition_note
+    member.is_bedridden = body.is_bedridden
+    if member.is_head:
+        household.head_name = member.full_name
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="member.update",
+        entity_type="member",
+        entity_id=member.id,
+        changes={"household_id": str(household.id), "is_head": member.is_head},
+    )
+    await session.commit()
+    return _member_directory_out(member, household=household, area_name=area_name)
+
+
+async def add_member(
+    session: AsyncSession,
+    *,
+    household_id: uuid.UUID,
+    body: MemberIn,
+    actor: AuthenticatedUser,
+    resident: bool = False,
+) -> RegistryMemberOut:
+    household = await get_household_or_404(session, household_id)
+    if actor.is_area_scoped and household.area_id not in actor.assigned_area_ids:
+        raise PermissionDeniedError("You can only add citizens in your assigned areas.")
+    if resident and household.head_user_id != actor.id:
+        raise PermissionDeniedError("You can only add citizens to your own household.")
+    member = _new_member(
+        body,
+        household_id=household.id,
+        is_head=False,
+        derive_age_from_birthdate=not bool(body.birth_date is None),
+    )
+    session.add(member)
+    await session.flush()
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="member.create",
+        entity_type="member",
+        entity_id=member.id,
+        changes={"household_id": str(household.id)},
+    )
+    await session.commit()
+    area_name = await session.scalar(select(Area.name).where(Area.id == household.area_id))
+    return _member_directory_out(member, household=household, area_name=area_name or "Unknown area")
+
+
+async def archive_member(
+    session: AsyncSession, *, member_id: uuid.UUID, actor: AuthenticatedUser, resident: bool = False
+) -> None:
+    member = await session.get(Member, member_id)
+    if member is None or member.deleted_at is not None:
+        raise NotFoundError("Citizen not found.")
+    household = await get_household_or_404(session, member.household_id)
+    if actor.is_area_scoped and household.area_id not in actor.assigned_area_ids:
+        raise PermissionDeniedError("You can only archive citizens in your assigned areas.")
+    if resident and household.head_user_id != actor.id:
+        raise PermissionDeniedError("You can only archive citizens in your own household.")
+    if member.is_head:
+        raise ConflictError(
+            "A household head must be replaced before this citizen can be archived."
+        )
+    member.deleted_at = datetime.now(UTC)
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="member.archive",
+        entity_type="member",
+        entity_id=member.id,
+        changes={"household_id": str(household.id)},
+    )
+    await session.commit()
+
+
+async def transfer_member(
+    session: AsyncSession,
+    *,
+    member_id: uuid.UUID,
+    body: MemberTransferIn,
+    actor: AuthenticatedUser,
+) -> RegistryMemberOut:
+    row = (
+        await session.execute(
+            select(Member, Household)
+            .join(Household, Member.household_id == Household.id)
+            .where(
+                Member.id == member_id, Member.deleted_at.is_(None), Household.deleted_at.is_(None)
+            )
+        )
+    ).one_or_none()
+    if row is None:
+        raise NotFoundError("Citizen not found.")
+    member, source = row
+    target = await get_household_or_404(session, body.household_id)
+    if member.is_head:
+        raise ConflictError("The household head must be replaced before a transfer.")
+    if source.id == target.id:
+        raise ConflictError("Choose a different destination household.")
+    if actor.is_area_scoped and (
+        source.area_id not in actor.assigned_area_ids
+        or target.area_id not in actor.assigned_area_ids
+    ):
+        raise PermissionDeniedError("Both households must be within your assigned areas.")
+    member.household_id = target.id
+    member.relationship_to_head = body.relationship_to_head
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="member.transfer",
+        entity_type="member",
+        entity_id=member.id,
+        changes={"from_household_id": str(source.id), "to_household_id": str(target.id)},
+    )
+    await session.commit()
+    area_name = await session.scalar(select(Area.name).where(Area.id == target.area_id))
+    return _member_directory_out(member, household=target, area_name=area_name or "Unknown area")
+
+
+async def promote_member(
+    session: AsyncSession,
+    *,
+    member_id: uuid.UUID,
+    body: MemberPromoteIn,
+    actor: AuthenticatedUser,
+) -> HouseholdDetailOut:
+    row = (
+        await session.execute(
+            select(Member, Household)
+            .join(Household, Member.household_id == Household.id)
+            .where(
+                Member.id == member_id, Member.deleted_at.is_(None), Household.deleted_at.is_(None)
+            )
+        )
+    ).one_or_none()
+    if row is None:
+        raise NotFoundError("Citizen not found.")
+    member, source = row
+    if member.is_head:
+        raise ConflictError("This citizen is already a household head.")
+    if member.is_child:
+        raise ConflictError("A child cannot create a household.")
+    if actor.is_area_scoped and source.area_id not in actor.assigned_area_ids:
+        raise PermissionDeniedError("You can only promote citizens in your assigned areas.")
+    area = await geo_service.get_area_or_404(session, body.area_id)
+    if actor.is_area_scoped and area.id not in actor.assigned_area_ids:
+        raise PermissionDeniedError("You can only create households in your assigned areas.")
+    await _validate_pin_area(
+        session,
+        latitude=body.latitude,
+        longitude=body.longitude,
+        area_id=area.id,
+    )
+    location = None
+    if body.latitude is not None and body.longitude is not None:
+        location = func.ST_SetSRID(func.ST_MakePoint(body.longitude, body.latitude), 4326)
+    household = Household(
+        reference_no=await _next_reference_no(session),
+        head_name=member.full_name,
+        head_user_id=None,
+        contact_number=body.contact_number,
+        is_unreachable_by_phone=body.is_unreachable_by_phone,
+        area_id=area.id,
+        street_address=body.street_address,
+        waterway_proximity=body.waterway_proximity,
+        location=location,
+        source="bhw",
+        created_by_user_id=actor.id,
+        verified_at=datetime.now(UTC),
+        verified_by_user_id=actor.id,
+    )
+    session.add(household)
+    await session.flush()
+    member.household_id = household.id
+    member.is_head = True
+    member.relationship_to_head = None
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="member.promote",
+        entity_type="member",
+        entity_id=member.id,
+        changes={"from_household_id": str(source.id), "to_household_id": str(household.id)},
+    )
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="household.create",
+        entity_type="household",
+        entity_id=household.id,
+        changes={"promoted_member_id": str(member.id)},
+    )
+    await session.commit()
+    return await get_household_detail(session, household_id=household.id, user=actor)
+
+
+async def make_head(
+    session: AsyncSession, *, member_id: uuid.UUID, actor: AuthenticatedUser
+) -> HouseholdDetailOut:
+    row = (
+        await session.execute(
+            select(Member, Household)
+            .join(Household, Member.household_id == Household.id)
+            .where(
+                Member.id == member_id,
+                Member.deleted_at.is_(None),
+                Household.deleted_at.is_(None),
+            )
+        )
+    ).one_or_none()
+    if row is None:
+        raise NotFoundError("Citizen not found.")
+    member, household = row
+    if actor.is_area_scoped and household.area_id not in actor.assigned_area_ids:
+        raise PermissionDeniedError("You can only change heads in your assigned areas.")
+    if member.is_head:
+        raise ConflictError("This citizen is already the household head.")
+    if household.head_user_id is not None:
+        raise ConflictError(
+            "The linked household head must transfer the account before a new head can be assigned."
+        )
+    current_head = (
+        await session.execute(
+            select(Member).where(
+                Member.household_id == household.id,
+                Member.is_head.is_(True),
+                Member.deleted_at.is_(None),
+            )
+        )
+    ).scalar_one_or_none()
+    if current_head is None:
+        raise ConflictError("This household has no replaceable head.")
+    current_head.is_head = False
+    current_head.relationship_to_head = "member"
+    await session.flush()
+    member.is_head = True
+    member.relationship_to_head = None
+    household.head_name = member.full_name
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="member.promote_to_head",
+        entity_type="member",
+        entity_id=member.id,
+        changes={"household_id": str(household.id), "previous_head_id": str(current_head.id)},
+    )
+    await session.commit()
+    return await get_household_detail(session, household_id=household.id, user=actor)
+
+
+async def archive_household(
+    session: AsyncSession, *, household_id: uuid.UUID, actor: AuthenticatedUser
+) -> None:
+    household = await get_household_or_404(session, household_id)
+    if actor.is_area_scoped and household.area_id not in actor.assigned_area_ids:
+        raise PermissionDeniedError("You can only archive households in your assigned areas.")
+    if household.head_user_id is not None:
+        raise ConflictError(
+            "An account-linked household head must close or transfer the account before archive."
+        )
+    household.deleted_at = datetime.now(UTC)
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="household.archive",
+        entity_type="household",
+        entity_id=household.id,
+        changes={"reference_no": household.reference_no},
+    )
+    await session.commit()
 
 
 # --- merge (FR-REG-010) ---------------------------------------------------------
@@ -618,6 +1263,8 @@ async def merge_households(
         raise NotFoundError("One or both households were not found.")
     if kept.merged_into_id is not None or merged.merged_into_id is not None:
         raise ConflictError("One of these records is already part of a merge.")
+    if merged.head_user_id is not None:
+        raise ConflictError("A household linked to a resident account cannot be merged away.")
 
     # Demote before re-parenting — `idx_member_one_head` allows only one
     # is_head=true member per household, so the losing household's head must

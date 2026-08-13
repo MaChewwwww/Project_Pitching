@@ -23,7 +23,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from shutil import copyfile
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
 from src.core.config import settings
 from src.core.logging import configure_logging
@@ -44,6 +44,7 @@ from src.modules.evacuation.models import EmergencyEvent, EvacCenter
 from src.modules.geo.models import Area, Facility, Hotline
 from src.modules.preparedness.models import Faq, Guide
 from src.modules.registry.models import Household, Member
+from src.modules.registry.reference import format_household_number
 from src.modules.safety.models import RescueRequest, UnregisteredPerson
 from src.modules.users.models import User, UserArea
 from src.modules.weather.models import FloodEvent, FloodEventArea, Forecast, Reading
@@ -1402,6 +1403,22 @@ LAST_NAMES = [
 
 async def seed_households(session, areas: dict[str, Area]) -> None:
     if await _table_has_rows(session, Household):
+        # Older demo databases were seeded before household pins were added.
+        # Backfill only clearly synthetic rows; never rewrite resident/BHW data.
+        await session.execute(
+            update(Household)
+            .where(
+                Household.reference_no.like("HH-SEED-%"),
+                Household.location.is_(None),
+            )
+            .values(
+                location=(
+                    select(func.ST_PointOnSurface(Area.geom))
+                    .where(Area.id == Household.area_id)
+                    .scalar_subquery()
+                )
+            )
+        )
         return
 
     rng = random.Random(2026)  # deterministic — reruns produce the same synthetic set
@@ -1422,11 +1439,15 @@ async def seed_households(session, areas: dict[str, Area]) -> None:
             proximity = "near" if r < 0.55 else ("very_near" if r < 0.75 else "far")
 
         household = Household(
-            reference_no=f"HH-SEED-{i:05d}",
+            reference_no=format_household_number(i),
             head_name=head_name,
             contact_number=None if rng.random() < 0.1 else f"09{rng.randint(100000000, 999999999)}",
             is_unreachable_by_phone=rng.random() < 0.1,
             area_id=area.id,
+            # Keep synthetic demo pins inside the seeded area polygon so the
+            # registry map and boundary resolver agree. This is a planning
+            # point, not a real household address.
+            location=func.ST_PointOnSurface(area.geom),
             waterway_proximity=proximity,
             source="bhw",
         )
@@ -1458,6 +1479,8 @@ async def seed_households(session, areas: dict[str, Area]) -> None:
             )
         total += 1
 
+    # Reserve the seeded range before the first real registration.
+    await session.execute(select(func.setval("household_reference_no_seq", total, True)))
     log.info("seeded synthetic households", extra={"count": total})
 
 

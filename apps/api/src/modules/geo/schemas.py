@@ -57,6 +57,17 @@ class PublicArea(BaseModel):
     has_boundary: bool  # derived — geom IS NOT NULL, pending BRD OI-3
 
 
+class PointResolution(BaseModel):
+    """Boundary-derived location context; no external geocoder is queried."""
+
+    latitude: float
+    longitude: float
+    within_barangay: bool
+    area_id: uuid.UUID | None = None
+    area_name: str | None = None
+    address_label: str | None = None
+
+
 # --- admin --------------------------------------------------------------------
 
 
@@ -160,5 +171,4 @@ class SirenIn(BaseModel):
 
 class SirenOut(PublicSiren):
     pass
-
 

@@ -215,7 +215,7 @@ erDiagram
 
 | Column                         | Notes                                                         |
 | ------------------------------ | ------------------------------------------------------------- |
-| `id`, `reference_no`           | Reference generated at creation (FR-REG-006)                  |
+| `id`, `reference_no`           | Household Number in `M-SJ-000-000` format, generated at creation (FR-REG-006) |
 | `head_name`, `contact_number`  | Contact nullable (FR-REG-005)                                 |
 | `unreachable_by_phone`         | Derived on write; feeds capacity scoring                      |
 | `area_id`                      | FK; **also derivable** via `ST_Contains` when a geotag exists |
@@ -388,7 +388,7 @@ GET   /me/household                 implemented — null drives the onboarding r
 POST  /me/household                 implemented — FR-REG-001's onboarding step, creates the
                                      household + head member row (registration itself is
                                      POST /auth/register, which only creates the account)
-PATCH /me/household                 planned — editing (FR-REG-009) is out of scope so far
+PATCH /me/household                 implemented — resident head edits their household (FR-REG-009)
 POST  /me/household/members
 PATCH /me/household/members/{id}
 POST  /me/safety-status            implemented — per member or whole household (FR-SAF-001..007)
@@ -405,10 +405,20 @@ PUT   /me/go-bag
 ```
 GET   /admin/households              implemented — paginated, area-scoped for BHW, ?flagged=
 POST  /admin/households              implemented — assisted registration (FR-REG-002)
-GET   /admin/households/{id}         not built — the list view's row data has been enough so far
+GET   /admin/households/{id}         implemented — detail plus active member roster
+PATCH /admin/households/{id}         implemented — admin/BHW edit with area-scope enforcement
+GET   /admin/households/summary      implemented — scoped coverage metrics for registry workspaces
+POST  /admin/households/{id}/members implemented — add a citizen to an existing household
+DELETE /admin/households/{id}        implemented — admin-only archive
+GET   /admin/members                 implemented — active citizen directory, area-scoped for BHW
+GET   /admin/members/{id}            implemented — enriched citizen detail
+PATCH /admin/members/{id}            implemented — profile and vulnerability flag edit
+DELETE /admin/members/{id}           implemented — admin-only archive; heads require replacement
+POST  /admin/members/{id}/transfer   implemented — preserve member identity while moving households
+POST  /admin/members/{id}/make-head  implemented — replace an unlinked registry head
+POST  /admin/members/{id}/promote    implemented — create a household from an adult member
 POST  /admin/households/{id}/vulnerability-override
-GET   /admin/households/duplicates   folded into GET /admin/households?flagged=true instead
-                                     of a separate endpoint — same data, one fewer route
+GET   /admin/households/{id}/duplicates implemented — fresh duplicate candidates for merge review
 POST  /admin/households/merge        implemented (FR-REG-010)
 GET   /admin/emergency-events        implemented — list events (FR-SAF-018/019)
 POST  /admin/emergency-events        implemented — declare an event
@@ -429,6 +439,8 @@ GET   /admin/alert-prompts           threshold prompt history, optionally unreso
 POST  /admin/alert-prompts/{id}/acknowledge  record the human review decision
 DELETE /admin/alert-prompts/{id}     remove an unacknowledged false-positive prompt
 POST  /admin/readings                manual river/weather reading (FR-WX-007); river crossings create a prompt, never a public alert
+GET   /admin/readings/river-history  cached river-level observations for the Weather Watch history chart (admin/BHW)
+POST  /admin/readings/simulate-typhoon  admin-only demo sequence that writes readings and alert prompts
 GET   /admin/evacuation-centers
 POST  /admin/evacuation-centers/{id}/checkins
 GET   /admin/analytics/*
@@ -445,9 +457,9 @@ PUT   /admin/config/{key}           legacy/internal settings write (not linked i
 /admin/sirens                 POST, GET, PATCH, POST /{id}/trigger, DELETE (FR-MAP-014)
 /admin/facilities            POST, GET, PATCH, DELETE
 /admin/donation-drives        POST, GET, PATCH        (+ nested drive_need)
-/admin/flood-events            POST, GET, PATCH, DELETE
+/admin/flood-events            POST, GET, PATCH, DELETE (admin-only; admin GET includes `area_ids`; DELETE removes manual records only and returns 409 for Emergency Event-linked records)
 /admin/areas                    GET, PATCH             (internal reference data; not linked in the console)
-GET   /admin/alert-prompts      threshold prompt history with optional unresolved filter (FR-WX-009; embedded in `/admin/readings`)
+GET   /admin/alert-prompts      threshold prompt history with optional unresolved filter (FR-WX-009; embedded in `/admin/weather-readings`)
 POST  /admin/alert-prompts/{id}/acknowledge  keep the reviewed prompt in history
 DELETE /admin/alert-prompts/{id}  delete only an unacknowledged false-positive prompt
 ```
@@ -986,7 +998,7 @@ and in structured logs — it does not gate any code path. `PROXY_PORT`/`WEB_POR
 
 `DEMO_MODE=true` would switch the readings source to a scripted timeline (FR-WX-016) — **not
 implemented**. The decision taken instead: cron always fetches live (`tech_stack.md` Section 7
-decision log), and the admin console's **Simulate typhoon** action (`/admin/readings`) gives a
+decision log), and the admin console's **Simulate typhoon** action (`/admin/weather-readings`) gives a
 presenter an on-demand, real river-level sequence to trigger during the pitch without depending
 on an actual flood or a live PAGASA gauge reporting at that moment.
 
@@ -1066,6 +1078,13 @@ mid-way, or after adding a new seed section that predates a running database.
 | AR-9 | **Generated types drift because someone skips `make types`**                       | CI regenerates and fails on any diff (Section 12.6). Never rely on the convention alone                                                                           |
 
 ---
+
+### Map pin resolution
+
+`GET /public/areas/resolve-point` performs a boundary-inclusive PostGIS lookup for a map pin and
+returns the matching area plus a coarse address label. It intentionally does not call an external
+reverse-geocoder on the request path; registry writes validate that a selected area agrees with the
+boundary result.
 
 ## 17. Open Architecture Decisions
 

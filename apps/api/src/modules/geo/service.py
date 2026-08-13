@@ -26,6 +26,7 @@ from src.modules.geo.schemas import (
     FacilityOut,
     GeoJsonPoint,
     HotlineIn,
+    PointResolution,
     PublicArea,
     PublicFacility,
     PublicSiren,
@@ -163,13 +164,40 @@ async def area_for_point(
     """
     result = await session.execute(
         select(Area).where(
-            func.ST_Contains(
+            func.ST_Covers(
                 Area.geom,
                 func.ST_SetSRID(func.ST_MakePoint(lon, lat), 4326),
             )
         )
     )
     return result.scalars().first()
+
+
+async def resolve_point(
+    session: AsyncSession, *, latitude: float, longitude: float
+) -> PointResolution:
+    """Resolve a pin against the seeded barangay boundaries.
+
+    The address is intentionally a coarse, boundary-derived label. A precise
+    street address would require a reverse-geocoding provider on the request
+    path, which this system does not permit and which would be unreliable for
+    dense informal addresses.
+    """
+    area = await area_for_point(session, latitude, longitude)
+    if area is None:
+        return PointResolution(
+            latitude=latitude,
+            longitude=longitude,
+            within_barangay=False,
+        )
+    return PointResolution(
+        latitude=latitude,
+        longitude=longitude,
+        within_barangay=True,
+        area_id=area.id,
+        area_name=area.name,
+        address_label=f"{area.name}, Barangay San Jose, Rodriguez, Rizal",
+    )
 
 
 async def list_area_boundaries(session: AsyncSession) -> AreaBoundaryCollection:

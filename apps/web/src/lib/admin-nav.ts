@@ -47,7 +47,10 @@ export const ADMIN_CATEGORIES: AdminNavCategory[] = [
     id: "registry",
     title: "Community Registry",
     icon: Users,
-    items: [{ href: "/admin/households" as Route, label: "Households & Members", icon: Users }],
+    items: [
+      { href: "/admin/households" as Route, label: "Household List", icon: Home },
+      { href: "/admin/citizens" as Route, label: "Registered Citizens", icon: Users },
+    ],
   },
   {
     // Second, right after registry, so a walkthrough reads in demo order:
