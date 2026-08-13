@@ -1162,7 +1162,7 @@ export default function AdminWeatherReadingsPage() {
                   <Droplets aria-hidden className="size-4 shrink-0" />
                   River Alert
                   {pendingPromptCount > 0 ? (
-                    <span className="ml-0.5 min-w-5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] leading-none font-bold text-amber-900">
+                    <span className="ml-0.5 min-w-5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] leading-none font-bold text-emerald-800">
                       {pendingPromptCount}
                     </span>
                   ) : null}
