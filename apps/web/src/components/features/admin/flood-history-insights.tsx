@@ -20,7 +20,6 @@ import {
   Clock3,
   ExternalLink,
   Gauge,
-  House,
   Layers3,
   MapPin,
   Users,
@@ -82,9 +81,13 @@ function EmptyChart({ description }: { description: string }) {
 export function FloodHistoryInsights({
   events,
   isLoading,
+  summaryOnly = false,
+  hideSummary = false,
 }: {
   events: FloodEventRecord[];
   isLoading: boolean;
+  summaryOnly?: boolean;
+  hideSummary?: boolean;
 }) {
   const insights = React.useMemo(() => {
     const chronologicalEvents = [...events].sort(
@@ -160,7 +163,6 @@ export function FloodHistoryInsights({
       areaReach,
       recordPeak,
       totalDisplaced,
-      averageDisplaced: totalDisplaced == null ? null : totalDisplaced / displaced.length,
       topArea,
       areaCount: areas.size,
       ongoingCount: events.filter((event) => event.is_ongoing || !event.ended_at).length,
@@ -169,261 +171,211 @@ export function FloodHistoryInsights({
 
   if (isLoading) {
     return (
-      <aside aria-label="Loading history insights" className="space-y-4">
-        <div className="overflow-hidden rounded-3xl border border-emerald-100 bg-white p-4 shadow-2xs sm:p-5">
-          <div className="flex animate-pulse items-center gap-3">
-            <div className="size-10 rounded-xl bg-neutral-200" />
-            <div className="flex-1 space-y-2">
-              <div className="h-3 w-32 rounded bg-neutral-200" />
-              <div className="h-2.5 w-56 max-w-full rounded bg-neutral-100" />
+      <aside
+        aria-label="Loading history insights"
+        className={
+          summaryOnly ? "space-y-4" : "space-y-4 lg:sticky lg:top-5 lg:self-start"
+        }
+      >
+        {!hideSummary ? (
+          <div className="overflow-hidden rounded-3xl border border-emerald-100 bg-white p-4 shadow-2xs sm:p-5">
+            <div className="flex animate-pulse items-center gap-3">
+              <div className="size-10 rounded-xl bg-neutral-200" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-32 rounded bg-neutral-200" />
+                <div className="h-2.5 w-56 max-w-full rounded bg-neutral-100" />
+              </div>
+            </div>
+            <div className="mt-4 h-32 animate-pulse rounded-2xl bg-neutral-100" />
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              {[0, 1, 2, 3].map((item) => (
+                <div
+                  key={item}
+                  className="h-24 animate-pulse rounded-2xl bg-neutral-100"
+                />
+              ))}
             </div>
           </div>
-          <div className="mt-4 h-32 animate-pulse rounded-2xl bg-neutral-100" />
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            {[0, 1, 2, 3].map((item) => (
-              <div key={item} className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
-            ))}
-          </div>
-        </div>
-        {[0, 1, 2].map((item) => (
-          <Card key={item} className="min-h-72 animate-pulse bg-neutral-50">
-            <CardContent>
-              <div className="h-4 w-36 rounded bg-neutral-200" />
-              <div className="mt-5 h-52 rounded-2xl bg-neutral-100" />
-            </CardContent>
-          </Card>
-        ))}
+        ) : null}
+        {!summaryOnly
+          ? [0, 1, 2].map((item) => (
+              <Card key={item} className="min-h-72 animate-pulse bg-neutral-50">
+                <CardContent>
+                  <div className="h-4 w-36 rounded bg-neutral-200" />
+                  <div className="mt-5 h-52 rounded-2xl bg-neutral-100" />
+                </CardContent>
+              </Card>
+            ))
+          : null}
       </aside>
     );
   }
 
-  const peakScale = insights.recordPeak
-    ? Math.min(100, Math.max(8, (insights.recordPeak.value / 24) * 100))
-    : 0;
-  const peakStatus = insights.recordPeak ? peakBand(insights.recordPeak.value) : null;
-
   return (
     <aside
-      className="space-y-4 lg:sticky lg:top-5 lg:self-start"
+      className={summaryOnly ? "space-y-4" : "space-y-4 lg:sticky lg:top-5 lg:self-start"}
       aria-label="Flood history insights"
     >
-      <section className="overflow-hidden rounded-3xl border border-emerald-100 bg-[radial-gradient(circle_at_top_right,_rgba(20,184,166,0.16),_transparent_40%),linear-gradient(135deg,#f0fdf4_0%,#ffffff_48%,#ecfeff_100%)] p-4 shadow-sm sm:p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-700/20">
-              <Gauge aria-hidden className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold tracking-[0.18em] text-emerald-700 uppercase">
-                Impact dashboard
-              </p>
-              <h2 className="mt-1 text-base font-bold tracking-tight text-neutral-950">
-                History at a glance
-              </h2>
-              <p className="mt-1 max-w-md text-xs leading-relaxed text-neutral-500">
-                A comparison of recorded impact, not a live flood forecast.
-              </p>
+      {!hideSummary ? (
+        <section className="overflow-hidden rounded-3xl border border-emerald-100 bg-[radial-gradient(circle_at_top_right,_rgba(20,184,166,0.16),_transparent_40%),linear-gradient(135deg,#f0fdf4_0%,#ffffff_48%,#ecfeff_100%)] p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-700/20">
+                <Gauge aria-hidden className="size-4" />
+              </span>
+              <div className="min-w-0">
+                <h2 className="mt-1 text-base font-bold tracking-tight text-neutral-950">
+                  History at a glance
+                </h2>
+                <p className="mt-1 max-w-md text-xs leading-relaxed text-neutral-500">
+                  A comparison of recorded impact, not a live flood forecast.
+                </p>
+              </div>
             </div>
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="h-9 shrink-0 self-start rounded-full border-emerald-200 bg-white/80 px-3 text-emerald-800 shadow-2xs hover:bg-emerald-50"
+            >
+              <Link href="/admin/weather-readings">
+                <Waves aria-hidden className="size-3.5" />
+                <span>Weather Watch</span>
+                <ExternalLink aria-hidden className="size-3.5" />
+              </Link>
+            </Button>
           </div>
-          <Button
-            asChild
-            size="sm"
-            variant="outline"
-            className="h-9 shrink-0 self-start rounded-full border-emerald-200 bg-white/80 px-3 text-emerald-800 shadow-2xs hover:bg-emerald-50"
-          >
-            <Link href="/admin/weather-readings">
-              <Waves aria-hidden className="size-3.5" />
-              <span>Weather Watch</span>
-              <ExternalLink aria-hidden className="size-3.5" />
-            </Link>
-          </Button>
-        </div>
 
-        <div className="relative mt-5 overflow-hidden rounded-2xl bg-emerald-950 p-4 text-white shadow-lg shadow-emerald-950/15 sm:p-5">
-          <div className="pointer-events-none absolute -top-16 -right-12 size-44 rounded-full bg-teal-400/20 blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-20 left-1/3 size-40 rounded-full bg-emerald-400/10 blur-2xl" />
-          <div className="relative flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-bold tracking-[0.16em] text-emerald-200/80 uppercase">
-                Record peak
-              </p>
-              <p className="mt-1 text-xs text-emerald-100/70">
-                Highest crest in the current view
-              </p>
-            </div>
-            {peakStatus ? (
-              <span
-                className="rounded-full px-2.5 py-1 text-[10px] font-bold"
-                style={{
-                  backgroundColor: `${peakStatus.color}33`,
-                  color: peakStatus.color,
-                }}
-              >
-                {peakStatus.label}
-              </span>
-            ) : (
-              <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold text-emerald-100/70">
-                Awaiting data
-              </span>
-            )}
-          </div>
-          <div className="relative mt-4 flex items-end justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-4xl font-bold tracking-[-0.04em] text-white tabular-nums">
-                {insights.recordPeak ? formatMeters(insights.recordPeak.value) : "—"}
-                {insights.recordPeak ? (
-                  <span className="ml-1 text-base font-medium tracking-normal text-emerald-200">
-                    m
-                  </span>
-                ) : null}
-              </p>
-              <p className="mt-1 truncate text-xs text-emerald-100/70">
-                {insights.recordPeak
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <MetricTile
+              label="Events in view"
+              value={formatNumber(events.length)}
+              detail={
+                insights.ongoingCount
+                  ? `${insights.ongoingCount} ongoing now`
+                  : "Historical records"
+              }
+              icon={BarChart3}
+              tone="emerald"
+            />
+            <MetricTile
+              label="Record peak"
+              value={
+                insights.recordPeak ? `${formatMeters(insights.recordPeak.value)} m` : "—"
+              }
+              detail={
+                insights.recordPeak
                   ? `${insights.recordPeak.name} · ${insights.recordPeak.date}`
-                  : "No peak level has been recorded yet."}
-              </p>
+                  : "No peak level recorded"
+              }
+              icon={Gauge}
+              tone="amber"
+            />
+            <MetricTile
+              label="Households displaced"
+              value={
+                insights.totalDisplaced == null
+                  ? "—"
+                  : formatNumber(insights.totalDisplaced)
+              }
+              detail={
+                insights.displaced.length
+                  ? `${insights.displaced.length} records with counts`
+                  : "No counts recorded"
+              }
+              icon={Users}
+              tone="sky"
+            />
+            <MetricTile
+              label="Most affected"
+              value={insights.topArea?.[0] ?? "—"}
+              detail={
+                insights.topArea
+                  ? `${insights.topArea[1]} event${insights.topArea[1] === 1 ? "" : "s"} · ${insights.areaCount} areas`
+                  : "No areas recorded"
+              }
+              icon={Building2}
+              tone="violet"
+            />
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-semibold text-neutral-600">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/70 px-2.5 py-1.5 shadow-2xs">
+              <Layers3 aria-hidden className="size-3.5 text-emerald-600" />
+              {insights.areaCount} area{insights.areaCount === 1 ? "" : "s"} referenced
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/70 px-2.5 py-1.5 shadow-2xs">
+              <Clock3 aria-hidden className="size-3.5 text-indigo-600" />
+              {insights.ongoingCount
+                ? `${insights.ongoingCount} ongoing`
+                : "No ongoing events"}
+            </span>
+          </div>
+        </section>
+      ) : null}
+
+      {!summaryOnly ? (
+        <ChartCard
+          title="Peak water level"
+          eyebrow="Crest comparison"
+          description="How high the water rose in each event"
+          unit="m"
+          data={insights.peaks}
+          empty="Record a peak level to compare flood-water crests over time. Events without a peak are left out."
+          icon={Activity}
+          summary={
+            insights.recordPeak ? `${formatMeters(insights.recordPeak.value)} m` : "—"
+          }
+          summaryLabel={insights.recordPeak ? "highest" : "no peaks"}
+          legend={
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+              <LegendDot color={PEAK_THRESHOLDS.watch.color} label="Moderate · <18m" />
+              <LegendDot color={PEAK_THRESHOLDS.severe.color} label="Severe · 18m+" />
+              <LegendDot color={PEAK_THRESHOLDS.extreme.color} label="Extreme · 21m+" />
             </div>
-            <Activity aria-hidden className="mb-1 size-7 shrink-0 text-emerald-300/80" />
-          </div>
-          <div className="relative mt-5">
-            <div className="h-2 overflow-hidden rounded-full bg-white/15">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-teal-300 via-amber-300 to-red-400 transition-[width] duration-500"
-                style={{ width: `${peakScale}%` }}
-              />
+          }
+          referenceLines={[
+            {
+              value: PEAK_THRESHOLDS.severe.min,
+              label: "18m",
+              color: PEAK_THRESHOLDS.severe.color,
+            },
+            {
+              value: PEAK_THRESHOLDS.extreme.min,
+              label: "21m",
+              color: PEAK_THRESHOLDS.extreme.color,
+            },
+          ]}
+        />
+      ) : null}
+
+      {!summaryOnly ? (
+        <ChartCard
+          title="Displaced households"
+          eyebrow="Community impact"
+          description="Recorded household impact by event"
+          data={insights.displaced}
+          empty="Add displaced-household counts to compare historical impact. Events without a count are left out."
+          icon={Users}
+          summary={
+            insights.totalDisplaced == null ? "—" : formatNumber(insights.totalDisplaced)
+          }
+          summaryLabel={
+            insights.totalDisplaced == null ? "no counts" : "households total"
+          }
+          legend={
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+              <LegendDot color={DISPLACEMENT_COLORS[0]} label="Lower impact" />
+              <LegendDot color={DISPLACEMENT_COLORS[1]} label="Mid impact" />
+              <LegendDot color={DISPLACEMENT_COLORS[3]} label="Highest impact" />
             </div>
-            <div className="mt-1.5 flex items-center justify-between text-[9px] font-medium text-emerald-100/60">
-              <span>0 m</span>
-              <span>18 m severe</span>
-              <span>21 m extreme</span>
-              <span>24 m+</span>
-            </div>
-          </div>
-        </div>
+          }
+        />
+      ) : null}
 
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <MetricTile
-            label="Events in view"
-            value={formatNumber(events.length)}
-            detail={
-              insights.ongoingCount
-                ? `${insights.ongoingCount} ongoing now`
-                : "Historical records"
-            }
-            icon={BarChart3}
-            tone="emerald"
-          />
-          <MetricTile
-            label="Households displaced"
-            value={
-              insights.totalDisplaced == null
-                ? "—"
-                : formatNumber(insights.totalDisplaced)
-            }
-            detail={
-              insights.displaced.length
-                ? `${insights.displaced.length} records with counts`
-                : "No counts recorded"
-            }
-            icon={Users}
-            tone="sky"
-          />
-          <MetricTile
-            label="Most affected"
-            value={insights.topArea?.[0] ?? "—"}
-            detail={
-              insights.topArea
-                ? `${insights.topArea[1]} event${insights.topArea[1] === 1 ? "" : "s"} · ${insights.areaCount} areas`
-                : "No areas recorded"
-            }
-            icon={Building2}
-            tone="amber"
-          />
-          <MetricTile
-            label="Average displacement"
-            value={
-              insights.averageDisplaced == null
-                ? "—"
-                : formatNumber(Math.round(insights.averageDisplaced))
-            }
-            detail={
-              insights.averageDisplaced == null
-                ? "Add household counts"
-                : "Households per recorded event"
-            }
-            icon={House}
-            tone="violet"
-          />
-        </div>
-
-        <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-semibold text-neutral-600">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/70 px-2.5 py-1.5 shadow-2xs">
-            <Layers3 aria-hidden className="size-3.5 text-emerald-600" />
-            {insights.areaCount} area{insights.areaCount === 1 ? "" : "s"} referenced
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/70 px-2.5 py-1.5 shadow-2xs">
-            <Clock3 aria-hidden className="size-3.5 text-indigo-600" />
-            {insights.ongoingCount
-              ? `${insights.ongoingCount} ongoing`
-              : "No ongoing events"}
-          </span>
-        </div>
-      </section>
-
-      <ChartCard
-        title="Peak water level"
-        eyebrow="Crest comparison"
-        description="How high the water rose in each event"
-        unit="m"
-        data={insights.peaks}
-        empty="Record a peak level to compare flood-water crests over time. Events without a peak are left out."
-        icon={Activity}
-        summary={
-          insights.recordPeak ? `${formatMeters(insights.recordPeak.value)} m` : "—"
-        }
-        summaryLabel={insights.recordPeak ? "highest" : "no peaks"}
-        legend={
-          <div className="flex flex-wrap gap-x-3 gap-y-1.5">
-            <LegendDot color={PEAK_THRESHOLDS.watch.color} label="Moderate · <18m" />
-            <LegendDot color={PEAK_THRESHOLDS.severe.color} label="Severe · 18m+" />
-            <LegendDot color={PEAK_THRESHOLDS.extreme.color} label="Extreme · 21m+" />
-          </div>
-        }
-        referenceLines={[
-          {
-            value: PEAK_THRESHOLDS.severe.min,
-            label: "18m",
-            color: PEAK_THRESHOLDS.severe.color,
-          },
-          {
-            value: PEAK_THRESHOLDS.extreme.min,
-            label: "21m",
-            color: PEAK_THRESHOLDS.extreme.color,
-          },
-        ]}
-      />
-
-      <ChartCard
-        title="Displaced households"
-        eyebrow="Community impact"
-        description="Recorded household impact by event"
-        data={insights.displaced}
-        empty="Add displaced-household counts to compare historical impact. Events without a count are left out."
-        icon={Users}
-        summary={
-          insights.totalDisplaced == null ? "—" : formatNumber(insights.totalDisplaced)
-        }
-        summaryLabel={insights.totalDisplaced == null ? "no counts" : "households total"}
-        legend={
-          <div className="flex flex-wrap gap-x-3 gap-y-1.5">
-            <LegendDot color={DISPLACEMENT_COLORS[0]} label="Lower impact" />
-            <LegendDot color={DISPLACEMENT_COLORS[1]} label="Mid impact" />
-            <LegendDot color={DISPLACEMENT_COLORS[3]} label="Highest impact" />
-          </div>
-        }
-      />
-
-      <AreaReachCard data={insights.areaReach} areaCount={insights.areaCount} />
+      {!summaryOnly ? (
+        <AreaReachCard data={insights.areaReach} areaCount={insights.areaCount} />
+      ) : null}
     </aside>
   );
 }

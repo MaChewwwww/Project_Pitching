@@ -196,108 +196,119 @@ export default function AdminFloodEventsPage() {
       />
 
       <div className="grid items-start gap-5 lg:grid-cols-2">
-        <ResourceTable
-          columns={columns}
-          data={filteredEvents}
-          isLoading={eventsQuery.isLoading}
-          isError={eventsQuery.isError}
-          onRetry={() => eventsQuery.refetch()}
-          emptyTitle="No flood events recorded yet"
-          toolbarAction={
-            <Select value={activeYear} onValueChange={setYear}>
-              <SelectTrigger className="inline-flex h-9 w-fit min-w-[132px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
-                <CalendarDays
-                  aria-hidden
-                  className="size-3.5 shrink-0 text-emerald-600"
-                />
-                <SelectValue placeholder="All years" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                align="end"
-                sideOffset={6}
-                className="z-50 min-w-40 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg"
-              >
-                <SelectItem
-                  value="all"
-                  className={`my-0.5 flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                    activeYear === "all"
-                      ? "bg-emerald-600 font-bold text-white focus:bg-emerald-600 focus:text-white"
-                      : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950"
-                  }`}
+        <div className="space-y-5">
+          <FloodHistoryInsights
+            events={filteredEvents}
+            isLoading={eventsQuery.isLoading}
+            summaryOnly
+          />
+          <ResourceTable
+            columns={columns}
+            data={filteredEvents}
+            isLoading={eventsQuery.isLoading}
+            isError={eventsQuery.isError}
+            onRetry={() => eventsQuery.refetch()}
+            emptyTitle="No flood events recorded yet"
+            toolbarAction={
+              <Select value={activeYear} onValueChange={setYear}>
+                <SelectTrigger className="inline-flex h-9 w-fit min-w-[132px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
+                  <CalendarDays
+                    aria-hidden
+                    className="size-3.5 shrink-0 text-emerald-600"
+                  />
+                  <SelectValue placeholder="All years" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  align="end"
+                  sideOffset={6}
+                  className="z-50 min-w-40 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg"
                 >
-                  <span className="truncate">All years</span>
-                  <span
-                    className={`ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
-                      activeYear === "all"
-                        ? "bg-white/25 text-white"
-                        : "bg-neutral-100 text-neutral-600"
-                    }`}
-                  >
-                    {events.length}
-                  </span>
-                </SelectItem>
-                {years.map((availableYear) => (
                   <SelectItem
-                    key={availableYear}
-                    value={availableYear}
+                    value="all"
                     className={`my-0.5 flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                      activeYear === availableYear
+                      activeYear === "all"
                         ? "bg-emerald-600 font-bold text-white focus:bg-emerald-600 focus:text-white"
                         : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950"
                     }`}
                   >
-                    <span className="truncate">{availableYear}</span>
+                    <span className="truncate">All years</span>
                     <span
                       className={`ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
-                        activeYear === availableYear
+                        activeYear === "all"
                           ? "bg-white/25 text-white"
                           : "bg-neutral-100 text-neutral-600"
                       }`}
                     >
-                      {yearCounts[availableYear] ?? 0}
+                      {events.length}
                     </span>
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          }
-          emptyDescription="Record a past flood event to build the community's public disaster history."
-          getRowKey={(event) => event.id}
-          rowActions={(event) => (
-            <>
-              <FloodEventDetailsDialog event={event} />
-              <FloodEventEditorDialog
-                event={event}
-                areas={areasQuery.data ?? []}
-                areasLoading={areasQuery.isLoading}
-                areasError={areasQuery.isError}
-                onRetryAreas={() => areasQuery.refetch()}
-                isSubmitting={updateMutation.isPending}
-                onSubmit={async (values) => {
-                  await updateMutation.mutateAsync({ id: event.id, values });
-                }}
-                trigger={
-                  <Button
-                    size="sm"
-                    variant="warning"
-                    className="h-8 rounded-lg border border-amber-300/80 bg-amber-50 px-2.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 hover:text-amber-800"
-                  >
-                    <Pencil aria-hidden className="size-3.5" />
-                    <span className="md:hidden">Edit</span>
-                  </Button>
-                }
-              />
-              {!event.emergency_event_id ? (
-                <ConfirmDeleteButton
-                  itemLabel={event.name}
-                  onConfirm={() => deleteMutation.mutate(event.id)}
+                  {years.map((availableYear) => (
+                    <SelectItem
+                      key={availableYear}
+                      value={availableYear}
+                      className={`my-0.5 flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                        activeYear === availableYear
+                          ? "bg-emerald-600 font-bold text-white focus:bg-emerald-600 focus:text-white"
+                          : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950"
+                      }`}
+                    >
+                      <span className="truncate">{availableYear}</span>
+                      <span
+                        className={`ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                          activeYear === availableYear
+                            ? "bg-white/25 text-white"
+                            : "bg-neutral-100 text-neutral-600"
+                        }`}
+                      >
+                        {yearCounts[availableYear] ?? 0}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            }
+            emptyDescription="Record a past flood event to build the community's public disaster history."
+            getRowKey={(event) => event.id}
+            rowActions={(event) => (
+              <>
+                <FloodEventDetailsDialog event={event} />
+                <FloodEventEditorDialog
+                  event={event}
+                  areas={areasQuery.data ?? []}
+                  areasLoading={areasQuery.isLoading}
+                  areasError={areasQuery.isError}
+                  onRetryAreas={() => areasQuery.refetch()}
+                  isSubmitting={updateMutation.isPending}
+                  onSubmit={async (values) => {
+                    await updateMutation.mutateAsync({ id: event.id, values });
+                  }}
+                  trigger={
+                    <Button
+                      size="sm"
+                      variant="warning"
+                      className="h-8 rounded-lg border border-amber-300/80 bg-amber-50 px-2.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 hover:text-amber-800"
+                    >
+                      <Pencil aria-hidden className="size-3.5" />
+                      <span className="md:hidden">Edit</span>
+                    </Button>
+                  }
                 />
-              ) : null}
-            </>
-          )}
+                {!event.emergency_event_id ? (
+                  <ConfirmDeleteButton
+                    itemLabel={event.name}
+                    onConfirm={() => deleteMutation.mutate(event.id)}
+                  />
+                ) : null}
+              </>
+            )}
+          />
+        </div>
+        <FloodHistoryInsights
+          events={filteredEvents}
+          isLoading={eventsQuery.isLoading}
+          hideSummary
         />
-        <FloodHistoryInsights events={filteredEvents} isLoading={eventsQuery.isLoading} />
       </div>
     </div>
   );

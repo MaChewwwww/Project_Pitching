@@ -246,7 +246,8 @@ retain their Emergency Event link and must not expose a delete action; the API e
 The insights rail keeps its scorecard and charts on the same filtered event set: peak bars use the
 18m/21m severity bands, displacement bars omit missing counts, and the area-reach chart ranks the
 areas mentioned most often. Each chart carries a visible legend, an empty state, and a text summary
-for keyboard and screen-reader users.
+for keyboard and screen-reader users. On desktop, the scorecard sits above the event table in the
+left column while the comparison charts form the right rail; the columns stack on small screens.
 
 ### Portal splash loading
 
