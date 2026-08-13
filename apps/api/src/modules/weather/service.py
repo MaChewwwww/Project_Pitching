@@ -16,10 +16,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.audit import write_audit
 from src.core.config import settings
-from src.core.errors import NotFoundError
+from src.core.errors import ConflictError, NotFoundError
 from src.core.pagination import Page, page_meta
 from src.modules.weather.models import FloodEvent, FloodEventArea, Forecast, Reading
 from src.modules.weather.schemas import (
+    AdminFloodEvent,
     FloodEventIn,
     ManualReadingIn,
     PublicFloodEvent,
@@ -216,9 +217,7 @@ async def reading_to_public(session: AsyncSession, reading: Reading) -> PublicRe
     return _to_public(reading, stale_after_minutes=stale_after, now=datetime.now(UTC))
 
 
-async def get_river_history(
-    session: AsyncSession, hours: int
-) -> list[RiverHistoryPoint]:
+async def get_river_history(session: AsyncSession, hours: int) -> list[RiverHistoryPoint]:
     """Return river_level readings for the past `hours` hours, ordered ASC.
 
     For windows > 24 h we bucket by hour (latest reading per hour) to keep
@@ -426,23 +425,23 @@ async def simulate_typhoon(session: AsyncSession, *, actor_id: uuid.UUID) -> Sim
 # --- flood events (FR-WX-013) --------------------------------------------------
 
 
-async def _flood_area_names(
+async def _flood_area_data(
     session: AsyncSession, event_ids: list[uuid.UUID]
-) -> dict[uuid.UUID, list[str]]:
+) -> dict[uuid.UUID, list[tuple[uuid.UUID, str]]]:
     if not event_ids:
         return {}
     from src.modules.geo.models import Area
 
     rows = (
         await session.execute(
-            select(FloodEventArea.flood_event_id, Area.name)
+            select(FloodEventArea.flood_event_id, Area.id, Area.name)
             .join(Area, FloodEventArea.area_id == Area.id)
             .where(FloodEventArea.flood_event_id.in_(event_ids))
         )
     ).all()
-    out: dict[uuid.UUID, list[str]] = {eid: [] for eid in event_ids}
-    for event_id, name in rows:
-        out[event_id].append(name)
+    out: dict[uuid.UUID, list[tuple[uuid.UUID, str]]] = {eid: [] for eid in event_ids}
+    for event_id, area_id, name in rows:
+        out[event_id].append((area_id, name))
     return out
 
 
@@ -452,7 +451,7 @@ async def list_flood_events(
     stmt = select(FloodEvent).order_by(FloodEvent.started_at.desc())
     total = len((await session.execute(stmt)).all())
     rows = (await session.execute(stmt.limit(size).offset((page - 1) * size))).scalars().all()
-    area_names = await _flood_area_names(session, [e.id for e in rows])
+    area_data = await _flood_area_data(session, [e.id for e in rows])
     items = [
         PublicFloodEvent(
             id=e.id,
@@ -465,11 +464,36 @@ async def list_flood_events(
             peak_at=e.peak_at,
             households_displaced=e.households_displaced,
             notes=e.notes,
-            area_names=area_names.get(e.id, []),
+            area_names=[name for _, name in area_data.get(e.id, [])],
         )
         for e in rows
     ]
     return Page[PublicFloodEvent](items=items, **page_meta(total, page, size))
+
+
+async def list_admin_flood_events(session: AsyncSession) -> Page[AdminFloodEvent]:
+    """Return history records with area ids for the admin editor only."""
+    stmt = select(FloodEvent).order_by(FloodEvent.started_at.desc())
+    rows = (await session.execute(stmt.limit(100))).scalars().all()
+    area_data = await _flood_area_data(session, [event.id for event in rows])
+    items = [
+        AdminFloodEvent(
+            id=event.id,
+            emergency_event_id=event.emergency_event_id,
+            name=event.name,
+            started_at=event.started_at,
+            ended_at=event.ended_at,
+            is_ongoing=event.ended_at is None,
+            peak_level_m=event.peak_level_m,
+            peak_at=event.peak_at,
+            households_displaced=event.households_displaced,
+            notes=event.notes,
+            area_ids=[area_id for area_id, _ in area_data.get(event.id, [])],
+            area_names=[name for _, name in area_data.get(event.id, [])],
+        )
+        for event in rows
+    ]
+    return Page[AdminFloodEvent](items=items, **page_meta(len(rows), 1, 100))
 
 
 async def create_flood_event(
@@ -540,6 +564,30 @@ async def update_flood_event(
     )
     await session.commit()
     return event
+
+
+async def delete_flood_event(
+    session: AsyncSession, event_id: uuid.UUID, *, actor_id: uuid.UUID
+) -> None:
+    """Delete a manually recorded history item and its area associations."""
+    event = await session.get(FloodEvent, event_id)
+    if event is None:
+        raise NotFoundError("Flood event not found.")
+    if event.emergency_event_id is not None:
+        raise ConflictError(
+            "Auto-synced flood events are managed through their linked Emergency Event "
+            "and cannot be deleted here."
+        )
+
+    await session.delete(event)
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="flood_event.delete",
+        entity_type="flood_event",
+        entity_id=event_id,
+    )
+    await session.commit()
 
 
 async def create_flood_event_from_emergency(

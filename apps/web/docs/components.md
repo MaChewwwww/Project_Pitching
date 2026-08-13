@@ -228,6 +228,15 @@ scheduler and may create an `alert_prompt`; it never publishes an announcement. 
 the prompt or open the announcement authoring route with Alert preselected. BHW staff can view the feed
 and enter readings but cannot access the review queue or demo simulation.
 
+### Flood History workspace
+
+`/admin/flood-events` keeps history management separate from live Weather Watch work. Its wide
+record log uses `ResourceTable`; the adjacent insights rail derives peak-level and displacement
+comparisons from the same query, so it never presents a second source of truth. `FloodEventEditorDialog`
+is the domain form because the generic resource dialog cannot restore the optional many-area history
+relationship. Auto-synced records retain their Emergency Event link and must not expose a delete action;
+the API enforces the same rule.
+
 ## Animation lives in `globals.css`, not in a client component
 
 `WaterSpinner` and the hero illustrations are animated entirely by CSS classes defined in

@@ -95,6 +95,12 @@ class PublicFloodEvent(BaseModel):
     area_names: list[str]
 
 
+class AdminFloodEvent(PublicFloodEvent):
+    """Flood history record enriched with the area ids needed by the editor."""
+
+    area_ids: list[uuid.UUID]
+
+
 class ManualReadingIn(BaseModel):
     metric: ReadingMetric
     value: float

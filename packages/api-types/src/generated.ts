@@ -1287,6 +1287,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/readings/river-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** River level readings for the history chart (FR-WX-*) */
+        get: operations["admin_river_history_api_v1_admin_readings_river_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/readings/simulate-typhoon": {
         parameters: {
             query?: never;
@@ -1332,7 +1349,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete a manually recorded flood event */
+        delete: operations["admin_delete_flood_event_api_v1_admin_flood_events__event_id__delete"];
         options?: never;
         head?: never;
         /** Update a flood event */
@@ -1671,9 +1689,7 @@ export interface components {
             is_upcoming: boolean;
             cover_image?: components["schemas"]["ArticleImageOut"] | null;
             /** Body Json */
-            body_json: {
-                [key: string]: unknown;
-            };
+            body_json: Record<string, never>;
             /** Images */
             images: components["schemas"]["ArticleImageOut"][];
         };
@@ -1687,9 +1703,7 @@ export interface components {
              */
             excerpt: string;
             /** Body Json */
-            body_json?: {
-                [key: string]: unknown;
-            };
+            body_json?: Record<string, never>;
             /**
              * Type
              * @enum {string}
@@ -1760,9 +1774,7 @@ export interface components {
             is_active: boolean;
             cover_image?: components["schemas"]["ArticleImageOut"] | null;
             /** Body Json */
-            body_json: {
-                [key: string]: unknown;
-            };
+            body_json: Record<string, never>;
             /** Images */
             images: components["schemas"]["ArticleImageOut"][];
             /** Area Ids */
@@ -1772,6 +1784,45 @@ export interface components {
              * @enum {string}
              */
             publication_status: "draft" | "published" | "archived";
+        };
+        /**
+         * AdminFloodEvent
+         * @description Flood history record enriched with the area ids needed by the editor.
+         */
+        AdminFloodEvent: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Emergency Event Id */
+            emergency_event_id?: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Ended At */
+            ended_at: string | null;
+            /**
+             * Is Ongoing
+             * @default false
+             */
+            is_ongoing: boolean;
+            /** Peak Level M */
+            peak_level_m: number | null;
+            /** Peak At */
+            peak_at: string | null;
+            /** Households Displaced */
+            households_displaced: number | null;
+            /** Notes */
+            notes: string | null;
+            /** Area Names */
+            area_names: string[];
+            /** Area Ids */
+            area_ids: string[];
         };
         /** AlertPromptOut */
         AlertPromptOut: {
@@ -1845,9 +1896,7 @@ export interface components {
             is_active: boolean;
             cover_image?: components["schemas"]["ArticleImageOut"] | null;
             /** Body Json */
-            body_json: {
-                [key: string]: unknown;
-            };
+            body_json: Record<string, never>;
             /** Images */
             images: components["schemas"]["ArticleImageOut"][];
         };
@@ -1870,9 +1919,7 @@ export interface components {
              */
             excerpt: string;
             /** Body Json */
-            body_json?: {
-                [key: string]: unknown;
-            };
+            body_json?: Record<string, never>;
             /** Instruction */
             instruction?: string | null;
             /**
@@ -2087,9 +2134,7 @@ export interface components {
             archived_at: string | null;
             cover_image?: components["schemas"]["ArticleImageOut"] | null;
             /** Body Json */
-            body_json: {
-                [key: string]: unknown;
-            };
+            body_json: Record<string, never>;
             /** Images */
             images: components["schemas"]["ArticleImageOut"][];
         };
@@ -2103,9 +2148,7 @@ export interface components {
              */
             excerpt: string;
             /** Body Json */
-            body_json?: {
-                [key: string]: unknown;
-            };
+            body_json?: Record<string, never>;
             /** Event Id */
             event_id?: string | null;
             /** Organizer Name */
@@ -2872,6 +2915,19 @@ export interface components {
         MySafetyOut: {
             event: components["schemas"]["PublicEmergencyEvent"] | null;
             household: components["schemas"]["HouseholdSafetyOut"] | null;
+        };
+        /** Page[AdminFloodEvent] */
+        Page_AdminFloodEvent_: {
+            /** Items */
+            items: components["schemas"]["AdminFloodEvent"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
         };
         /** Page[EmergencyEventOut] */
         Page_EmergencyEventOut_: {
@@ -3672,6 +3728,24 @@ export interface components {
             description: string;
             /** People Count */
             people_count?: number | null;
+        };
+        /**
+         * RiverHistoryPoint
+         * @description One data point for the river-level history chart (admin only).
+         */
+        RiverHistoryPoint: {
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Value */
+            value: number;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "open_meteo" | "pagasa" | "manual";
         };
         /** RiverThresholds */
         RiverThresholds: {
@@ -6721,6 +6795,37 @@ export interface operations {
             };
         };
     };
+    admin_river_history_api_v1_admin_readings_river_history_get: {
+        parameters: {
+            query?: {
+                hours?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiverHistoryPoint"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     admin_simulate_typhoon_api_v1_admin_readings_simulate_typhoon_post: {
         parameters: {
             query?: never;
@@ -6756,7 +6861,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Page_PublicFloodEvent_"];
+                    "application/json": components["schemas"]["Page_AdminFloodEvent_"];
                 };
             };
         };
@@ -6782,6 +6887,39 @@ export interface operations {
                 content: {
                     "application/json": {
                         [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_delete_flood_event_api_v1_admin_flood_events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
                     };
                 };
             };

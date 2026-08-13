@@ -16,6 +16,7 @@ from src.core.pagination import Page
 from src.db.session import DbSessionDep
 from src.modules.weather import service
 from src.modules.weather.schemas import (
+    AdminFloodEvent,
     FloodEventIn,
     ManualReadingIn,
     PublicFloodEvent,
@@ -70,9 +71,7 @@ async def admin_record_reading(
     dependencies=[Depends(require_role("admin", "bhw"))],
     summary="River level readings for the history chart (FR-WX-*)",
 )
-async def admin_river_history(
-    session: DbSessionDep, hours: int = 6
-) -> list[RiverHistoryPoint]:
+async def admin_river_history(session: DbSessionDep, hours: int = 6) -> list[RiverHistoryPoint]:
     return await service.get_river_history(session, hours=hours)
 
 
@@ -88,8 +87,8 @@ async def admin_simulate_typhoon(session: DbSessionDep, user: CurrentUser) -> Si
 @admin_router.get(
     "/flood-events", dependencies=[Depends(require_role("admin"))], summary="List all flood events"
 )
-async def admin_list_flood_events(session: DbSessionDep) -> Page[PublicFloodEvent]:
-    return await service.list_flood_events(session, page=1, size=100)
+async def admin_list_flood_events(session: DbSessionDep) -> Page[AdminFloodEvent]:
+    return await service.list_admin_flood_events(session)
 
 
 @admin_router.post(
@@ -111,4 +110,16 @@ async def admin_update_flood_event(
     event_id: uuid.UUID, body: FloodEventIn, session: DbSessionDep, user: CurrentUser
 ) -> dict[str, bool]:
     await service.update_flood_event(session, event_id, body, actor_id=user.id)
+    return {"ok": True}
+
+
+@admin_router.delete(
+    "/flood-events/{event_id}",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Delete a manually recorded flood event",
+)
+async def admin_delete_flood_event(
+    event_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> dict[str, bool]:
+    await service.delete_flood_event(session, event_id, actor_id=user.id)
     return {"ok": True}
