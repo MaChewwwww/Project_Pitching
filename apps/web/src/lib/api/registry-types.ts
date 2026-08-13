@@ -118,6 +118,36 @@ export interface HouseholdUpdate {
   longitude: number | null;
 }
 
+export interface WorkspaceMemberUpdate extends MemberUpdate {
+  id?: string | null;
+}
+
+export interface HouseholdWorkspaceUpdate extends HouseholdUpdate {
+  head_member: MemberUpdate;
+  members: WorkspaceMemberUpdate[];
+}
+
+export interface HouseholdActivityItem {
+  id: string;
+  kind: "evacuation" | "rescue" | "incident";
+  title: string;
+  detail: string | null;
+  status: string | null;
+  occurred_at: string;
+}
+
+export interface HouseholdActivityOut {
+  safety: {
+    event_name: string;
+    safe: number;
+    needs_rescue: number;
+    unaccounted: number;
+  } | null;
+  evacuations: HouseholdActivityItem[];
+  rescues: HouseholdActivityItem[];
+  incident_reports: HouseholdActivityItem[];
+}
+
 export interface MemberUpdate {
   full_name: string;
   birth_date: string | null;

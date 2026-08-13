@@ -186,6 +186,47 @@ class HouseholdUpdate(BaseModel):
         return self
 
 
+class WorkspaceMemberUpdate(MemberUpdate):
+    """A member row submitted from the household workspace.
+
+    ``id=None`` creates a new citizen; an existing id updates that citizen in
+    the same household transaction. Archival intentionally remains a separate,
+    confirmed action.
+    """
+
+    id: uuid.UUID | None = None
+
+
+class HouseholdWorkspaceUpdate(HouseholdUpdate):
+    """Complete admin/BHW household workspace save (FR-REG-009/024)."""
+
+    head_member: MemberUpdate
+    members: list[WorkspaceMemberUpdate] = Field(default_factory=list)
+
+
+class HouseholdActivityItem(BaseModel):
+    id: uuid.UUID
+    kind: Literal["evacuation", "rescue", "incident"]
+    title: str
+    detail: str | None = None
+    status: str | None = None
+    occurred_at: datetime
+
+
+class HouseholdSafetySummary(BaseModel):
+    event_name: str
+    safe: int
+    needs_rescue: int
+    unaccounted: int
+
+
+class HouseholdActivityOut(BaseModel):
+    safety: HouseholdSafetySummary | None = None
+    evacuations: list[HouseholdActivityItem] = Field(default_factory=list)
+    rescues: list[HouseholdActivityItem] = Field(default_factory=list)
+    incident_reports: list[HouseholdActivityItem] = Field(default_factory=list)
+
+
 class RegistrySummary(BaseModel):
     households: int
     citizens: int

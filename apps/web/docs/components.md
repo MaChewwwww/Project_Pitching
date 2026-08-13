@@ -274,6 +274,11 @@ matching area and derive the initial waterway-proximity band from the static flo
 click, drag, or GPS fix; it never invents a street address, so the user enters the precise house number,
 street, or subdivision. Household forms show a blocking error dialog for pins outside Barangay San Jose.
 
+`/admin/households/[id]/edit` reuses the creation workspace with the current household and citizen
+data prefilled. One save updates the household, head profile, existing members, and new members together;
+removal remains an admin-only confirmed archive. The detail page shows only linked safety, evacuation,
+rescue, and resident-head incident report records, keeping unfinished operational modules factual.
+
 `/admin/households/new` is the BHW-assisted creation workspace. It uses the announcement-style
 primary work surface with identity and head details on the left, while the right rail keeps the
 required street address, map pin, and waterway-proximity survey together. The survey exposes the

@@ -39,6 +39,8 @@ import { useRequireRole } from "@/lib/auth/use-require-role";
 import type {
   HouseholdCreateBhw,
   HouseholdCreateResponse,
+  HouseholdDetailOut,
+  HouseholdWorkspaceUpdate,
 } from "@/lib/api/registry-types";
 import { cn } from "@/lib/utils";
 
@@ -57,6 +59,7 @@ interface Area {
 }
 
 const memberSchema = z.object({
+  record_id: z.string().optional(),
   full_name: z.string().trim().min(1, "Enter the member's full name"),
   birth_date: z.string().min(1, "Enter the member's birth date"),
   sex: z.enum(["male", "female"], { message: "Select the member's sex" }),
@@ -171,6 +174,64 @@ function toCreateBody(values: BhwFormValues): HouseholdCreateBhw {
   };
 }
 
+function toWorkspaceBody(values: BhwFormValues): HouseholdWorkspaceUpdate {
+  const body = toCreateBody(values);
+  return {
+    ...body,
+    is_unreachable_by_phone: !values.contact_number?.trim(),
+    head_member: body.head_member,
+    members: values.members.map((member) => ({
+      ...member,
+      id: member.record_id ?? null,
+      contact_number: member.contact_number?.trim() || null,
+      chronic_condition_note: member.chronic_condition_note || null,
+    })),
+  };
+}
+
+function valuesFromHousehold(household: HouseholdDetailOut): BhwFormValues {
+  const head = household.members.find((member) => member.is_head);
+  return {
+    head_name: household.head_name,
+    contact_number: household.contact_number ?? "",
+    area_id: household.area_id,
+    street_address: household.street_address ?? "",
+    waterway_proximity:
+      (household.waterway_proximity as BhwFormValues["waterway_proximity"]) ?? undefined,
+    head_birth_date: head?.birth_date ?? "",
+    head_sex: (head?.sex as BhwFormValues["head_sex"]) ?? undefined,
+    head_is_pwd: head?.is_pwd ?? false,
+    head_is_pregnant: head?.is_pregnant ?? false,
+    head_is_lactating: head?.is_lactating ?? false,
+    head_has_chronic_condition: head?.has_chronic_condition ?? false,
+    head_is_bedridden: head?.is_bedridden ?? false,
+    location: household.location
+      ? { lat: household.location.coordinates[1], lng: household.location.coordinates[0] }
+      : null,
+    members: household.members
+      .filter((member) => !member.is_head)
+      .map((member) => ({
+        record_id: member.id,
+        full_name: member.full_name,
+        birth_date: member.birth_date ?? "",
+        // Older records may not have a sex recorded. Keep it empty so the
+        // required field asks staff to correct it rather than inventing data.
+        sex: ((member.sex as "male" | "female" | null) ??
+          undefined) as BhwFormValues["members"][number]["sex"],
+        contact_number: member.contact_number ?? "",
+        relationship_to_head: member.relationship_to_head ?? "",
+        is_child: member.is_child,
+        is_senior: member.is_senior,
+        is_pwd: member.is_pwd,
+        is_pregnant: member.is_pregnant,
+        is_lactating: member.is_lactating,
+        has_chronic_condition: member.has_chronic_condition,
+        chronic_condition_note: member.chronic_condition_note ?? "",
+        is_bedridden: member.is_bedridden,
+      })),
+  };
+}
+
 const WATERWAY_OPTIONS = [
   {
     value: "very_near" as const,
@@ -211,7 +272,7 @@ const REGISTRATION_STEPS = [
 ] as const;
 
 /** FR-REG-002/003/004/024/025 — one BHW-assisted household visit. */
-export default function NewHouseholdPage() {
+export function HouseholdWorkspace({ household }: { household?: HouseholdDetailOut }) {
   useRequireRole("admin", "bhw");
   const { user } = useAuth();
   const router = useRouter();
@@ -220,6 +281,7 @@ export default function NewHouseholdPage() {
   const [locationHintIsError, setLocationHintIsError] = React.useState(false);
   const [confirmationOpen, setConfirmationOpen] = React.useState(false);
   const [pendingValues, setPendingValues] = React.useState<BhwFormValues | null>(null);
+  const isEdit = Boolean(household);
 
   const { data: allAreas } = useQuery({
     queryKey: ["admin", "areas"],
@@ -243,6 +305,9 @@ export default function NewHouseholdPage() {
     setValue,
     formState: { errors, isSubmitting },
   } = form;
+  React.useEffect(() => {
+    if (household) reset(valuesFromHousehold(household));
+  }, [household, reset]);
   const watchedValues = useWatch({ control });
   const memberEntries = watchedValues.members ?? [];
   const completedSteps = {
@@ -266,24 +331,38 @@ export default function NewHouseholdPage() {
   };
 
   const submitMutation = useMutation({
-    mutationFn: (body: HouseholdCreateBhw) =>
-      api
-        .post<HouseholdCreateResponse>("/admin/households", body)
-        .then((response) => response.data),
+    mutationFn: (body: HouseholdCreateBhw | HouseholdWorkspaceUpdate) =>
+      (isEdit
+        ? api.put<HouseholdDetailOut>(
+            `/admin/households/${household?.id}/workspace`,
+            body,
+          )
+        : api.post<HouseholdCreateResponse>("/admin/households", body)
+      ).then((response) => response.data),
     onSuccess: (result) => {
       setConfirmationOpen(false);
       setPendingValues(null);
-      toast.success(`Household ${result.household.reference_no} created`);
-      if (result.duplicate_candidates.length > 0) {
+      const saved = "household" in result ? result.household : result;
+      toast.success(
+        isEdit
+          ? `Household ${saved.reference_no} updated`
+          : `Household ${saved.reference_no} created`,
+      );
+      if ("duplicate_candidates" in result && result.duplicate_candidates.length > 0) {
         toast.warning(
           `Possible duplicate: ${result.duplicate_candidates[0].head_name} (${result.duplicate_candidates[0].reference_no})`,
         );
       }
-      router.push("/admin/households");
+      router.push(isEdit ? `/admin/households/${household?.id}` : "/admin/households");
     },
     onError: (error) => {
       setServerError(toDisplayError(error).detail);
     },
+  });
+  const archiveMemberMutation = useMutation({
+    mutationFn: (memberId: string) => api.delete(`/admin/members/${memberId}`),
+    onSuccess: () => toast.success("Citizen archived"),
+    onError: (error) => toast.error(toDisplayError(error).detail),
   });
 
   async function onSubmit(values: BhwFormValues) {
@@ -300,7 +379,9 @@ export default function NewHouseholdPage() {
     if (!pendingValues) return;
     setServerError(null);
     try {
-      await submitMutation.mutateAsync(toCreateBody(pendingValues));
+      await submitMutation.mutateAsync(
+        isEdit ? toWorkspaceBody(pendingValues) : toCreateBody(pendingValues),
+      );
     } catch {
       // The mutation's onError handler places the API message in the modal.
     }
@@ -309,8 +390,12 @@ export default function NewHouseholdPage() {
   return (
     <div className="flex flex-col gap-6 pb-28 sm:pb-24">
       <AdminPageHeader
-        title="Create Household"
-        description="Record a household, its location, waterway proximity, and every known member in one barangay visit."
+        title={isEdit ? `Edit ${household?.reference_no}` : "Create Household"}
+        description={
+          isEdit
+            ? "Update the household, map location, waterway proximity, and citizen roster in one workspace."
+            : "Record a household, its location, waterway proximity, and every known member in one barangay visit."
+        }
       />
 
       <form
@@ -496,7 +581,16 @@ export default function NewHouseholdPage() {
 
           <Card className="border-emerald-200/80 bg-white">
             <CardContent className="space-y-5 p-4 sm:p-5">
-              <HouseholdMemberRepeater control={control} />
+              <HouseholdMemberRepeater
+                control={control}
+                onArchiveExisting={
+                  isEdit && user?.role === "admin"
+                    ? async (memberId) => {
+                        await archiveMemberMutation.mutateAsync(memberId);
+                      }
+                    : undefined
+                }
+              />
             </CardContent>
           </Card>
         </div>
@@ -764,7 +858,7 @@ export default function NewHouseholdPage() {
               onClick={() => reset(emptyValues)}
               className="rounded-xl"
             >
-              Clear form
+              {isEdit ? "Reset changes" : "Clear form"}
             </Button>
             <Button
               type="submit"
@@ -772,8 +866,12 @@ export default function NewHouseholdPage() {
               className="rounded-xl bg-emerald-600 px-5 font-bold text-white shadow-sm hover:bg-emerald-700"
             >
               {isSubmitting || submitMutation.isPending
-                ? "Creating household…"
-                : "Create household"}
+                ? isEdit
+                  ? "Saving changes…"
+                  : "Creating household…"
+                : isEdit
+                  ? "Save changes"
+                  : "Create household"}
             </Button>
           </div>
         </div>
@@ -787,7 +885,9 @@ export default function NewHouseholdPage() {
       >
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Confirm household registration</DialogTitle>
+            <DialogTitle>
+              {isEdit ? "Confirm household changes" : "Confirm household registration"}
+            </DialogTitle>
             <DialogDescription>
               Review the visit details before saving. The household head and every added
               member will be registered as citizens.
@@ -862,11 +962,19 @@ export default function NewHouseholdPage() {
               disabled={submitMutation.isPending}
               className="bg-emerald-600 font-bold hover:bg-emerald-700"
             >
-              {submitMutation.isPending ? "Saving household…" : "Confirm and create"}
+              {submitMutation.isPending
+                ? "Saving household…"
+                : isEdit
+                  ? "Confirm changes"
+                  : "Confirm and create"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   );
+}
+
+export default function NewHouseholdPage() {
+  return <HouseholdWorkspace />;
 }

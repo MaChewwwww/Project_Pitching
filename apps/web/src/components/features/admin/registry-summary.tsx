@@ -105,9 +105,14 @@ export function RegistrySummaryRibbon({ summary }: { summary?: RegistrySummary }
           {summary.areas.length ? (
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {summary.areas.map((area) => (
-                <div key={area.id} className="rounded-xl border border-neutral-200 bg-white/85 p-3">
+                <div
+                  key={area.id}
+                  className="rounded-xl border border-neutral-200 bg-white/85 p-3"
+                >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-xs font-bold text-neutral-800">{area.name}</span>
+                    <span className="truncate text-xs font-bold text-neutral-800">
+                      {area.name}
+                    </span>
                     <span className="text-[11px] font-semibold text-neutral-500 tabular-nums">
                       {area.citizens} citizens
                     </span>
@@ -115,7 +120,9 @@ export function RegistrySummaryRibbon({ summary }: { summary?: RegistrySummary }
                   <div className="mt-2 h-2 overflow-hidden rounded-full bg-neutral-100">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all"
-                      style={{ width: `${Math.max(8, (area.households / maxArea) * 100)}%` }}
+                      style={{
+                        width: `${Math.max(8, (area.households / maxArea) * 100)}%`,
+                      }}
                     />
                   </div>
                   <p className="mt-2 text-[11px] text-neutral-500">
@@ -151,14 +158,24 @@ export function HouseholdRegistrySummary({
   if (!summary) return null;
 
   const average = summary.average_household_size?.toFixed(1) ?? "—";
-  const totalHouseholds = summary.areas.reduce((total, area) => total + area.households, 0);
+  const totalHouseholds = summary.areas.reduce(
+    (total, area) => total + area.households,
+    0,
+  );
   const totalCitizens = summary.areas.reduce((total, area) => total + area.citizens, 0);
   const areas = [...summary.areas]
-    .sort((left, right) => left.name.localeCompare(right.name, undefined, { numeric: true, sensitivity: "base" }))
+    .sort((left, right) =>
+      left.name.localeCompare(right.name, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      }),
+    )
     .map((area, index) => ({
       ...area,
       color: AREA_COLORS[index % AREA_COLORS.length],
-      householdShare: totalHouseholds ? Math.round((area.households / totalHouseholds) * 100) : 0,
+      householdShare: totalHouseholds
+        ? Math.round((area.households / totalHouseholds) * 100)
+        : 0,
       citizenShare: totalCitizens ? Math.round((area.citizens / totalCitizens) * 100) : 0,
     }));
   const hasDistribution = areas.some((area) => area.households > 0 || area.citizens > 0);
@@ -176,9 +193,6 @@ export function HouseholdRegistrySummary({
                   </span>
                   Household &amp; Registered Citizens
                 </p>
-                <p className="mt-2 text-xs text-neutral-500">
-                  Coverage at a glance across the active registry.
-                </p>
               </div>
               <span className="rounded-full border border-emerald-200 bg-white/80 px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] text-emerald-700 uppercase">
                 {areas.length} areas
@@ -187,27 +201,40 @@ export function HouseholdRegistrySummary({
 
             <div className="mt-4 grid grid-cols-2 divide-x divide-emerald-200/80">
               <div className="pr-4">
-                <p className="text-[10px] font-bold tracking-[0.12em] text-neutral-500 uppercase">Households</p>
+                <p className="text-[10px] font-bold tracking-[0.12em] text-neutral-500 uppercase">
+                  Households
+                </p>
                 <p className="mt-1 text-3xl font-bold tracking-tight text-neutral-950 tabular-nums">
                   {summary.households.toLocaleString()}
                 </p>
                 <p className="mt-1 text-xs text-neutral-500">
-                  {summary.self_registered_households} Self-Registered · {summary.bhw_assisted_households} BHW-Assisted
+                  {summary.self_registered_households} Self-Registered ·{" "}
+                  {summary.bhw_assisted_households} BHW-Assisted
                 </p>
               </div>
               <div className="pl-4">
-                <p className="text-[10px] font-bold tracking-[0.12em] text-neutral-500 uppercase">Registered Citizens</p>
+                <p className="text-[10px] font-bold tracking-[0.12em] text-neutral-500 uppercase">
+                  Registered Citizens
+                </p>
                 <p className="mt-1 text-3xl font-bold tracking-tight text-neutral-950 tabular-nums">
                   {summary.citizens.toLocaleString()}
                 </p>
-                <p className="mt-1 text-xs text-neutral-500">{average} people per household</p>
+                <p className="mt-1 text-xs text-neutral-500">
+                  {average} people per household
+                </p>
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-3 divide-x divide-emerald-200/80 border-t border-emerald-100/80 pt-2.5" aria-label="Households by flood risk">
+            <div
+              className="mt-4 grid grid-cols-3 divide-x divide-emerald-200/80 border-t border-emerald-100/80 pt-2.5"
+              aria-label="Households by flood risk"
+            >
               <div className="flex items-center justify-between gap-2 pr-3">
-                <p className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-[9px] font-semibold text-neutral-500 sm:text-[10px]">
-                  <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden />
+                <p className="flex min-w-0 items-center gap-1.5 text-[9px] font-semibold whitespace-nowrap text-neutral-500 sm:text-[10px]">
+                  <span
+                    className="size-1.5 shrink-0 rounded-full bg-emerald-500"
+                    aria-hidden
+                  />
                   Low Flood Risk
                 </p>
                 <p className="shrink-0 text-lg font-bold text-emerald-700 tabular-nums">
@@ -215,8 +242,11 @@ export function HouseholdRegistrySummary({
                 </p>
               </div>
               <div className="flex items-center justify-between gap-2 px-3">
-                <p className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-[9px] font-semibold text-neutral-500 sm:text-[10px]">
-                  <span className="size-1.5 shrink-0 rounded-full bg-amber-500" aria-hidden />
+                <p className="flex min-w-0 items-center gap-1.5 text-[9px] font-semibold whitespace-nowrap text-neutral-500 sm:text-[10px]">
+                  <span
+                    className="size-1.5 shrink-0 rounded-full bg-amber-500"
+                    aria-hidden
+                  />
                   Medium Flood Risk
                 </p>
                 <p className="shrink-0 text-lg font-bold text-amber-700 tabular-nums">
@@ -224,8 +254,11 @@ export function HouseholdRegistrySummary({
                 </p>
               </div>
               <div className="flex items-center justify-between gap-2 pl-3">
-                <p className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-[9px] font-semibold text-neutral-500 sm:text-[10px]">
-                  <span className="size-1.5 shrink-0 rounded-full bg-rose-500" aria-hidden />
+                <p className="flex min-w-0 items-center gap-1.5 text-[9px] font-semibold whitespace-nowrap text-neutral-500 sm:text-[10px]">
+                  <span
+                    className="size-1.5 shrink-0 rounded-full bg-rose-500"
+                    aria-hidden
+                  />
                   High Flood Risk
                 </p>
                 <p className="shrink-0 text-lg font-bold text-rose-700 tabular-nums">
@@ -233,7 +266,6 @@ export function HouseholdRegistrySummary({
                 </p>
               </div>
             </div>
-
           </CardContent>
         </Card>
 
@@ -244,8 +276,12 @@ export function HouseholdRegistrySummary({
                 <ClipboardCheck aria-hidden className="size-4" />
               </span>
               <div>
-                <p className="text-sm font-bold text-neutral-950">Review Queue &amp; Follow Up</p>
-                <p className="mt-1 text-xs text-neutral-500">Small queues worth an officer&apos;s next look.</p>
+                <p className="text-sm font-bold text-neutral-950">
+                  Review Queue &amp; Follow Up
+                </p>
+                <p className="mt-1 text-xs text-neutral-500">
+                  Small queues worth an officer&apos;s next look.
+                </p>
               </div>
             </div>
 
@@ -257,10 +293,14 @@ export function HouseholdRegistrySummary({
                   </span>
                   <div>
                     <p className="text-xs font-bold text-neutral-800">Review Queue</p>
-                    <p className="text-[11px] text-neutral-500">Possible duplicate records</p>
+                    <p className="text-[11px] text-neutral-500">
+                      Possible duplicate records
+                    </p>
                   </div>
                 </div>
-                <span className="text-2xl font-bold text-violet-700 tabular-nums">{summary.possible_duplicates}</span>
+                <span className="text-2xl font-bold text-violet-700 tabular-nums">
+                  {summary.possible_duplicates}
+                </span>
               </div>
               <div className="flex items-center justify-between gap-3 px-3.5 py-2.5">
                 <div className="flex items-center gap-2.5">
@@ -269,74 +309,132 @@ export function HouseholdRegistrySummary({
                   </span>
                   <div>
                     <p className="text-xs font-bold text-neutral-800">Follow Up</p>
-                    <p className="text-[11px] text-neutral-500">Marked unreachable by phone</p>
+                    <p className="text-[11px] text-neutral-500">
+                      Marked unreachable by phone
+                    </p>
                   </div>
                 </div>
-                <span className="text-2xl font-bold text-amber-700 tabular-nums">{summary.unreachable_households}</span>
+                <span className="text-2xl font-bold text-amber-700 tabular-nums">
+                  {summary.unreachable_households}
+                </span>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card className="order-2 overflow-hidden border-sky-200/80 bg-gradient-to-br from-white via-white to-sky-50/45">
-        <CardContent className="p-3 sm:p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="flex items-center gap-2 text-sm font-bold text-neutral-950">
-                <MapPinned aria-hidden className="size-4 text-sky-700" />
-                Population by Area
-              </p>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="flex items-center gap-2 text-sm font-bold text-neutral-950">
+                  <MapPinned aria-hidden className="size-4 text-sky-700" />
+                  Population by Area
+                </p>
+              </div>
+              <span className="rounded-full bg-sky-100 px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] text-sky-800 uppercase">
+                Barangay San Jose
+              </span>
             </div>
-            <span className="rounded-full bg-sky-100 px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] text-sky-800 uppercase">
-              Barangay San Jose
-            </span>
-          </div>
 
-          {hasDistribution ? (
-            <div className="mt-2 grid gap-3 sm:grid-cols-[minmax(150px,0.72fr)_1fr] sm:items-center">
-              <div className="mx-auto w-full max-w-[180px]">
-                <div className="relative h-44" role="img" aria-label="Population by area. Outer ring shows households; inner ring shows citizens.">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={areas} dataKey="households" nameKey="area" innerRadius={48} outerRadius={72} paddingAngle={2} stroke="#ffffff" strokeWidth={3}>
-                      {areas.map((area) => <Cell key={`households-${area.id}`} fill={area.color} />)}
-                    </Pie>
-                    <Pie data={areas} dataKey="citizens" nameKey="area" innerRadius={31} outerRadius={44} paddingAngle={2} stroke="#ffffff" strokeWidth={3}>
-                      {areas.map((area) => <Cell key={`citizens-${area.id}`} fill={area.color} fillOpacity={0.55} />)}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                  <p className="text-sm font-bold tracking-tight text-neutral-950 tabular-nums">
-                    {summary.households.toLocaleString()} <span className="font-normal text-neutral-400">·</span> {summary.citizens.toLocaleString()}
-                  </p>
-                </div>
-                </div>
-              </div>
-              <div className="space-y-1.5 text-[11px]">
-                {areas.map((area) => (
-                  <div key={area.id} className="flex min-w-0 items-center gap-2">
-                    <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: area.color }} />
-                    <span className="min-w-0 flex-1 truncate font-bold text-neutral-800">{areaLabel(area.name)}</span>
-                    <span className="shrink-0 text-right text-[10px] text-neutral-500 tabular-nums sm:text-[11px]">
-                      <span className="font-bold text-neutral-800">{area.households}</span>{" "}
-                      <span className="font-semibold">Households ({area.householdShare}%)</span>{" "}
-                      <span aria-hidden className="px-1">|</span>{" "}
-                      <span className="font-bold text-neutral-800">{area.citizens}</span>{" "}
-                      <span className="font-semibold">Citizens ({area.citizenShare}%)</span>
-                    </span>
+            {hasDistribution ? (
+              <div className="mt-2 grid gap-3 sm:grid-cols-[minmax(150px,0.72fr)_1fr] sm:items-center">
+                <div className="mx-auto w-full max-w-[180px]">
+                  <div
+                    className="relative h-44"
+                    role="img"
+                    aria-label="Population by area. Outer ring shows households; inner ring shows citizens."
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={areas}
+                          dataKey="households"
+                          nameKey="area"
+                          innerRadius={48}
+                          outerRadius={72}
+                          paddingAngle={2}
+                          stroke="#ffffff"
+                          strokeWidth={3}
+                        >
+                          {areas.map((area) => (
+                            <Cell key={`households-${area.id}`} fill={area.color} />
+                          ))}
+                        </Pie>
+                        <Pie
+                          data={areas}
+                          dataKey="citizens"
+                          nameKey="area"
+                          innerRadius={31}
+                          outerRadius={44}
+                          paddingAngle={2}
+                          stroke="#ffffff"
+                          strokeWidth={3}
+                        >
+                          {areas.map((area) => (
+                            <Cell
+                              key={`citizens-${area.id}`}
+                              fill={area.color}
+                              fillOpacity={0.55}
+                            />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                      <p className="text-sm font-bold tracking-tight text-neutral-950 tabular-nums">
+                        {summary.households.toLocaleString()}{" "}
+                        <span className="font-normal text-neutral-400">·</span>{" "}
+                        {summary.citizens.toLocaleString()}
+                      </p>
+                    </div>
                   </div>
-                ))}
+                </div>
+                <div className="space-y-1.5 text-[11px]">
+                  {areas.map((area) => (
+                    <div key={area.id} className="flex min-w-0 items-center gap-2">
+                      <span
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: area.color }}
+                      />
+                      <span className="min-w-0 flex-1 truncate font-bold text-neutral-800">
+                        {areaLabel(area.name)}
+                      </span>
+                      <span className="shrink-0 text-right text-[10px] text-neutral-500 tabular-nums sm:text-[11px]">
+                        <span className="font-bold text-neutral-800">
+                          {area.households}
+                        </span>{" "}
+                        <span className="font-semibold">
+                          Households ({area.householdShare}%)
+                        </span>{" "}
+                        <span aria-hidden className="px-1">
+                          |
+                        </span>{" "}
+                        <span className="font-bold text-neutral-800">
+                          {area.citizens}
+                        </span>{" "}
+                        <span className="font-semibold">
+                          Citizens ({area.citizenShare}%)
+                        </span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="sr-only">
+                  Area distribution:{" "}
+                  {areas
+                    .map(
+                      (area) =>
+                        `${areaLabel(area.name)} has ${area.households} households (${area.householdShare} percent) and ${area.citizens} citizens (${area.citizenShare} percent)`,
+                    )
+                    .join("; ")}
+                  .
+                </p>
               </div>
-              <p className="sr-only">
-                Area distribution: {areas.map((area) => `${areaLabel(area.name)} has ${area.households} households (${area.householdShare} percent) and ${area.citizens} citizens (${area.citizenShare} percent)`).join("; ")}.
+            ) : (
+              <p className="mt-4 rounded-xl border border-dashed border-neutral-200 p-6 text-center text-sm text-neutral-500">
+                Distribution will appear after the first household is registered.
               </p>
-            </div>
-          ) : (
-            <p className="mt-4 rounded-xl border border-dashed border-neutral-200 p-6 text-center text-sm text-neutral-500">
-              Distribution will appear after the first household is registered.
-            </p>
-          )}
-        </CardContent>
+            )}
+          </CardContent>
         </Card>
       </div>
     </section>

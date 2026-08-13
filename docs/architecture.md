@@ -422,6 +422,10 @@ POST  /admin/households/{id}/vulnerability-override
 GET   /admin/households/{id}/duplicates implemented — fresh duplicate candidates for merge review
 POST  /admin/households/merge        implemented (FR-REG-010)
 
+The household workspace (`PUT /admin/households/{id}/workspace`) saves the household, its head, and
+active citizen roster atomically. Its companion activity endpoint (`GET /admin/households/{id}/activity`)
+returns only records linked to the household or its members, including resident-head incident reports.
+
 The assisted-registration payload requires the household head's birthday and sex, accepts optional
 contact numbers for added members, and requires each added member's birthday, sex, and relationship;
 those members are created in the same transaction and appear in the registered citizen directory.

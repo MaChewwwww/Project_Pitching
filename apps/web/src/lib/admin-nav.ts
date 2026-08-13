@@ -40,7 +40,11 @@ export interface AdminNavCategory {
   items: AdminNavLink[];
 }
 
-export const ADMIN_ROOT = { href: "/admin" as Route, label: "Barangay Admin", icon: LayoutDashboard };
+export const ADMIN_ROOT = {
+  href: "/admin" as Route,
+  label: "Barangay Admin",
+  icon: LayoutDashboard,
+};
 
 export const ADMIN_CATEGORIES: AdminNavCategory[] = [
   {
@@ -59,11 +63,23 @@ export const ADMIN_CATEGORIES: AdminNavCategory[] = [
     title: "Emergency Response",
     icon: ShieldCheck,
     items: [
-      { href: "/admin/emergency-events" as Route, label: "Emergency Events", icon: Siren },
+      {
+        href: "/admin/emergency-events" as Route,
+        label: "Emergency Events",
+        icon: Siren,
+      },
       { href: "/admin/safety" as Route, label: "Accounted For", icon: ShieldCheck },
       { href: "/admin/rescue-requests" as Route, label: "Rescue Queue", icon: LifeBuoy },
-      { href: "/admin/unregistered-persons" as Route, label: "Unregistered Persons", icon: UserPlus },
-      { href: "/admin/incident-reports" as Route, label: "Incident Reports", icon: Camera },
+      {
+        href: "/admin/unregistered-persons" as Route,
+        label: "Unregistered Persons",
+        icon: UserPlus,
+      },
+      {
+        href: "/admin/incident-reports" as Route,
+        label: "Incident Reports",
+        icon: Camera,
+      },
     ],
   },
   {
@@ -72,8 +88,16 @@ export const ADMIN_CATEGORIES: AdminNavCategory[] = [
     icon: CloudRain,
     items: [
       { href: "/admin/announcements" as Route, label: "Announcements", icon: Megaphone },
-      { href: "/admin/weather-readings" as Route, label: "River & Weather Readings", icon: Droplets },
-      { href: "/admin/flood-events" as Route, label: "Flood History", icon: AlertTriangle },
+      {
+        href: "/admin/weather-readings" as Route,
+        label: "River & Weather Readings",
+        icon: Droplets,
+      },
+      {
+        href: "/admin/flood-events" as Route,
+        label: "Flood History",
+        icon: AlertTriangle,
+      },
     ],
   },
   {
@@ -81,8 +105,16 @@ export const ADMIN_CATEGORIES: AdminNavCategory[] = [
     title: "Operations & Facilities",
     icon: Building2,
     items: [
-      { href: "/admin/evacuation-centers" as Route, label: "Evacuation Centers", icon: MapPin },
-      { href: "/admin/facilities" as Route, label: "Barangay Facilities", icon: Building2 },
+      {
+        href: "/admin/evacuation-centers" as Route,
+        label: "Evacuation Centers",
+        icon: MapPin,
+      },
+      {
+        href: "/admin/facilities" as Route,
+        label: "Barangay Facilities",
+        icon: Building2,
+      },
       { href: "/admin/sirens" as Route, label: "Siren Units", icon: Siren },
       { href: "/admin/donation-drives" as Route, label: "Donation Drives", icon: Gift },
       { href: "/admin/hotlines" as Route, label: "Hotlines Directory", icon: Phone },
@@ -93,9 +125,21 @@ export const ADMIN_CATEGORIES: AdminNavCategory[] = [
     title: "Community & Content",
     icon: BookOpen,
     items: [
-      { href: "/admin/activities" as Route, label: "Activities & Programs", icon: Activity },
-      { href: "/admin/guides" as Route, label: "Preparedness Guidelines", icon: BookOpen },
-      { href: "/admin/faqs" as Route, label: "Frequently Asked Questions", icon: HelpCircle },
+      {
+        href: "/admin/activities" as Route,
+        label: "Activities & Programs",
+        icon: Activity,
+      },
+      {
+        href: "/admin/guides" as Route,
+        label: "Preparedness Guidelines",
+        icon: BookOpen,
+      },
+      {
+        href: "/admin/faqs" as Route,
+        label: "Frequently Asked Questions",
+        icon: HelpCircle,
+      },
     ],
   },
 ];
@@ -137,16 +181,26 @@ export function resolveAdminBreadcrumbs(pathname: string): AdminCrumb[] {
   if (!link) return crumbs;
 
   const rest = pathname.slice(link.href.length).split("/").filter(Boolean);
-  crumbs.push(rest.length > 0 ? { label: link.label, href: link.href } : { label: link.label });
+  crumbs.push(
+    rest.length > 0 ? { label: link.label, href: link.href } : { label: link.label },
+  );
 
-  for (const segment of rest) {
-    const label = link.href === "/admin/announcements"
-      ? segment === "create-announcement"
-        ? "Create Announcement"
-        : "Edit Announcement"
-      : link.href === "/admin/households" && segment === "new"
-        ? "Create Household"
-        : LEAF_LABELS[segment] ?? "Edit";
+  for (let index = 0; index < rest.length; index += 1) {
+    const segment = rest[index];
+    const label =
+      link.href === "/admin/announcements"
+        ? segment === "create-announcement"
+          ? "Create Announcement"
+          : "Edit Announcement"
+        : link.href === "/admin/households"
+          ? segment === "new"
+            ? "Create Household"
+            : segment === "edit"
+              ? "Edit Household"
+              : index === 0
+                ? "Household Details"
+                : (LEAF_LABELS[segment] ?? "Edit Household")
+          : (LEAF_LABELS[segment] ?? "Edit");
     crumbs.push({ label });
   }
   return crumbs;

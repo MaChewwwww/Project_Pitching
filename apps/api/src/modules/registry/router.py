@@ -22,9 +22,11 @@ from src.modules.registry.schemas import (
     HouseholdCreateResponse,
     HouseholdCreateSelf,
     HouseholdDetailOut,
+    HouseholdActivityOut,
     HouseholdMergeRequest,
     HouseholdOut,
     HouseholdUpdate,
+    HouseholdWorkspaceUpdate,
     MemberIn,
     MemberPromoteIn,
     MemberTransferIn,
@@ -180,6 +182,33 @@ async def admin_update_household(
     household_id: uuid.UUID, body: HouseholdUpdate, session: DbSessionDep, user: CurrentUser
 ) -> HouseholdDetailOut:
     return await service.update_household(session, household_id=household_id, body=body, actor=user)
+
+
+@admin_router.put(
+    "/{household_id}/workspace",
+    dependencies=[Depends(require_role("admin", "bhw"))],
+    summary="Save the household and its citizen roster in one transaction",
+)
+async def admin_update_household_workspace(
+    household_id: uuid.UUID,
+    body: HouseholdWorkspaceUpdate,
+    session: DbSessionDep,
+    user: CurrentUser,
+) -> HouseholdDetailOut:
+    return await service.update_household_workspace(
+        session, household_id=household_id, body=body, actor=user
+    )
+
+
+@admin_router.get(
+    "/{household_id}/activity",
+    dependencies=[Depends(require_role("admin", "bhw"))],
+    summary="Linked household safety and operational history",
+)
+async def admin_get_household_activity(
+    household_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> HouseholdActivityOut:
+    return await service.get_household_activity(session, household_id=household_id, user=user)
 
 
 @admin_router.post("/{household_id}/members", dependencies=[Depends(require_role("admin", "bhw"))])

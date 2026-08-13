@@ -1,11 +1,23 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, Archive, CircleAlert, Pencil, Plus, ShieldCheck, UserRound } from "lucide-react";
+import {
+  ArrowLeft,
+  Archive,
+  BellRing,
+  CircleAlert,
+  ClipboardCheck,
+  Clock3,
+  Droplets,
+  FileText,
+  MapPin,
+  Pencil,
+  Plus,
+  UsersRound,
+} from "lucide-react";
 
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
@@ -14,44 +26,436 @@ import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useRequireRole } from "@/lib/auth/use-require-role";
-import type { HouseholdDetailOut } from "@/lib/api/registry-types";
+import type {
+  HouseholdActivityItem,
+  HouseholdActivityOut,
+  HouseholdDetailOut,
+} from "@/lib/api/registry-types";
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(
+    new Date(value),
+  );
+}
+
+function memberFlags(member: HouseholdDetailOut["members"][number]) {
+  return [
+    member.is_child && "Child",
+    member.is_senior && "Senior",
+    member.is_pwd && "PWD",
+    member.is_pregnant && "Pregnant",
+    member.is_lactating && "Lactating",
+    member.has_chronic_condition && "Chronic Condition",
+    member.is_bedridden && "Mobility-Limited",
+  ].filter(Boolean) as string[];
+}
+
+function ActivityList({
+  items,
+  empty,
+}: {
+  items: HouseholdActivityItem[];
+  empty: string;
+}) {
+  if (!items.length) return <p className="py-3 text-sm text-neutral-500">{empty}</p>;
+  return (
+    <ol className="divide-y divide-neutral-100">
+      {items.map((item) => (
+        <li key={item.id} className="flex gap-3 py-3 first:pt-0 last:pb-0">
+          <span className="mt-1.5 size-2 shrink-0 rounded-full bg-emerald-500" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-neutral-900">{item.title}</p>
+            <p className="mt-0.5 line-clamp-2 text-xs text-neutral-500">{item.detail}</p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="text-xs font-medium text-neutral-600">{item.status}</p>
+            <time className="mt-0.5 block text-[11px] text-neutral-400">
+              {formatDate(item.occurred_at)}
+            </time>
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 export default function HouseholdDetailPage() {
   useRequireRole("admin", "bhw");
-  const params = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const { data: household, isLoading, isError } = useQuery({
-    queryKey: ["admin", "household", params.id],
-    queryFn: () => api.get<HouseholdDetailOut>(`/admin/households/${params.id}`).then((r) => r.data),
+  const client = useQueryClient();
+  const householdQuery = useQuery({
+    queryKey: ["admin", "household", id],
+    queryFn: () =>
+      api.get<HouseholdDetailOut>(`/admin/households/${id}`).then((r) => r.data),
+  });
+  const activityQuery = useQuery({
+    queryKey: ["admin", "household", id, "activity"],
+    queryFn: () =>
+      api
+        .get<HouseholdActivityOut>(`/admin/households/${id}/activity`)
+        .then((r) => r.data),
+  });
+  const archive = useMutation({
+    mutationFn: () => api.delete(`/admin/households/${id}`),
+    onSuccess: () => {
+      toast.success("Household archived");
+      router.push("/admin/households");
+    },
+    onError: (error) => toast.error(toDisplayError(error).detail),
   });
   const makeHead = useMutation({
     mutationFn: (memberId: string) => api.post(`/admin/members/${memberId}/make-head`),
-    onSuccess: () => { toast.success("New household head assigned"); queryClient.invalidateQueries({ queryKey: ["admin", "household", params.id] }); queryClient.invalidateQueries({ queryKey: ["admin", "households"] }); },
-    onError: (error) => toast.error(toDisplayError(error).detail),
-  });
-  const archive = useMutation({
-    mutationFn: () => api.delete(`/admin/households/${params.id}`),
-    onSuccess: () => { toast.success("Household archived"); router.push("/admin/households"); },
+    onSuccess: () => {
+      toast.success("New household head assigned");
+      client.invalidateQueries({ queryKey: ["admin", "household", id] });
+    },
     onError: (error) => toast.error(toDisplayError(error).detail),
   });
 
-  if (isLoading) return <div className="flex min-h-64 items-center justify-center text-sm text-neutral-500">Loading household…</div>;
-  if (isError || !household) return <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">This household could not be loaded.</div>;
-  const record = household;
-
-  function confirmArchive() {
-    if (window.confirm(`Archive ${record.reference_no}? Its history remains in the audit trail, but it will leave active registry lists.`)) archive.mutate();
-  }
+  if (householdQuery.isLoading)
+    return (
+      <div className="flex min-h-64 items-center justify-center text-sm text-neutral-500">
+        Loading household…
+      </div>
+    );
+  if (!householdQuery.data)
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">
+        This household could not be loaded.
+      </div>
+    );
+  const household = householdQuery.data;
+  const activity = activityQuery.data;
+  const risk =
+    household.waterway_proximity === "very_near"
+      ? "High"
+      : household.waterway_proximity === "near"
+        ? "Medium"
+        : household.waterway_proximity === "far"
+          ? "Low"
+          : "Not recorded";
+  const riskTone =
+    risk === "High"
+      ? "danger"
+      : risk === "Medium"
+        ? "warning"
+        : risk === "Low"
+          ? "success"
+          : "neutral";
 
   return (
-    <div className="flex flex-col gap-6 pb-10">
-      <AdminPageHeader title={household.reference_no} description={`Household record for ${household.head_name} · ${household.area_name ?? "Area not recorded"}.`} action={<div className="flex flex-wrap gap-2"><Button asChild size="sm" variant="outline"><Link href="/admin/households"><ArrowLeft aria-hidden className="size-4" />Back to households</Link></Button><Button asChild size="sm" variant="outline"><Link href={`/admin/households/${household.id}/edit`}><Pencil aria-hidden className="size-4" />Edit details</Link></Button>{user?.role === "admin" ? <Button size="sm" variant="danger" onClick={confirmArchive} disabled={archive.isPending}><Archive aria-hidden className="size-4" />Archive</Button> : null}</div>} meta={<div className="flex flex-wrap gap-2"><Badge tone={household.source === "self" ? "success" : "neutral"}>{household.source === "self" ? "Resident self-registration" : "BHW-assisted"}</Badge>{household.verified_at ? <Badge tone="success"><ShieldCheck aria-hidden className="mr-1 inline size-3" />Verified</Badge> : <Badge tone="warning">Needs verification</Badge>}{household.has_possible_duplicate ? <Badge tone="warning"><CircleAlert aria-hidden className="mr-1 inline size-3" />Possible duplicate</Badge> : null}</div>} />
-      <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-        <Card><CardContent className="space-y-5"><div><p className="text-overline text-neutral-500">Household profile</p><h2 className="mt-1 text-xl font-bold text-neutral-950">{household.head_name}</h2><p className="mt-1 text-sm text-neutral-500">{household.street_address ?? "No street address recorded"}</p></div><dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1"><div><dt className="text-xs font-bold tracking-wide text-neutral-500 uppercase">Contact</dt><dd className="mt-1 text-sm text-neutral-900">{household.contact_number ?? (household.is_unreachable_by_phone ? "Marked unreachable" : "Not recorded")}</dd></div><div><dt className="text-xs font-bold tracking-wide text-neutral-500 uppercase">Waterway proximity</dt><dd className="mt-1 text-sm capitalize text-neutral-900">{household.waterway_proximity?.replace("_", " ") ?? "Not recorded"}</dd></div><div><dt className="text-xs font-bold tracking-wide text-neutral-500 uppercase">Registered</dt><dd className="mt-1 text-sm text-neutral-900">{new Date(household.created_at).toLocaleDateString()}</dd></div></dl>{household.head_user_id ? <p className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs leading-relaxed text-sky-900">The head is linked to a resident account. Name, move, demotion, and archive actions are protected by the account lifecycle.</p> : <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs leading-relaxed text-emerald-900">This household is managed by the registry. Assign a new head before archiving or transferring the current head.</p>}</CardContent></Card>
-        <Card><CardContent><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-overline text-neutral-500">Citizen roster</p><h2 className="mt-1 text-xl font-bold text-neutral-950">{household.members.length} registered citizen{household.members.length === 1 ? "" : "s"}</h2></div><Button asChild size="sm"><Link href={`/admin/citizens/new?household_id=${household.id}`}><Plus aria-hidden className="size-4" />Add citizen</Link></Button></div><div className="mt-5 divide-y divide-neutral-100 rounded-xl border border-neutral-200">{household.members.map((member) => <div key={member.id} className="flex flex-wrap items-center justify-between gap-3 p-3.5"><div className="flex min-w-0 items-center gap-3"><span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"><UserRound aria-hidden className="size-4" /></span><div className="min-w-0"><p className="truncate text-sm font-bold text-neutral-900">{member.full_name}{member.is_head ? <Badge tone="success" className="ml-2">Head</Badge> : null}</p><p className="mt-0.5 text-xs text-neutral-500">{member.relationship_to_head ?? "Household member"}{member.is_pwd || member.is_senior || member.is_bedridden ? " · Support flag" : ""}</p></div></div><div className="flex items-center gap-1.5"><Button asChild size="sm" variant="outline" className="size-9 px-0" title="Edit citizen"><Link href={`/admin/citizens/${member.id}/edit`}><Pencil aria-hidden className="size-4" /><span className="sr-only">Edit citizen</span></Link></Button>{!member.is_head && !household.head_user_id ? <Button size="sm" variant="outline" onClick={() => makeHead.mutate(member.id)} disabled={makeHead.isPending} title="Make household head">Make head</Button> : null}</div></div>)}{household.members.length === 0 ? <p className="p-5 text-sm text-neutral-500">No active citizens are attached to this household.</p> : null}</div></CardContent></Card>
-      </div>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 pb-10">
+      <AdminPageHeader
+        title={household.reference_no}
+        description={`${household.head_name} · ${household.area_name ?? "Area not recorded"}`}
+        action={
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button asChild size="sm" variant="outline">
+              <Link href="/admin/households">
+                <ArrowLeft aria-hidden className="size-4" />
+                Back
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/admin/households/${id}/edit`}>
+                <Pencil aria-hidden className="size-4" />
+                Edit Household
+              </Link>
+            </Button>
+            {user?.role === "admin" ? (
+              <Button
+                size="sm"
+                variant="danger"
+                disabled={archive.isPending}
+                onClick={() =>
+                  window.confirm(`Archive ${household.reference_no}?`) && archive.mutate()
+                }
+              >
+                <Archive aria-hidden className="size-4" />
+                Archive
+              </Button>
+            ) : null}
+          </div>
+        }
+      />
+
+      <section className="grid gap-4 lg:grid-cols-12">
+        <Card className="border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white lg:col-span-7">
+          <CardContent className="p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <span className="grid size-11 place-items-center rounded-2xl bg-emerald-600 text-white shadow-sm">
+                  <UsersRound aria-hidden className="size-5" />
+                </span>
+                <div>
+                  <p className="text-overline text-emerald-700">Household Record</p>
+                  <h2 className="mt-1 text-xl font-bold text-neutral-950">
+                    {household.head_name}
+                  </h2>
+                  <p className="mt-1 text-sm text-neutral-500">
+                    {household.member_count} registered citizen
+                    {household.member_count === 1 ? "" : "s"} · Registered{" "}
+                    {formatDate(household.created_at)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <Badge tone={household.source === "self" ? "success" : "neutral"}>
+                  {household.source === "self" ? "Self-Registered" : "BHW-Assisted"}
+                </Badge>
+                <Badge tone={riskTone}>Flood Risk: {risk}</Badge>
+                {household.has_possible_duplicate ? (
+                  <Badge tone="warning">
+                    <CircleAlert aria-hidden className="mr-1 size-3" />
+                    Possible Duplicate
+                  </Badge>
+                ) : null}
+              </div>
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-emerald-100 bg-white/80 p-3">
+                <p className="text-[10px] font-bold tracking-[0.1em] text-neutral-500 uppercase">
+                  Area
+                </p>
+                <p className="mt-1 text-sm font-bold text-neutral-900">
+                  {household.area_name ?? "Not Recorded"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-emerald-100 bg-white/80 p-3">
+                <p className="text-[10px] font-bold tracking-[0.1em] text-neutral-500 uppercase">
+                  Contact
+                </p>
+                <p className="mt-1 text-sm font-bold text-neutral-900">
+                  {household.contact_number ??
+                    (household.is_unreachable_by_phone
+                      ? "No Contact Number"
+                      : "Not Recorded")}
+                </p>
+              </div>
+              <div className="rounded-xl border border-emerald-100 bg-white/80 p-3">
+                <p className="text-[10px] font-bold tracking-[0.1em] text-neutral-500 uppercase">
+                  Record State
+                </p>
+                <p className="mt-1 text-sm font-bold text-neutral-900">
+                  {household.verified_at ? "Verified" : "Needs Review"}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-sky-200/80 bg-white lg:col-span-5">
+          <CardContent className="p-5">
+            <div className="flex items-start gap-3">
+              <span className="grid size-10 place-items-center rounded-xl bg-sky-100 text-sky-700">
+                <MapPin aria-hidden className="size-4" />
+              </span>
+              <div>
+                <p className="text-overline text-sky-700">Location</p>
+                <h2 className="mt-1 text-base font-bold text-neutral-950">
+                  Barangay San Jose, Rodriguez, Rizal
+                </h2>
+                <p className="mt-1 text-sm text-neutral-600">
+                  {household.street_address ?? "Specific address not recorded"}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-between rounded-lg border border-sky-100 bg-sky-50/60 px-3 py-2.5 text-xs">
+              <span className="flex items-center gap-2 text-sky-900">
+                <Droplets aria-hidden className="size-4" />
+                Waterway Proximity
+              </span>
+              <span className="font-bold text-sky-950">
+                {household.waterway_proximity?.replace("_", " ") ?? "Not recorded"}
+              </span>
+            </div>
+            {household.location ? (
+              <p className="mt-3 text-xs text-emerald-700">
+                Map pin recorded inside Barangay San Jose.
+              </p>
+            ) : (
+              <p className="mt-3 text-xs text-amber-700">No map pin recorded.</p>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-12">
+        <Card className="lg:col-span-7">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-overline text-neutral-500">Citizen Roster</p>
+                <h2 className="mt-1 text-lg font-bold text-neutral-950">Members</h2>
+              </div>
+              <Button asChild size="sm">
+                <Link href={`/admin/citizens/new?household_id=${id}`}>
+                  <Plus aria-hidden className="size-4" />
+                  Add Citizen
+                </Link>
+              </Button>
+            </div>
+            <div className="mt-4 divide-y divide-neutral-100 rounded-xl border border-neutral-200">
+              {household.members.map((member) => (
+                <div
+                  key={member.id}
+                  className="flex flex-wrap items-center justify-between gap-3 p-3.5"
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold text-neutral-950">
+                      {member.full_name}
+                      {member.is_head ? (
+                        <span className="ml-2 text-xs font-bold text-emerald-700">
+                          Head Of Household
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className="mt-0.5 text-xs text-neutral-500">
+                      {member.relationship_to_head ?? "Household Head"} ·{" "}
+                      {member.sex
+                        ? member.sex[0].toUpperCase() + member.sex.slice(1)
+                        : "Sex not recorded"}
+                      {member.birth_date ? ` · ${member.birth_date}` : ""}
+                      {member.contact_number
+                        ? ` · ${member.contact_number}`
+                        : " · No Contact Number"}
+                    </p>
+                    {memberFlags(member).length ? (
+                      <p className="mt-1 text-xs text-amber-700">
+                        {memberFlags(member).join(" · ")}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button asChild size="sm" variant="outline">
+                      <Link href={`/admin/citizens/${member.id}/edit`}>
+                        <Pencil aria-hidden className="size-3.5" />
+                        Edit
+                      </Link>
+                    </Button>
+                    {!member.is_head && !household.head_user_id ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={makeHead.isPending}
+                        onClick={() => makeHead.mutate(member.id)}
+                      >
+                        Make Head
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-5">
+          <CardContent className="p-5">
+            <div className="flex items-start gap-3">
+              <span className="grid size-10 place-items-center rounded-xl bg-violet-100 text-violet-700">
+                <ClipboardCheck aria-hidden className="size-4" />
+              </span>
+              <div>
+                <p className="text-overline text-violet-700">Active Emergency</p>
+                <h2 className="mt-1 text-lg font-bold text-neutral-950">Safety Status</h2>
+              </div>
+            </div>
+            {activity?.safety ? (
+              <>
+                <p className="mt-4 text-sm font-semibold text-neutral-900">
+                  {activity.safety.event_name}
+                </p>
+                <div className="mt-3 grid grid-cols-3 divide-x divide-neutral-100 rounded-xl border border-neutral-200 bg-neutral-50/50">
+                  <p className="p-3 text-center text-xs text-neutral-500">
+                    <b className="block text-lg text-emerald-700">
+                      {activity.safety.safe}
+                    </b>
+                    Safe
+                  </p>
+                  <p className="p-3 text-center text-xs text-neutral-500">
+                    <b className="block text-lg text-red-700">
+                      {activity.safety.needs_rescue}
+                    </b>
+                    Needs Rescue
+                  </p>
+                  <p className="p-3 text-center text-xs text-neutral-500">
+                    <b className="block text-lg text-neutral-700">
+                      {activity.safety.unaccounted}
+                    </b>
+                    Unaccounted
+                  </p>
+                </div>
+              </>
+            ) : (
+              <p className="mt-4 text-sm text-neutral-500">
+                No active emergency safety record for this household.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      {activityQuery.isLoading ? (
+        <p className="rounded-xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+          Loading linked operational records…
+        </p>
+      ) : null}
+      {activityQuery.isError ? (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Linked operational records could not be loaded. Household details remain
+          available.
+        </p>
+      ) : null}
+
+      <section className="grid gap-4 lg:grid-cols-3">
+        <Card>
+          <CardContent className="p-5">
+            <p className="flex items-center gap-2 text-sm font-bold text-neutral-950">
+              <Clock3 aria-hidden className="size-4 text-sky-700" />
+              Evacuation History
+            </p>
+            <div className="mt-4">
+              <ActivityList
+                items={activity?.evacuations ?? []}
+                empty="No member evacuation check-ins recorded."
+              />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <p className="flex items-center gap-2 text-sm font-bold text-neutral-950">
+              <BellRing aria-hidden className="size-4 text-amber-700" />
+              Rescue Requests
+            </p>
+            <div className="mt-4">
+              <ActivityList
+                items={activity?.rescues ?? []}
+                empty="No rescue requests are linked to this household."
+              />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <p className="flex items-center gap-2 text-sm font-bold text-neutral-950">
+              <FileText aria-hidden className="size-4 text-violet-700" />
+              Reports By Head
+            </p>
+            <div className="mt-4">
+              <ActivityList
+                items={activity?.incident_reports ?? []}
+                empty={
+                  household.head_user_id
+                    ? "No incident reports have been submitted by the linked resident account."
+                    : "This household has no linked resident account."
+                }
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 }

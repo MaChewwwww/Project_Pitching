@@ -5,9 +5,9 @@ never imports another module's `models.py` — cross-module access goes through
 the owning service (AGENTS.md Section 5).
 
 **Scope note.** Self-registration (FR-REG-001), BHW-assisted registration
-(FR-REG-002), and minimal duplicate detection/merge (FR-REG-010) land here.
-Editing an existing household (FR-REG-009) and splitting a member out
-(FR-REG-026) remain out of scope — see `models.py`'s module docstring.
+(FR-REG-002), household editing (FR-REG-009), and minimal duplicate
+detection/merge (FR-REG-010) land here. Splitting a member out (FR-REG-026)
+remains out of scope — see `models.py`'s module docstring.
 """
 
 from __future__ import annotations
@@ -35,9 +35,13 @@ from src.modules.registry.schemas import (
     HouseholdCreateResponse,
     HouseholdCreateSelf,
     HouseholdDetailOut,
+    HouseholdActivityItem,
+    HouseholdActivityOut,
     HouseholdMergeRequest,
     HouseholdOut,
     HouseholdUpdate,
+    HouseholdWorkspaceUpdate,
+    HouseholdSafetySummary,
     MemberIn,
     MemberOut,
     MemberPromoteIn,
@@ -868,6 +872,220 @@ async def update_household(
     )
     await session.commit()
     return await get_household_detail(session, household_id=household.id, user=actor)
+
+
+def _apply_member_update(member: Member, data: MemberUpdate) -> None:
+    """Apply editable citizen fields without changing household ownership."""
+    member.full_name = data.full_name.strip()
+    member.birth_date = data.birth_date
+    member.sex = data.sex
+    member.contact_number = data.contact_number.strip() if data.contact_number else None
+    member.relationship_to_head = data.relationship_to_head
+    member.is_child = data.is_child
+    member.is_senior = data.is_senior
+    member.is_pwd = data.is_pwd
+    member.is_pregnant = data.is_pregnant
+    member.is_lactating = data.is_lactating
+    member.has_chronic_condition = data.has_chronic_condition
+    member.chronic_condition_note = data.chronic_condition_note
+    member.is_bedridden = data.is_bedridden
+
+
+async def update_household_workspace(
+    session: AsyncSession,
+    *,
+    household_id: uuid.UUID,
+    body: HouseholdWorkspaceUpdate,
+    actor: AuthenticatedUser,
+) -> HouseholdDetailOut:
+    """Save the admin registration workspace as one transaction.
+
+    The route deliberately owns only the household and its roster. Removing a
+    citizen remains an explicit, separately audited archive action.
+    """
+    household = await get_household_or_404(session, household_id)
+    if actor.is_area_scoped and household.area_id not in actor.assigned_area_ids:
+        raise PermissionDeniedError("You can only update households in your assigned areas.")
+    if household.head_user_id is not None and body.area_id != household.area_id:
+        raise ConflictError("An account-linked household head cannot be moved by the registry.")
+    if body.head_name and body.head_name.strip() != body.head_member.full_name.strip():
+        raise ConflictError("The household head and head profile names must match.")
+    if household.head_user_id is not None and body.head_member.full_name != household.head_name:
+        raise ConflictError("The linked household head's name is managed by their account.")
+
+    area = await geo_service.get_area_or_404(session, body.area_id)
+    if actor.is_area_scoped and area.id not in actor.assigned_area_ids:
+        raise PermissionDeniedError("You can only move households within your assigned areas.")
+    await _validate_pin_area(
+        session, latitude=body.latitude, longitude=body.longitude, area_id=area.id
+    )
+
+    roster = (
+        await session.execute(
+            select(Member).where(Member.household_id == household.id, Member.deleted_at.is_(None))
+        )
+    ).scalars().all()
+    head = next((member for member in roster if member.is_head), None)
+    if head is None:
+        raise ConflictError("This household has no active head profile.")
+    _apply_member_update(head, body.head_member)
+    head.is_head = True
+    head.relationship_to_head = None
+
+    existing = {member.id: member for member in roster if not member.is_head}
+    submitted_ids = {member.id for member in body.members if member.id is not None}
+    if not submitted_ids <= set(existing):
+        raise ConflictError("One or more citizens no longer belong to this household.")
+    for data in body.members:
+        if data.id is None:
+            session.add(_new_member(data, household_id=household.id, is_head=False, derive_age_from_birthdate=False))
+        else:
+            _apply_member_update(existing[data.id], data)
+            existing[data.id].is_head = False
+
+    household.head_name = head.full_name
+    household.contact_number = body.contact_number.strip() if body.contact_number else None
+    household.is_unreachable_by_phone = body.is_unreachable_by_phone
+    household.area_id = area.id
+    household.street_address = body.street_address.strip() if body.street_address else None
+    household.waterway_proximity = body.waterway_proximity
+    household.location = (
+        func.ST_SetSRID(func.ST_MakePoint(body.longitude, body.latitude), 4326)
+        if body.latitude is not None and body.longitude is not None
+        else None
+    )
+    await session.flush()
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="household.workspace_update",
+        entity_type="household",
+        entity_id=household.id,
+        changes={"area_id": str(area.id), "member_count": len(body.members) + 1},
+    )
+    await session.commit()
+    return await get_household_detail(session, household_id=household.id, user=actor)
+
+
+async def get_household_activity(
+    session: AsyncSession, *, household_id: uuid.UUID, user: AuthenticatedUser
+) -> HouseholdActivityOut:
+    """Return only operational records with an explicit household/member link."""
+    household = await get_household_or_404(session, household_id)
+    if user.is_area_scoped and household.area_id not in user.assigned_area_ids:
+        raise PermissionDeniedError("You can only view households in your assigned areas.")
+
+    # Read-only cross-module joins: the registry owns the response, while the
+    # operational modules retain all write and lifecycle rules.
+    from src.modules.evacuation.models import EmergencyEvent, EvacCenter, EvacCheckin
+    from src.modules.geo.models import Facility
+    from src.modules.safety.models import IncidentReport, RescueRequest, SafetyStatus
+
+    member_ids = list(
+        (
+            await session.execute(
+                select(Member.id).where(
+                    Member.household_id == household.id, Member.deleted_at.is_(None)
+                )
+            )
+        ).scalars()
+    )
+    safety = None
+    active_event = await session.scalar(
+        select(EmergencyEvent).where(EmergencyEvent.is_active.is_(True)).limit(1)
+    )
+    if active_event and member_ids:
+        rows = (
+            await session.execute(
+                select(SafetyStatus.status, func.count(SafetyStatus.id))
+                .where(
+                    SafetyStatus.event_id == active_event.id,
+                    SafetyStatus.member_id.in_(member_ids),
+                    SafetyStatus.superseded_at.is_(None),
+                )
+                .group_by(SafetyStatus.status)
+            )
+        ).all()
+        counts = {status: count for status, count in rows}
+        safety = HouseholdSafetySummary(
+            event_name=active_event.name,
+            safe=counts.get("safe", 0),
+            needs_rescue=counts.get("needs_rescue", 0),
+            unaccounted=max(0, len(member_ids) - sum(counts.values())),
+        )
+
+    evacuation_rows = []
+    if member_ids:
+        checkins = (
+            await session.execute(
+                select(EvacCheckin, Facility.name, EmergencyEvent.name)
+                .join(EvacCenter, EvacCenter.id == EvacCheckin.evac_center_id)
+                .join(Facility, Facility.id == EvacCenter.facility_id)
+                .join(EmergencyEvent, EmergencyEvent.id == EvacCheckin.event_id)
+                .where(EvacCheckin.member_id.in_(member_ids))
+                .order_by(EvacCheckin.checked_in_at.desc())
+                .limit(12)
+            )
+        ).all()
+        for checkin, center_name, event_name in checkins:
+            evacuation_rows.append(
+                HouseholdActivityItem(
+                    id=checkin.id,
+                    kind="evacuation",
+                    title=f"{checkin.person_name} checked in at {center_name}",
+                    detail=event_name,
+                    status="Checked out" if checkin.checked_out_at else "Currently checked in",
+                    occurred_at=checkin.checked_in_at,
+                )
+            )
+
+    rescue_rows = (
+        await session.execute(
+            select(RescueRequest)
+            .where(RescueRequest.household_id == household.id)
+            .order_by(RescueRequest.created_at.desc())
+            .limit(12)
+        )
+    ).scalars().all()
+    rescues = [
+        HouseholdActivityItem(
+            id=row.id,
+            kind="rescue",
+            title="Rescue request",
+            detail=row.description,
+            status=row.status,
+            occurred_at=row.created_at,
+        )
+        for row in rescue_rows
+    ]
+
+    incidents = []
+    if household.head_user_id is not None:
+        incident_rows = (
+            await session.execute(
+                select(IncidentReport)
+                .where(IncidentReport.reported_by_user_id == household.head_user_id)
+                .order_by(IncidentReport.created_at.desc())
+                .limit(12)
+            )
+        ).scalars().all()
+        incidents = [
+            HouseholdActivityItem(
+                id=row.id,
+                kind="incident",
+                title=row.type.replace("_", " ").title(),
+                detail=row.description,
+                status=row.status,
+                occurred_at=row.created_at,
+            )
+            for row in incident_rows
+        ]
+    return HouseholdActivityOut(
+        safety=safety,
+        evacuations=evacuation_rows,
+        rescues=rescues,
+        incident_reports=incidents,
+    )
 
 
 async def list_members(

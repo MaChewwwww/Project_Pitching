@@ -3,14 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  ChevronDown,
-  ChevronRight,
-  ExternalLink,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink, LogOut, Menu } from "lucide-react";
 
 import { LogoLockup } from "@/components/common/logo";
 import { AdminBreadcrumbs } from "@/components/features/admin/admin-breadcrumbs";
@@ -45,7 +38,8 @@ function ConsoleProfileMenu({
           type="button"
           className={cn(
             "group flex items-center gap-2.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-2 focus-visible:outline-none",
-            compact && "border-white/15 bg-white/10 text-white hover:border-white/25 hover:bg-white/15",
+            compact &&
+              "border-white/15 bg-white/10 text-white hover:border-white/25 hover:bg-white/15",
           )}
           aria-label="Open profile menu"
         >
@@ -76,7 +70,10 @@ function ConsoleProfileMenu({
           />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64 rounded-xl border border-emerald-100 bg-white p-1.5 shadow-lg shadow-emerald-950/10">
+      <DropdownMenuContent
+        align="end"
+        className="w-64 rounded-xl border border-emerald-100 bg-white p-1.5 shadow-lg shadow-emerald-950/10"
+      >
         <DropdownMenuLabel className="flex items-center gap-2.5 px-2.5 py-2.5">
           <span className="grid size-9 shrink-0 place-items-center rounded-full bg-emerald-700 text-xs font-bold text-white ring-2 ring-emerald-100">
             {initial}
@@ -85,7 +82,9 @@ function ConsoleProfileMenu({
             <span className="block truncate text-sm font-bold text-neutral-900">
               {user?.full_name ?? "Barangay staff"}
             </span>
-            <span className="mt-0.5 block truncate text-xs font-normal text-neutral-500">{user?.email}</span>
+            <span className="mt-0.5 block truncate text-xs font-normal text-neutral-500">
+              {user?.email}
+            </span>
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -118,44 +117,33 @@ function useIsActive() {
 }
 
 function ConsoleNav({ onNavigate }: { onNavigate?: () => void }) {
-  const pathname = usePathname();
   const isActive = useIsActive();
 
   // Every category open by default; a category the officer collapses stays
   // collapsed unless the route moves into it.
-  const [collapsed, setCollapsed] = React.useState<Record<string, boolean>>({});
+  const [openCategories, setOpenCategories] = React.useState<Record<string, boolean>>({});
 
   return (
-    <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
-      <Link
-        href="/admin"
-        onClick={onNavigate}
-        className={cn(
-          "flex items-center gap-3 rounded-md px-3 py-2.5 text-[13px] font-bold transition-colors",
-          pathname === "/admin"
-            ? "bg-primary-600 text-white shadow-sm"
-            : "text-primary-100 hover:bg-white/10 hover:text-white",
-        )}
-      >
-        <LayoutDashboard aria-hidden className="size-4 shrink-0" />
-        <span>Console Dashboard</span>
-      </Link>
-
-      <div className="space-y-2">
+    <nav className="flex-1 space-y-2 px-3 py-4">
+      <div className="space-y-1.5">
         {ADMIN_CATEGORIES.map((category) => {
           const hasActiveChild = category.items.some((item) => isActive(item.href));
-          const isOpen = hasActiveChild || !collapsed[category.id];
+          const isOpen = hasActiveChild || Boolean(openCategories[category.id]);
           const CategoryIcon = category.icon;
 
           return (
             <div key={category.id}>
               <button
                 type="button"
-                onClick={() => setCollapsed((prev) => ({ ...prev, [category.id]: !prev[category.id] }))}
+                onClick={() =>
+                  setOpenCategories((prev) => ({ ...prev, [category.id]: !isOpen }))
+                }
                 aria-expanded={isOpen}
                 className={cn(
                   "flex w-full items-center justify-between gap-2 rounded px-2.5 py-1.5 text-left text-[10px] font-bold tracking-[0.12em] uppercase transition-colors",
-                  hasActiveChild ? "text-primary-100" : "text-primary-300 hover:text-white",
+                  hasActiveChild
+                    ? "text-primary-100"
+                    : "text-primary-300 hover:text-white",
                 )}
               >
                 <span className="flex min-w-0 items-center gap-2">
@@ -169,9 +157,15 @@ function ConsoleNav({ onNavigate }: { onNavigate?: () => void }) {
                   <span className="truncate">{category.title}</span>
                 </span>
                 {isOpen ? (
-                  <ChevronDown aria-hidden className="text-primary-400 size-3.5 shrink-0" />
+                  <ChevronDown
+                    aria-hidden
+                    className="text-primary-400 size-3.5 shrink-0"
+                  />
                 ) : (
-                  <ChevronRight aria-hidden className="text-primary-400 size-3.5 shrink-0" />
+                  <ChevronRight
+                    aria-hidden
+                    className="text-primary-400 size-3.5 shrink-0"
+                  />
                 )}
               </button>
 
@@ -228,7 +222,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-neutral-100">
-      <aside className="bg-primary-950 text-primary-50 hidden w-64 shrink-0 flex-col lg:flex">
+      <aside className="bg-primary-950 text-primary-50 hidden h-svh w-64 shrink-0 flex-col lg:sticky lg:top-0 lg:flex">
         <div className="flex items-center gap-2.5 border-b border-white/10 px-4 py-4">
           <div className="flex min-w-0 items-center gap-2.5">
             <LogoLockup size={32} variant="mark" onDark />
@@ -276,7 +270,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   <span className="sr-only">Open console navigation</span>
                 </button>
               </SheetTrigger>
-              <SheetContent side="left" className="bg-primary-950 flex w-80 flex-col border-0 p-0 text-white">
+              <SheetContent
+                side="left"
+                className="bg-primary-950 flex w-80 flex-col border-0 p-0 text-white"
+              >
                 <SheetTitle className="sr-only">Console navigation</SheetTitle>
                 <div className="flex items-center gap-2.5 border-b border-white/10 px-4 py-4">
                   <LogoLockup size={32} variant="mark" onDark />

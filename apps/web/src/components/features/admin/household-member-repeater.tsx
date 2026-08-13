@@ -79,8 +79,10 @@ const RELATIONSHIP_OPTIONS = [
  */
 export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
   control,
+  onArchiveExisting,
 }: {
   control: Control<TFieldValues>;
+  onArchiveExisting?: (memberId: string) => Promise<void>;
 }) {
   const { fields, append, remove } = useFieldArray({
     control,
@@ -144,19 +146,35 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
               </button>
             </CollapsibleTrigger>
 
-            <Button
-              type="button"
-              variant="danger"
-              size="sm"
-              className="shrink-0"
-              onClick={() => {
-                remove(i);
-                setOpenIndex(null);
-              }}
-            >
-              <Trash2 aria-hidden className="size-3.5" />
-              Remove member
-            </Button>
+            {!(field as { record_id?: string }).record_id || onArchiveExisting ? (
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                className="shrink-0"
+                onClick={() => {
+                  const recordId = (field as { record_id?: string }).record_id;
+                  if (recordId && onArchiveExisting) {
+                    if (
+                      !window.confirm(
+                        "Archive this citizen? Their historical records will be retained.",
+                      )
+                    )
+                      return;
+                    void onArchiveExisting(recordId).then(() => {
+                      remove(i);
+                      setOpenIndex(null);
+                    });
+                    return;
+                  }
+                  remove(i);
+                  setOpenIndex(null);
+                }}
+              >
+                <Trash2 aria-hidden className="size-3.5" />
+                Remove member
+              </Button>
+            ) : null}
           </div>
 
           <CollapsibleContent className="flex flex-col gap-4 border-t border-emerald-100 p-4">

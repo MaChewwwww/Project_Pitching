@@ -1515,6 +1515,40 @@ export interface paths {
         patch: operations["admin_update_household_api_v1_admin_households__household_id__patch"];
         trace?: never;
     };
+    "/api/v1/admin/households/{household_id}/workspace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save the household and its citizen roster in one transaction */
+        put: operations["admin_update_household_workspace_api_v1_admin_households__household_id__workspace_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/households/{household_id}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Linked household safety and operational history */
+        get: operations["admin_get_household_activity_api_v1_admin_households__household_id__activity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/households/{household_id}/members": {
         parameters: {
             query?: never;
@@ -2750,6 +2784,40 @@ export interface components {
             /** Is Active */
             is_active: boolean;
         };
+        /** HouseholdActivityItem */
+        HouseholdActivityItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "evacuation" | "rescue" | "incident";
+            /** Title */
+            title: string;
+            /** Detail */
+            detail?: string | null;
+            /** Status */
+            status?: string | null;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+        };
+        /** HouseholdActivityOut */
+        HouseholdActivityOut: {
+            safety?: components["schemas"]["HouseholdSafetySummary"] | null;
+            /** Evacuations */
+            evacuations?: components["schemas"]["HouseholdActivityItem"][];
+            /** Rescues */
+            rescues?: components["schemas"]["HouseholdActivityItem"][];
+            /** Incident Reports */
+            incident_reports?: components["schemas"]["HouseholdActivityItem"][];
+        };
         /**
          * HouseholdCreateBhw
          * @description FR-REG-002/004/024, one-shot admin-console form.
@@ -2956,6 +3024,17 @@ export interface components {
             /** Members */
             members: components["schemas"]["MemberSafetyOut"][];
         };
+        /** HouseholdSafetySummary */
+        HouseholdSafetySummary: {
+            /** Event Name */
+            event_name: string;
+            /** Safe */
+            safe: number;
+            /** Needs Rescue */
+            needs_rescue: number;
+            /** Unaccounted */
+            unaccounted: number;
+        };
         /** HouseholdUpdate */
         HouseholdUpdate: {
             /** Head Name */
@@ -2980,6 +3059,37 @@ export interface components {
             latitude?: number | null;
             /** Longitude */
             longitude?: number | null;
+        };
+        /**
+         * HouseholdWorkspaceUpdate
+         * @description Complete admin/BHW household workspace save (FR-REG-009/024).
+         */
+        HouseholdWorkspaceUpdate: {
+            /** Head Name */
+            head_name?: string | null;
+            /** Contact Number */
+            contact_number?: string | null;
+            /**
+             * Is Unreachable By Phone
+             * @default false
+             */
+            is_unreachable_by_phone: boolean;
+            /**
+             * Area Id
+             * Format: uuid
+             */
+            area_id: string;
+            /** Street Address */
+            street_address?: string | null;
+            /** Waterway Proximity */
+            waterway_proximity?: ("very_near" | "near" | "far") | null;
+            /** Latitude */
+            latitude?: number | null;
+            /** Longitude */
+            longitude?: number | null;
+            head_member: components["schemas"]["MemberUpdate"];
+            /** Members */
+            members?: components["schemas"]["WorkspaceMemberUpdate"][];
         };
         /** ImageOrderIn */
         ImageOrderIn: {
@@ -3458,7 +3568,7 @@ export interface components {
         };
         /**
          * PointResolution
-         * @description Boundary-derived location context; no external geocoder is queried.
+         * @description Boundary-derived location context; exact addresses are entered by users.
          */
         PointResolution: {
             /** Latitude */
@@ -4416,6 +4526,65 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /**
+         * WorkspaceMemberUpdate
+         * @description A member row submitted from the household workspace.
+         *
+         *     ``id=None`` creates a new citizen; an existing id updates that citizen in
+         *     the same household transaction. Archival intentionally remains a separate,
+         *     confirmed action.
+         */
+        WorkspaceMemberUpdate: {
+            /** Full Name */
+            full_name: string;
+            /** Birth Date */
+            birth_date?: string | null;
+            /** Sex */
+            sex?: ("male" | "female") | null;
+            /** Contact Number */
+            contact_number?: string | null;
+            /** Relationship To Head */
+            relationship_to_head?: string | null;
+            /**
+             * Is Child
+             * @default false
+             */
+            is_child: boolean;
+            /**
+             * Is Senior
+             * @default false
+             */
+            is_senior: boolean;
+            /**
+             * Is Pwd
+             * @default false
+             */
+            is_pwd: boolean;
+            /**
+             * Is Pregnant
+             * @default false
+             */
+            is_pregnant: boolean;
+            /**
+             * Is Lactating
+             * @default false
+             */
+            is_lactating: boolean;
+            /**
+             * Has Chronic Condition
+             * @default false
+             */
+            has_chronic_condition: boolean;
+            /** Chronic Condition Note */
+            chronic_condition_note?: string | null;
+            /**
+             * Is Bedridden
+             * @default false
+             */
+            is_bedridden: boolean;
+            /** Id */
+            id?: string | null;
         };
     };
     responses: never;
@@ -7883,6 +8052,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HouseholdDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_household_workspace_api_v1_admin_households__household_id__workspace_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                household_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdWorkspaceUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_get_household_activity_api_v1_admin_households__household_id__activity_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                household_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdActivityOut"];
                 };
             };
             /** @description Validation Error */
