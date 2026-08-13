@@ -4,6 +4,7 @@ import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 
+import { PageSplashLoader } from "@/components/common/page-splash-loader";
 import { api } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import type { HouseholdOut } from "@/lib/api/registry-types";
@@ -38,13 +39,16 @@ export function PortalGate({ children }: { children: React.ReactNode }) {
     }
   }, [roleLoading, householdLoading, household, isOnboarding, user, router]);
 
-  if (roleLoading || !user || householdLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-neutral-50">
-        <p className="text-body-sm text-neutral-500">Loading…</p>
-      </div>
-    );
-  }
+  const portalReady = !roleLoading && !!user && !householdLoading;
 
-  return <>{children}</>;
+  return (
+    <>
+      <PageSplashLoader
+        minDurationMs={1500}
+        ready={portalReady}
+        loadingLabel="Loading resident portal..."
+      />
+      {portalReady ? children : null}
+    </>
+  );
 }

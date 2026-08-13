@@ -237,6 +237,13 @@ is the domain form because the generic resource dialog cannot restore the option
 relationship. Auto-synced records retain their Emergency Event link and must not expose a delete action;
 the API enforces the same rule.
 
+### Portal splash loading
+
+`AdminGate` and `PortalGate` reuse `PageSplashLoader` with a 1.5-second minimum presentation.
+The splash only fades once the session and portal gate checks are ready, so a slow refresh may
+remain visible longer without exposing an incomplete shell. The loader dispatches the same
+`splash-ready` event as the public shell so shared entrance reveals keep one lifecycle.
+
 ## Animation lives in `globals.css`, not in a client component
 
 `WaterSpinner` and the hero illustrations are animated entirely by CSS classes defined in

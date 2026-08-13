@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import { PageSplashLoader } from "@/components/common/page-splash-loader";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import { AdminShell } from "./admin-shell";
 
@@ -13,14 +14,16 @@ import { AdminShell } from "./admin-shell";
  */
 export function AdminGate({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useRequireRole("bhw", "admin", "sk");
+  const portalReady = !isLoading && !!user;
 
-  if (isLoading || !user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-neutral-50">
-        <p className="text-body-sm text-neutral-500">Loading…</p>
-      </div>
-    );
-  }
-
-  return <AdminShell>{children}</AdminShell>;
+  return (
+    <>
+      <PageSplashLoader
+        minDurationMs={1500}
+        ready={portalReady}
+        loadingLabel="Loading barangay console..."
+      />
+      {portalReady ? <AdminShell>{children}</AdminShell> : null}
+    </>
+  );
 }
