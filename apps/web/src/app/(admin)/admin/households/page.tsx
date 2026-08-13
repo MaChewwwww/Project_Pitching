@@ -92,6 +92,17 @@ export default function AdminHouseholdsPage() {
     () => new Map(areaStats?.areas.map((area) => [area.area_id, area.flood_exposure] as const)),
     [areaStats],
   );
+  const riskCounts = React.useMemo(() => {
+    if (!data?.items || !areaStats) return undefined;
+    return data.items.reduce(
+      (counts, household) => {
+        const risk = areaRisk.get(household.area_id);
+        if (risk) counts[risk] += 1;
+        return counts;
+      },
+      { low: 0, medium: 0, high: 0 },
+    );
+  }, [areaRisk, areaStats, data]);
 
   const mergeMutation = useMutation({
     mutationFn: (body: { kept_household_id: string; merged_household_id: string }) =>
@@ -202,7 +213,7 @@ export default function AdminHouseholdsPage() {
         }
       />
 
-      <HouseholdRegistrySummary summary={summary} />
+      <HouseholdRegistrySummary summary={summary} riskCounts={riskCounts} />
 
       <ResourceTable
         columns={columns}

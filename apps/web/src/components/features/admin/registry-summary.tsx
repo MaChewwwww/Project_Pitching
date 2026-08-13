@@ -13,6 +13,12 @@ import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 import { Card, CardContent } from "@/components/common/card";
 import type { RegistrySummary } from "@/lib/api/registry-types";
 
+type FloodRiskCounts = {
+  low: number;
+  medium: number;
+  high: number;
+};
+
 function Metric({
   icon: Icon,
   label,
@@ -135,7 +141,13 @@ function areaLabel(value: string): string {
   return value.replace(/\b\p{L}/gu, (letter) => letter.toLocaleUpperCase());
 }
 
-export function HouseholdRegistrySummary({ summary }: { summary?: RegistrySummary }) {
+export function HouseholdRegistrySummary({
+  summary,
+  riskCounts,
+}: {
+  summary?: RegistrySummary;
+  riskCounts?: FloodRiskCounts;
+}) {
   if (!summary) return null;
 
   const average = summary.average_household_size?.toFixed(1) ?? "—";
@@ -151,7 +163,7 @@ export function HouseholdRegistrySummary({ summary }: { summary?: RegistrySummar
 
   return (
     <section aria-label="Household registry overview">
-      <div className="grid gap-3 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,0.85fr)]">
         <Card className="h-full overflow-hidden border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white">
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-start justify-between gap-4">
@@ -187,6 +199,36 @@ export function HouseholdRegistrySummary({ summary }: { summary?: RegistrySummar
                   {summary.citizens.toLocaleString()}
                 </p>
                 <p className="mt-1 text-xs text-neutral-500">{average} people per household</p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-3 divide-x divide-emerald-200/80 border-t border-emerald-100/80 pt-3" aria-label="Households by flood risk">
+              <div className="pr-3">
+                <p className="flex items-start gap-1.5 text-[9px] font-bold leading-tight tracking-[0.06em] text-neutral-500 uppercase sm:text-[10px]">
+                  <span className="mt-0.5 size-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden />
+                  No. of Low Flood Risk
+                </p>
+                <p className="mt-1.5 text-lg font-bold text-emerald-700 tabular-nums">
+                  {riskCounts ? riskCounts.low.toLocaleString() : "—"}
+                </p>
+              </div>
+              <div className="px-3">
+                <p className="flex items-start gap-1.5 text-[9px] font-bold leading-tight tracking-[0.06em] text-neutral-500 uppercase sm:text-[10px]">
+                  <span className="mt-0.5 size-1.5 shrink-0 rounded-full bg-amber-500" aria-hidden />
+                  No. of Medium Flood Risk
+                </p>
+                <p className="mt-1.5 text-lg font-bold text-amber-700 tabular-nums">
+                  {riskCounts ? riskCounts.medium.toLocaleString() : "—"}
+                </p>
+              </div>
+              <div className="pl-3">
+                <p className="flex items-start gap-1.5 text-[9px] font-bold leading-tight tracking-[0.06em] text-neutral-500 uppercase sm:text-[10px]">
+                  <span className="mt-0.5 size-1.5 shrink-0 rounded-full bg-rose-500" aria-hidden />
+                  No. of High Flood Risk
+                </p>
+                <p className="mt-1.5 text-lg font-bold text-rose-700 tabular-nums">
+                  {riskCounts ? riskCounts.high.toLocaleString() : "—"}
+                </p>
               </div>
             </div>
 
@@ -249,7 +291,8 @@ export function HouseholdRegistrySummary({ summary }: { summary?: RegistrySummar
 
           {hasDistribution ? (
             <div className="mt-2 grid gap-3 sm:grid-cols-[minmax(150px,0.72fr)_1fr] sm:items-center">
-              <div className="relative mx-auto h-44 w-full max-w-[180px]" role="img" aria-label="Household and citizen population distribution by area">
+              <div className="mx-auto w-full max-w-[180px]">
+                <div className="relative h-44" role="img" aria-label="Population by area. Outer ring shows households; inner ring shows citizens.">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={areas} dataKey="households" nameKey="area" innerRadius={48} outerRadius={72} paddingAngle={2} stroke="#ffffff" strokeWidth={3}>
@@ -265,14 +308,25 @@ export function HouseholdRegistrySummary({ summary }: { summary?: RegistrySummar
                     {summary.households.toLocaleString()} <span className="font-normal text-neutral-400">·</span> {summary.citizens.toLocaleString()}
                   </p>
                 </div>
+                </div>
+                <div className="mt-1 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[10px] font-semibold text-neutral-500" aria-label="Chart ring legend">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="size-2 rounded-full bg-sky-700" aria-hidden />
+                    Outer ring: Households
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="size-2 rounded-full bg-sky-300 ring-1 ring-sky-700/30" aria-hidden />
+                    Inner ring: Citizens
+                  </span>
+                </div>
               </div>
               <div className="space-y-1.5 text-[11px]">
                 {areas.map((area) => (
                   <div key={area.id} className="flex min-w-0 items-center gap-2">
                     <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: area.color }} />
                     <span className="min-w-0 flex-1 truncate font-bold text-neutral-800">{areaLabel(area.name)}</span>
-                    <span className="shrink-0 font-semibold text-neutral-500 tabular-nums">
-                      {area.households} H ({area.householdShare}%) · {area.citizens} C ({area.citizenShare}%)
+                    <span className="shrink-0 text-right text-[10px] font-semibold text-neutral-500 tabular-nums sm:text-[11px]">
+                      {area.households} Households ({area.householdShare}%) · {area.citizens} Citizens ({area.citizenShare}%)
                     </span>
                   </div>
                 ))}
