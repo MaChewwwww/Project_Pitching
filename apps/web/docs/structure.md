@@ -57,6 +57,10 @@ observed rainfall and heat-index readings from the Asia/Manila calendar day; a p
 that day has a matching observation. Its forecast strip keeps the announcement-style select control
 for the hourly/daily horizon and uses Rain Chance and Heat Index tabs. Hourly includes the current
 hour; Daily includes today and shows that day's maximum apparent temperature as the heat-index proxy.
+The rain bars scale to expected rainfall rather than probability so a 100% chance does not flatten
+the chart; probability, severity, and the metric-specific guidance remain available through the
+keyboard-reachable tooltip. The current Rainfall and Heat Index cards use the same severity icon
+and explanation pattern.
 
 ## Rendering strategy, per surface
 

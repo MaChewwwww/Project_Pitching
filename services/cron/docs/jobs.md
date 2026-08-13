@@ -20,6 +20,10 @@ outlooks plus daily precipitation totals, maximum rain chance, and maximum appar
 the next seven days. `forecast.horizon` keeps the two series separate for the public weather panel;
 the API returns the current hour and today rather than dropping them at the time boundary.
 
+On every cron container startup, `main.py` runs `fetch_weather` before registering the recurring
+schedule. A deploy or worker restart therefore refreshes the cached weather and forecast data
+immediately; the normal 20-minute interval resumes afterward.
+
 > All six are currently stubs that log and return. The scheduling, logging, and failure
 > isolation around them is real; the bodies land with their FRs.
 

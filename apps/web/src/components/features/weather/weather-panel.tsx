@@ -25,6 +25,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type {
   PublicForecastPoint,
@@ -159,6 +165,12 @@ function heatSeverity(heatIndex: number) {
   return { label: "Caution", icon: SunMedium, color: "text-amber-700" };
 }
 
+function metricSeverity(metric: ReadingMetric, value: number) {
+  if (metric === "rainfall") return rainSeverity(value);
+  if (metric === "heat_index") return heatSeverity(value);
+  return null;
+}
+
 function formatForecastLabel(validAt: string, horizon: ForecastHorizon) {
   return new Intl.DateTimeFormat("en-PH", {
     timeZone: "Asia/Manila",
@@ -210,12 +222,28 @@ export function WeatherPanel({
     forecastMetric,
     forecastHorizon,
   );
-  const chartPeak = Math.max(
+  const barPeak = Math.max(
     ...forecastSeries.map((point) =>
-      forecastMetric === "rain" ? point.probability : point.heatIndex,
+      forecastMetric === "rain" ? point.rainfall : point.heatIndex,
     ),
     1,
   );
+  const forecastTheme =
+    forecastMetric === "rain"
+      ? {
+          panel: "border-sky-100 bg-gradient-to-b from-sky-50/50 to-indigo-50/20",
+          tabShell: "border-sky-200/70 bg-white/70",
+          select:
+            "border-sky-200/80 text-sky-900 focus:border-sky-600 focus:ring-sky-500/20",
+          selectIcon: "text-sky-600",
+        }
+      : {
+          panel: "border-orange-100 bg-gradient-to-b from-orange-50/50 to-amber-50/20",
+          tabShell: "border-orange-200/70 bg-white/70",
+          select:
+            "border-orange-200/80 text-orange-900 focus:border-orange-600 focus:ring-orange-500/20",
+          selectIcon: "text-orange-600",
+        };
   const readingsByMetric = new Map(
     weather.readings.map((reading) => [reading.metric, reading]),
   );
@@ -230,274 +258,322 @@ export function WeatherPanel({
   });
 
   return (
-    <Card
-      radius="xl"
-      className={cn(
-        "h-full border border-neutral-200/80 shadow-sm transition-all duration-300 hover:shadow-md",
-        className,
-      )}
-    >
-      <CardContent className="flex h-full flex-col gap-4">
-        {/* Metric Cards Grid */}
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-[0.82fr_0.82fr_1.18fr_1.18fr]">
-          {standardReadings.map(({ reading, peak }) => {
-            const meta = METRIC_META[reading.metric];
-            const Icon = meta.icon;
-            const orderClass: Partial<Record<ReadingMetric, string>> = {
-              temperature: "order-1 xl:order-1",
-              rainfall: "order-2 xl:order-3",
-              humidity: "order-3 xl:order-2",
-              heat_index: "order-4 xl:order-4",
-            };
-            const hasPeak =
-              reading.metric === "rainfall" || reading.metric === "heat_index";
-            return (
-              <div
-                key={reading.id}
-                className={cn(
-                  "flex min-w-0 flex-col gap-1 rounded-xl border p-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm sm:p-3",
-                  orderClass[reading.metric],
-                  meta.bg,
-                )}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-overline inline-flex min-w-0 items-center gap-1.5 font-bold text-neutral-600 uppercase">
-                    <Icon aria-hidden className={cn("size-4", meta.color)} />
-                    {meta.label}
-                  </span>
-                  {hasPeak ? (
-                    <span className="text-caption shrink-0 font-semibold text-neutral-500">
-                      <span className="hidden sm:inline">Peak Today</span>
-                      <span className="sm:hidden">Peak</span>
+    <TooltipProvider>
+      <Card
+        radius="xl"
+        className={cn(
+          "h-full border border-neutral-200/80 shadow-sm transition-all duration-300 hover:shadow-md",
+          className,
+        )}
+      >
+        <CardContent className="flex h-full flex-col gap-4">
+          {/* Metric Cards Grid */}
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-[0.82fr_0.82fr_1.18fr_1.18fr]">
+            {standardReadings.map(({ reading, peak }) => {
+              const meta = METRIC_META[reading.metric];
+              const severity = metricSeverity(reading.metric, Number(reading.value));
+              const Icon = severity?.icon ?? meta.icon;
+              const orderClass: Partial<Record<ReadingMetric, string>> = {
+                temperature: "order-1 xl:order-1",
+                rainfall: "order-2 xl:order-3",
+                humidity: "order-3 xl:order-2",
+                heat_index: "order-4 xl:order-4",
+              };
+              const hasPeak =
+                reading.metric === "rainfall" || reading.metric === "heat_index";
+              const card = (
+                <div
+                  className={cn(
+                    "flex min-w-0 flex-col gap-1 rounded-xl border p-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm sm:p-3",
+                    hasPeak && "cursor-help",
+                    orderClass[reading.metric],
+                    meta.bg,
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-overline inline-flex min-w-0 items-center gap-1.5 font-bold text-neutral-600 uppercase">
+                      <Icon
+                        aria-hidden
+                        className={cn("size-4", severity?.color ?? meta.color)}
+                      />
+                      {meta.label}
                     </span>
-                  ) : null}
-                </div>
-                {hasPeak ? (
-                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2">
-                    <span className="tabular sm:text-h2 min-w-0 truncate text-xl font-black text-neutral-950">
+                    {hasPeak ? (
+                      <span className="text-caption shrink-0 font-semibold text-neutral-500">
+                        <span className="hidden sm:inline">Peak Today</span>
+                        <span className="sm:hidden">Peak</span>
+                      </span>
+                    ) : null}
+                  </div>
+                  {hasPeak ? (
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2">
+                      <span className="tabular sm:text-h2 min-w-0 truncate text-xl font-black text-neutral-950">
+                        {reading.value}
+                        <span className="sm:text-body ml-1 text-sm font-normal text-neutral-500">
+                          {reading.unit}
+                        </span>
+                      </span>
+                      <span className="tabular sm:text-h3 border-l border-black/10 pl-2 text-lg font-bold whitespace-nowrap text-neutral-800 sm:pl-3">
+                        {peak ? peak.value : "—"}
+                        {peak ? (
+                          <span className="sm:text-body ml-1 text-sm font-normal text-neutral-500">
+                            {peak.unit}
+                          </span>
+                        ) : null}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="tabular sm:text-h2 text-xl font-black text-neutral-900">
                       {reading.value}
                       <span className="sm:text-body ml-1 text-sm font-normal text-neutral-500">
                         {reading.unit}
                       </span>
                     </span>
-                    <span className="tabular sm:text-h3 border-l border-black/10 pl-2 text-lg font-bold whitespace-nowrap text-neutral-800 sm:pl-3">
-                      {peak ? peak.value : "—"}
-                      {peak ? (
-                        <span className="sm:text-body ml-1 text-sm font-normal text-neutral-500">
-                          {peak.unit}
-                        </span>
-                      ) : null}
+                  )}
+                </div>
+              );
+              if (!hasPeak || !severity) {
+                return <React.Fragment key={reading.id}>{card}</React.Fragment>;
+              }
+
+              return (
+                <Tooltip key={reading.id}>
+                  <TooltipTrigger asChild>{card}</TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    sideOffset={8}
+                    className="max-w-60 leading-relaxed whitespace-normal"
+                  >
+                    <span className="font-bold">{severity.label}.</span> Current{" "}
+                    {meta.label.toLowerCase()} is {reading.value} {reading.unit}
+                    {peak ? `; today’s peak is ${peak.value} ${peak.unit}.` : "."}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+
+          {/* Forecast strip: metric tabs, horizon selector, and severity-aware chart */}
+          <div
+            className={cn(
+              "flex flex-col gap-3 rounded-2xl border p-3.5 sm:p-4",
+              forecastTheme.panel,
+            )}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap">
+              <div
+                className={cn(
+                  "inline-flex rounded-lg border p-1 shadow-2xs",
+                  forecastTheme.tabShell,
+                )}
+                role="tablist"
+                aria-label="Forecast metric"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={forecastMetric === "rain"}
+                  onClick={() => setForecastMetric("rain")}
+                  className={cn(
+                    "text-caption inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600",
+                    forecastMetric === "rain"
+                      ? "bg-sky-600 text-white shadow-xs"
+                      : "text-sky-800 hover:bg-sky-100/80",
+                  )}
+                >
+                  <Umbrella aria-hidden className="size-3.5" />
+                  Rain Chance
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={forecastMetric === "heat"}
+                  onClick={() => setForecastMetric("heat")}
+                  className={cn(
+                    "text-caption inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600",
+                    forecastMetric === "heat"
+                      ? "bg-orange-600 text-white shadow-xs"
+                      : "text-orange-800 hover:bg-orange-100/70",
+                  )}
+                >
+                  <ThermometerSun aria-hidden className="size-3.5" />
+                  Heat Index
+                </button>
+              </div>
+              <Select
+                value={forecastHorizon}
+                onValueChange={(value) => setForecastHorizon(value as ForecastHorizon)}
+              >
+                <SelectTrigger
+                  className={cn(
+                    "h-8 rounded-lg bg-white font-semibold focus:ring-2",
+                    forecastTheme.select,
+                  )}
+                >
+                  <Clock
+                    aria-hidden
+                    className={cn("size-3.5", forecastTheme.selectIcon)}
+                  />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent
+                  align="end"
+                  className="w-[var(--radix-select-trigger-width)] min-w-32"
+                >
+                  <SelectItem value="hourly">Hourly</SelectItem>
+                  <SelectItem value="daily">Daily</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="-mx-1 scrollbar-none overflow-x-auto px-1 pt-2 sm:mx-0 sm:px-0">
+              <div className="flex h-36 min-w-[310px] items-end gap-1.5 sm:min-w-0 sm:gap-2">
+                {forecastSeries.length === 0 ? (
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-sky-200 bg-white/45 px-4 text-center">
+                    <CloudRain aria-hidden className="size-5 text-sky-500" />
+                    <span className="text-caption font-semibold text-sky-900">
+                      {forecastHorizon === "daily"
+                        ? "Daily outlook is being refreshed."
+                        : "Hourly outlook is being refreshed."}
                     </span>
                   </div>
                 ) : (
-                  <span className="tabular sm:text-h2 text-xl font-black text-neutral-900">
-                    {reading.value}
-                    <span className="sm:text-body ml-1 text-sm font-normal text-neutral-500">
-                      {reading.unit}
-                    </span>
-                  </span>
+                  forecastSeries.map((item) => {
+                    const chartValue =
+                      forecastMetric === "rain" ? item.rainfall : item.heatIndex;
+                    const heightPct = Math.max(12, (chartValue / barPeak) * 100);
+                    const severity =
+                      forecastMetric === "rain"
+                        ? rainSeverity(item.rainfall)
+                        : heatSeverity(item.heatIndex);
+                    const SeverityIcon = severity.icon;
+                    const chartValueLabel =
+                      forecastMetric === "rain"
+                        ? `${Math.round(item.probability)}%`
+                        : `${item.heatIndex} °C`;
+                    const tooltip =
+                      forecastMetric === "rain"
+                        ? `${severity.label}: ${Math.round(item.probability)}% rain chance${item.rainfall > 0 ? `, ${item.rainfall} mm expected` : ""}.`
+                        : `${severity.label}: heat index expected to reach ${item.heatIndex} °C.`;
+
+                    return (
+                      <Tooltip key={item.validAt}>
+                        <TooltipTrigger asChild>
+                          <div
+                            tabIndex={0}
+                            role="img"
+                            aria-label={`${formatForecastLabel(item.validAt, forecastHorizon)}: ${tooltip}`}
+                            className="group flex h-full min-w-[44px] flex-1 cursor-help flex-col items-center justify-between rounded-xl p-1 transition-all duration-200 hover:-translate-y-1 hover:bg-white/80 hover:shadow-sm focus-visible:-translate-y-1 focus-visible:bg-white/80 focus-visible:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-600 sm:min-w-0 sm:p-1.5"
+                          >
+                            <div className="flex w-full flex-1 flex-col items-center justify-end gap-1 py-1">
+                              <span className="tabular inline-flex items-center gap-1 text-[10px] font-semibold whitespace-nowrap text-neutral-600 opacity-80 group-hover:opacity-100 group-focus-visible:opacity-100 sm:text-[11px]">
+                                <SeverityIcon
+                                  aria-hidden
+                                  className={cn("size-3", severity.color)}
+                                />
+                                {chartValueLabel}
+                              </span>
+                              <div
+                                className={cn(
+                                  "w-full max-w-[24px] rounded-t-md shadow-xs transition-all duration-300 sm:max-w-[28px]",
+                                  forecastMetric === "rain"
+                                    ? "bg-gradient-to-t from-sky-500 via-sky-400 to-indigo-400 group-hover:from-sky-600 group-hover:to-indigo-500"
+                                    : "bg-gradient-to-t from-amber-500 via-orange-400 to-red-400 group-hover:from-amber-600 group-hover:to-red-500",
+                                )}
+                                style={{ height: `${heightPct}%` }}
+                                aria-hidden
+                              />
+                            </div>
+
+                            <span className="text-caption text-[10px] font-bold whitespace-nowrap text-neutral-700 sm:text-[11px]">
+                              {formatForecastLabel(item.validAt, forecastHorizon)}
+                            </span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="top"
+                          sideOffset={8}
+                          className="max-w-60 leading-relaxed whitespace-normal"
+                        >
+                          <span className="block font-bold">{severity.label}</span>
+                          {tooltip}
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })
                 )}
               </div>
-            );
-          })}
-        </div>
-
-        {/* Forecast strip: metric tabs, horizon selector, and severity-aware chart */}
-        <div className="flex flex-col gap-3 rounded-2xl border border-sky-100 bg-gradient-to-b from-sky-50/50 to-indigo-50/20 p-3.5 sm:p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap">
-            <div
-              className="inline-flex rounded-lg border border-sky-200/70 bg-white/70 p-1 shadow-2xs"
-              role="tablist"
-              aria-label="Forecast metric"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={forecastMetric === "rain"}
-                onClick={() => setForecastMetric("rain")}
-                className={cn(
-                  "text-caption inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600",
-                  forecastMetric === "rain"
-                    ? "bg-sky-600 text-white shadow-xs"
-                    : "text-sky-900 hover:bg-sky-100/80",
-                )}
-              >
-                <Umbrella aria-hidden className="size-3.5" />
-                Rain Chance
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={forecastMetric === "heat"}
-                onClick={() => setForecastMetric("heat")}
-                className={cn(
-                  "text-caption inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600",
-                  forecastMetric === "heat"
-                    ? "bg-orange-600 text-white shadow-xs"
-                    : "text-sky-900 hover:bg-orange-50",
-                )}
-              >
-                <ThermometerSun aria-hidden className="size-3.5" />
-                Heat Index
-              </button>
-            </div>
-            <Select
-              value={forecastHorizon}
-              onValueChange={(value) => setForecastHorizon(value as ForecastHorizon)}
-            >
-              <SelectTrigger className="h-8 rounded-lg border-sky-200/80 bg-white font-semibold text-sky-900 focus:border-sky-600 focus:ring-2 focus:ring-sky-500/20">
-                <Clock aria-hidden className="size-3.5 text-sky-600" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent
-                align="end"
-                className="w-[var(--radix-select-trigger-width)] min-w-32"
-              >
-                <SelectItem value="hourly">Hourly</SelectItem>
-                <SelectItem value="daily">Daily</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="-mx-1 scrollbar-none overflow-x-auto px-1 pt-2 sm:mx-0 sm:px-0">
-            <div className="flex h-36 min-w-[310px] items-end gap-1.5 sm:min-w-0 sm:gap-2">
-              {forecastSeries.length === 0 ? (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-sky-200 bg-white/45 px-4 text-center">
-                  <CloudRain aria-hidden className="size-5 text-sky-500" />
-                  <span className="text-caption font-semibold text-sky-900">
-                    {forecastHorizon === "daily"
-                      ? "Daily outlook is being refreshed."
-                      : "Hourly outlook is being refreshed."}
-                  </span>
-                </div>
-              ) : (
-                forecastSeries.map((item) => {
-                  const chartValue =
-                    forecastMetric === "rain" ? item.probability : item.heatIndex;
-                  const heightPct = Math.max(12, (chartValue / chartPeak) * 100);
-                  const severity =
-                    forecastMetric === "rain"
-                      ? rainSeverity(item.rainfall)
-                      : heatSeverity(item.heatIndex);
-                  const SeverityIcon = severity.icon;
-                  const chartValueLabel =
-                    forecastMetric === "rain"
-                      ? `${Math.round(item.probability)}%`
-                      : `${item.heatIndex} °C`;
-                  const tooltip =
-                    forecastMetric === "rain"
-                      ? `${severity.label}: ${Math.round(item.probability)}% rain chance${item.rainfall > 0 ? `, ${item.rainfall} mm expected` : ""}.`
-                      : `${severity.label}: heat index expected to reach ${item.heatIndex} °C.`;
-
-                  return (
-                    <div
-                      key={item.validAt}
-                      tabIndex={0}
-                      role="img"
-                      aria-label={`${formatForecastLabel(item.validAt, forecastHorizon)}: ${tooltip}`}
-                      className="group relative flex h-full min-w-[44px] flex-1 cursor-default flex-col items-center justify-between rounded-xl p-1 transition-all duration-200 hover:-translate-y-1 hover:bg-white/80 hover:shadow-sm focus-visible:-translate-y-1 focus-visible:bg-white/80 focus-visible:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-600 sm:min-w-0 sm:p-1.5"
-                    >
-                      <div className="flex w-full flex-1 flex-col items-center justify-end gap-1 py-1">
-                        <span className="tabular inline-flex items-center gap-1 text-[10px] font-semibold whitespace-nowrap text-neutral-600 opacity-80 group-hover:opacity-100 group-focus-visible:opacity-100 sm:text-[11px]">
-                          <SeverityIcon
-                            aria-hidden
-                            className={cn("size-3", severity.color)}
-                          />
-                          {chartValueLabel}
-                        </span>
-                        <div
-                          className={cn(
-                            "w-full max-w-[24px] rounded-t-md shadow-xs transition-all duration-300 sm:max-w-[28px]",
-                            forecastMetric === "rain"
-                              ? "bg-gradient-to-t from-sky-500 via-sky-400 to-indigo-400 group-hover:from-sky-600 group-hover:to-indigo-500"
-                              : "bg-gradient-to-t from-amber-500 via-orange-400 to-red-400 group-hover:from-amber-600 group-hover:to-red-500",
-                          )}
-                          style={{ height: `${heightPct}%` }}
-                          aria-hidden
-                        />
-                      </div>
-
-                      <span className="text-caption text-[10px] font-bold whitespace-nowrap text-neutral-700 sm:text-[11px]">
-                        {formatForecastLabel(item.validAt, forecastHorizon)}
-                      </span>
-
-                      <div className="pointer-events-none absolute bottom-[calc(100%+0.35rem)] left-1/2 z-20 w-44 -translate-x-1/2 rounded-lg border border-neutral-200 bg-neutral-950 px-2.5 py-2 text-left text-[11px] leading-snug font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
-                        <span className="mb-0.5 block font-bold">{severity.label}</span>
-                        {tooltip}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
             </div>
           </div>
-        </div>
 
-        {/* DOST-PAGASA Tropical Cyclone Wind Signal (TCWS #1 to #5) & Typhoon Watch Banner (2-Row Symmetrical Layout) */}
-        <div
-          className={cn(
-            "mt-auto flex flex-col gap-2 rounded-2xl border bg-gradient-to-r p-2.5 shadow-2xs transition-all duration-300",
-            tcwsInfo.bgGradient,
-            signalLevel > 0 ? "border-amber-300 shadow-xs" : "border-emerald-200/80",
-          )}
-        >
-          {/* Row 1: Title & Signal Badge */}
-          <div className="flex flex-wrap items-center justify-between gap-2 px-3 pt-1 sm:flex-nowrap">
-            <div className="flex min-w-0 items-center gap-2">
-              <ShieldAlert
+          {/* DOST-PAGASA Tropical Cyclone Wind Signal (TCWS #1 to #5) & Typhoon Watch Banner (2-Row Symmetrical Layout) */}
+          <div
+            className={cn(
+              "mt-auto flex flex-col gap-2 rounded-2xl border bg-gradient-to-r p-2.5 shadow-2xs transition-all duration-300",
+              tcwsInfo.bgGradient,
+              signalLevel > 0 ? "border-amber-300 shadow-xs" : "border-emerald-200/80",
+            )}
+          >
+            {/* Row 1: Title & Signal Badge */}
+            <div className="flex flex-wrap items-center justify-between gap-2 px-3 pt-1 sm:flex-nowrap">
+              <div className="flex min-w-0 items-center gap-2">
+                <ShieldAlert
+                  className={cn(
+                    "size-4 shrink-0",
+                    signalLevel > 0 ? "text-amber-600" : "text-emerald-600",
+                  )}
+                />
+                <span className="text-overline font-black tracking-wider text-neutral-900 uppercase">
+                  DOST-PAGASA Tropical Cyclone Wind Signal (TCWS)
+                </span>
+              </div>
+              <span
                 className={cn(
-                  "size-4 shrink-0",
-                  signalLevel > 0 ? "text-amber-600" : "text-emerald-600",
+                  "shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase shadow-2xs",
+                  tcwsInfo.badgeBg,
                 )}
-              />
-              <span className="text-overline font-black tracking-wider text-neutral-900 uppercase">
-                DOST-PAGASA Tropical Cyclone Wind Signal (TCWS)
+              >
+                {tcwsInfo.label}
               </span>
             </div>
-            <span
-              className={cn(
-                "shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase shadow-2xs",
-                tcwsInfo.badgeBg,
-              )}
-            >
-              {tcwsInfo.label}
-            </span>
+
+            {/* Row 2: Winds & Threat Advisory (Symmetrical & Horizontally Aligned) */}
+            <div className="flex flex-col justify-between gap-2 rounded-xl border border-black/5 bg-white/80 px-3 py-2 text-xs sm:flex-row sm:items-center">
+              <span className="shrink-0 font-semibold text-neutral-800">
+                💨 Expected Winds:{" "}
+                <strong className="font-extrabold text-neutral-900">
+                  {tcwsInfo.wind}
+                </strong>
+              </span>
+              <span className="flex items-center gap-1.5 text-[11px] font-medium text-neutral-700 sm:justify-end">
+                <AlertTriangle
+                  className={cn(
+                    "size-3.5 shrink-0",
+                    signalLevel > 0 ? "text-amber-600" : "text-emerald-600",
+                  )}
+                />
+                <span>{tcwsInfo.threat}</span>
+              </span>
+            </div>
           </div>
 
-          {/* Row 2: Winds & Threat Advisory (Symmetrical & Horizontally Aligned) */}
-          <div className="flex flex-col justify-between gap-2 rounded-xl border border-black/5 bg-white/80 px-3 py-2 text-xs sm:flex-row sm:items-center">
-            <span className="shrink-0 font-semibold text-neutral-800">
-              💨 Expected Winds:{" "}
-              <strong className="font-extrabold text-neutral-900">{tcwsInfo.wind}</strong>
-            </span>
-            <span className="flex items-center gap-1.5 text-[11px] font-medium text-neutral-700 sm:justify-end">
-              <AlertTriangle
-                className={cn(
-                  "size-3.5 shrink-0",
-                  signalLevel > 0 ? "text-amber-600" : "text-emerald-600",
-                )}
-              />
-              <span>{tcwsInfo.threat}</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Freshness Footer */}
-        {weather.observed_at && weather.source ? (
-          <DataFreshness
-            className="pt-1"
-            observedAt={weather.observed_at}
-            source={weather.source}
-            ageMinutes={weather.readings[0]?.age_minutes ?? 0}
-            isStale={weather.is_stale || (weather.readings[0]?.age_minutes ?? 0) > 30}
-            staleAfterMinutes={30}
-          />
-        ) : (
-          <p className="text-caption text-neutral-500">
-            No weather reading available yet.
-          </p>
-        )}
-      </CardContent>
-    </Card>
+          {/* Freshness Footer */}
+          {weather.observed_at && weather.source ? (
+            <DataFreshness
+              className="pt-1"
+              observedAt={weather.observed_at}
+              source={weather.source}
+              ageMinutes={weather.readings[0]?.age_minutes ?? 0}
+              isStale={weather.is_stale || (weather.readings[0]?.age_minutes ?? 0) > 30}
+              staleAfterMinutes={30}
+            />
+          ) : (
+            <p className="text-caption text-neutral-500">
+              No weather reading available yet.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   );
 }
