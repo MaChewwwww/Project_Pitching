@@ -67,6 +67,7 @@ export default function AdminHouseholdsPage() {
   useRequireRole("admin", "bhw");
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const canAdministerHouseholds = user?.role === "admin" || user?.role === "superadmin";
   const [mergeTarget, setMergeTarget] = React.useState<HouseholdOut | null>(null);
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -237,7 +238,7 @@ export default function AdminHouseholdsPage() {
             >
               <Link href={`/admin/households/${row.id}/edit`}><Pencil aria-hidden className="size-3.5 shrink-0" /><span className="md:hidden">Edit</span></Link>
             </Button>
-            {row.has_possible_duplicate && user?.role === "admin" ? (
+            {row.has_possible_duplicate && canAdministerHouseholds ? (
               <Dialog open={mergeTarget?.id === row.id} onOpenChange={(open) => setMergeTarget(open ? row : null)}>
                 <DialogTrigger asChild>
                   <Button
@@ -265,7 +266,7 @@ export default function AdminHouseholdsPage() {
                 </DialogContent>
               </Dialog>
             ) : null}
-            {user?.role === "admin" ? (
+            {canAdministerHouseholds ? (
               <ConfirmDeleteButton
                 itemLabel={row.reference_no}
                 actionLabel="Delete"
