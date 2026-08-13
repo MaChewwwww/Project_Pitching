@@ -273,6 +273,13 @@ households remain protected by the server and surface the conflict as feedback.
 matching area and suggest a coarse Barangay San Jose address label after a map click, drag, or GPS fix;
 the resident can still add the precise house number, street, or purok.
 
+`/admin/households/new` is the BHW-assisted creation workspace. It uses the announcement-style
+primary work surface with a responsive detail column and operational right rail: household and
+location capture stay together, while the required waterway-proximity survey exposes the same
+very-near/near/far flood-risk bands used during resident onboarding. The member repeater spans the
+workspace below both columns so a complete household can be captured in one visit without a nested
+dialog or a second submission.
+
 ### Portal splash loading
 
 `AdminGate` and `PortalGate` reuse `PageSplashLoader` with a 1.5-second minimum presentation.

@@ -165,9 +165,9 @@ export function HouseholdRegistrySummary({
 
   return (
     <section aria-label="Household registry overview">
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,0.85fr)]">
-        <Card className="h-full overflow-hidden border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white">
-          <CardContent className="p-4 sm:p-5">
+      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,0.85fr)]">
+        <Card className="overflow-hidden border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="flex items-center gap-2 text-sm font-bold text-neutral-950">
@@ -185,7 +185,7 @@ export function HouseholdRegistrySummary({
               </span>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 divide-x divide-emerald-200/80">
+            <div className="mt-4 grid grid-cols-2 divide-x divide-emerald-200/80">
               <div className="pr-4">
                 <p className="text-[10px] font-bold tracking-[0.12em] text-neutral-500 uppercase">Households</p>
                 <p className="mt-1 text-3xl font-bold tracking-tight text-neutral-950 tabular-nums">
@@ -204,7 +204,7 @@ export function HouseholdRegistrySummary({
               </div>
             </div>
 
-            <div className="mt-5 grid grid-cols-3 divide-x divide-emerald-200/80 border-t border-emerald-100/80 pt-3" aria-label="Households by flood risk">
+            <div className="mt-4 grid grid-cols-3 divide-x divide-emerald-200/80 border-t border-emerald-100/80 pt-2.5" aria-label="Households by flood risk">
               <div className="flex items-center justify-between gap-2 pr-3">
                 <p className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-[9px] font-semibold text-neutral-500 sm:text-[10px]">
                   <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden />
@@ -237,8 +237,8 @@ export function HouseholdRegistrySummary({
           </CardContent>
         </Card>
 
-        <Card className="order-3 h-full overflow-hidden border-violet-200/80 bg-gradient-to-br from-violet-50/70 via-white to-amber-50/40">
-          <CardContent className="p-4 sm:p-5">
+        <Card className="order-3 overflow-hidden border-violet-200/80 bg-gradient-to-br from-violet-50/70 via-white to-amber-50/40">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-start gap-3">
               <span className="flex size-8 items-center justify-center rounded-xl bg-violet-600 text-white shadow-sm">
                 <ClipboardCheck aria-hidden className="size-4" />
@@ -249,8 +249,8 @@ export function HouseholdRegistrySummary({
               </div>
             </div>
 
-            <div className="mt-5 divide-y divide-neutral-200/80 rounded-xl border border-neutral-200/80 bg-white/75">
-              <div className="flex items-center justify-between gap-3 px-3.5 py-3">
+            <div className="mt-4 divide-y divide-neutral-200/80 rounded-xl border border-neutral-200/80 bg-white/75">
+              <div className="flex items-center justify-between gap-3 px-3.5 py-2.5">
                 <div className="flex items-center gap-2.5">
                   <span className="flex size-7 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
                     <UserRoundCheck aria-hidden className="size-3.5" />
@@ -262,7 +262,7 @@ export function HouseholdRegistrySummary({
                 </div>
                 <span className="text-2xl font-bold text-violet-700 tabular-nums">{summary.possible_duplicates}</span>
               </div>
-              <div className="flex items-center justify-between gap-3 px-3.5 py-3">
+              <div className="flex items-center justify-between gap-3 px-3.5 py-2.5">
                 <div className="flex items-center gap-2.5">
                   <span className="flex size-7 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
                     <PhoneOff aria-hidden className="size-3.5" />
@@ -277,8 +277,8 @@ export function HouseholdRegistrySummary({
             </div>
           </CardContent>
         </Card>
-        <Card className="order-2 h-full overflow-hidden border-sky-200/80 bg-gradient-to-br from-white via-white to-sky-50/45">
-        <CardContent className="p-4 sm:p-5">
+        <Card className="order-2 overflow-hidden border-sky-200/80 bg-gradient-to-br from-white via-white to-sky-50/45">
+        <CardContent className="p-3 sm:p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="flex items-center gap-2 text-sm font-bold text-neutral-950">
@@ -287,7 +287,7 @@ export function HouseholdRegistrySummary({
               </p>
             </div>
             <span className="rounded-full bg-sky-100 px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] text-sky-800 uppercase">
-              {areas.length} areas represented
+              Barangay San Jose
             </span>
           </div>
 

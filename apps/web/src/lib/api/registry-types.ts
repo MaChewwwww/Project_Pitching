@@ -49,6 +49,7 @@ export interface HouseholdCreateBhw {
   is_unreachable_by_phone: boolean;
   area_id: string;
   street_address: string | null;
+  waterway_proximity?: "very_near" | "near" | "far" | null;
   latitude: number | null;
   longitude: number | null;
   head_member: MemberIn;
