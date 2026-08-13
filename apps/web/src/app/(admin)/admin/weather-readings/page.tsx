@@ -900,9 +900,18 @@ function RiverAlertPanel({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent align="end">
-                <SelectItem value="all" className="text-xs">All ({filterCounts.all})</SelectItem>
-                <SelectItem value="to-review" className="text-xs">To review ({filterCounts["to-review"]})</SelectItem>
-                <SelectItem value="acknowledged" className="text-xs">Acknowledged ({filterCounts.acknowledged})</SelectItem>
+                <SelectItem value="all" className="text-xs">
+                  <span>All</span>
+                  <span className="tabular-nums text-neutral-500"> ({filterCounts.all})</span>
+                </SelectItem>
+                <SelectItem value="to-review" className="text-xs">
+                  <span>To review</span>
+                  <span className="tabular-nums text-neutral-500"> ({filterCounts["to-review"]})</span>
+                </SelectItem>
+                <SelectItem value="acknowledged" className="text-xs">
+                  <span>Acknowledged</span>
+                  <span className="tabular-nums text-neutral-500"> ({filterCounts.acknowledged})</span>
+                </SelectItem>
               </SelectContent>
             </Select>
             <Button asChild size="sm" className="bg-emerald-700 shadow-sm hover:bg-emerald-800">
