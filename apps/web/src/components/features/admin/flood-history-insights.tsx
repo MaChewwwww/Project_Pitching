@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   Bar,
   BarChart,
@@ -10,8 +11,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { BarChart3, Building2, Gauge, House } from "lucide-react";
+import { BarChart3, Building2, ExternalLink, Gauge, House, Waves } from "lucide-react";
 
+import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
 import type { FloodEventRecord } from "@/components/features/admin/flood-event-editor";
 
@@ -91,26 +93,42 @@ export function FloodHistoryInsights({
 
   return (
     <aside
-      className="space-y-4 xl:sticky xl:top-5 xl:self-start"
+      className="space-y-4 lg:sticky lg:top-5 lg:self-start"
       aria-label="Flood history insights"
     >
-      <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-teal-50/60 p-5 shadow-2xs">
-        <div className="flex items-start gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
-            <Gauge aria-hidden className="size-4" />
-          </span>
-          <div>
-            <h2 className="text-sm font-bold text-neutral-900">History at a glance</h2>
-            <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-              A comparison of recorded impact, not a live flood forecast.
-            </p>
+      <section className="overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-teal-50/60 p-5 shadow-2xs">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-700/20">
+              <Gauge aria-hidden className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-sm font-bold text-neutral-900">History at a glance</h2>
+              <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+                A comparison of recorded impact, not a live flood forecast.
+              </p>
+            </div>
           </div>
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="h-9 shrink-0 rounded-full border-emerald-200 bg-white px-3 text-emerald-800 hover:bg-emerald-50"
+          >
+            <Link href="/admin/weather-readings">
+              <Waves aria-hidden className="size-3.5" />
+              <span>Weather Watch</span>
+              <ExternalLink aria-hidden className="size-3.5" />
+            </Link>
+          </Button>
         </div>
-        <div className="mt-5 grid grid-cols-2 gap-2.5">
+        <div className="mt-5 grid grid-cols-2 gap-3">
           <Stat
-            label="Records"
+            label="Events in view"
             value={events.length.toLocaleString("en-PH")}
+            detail="Historical records"
             icon={BarChart3}
+            emphasis
           />
           <Stat
             label="Record peak"
@@ -119,9 +137,9 @@ export function FloodHistoryInsights({
             icon={Gauge}
           />
           <Stat
-            label="Displaced"
+            label="Households displaced"
             value={insights.totalDisplaced.toLocaleString("en-PH")}
-            detail="Households recorded"
+            detail="Across events in view"
             icon={House}
           />
           <Stat
@@ -129,13 +147,13 @@ export function FloodHistoryInsights({
             value={insights.topArea?.[0] ?? "—"}
             detail={
               insights.topArea
-                ? `${insights.topArea[1]} recorded event${insights.topArea[1] === 1 ? "" : "s"}`
+                ? `${insights.topArea[1]} event${insights.topArea[1] === 1 ? "" : "s"}`
                 : "No areas recorded"
             }
             icon={Building2}
           />
         </div>
-      </div>
+      </section>
 
       <ChartCard
         title="Peak water level"
@@ -161,21 +179,27 @@ function Stat({
   value,
   detail,
   icon: Icon,
+  emphasis = false,
 }: {
   label: string;
   value: string;
   detail?: string;
   icon: typeof Gauge;
+  emphasis?: boolean;
 }) {
   return (
-    <div className="min-w-0 rounded-xl border border-white/90 bg-white/85 p-3 shadow-2xs">
+    <div
+      className={`min-w-0 rounded-xl border p-3.5 shadow-2xs ${
+        emphasis ? "border-emerald-200 bg-white" : "border-white/90 bg-white/75"
+      }`}
+    >
       <div className="flex items-center justify-between gap-2">
         <span className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
           {label}
         </span>
         <Icon aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
       </div>
-      <p className="mt-2 truncate text-lg font-bold tracking-tight text-neutral-900">
+      <p className="mt-2 truncate text-xl font-bold tracking-tight text-neutral-900">
         {value}
       </p>
       {detail ? (
@@ -209,18 +233,24 @@ function ChartCard({
   return (
     <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-2xs">
       <CardContent className="p-0">
-        <div className="border-b border-neutral-100 px-4 py-3.5">
-          <h2 className="text-sm font-bold text-neutral-900">{title}</h2>
-          <p className="mt-0.5 text-xs text-neutral-500">{description}</p>
+        <div className="flex items-start justify-between gap-3 border-b border-neutral-100 px-5 py-4">
+          <div>
+            <h2 className="text-sm font-bold text-neutral-900">{title}</h2>
+            <p className="mt-0.5 text-xs text-neutral-500">{description}</p>
+          </div>
+          <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold tracking-wide text-emerald-700">
+            {data.length} {data.length === 1 ? "event" : "events"}
+          </span>
         </div>
-        <div className="p-3.5">
+        <div className="px-3 py-4 sm:px-4">
           {data.length ? (
-            <div className="h-52">
+            <div
+              className="h-60"
+              role="img"
+              aria-label={`${title}: ${data.map((item) => `${item.name}, ${item.value}${unit ? ` ${unit}` : " households"}`).join("; ")}`}
+            >
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={data}
-                  margin={{ top: 8, right: 4, left: -20, bottom: 18 }}
-                >
+                <BarChart data={data} margin={{ top: 14, right: 8, left: 2, bottom: 18 }}>
                   <CartesianGrid
                     stroke="#E5E7EB"
                     strokeDasharray="3 3"
@@ -237,11 +267,13 @@ function ChartCard({
                     height={48}
                   />
                   <YAxis
-                    unit={unit}
                     tick={{ fontSize: 10, fill: "#6B7280" }}
                     tickLine={false}
                     axisLine={false}
-                    width={38}
+                    width={48}
+                    tickFormatter={(value) =>
+                      unit ? `${value}m` : Number(value).toLocaleString("en-PH")
+                    }
                   />
                   <Tooltip
                     cursor={{ fill: "#ECFDF5" }}
@@ -262,7 +294,12 @@ function ChartCard({
                       ) : null
                     }
                   />
-                  <Bar dataKey="value" fill={color} radius={[5, 5, 0, 0]} />
+                  <Bar
+                    dataKey="value"
+                    fill={color}
+                    radius={[6, 6, 0, 0]}
+                    maxBarSize={72}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>

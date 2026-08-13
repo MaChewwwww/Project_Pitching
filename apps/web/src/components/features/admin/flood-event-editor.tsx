@@ -178,7 +178,7 @@ export function FloodEventEditorDialog({
         )}
       </DialogTrigger>
       <DialogContent
-        className="flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-5xl flex-col gap-0 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50 p-0 shadow-xl sm:max-h-[calc(100dvh-2rem)] sm:w-[calc(100vw-2rem)]"
+        className="flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] flex-col gap-0 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50 p-0 shadow-xl sm:max-h-[calc(100dvh-2rem)] sm:w-[calc(100vw-2rem)] sm:max-w-5xl"
         showCloseButton={false}
       >
         <DialogHeader className="shrink-0 border-b border-neutral-200 bg-white px-5 py-4 sm:px-7 sm:py-5">
@@ -215,176 +215,180 @@ export function FloodEventEditorDialog({
         <form
           onSubmit={handleSubmit(submit)}
           noValidate
-          className="min-h-0 overflow-y-auto p-4 sm:p-6"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.85fr)]">
-            <section className="space-y-5 rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-2xs sm:p-6">
-              <div className="border-b border-neutral-100 pb-3">
-                <h3 className="text-sm font-bold text-neutral-900">Event details</h3>
-                <p className="mt-1 text-xs text-neutral-500">
-                  Capture the timeline and the highest recorded water level.
-                </p>
-              </div>
-              <Field label="Event name" error={errors.name?.message} required>
-                <Input
-                  {...register("name")}
-                  placeholder="Typhoon Ulysses (Vamco)"
-                  className="h-10 rounded-lg border-emerald-200/80 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
-                />
-              </Field>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Started" error={errors.started_at?.message} required>
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="grid gap-5 md:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
+              <section className="space-y-5 rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-2xs sm:p-6">
+                <div className="border-b border-neutral-100 pb-3">
+                  <h3 className="text-sm font-bold text-neutral-900">Event details</h3>
+                  <p className="mt-1 text-xs text-neutral-500">
+                    Capture the timeline and the highest recorded water level.
+                  </p>
+                </div>
+                <Field label="Event name" error={errors.name?.message} required>
                   <Input
-                    {...register("started_at")}
-                    type="datetime-local"
+                    {...register("name")}
+                    placeholder="Typhoon Ulysses (Vamco)"
                     className="h-10 rounded-lg border-emerald-200/80 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
                   />
                 </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Started" error={errors.started_at?.message} required>
+                    <Input
+                      {...register("started_at")}
+                      type="datetime-local"
+                      className="h-10 rounded-lg border-emerald-200/80 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                    />
+                  </Field>
+                  <Field
+                    label="Ended"
+                    error={errors.ended_at?.message}
+                    hint="Leave empty while ongoing."
+                  >
+                    <Input
+                      {...register("ended_at")}
+                      type="datetime-local"
+                      className="h-10 rounded-lg border-emerald-200/80 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                    />
+                  </Field>
+                  <Field
+                    label="Peak level"
+                    error={errors.peak_level_m?.message}
+                    hint="Meters"
+                  >
+                    <Input
+                      {...register("peak_level_m")}
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      inputMode="decimal"
+                      placeholder="20.7"
+                      className="h-10 rounded-lg border-emerald-200/80 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                    />
+                  </Field>
+                  <Field label="Peak recorded at" error={errors.peak_at?.message}>
+                    <Input
+                      {...register("peak_at")}
+                      type="datetime-local"
+                      className="h-10 rounded-lg border-emerald-200/80 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                    />
+                  </Field>
+                </div>
                 <Field
-                  label="Ended"
-                  error={errors.ended_at?.message}
-                  hint="Leave empty while ongoing."
+                  label="Households displaced"
+                  error={errors.households_displaced?.message}
                 >
                   <Input
-                    {...register("ended_at")}
-                    type="datetime-local"
-                    className="h-10 rounded-lg border-emerald-200/80 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </Field>
-                <Field
-                  label="Peak level"
-                  error={errors.peak_level_m?.message}
-                  hint="Meters"
-                >
-                  <Input
-                    {...register("peak_level_m")}
+                    {...register("households_displaced")}
                     type="number"
                     min="0"
-                    step="0.1"
-                    inputMode="decimal"
-                    placeholder="20.7"
+                    step="1"
+                    inputMode="numeric"
+                    placeholder="980"
                     className="h-10 rounded-lg border-emerald-200/80 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
                   />
                 </Field>
-                <Field label="Peak recorded at" error={errors.peak_at?.message}>
-                  <Input
-                    {...register("peak_at")}
-                    type="datetime-local"
-                    className="h-10 rounded-lg border-emerald-200/80 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                <Field
+                  label="Notes"
+                  error={errors.notes?.message}
+                  hint="Optional public context"
+                >
+                  <Textarea
+                    {...register("notes")}
+                    rows={5}
+                    placeholder="What residents should know about the event and its impact."
+                    className="resize-y rounded-lg border-emerald-200/80 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
                   />
                 </Field>
-              </div>
-              <Field
-                label="Households displaced"
-                error={errors.households_displaced?.message}
-              >
-                <Input
-                  {...register("households_displaced")}
-                  type="number"
-                  min="0"
-                  step="1"
-                  inputMode="numeric"
-                  placeholder="980"
-                  className="h-10 rounded-lg border-emerald-200/80 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
-                />
-              </Field>
-              <Field
-                label="Notes"
-                error={errors.notes?.message}
-                hint="Optional public context"
-              >
-                <Textarea
-                  {...register("notes")}
-                  rows={5}
-                  placeholder="What residents should know about the event and its impact."
-                  className="resize-y rounded-lg border-emerald-200/80 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
-                />
-              </Field>
-            </section>
-
-            <aside className="space-y-5">
-              <section className="rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-2xs sm:p-6">
-                <div className="flex items-start gap-2.5 border-b border-neutral-100 pb-3">
-                  <MapPin
-                    aria-hidden
-                    className="mt-0.5 size-4 shrink-0 text-emerald-600"
-                  />
-                  <div>
-                    <h3 className="text-sm font-bold text-neutral-900">Areas affected</h3>
-                    <p className="mt-1 text-xs text-neutral-500">
-                      Optional. Leave clear when the extent was not recorded.
-                    </p>
-                  </div>
-                </div>
-                {areasLoading ? (
-                  <div className="mt-4 h-20 animate-pulse rounded-xl bg-neutral-100" />
-                ) : null}
-                {areasError ? (
-                  <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-                    Area choices could not be loaded.{" "}
-                    <button
-                      type="button"
-                      onClick={onRetryAreas}
-                      className="font-bold underline"
-                    >
-                      Try again
-                    </button>
-                    .
-                  </div>
-                ) : null}
-                {!areasLoading && !areasError ? (
-                  <Controller
-                    control={control}
-                    name="area_ids"
-                    render={({ field }) => (
-                      <div className="mt-4 flex max-h-56 flex-col gap-2 overflow-y-auto pr-1">
-                        {areas.map((area) => {
-                          const checked = field.value.includes(area.id);
-                          return (
-                            <label
-                              key={area.id}
-                              className={cn(
-                                "flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors",
-                                checked
-                                  ? "border-emerald-500 bg-emerald-50 text-emerald-950"
-                                  : "border-neutral-200 bg-white text-neutral-700 hover:border-emerald-300 hover:bg-emerald-50/40",
-                              )}
-                            >
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={(next) =>
-                                  field.onChange(
-                                    next
-                                      ? [...field.value, area.id]
-                                      : field.value.filter((id) => id !== area.id),
-                                  )
-                                }
-                                className="data-[state=checked]:bg-emerald-600"
-                              />
-                              {area.name}
-                            </label>
-                          );
-                        })}
-                      </div>
-                    )}
-                  />
-                ) : null}
               </section>
-              {event?.emergency_event_id ? (
-                <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 text-xs text-amber-950 shadow-2xs">
-                  <div className="flex items-center gap-2 font-bold">
-                    <Waves aria-hidden className="size-4 text-amber-700" /> Auto-synced
-                    record
+
+              <aside className="space-y-5">
+                <section className="rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-2xs sm:p-6">
+                  <div className="flex items-start gap-2.5 border-b border-neutral-100 pb-3">
+                    <MapPin
+                      aria-hidden
+                      className="mt-0.5 size-4 shrink-0 text-emerald-600"
+                    />
+                    <div>
+                      <h3 className="text-sm font-bold text-neutral-900">
+                        Areas affected
+                      </h3>
+                      <p className="mt-1 text-xs text-neutral-500">
+                        Optional. Leave clear when the extent was not recorded.
+                      </p>
+                    </div>
                   </div>
-                  <p className="mt-2 leading-relaxed">
-                    This entry is linked to an Emergency Event. Its lifecycle link stays
-                    managed by the emergency workflow.
-                  </p>
+                  {areasLoading ? (
+                    <div className="mt-4 h-20 animate-pulse rounded-xl bg-neutral-100" />
+                  ) : null}
+                  {areasError ? (
+                    <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                      Area choices could not be loaded.{" "}
+                      <button
+                        type="button"
+                        onClick={onRetryAreas}
+                        className="font-bold underline"
+                      >
+                        Try again
+                      </button>
+                      .
+                    </div>
+                  ) : null}
+                  {!areasLoading && !areasError ? (
+                    <Controller
+                      control={control}
+                      name="area_ids"
+                      render={({ field }) => (
+                        <div className="mt-4 flex max-h-56 flex-col gap-2 overflow-y-auto pr-1">
+                          {areas.map((area) => {
+                            const checked = field.value.includes(area.id);
+                            return (
+                              <label
+                                key={area.id}
+                                className={cn(
+                                  "flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors",
+                                  checked
+                                    ? "border-emerald-500 bg-emerald-50 text-emerald-950"
+                                    : "border-neutral-200 bg-white text-neutral-700 hover:border-emerald-300 hover:bg-emerald-50/40",
+                                )}
+                              >
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(next) =>
+                                    field.onChange(
+                                      next
+                                        ? [...field.value, area.id]
+                                        : field.value.filter((id) => id !== area.id),
+                                    )
+                                  }
+                                  className="data-[state=checked]:bg-emerald-600"
+                                />
+                                {area.name}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                    />
+                  ) : null}
                 </section>
-              ) : null}
-            </aside>
+                {event?.emergency_event_id ? (
+                  <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 text-xs text-amber-950 shadow-2xs">
+                    <div className="flex items-center gap-2 font-bold">
+                      <Waves aria-hidden className="size-4 text-amber-700" /> Auto-synced
+                      record
+                    </div>
+                    <p className="mt-2 leading-relaxed">
+                      This entry is linked to an Emergency Event. Its lifecycle link stays
+                      managed by the emergency workflow.
+                    </p>
+                  </section>
+                ) : null}
+              </aside>
+            </div>
           </div>
-          <footer className="mt-5 flex flex-col-reverse gap-2 border-t border-neutral-200 pt-4 sm:flex-row sm:justify-end">
+          <footer className="flex shrink-0 flex-col-reverse gap-2 border-t border-neutral-200 bg-white px-4 py-4 sm:flex-row sm:justify-end sm:px-6">
             <DialogClose asChild>
               <Button type="button" variant="outline" className="h-10 rounded-xl">
                 Cancel

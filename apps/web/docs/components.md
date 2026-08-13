@@ -234,11 +234,13 @@ and enter readings but cannot access the review queue or demo simulation.
 ### Flood History workspace
 
 `/admin/flood-events` keeps history management separate from live Weather Watch work. Its wide
-record log uses `ResourceTable`; the adjacent insights rail derives peak-level and displacement
-comparisons from the same query, so it never presents a second source of truth. `FloodEventEditorDialog`
-is the domain form because the generic resource dialog cannot restore the optional many-area history
-relationship. Auto-synced records retain their Emergency Event link and must not expose a delete action;
-the API enforces the same rule.
+record log uses `ResourceTable`; its toolbar year selector filters the table and the adjacent
+insights rail from the same in-memory view, so comparisons never present a second source of truth.
+Weather Watch belongs in the insights heading because it is a companion live-data destination, not a
+table filter. `FloodEventEditorDialog` is the domain form because the generic resource dialog cannot
+restore the optional many-area history relationship; its responsive two-column layout collapses to a
+single scrollable form on small screens. Auto-synced records retain their Emergency Event link and
+must not expose a delete action; the API enforces the same rule.
 
 ### Portal splash loading
 

@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import type { Route } from "next";
+import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ExternalLink, Pencil, Plus, Waves } from "lucide-react";
+import { AlertTriangle, CalendarDays, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/common/badge";
@@ -23,6 +22,13 @@ import {
   ResourceTable,
   type ResourceColumn,
 } from "@/components/features/admin/resource-table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import { formatPhtDate } from "@/lib/format";
@@ -47,6 +53,7 @@ export default function AdminFloodEventsPage() {
     queryFn: () =>
       api.get<FloodAreaOption[]>("/public/areas").then((response) => response.data),
   });
+  const [year, setYear] = React.useState("all");
 
   const refreshEvents = () =>
     queryClient.invalidateQueries({ queryKey: ["admin", "flood-events"] });
@@ -133,7 +140,24 @@ export default function AdminFloodEventsPage() {
     },
   ];
 
-  const events = eventsQuery.data ?? [];
+  const events = React.useMemo(() => eventsQuery.data ?? [], [eventsQuery.data]);
+  const years = React.useMemo(
+    () =>
+      [...new Set(events.map((event) => new Date(event.started_at).getFullYear()))]
+        .sort((left, right) => right - left)
+        .map(String),
+    [events],
+  );
+  const activeYear = year === "all" || years.includes(year) ? year : "all";
+  const filteredEvents = React.useMemo(
+    () =>
+      activeYear === "all"
+        ? events
+        : events.filter(
+            (event) => String(new Date(event.started_at).getFullYear()) === activeYear,
+          ),
+    [activeYear, events],
+  );
   return (
     <div className="flex flex-col gap-6">
       <AdminPageHeader
@@ -166,24 +190,40 @@ export default function AdminFloodEventsPage() {
       <div className="grid items-start gap-5 lg:grid-cols-2">
         <ResourceTable
           columns={columns}
-          data={eventsQuery.data}
+          data={filteredEvents}
           isLoading={eventsQuery.isLoading}
           isError={eventsQuery.isError}
           onRetry={() => eventsQuery.refetch()}
           emptyTitle="No flood events recorded yet"
           toolbarAction={
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="h-9 rounded-full border-emerald-200 bg-white px-3 text-emerald-800 hover:bg-emerald-50"
-            >
-              <Link href={"/admin/weather-readings" as Route}>
-                <Waves aria-hidden className="size-3.5" />
-                <span>Weather Watch</span>
-                <ExternalLink aria-hidden className="size-3.5" />
-              </Link>
-            </Button>
+            <Select value={activeYear} onValueChange={setYear}>
+              <SelectTrigger className="inline-flex h-9 w-fit min-w-[132px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
+                <CalendarDays
+                  aria-hidden
+                  className="size-3.5 shrink-0 text-emerald-600"
+                />
+                <SelectValue placeholder="All years" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                align="end"
+                sideOffset={6}
+                className="z-50 min-w-40 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg"
+              >
+                <SelectItem value="all" className="cursor-pointer rounded-lg text-xs">
+                  All years
+                </SelectItem>
+                {years.map((availableYear) => (
+                  <SelectItem
+                    key={availableYear}
+                    value={availableYear}
+                    className="cursor-pointer rounded-lg text-xs"
+                  >
+                    {availableYear}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           }
           emptyDescription="Record a past flood event to build the community's public disaster history."
           getRowKey={(event) => event.id}
@@ -220,7 +260,7 @@ export default function AdminFloodEventsPage() {
             </>
           )}
         />
-        <FloodHistoryInsights events={events} isLoading={eventsQuery.isLoading} />
+        <FloodHistoryInsights events={filteredEvents} isLoading={eventsQuery.isLoading} />
       </div>
     </div>
   );
