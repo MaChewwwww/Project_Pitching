@@ -25,7 +25,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
 /**
@@ -51,14 +58,25 @@ export interface ResourceTableProps<T> {
   emptyTitle?: string;
   emptyDescription?: string;
   rowActions?: (row: T) => React.ReactNode;
+  /** Optional action aligned to the right of the search toolbar. */
+  toolbarAction?: React.ReactNode;
   getRowKey: (row: T) => string;
   searchPlaceholder?: string;
 }
 
 const PAGE_SIZE = 10;
 const FILTER_KEYS = new Set([
-  "kind", "type", "status", "is_active", "area_name", "area_names", "priority", "role",
-  "publication_status", "flood_exposure", "category",
+  "kind",
+  "type",
+  "status",
+  "is_active",
+  "area_name",
+  "area_names",
+  "priority",
+  "role",
+  "publication_status",
+  "flood_exposure",
+  "category",
 ]);
 
 export function plainValue(value: unknown): string {
@@ -88,6 +106,7 @@ export function ResourceTable<T extends object>({
   emptyTitle = "Nothing here yet",
   emptyDescription,
   rowActions,
+  toolbarAction,
   getRowKey,
   searchPlaceholder = "Search this list",
 }: ResourceTableProps<T>) {
@@ -113,7 +132,9 @@ export function ResourceTable<T extends object>({
       filterColumn && data
         ? [
             ...new Set(
-              data.map((row) => plainValue((row as Record<string, unknown>)[filterColumn.key])),
+              data.map((row) =>
+                plainValue((row as Record<string, unknown>)[filterColumn.key]),
+              ),
             ),
           ].sort()
         : [],
@@ -136,14 +157,18 @@ export function ResourceTable<T extends object>({
       const record = row as Record<string, unknown>;
       const matchesQuery =
         !lowered ||
-        columns.some((column) => plainValue(record[column.key]).toLocaleLowerCase().includes(lowered));
+        columns.some((column) =>
+          plainValue(record[column.key]).toLocaleLowerCase().includes(lowered),
+        );
       const matchesFilter =
         !filter || !filterColumn || plainValue(record[filterColumn.key]) === filter;
       return matchesQuery && matchesFilter;
     });
     if (!sortKey) return next;
     return [...next].sort((left, right) => {
-      const compared = plainValue((left as Record<string, unknown>)[sortKey]).localeCompare(
+      const compared = plainValue(
+        (left as Record<string, unknown>)[sortKey],
+      ).localeCompare(
         plainValue((right as Record<string, unknown>)[sortKey]),
         undefined,
         { numeric: true },
@@ -215,7 +240,7 @@ export function ResourceTable<T extends object>({
                 setPage(1);
               }}
               placeholder={searchPlaceholder}
-              className="h-9.5 w-full rounded-full border border-neutral-200/90 bg-white/95 pr-9 pl-9.5 text-xs sm:text-sm outline-none transition placeholder:text-neutral-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+              className="h-9.5 w-full rounded-full border border-neutral-200/90 bg-white/95 pr-9 pl-9.5 text-xs shadow-2xs transition outline-none placeholder:text-neutral-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 sm:text-sm"
             />
             {query ? (
               <button
@@ -235,12 +260,14 @@ export function ResourceTable<T extends object>({
                 size="sm"
                 variant="ghost"
                 onClick={reset}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 cursor-pointer shrink-0"
+                className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
               >
-                <X aria-hidden className="size-3.5 text-neutral-500 shrink-0" />
+                <X aria-hidden className="size-3.5 shrink-0 text-neutral-500" />
                 <span>Reset</span>
               </Button>
             ) : null}
+
+            {toolbarAction}
 
             {filterColumn ? (
               <Select
@@ -250,12 +277,13 @@ export function ResourceTable<T extends object>({
                   setPage(1);
                 }}
               >
-                <SelectTrigger className="inline-flex h-9 w-fit min-w-[130px] items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all cursor-pointer max-sm:ml-auto">
-                  <SlidersHorizontal aria-hidden className="size-3.5 text-emerald-600 shrink-0" />
+                <SelectTrigger className="inline-flex h-9 w-fit min-w-[130px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none max-sm:ml-auto">
+                  <SlidersHorizontal
+                    aria-hidden
+                    className="size-3.5 shrink-0 text-emerald-600"
+                  />
                   <SelectValue placeholder={formatAllFilterLabel(filterColumn.header)}>
-                    {!filter
-                      ? formatAllFilterLabel(filterColumn.header)
-                      : filter}
+                    {!filter ? formatAllFilterLabel(filterColumn.header) : filter}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent
@@ -267,19 +295,21 @@ export function ResourceTable<T extends object>({
                   <SelectItem
                     value="ALL_ITEMS"
                     className={cn(
-                      "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer my-0.5",
+                      "my-0.5 flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
                       !filter
-                        ? "bg-emerald-600 text-white font-bold focus:bg-emerald-600 focus:text-white"
-                        : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950"
+                        ? "bg-emerald-600 font-bold text-white focus:bg-emerald-600 focus:text-white"
+                        : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950",
                     )}
                   >
-                    <span className="truncate">{formatAllFilterLabel(filterColumn.header)}</span>
+                    <span className="truncate">
+                      {formatAllFilterLabel(filterColumn.header)}
+                    </span>
                     <span
                       className={cn(
-                        "text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 tabular-nums ml-auto",
+                        "ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
                         !filter
                           ? "bg-white/25 text-white"
-                          : "bg-neutral-100 text-neutral-600"
+                          : "bg-neutral-100 text-neutral-600",
                       )}
                     >
                       {filterValueCounts.__all__ ?? 0}
@@ -293,19 +323,19 @@ export function ResourceTable<T extends object>({
                         key={value}
                         value={value}
                         className={cn(
-                          "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer my-0.5",
+                          "my-0.5 flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
                           isSelected
-                            ? "bg-emerald-600 text-white font-bold focus:bg-emerald-600 focus:text-white"
-                            : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950"
+                            ? "bg-emerald-600 font-bold text-white focus:bg-emerald-600 focus:text-white"
+                            : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950",
                         )}
                       >
                         <span className="truncate">{value}</span>
                         <span
                           className={cn(
-                            "text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 tabular-nums ml-auto",
+                            "ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
                             isSelected
                               ? "bg-white/25 text-white"
-                              : "bg-neutral-100 text-neutral-600"
+                              : "bg-neutral-100 text-neutral-600",
                           )}
                         >
                           {count}
@@ -320,17 +350,17 @@ export function ResourceTable<T extends object>({
         </div>
       </div>
 
-      <div className="space-y-3 p-3 bg-neutral-50/60 md:hidden">
+      <div className="space-y-3 bg-neutral-50/60 p-3 md:hidden">
         {pagedRows.map((row) => {
           const firstCol = columns[0];
           const remainingCols = columns.slice(1);
           return (
             <article
               key={getRowKey(row)}
-              className="relative overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-4 shadow-2xs space-y-3 transition-all"
+              className="relative space-y-3 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-4 shadow-2xs transition-all"
             >
               {/* Subtle top accent bar */}
-              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-400" />
+              <div className="absolute top-0 right-0 left-0 h-0.5 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-400" />
 
               {/* Card Header: Primary Identifier Column */}
               {firstCol ? (
@@ -338,7 +368,7 @@ export function ResourceTable<T extends object>({
                   <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
                     {firstCol.header}
                   </span>
-                  <h3 className="mt-0.5 text-sm font-bold text-neutral-900 leading-snug break-words">
+                  <h3 className="mt-0.5 text-sm leading-snug font-bold break-words text-neutral-900">
                     {firstCol.render
                       ? firstCol.render(row)
                       : plainValue((row as Record<string, unknown>)[firstCol.key])}
@@ -354,7 +384,7 @@ export function ResourceTable<T extends object>({
                       <dt className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
                         {column.header}
                       </dt>
-                      <dd className="mt-0.5 text-xs font-semibold text-neutral-700 break-words">
+                      <dd className="mt-0.5 text-xs font-semibold break-words text-neutral-700">
                         {column.render
                           ? column.render(row)
                           : plainValue((row as Record<string, unknown>)[column.key])}
@@ -366,7 +396,7 @@ export function ResourceTable<T extends object>({
 
               {/* Card Action Footer */}
               {rowActions ? (
-                <div className="flex flex-wrap items-center justify-center gap-2 border-t border-neutral-100 pt-2.5 w-full">
+                <div className="flex w-full flex-wrap items-center justify-center gap-2 border-t border-neutral-100 pt-2.5">
                   {rowActions(row)}
                 </div>
               ) : null}
@@ -383,7 +413,13 @@ export function ResourceTable<T extends object>({
               return (
                 <TableHead
                   key={column.key}
-                  aria-sort={sorted ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                  aria-sort={
+                    sorted
+                      ? sortDirection === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
                   className={cn("text-primary-50 h-11 px-4", column.className)}
                 >
                   <button
@@ -401,9 +437,17 @@ export function ResourceTable<T extends object>({
                     {column.header}
                     {sorted ? (
                       sortDirection === "asc" ? (
-                        <ArrowUp aria-hidden className="size-3.5 text-white" strokeWidth={2.5} />
+                        <ArrowUp
+                          aria-hidden
+                          className="size-3.5 text-white"
+                          strokeWidth={2.5}
+                        />
                       ) : (
-                        <ArrowDown aria-hidden className="size-3.5 text-white" strokeWidth={2.5} />
+                        <ArrowDown
+                          aria-hidden
+                          className="size-3.5 text-white"
+                          strokeWidth={2.5}
+                        />
                       )
                     ) : (
                       <ChevronsUpDown

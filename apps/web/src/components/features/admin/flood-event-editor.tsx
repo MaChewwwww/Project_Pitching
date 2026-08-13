@@ -4,7 +4,7 @@ import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
-import { MapPin, Pencil, Plus, Waves, X } from "lucide-react";
+import { Eye, MapPin, Pencil, Plus, Waves, X } from "lucide-react";
 
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
@@ -440,9 +440,11 @@ export function FloodEventDetailsDialog({ event }: { event: FloodEventRecord }) 
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="h-8 cursor-pointer rounded-lg border border-neutral-200 bg-white px-2.5 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-100 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+        title="View flood event details"
+        aria-label={`View details for ${event.name}`}
+        className="grid size-8 cursor-pointer place-items-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
       >
-        Details
+        <Eye aria-hidden className="size-4" />
       </button>
       <DialogContent
         className="w-[calc(100vw-1rem)] max-w-xl rounded-2xl border border-neutral-200 bg-white p-0"

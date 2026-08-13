@@ -152,6 +152,9 @@ categorical filtering, sortable headings, pagination, empty/loading/error states
 stacked-card small-screen layout. A resource page supplies its columns and actions; it must not
 recreate those controls in a page.
 
+Pages may supply `toolbarAction` for a contextual link or action. It stays in the shared search
+toolbar, aligned with the list controls rather than competing with the page header.
+
 Its chrome is green — `primary-900` heading band, gradient toolbar, `emerald-50/35` zebra rows.
 A neutral variant was tried and rejected: the console is a green interface throughout, and a
 grey list reads as a foreign component dropped into it. Keep new console surfaces on the green.

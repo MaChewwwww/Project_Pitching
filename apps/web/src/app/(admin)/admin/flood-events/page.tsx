@@ -140,51 +140,30 @@ export default function AdminFloodEventsPage() {
         icon={AlertTriangle}
         title="Flood History"
         description="Maintain the historical record residents use to understand flood impact in Barangay San Jose."
-        meta={
-          eventsQuery.data ? (
-            <Badge tone="neutral">
-              {events.length} recorded event{events.length === 1 ? "" : "s"}
-            </Badge>
-          ) : null
-        }
         action={
-          <>
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="h-10 rounded-xl border-emerald-200 bg-white px-3 text-emerald-800 hover:bg-emerald-50"
-            >
-              <Link href={"/admin/weather-readings" as Route}>
-                <Waves aria-hidden className="size-4" />
-                <span className="hidden lg:inline">Weather watch</span>
-                <ExternalLink aria-hidden className="size-3.5" />
-              </Link>
-            </Button>
-            <FloodEventEditorDialog
-              areas={areasQuery.data ?? []}
-              areasLoading={areasQuery.isLoading}
-              areasError={areasQuery.isError}
-              onRetryAreas={() => areasQuery.refetch()}
-              isSubmitting={createMutation.isPending}
-              onSubmit={async (values) => {
-                await createMutation.mutateAsync(values);
-              }}
-              trigger={
-                <Button
-                  size="sm"
-                  className="h-10 rounded-xl bg-emerald-700 px-4 font-bold text-white hover:bg-emerald-800"
-                >
-                  <Plus aria-hidden className="size-4" />
-                  Record event
-                </Button>
-              }
-            />
-          </>
+          <FloodEventEditorDialog
+            areas={areasQuery.data ?? []}
+            areasLoading={areasQuery.isLoading}
+            areasError={areasQuery.isError}
+            onRetryAreas={() => areasQuery.refetch()}
+            isSubmitting={createMutation.isPending}
+            onSubmit={async (values) => {
+              await createMutation.mutateAsync(values);
+            }}
+            trigger={
+              <Button
+                size="sm"
+                className="h-10 rounded-xl bg-emerald-700 px-4 font-bold text-white hover:bg-emerald-800"
+              >
+                <Plus aria-hidden className="size-4" />
+                Record event
+              </Button>
+            }
+          />
         }
       />
 
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.48fr)_minmax(19rem,0.82fr)]">
+      <div className="grid items-start gap-5 lg:grid-cols-2">
         <ResourceTable
           columns={columns}
           data={eventsQuery.data}
@@ -192,7 +171,21 @@ export default function AdminFloodEventsPage() {
           isError={eventsQuery.isError}
           onRetry={() => eventsQuery.refetch()}
           emptyTitle="No flood events recorded yet"
-          emptyDescription="Record a past flood event to build the community’s public disaster history."
+          toolbarAction={
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="h-9 rounded-full border-emerald-200 bg-white px-3 text-emerald-800 hover:bg-emerald-50"
+            >
+              <Link href={"/admin/weather-readings" as Route}>
+                <Waves aria-hidden className="size-3.5" />
+                <span>Weather Watch</span>
+                <ExternalLink aria-hidden className="size-3.5" />
+              </Link>
+            </Button>
+          }
+          emptyDescription="Record a past flood event to build the community's public disaster history."
           getRowKey={(event) => event.id}
           rowActions={(event) => (
             <>
