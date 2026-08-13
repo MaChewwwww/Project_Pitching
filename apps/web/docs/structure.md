@@ -64,8 +64,9 @@ their source control. The current Rainfall and Heat Index cards use the same sev
 explanation pattern. Heat bars are scaled from the 27°C Caution boundary rather than zero so the
 narrow but important day-to-day range remains visible. The river gauge keeps its human-issued alert
 level separate from the forecast, but adds a clearly labelled cached rainfall outlook when hourly
-rain is expected. It only advises that continued or strengthening rain may raise water levels; it
-never changes the gauge's alert state.
+rain is expected. Light rain is explicitly described as insufficient on its own to materially raise
+the river; only moderate or heavy rain carries a rising-water advisory. The forecast never changes
+the gauge's alert state.
 
 ## Rendering strategy, per surface
 

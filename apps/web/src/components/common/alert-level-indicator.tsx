@@ -23,8 +23,6 @@ export interface AlertLevelIndicatorProps {
    * Show the alert level description paragraph. Defaults to true.
    */
   showDescription?: boolean;
-  /** A cached weather outlook; it never changes the human-issued alert level. */
-  weatherAdvisory?: string | null;
 }
 
 const SEGMENTS = [
@@ -68,7 +66,6 @@ export function AlertLevelIndicator({
   onDark = false,
   explainMissingThresholds = true,
   showDescription = true,
-  weatherAdvisory,
 }: AlertLevelIndicatorProps) {
   const hasThresholds =
     thresholds != null &&
@@ -173,22 +170,9 @@ export function AlertLevelIndicator({
               onDark ? "text-neutral-300" : "text-neutral-600",
             )}
           >
-            <p className="text-caption leading-relaxed">
+            <p className="sm:text-body-sm text-[13px] leading-relaxed">
               {ALERT_PARAGRAPHS[level] ?? ALERT_PARAGRAPHS[0]}
             </p>
-            {weatherAdvisory ? (
-              <p
-                className={cn(
-                  "text-caption border-l-2 pl-2.5 leading-relaxed",
-                  onDark
-                    ? "border-primary-300/60 text-primary-100"
-                    : "border-sky-300 text-sky-900",
-                )}
-              >
-                <span className="font-bold">Rainfall outlook: </span>
-                {weatherAdvisory}
-              </p>
-            ) : null}
           </div>
         ) : null}
       </div>

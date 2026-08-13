@@ -50,15 +50,18 @@ function getRainfallAdvisory(weather?: PublicWeatherCurrent) {
 
   if (!hourlyRain?.length) return null;
 
-  const currentRain = hourlyRain[0] ?? 0;
   const peakRain = Math.max(...hourlyRain);
   if (peakRain <= 0) return null;
 
-  if (peakRain >= Math.max(0.5, currentRain * 1.25)) {
-    return `Rain is forecast to strengthen over the next few hours, with up to ${peakRain} mm expected in an hour. River levels may rise after sustained rainfall; households in low-lying areas should monitor BDRRMC notices and be ready to move early.`;
+  if (peakRain < 2.5) {
+    return `Light rain of up to ${peakRain} mm is forecast in an hour. This amount alone is not expected to materially raise the river level; the current alert is based on the gauge reading.`;
   }
 
-  return `Up to ${peakRain} mm of rain is forecast in the next few hours. Continued rainfall can raise river levels, so households in low-lying areas should keep monitoring BDRRMC notices.`;
+  if (peakRain < 7.6) {
+    return `Moderate rain of up to ${peakRain} mm is forecast in an hour. If it continues, river levels can rise; households in low-lying areas should monitor BDRRMC notices.`;
+  }
+
+  return `Heavy rain of up to ${peakRain} mm is forecast in an hour. Sustained rainfall can raise river levels quickly; households in low-lying areas should monitor BDRRMC notices and be ready to move early.`;
 }
 
 export function RiverLevelPanel({
@@ -178,8 +181,21 @@ export function RiverLevelPanel({
             onDark={onDark}
             explainMissingThresholds={!compact}
             showDescription
-            weatherAdvisory={rainfallAdvisory}
           />
+
+          {rainfallAdvisory ? (
+            <p
+              className={cn(
+                "sm:text-body-sm border-l-2 pl-2.5 text-[13px] leading-relaxed",
+                onDark
+                  ? "border-primary-300/60 text-primary-100"
+                  : "border-sky-300 text-sky-900",
+              )}
+            >
+              <span className="font-bold">Rain Outlook: </span>
+              {rainfallAdvisory}
+            </p>
+          ) : null}
         </div>
 
         <div
