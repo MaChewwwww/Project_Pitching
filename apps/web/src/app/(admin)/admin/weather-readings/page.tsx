@@ -418,7 +418,7 @@ const HISTORY_OPTIONS: { label: string; value: HistoryHours }[] = [
 ];
 
 const RIVER_HISTORY_SOURCE_LABELS: Record<string, string> = {
-  pagasa: "DOST-PAGASA gauge",
+  pagasa: "DOST-PAGASA · Montalban (Rodriguez) River Gauge",
   manual: "Verified staff entry",
 };
 
@@ -431,7 +431,7 @@ function RiverHistoryChart({
 }) {
   const [hours, setHours] = React.useState<HistoryHours>(168);
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ["admin", "river-history", hours],
     queryFn: () =>
       api
@@ -521,17 +521,32 @@ function RiverHistoryChart({
     <div className="flex h-full flex-col overflow-hidden rounded-[14px] border border-neutral-200 bg-white shadow-sm-card">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-100 px-5 py-4">
         <div className="flex items-start gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-700 ring-1 ring-sky-100">
             <Droplets aria-hidden className="size-4" />
           </div>
           <div>
             <h2 className="text-sm font-bold text-neutral-900">River level history</h2>
             <p className="mt-0.5 text-xs text-neutral-500">
-              Measured levels only — no estimated trend is drawn.
+              Measured at the DOST-PAGASA Montalban (Rodriguez) River Gauge.
             </p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="size-8 min-w-8 px-0 text-neutral-500 hover:bg-sky-50 hover:text-sky-700"
+            disabled={isFetching}
+            aria-label={isFetching ? "Refreshing river level history" : "Refresh river level history"}
+            title={isFetching ? "Refreshing river level history" : "Refresh river level history"}
+            onClick={() => void refetch()}
+          >
+            <RefreshCw
+              aria-hidden
+              className={`size-3.5 ${isFetching ? "animate-spin motion-reduce:animate-none" : ""}`}
+            />
+          </Button>
           <Select value={String(hours)} onValueChange={(value) => setHours(Number(value) as HistoryHours)}>
             <SelectTrigger className="h-8 w-34 border-neutral-200 bg-neutral-50 text-xs font-medium">
               <SelectValue />
@@ -544,17 +559,6 @@ function RiverHistoryChart({
               ))}
             </SelectContent>
           </Select>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="size-8 min-w-8 px-0 text-neutral-500 hover:bg-neutral-100 hover:text-emerald-700"
-            aria-label="Refresh river level history"
-            title="Refresh river level history"
-            onClick={() => void refetch()}
-          >
-            <RefreshCw aria-hidden className="size-3.5" />
-          </Button>
         </div>
       </div>
 
@@ -576,7 +580,7 @@ function RiverHistoryChart({
           <p className="mt-0.5 truncate text-[11px] text-neutral-500">
             {latestSource
               ? `${RIVER_HISTORY_SOURCE_LABELS[latestSource] ?? latestSource} · ${chartData.length} distinct observation${chartData.length === 1 ? "" : "s"} in this view`
-              : "PAGASA or a verified staff entry will appear here."}
+              : "DOST-PAGASA Montalban gauge reports or verified staff entries will appear here."}
           </p>
         </div>
       </div>
@@ -597,7 +601,7 @@ function RiverHistoryChart({
             <Waves aria-hidden className="size-7 text-neutral-300" />
             <p className="text-sm font-semibold text-neutral-700">No measured levels in this period</p>
             <p className="max-w-xs text-xs leading-5 text-neutral-500">
-              The chart only plots reported PAGASA measurements and verified staff entries. It never fills gaps with estimates.
+              The chart plots DOST-PAGASA Montalban gauge reports and verified staff entries. It never fills gaps with estimates.
             </p>
           </div>
         ) : (
@@ -605,8 +609,8 @@ function RiverHistoryChart({
             <AreaChart data={chartData} margin={{ top: 16, right: 8, left: -14, bottom: 4 }}>
               <defs>
                 <linearGradient id="riverHistoryGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#059669" stopOpacity={0.22} />
-                  <stop offset="92%" stopColor="#059669" stopOpacity={0.01} />
+                  <stop offset="0%" stopColor="#0284c7" stopOpacity={0.24} />
+                  <stop offset="92%" stopColor="#0284c7" stopOpacity={0.01} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 4" stroke="#e5e7eb" vertical={false} />
@@ -642,7 +646,7 @@ function RiverHistoryChart({
                     <div className="min-w-38 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs shadow-lg">
                       <p className="font-bold text-neutral-950">{point.v.toFixed(2)} m</p>
                       <p className="mt-0.5 text-neutral-600">{formatPhtDateTime(point.observedAt)}</p>
-                      <p className="mt-1 text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">
+                      <p className="mt-1 text-[10px] font-semibold tracking-wide text-sky-700 uppercase">
                         {RIVER_HISTORY_SOURCE_LABELS[point.source] ?? point.source}
                       </p>
                     </div>
@@ -668,11 +672,11 @@ function RiverHistoryChart({
               <Area
                 type="monotone"
                 dataKey="v"
-                stroke="#059669"
+                stroke="#0284c7"
                 strokeWidth={2.5}
                 fill="url(#riverHistoryGradient)"
-                dot={{ r: 3.5, fill: "#ffffff", stroke: "#059669", strokeWidth: 2 }}
-                activeDot={{ r: 5, fill: "#059669", stroke: "#ffffff", strokeWidth: 2 }}
+                dot={{ r: 3.5, fill: "#ffffff", stroke: "#0284c7", strokeWidth: 2 }}
+                activeDot={{ r: 5, fill: "#0284c7", stroke: "#ffffff", strokeWidth: 2 }}
                 isAnimationActive={false}
               />
             </AreaChart>
@@ -684,22 +688,34 @@ function RiverHistoryChart({
         <div className="mx-5 mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
           <AlertCircle aria-hidden className="mt-0.5 size-3.5 shrink-0" />
           <p>
-            One distinct measurement is available here, so a trend cannot be shown yet. A new PAGASA report or verified staff entry will extend the line.
+            One distinct measurement is available here, so a trend cannot be shown yet. A new Montalban gauge report or verified staff entry will extend the line.
           </p>
         </div>
       ) : null}
 
-      <div className="mt-auto grid grid-cols-3 divide-x divide-neutral-100 border-t border-neutral-200 bg-neutral-50/70">
-        {thresholdRows.map((threshold) => (
-          <div key={threshold.level} className="relative px-3 py-3 first:pl-5">
-            <span className={`absolute top-0 left-0 h-0.5 w-full ${threshold.surface}`} />
-            <p className="text-[10px] font-bold tracking-[0.08em] text-neutral-500 uppercase">
-              Level {threshold.level}
-            </p>
-            <p className="mt-0.5 text-xs font-bold text-neutral-900">{threshold.label}</p>
-            <p className="mt-0.5 text-[11px] font-medium text-neutral-600">{threshold.value.toFixed(1)} m</p>
-          </div>
-        ))}
+      <div className="mt-auto border-t border-neutral-200 bg-neutral-50/70" aria-label="River level chart legend">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-neutral-200 px-5 py-3">
+          <p className="text-[10px] font-bold tracking-[0.1em] text-neutral-500 uppercase">Chart key</p>
+          <span className="flex items-center gap-2 text-[11px] text-neutral-700">
+            <span aria-hidden className="h-0.5 w-6 rounded-full bg-sky-600" />
+            <span><strong className="font-bold text-neutral-900">Blue line and area:</strong> reported river level</span>
+          </span>
+          <span className="flex items-center gap-2 text-[11px] text-neutral-700">
+            <span aria-hidden className="w-6 border-t-2 border-dashed border-neutral-500" />
+            <span><strong className="font-bold text-neutral-900">Dashed colour lines:</strong> alert thresholds, not measurements</span>
+          </span>
+        </div>
+        <div className="grid grid-cols-3 divide-x divide-neutral-200">
+          {thresholdRows.map((threshold) => (
+            <div key={threshold.level} className="relative px-3 py-3 first:pl-5">
+              <span className={`absolute top-0 left-0 h-0.5 w-full ${threshold.surface}`} />
+              <p className="text-[10px] font-bold tracking-[0.08em] text-neutral-500 uppercase">
+                Level {threshold.level} · {threshold.label}
+              </p>
+              <p className="mt-1 text-xs font-bold text-neutral-900">Dashed line at {threshold.value.toFixed(1)} m</p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -848,9 +864,9 @@ function RiverAlertPanel({
               <Waves aria-hidden className="size-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-neutral-900">Threshold review</h2>
+              <h2 className="text-sm font-bold text-neutral-900">River Alert Review</h2>
               <p className="text-xs text-neutral-500">
-                A crossing is recorded here; only an officer can create a public alert.
+                Review recorded river-level crossings before issuing a public alert.
               </p>
             </div>
           </div>
