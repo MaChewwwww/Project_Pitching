@@ -606,7 +606,7 @@ function RiverAlertPanel({
   onRefresh: () => void;
 }) {
   const queryClient = useQueryClient();
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery<AlertPrompt[]>({
     queryKey: ["admin", "alert-prompts"],
     queryFn: () =>
       api
@@ -696,7 +696,7 @@ function RiverAlertPanel({
     }
 
     if (isError) {
-      return <ErrorState sectionName="River Alert review" onRetry={() => void refetch()} />;
+      return <ErrorState sectionName="River Alert review" onRetry={onRefresh} />;
     }
 
     if (prompts.length === 0) {
