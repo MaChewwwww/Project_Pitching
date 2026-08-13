@@ -22,6 +22,7 @@ from src.modules.weather.schemas import (
     PublicReading,
     PublicRiverLevel,
     PublicWeatherCurrent,
+    RiverHistoryPoint,
     SimulateTyphoonResult,
 )
 
@@ -62,6 +63,17 @@ async def admin_record_reading(
 ) -> PublicReading:
     reading = await service.record_manual_reading(session, body, actor_id=user.id)
     return await service.reading_to_public(session, reading)
+
+
+@admin_router.get(
+    "/readings/river-history",
+    dependencies=[Depends(require_role("admin", "bhw"))],
+    summary="River level readings for the history chart (FR-WX-*)",
+)
+async def admin_river_history(
+    session: DbSessionDep, hours: int = 6
+) -> list[RiverHistoryPoint]:
+    return await service.get_river_history(session, hours=hours)
 
 
 @admin_router.post(

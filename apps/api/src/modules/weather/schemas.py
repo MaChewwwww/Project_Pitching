@@ -26,6 +26,14 @@ ReadingMetric = Literal[
 ]
 
 
+class RiverHistoryPoint(BaseModel):
+    """One data point for the river-level history chart (admin only)."""
+
+    observed_at: datetime
+    value: float
+    source: ReadingSource
+
+
 class PublicReading(BaseModel):
     id: int
     source: ReadingSource

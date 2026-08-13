@@ -22,6 +22,18 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { format } from "date-fns";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from "recharts";
+
 
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
@@ -381,6 +393,199 @@ function ManualEntryPanel({
 
 /* ─────────────────────────────────── River Alert ── */
 
+interface RiverHistoryPoint {
+  observed_at: string;
+  value: number;
+  source: string;
+}
+
+type HistoryHours = 6 | 24 | 168;
+
+const HISTORY_OPTIONS: { label: string; value: HistoryHours }[] = [
+  { label: "Past 6 hours", value: 6 },
+  { label: "Past 24 hours", value: 24 },
+  { label: "Past 7 days", value: 168 },
+];
+
+function RiverHistoryChart({
+  thresholds,
+}: {
+  thresholds: PublicRiverLevel["thresholds"] | undefined;
+}) {
+  const [hours, setHours] = React.useState<HistoryHours>(6);
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["admin", "river-history", hours],
+    queryFn: () =>
+      api
+        .get<RiverHistoryPoint[]>(`/admin/readings/river-history?hours=${hours}`)
+        .then((r) => r.data),
+    refetchInterval: 60_000,
+  });
+
+  const chartData =
+    data?.map((pt) => ({
+      t: new Date(pt.observed_at).getTime(),
+      v: pt.value,
+    })) ?? [];
+
+  const xFormatter = (ts: number) =>
+    hours <= 24
+      ? format(new Date(ts), "HH:mm")
+      : format(new Date(ts), "MMM d");
+
+  const isEmpty = !isLoading && !isError && chartData.length === 0;
+
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4">
+      {/* header row */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="flex size-7 items-center justify-center rounded-md bg-emerald-50 text-emerald-600">
+            <Droplets aria-hidden className="size-3.5" />
+          </div>
+          <span className="text-sm font-semibold text-neutral-800">River Level History</span>
+        </div>
+        <Select
+          value={String(hours)}
+          onValueChange={(v) => setHours(Number(v) as HistoryHours)}
+        >
+          <SelectTrigger className="h-7 w-36 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {HISTORY_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={String(o.value)} className="text-xs">
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* chart body */}
+      <div className="h-56">
+        {isLoading ? (
+          <div className="h-full w-full animate-pulse rounded-lg bg-neutral-100" />
+        ) : isError ? (
+          <div className="flex h-full items-center justify-center text-xs text-neutral-400">
+            Could not load history
+          </div>
+        ) : isEmpty ? (
+          <div className="flex h-full flex-col items-center justify-center gap-1 text-center">
+            <Droplets className="size-6 text-neutral-300" />
+            <p className="text-xs text-neutral-400">No river readings in this window</p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 8, right: 4, left: -16, bottom: 0 }}>
+              <defs>
+                <linearGradient id="riverGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#059669" stopOpacity={0.18} />
+                  <stop offset="95%" stopColor="#059669" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+              <XAxis
+                dataKey="t"
+                type="number"
+                domain={["dataMin", "dataMax"]}
+                scale="time"
+                tickFormatter={xFormatter}
+                tick={{ fontSize: 10, fill: "#9ca3af" }}
+                axisLine={false}
+                tickLine={false}
+                minTickGap={32}
+              />
+              <YAxis
+                tick={{ fontSize: 10, fill: "#9ca3af" }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v: number) => `${v}m`}
+              />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const pt = payload[0]?.payload as { t: number; v: number };
+                  return (
+                    <div className="rounded-lg border border-neutral-200 bg-white p-2 text-xs shadow-md">
+                      <p className="font-semibold text-neutral-900">{pt.v.toFixed(2)} m</p>
+                      <p className="text-neutral-500">{format(new Date(pt.t), "MMM d, HH:mm")}</p>
+                    </div>
+                  );
+                }}
+              />
+              {/* Threshold reference lines */}
+              {thresholds?.level_1_m != null && (
+                <ReferenceLine
+                  y={thresholds.level_1_m}
+                  stroke="#f59e0b"
+                  strokeDasharray="4 3"
+                  strokeWidth={1.5}
+                  label={{ value: "L1", fill: "#f59e0b", fontSize: 9, position: "insideTopRight" }}
+                />
+              )}
+              {thresholds?.level_2_m != null && (
+                <ReferenceLine
+                  y={thresholds.level_2_m}
+                  stroke="#f97316"
+                  strokeDasharray="4 3"
+                  strokeWidth={1.5}
+                  label={{ value: "L2", fill: "#f97316", fontSize: 9, position: "insideTopRight" }}
+                />
+              )}
+              {thresholds?.level_3_m != null && (
+                <ReferenceLine
+                  y={thresholds.level_3_m}
+                  stroke="#ef4444"
+                  strokeDasharray="4 3"
+                  strokeWidth={1.5}
+                  label={{ value: "L3", fill: "#ef4444", fontSize: 9, position: "insideTopRight" }}
+                />
+              )}
+              <Area
+                type="monotone"
+                dataKey="v"
+                stroke="#059669"
+                strokeWidth={2}
+                fill="url(#riverGrad)"
+                dot={chartData.length <= 20}
+                activeDot={{ r: 4, fill: "#059669" }}
+                isAnimationActive={false}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* legend */}
+      {!isEmpty && !isLoading && !isError && (
+        <div className="flex flex-wrap gap-3 pt-1">
+          <span className="flex items-center gap-1.5 text-[10px] text-neutral-500">
+            <span className="inline-block h-0.5 w-4 rounded bg-emerald-500" /> River level
+          </span>
+          {thresholds?.level_1_m != null && (
+            <span className="flex items-center gap-1.5 text-[10px] text-neutral-500">
+              <span className="inline-block h-px w-4 border-t-2 border-dashed border-amber-400" /> L1 ({thresholds.level_1_m}m)
+            </span>
+          )}
+          {thresholds?.level_2_m != null && (
+            <span className="flex items-center gap-1.5 text-[10px] text-neutral-500">
+              <span className="inline-block h-px w-4 border-t-2 border-dashed border-orange-400" /> L2 ({thresholds.level_2_m}m)
+            </span>
+          )}
+          {thresholds?.level_3_m != null && (
+            <span className="flex items-center gap-1.5 text-[10px] text-neutral-500">
+              <span className="inline-block h-px w-4 border-t-2 border-dashed border-red-400" /> L3 ({thresholds.level_3_m}m)
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function PromptLevelBadge({ level }: { level: AlertPrompt["level"] }) {
   const tone = level === 3 ? "danger" : level === 2 ? "orange" : "warning";
   const label = level === 3 ? "Critical" : level === 2 ? "Evacuate" : "Prepare";
@@ -393,9 +598,11 @@ function PromptLevelBadge({ level }: { level: AlertPrompt["level"] }) {
 
 function RiverAlertPanel({
   isAdmin,
+  river,
   onRefresh,
 }: {
   isAdmin: boolean;
+  river: PublicRiverLevel | undefined;
   onRefresh: () => void;
 }) {
   const queryClient = useQueryClient();
@@ -459,128 +666,169 @@ function RiverAlertPanel({
   }
 
   const prompts = data ?? [];
-  if (prompts.length === 0) {
+
+  const content = (() => {
+    if (!isAdmin) {
+      return (
+        <Card>
+          <CardContent>
+            <EmptyState
+              icon={ClipboardCheck}
+              size="sm"
+              title="River Alert review is admin-only"
+              description="BHW staff can record field readings. An admin reviews threshold breaches and decides whether to publish a public alert."
+            />
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (isLoading) {
+      return (
+        <Card className="min-h-[260px] animate-pulse bg-neutral-50">
+          <CardContent className="flex flex-col gap-4">
+            <div className="h-4 w-48 rounded bg-neutral-200" />
+            <div className="h-16 rounded-xl bg-neutral-200" />
+            <div className="h-16 rounded-xl bg-neutral-200" />
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (isError) {
+      return <ErrorState sectionName="River Alert review" onRetry={() => void refetch()} />;
+    }
+
+    if (prompts.length === 0) {
+      return (
+        <Card>
+          <CardContent>
+            <EmptyState
+              icon={Waves}
+              title="No threshold breaches awaiting review"
+              description="When a river reading crosses a configured level, it will appear here for a human decision."
+              action={
+                <Button variant="outline" size="sm" onClick={onRefresh}>
+                  <RefreshCw aria-hidden className="size-4" />
+                  Refresh feed
+                </Button>
+              }
+            />
+          </CardContent>
+        </Card>
+      );
+    }
+
     return (
-      <Card>
-        <CardContent>
-          <EmptyState
-            icon={Waves}
-            title="No threshold breaches awaiting review"
-            description="When a river reading crosses a configured level, it will appear here for a human decision."
-            action={
-              <Button variant="outline" size="sm" onClick={onRefresh}>
-                <RefreshCw aria-hidden className="size-4" />
-                Refresh feed
-              </Button>
-            }
-          />
-        </CardContent>
-      </Card>
+      <div className="space-y-6 rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-2xs sm:p-8">
+        {/* Header row: title/description + create alert CTA */}
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-100 pb-5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-8 items-center justify-center rounded-lg border border-emerald-200/60 bg-emerald-50 text-emerald-600">
+              <Waves aria-hidden className="size-4" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-neutral-900">River Alert</h2>
+              <p className="text-xs text-neutral-500">
+                A prompt records a threshold crossing; it does not publish anything by itself.
+              </p>
+            </div>
+          </div>
+          <Button
+            asChild
+            size="sm"
+            className="bg-emerald-700 hover:bg-emerald-800 shadow-sm"
+          >
+            <Link href="/admin/announcements/create-announcement?kind=alert">
+              Create alert
+              <ChevronRight aria-hidden className="size-4" />
+            </Link>
+          </Button>
+        </div>
+
+        {/* Prompt list */}
+        <div className="flex flex-col divide-y divide-neutral-100">
+          {prompts.map((prompt) => (
+            <article
+              key={prompt.id}
+              className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="flex min-w-0 items-start gap-3">
+                <span
+                  className={`grid size-9 shrink-0 place-items-center rounded-lg ring-1 ${
+                    prompt.level === 3
+                      ? "bg-red-50 text-red-700 ring-red-200"
+                      : prompt.level === 2
+                        ? "bg-orange-50 text-orange-700 ring-orange-200"
+                        : "bg-amber-50 text-amber-700 ring-amber-200"
+                  }`}
+                >
+                  <Waves aria-hidden className="size-4" />
+                </span>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <PromptLevelBadge level={prompt.level} />
+                    <span className="text-body-sm font-semibold text-neutral-900">
+                      River threshold crossed at {prompt.threshold_value} m
+                    </span>
+                  </div>
+                  <p className="text-caption mt-1 text-neutral-500">
+                    {prompt.acknowledged_at
+                      ? `Acknowledged ${formatPhtDateTime(prompt.acknowledged_at)}`
+                      : `Detected ${formatPhtDateTime(prompt.created_at)}`}
+                    {prompt.reading_id ? ` · Reading #${prompt.reading_id}` : ""}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+                {/* Acknowledge */}
+                {prompt.acknowledged_at ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                    <Check aria-hidden className="size-3.5" />
+                    Acknowledged
+                  </span>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-neutral-300 text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
+                    disabled={acknowledgeMutation.isPending}
+                    onClick={() => acknowledgeMutation.mutate(prompt.id)}
+                  >
+                    <Check aria-hidden className="size-4" />
+                    Acknowledge
+                  </Button>
+                )}
+
+                {/* Delete (unacknowledged only) */}
+                {!prompt.acknowledged_at ? (
+                  <ConfirmDeleteButton
+                    itemLabel="this threshold prompt"
+                    actionLabel="Delete false prompt"
+                    onConfirm={() => deleteMutation.mutate(prompt.id)}
+                  />
+                ) : null}
+
+                {/* Alert status */}
+                {prompt.resulted_in_announcement_id ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                    <AlertCircle aria-hidden className="size-3.5" />
+                    Alert created
+                  </span>
+                ) : null}
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
     );
-  }
+  })();
 
   return (
-    <div className="space-y-6 rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-2xs sm:p-8">
-      {/* Header row: title/description + create alert CTA */}
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-100 pb-5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-8 items-center justify-center rounded-lg border border-emerald-200/60 bg-emerald-50 text-emerald-600">
-            <Waves aria-hidden className="size-4" />
-          </div>
-          <div>
-            <h2 className="text-base font-bold text-neutral-900">River Alert</h2>
-            <p className="text-xs text-neutral-500">
-              A prompt records a threshold crossing; it does not publish anything by itself.
-            </p>
-          </div>
-        </div>
-        <Button
-          asChild
-          size="sm"
-          className="bg-emerald-700 hover:bg-emerald-800 shadow-sm"
-        >
-          <Link href="/admin/announcements/create-announcement?kind=alert">
-            Create alert
-            <ChevronRight aria-hidden className="size-4" />
-          </Link>
-        </Button>
-      </div>
-
-      {/* Prompt list */}
-      <div className="flex flex-col divide-y divide-neutral-100">
-        {prompts.map((prompt) => (
-          <article
-            key={prompt.id}
-            className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div className="flex min-w-0 items-start gap-3">
-              <span
-                className={`grid size-9 shrink-0 place-items-center rounded-lg ring-1 ${
-                  prompt.level === 3
-                    ? "bg-red-50 text-red-700 ring-red-200"
-                    : prompt.level === 2
-                      ? "bg-orange-50 text-orange-700 ring-orange-200"
-                      : "bg-amber-50 text-amber-700 ring-amber-200"
-                }`}
-              >
-                <Waves aria-hidden className="size-4" />
-              </span>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <PromptLevelBadge level={prompt.level} />
-                  <span className="text-body-sm font-semibold text-neutral-900">
-                    River threshold crossed at {prompt.threshold_value} m
-                  </span>
-                </div>
-                <p className="text-caption mt-1 text-neutral-500">
-                  {prompt.acknowledged_at
-                    ? `Acknowledged ${formatPhtDateTime(prompt.acknowledged_at)}`
-                    : `Detected ${formatPhtDateTime(prompt.created_at)}`}
-                  {prompt.reading_id ? ` · Reading #${prompt.reading_id}` : ""}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
-              {/* Acknowledge */}
-              {prompt.acknowledged_at ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
-                  <Check aria-hidden className="size-3.5" />
-                  Acknowledged
-                </span>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-neutral-300 text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
-                  disabled={acknowledgeMutation.isPending}
-                  onClick={() => acknowledgeMutation.mutate(prompt.id)}
-                >
-                  <Check aria-hidden className="size-4" />
-                  Acknowledge
-                </Button>
-              )}
-
-              {/* Delete (unacknowledged only) */}
-              {!prompt.acknowledged_at ? (
-                <ConfirmDeleteButton
-                  itemLabel="this threshold prompt"
-                  actionLabel="Delete false prompt"
-                  onConfirm={() => deleteMutation.mutate(prompt.id)}
-                />
-              ) : null}
-
-              {/* Alert status */}
-              {prompt.resulted_in_announcement_id ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
-                  <AlertCircle aria-hidden className="size-3.5" />
-                  Alert created
-                </span>
-              ) : null}
-            </div>
-          </article>
-        ))}
-      </div>
+    <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
+      <div>{content}</div>
+      <RiverHistoryChart thresholds={river?.thresholds} />
     </div>
   );
 }
@@ -741,7 +989,7 @@ export default function AdminWeatherReadingsPage() {
 
             {canReview ? (
               <TabsContent value="river-alert" className="mt-0">
-                <RiverAlertPanel isAdmin={canReview} onRefresh={refreshFeed} />
+                <RiverAlertPanel isAdmin={canReview} river={river} onRefresh={refreshFeed} />
               </TabsContent>
             ) : null}
           </div>

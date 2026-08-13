@@ -27,6 +27,7 @@ from src.modules.weather.schemas import (
     PublicReading,
     PublicRiverLevel,
     PublicWeatherCurrent,
+    RiverHistoryPoint,
     RiverThresholds,
     SimulateTyphoonResult,
 )
@@ -45,9 +46,9 @@ def _to_public(r: Reading, *, stale_after_minutes: int, now: datetime) -> Public
     age = max(0, int((now - r.observed_at).total_seconds() // 60))
     return PublicReading(
         id=r.id,
-        source=r.source,
-        metric=r.metric,
-        value=float(r.value),
+        source=r.source,  # type: ignore[arg-type]
+        metric=r.metric,  # type: ignore[arg-type]
+        value=r.value,
         unit=r.unit,
         station=r.station,
         observed_at=r.observed_at,
@@ -129,11 +130,11 @@ async def get_weather_current(session: AsyncSession) -> PublicWeatherCurrent:
     forecast = [
         PublicForecastPoint(
             valid_at=f.valid_at,
-            metric=f.metric,
-            value=float(f.value),
+            metric=f.metric,  # type: ignore[arg-type]
+            value=f.value,
             unit=f.unit,
-            horizon=f.horizon,
-            source=f.source,
+            horizon=f.horizon,  # type: ignore[arg-type]
+            source=f.source,  # type: ignore[arg-type]
             fetched_at=f.fetched_at,
         )
         for f in forecast_rows
@@ -200,7 +201,7 @@ async def get_river_level(session: AsyncSession) -> PublicRiverLevel:
 
     return PublicRiverLevel(
         reading=reading,
-        alert_level=_alert_level(reading.value if reading else None, thresholds),
+        alert_level=_alert_level(reading.value if reading else None, thresholds),  # type: ignore[arg-type]
         thresholds=thresholds,
         is_stale=reading.is_stale if reading else False,
         # The read path always returns the most recent reading regardless of age
@@ -213,6 +214,52 @@ async def get_river_level(session: AsyncSession) -> PublicRiverLevel:
 async def reading_to_public(session: AsyncSession, reading: Reading) -> PublicReading:
     stale_after = _stale_after_minutes()
     return _to_public(reading, stale_after_minutes=stale_after, now=datetime.now(UTC))
+
+
+async def get_river_history(
+    session: AsyncSession, hours: int
+) -> list[RiverHistoryPoint]:
+    """Return river_level readings for the past `hours` hours, ordered ASC.
+
+    For windows > 24 h we bucket by hour (latest reading per hour) to keep
+    the payload small; for short windows every reading is returned as-is.
+    The caller controls the window via the `hours` query param (max 168).
+    """
+    hours = min(max(hours, 1), 168)
+    since = datetime.now(UTC) - timedelta(hours=hours)
+
+    stmt = (
+        select(Reading)
+        .where(
+            Reading.metric == "river_level",
+            Reading.observed_at >= since,
+        )
+        .order_by(Reading.observed_at.asc())
+    )
+    rows = list((await session.execute(stmt)).scalars().all())
+
+    # For 7-day windows downsample: keep the latest reading per clock-hour
+    if hours > 24 and len(rows) > 200:
+        bucketed: dict[tuple[int, int, int, int], Reading] = {}
+        for row in rows:
+            key = (
+                row.observed_at.year,
+                row.observed_at.month,
+                row.observed_at.day,
+                row.observed_at.hour,
+            )
+            # Overwrite keeps the latest in the hour (rows are ASC)
+            bucketed[key] = row
+        rows = sorted(bucketed.values(), key=lambda r: r.observed_at)
+
+    return [
+        RiverHistoryPoint(
+            observed_at=r.observed_at,
+            value=r.value,
+            source=r.source,  # type: ignore[arg-type]
+        )
+        for r in rows
+    ]
 
 
 async def record_manual_reading(
@@ -372,7 +419,7 @@ async def simulate_typhoon(session: AsyncSession, *, actor_id: uuid.UUID) -> Sim
     return SimulateTyphoonResult(
         readings=public_readings,
         alert_prompts_created=prompts_created,
-        highest_alert_level=highest_level,
+        highest_alert_level=highest_level,  # type: ignore[arg-type]
     )
 
 
@@ -414,7 +461,7 @@ async def list_flood_events(
             started_at=e.started_at,
             ended_at=e.ended_at,
             is_ongoing=e.ended_at is None,
-            peak_level_m=float(e.peak_level_m) if e.peak_level_m is not None else None,
+            peak_level_m=e.peak_level_m if e.peak_level_m is not None else None,
             peak_at=e.peak_at,
             households_displaced=e.households_displaced,
             notes=e.notes,
@@ -543,7 +590,7 @@ async def finalize_flood_event_from_emergency(
     )
     peak_reading = (await session.execute(peak_stmt)).scalar_one_or_none()
     if peak_reading is not None:
-        event.peak_level_m = float(peak_reading.value)
+        event.peak_level_m = peak_reading.value
         event.peak_at = peak_reading.observed_at
 
     # Compute displaced count from evac checkins if available
