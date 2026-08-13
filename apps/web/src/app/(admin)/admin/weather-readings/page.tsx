@@ -202,6 +202,7 @@ function ManualEntryPanel({
       toast.success("Reading recorded");
       queryClient.invalidateQueries({ queryKey: ["admin", "weather-watch"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "alert-prompts"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "river-history"] });
       onReadingRecorded();
     },
     onError: (error) => toast.error(toDisplayError(error).detail),
@@ -218,6 +219,7 @@ function ManualEntryPanel({
       );
       queryClient.invalidateQueries({ queryKey: ["admin", "weather-watch"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "alert-prompts"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "river-history"] });
     },
     onError: (error) => toast.error(toDisplayError(error).detail),
   });
@@ -399,6 +401,14 @@ interface RiverHistoryPoint {
   source: string;
 }
 
+interface ThresholdLine {
+  level: 1 | 2 | 3;
+  label: string;
+  value: number;
+  color: string;
+  surface: string;
+}
+
 type HistoryHours = 6 | 24 | 168;
 
 const HISTORY_OPTIONS: { label: string; value: HistoryHours }[] = [
@@ -407,14 +417,21 @@ const HISTORY_OPTIONS: { label: string; value: HistoryHours }[] = [
   { label: "Past 7 days", value: 168 },
 ];
 
+const RIVER_HISTORY_SOURCE_LABELS: Record<string, string> = {
+  pagasa: "DOST-PAGASA gauge",
+  manual: "Verified staff entry",
+};
+
 function RiverHistoryChart({
   thresholds,
+  river,
 }: {
   thresholds: PublicRiverLevel["thresholds"] | undefined;
+  river: PublicRiverLevel | undefined;
 }) {
-  const [hours, setHours] = React.useState<HistoryHours>(6);
+  const [hours, setHours] = React.useState<HistoryHours>(168);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "river-history", hours],
     queryFn: () =>
       api
@@ -423,11 +440,70 @@ function RiverHistoryChart({
     refetchInterval: 60_000,
   });
 
-  const chartData =
-    data?.map((pt) => ({
-      t: new Date(pt.observed_at).getTime(),
-      v: pt.value,
-    })) ?? [];
+  const chartData = React.useMemo(() => {
+    const byObservedAt = new Map<number, RiverHistoryPoint>();
+    for (const point of data ?? []) {
+      byObservedAt.set(new Date(point.observed_at).getTime(), point);
+    }
+    return Array.from(byObservedAt.entries()).map(([t, point]) => ({
+      t,
+      v: point.value,
+      observedAt: point.observed_at,
+      source: point.source,
+    }));
+  }, [data]);
+
+  const thresholdRows = React.useMemo<ThresholdLine[]>(() => {
+    const rows: ThresholdLine[] = [];
+    if (thresholds?.level_1_m != null) {
+      rows.push({
+        level: 1,
+        label: "Prepare",
+        value: thresholds.level_1_m,
+        color: "#d97706",
+        surface: "bg-amber-500",
+      });
+    }
+    if (thresholds?.level_2_m != null) {
+      rows.push({
+        level: 2,
+        label: "Evacuate",
+        value: thresholds.level_2_m,
+        color: "#ea580c",
+        surface: "bg-orange-500",
+      });
+    }
+    if (thresholds?.level_3_m != null) {
+      rows.push({
+        level: 3,
+        label: "Critical",
+        value: thresholds.level_3_m,
+        color: "#dc2626",
+        surface: "bg-red-500",
+      });
+    }
+    return rows;
+  }, [thresholds]);
+
+  const yDomain = React.useMemo<[number, number]>(() => {
+    const values = [...chartData.map((point) => point.v), ...thresholdRows.map((row) => row.value)];
+    if (values.length === 0) return [0, 1];
+
+    const minimum = Math.min(...values);
+    const maximum = Math.max(...values);
+    const span = Math.max(maximum - minimum, 1);
+    return [Math.max(0, minimum - span * 0.35), maximum + span * 0.25];
+  }, [chartData, thresholdRows]);
+
+  const xDomain =
+    chartData.length > 1
+      ? ["dataMin", "dataMax"]
+      : chartData.length === 1
+        ? [
+            chartData[0].t - Math.min(hours * 60 * 60 * 1000, 60 * 60 * 1000),
+            chartData[0].t + Math.min(hours * 60 * 60 * 1000, 60 * 60 * 1000),
+          ]
+        : [0, hours * 60 * 60 * 1000];
 
   const xFormatter = (ts: number) =>
     hours <= 24
@@ -435,70 +511,120 @@ function RiverHistoryChart({
       : format(new Date(ts), "MMM d");
 
   const isEmpty = !isLoading && !isError && chartData.length === 0;
+  const hasTrend = chartData.length > 1;
+  const latestPoint = chartData.at(-1);
+  const latestValue = latestPoint?.v ?? river?.reading?.value ?? null;
+  const latestObservedAt = latestPoint?.observedAt ?? river?.reading?.observed_at ?? null;
+  const latestSource = latestPoint?.source ?? river?.reading?.source ?? null;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4">
-      {/* header row */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-md bg-emerald-50 text-emerald-600">
-            <Droplets aria-hidden className="size-3.5" />
+    <div className="flex h-full flex-col overflow-hidden rounded-[14px] border border-neutral-200 bg-white shadow-sm-card">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-100 px-5 py-4">
+        <div className="flex items-start gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
+            <Droplets aria-hidden className="size-4" />
           </div>
-          <span className="text-sm font-semibold text-neutral-800">River Level History</span>
+          <div>
+            <h2 className="text-sm font-bold text-neutral-900">River level history</h2>
+            <p className="mt-0.5 text-xs text-neutral-500">
+              Measured levels only — no estimated trend is drawn.
+            </p>
+          </div>
         </div>
-        <Select
-          value={String(hours)}
-          onValueChange={(v) => setHours(Number(v) as HistoryHours)}
-        >
-          <SelectTrigger className="h-7 w-36 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {HISTORY_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={String(o.value)} className="text-xs">
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-1.5">
+          <Select value={String(hours)} onValueChange={(value) => setHours(Number(value) as HistoryHours)}>
+            <SelectTrigger className="h-8 w-34 border-neutral-200 bg-neutral-50 text-xs font-medium">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {HISTORY_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={String(option.value)} className="text-xs">
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="size-8 min-w-8 px-0 text-neutral-500 hover:bg-neutral-100 hover:text-emerald-700"
+            aria-label="Refresh river level history"
+            title="Refresh river level history"
+            onClick={() => void refetch()}
+          >
+            <RefreshCw aria-hidden className="size-3.5" />
+          </Button>
+        </div>
       </div>
 
-      {/* chart body */}
-      <div className="h-56">
+      <div className="grid grid-cols-[auto_1fr] gap-x-3 border-b border-neutral-100 bg-neutral-50/70 px-5 py-3">
+        <div className="min-w-20 border-r border-neutral-200 pr-3">
+          <p className="text-[10px] font-bold tracking-[0.12em] text-neutral-500 uppercase">Latest level</p>
+          <p className="mt-0.5 text-xl font-black tracking-tight text-neutral-950">
+            {latestValue != null ? `${latestValue.toFixed(2)} m` : "—"}
+          </p>
+        </div>
+        <div className="min-w-0 self-center">
+          <p className="text-xs font-semibold text-neutral-800">
+            {isLoading
+              ? "Loading measurements…"
+              : latestObservedAt
+                ? `Observed ${formatPhtDateTime(latestObservedAt)}`
+                : "No river measurement recorded"}
+          </p>
+          <p className="mt-0.5 truncate text-[11px] text-neutral-500">
+            {latestSource
+              ? `${RIVER_HISTORY_SOURCE_LABELS[latestSource] ?? latestSource} · ${chartData.length} distinct observation${chartData.length === 1 ? "" : "s"} in this view`
+              : "PAGASA or a verified staff entry will appear here."}
+          </p>
+        </div>
+      </div>
+
+      <div className="h-64 px-3 pt-4 sm:px-4">
         {isLoading ? (
           <div className="h-full w-full animate-pulse rounded-lg bg-neutral-100" />
         ) : isError ? (
-          <div className="flex h-full items-center justify-center text-xs text-neutral-400">
-            Could not load history
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+            <AlertCircle aria-hidden className="size-5 text-red-500" />
+            <p className="text-xs font-semibold text-neutral-700">River history could not be loaded.</p>
+            <Button type="button" variant="outline" size="sm" onClick={() => void refetch()}>
+              Try again
+            </Button>
           </div>
         ) : isEmpty ? (
-          <div className="flex h-full flex-col items-center justify-center gap-1 text-center">
-            <Droplets className="size-6 text-neutral-300" />
-            <p className="text-xs text-neutral-400">No river readings in this window</p>
+          <div className="flex h-full flex-col items-center justify-center gap-2 px-8 text-center">
+            <Waves aria-hidden className="size-7 text-neutral-300" />
+            <p className="text-sm font-semibold text-neutral-700">No measured levels in this period</p>
+            <p className="max-w-xs text-xs leading-5 text-neutral-500">
+              The chart only plots reported PAGASA measurements and verified staff entries. It never fills gaps with estimates.
+            </p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 8, right: 4, left: -16, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 16, right: 8, left: -14, bottom: 4 }}>
               <defs>
-                <linearGradient id="riverGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#059669" stopOpacity={0.18} />
-                  <stop offset="95%" stopColor="#059669" stopOpacity={0} />
+                <linearGradient id="riverHistoryGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#059669" stopOpacity={0.22} />
+                  <stop offset="92%" stopColor="#059669" stopOpacity={0.01} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+              <CartesianGrid strokeDasharray="3 4" stroke="#e5e7eb" vertical={false} />
               <XAxis
                 dataKey="t"
                 type="number"
-                domain={["dataMin", "dataMax"]}
+                domain={xDomain}
                 scale="time"
                 tickFormatter={xFormatter}
-                tick={{ fontSize: 10, fill: "#9ca3af" }}
+                tick={{ fontSize: 10, fill: "#6b7280" }}
                 axisLine={false}
                 tickLine={false}
                 minTickGap={32}
               />
               <YAxis
-                tick={{ fontSize: 10, fill: "#9ca3af" }}
+                domain={yDomain}
+                width={42}
+                tick={{ fontSize: 10, fill: "#6b7280" }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={(v: number) => `${v}m`}
@@ -506,51 +632,47 @@ function RiverHistoryChart({
               <Tooltip
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;
-                  const pt = payload[0]?.payload as { t: number; v: number };
+                  const point = payload[0]?.payload as {
+                    t: number;
+                    v: number;
+                    observedAt: string;
+                    source: string;
+                  };
                   return (
-                    <div className="rounded-lg border border-neutral-200 bg-white p-2 text-xs shadow-md">
-                      <p className="font-semibold text-neutral-900">{pt.v.toFixed(2)} m</p>
-                      <p className="text-neutral-500">{format(new Date(pt.t), "MMM d, HH:mm")}</p>
+                    <div className="min-w-38 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs shadow-lg">
+                      <p className="font-bold text-neutral-950">{point.v.toFixed(2)} m</p>
+                      <p className="mt-0.5 text-neutral-600">{formatPhtDateTime(point.observedAt)}</p>
+                      <p className="mt-1 text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">
+                        {RIVER_HISTORY_SOURCE_LABELS[point.source] ?? point.source}
+                      </p>
                     </div>
                   );
                 }}
               />
-              {/* Threshold reference lines */}
-              {thresholds?.level_1_m != null && (
+              {thresholdRows.map((threshold) => (
                 <ReferenceLine
-                  y={thresholds.level_1_m}
-                  stroke="#f59e0b"
-                  strokeDasharray="4 3"
+                  key={threshold.level}
+                  y={threshold.value}
+                  stroke={threshold.color}
+                  strokeDasharray="6 4"
                   strokeWidth={1.5}
-                  label={{ value: "L1", fill: "#f59e0b", fontSize: 9, position: "insideTopRight" }}
+                  label={{
+                    value: `L${threshold.level} · ${threshold.value.toFixed(1)}m`,
+                    fill: threshold.color,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    position: "insideTopRight",
+                  }}
                 />
-              )}
-              {thresholds?.level_2_m != null && (
-                <ReferenceLine
-                  y={thresholds.level_2_m}
-                  stroke="#f97316"
-                  strokeDasharray="4 3"
-                  strokeWidth={1.5}
-                  label={{ value: "L2", fill: "#f97316", fontSize: 9, position: "insideTopRight" }}
-                />
-              )}
-              {thresholds?.level_3_m != null && (
-                <ReferenceLine
-                  y={thresholds.level_3_m}
-                  stroke="#ef4444"
-                  strokeDasharray="4 3"
-                  strokeWidth={1.5}
-                  label={{ value: "L3", fill: "#ef4444", fontSize: 9, position: "insideTopRight" }}
-                />
-              )}
+              ))}
               <Area
                 type="monotone"
                 dataKey="v"
                 stroke="#059669"
-                strokeWidth={2}
-                fill="url(#riverGrad)"
-                dot={chartData.length <= 20}
-                activeDot={{ r: 4, fill: "#059669" }}
+                strokeWidth={2.5}
+                fill="url(#riverHistoryGradient)"
+                dot={{ r: 3.5, fill: "#ffffff", stroke: "#059669", strokeWidth: 2 }}
+                activeDot={{ r: 5, fill: "#059669", stroke: "#ffffff", strokeWidth: 2 }}
                 isAnimationActive={false}
               />
             </AreaChart>
@@ -558,29 +680,27 @@ function RiverHistoryChart({
         )}
       </div>
 
-      {/* legend */}
-      {!isEmpty && !isLoading && !isError && (
-        <div className="flex flex-wrap gap-3 pt-1">
-          <span className="flex items-center gap-1.5 text-[10px] text-neutral-500">
-            <span className="inline-block h-0.5 w-4 rounded bg-emerald-500" /> River level
-          </span>
-          {thresholds?.level_1_m != null && (
-            <span className="flex items-center gap-1.5 text-[10px] text-neutral-500">
-              <span className="inline-block h-px w-4 border-t-2 border-dashed border-amber-400" /> L1 ({thresholds.level_1_m}m)
-            </span>
-          )}
-          {thresholds?.level_2_m != null && (
-            <span className="flex items-center gap-1.5 text-[10px] text-neutral-500">
-              <span className="inline-block h-px w-4 border-t-2 border-dashed border-orange-400" /> L2 ({thresholds.level_2_m}m)
-            </span>
-          )}
-          {thresholds?.level_3_m != null && (
-            <span className="flex items-center gap-1.5 text-[10px] text-neutral-500">
-              <span className="inline-block h-px w-4 border-t-2 border-dashed border-red-400" /> L3 ({thresholds.level_3_m}m)
-            </span>
-          )}
+      {!isEmpty && !hasTrend ? (
+        <div className="mx-5 mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          <AlertCircle aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+          <p>
+            One distinct measurement is available here, so a trend cannot be shown yet. A new PAGASA report or verified staff entry will extend the line.
+          </p>
         </div>
-      )}
+      ) : null}
+
+      <div className="mt-auto grid grid-cols-3 divide-x divide-neutral-100 border-t border-neutral-200 bg-neutral-50/70">
+        {thresholdRows.map((threshold) => (
+          <div key={threshold.level} className="relative px-3 py-3 first:pl-5">
+            <span className={`absolute top-0 left-0 h-0.5 w-full ${threshold.surface}`} />
+            <p className="text-[10px] font-bold tracking-[0.08em] text-neutral-500 uppercase">
+              Level {threshold.level}
+            </p>
+            <p className="mt-0.5 text-xs font-bold text-neutral-900">{threshold.label}</p>
+            <p className="mt-0.5 text-[11px] font-medium text-neutral-600">{threshold.value.toFixed(1)} m</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -666,6 +786,7 @@ function RiverAlertPanel({
   }
 
   const prompts = data ?? [];
+  const pendingCount = prompts.filter((prompt) => !prompt.acknowledged_at).length;
 
   const content = (() => {
     if (!isAdmin) {
@@ -720,38 +841,43 @@ function RiverAlertPanel({
     }
 
     return (
-      <div className="space-y-6 rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-2xs sm:p-8">
-        {/* Header row: title/description + create alert CTA */}
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-100 pb-5">
+      <div className="flex h-full flex-col overflow-hidden rounded-[14px] border border-neutral-200 bg-white shadow-sm-card">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-100 bg-neutral-50/70 px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex size-8 items-center justify-center rounded-lg border border-emerald-200/60 bg-emerald-50 text-emerald-600">
+            <div className="flex size-9 items-center justify-center rounded-xl border border-emerald-200/60 bg-emerald-50 text-emerald-700">
               <Waves aria-hidden className="size-4" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-neutral-900">River Alert</h2>
+              <h2 className="text-sm font-bold text-neutral-900">Threshold review</h2>
               <p className="text-xs text-neutral-500">
-                A prompt records a threshold crossing; it does not publish anything by itself.
+                A crossing is recorded here; only an officer can create a public alert.
               </p>
             </div>
           </div>
-          <Button
-            asChild
-            size="sm"
-            className="bg-emerald-700 hover:bg-emerald-800 shadow-sm"
-          >
-            <Link href="/admin/announcements/create-announcement?kind=alert">
-              Create alert
-              <ChevronRight aria-hidden className="size-4" />
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <span
+              className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                pendingCount > 0
+                  ? "bg-amber-100 text-amber-900"
+                  : "bg-emerald-100 text-emerald-800"
+              }`}
+            >
+              {pendingCount > 0 ? `${pendingCount} to review` : "Review complete"}
+            </span>
+            <Button asChild size="sm" className="bg-emerald-700 shadow-sm hover:bg-emerald-800">
+              <Link href="/admin/announcements/create-announcement?kind=alert">
+                Create alert
+                <ChevronRight aria-hidden className="size-4" />
+              </Link>
+            </Button>
+          </div>
         </div>
 
-        {/* Prompt list */}
         <div className="flex flex-col divide-y divide-neutral-100">
           {prompts.map((prompt) => (
             <article
               key={prompt.id}
-              className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="flex min-w-0 items-start gap-3">
                 <span
@@ -769,7 +895,7 @@ function RiverAlertPanel({
                   <div className="flex flex-wrap items-center gap-2">
                     <PromptLevelBadge level={prompt.level} />
                     <span className="text-body-sm font-semibold text-neutral-900">
-                      River threshold crossed at {prompt.threshold_value} m
+                      River level reached {prompt.threshold_value.toFixed(1)} m
                     </span>
                   </div>
                   <p className="text-caption mt-1 text-neutral-500">
@@ -782,7 +908,6 @@ function RiverAlertPanel({
               </div>
 
               <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
-                {/* Acknowledge */}
                 {prompt.acknowledged_at ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
                     <Check aria-hidden className="size-3.5" />
@@ -792,16 +917,16 @@ function RiverAlertPanel({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-neutral-300 text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
+                    className="size-9 min-w-9 border-neutral-300 px-0 text-neutral-700 hover:bg-emerald-50 hover:text-emerald-800"
                     disabled={acknowledgeMutation.isPending}
+                    aria-label={`Acknowledge Level ${prompt.level} river threshold prompt`}
+                    title="Acknowledge threshold prompt"
                     onClick={() => acknowledgeMutation.mutate(prompt.id)}
                   >
                     <Check aria-hidden className="size-4" />
-                    Acknowledge
                   </Button>
                 )}
 
-                {/* Delete (unacknowledged only) */}
                 {!prompt.acknowledged_at ? (
                   <ConfirmDeleteButton
                     itemLabel="this threshold prompt"
@@ -810,7 +935,6 @@ function RiverAlertPanel({
                   />
                 ) : null}
 
-                {/* Alert status */}
                 {prompt.resulted_in_announcement_id ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
                     <AlertCircle aria-hidden className="size-3.5" />
@@ -826,9 +950,9 @@ function RiverAlertPanel({
   })();
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
+    <div className="grid items-stretch gap-5 xl:grid-cols-2">
       <div>{content}</div>
-      <RiverHistoryChart thresholds={river?.thresholds} />
+      <RiverHistoryChart thresholds={river?.thresholds} river={river} />
     </div>
   );
 }

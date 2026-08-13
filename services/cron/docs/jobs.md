@@ -5,7 +5,7 @@
 | Job                       | Cadence                | Writes               | Requirement |
 | ------------------------- | ---------------------- | -------------------- | ----------- |
 | `fetch_weather`           | every 20 min           | `reading`, `forecast` | FR-WX-003   |
-| `fetch_river_level`       | every 15 min           | `reading`            | FR-WX-008   |
+| `fetch_river_level`       | every 15 min           | `reading` when PAGASA reports a measurement | FR-WX-008   |
 | `fetch_tcws_signal`       | every 30 min           | `reading`            | FR-WX-008   |
 | `evaluate_thresholds`     | after each river fetch | `alert_prompt`       | FR-WX-009   |
 | `flag_stale_records`      | daily 02:00            | `household.stale_at` | R-2         |
@@ -66,6 +66,11 @@ In this order (`architecture.md` Section 8.2):
 
 Writing a null or a zero on failure would be worse than writing nothing — it looks like a
 measurement.
+
+An idle PAGASA gauge (`wl: null`) is a successful poll with no new measurement, not a failed
+fetch. It writes nothing and never changes an older row's `observed_at` timestamp. That preserves
+the actual history and lets the console truthfully mark the last confirmed level as stale when the
+upstream gauge stays quiet.
 
 ## Scraping PAGASA politely
 

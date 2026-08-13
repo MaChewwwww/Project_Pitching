@@ -636,7 +636,7 @@ Single-replica `cron` container. Jobs are plain Python functions invoked by the 
 | Job                       | Cadence                | Writes               | Requirement |
 | ------------------------- | ---------------------- | -------------------- | ----------- |
 | `fetch_weather`           | 20 min                 | `reading`, `forecast` | FR-WX-003   |
-| `fetch_river_level`       | 15 min                 | `reading`            | FR-WX-008   |
+| `fetch_river_level`       | 15 min                 | `reading` on a new gauge measurement | FR-WX-008   |
 | `fetch_tcws_signal`       | 30 min                 | `reading`            | FR-WX-008   |
 | `evaluate_thresholds`     | after each river fetch | `alert_prompt`       | FR-WX-009   |
 | `flag_stale_records`      | daily 02:00            | `household.stale_at` | R-2         |

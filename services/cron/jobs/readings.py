@@ -104,11 +104,10 @@ def fetch_river_level() -> None:
         raise
 
     if not readings:
-        log.info("no new reading (gauge idle)", extra={"job": "fetch_river_level", "source": "pagasa"})
-        with engine.begin() as conn:
-            conn.execute(
-                text("UPDATE reading SET observed_at = now(), fetched_at = now() WHERE metric = 'river_level'")
-            )
+        log.info(
+            "no new reading (gauge idle)",
+            extra={"job": "fetch_river_level", "source": "pagasa"},
+        )
         return
 
     with engine.begin() as conn:
