@@ -4,7 +4,7 @@ import * as React from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -160,8 +160,6 @@ export default function NewHouseholdPage() {
     setValue,
     formState: { errors, isSubmitting },
   } = form;
-  const members = useWatch({ control, name: "members" });
-  const hasMembers = members.length > 0;
 
   const submitMutation = useMutation({
     mutationFn: (body: HouseholdCreateBhw) =>
@@ -224,7 +222,7 @@ export default function NewHouseholdPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 pb-16">
+    <div className="flex flex-col gap-6 pb-28 sm:pb-24">
       <AdminPageHeader
         title="Create Household"
         description="Record a household, its location, waterway proximity, and every known member in one barangay visit."
@@ -280,20 +278,18 @@ export default function NewHouseholdPage() {
             </CardContent>
           </Card>
 
-          {!hasMembers ? (
-            <Card className="border-emerald-200/80 bg-white">
-              <CardContent className="space-y-5 p-4 sm:p-5">
-                <div className="flex items-start gap-3 border-b border-neutral-100 pb-4">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700"><Users aria-hidden className="size-4" /></span>
-                  <div><h2 className="text-base font-bold text-neutral-950">Household Members</h2><p className="mt-0.5 text-xs text-neutral-500">Add every member available during this visit. You can add more than one.</p></div>
-                </div>
-                <HouseholdMemberRepeater control={control} />
-              </CardContent>
-            </Card>
-          ) : null}
+          <Card className="border-emerald-200/80 bg-white">
+            <CardContent className="space-y-5 p-4 sm:p-5">
+              <div className="flex items-start gap-3 border-b border-neutral-100 pb-4">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700"><Users aria-hidden className="size-4" /></span>
+                <div><h2 className="text-base font-bold text-neutral-950">Household Members</h2><p className="mt-0.5 text-xs text-neutral-500">Add every member available during this visit. You can add more than one.</p></div>
+              </div>
+              <HouseholdMemberRepeater control={control} />
+            </CardContent>
+          </Card>
         </div>
 
-        <aside className="space-y-4 lg:col-span-5">
+        <aside className="self-start space-y-4 lg:sticky lg:top-20 lg:col-span-5 lg:max-h-[calc(100dvh-9rem)] lg:h-fit lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
           <Card className="border-neutral-200/90 bg-white">
             <CardContent className="space-y-5 p-4 sm:p-5">
               <div className="flex items-start gap-3 border-b border-neutral-100 pb-4">
@@ -361,19 +357,7 @@ export default function NewHouseholdPage() {
 
         </aside>
 
-        {hasMembers ? (
-          <Card className="lg:col-span-7 border-emerald-200/80 bg-white">
-            <CardContent className="space-y-5 p-4 sm:p-5">
-              <div className="flex items-start gap-3 border-b border-neutral-100 pb-4">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700"><Users aria-hidden className="size-4" /></span>
-                <div><h2 className="text-base font-bold text-neutral-950">Household Members</h2><p className="mt-0.5 text-xs text-neutral-500">Add every member available during this visit. You can add more than one.</p></div>
-              </div>
-              <HouseholdMemberRepeater control={control} />
-            </CardContent>
-          </Card>
-        ) : null}
-
-        <div className="lg:col-span-12 mt-1 flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-3 border-t border-neutral-200 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:left-64 xl:px-8">
           <div className="flex flex-wrap justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => router.push("/admin/households")} className="rounded-xl">Cancel</Button>
             <Button type="button" variant="outline" onClick={() => reset(emptyValues)} className="rounded-xl">Clear form</Button>
