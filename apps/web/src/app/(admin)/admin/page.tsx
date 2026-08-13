@@ -42,7 +42,7 @@ const TILES: {
     icon: Megaphone,
   },
   {
-    href: "/admin/readings",
+    href: "/admin/weather-readings" as Route,
     label: "River & Weather Readings",
     description: "Enter a reading manually (FR-WX-007)",
     icon: Droplets,

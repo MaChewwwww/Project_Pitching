@@ -69,7 +69,7 @@ export const ADMIN_CATEGORIES: AdminNavCategory[] = [
     icon: CloudRain,
     items: [
       { href: "/admin/announcements" as Route, label: "Announcements", icon: Megaphone },
-      { href: "/admin/readings" as Route, label: "River & Weather Readings", icon: Droplets },
+      { href: "/admin/weather-readings" as Route, label: "River & Weather Readings", icon: Droplets },
       { href: "/admin/flood-events" as Route, label: "Flood History", icon: AlertTriangle },
     ],
   },
