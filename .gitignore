@@ -46,3 +46,4 @@ Thumbs.db
 
 # --- Runtime data (lives on a volume, not in git) ---
 uploads/
+.aider*
