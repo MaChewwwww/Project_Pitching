@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   Check,
+  ChevronLeft,
   ChevronRight,
   CloudLightning,
   CloudRain,
@@ -410,6 +411,9 @@ interface ThresholdLine {
 }
 
 type HistoryHours = 6 | 24 | 168;
+type PromptFilter = "all" | "to-review" | "acknowledged";
+
+const PROMPTS_PER_PAGE = 3;
 
 const HISTORY_OPTIONS: { label: string; value: HistoryHours }[] = [
   { label: "Past 6 hours", value: 6 },
@@ -709,10 +713,17 @@ function RiverHistoryChart({
           {thresholdRows.map((threshold) => (
             <div key={threshold.level} className="relative px-3 py-3 first:pl-5">
               <span className={`absolute top-0 left-0 h-0.5 w-full ${threshold.surface}`} />
-              <p className="text-[10px] font-bold tracking-[0.08em] text-neutral-500 uppercase">
-                Level {threshold.level} · {threshold.label}
-              </p>
-              <p className="mt-1 text-xs font-bold text-neutral-900">Dashed line at {threshold.value.toFixed(1)} m</p>
+              <div className="flex items-center gap-2">
+                <span
+                  aria-hidden
+                  className="w-8 border-t-2 border-dashed"
+                  style={{ borderColor: threshold.color }}
+                />
+                <p className="text-[10px] font-bold tracking-[0.08em] text-neutral-500 uppercase">
+                  Level {threshold.level} · {threshold.label}
+                </p>
+              </div>
+              <p className="mt-1 text-xs font-bold text-neutral-900">{threshold.value.toFixed(1)} m</p>
             </div>
           ))}
         </div>
@@ -742,6 +753,8 @@ function RiverAlertPanel({
   onRefresh: () => void;
 }) {
   const queryClient = useQueryClient();
+  const [promptFilter, setPromptFilter] = React.useState<PromptFilter>("all");
+  const [currentPage, setCurrentPage] = React.useState(1);
   const { data, isLoading, isError, refetch } = useQuery<AlertPrompt[]>({
     queryKey: ["admin", "alert-prompts"],
     queryFn: () =>
@@ -769,6 +782,22 @@ function RiverAlertPanel({
     },
     onError: (error) => toast.error(toDisplayError(error).detail),
   });
+
+  const prompts = data ?? [];
+  const filterCounts = {
+    all: prompts.length,
+    "to-review": prompts.filter((prompt) => !prompt.acknowledged_at).length,
+    acknowledged: prompts.filter((prompt) => Boolean(prompt.acknowledged_at)).length,
+  };
+  const filteredPrompts = prompts.filter((prompt) => {
+    if (promptFilter === "to-review") return !prompt.acknowledged_at;
+    if (promptFilter === "acknowledged") return Boolean(prompt.acknowledged_at);
+    return true;
+  });
+  const totalPages = Math.max(1, Math.ceil(filteredPrompts.length / PROMPTS_PER_PAGE));
+  const activePage = Math.min(currentPage, totalPages);
+  const pageStart = (activePage - 1) * PROMPTS_PER_PAGE;
+  const paginatedPrompts = filteredPrompts.slice(pageStart, pageStart + PROMPTS_PER_PAGE);
 
   if (!isAdmin) {
     return (
@@ -800,9 +829,6 @@ function RiverAlertPanel({
   if (isError) {
     return <ErrorState sectionName="River Alert review" onRetry={() => void refetch()} />;
   }
-
-  const prompts = data ?? [];
-  const pendingCount = prompts.filter((prompt) => !prompt.acknowledged_at).length;
 
   const content = (() => {
     if (!isAdmin) {
@@ -871,15 +897,25 @@ function RiverAlertPanel({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span
-              className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                pendingCount > 0
-                  ? "bg-amber-100 text-amber-900"
-                  : "bg-emerald-100 text-emerald-800"
-              }`}
+            <Select
+              value={promptFilter}
+              onValueChange={(value) => {
+                setPromptFilter(value as PromptFilter);
+                setCurrentPage(1);
+              }}
             >
-              {pendingCount > 0 ? `${pendingCount} to review` : "Review complete"}
-            </span>
+              <SelectTrigger
+                className="h-8 min-w-36 border-neutral-200 bg-white text-xs font-semibold text-neutral-800"
+                aria-label="Filter river alert prompts by review status"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                <SelectItem value="all" className="text-xs">All ({filterCounts.all})</SelectItem>
+                <SelectItem value="to-review" className="text-xs">To review ({filterCounts["to-review"]})</SelectItem>
+                <SelectItem value="acknowledged" className="text-xs">Acknowledged ({filterCounts.acknowledged})</SelectItem>
+              </SelectContent>
+            </Select>
             <Button asChild size="sm" className="bg-emerald-700 shadow-sm hover:bg-emerald-800">
               <Link href="/admin/announcements/create-announcement?kind=alert">
                 Create alert
@@ -889,8 +925,8 @@ function RiverAlertPanel({
           </div>
         </div>
 
-        <div className="flex flex-col divide-y divide-neutral-100">
-          {prompts.map((prompt) => (
+        <div className="flex flex-1 flex-col divide-y divide-neutral-100">
+          {paginatedPrompts.map((prompt) => (
             <article
               key={prompt.id}
               className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
@@ -960,7 +996,51 @@ function RiverAlertPanel({
               </div>
             </article>
           ))}
+          {filteredPrompts.length === 0 ? (
+            <div className="flex min-h-48 flex-1 flex-col items-center justify-center px-6 text-center">
+              <ClipboardCheck aria-hidden className="size-6 text-neutral-300" />
+              <p className="mt-2 text-sm font-semibold text-neutral-800">
+                {promptFilter === "acknowledged" ? "No acknowledged prompts" : "No prompts to review"}
+              </p>
+              <p className="mt-1 text-xs text-neutral-500">Try another review status to see recorded river-level crossings.</p>
+            </div>
+          ) : null}
         </div>
+
+        {filteredPrompts.length > 0 ? (
+          <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 bg-neutral-50/70 px-5 py-3">
+            <p className="text-xs text-neutral-600">
+              Showing <span className="font-semibold text-neutral-900">{pageStart + 1}–{Math.min(pageStart + PROMPTS_PER_PAGE, filteredPrompts.length)}</span> of {filteredPrompts.length}
+            </p>
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 px-2 text-xs"
+                disabled={activePage === 1}
+                onClick={() => setCurrentPage(activePage - 1)}
+              >
+                <ChevronLeft aria-hidden className="size-3.5" />
+                Previous
+              </Button>
+              <span className="min-w-18 text-center text-[11px] font-semibold text-neutral-600">
+                Page {activePage} of {totalPages}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 px-2 text-xs"
+                disabled={activePage === totalPages}
+                onClick={() => setCurrentPage(activePage + 1)}
+              >
+                Next
+                <ChevronRight aria-hidden className="size-3.5" />
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </div>
     );
   })();
