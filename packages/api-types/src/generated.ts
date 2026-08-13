@@ -2765,13 +2765,13 @@ export interface components {
              */
             area_id: string;
             /** Street Address */
-            street_address?: string | null;
+            street_address: string;
             /** Waterway Proximity */
             waterway_proximity?: ("very_near" | "near" | "far") | null;
             /** Latitude */
-            latitude?: number | null;
+            latitude: number;
             /** Longitude */
-            longitude?: number | null;
+            longitude: number;
             head_member: components["schemas"]["MemberIn"];
             /**
              * Members

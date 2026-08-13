@@ -134,25 +134,29 @@ export default function LocationPicker({
         </MapContainer>
       </div>
 
-      {geo.isSecureContext && geo.isSupported ? (
+      <div className="mt-2 flex flex-col-reverse gap-1.5 sm:flex-row-reverse sm:items-center sm:justify-between">
+        {geo.isSecureContext && geo.isSupported ? (
         <Button
           type="button"
           variant="outline"
           size="sm"
-          className="mt-2"
+          className="sm:ml-auto"
           disabled={geo.status === "locating"}
           onClick={geo.locate}
         >
           <LocateFixed aria-hidden className="size-3.5" />
-          {geo.status === "locating" ? "Locating…" : "Use my current location"}
+          {geo.status === "locating" ? "Locating…" : "Use My Current Location"}
         </Button>
       ) : (
-        <p className="text-caption mt-2 text-neutral-500">
+        <p className="text-caption text-neutral-500">
           {geo.isSecureContext
             ? "This browser can't get your location — drag the pin instead."
             : "Location access needs a secure (https) connection — drag the pin instead."}
         </p>
-      )}
+        )}
+
+        <p className="text-caption text-neutral-500">{caption}</p>
+      </div>
 
       {geo.errorMessage ? (
         <p className="text-caption text-danger mt-1">{geo.errorMessage}</p>
@@ -161,7 +165,6 @@ export default function LocationPicker({
         <p className="text-caption mt-1 text-neutral-500">{geo.accuracyNote}</p>
       ) : null}
 
-      <p className="text-caption mt-1 text-neutral-500">{caption}</p>
     </div>
   );
 }

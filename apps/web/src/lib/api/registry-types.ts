@@ -47,10 +47,10 @@ export interface HouseholdCreateBhw {
   head_name: string;
   contact_number: string | null;
   area_id: string;
-  street_address: string | null;
+  street_address: string;
   waterway_proximity?: "very_near" | "near" | "far" | null;
-  latitude: number | null;
-  longitude: number | null;
+  latitude: number;
+  longitude: number;
   head_member: MemberIn;
   members: MemberIn[];
 }

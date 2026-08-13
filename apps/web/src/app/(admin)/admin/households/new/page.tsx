@@ -4,11 +4,11 @@ import * as React from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { toast } from "sonner";
-import { AlertCircle, Droplets, Home, MapPin, UserRound, Users } from "lucide-react";
+import { AlertCircle, Droplets, Home, MapPin, Users } from "lucide-react";
 
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
@@ -61,7 +61,7 @@ const bhwFormSchema = z.object({
   head_name: z.string().min(1, "Enter the household head's full name"),
   contact_number: z.string().optional(),
   area_id: z.string().min(1, "Select an area"),
-  street_address: z.string().optional(),
+  street_address: z.string().trim().min(1, "Enter the household address"),
   waterway_proximity: z.enum(["very_near", "near", "far"], {
     message: "Select the household's proximity to a waterway",
   }),
@@ -72,7 +72,9 @@ const bhwFormSchema = z.object({
   head_is_lactating: z.boolean(),
   head_has_chronic_condition: z.boolean(),
   head_is_bedridden: z.boolean(),
-  location: z.object({ lat: z.number(), lng: z.number() }).nullable(),
+  location: z.object({ lat: z.number(), lng: z.number() }).nullable().refine((value) => Boolean(value), {
+    message: "Pin the household location on the map",
+  }),
   members: z.array(memberSchema),
 });
 
@@ -154,6 +156,8 @@ export default function NewHouseholdPage() {
     setValue,
     formState: { errors, isSubmitting },
   } = form;
+  const members = useWatch({ control, name: "members" });
+  const hasMembers = members.length > 0;
 
   const submitMutation = useMutation({
     mutationFn: (body: HouseholdCreateBhw) =>
@@ -172,14 +176,18 @@ export default function NewHouseholdPage() {
 
   async function onSubmit(values: BhwFormValues) {
     setServerError(null);
+    if (!values.location) {
+      setServerError("Pin the household location on the map.");
+      return;
+    }
     await submitMutation.mutateAsync({
       head_name: values.head_name,
       contact_number: values.contact_number || null,
       area_id: values.area_id,
-      street_address: values.street_address || null,
+      street_address: values.street_address,
       waterway_proximity: values.waterway_proximity,
-      latitude: values.location?.lat ?? null,
-      longitude: values.location?.lng ?? null,
+      latitude: values.location.lat,
+      longitude: values.location.lng,
       head_member: {
         full_name: values.head_name,
         birth_date: values.head_birth_date || null,
@@ -241,6 +249,11 @@ export default function NewHouseholdPage() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5"><Label htmlFor="head_birth_date">Birthday</Label><Input id="head_birth_date" type="date" className={formFieldClassName} {...register("head_birth_date")} /></div>
+                <div className="flex flex-col gap-1.5"><Label htmlFor="head_sex">Sex</Label><Controller control={control} name="head_sex" render={({ field }) => (<Select value={field.value ?? ""} onValueChange={field.onChange}><SelectTrigger id="head_sex" className={`${formFieldClassName} w-full`}><SelectValue placeholder="Select" /></SelectTrigger><SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem></SelectContent></Select>)} /></div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5"><Label htmlFor="contact_number">Contact Number <span className="text-neutral-400 font-normal">(Optional)</span></Label><Input id="contact_number" type="tel" placeholder="09XX XXX XXXX" className={formFieldClassName} {...register("contact_number")} /></div>
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="area_id">Area <span className="text-red-600">*</span></Label>
@@ -254,32 +267,29 @@ export default function NewHouseholdPage() {
                 </div>
               </div>
 
-              <div className="border-t border-emerald-100 pt-5">
-                <div className="mb-4 flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-bold text-neutral-950">Head&apos;s Profile</h3>
-                    <p className="mt-0.5 text-xs text-neutral-500">Optional details help readiness planning.</p>
-                  </div>
-                  <UserRound aria-hidden className="size-4 text-emerald-700" />
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="flex flex-col gap-1.5"><Label htmlFor="head_birth_date">Birth Date</Label><Input id="head_birth_date" type="date" className={formFieldClassName} {...register("head_birth_date")} /></div>
-                  <div className="flex flex-col gap-1.5"><Label htmlFor="head_sex">Sex</Label><Controller control={control} name="head_sex" render={({ field }) => (<Select value={field.value ?? ""} onValueChange={field.onChange}><SelectTrigger id="head_sex" className={`${formFieldClassName} w-full`}><SelectValue placeholder="Select" /></SelectTrigger><SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem></SelectContent></Select>)} /></div>
-                </div>
-
-                <fieldset className="mt-4 grid gap-2 sm:grid-cols-2">
-                  <legend className="mb-1 text-xs font-semibold text-neutral-600">Does Any of This Apply to the Head?</legend>
-                  {([ ["head_is_pwd", "PWD"], ["head_is_pregnant", "Pregnant"], ["head_is_lactating", "Lactating"], ["head_has_chronic_condition", "Chronic condition"], ["head_is_bedridden", "Bedridden / mobility-limited"] ] as const).map(([name, label]) => (
-                    <label key={name} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-neutral-700 hover:bg-emerald-50/60"><Controller control={control} name={name} render={({ field }) => <Checkbox id={name} checked={field.value} onCheckedChange={field.onChange} />} /><span>{label}</span></label>
-                  ))}
-                </fieldset>
-              </div>
+              <fieldset className="grid gap-2 sm:grid-cols-2">
+                <legend className="mb-1 text-xs font-semibold text-neutral-600">Does Any of This Apply to the Head?</legend>
+                {([ ["head_is_pwd", "PWD"], ["head_is_pregnant", "Pregnant"], ["head_is_lactating", "Lactating"], ["head_has_chronic_condition", "Chronic condition"], ["head_is_bedridden", "Bedridden / mobility-limited"] ] as const).map(([name, label]) => (
+                  <label key={name} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-neutral-700 hover:bg-emerald-50/60"><Controller control={control} name={name} render={({ field }) => <Checkbox id={name} checked={field.value} onCheckedChange={field.onChange} />} /><span>{label}</span></label>
+                ))}
+              </fieldset>
             </CardContent>
           </Card>
+
+          {!hasMembers ? (
+            <Card className="border-emerald-200/80 bg-white">
+              <CardContent className="space-y-5 p-4 sm:p-5">
+                <div className="flex items-start gap-3 border-b border-neutral-100 pb-4">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700"><Users aria-hidden className="size-4" /></span>
+                  <div><h2 className="text-base font-bold text-neutral-950">Household Members</h2><p className="mt-0.5 text-xs text-neutral-500">Add every member available during this visit. You can add more than one.</p></div>
+                </div>
+                <HouseholdMemberRepeater control={control} />
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
 
-        <aside className="space-y-4 lg:col-span-5 lg:sticky lg:top-4">
+        <aside className="space-y-4 lg:col-span-5">
           <Card className="border-neutral-200/90 bg-white">
             <CardContent className="space-y-5 p-4 sm:p-5">
               <div className="flex items-start gap-3 border-b border-neutral-100 pb-4">
@@ -294,10 +304,10 @@ export default function NewHouseholdPage() {
                 <p className="text-neutral-500">Barangay <span className="block pt-0.5 font-semibold text-neutral-800">San Jose</span></p>
               </div>
 
-              <div className="flex flex-col gap-1.5"><Label htmlFor="street_address">House No. / Street / Subdivision <span className="text-neutral-400 font-normal">(Optional)</span></Label><Input id="street_address" className={formFieldClassName} {...register("street_address")} placeholder="e.g. 12, Sampaguita St., Greenview Subdivision" /></div>
+              <div className="flex flex-col gap-1.5"><Label htmlFor="street_address">House No. / Street / Subdivision <span className="text-red-600">*</span></Label><Input id="street_address" aria-invalid={!!errors.street_address} className={formFieldClassName} {...register("street_address")} placeholder="e.g. 12, Sampaguita St., Greenview Subdivision" />{errors.street_address ? <p className="text-danger text-xs">{errors.street_address.message}</p> : null}</div>
 
               <div className="flex flex-col gap-2">
-                <Label>Pin Household Location <span className="text-neutral-400 font-normal">(Optional)</span></Label>
+                <Label>Pin Household Location <span className="text-red-600">*</span></Label>
                 <Controller control={control} name="location" render={({ field }) => (
                   <LocationPicker
                     value={field.value}
@@ -314,6 +324,7 @@ export default function NewHouseholdPage() {
                     }}
                   />
                 )} />
+                {errors.location ? <p className="text-danger text-xs">{errors.location.message}</p> : null}
                 {locationHint ? <p className="rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-800">{locationHint}</p> : null}
               </div>
             </CardContent>
@@ -346,17 +357,19 @@ export default function NewHouseholdPage() {
 
         </aside>
 
-        <Card className="lg:col-span-12 border-emerald-200/80 bg-white">
-          <CardContent className="space-y-5 p-4 sm:p-5">
-            <div className="flex items-start gap-3 border-b border-neutral-100 pb-4">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700"><Users aria-hidden className="size-4" /></span>
-              <div><h2 className="text-base font-bold text-neutral-950">Household Members</h2><p className="mt-0.5 text-xs text-neutral-500">Add every member available during this visit. You can add more than one.</p></div>
-            </div>
-            <HouseholdMemberRepeater control={control} />
-          </CardContent>
-        </Card>
+        {hasMembers ? (
+          <Card className="relative z-0 lg:col-span-12 lg:col-start-1 border-emerald-200/80 bg-white">
+            <CardContent className="space-y-5 p-4 sm:p-5">
+              <div className="flex items-start gap-3 border-b border-neutral-100 pb-4">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700"><Users aria-hidden className="size-4" /></span>
+                <div><h2 className="text-base font-bold text-neutral-950">Household Members</h2><p className="mt-0.5 text-xs text-neutral-500">Add every member available during this visit. You can add more than one.</p></div>
+              </div>
+              <HouseholdMemberRepeater control={control} />
+            </CardContent>
+          </Card>
+        ) : null}
 
-        <div className="lg:col-span-12 sticky bottom-3 z-10 flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white/95 p-3 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+        <div className="lg:col-span-12 mt-1 flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-neutral-500">Fields marked <span className="font-bold text-red-600">*</span> are required.</p>
           <div className="flex flex-wrap justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => router.push("/admin/households")} className="rounded-xl">Cancel</Button>

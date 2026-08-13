@@ -10,7 +10,7 @@ import uuid
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from src.modules.geo.schemas import GeoJsonPoint
 
@@ -81,12 +81,20 @@ class HouseholdCreateBhw(BaseModel):
     head_name: str = Field(min_length=1)
     contact_number: str | None = None
     area_id: uuid.UUID
-    street_address: str | None = None
+    street_address: str = Field(min_length=1)
     waterway_proximity: Literal["very_near", "near", "far"] | None = None
-    latitude: float | None = Field(None, ge=-90, le=90)
-    longitude: float | None = Field(None, ge=-180, le=180)
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
     head_member: MemberIn
     members: list[MemberIn] = []
+
+    @field_validator("street_address")
+    @classmethod
+    def _address_must_not_be_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Street address is required")
+        return value
 
 
 class DuplicateCandidate(BaseModel):

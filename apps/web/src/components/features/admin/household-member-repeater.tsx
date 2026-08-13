@@ -213,7 +213,7 @@ export function HouseholdMemberRepeater<TFieldValues extends FieldValues>({
         type="button"
         variant="outline"
         size="sm"
-        className="sticky bottom-0 self-start bg-white"
+        className="self-start"
         onClick={() => {
           append(emptyMemberValues as never);
           setOpenIndex(fields.length);
