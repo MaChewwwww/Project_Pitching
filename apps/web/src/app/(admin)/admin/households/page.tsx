@@ -103,10 +103,6 @@ export default function AdminHouseholdsPage() {
       { low: 0, medium: 0, high: 0 },
     );
   }, [areaRisk, areaStats, data]);
-  const noContactHouseholds = React.useMemo(
-    () => (data?.items ? data.items.filter((household) => !household.contact_number).length : undefined),
-    [data],
-  );
 
   const mergeMutation = useMutation({
     mutationFn: (body: { kept_household_id: string; merged_household_id: string }) =>
@@ -217,7 +213,6 @@ export default function AdminHouseholdsPage() {
       <HouseholdRegistrySummary
         summary={summary}
         riskCounts={riskCounts}
-        noContactHouseholds={noContactHouseholds}
       />
 
       <ResourceTable

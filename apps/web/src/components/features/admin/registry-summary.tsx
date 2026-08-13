@@ -5,7 +5,6 @@ import {
   ClipboardCheck,
   Home,
   MapPinned,
-  Phone,
   PhoneOff,
   Users,
   UserRoundCheck,
@@ -145,11 +144,9 @@ function areaLabel(value: string): string {
 export function HouseholdRegistrySummary({
   summary,
   riskCounts,
-  noContactHouseholds,
 }: {
   summary?: RegistrySummary;
   riskCounts?: FloodRiskCounts;
-  noContactHouseholds?: number;
 }) {
   if (!summary) return null;
 
@@ -277,18 +274,6 @@ export function HouseholdRegistrySummary({
                 </div>
                 <span className="text-2xl font-bold text-amber-700 tabular-nums">{summary.unreachable_households}</span>
               </div>
-              <div className="flex items-center justify-between gap-3 px-3.5 py-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex size-7 items-center justify-center rounded-lg bg-orange-100 text-orange-700">
-                    <Phone aria-hidden className="size-3.5" />
-                  </span>
-                  <div>
-                    <p className="text-xs font-bold text-neutral-800">No Contact Number</p>
-                    <p className="text-[11px] text-neutral-500">Households missing phone details</p>
-                  </div>
-                </div>
-                <span className="text-2xl font-bold text-orange-700 tabular-nums">{noContactHouseholds ?? "—"}</span>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -341,11 +326,6 @@ export function HouseholdRegistrySummary({
                     </span>
                   </div>
                 ))}
-              </div>
-              <div className="sm:col-span-2 flex flex-nowrap items-center justify-center gap-x-4 whitespace-nowrap text-[10px] font-semibold text-neutral-500" aria-label="Chart ring legend">
-                <span>Outer ring: Households</span>
-                <span aria-hidden>|</span>
-                <span>Inner ring: Citizens</span>
               </div>
               <p className="sr-only">
                 Area distribution: {areas.map((area) => `${areaLabel(area.name)} has ${area.households} households (${area.householdShare} percent) and ${area.citizens} citizens (${area.citizenShare} percent)`).join("; ")}.
