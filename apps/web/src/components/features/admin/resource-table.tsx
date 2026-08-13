@@ -47,6 +47,8 @@ export interface ResourceColumn<T> {
   className?: string;
   /** Set false for long prose or values that do not make meaningful filters. */
   filterable?: boolean;
+  /** Optional display value used by the shared filter without adding a column. */
+  filterValue?: (row: T) => unknown;
 }
 
 export interface ResourceTableProps<T> {
@@ -77,7 +79,14 @@ const FILTER_KEYS = new Set([
   "publication_status",
   "flood_exposure",
   "category",
+  "has_possible_duplicate",
 ]);
+
+function columnFilterValue<T>(column: ResourceColumn<T>, row: T): unknown {
+  return column.filterValue
+    ? column.filterValue(row)
+    : (row as Record<string, unknown>)[column.key];
+}
 
 export function plainValue(value: unknown): string {
   if (Array.isArray(value)) return value.map((item) => plainValue(item)).join(", ");
@@ -120,9 +129,7 @@ export function ResourceTable<T extends object>({
     if (!data?.length) return undefined;
     return columns.find((column) => {
       if (column.filterable === false || !FILTER_KEYS.has(column.key)) return false;
-      const values = new Set(
-        data.map((row) => plainValue((row as Record<string, unknown>)[column.key])),
-      );
+      const values = new Set(data.map((row) => plainValue(columnFilterValue(column, row))));
       return values.size > 1 && values.size <= 8;
     });
   }, [columns, data]);
@@ -133,7 +140,7 @@ export function ResourceTable<T extends object>({
         ? [
             ...new Set(
               data.map((row) =>
-                plainValue((row as Record<string, unknown>)[filterColumn.key]),
+                plainValue(columnFilterValue(filterColumn, row)),
               ),
             ),
           ].sort()
@@ -145,7 +152,7 @@ export function ResourceTable<T extends object>({
     if (!filterColumn || !data) return {};
     const counts: Record<string, number> = { __all__: data.length };
     for (const row of data) {
-      const val = plainValue((row as Record<string, unknown>)[filterColumn.key]);
+      const val = plainValue(columnFilterValue(filterColumn, row));
       counts[val] = (counts[val] ?? 0) + 1;
     }
     return counts;
@@ -161,7 +168,9 @@ export function ResourceTable<T extends object>({
           plainValue(record[column.key]).toLocaleLowerCase().includes(lowered),
         );
       const matchesFilter =
-        !filter || !filterColumn || plainValue(record[filterColumn.key]) === filter;
+        !filter ||
+        !filterColumn ||
+        plainValue(columnFilterValue(filterColumn, row)) === filter;
       return matchesQuery && matchesFilter;
     });
     if (!sortKey) return next;
