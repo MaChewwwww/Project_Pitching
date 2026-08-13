@@ -413,7 +413,7 @@ interface ThresholdLine {
 type HistoryHours = 6 | 24 | 168;
 type PromptFilter = "all" | "to-review" | "acknowledged";
 
-const PROMPTS_PER_PAGE = 3;
+const PROMPTS_PER_PAGE = 6;
 
 const HISTORY_OPTIONS: { label: string; value: HistoryHours }[] = [
   { label: "Past 6 hours", value: 6 },
@@ -698,17 +698,6 @@ function RiverHistoryChart({
       ) : null}
 
       <div className="mt-auto border-t border-neutral-200 bg-neutral-50/70" aria-label="River level chart legend">
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-neutral-200 px-5 py-3">
-          <p className="text-[10px] font-bold tracking-[0.1em] text-neutral-500 uppercase">Chart key</p>
-          <span className="flex items-center gap-2 text-[11px] text-neutral-700">
-            <span aria-hidden className="h-0.5 w-6 rounded-full bg-sky-600" />
-            <span><strong className="font-bold text-neutral-900">Blue line and area:</strong> reported river level</span>
-          </span>
-          <span className="flex items-center gap-2 text-[11px] text-neutral-700">
-            <span aria-hidden className="w-6 border-t-2 border-dashed border-neutral-500" />
-            <span><strong className="font-bold text-neutral-900">Dashed colour lines:</strong> alert thresholds, not measurements</span>
-          </span>
-        </div>
         <div className="grid grid-cols-3 divide-x divide-neutral-200">
           {thresholdRows.map((threshold) => (
             <div key={threshold.level} className="relative px-3 py-3 first:pl-5">
@@ -905,7 +894,7 @@ function RiverAlertPanel({
               }}
             >
               <SelectTrigger
-                className="h-8 min-w-36 border-neutral-200 bg-white text-xs font-semibold text-neutral-800"
+                className="h-8 w-fit border-neutral-200 bg-white text-xs font-semibold text-neutral-800"
                 aria-label="Filter river alert prompts by review status"
               >
                 <SelectValue />
