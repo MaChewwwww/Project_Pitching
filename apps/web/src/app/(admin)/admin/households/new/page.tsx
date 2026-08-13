@@ -4,11 +4,11 @@ import * as React from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { toast } from "sonner";
-import { AlertCircle, Droplets, Home, MapPin, Users } from "lucide-react";
+import { AlertCircle, Check, Droplets, Home, MapPin, Users } from "lucide-react";
 
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
@@ -203,6 +203,13 @@ const formFieldClassName =
 const formCheckboxClassName =
   "border-emerald-300 data-checked:border-emerald-600 data-checked:bg-emerald-600 data-checked:text-white focus-visible:ring-emerald-500/30";
 
+const REGISTRATION_STEPS = [
+  { id: "details", label: "Household Details", Icon: Home },
+  { id: "address", label: "Address and Map Pin", Icon: MapPin },
+  { id: "waterway", label: "Waterway Proximity", Icon: Droplets },
+  { id: "members", label: "Household Members", Icon: Users },
+] as const;
+
 /** FR-REG-002/003/004/024/025 — one BHW-assisted household visit. */
 export default function NewHouseholdPage() {
   useRequireRole("admin", "bhw");
@@ -210,8 +217,10 @@ export default function NewHouseholdPage() {
   const router = useRouter();
   const [serverError, setServerError] = React.useState<string | null>(null);
   const [locationHint, setLocationHint] = React.useState<string | null>(null);
+  const [locationHintIsError, setLocationHintIsError] = React.useState(false);
   const [confirmationOpen, setConfirmationOpen] = React.useState(false);
   const [pendingValues, setPendingValues] = React.useState<BhwFormValues | null>(null);
+  const generatedAddressRef = React.useRef<string | null>(null);
 
   const { data: allAreas } = useQuery({
     queryKey: ["admin", "areas"],
@@ -235,6 +244,27 @@ export default function NewHouseholdPage() {
     setValue,
     formState: { errors, isSubmitting },
   } = form;
+  const watchedValues = useWatch({ control });
+  const memberEntries = watchedValues.members ?? [];
+  const completedSteps = {
+    details: Boolean(
+      watchedValues.head_name?.trim() &&
+      watchedValues.head_birth_date &&
+      watchedValues.head_sex &&
+      watchedValues.area_id,
+    ),
+    address: Boolean(watchedValues.street_address?.trim() && watchedValues.location),
+    waterway: Boolean(watchedValues.waterway_proximity),
+    members:
+      memberEntries.length > 0 &&
+      memberEntries.every(
+        (member) =>
+          Boolean(member.full_name?.trim()) &&
+          Boolean(member.birth_date) &&
+          Boolean(member.sex) &&
+          Boolean(member.relationship_to_head),
+      ),
+  };
 
   const submitMutation = useMutation({
     mutationFn: (body: HouseholdCreateBhw) =>
@@ -530,22 +560,6 @@ export default function NewHouseholdPage() {
                 </p>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="street_address">
-                  House No. / Street / Subdivision <span className="text-red-600">*</span>
-                </Label>
-                <Input
-                  id="street_address"
-                  aria-invalid={!!errors.street_address}
-                  className={formFieldClassName}
-                  {...register("street_address")}
-                  placeholder="e.g. 12, Sampaguita St., Greenview Subdivision"
-                />
-                {errors.street_address ? (
-                  <p className="text-danger text-xs">{errors.street_address.message}</p>
-                ) : null}
-              </div>
-
               <div className="flex flex-col gap-2">
                 <Label>
                   Pin Household Location <span className="text-red-600">*</span>
@@ -559,15 +573,34 @@ export default function NewHouseholdPage() {
                       onChange={field.onChange}
                       onResolve={(resolution: PointResolution) => {
                         if (!resolution.within_barangay || !resolution.area_id) {
+                          setValue("area_id", "", { shouldValidate: true });
+                          setLocationHintIsError(true);
+                          if (
+                            form.getValues("street_address") ===
+                            generatedAddressRef.current
+                          ) {
+                            setValue("street_address", "", { shouldValidate: true });
+                            generatedAddressRef.current = null;
+                          }
                           setLocationHint("Choose a pin inside Barangay San Jose.");
                           return;
                         }
+                        setLocationHintIsError(false);
                         setValue("area_id", resolution.area_id, { shouldValidate: true });
                         const currentAddress = form.getValues("street_address");
-                        if (!currentAddress || currentAddress.startsWith("Area "))
-                          setValue("street_address", resolution.address_label ?? "");
+                        const canUseResolvedAddress =
+                          !currentAddress.trim() ||
+                          currentAddress === generatedAddressRef.current ||
+                          currentAddress.startsWith("Area ");
+                        if (resolution.address_label && canUseResolvedAddress) {
+                          generatedAddressRef.current = resolution.address_label;
+                          setValue("street_address", resolution.address_label, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
+                        }
                         setLocationHint(
-                          `${resolution.area_name} selected. The address label is approximate; add a house number or purok if known.`,
+                          `${resolution.area_name} selected. The address field was filled with an approximate area address; add the house number, street, or subdivision if known.`,
                         );
                       }}
                     />
@@ -577,9 +610,33 @@ export default function NewHouseholdPage() {
                   <p className="text-danger text-xs">{errors.location.message}</p>
                 ) : null}
                 {locationHint ? (
-                  <p className="rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-800">
+                  <p
+                    role={locationHintIsError ? "alert" : undefined}
+                    className={cn(
+                      "rounded-lg border px-3 py-2 text-xs",
+                      locationHintIsError
+                        ? "border-red-200 bg-red-50 text-red-800"
+                        : "border-sky-100 bg-sky-50 text-sky-800",
+                    )}
+                  >
                     {locationHint}
                   </p>
+                ) : null}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="street_address">
+                  House No. / Street / Subdivision <span className="text-red-600">*</span>
+                </Label>
+                <Input
+                  id="street_address"
+                  aria-invalid={!!errors.street_address}
+                  className={formFieldClassName}
+                  {...register("street_address")}
+                  placeholder="e.g. 12, Sampaguita St., Greenview Subdivision"
+                />
+                {errors.street_address ? (
+                  <p className="text-danger text-xs">{errors.street_address.message}</p>
                 ) : null}
               </div>
             </CardContent>
@@ -652,18 +709,66 @@ export default function NewHouseholdPage() {
         </aside>
 
         <div className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-3 border-t border-neutral-200 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:left-64 xl:px-8">
-          <div className="flex flex-wrap justify-end gap-2">
+          <nav
+            aria-label="Registration progress"
+            className="min-w-0 flex-1 overflow-x-auto pb-0.5"
+          >
+            <ol className="flex min-w-max items-center gap-2">
+              {REGISTRATION_STEPS.map((step, index) => {
+                const complete = completedSteps[step.id];
+                const Icon = step.Icon;
+                return (
+                  <React.Fragment key={step.id}>
+                    <li
+                      aria-label={`${step.label}: ${complete ? "complete" : "not complete"}`}
+                      className={cn(
+                        "flex items-center gap-2 rounded-full px-2 py-1.5 text-xs font-semibold transition-colors",
+                        complete ? "text-emerald-800" : "text-neutral-500",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "flex size-7 shrink-0 items-center justify-center rounded-full border transition-all",
+                          complete
+                            ? "border-emerald-500 bg-emerald-600 text-white shadow-[0_0_0_4px_rgba(16,185,129,0.14)]"
+                            : "border-neutral-300 bg-neutral-50 text-neutral-400",
+                        )}
+                      >
+                        {complete ? (
+                          <Check aria-hidden className="size-3.5 stroke-[3]" />
+                        ) : (
+                          <Icon aria-hidden className="size-3.5" />
+                        )}
+                      </span>
+                      <span className="whitespace-nowrap">{step.label}</span>
+                    </li>
+                    {index < REGISTRATION_STEPS.length - 1 ? (
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "h-px w-4 shrink-0 transition-colors",
+                          complete ? "bg-emerald-300" : "bg-neutral-200",
+                        )}
+                      />
+                    ) : null}
+                  </React.Fragment>
+                );
+              })}
+            </ol>
+          </nav>
+
+          <div className="flex shrink-0 flex-wrap justify-end gap-2 sm:ml-auto">
             <Button
               type="button"
               variant="outline"
               onClick={() => router.push("/admin/households")}
-              className="rounded-xl"
+              className="rounded-xl border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
             >
               Cancel
             </Button>
             <Button
               type="button"
-              variant="outline"
+              variant="warning"
               onClick={() => reset(emptyValues)}
               className="rounded-xl"
             >
@@ -672,7 +777,7 @@ export default function NewHouseholdPage() {
             <Button
               type="submit"
               disabled={isSubmitting || submitMutation.isPending}
-              className="rounded-xl bg-emerald-600 px-5 font-bold hover:bg-emerald-700"
+              className="rounded-xl bg-emerald-600 px-5 font-bold text-white shadow-sm hover:bg-emerald-700"
             >
               {isSubmitting || submitMutation.isPending
                 ? "Creating household…"

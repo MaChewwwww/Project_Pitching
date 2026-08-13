@@ -286,6 +286,8 @@ their contact number is optional and is carried into the Registered Citizens dir
 opens a confirmation review before saving, then the API duplicate check flags possible matches in the
 household list. Vulnerability flags remain optional because they record what the BHW knows. Household
 contact number is optional; the API normalizes a missing number to the `No Contact Number` review state automatically.
+The fixed action bar keeps a compact icon timeline on the left, lighting each step when its required fields
+are complete, while the color-coded cancel, clear, and create actions stay right-aligned.
 
 ### Portal splash loading
 
