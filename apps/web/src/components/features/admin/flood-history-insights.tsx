@@ -19,7 +19,6 @@ import {
   Building2,
   ExternalLink,
   Gauge,
-  Layers3,
   MapPin,
   Users,
   Waves,
@@ -638,10 +637,6 @@ function AreaReachCard({ data, areaCount }: { data: EventMetric[]; areaCount: nu
           ) : (
             <EmptyChart description="Add affected areas to see which parts of the barangay recur in flood records." />
           )}
-        </div>
-        <div className="flex items-center gap-2 border-t border-neutral-100 bg-violet-50/40 px-4 py-3 text-[10px] text-violet-800 sm:px-5">
-          <Layers3 aria-hidden className="size-3.5 shrink-0" />
-          <span>Counts represent event mentions, not a live risk rating.</span>
         </div>
       </CardContent>
     </Card>
