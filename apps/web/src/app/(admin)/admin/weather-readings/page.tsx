@@ -32,7 +32,7 @@ import { ErrorState } from "@/components/common/error-state";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
 import { RiverLevelPanel } from "@/components/features/weather/river-level-panel";
 import { WeatherPanel } from "@/components/features/weather/weather-panel";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -147,19 +147,9 @@ function OverviewPanel({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="border-b border-neutral-200 pb-3">
-        <h2 className="text-h3 text-neutral-900">Weather &amp; River Level</h2>
-        <p className="text-body-sm text-neutral-600">
-          Monitor real-time weather metrics and the DOST-PAGASA Montalban river gauge.
-          These cached readings are the same ones shown to San Jose residents on the
-          public weather page.
-        </p>
-      </div>
-      <div className="grid gap-4 xl:grid-cols-[1.45fr_0.85fr]">
-        <WeatherPanel weather={weather} />
-        <RiverLevelPanel river={river} weather={weather} density="compact" />
-      </div>
+    <div className="grid gap-4 xl:grid-cols-[1.45fr_0.85fr]">
+      <WeatherPanel weather={weather} />
+      <RiverLevelPanel river={river} weather={weather} density="compact" />
     </div>
   );
 }
@@ -670,29 +660,38 @@ export default function AdminWeatherReadingsPage() {
 
       <Card className="overflow-visible p-0">
         <Tabs value={activeTab} onValueChange={selectTab} className="w-full">
-          {/* Tab bar */}
-          <div className="border-b border-neutral-200 px-4 pt-3 sm:px-6">
-            <TabsList
-              variant="line"
-              className="h-auto w-full grid gap-0 bg-transparent p-0"
-              style={{
-                gridTemplateColumns: canReview ? "repeat(3, 1fr)" : "repeat(2, 1fr)",
-              }}
+          {/* Tab bar — plain div so shadcn TabsList defaults don't interfere */}
+          <div className="border-b border-neutral-200">
+            <div
+              role="tablist"
+              className="flex"
             >
               {/* Overview */}
-              <TabsTrigger
-                value="overview"
-                className="h-11 justify-center gap-2 rounded-none border-b-2 border-transparent px-4 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900 data-active:border-emerald-600 data-active:text-emerald-700"
+              <button
+                role="tab"
+                aria-selected={activeTab === "overview"}
+                onClick={() => selectTab("overview")}
+                className={`inline-flex h-12 flex-1 items-center justify-center gap-2 border-b-2 px-4 text-sm font-medium transition-colors ${
+                  activeTab === "overview"
+                    ? "border-emerald-600 text-emerald-700"
+                    : "border-transparent text-neutral-500 hover:text-neutral-900"
+                }`}
               >
                 <Gauge aria-hidden className="size-4 shrink-0" />
                 Overview
-              </TabsTrigger>
+              </button>
 
               {/* River Alert (admin only) */}
               {canReview ? (
-                <TabsTrigger
-                  value="river-alert"
-                  className="h-11 justify-center gap-2 rounded-none border-b-2 border-transparent px-4 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900 data-active:border-emerald-600 data-active:text-emerald-700"
+                <button
+                  role="tab"
+                  aria-selected={activeTab === "river-alert"}
+                  onClick={() => selectTab("river-alert")}
+                  className={`inline-flex h-12 flex-1 items-center justify-center gap-2 border-b-2 px-4 text-sm font-medium transition-colors ${
+                    activeTab === "river-alert"
+                      ? "border-emerald-600 text-emerald-700"
+                      : "border-transparent text-neutral-500 hover:text-neutral-900"
+                  }`}
                 >
                   <Droplets aria-hidden className="size-4 shrink-0" />
                   River Alert
@@ -701,18 +700,24 @@ export default function AdminWeatherReadingsPage() {
                       {pendingPromptCount}
                     </span>
                   ) : null}
-                </TabsTrigger>
+                </button>
               ) : null}
 
               {/* Manual Entry */}
-              <TabsTrigger
-                value="manual-entry"
-                className="h-11 justify-center gap-2 rounded-none border-b-2 border-transparent px-4 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900 data-active:border-emerald-600 data-active:text-emerald-700"
+              <button
+                role="tab"
+                aria-selected={activeTab === "manual-entry"}
+                onClick={() => selectTab("manual-entry")}
+                className={`inline-flex h-12 flex-1 items-center justify-center gap-2 border-b-2 px-4 text-sm font-medium transition-colors ${
+                  activeTab === "manual-entry"
+                    ? "border-emerald-600 text-emerald-700"
+                    : "border-transparent text-neutral-500 hover:text-neutral-900"
+                }`}
               >
                 <PenLine aria-hidden className="size-4 shrink-0" />
                 Manual Entry
-              </TabsTrigger>
-            </TabsList>
+              </button>
+            </div>
           </div>
 
           {/* Tab content */}
