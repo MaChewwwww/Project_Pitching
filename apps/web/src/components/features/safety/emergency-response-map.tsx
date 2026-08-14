@@ -2125,9 +2125,12 @@ function AreaSummaryModal({
                 <Users className="size-3 text-slate-500 shrink-0" />
                 Households
               </span>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-2xl font-black text-slate-950 tabular-nums shrink-0">{totalHouseholds}</span>
-                <span className="text-[11px] font-medium text-slate-600 text-right leading-tight">{totalResidents} Citizens</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-3xl font-black text-slate-950 tabular-nums leading-none shrink-0">{totalHouseholds}</span>
+                <div className="flex flex-col text-[10.5px] font-medium leading-[13px] text-right text-slate-600">
+                  <span>Total</span>
+                  <span className="font-bold text-slate-800">{totalResidents} Citizens</span>
+                </div>
               </div>
             </div>
 
@@ -2136,9 +2139,12 @@ function AreaSummaryModal({
                 <CheckCircle2 className="size-3 text-emerald-700 shrink-0" />
                 Safety Status
               </span>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-2xl font-black text-emerald-800 tabular-nums shrink-0">{safePct}%</span>
-                <span className="text-[11px] font-bold text-emerald-700 text-right leading-tight">{safeMembers} of {totalResidents} Safe</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-3xl font-black text-emerald-800 tabular-nums leading-none shrink-0">{safePct}%</span>
+                <div className="flex flex-col text-[10.5px] font-bold leading-[13px] text-right text-emerald-700">
+                  <span>{safeMembers} of {totalResidents}</span>
+                  <span>Citizens Safe</span>
+                </div>
               </div>
             </div>
 
@@ -2147,9 +2153,12 @@ function AreaSummaryModal({
                 <AlertTriangle className="size-3 text-amber-700 shrink-0" />
                 Special Needs
               </span>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-2xl font-black text-amber-900 tabular-nums shrink-0">{totalSpecialNeedsCount}</span>
-                <span className="text-[11px] font-medium text-amber-800 text-right leading-tight">Members with Needs</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-3xl font-black text-amber-900 tabular-nums leading-none shrink-0">{totalSpecialNeedsCount}</span>
+                <div className="flex flex-col text-[10.5px] font-medium leading-[13px] text-right text-amber-800">
+                  <span>Citizens with</span>
+                  <span className="font-bold text-amber-900">Special Needs</span>
+                </div>
               </div>
             </div>
 
@@ -2158,9 +2167,12 @@ function AreaSummaryModal({
                 <Shield className="size-3 text-rose-700 shrink-0" />
                 High Flood Risk
               </span>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-2xl font-black text-rose-900 tabular-nums shrink-0">{highRiskCount}</span>
-                <span className="text-[11px] font-medium text-rose-800 text-right leading-tight">Of {totalHouseholds} Households</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-3xl font-black text-rose-900 tabular-nums leading-none shrink-0">{highRiskCount}</span>
+                <div className="flex flex-col text-[10.5px] font-medium leading-[13px] text-right text-rose-800">
+                  <span>Of {totalHouseholds}</span>
+                  <span className="font-bold text-rose-900">Households</span>
+                </div>
               </div>
             </div>
           </div>
@@ -2400,9 +2412,12 @@ function BarangaySummaryModal({
                 <Users className="size-3 text-slate-500 shrink-0" />
                 Total Population
               </span>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-2xl font-black text-slate-950 tabular-nums shrink-0">{totalCitizens}</span>
-                <span className="text-[11px] font-medium text-slate-600 text-right leading-tight">{totalHouseholds} Households (6 Areas)</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-3xl font-black text-slate-950 tabular-nums leading-none shrink-0">{totalCitizens}</span>
+                <div className="flex flex-col text-[10.5px] font-medium leading-[13px] text-right text-slate-600">
+                  <span className="font-bold text-slate-800">{totalHouseholds} Households</span>
+                  <span>(6 Areas)</span>
+                </div>
               </div>
             </div>
 
@@ -2411,9 +2426,12 @@ function BarangaySummaryModal({
                 <CheckCircle2 className="size-3 text-emerald-700 shrink-0" />
                 Accounted For
               </span>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-2xl font-black text-emerald-800 tabular-nums shrink-0">{safePct}%</span>
-                <span className="text-[11px] font-bold text-emerald-700 text-right leading-tight">{safeCitizens} Citizens Confirmed Safe</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-3xl font-black text-emerald-800 tabular-nums leading-none shrink-0">{safePct}%</span>
+                <div className="flex flex-col text-[10.5px] font-bold leading-[13px] text-right text-emerald-700">
+                  <span>{safeCitizens} Citizens</span>
+                  <span>Confirmed Safe</span>
+                </div>
               </div>
             </div>
 
@@ -2422,9 +2440,12 @@ function BarangaySummaryModal({
                 <Home className="size-3 text-emerald-700 shrink-0" />
                 Evacuation Network
               </span>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-2xl font-black text-emerald-900 tabular-nums shrink-0">{totalCapUsed} / {totalCapMax}</span>
-                <span className="text-[11px] font-bold text-emerald-700 text-right leading-tight">{data.evacuation_centers.length} Centers ({evacCapPct}% Full)</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-2xl sm:text-3xl font-black text-emerald-900 tabular-nums leading-none shrink-0">{totalCapUsed}/{totalCapMax}</span>
+                <div className="flex flex-col text-[10.5px] font-bold leading-[13px] text-right text-emerald-700">
+                  <span>{data.evacuation_centers.length} Centers</span>
+                  <span>({evacCapPct}% Full)</span>
+                </div>
               </div>
             </div>
 
@@ -2433,9 +2454,12 @@ function BarangaySummaryModal({
                 <Siren className="size-3 text-slate-600 shrink-0" />
                 Alert & Civic Grid
               </span>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-2xl font-black text-slate-950 tabular-nums shrink-0">{sirens.length} Sirens</span>
-                <span className="text-[11px] font-medium text-slate-600 text-right leading-tight">{facilities.length} Public Facilities</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-3xl font-black text-slate-950 tabular-nums leading-none shrink-0">{sirens.length}</span>
+                <div className="flex flex-col text-[10.5px] font-medium leading-[13px] text-right text-slate-600">
+                  <span className="font-bold text-slate-800">Sirens</span>
+                  <span>{facilities.length} Facilities</span>
+                </div>
               </div>
             </div>
           </div>
