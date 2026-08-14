@@ -440,21 +440,25 @@ export default function AdminEmergencyEventsPage() {
             </div>
           ) : null}
 
-          {/* 3. Connected Underline Tabs Header Bar */}
+          {/* 3. Tabs Header: 2x2 Grid on Mobile / Underline Tabs on Desktop */}
           <div className="border-b border-neutral-200 bg-white">
-            <div role="tablist" className="flex overflow-x-auto px-3">
+            <div
+              role="tablist"
+              className="grid grid-cols-2 gap-2 p-2.5 sm:flex sm:gap-0 sm:p-0 sm:overflow-x-auto sm:px-3"
+            >
               {/* Tab 1: Overview Metrics */}
               <button
                 role="tab"
                 aria-selected={tab === "overview"}
                 onClick={() => setSelection(selectedId, "overview")}
-                className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${tab === "overview"
-                  ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
-                  : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
-                  }`}
+                className={`inline-flex h-11 sm:h-13 items-center justify-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-none sm:border-0 sm:border-b-2 px-3 sm:px-5 text-xs sm:text-sm font-extrabold transition-all ${
+                  tab === "overview"
+                    ? "border-emerald-600 bg-emerald-50 text-emerald-800 border sm:border-b-2 sm:border-emerald-600 sm:text-emerald-700 sm:bg-emerald-50/30 shadow-2xs sm:shadow-none"
+                    : "border-neutral-200 bg-neutral-50/70 border sm:border-0 sm:border-transparent text-neutral-600 sm:text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 sm:hover:bg-neutral-50"
+                }`}
               >
-                <Activity aria-hidden className="size-4 shrink-0" />
-                Overview Metrics
+                <Activity aria-hidden className="size-3.5 sm:size-4 shrink-0 text-emerald-600 sm:text-inherit" />
+                <span className="truncate">Overview Metrics</span>
               </button>
 
               {/* Tab 2: Emergency Events */}
@@ -462,15 +466,16 @@ export default function AdminEmergencyEventsPage() {
                 role="tab"
                 aria-selected={tab === "events"}
                 onClick={() => setSelection(selectedId, "events")}
-                className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${tab === "events"
-                  ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
-                  : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
-                  }`}
+                className={`inline-flex h-11 sm:h-13 items-center justify-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-none sm:border-0 sm:border-b-2 px-3 sm:px-5 text-xs sm:text-sm font-extrabold transition-all ${
+                  tab === "events"
+                    ? "border-emerald-600 bg-emerald-50 text-emerald-800 border sm:border-b-2 sm:border-emerald-600 sm:text-emerald-700 sm:bg-emerald-50/30 shadow-2xs sm:shadow-none"
+                    : "border-neutral-200 bg-neutral-50/70 border sm:border-0 sm:border-transparent text-neutral-600 sm:text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 sm:hover:bg-neutral-50"
+                }`}
               >
-                <Siren aria-hidden className="size-4 shrink-0" />
-                Emergency Events
+                <Siren aria-hidden className="size-3.5 sm:size-4 shrink-0 text-emerald-600 sm:text-inherit" />
+                <span className="truncate">Emergency Events</span>
                 {events.length > 0 ? (
-                  <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] leading-none font-black text-emerald-800">
+                  <span className="ml-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9.5px] sm:text-[10px] leading-none font-black text-emerald-800">
                     {events.length}
                   </span>
                 ) : null}
@@ -482,13 +487,14 @@ export default function AdminEmergencyEventsPage() {
                   role="tab"
                   aria-selected={tab === "map"}
                   onClick={() => setSelection(selectedId, "map")}
-                  className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${tab === "map"
-                    ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
-                    : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
-                    }`}
+                  className={`inline-flex h-11 sm:h-13 items-center justify-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-none sm:border-0 sm:border-b-2 px-3 sm:px-5 text-xs sm:text-sm font-extrabold transition-all ${
+                    tab === "map"
+                      ? "border-emerald-600 bg-emerald-50 text-emerald-800 border sm:border-b-2 sm:border-emerald-600 sm:text-emerald-700 sm:bg-emerald-50/30 shadow-2xs sm:shadow-none"
+                      : "border-neutral-200 bg-neutral-50/70 border sm:border-0 sm:border-transparent text-neutral-600 sm:text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 sm:hover:bg-neutral-50"
+                  }`}
                 >
-                  <Map aria-hidden className="size-4 shrink-0" />
-                  Response Map
+                  <Map aria-hidden className="size-3.5 sm:size-4 shrink-0 text-emerald-600 sm:text-inherit" />
+                  <span className="truncate">Response Map</span>
                 </button>
               ) : null}
 
@@ -497,13 +503,14 @@ export default function AdminEmergencyEventsPage() {
                 role="tab"
                 aria-selected={tab === "accounted-for"}
                 onClick={() => setSelection(selectedId, "accounted-for")}
-                className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${tab === "accounted-for"
-                  ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
-                  : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
-                  }`}
+                className={`inline-flex h-11 sm:h-13 items-center justify-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-none sm:border-0 sm:border-b-2 px-3 sm:px-5 text-xs sm:text-sm font-extrabold transition-all ${
+                  tab === "accounted-for"
+                    ? "border-emerald-600 bg-emerald-50 text-emerald-800 border sm:border-b-2 sm:border-emerald-600 sm:text-emerald-700 sm:bg-emerald-50/30 shadow-2xs sm:shadow-none"
+                    : "border-neutral-200 bg-neutral-50/70 border sm:border-0 sm:border-transparent text-neutral-600 sm:text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 sm:hover:bg-neutral-50"
+                } ${!canSeePii ? "col-span-2 sm:col-span-1" : ""}`}
               >
-                <CircleCheck aria-hidden className="size-4 shrink-0" />
-                Safety Ledger
+                <CircleCheck aria-hidden className="size-3.5 sm:size-4 shrink-0 text-emerald-600 sm:text-inherit" />
+                <span className="truncate">Safety Ledger</span>
               </button>
             </div>
           </div>

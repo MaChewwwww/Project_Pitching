@@ -150,8 +150,8 @@ function createEvacCenterIcon(isAtCapacity: boolean) {
     className: "evac-center-pin-icon",
     html: `
       <div class="transition-transform hover:scale-115 cursor-pointer" style="width:${width}px; height:${height}px;">
-        <svg width="${width}" height="${height}" viewBox="0 0 18 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));">
-          <path d="M9 0.75C4.444 0.75 0.75 4.444 0.75 9C0.75 14.5 7.8 22.8 9 23.25C10.2 22.8 17.25 14.5 17.25 9C17.25 4.444 13.556 0.75 9 0.75Z" fill="${bgColor}" stroke="#FFFFFF" stroke-width="1.25"/>
+        <svg width="${width}" height="${height}" viewBox="0 0 18 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 5px rgba(0,0,0,0.7));">
+          <path d="M9 0.75C4.444 0.75 0.75 4.444 0.75 9C0.75 14.5 7.8 22.8 9 23.25C10.2 22.8 17.25 14.5 17.25 9C17.25 4.444 13.556 0.75 9 0.75Z" fill="${bgColor}"/>
           <!-- Civic Building / Center (Pediment, Columns, Base) -->
           <polygon points="9,4.2 4.5,6.8 13.5,6.8" fill="#FFFFFF"/>
           <rect x="4.5" y="7.1" width="9" height="0.75" rx="0.2" fill="#FFFFFF"/>
@@ -268,7 +268,13 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
   /* --- UI state --- */
   const [selected, setSelected] = React.useState<WorkspaceHouseholdOut | null>(null);
   const [listTab, setListTab] = React.useState<ListTab>("mapped");
-  const [filtersExpanded, setFiltersExpanded] = React.useState(true);
+  const [legendExpanded, setLegendExpanded] = React.useState(true);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      setLegendExpanded(false);
+    }
+  }, []);
 
   /* --- area boundaries layer --- */
   const areaBoundariesQuery = useQuery({
@@ -548,16 +554,41 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
               : null}
           </MapContainer>
 
-          {/* Top-left full Legend card inside the map */}
+          {/* Top-left collapsible Legend card inside the map */}
           <div
             aria-label="Map legend"
-            className="absolute top-3.5 left-3.5 z-[1000] w-64 max-w-[calc(100%-6rem)] rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-3 text-white shadow-2xl backdrop-blur-md transition-all"
+            className={cn(
+              "absolute top-3.5 left-3.5 z-[1000] rounded-xl border border-emerald-900/80 bg-[#052e16]/95 text-white shadow-2xl backdrop-blur-md transition-all duration-200",
+              legendExpanded
+                ? "w-64 max-w-[calc(100%-6rem)] max-h-[calc(100%-2rem)] overflow-y-auto p-3"
+                : "w-auto p-2"
+            )}
           >
-            <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
-              <Shield className="size-3.5 text-emerald-400" aria-hidden />
-              Legend
-            </p>
-            <div className="flex flex-col gap-2 text-[11px]">
+            <button
+              type="button"
+              onClick={() => setLegendExpanded((v) => !v)}
+              className={cn(
+                "flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400 hover:text-emerald-300 transition-colors",
+                legendExpanded ? "w-full justify-between mb-2 pb-1.5 border-b border-emerald-900/60" : "w-auto"
+              )}
+              aria-expanded={legendExpanded}
+              title={legendExpanded ? "Collapse Legend" : "Expand Legend"}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <Shield className="size-3.5 text-emerald-400" aria-hidden />
+                Legend
+              </span>
+              <ChevronDown
+                className={cn(
+                  "size-3.5 text-emerald-400/80 transition-transform duration-200",
+                  legendExpanded ? "rotate-180" : "rotate-0"
+                )}
+                aria-hidden
+              />
+            </button>
+
+            {legendExpanded && (
+              <div className="flex flex-col gap-2 text-[11px]">
               {/* Flood Hazard */}
               {showHazard && (
                 <div>
@@ -610,7 +641,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                     <li className="flex items-center gap-2">
                       <span aria-hidden className="flex shrink-0 items-center justify-center">
                         <svg width="11" height="15" viewBox="0 0 18 24" fill="none">
-                          <path d="M9 0.75C4.444 0.75 0.75 4.444 0.75 9C0.75 14.5 7.8 22.8 9 23.25C10.2 22.8 17.25 14.5 17.25 9C17.25 4.444 13.556 0.75 9 0.75Z" fill="#059669" stroke="#FFFFFF" strokeWidth="1.25"/>
+                          <path d="M9 0.75C4.444 0.75 0.75 4.444 0.75 9C0.75 14.5 7.8 22.8 9 23.25C10.2 22.8 17.25 14.5 17.25 9C17.25 4.444 13.556 0.75 9 0.75Z" fill="#059669"/>
                           <polygon points="9,4.2 4.5,6.8 13.5,6.8" fill="#FFFFFF"/>
                           <rect x="4.5" y="7.1" width="9" height="0.75" rx="0.2" fill="#FFFFFF"/>
                           <rect x="5.2" y="8.2" width="1.3" height="3.2" rx="0.2" fill="#FFFFFF"/>
@@ -624,7 +655,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                     <li className="flex items-center gap-2">
                       <span aria-hidden className="flex shrink-0 items-center justify-center">
                         <svg width="11" height="15" viewBox="0 0 18 24" fill="none">
-                          <path d="M9 0.75C4.444 0.75 0.75 4.444 0.75 9C0.75 14.5 7.8 22.8 9 23.25C10.2 22.8 17.25 14.5 17.25 9C17.25 4.444 13.556 0.75 9 0.75Z" fill="#DC2626" stroke="#FFFFFF" strokeWidth="1.25"/>
+                          <path d="M9 0.75C4.444 0.75 0.75 4.444 0.75 9C0.75 14.5 7.8 22.8 9 23.25C10.2 22.8 17.25 14.5 17.25 9C17.25 4.444 13.556 0.75 9 0.75Z" fill="#DC2626"/>
                           <polygon points="9,4.2 4.5,6.8 13.5,6.8" fill="#FFFFFF"/>
                           <rect x="4.5" y="7.1" width="9" height="0.75" rx="0.2" fill="#FFFFFF"/>
                           <rect x="5.2" y="8.2" width="1.3" height="3.2" rx="0.2" fill="#FFFFFF"/>
@@ -681,24 +712,30 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                 </div>
               )}
             </div>
+            )}
           </div>
 
-          {/* Bottom-right Data Sources citation overlay */}
+          {/* Data Sources attribution (docked footer on mobile, floating card on desktop) */}
           <div
             aria-label="Data sources attribution"
-            className="pointer-events-none absolute bottom-3 right-3 z-[1000] hidden sm:flex flex-col gap-0.5 rounded-lg border border-emerald-900/80 bg-[#052e16]/95 px-3 py-2 text-[10.5px] text-primary-200/80 shadow-xl backdrop-blur-sm"
+            className="pointer-events-none absolute bottom-0 inset-x-0 sm:inset-x-auto sm:bottom-3 sm:right-3 z-[1000] flex flex-col gap-0.5 border-t sm:border border-emerald-900/80 bg-[#052e16]/95 px-2.5 py-1.5 sm:px-3 sm:py-2 text-[9px] sm:text-[10.5px] text-primary-200/90 sm:rounded-lg shadow-xl backdrop-blur-md"
           >
-            <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-primary-300 text-[10px]">
-              <Database className="size-3 text-primary-400" aria-hidden />
-              Data Sources
+            <div className="flex items-center justify-between sm:justify-start gap-1.5 font-bold uppercase tracking-wider text-primary-300 text-[8.5px] sm:text-[10px]">
+              <span className="inline-flex items-center gap-1">
+                <Database className="size-2.5 sm:size-3 text-primary-400" aria-hidden />
+                Data Sources
+              </span>
+              <span className="font-normal normal-case text-primary-300/80 sm:hidden">
+                Brgy. San Jose, Rodriguez, Rizal
+              </span>
             </div>
-            <div>
+            <div className="hidden sm:block">
               <span className="font-semibold text-white/90">Locality:</span> Barangay San Jose, Rodriguez (Montalban), Rizal
             </div>
             <div>
               <span className="font-semibold text-white/90">Data:</span> UP NOAH / LiPAD (ODC-ODbL)
             </div>
-            <div className="text-[9.5px] text-primary-300/60 pt-0.5 border-t border-emerald-900/60 mt-0.5">
+            <div className="text-[8px] sm:text-[9.5px] text-primary-300/70 pt-0.5 border-t border-emerald-900/60 mt-0.5">
               Map: Leaflet · © OpenStreetMap · CARTO
             </div>
           </div>
@@ -725,126 +762,110 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
             </fieldset>
           </div>
 
-          {/* Filters panel matching dark emerald card style */}
-          <div className="rounded-xl border border-primary-800/60 bg-primary-950/95 text-white shadow-xl backdrop-blur-md overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setFiltersExpanded((v) => !v)}
-              className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-primary-900/40 transition-colors"
-              aria-expanded={filtersExpanded}
-            >
-              <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary-400">
-                <Filter className="size-3.5 text-primary-400" aria-hidden />
-                Filters
-              </p>
-              <ChevronDown
-                className={cn(
-                  "size-4 text-primary-400 transition-transform duration-200",
-                  filtersExpanded && "rotate-180",
-                )}
-                aria-hidden
-              />
-            </button>
-            {filtersExpanded && (
-              <div className="px-4 pb-4 flex flex-col gap-3.5 border-t border-primary-800/60 pt-3">
-                {/* Search */}
-                <div className="relative">
-                  <Search
-                    className="pointer-events-none absolute top-2.5 left-3 size-4 text-slate-400"
-                    aria-hidden
-                  />
-                  <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search Household, Head, Or Member..."
-                    className="h-9 w-full rounded-lg border border-slate-200 bg-white pr-3 pl-9 text-xs font-medium text-slate-900 placeholder:text-slate-400 shadow-xs focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
-                    aria-label="Search households"
-                  />
-                </div>
-
-                <CustomFilterSelect
-                  label="Area"
-                  value={area}
-                  onValueChange={setArea}
-                  options={[
-                    { value: "all", label: "All Areas" },
-                    ...areas.map(([id, name]) => ({ value: id, label: name })),
-                  ]}
+          {/* Filters panel (non-collapsible) */}
+          <div className="rounded-xl border border-primary-800/60 bg-primary-950/95 p-4 text-white shadow-xl backdrop-blur-md">
+            <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary-400">
+              <Filter className="size-3.5 text-primary-400" aria-hidden />
+              Filters
+            </p>
+            <div className="flex flex-col gap-3">
+              {/* Search */}
+              <div className="relative">
+                <Search
+                  className="pointer-events-none absolute top-2.5 left-3 size-4 text-neutral-600"
+                  aria-hidden
                 />
-
-                <CustomFilterSelect
-                  label="Risk Level"
-                  value={risk}
-                  onValueChange={setRisk}
-                  options={[
-                    { value: "all", label: "All Risk Levels" },
-                    { value: "3", label: "High Risk" },
-                    { value: "2", label: "Medium Risk" },
-                    { value: "1", label: "Low Risk" },
-                  ]}
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search Household Or Member..."
+                  className="h-9 w-full rounded-lg border border-neutral-300 bg-white pr-3 pl-9 text-xs font-semibold text-neutral-900 placeholder:text-neutral-500 shadow-xs focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+                  aria-label="Search households"
                 />
-
-                <CustomFilterSelect
-                  label="Safety Status"
-                  value={safety}
-                  onValueChange={setSafety}
-                  options={[
-                    { value: "all", label: "All Safety Statuses" },
-                    { value: "safe", label: "All Safe" },
-                    { value: "not_safe", label: "Not Safe Yet" },
-                  ]}
-                />
-
-                <CustomFilterSelect
-                  label="Special Needs"
-                  value={support}
-                  onValueChange={setSupport}
-                  options={[
-                    { value: "all", label: "All Support Needs" },
-                    { value: "is_child", label: "Children (Under 18)" },
-                    { value: "is_senior", label: "Senior Citizens (60+)" },
-                    { value: "is_pwd", label: "Persons With Disabilities (PWD)" },
-                    { value: "is_pregnant", label: "Pregnant" },
-                    { value: "is_lactating", label: "Lactating" },
-                    { value: "is_bedridden", label: "Mobility-Limited / Bedridden" },
-                    { value: "has_chronic_condition", label: "Chronic Health Condition" },
-                  ]}
-                />
-
-                <CustomFilterSelect
-                  label="Center Capacity"
-                  value={capacity}
-                  onValueChange={setCapacity}
-                  options={[
-                    { value: "all", label: "All Evacuation Centers" },
-                    { value: "over", label: "Overloading Capacity" },
-                    { value: "available", label: "With Available Space" },
-                  ]}
-                />
-
-                {(search ||
-                  area !== "all" ||
-                  risk !== "all" ||
-                  safety !== "all" ||
-                  support !== "all" ||
-                  capacity !== "all") && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSearch("");
-                      setArea("all");
-                      setRisk("all");
-                      setSafety("all");
-                      setSupport("all");
-                      setCapacity("all");
-                    }}
-                    className="text-xs font-bold text-emerald-400 hover:text-emerald-300 hover:underline pt-1 text-left"
-                  >
-                    Clear All Filters
-                  </button>
-                )}
               </div>
-            )}
+
+              <CustomFilterSelect
+                label="Area"
+                value={area}
+                onValueChange={setArea}
+                options={[
+                  { value: "all", label: "All Areas" },
+                  ...areas.map(([id, name]) => ({ value: id, label: name })),
+                ]}
+              />
+
+              <CustomFilterSelect
+                label="Risk Level"
+                value={risk}
+                onValueChange={setRisk}
+                options={[
+                  { value: "all", label: "All Risk Levels" },
+                  { value: "3", label: "High Risk" },
+                  { value: "2", label: "Medium Risk" },
+                  { value: "1", label: "Low Risk" },
+                ]}
+              />
+
+              <CustomFilterSelect
+                label="Safety Status"
+                value={safety}
+                onValueChange={setSafety}
+                options={[
+                  { value: "all", label: "All Safety Statuses" },
+                  { value: "safe", label: "All Safe" },
+                  { value: "not_safe", label: "Not Safe Yet" },
+                ]}
+              />
+
+              <CustomFilterSelect
+                label="Special Needs"
+                value={support}
+                onValueChange={setSupport}
+                options={[
+                  { value: "all", label: "All Support Needs" },
+                  { value: "is_child", label: "Children (Under 18)" },
+                  { value: "is_senior", label: "Senior Citizens (60+)" },
+                  { value: "is_pwd", label: "Persons With Disabilities (PWD)" },
+                  { value: "is_pregnant", label: "Pregnant" },
+                  { value: "is_lactating", label: "Lactating" },
+                  { value: "is_bedridden", label: "Mobility-Limited / Bedridden" },
+                  { value: "has_chronic_condition", label: "Chronic Health Condition" },
+                ]}
+              />
+
+              <CustomFilterSelect
+                label="Center Capacity"
+                value={capacity}
+                onValueChange={setCapacity}
+                options={[
+                  { value: "all", label: "All Evacuation Centers" },
+                  { value: "over", label: "Overloading Capacity" },
+                  { value: "available", label: "With Available Space" },
+                ]}
+              />
+
+              {(search ||
+                area !== "all" ||
+                risk !== "all" ||
+                safety !== "all" ||
+                support !== "all" ||
+                capacity !== "all") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch("");
+                    setArea("all");
+                    setRisk("all");
+                    setSafety("all");
+                    setSupport("all");
+                    setCapacity("all");
+                  }}
+                  className="text-xs font-bold text-emerald-300 hover:text-white hover:underline pt-1 text-left"
+                >
+                  Clear All Filters
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1118,40 +1139,45 @@ function EvacCenterTooltip({
   center: EmergencyWorkspaceOut["evacuation_centers"][number];
 }) {
   const isOver = center.is_at_capacity;
-  const color = isOver ? "#DC2626" : "#059669";
 
   return (
     <div
-      className="flex flex-col gap-1 rounded-xl p-2.5 text-white shadow-2xl backdrop-blur-md"
+      className="flex flex-col gap-2 rounded-xl p-3 text-slate-900 shadow-2xl backdrop-blur-md border border-neutral-200/90"
       style={{
-        backgroundColor: "#090d16fa",
-        border: `1.5px solid ${color}`,
-        boxShadow: `0 10px 25px -5px rgba(0,0,0,0.7), 0 0 12px -2px ${color}55`,
-        minWidth: 180,
-        maxWidth: 260,
+        backgroundColor: "#fffffffa",
+        minWidth: 230,
+        maxWidth: 290,
       }}
     >
-      <div
-        className="flex items-center justify-between gap-1.5 border-b pb-1.5"
-        style={{ borderColor: `${color}40` }}
-      >
-        <span className="truncate text-xs font-black text-white">{center.facility.name}</span>
+      <div>
+        <p className="text-xs font-black leading-snug text-neutral-900">
+          {center.facility.name}
+        </p>
+        {center.facility.address ? (
+          <p className="mt-0.5 text-[11px] leading-tight text-neutral-500">
+            {center.facility.address}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="flex items-center justify-between gap-2 border-t border-neutral-100 pt-2 text-[11px]">
+        <div className="flex items-center gap-1 text-neutral-600">
+          <span className="font-medium">Occupancy:</span>
+          <span className="font-black text-neutral-900">
+            {center.occupancy} / {center.capacity ?? "—"}
+          </span>
+        </div>
         <span
-          className="rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white"
-          style={{ backgroundColor: color }}
+          className={cn(
+            "shrink-0 rounded-md px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wide",
+            isOver
+              ? "bg-rose-100 text-rose-800 border border-rose-200"
+              : "bg-emerald-100 text-emerald-800 border border-emerald-200",
+          )}
         >
           {isOver ? "Overloading Capacity" : "Available"}
         </span>
       </div>
-      <div className="pt-0.5 text-[10.5px]">
-        <span className="text-slate-400">Occupancy: </span>
-        <span className="font-bold text-white">
-          {center.occupancy} / {center.capacity ?? "—"}
-        </span>
-      </div>
-      {center.facility.address ? (
-        <p className="truncate text-[10px] text-slate-400">{center.facility.address}</p>
-      ) : null}
     </div>
   );
 }
