@@ -184,9 +184,9 @@ function createEvacCenterIcon(isAtCapacity: boolean) {
 function createBoundaryLabelIcon() {
   return L.divIcon({
     className: "san-jose-boundary-badge-container",
-    html: `<div class="bg-white text-slate-900 border border-slate-300 shadow-md px-3 py-1 rounded-md font-bold text-[11px] whitespace-nowrap flex items-center justify-center cursor-pointer hover:border-emerald-500 hover:text-emerald-700 transition-colors">Barangay San Jose Boundary ℹ️</div>`,
-    iconSize: [210, 26],
-    iconAnchor: [105, 48],
+    html: `<div class="bg-white text-slate-900 border border-slate-300 shadow-md px-3 py-1 rounded-md font-bold text-[11px] whitespace-nowrap flex items-center justify-center cursor-pointer hover:border-emerald-500 hover:text-emerald-700 transition-colors">Barangay San Jose Boundary</div>`,
+    iconSize: [200, 26],
+    iconAnchor: [100, 48],
   });
 }
 
@@ -509,10 +509,6 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                 onEachFeature={(feature, layer) => {
                   const areaName =
                     (feature.properties as { name?: string })?.name ?? "Area";
-                  layer.bindTooltip(
-                    `<div class="font-bold text-xs text-emerald-300">${areaName}</div><div class="text-[10px] text-slate-300">Click to view Area Summary</div>`,
-                    { sticky: true, opacity: 0.95 }
-                  );
                   layer.on({
                     mouseover: (e) => {
                       const l = e.target as L.Path;
@@ -545,10 +541,6 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                 className: "san-jose-interactive-boundary",
               })}
               onEachFeature={(feature, layer) => {
-                layer.bindTooltip(
-                  `<div class="font-bold text-xs text-emerald-300">Barangay San Jose Boundary</div><div class="text-[10px] text-slate-300">Click to view Barangay Summary</div>`,
-                  { sticky: true, opacity: 0.95 }
-                );
                 layer.on({
                   mouseover: (e) => {
                     const l = e.target as L.Path;
@@ -2105,7 +2097,7 @@ function AreaSummaryModal({
 
   return (
     <Dialog open={Boolean(areaName)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-5 sm:p-6 bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
+      <DialogContent className="w-full sm:max-w-2xl md:max-w-3xl max-h-[90vh] overflow-y-auto p-5 sm:p-6 bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
         <DialogHeader className="border-b border-slate-100 pb-4">
           <div className="flex flex-wrap items-center justify-between gap-2 pr-6">
             <div>
@@ -2424,7 +2416,7 @@ function BarangaySummaryModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-5 sm:p-6 bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
+      <DialogContent className="w-full sm:max-w-3xl md:max-w-4xl max-h-[90vh] overflow-y-auto p-5 sm:p-6 bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
         <DialogHeader className="border-b border-slate-100 pb-4">
           <div className="flex flex-wrap items-center justify-between gap-2 pr-6">
             <div>
