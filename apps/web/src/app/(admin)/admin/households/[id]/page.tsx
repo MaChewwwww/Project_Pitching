@@ -453,24 +453,36 @@ export default function HouseholdDetailPage() {
                     ) : null}
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-                    {!member.is_head ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={makeHead.isPending || Boolean(household.head_user_id)}
-                        className="h-9 cursor-pointer gap-1.5 rounded-lg border-amber-300 bg-amber-50 px-2.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-100 hover:text-amber-900 disabled:opacity-50"
-                        title={
-                          household.head_user_id
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={member.is_head || makeHead.isPending || Boolean(household.head_user_id)}
+                      className={`size-9 min-h-9 px-0 transition-colors ${
+                        member.is_head
+                          ? "border-amber-300/80 bg-amber-100/70 text-amber-700 opacity-90 cursor-not-allowed"
+                          : "border-amber-200 bg-amber-50/80 text-amber-800 hover:bg-amber-100 hover:border-amber-300 cursor-pointer"
+                      }`}
+                      title={
+                        member.is_head
+                          ? "Current Household Head"
+                          : household.head_user_id
                             ? "Linked account head cannot be replaced directly"
                             : `Assign ${member.full_name} as Household Head`
-                        }
-                        aria-label={`Assign ${member.full_name} as Household Head`}
-                        onClick={() => makeHead.mutate(member.id)}
-                      >
-                        <Crown aria-hidden className="size-3.5 shrink-0 text-amber-600" />
-                        <span className="hidden sm:inline">Make Head</span>
-                      </Button>
-                    ) : null}
+                      }
+                      aria-label={
+                        member.is_head
+                          ? `${member.full_name} is current Household Head`
+                          : `Assign ${member.full_name} as Household Head`
+                      }
+                      onClick={() => !member.is_head && makeHead.mutate(member.id)}
+                    >
+                      <Crown
+                        aria-hidden
+                        className={`size-4 shrink-0 ${
+                          member.is_head ? "text-amber-600 fill-amber-500/40" : "text-amber-600"
+                        }`}
+                      />
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
