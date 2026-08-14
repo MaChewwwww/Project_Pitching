@@ -205,7 +205,7 @@ export default function RegisteredCitizensPage() {
         }
       />
 
-      <CitizenRegistrySummary summary={summary.data} />
+      <CitizenRegistrySummary summary={summary.data} citizens={list.data?.items} />
 
       <ResourceTable
         columns={columns}

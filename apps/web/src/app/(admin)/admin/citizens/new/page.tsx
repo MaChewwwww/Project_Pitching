@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Card, CardContent } from "@/components/common/card";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { RegistryMemberForm } from "@/components/features/admin/registry-member-form";
+import { SearchableHouseholdSelect } from "@/components/features/admin/searchable-household-select";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import type { HouseholdOut, MemberUpdate, RegistryMemberOut } from "@/lib/api/registry-types";
@@ -57,24 +58,17 @@ export default function AddHouseholdMemberPage() {
             <Home className="size-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <label htmlFor="household" className="text-sm font-bold text-neutral-900">
+            <p className="text-sm font-bold text-neutral-900">
               Household Placement <span className="text-red-600">*</span>
-            </label>
+            </p>
             <p className="text-xs text-neutral-500">The citizen inherits this household’s area and location context.</p>
           </div>
-          <select
-            id="household"
+          <SearchableHouseholdSelect
+            households={households.data ?? []}
             value={householdId}
-            onChange={(event) => setHouseholdId(event.target.value)}
-            className="h-10 min-w-0 rounded-md border border-emerald-200/80 bg-white px-3 text-sm font-medium text-neutral-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:w-[420px]"
-          >
-            <option value="">Choose a Household</option>
-            {(households.data ?? []).map((household) => (
-              <option key={household.id} value={household.id}>
-                {household.reference_no} · {household.head_name} · {household.area_name}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setHouseholdId(val)}
+            placeholder="Search & Choose a Household"
+          />
         </CardContent>
       </Card>
 
