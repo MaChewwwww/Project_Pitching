@@ -16,6 +16,7 @@ import L from "leaflet";
 import type { Layer } from "leaflet";
 import {
   AlertTriangle,
+  Building2,
   CheckCircle2,
   ChevronDown,
   Database,
@@ -23,13 +24,16 @@ import {
   Home,
   Layers,
   MapPin,
+  RotateCcw,
   Search,
   Shield,
+  Siren,
   Users,
   UserX,
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import {
   Dialog,
@@ -180,9 +184,9 @@ function createEvacCenterIcon(isAtCapacity: boolean) {
 function createBoundaryLabelIcon() {
   return L.divIcon({
     className: "san-jose-boundary-badge-container",
-    html: `<div class="bg-white text-slate-900 border border-slate-300 shadow-md px-3 py-1 rounded-md font-bold text-[11px] whitespace-nowrap flex items-center justify-center">Barangay San Jose Boundary</div>`,
-    iconSize: [200, 26],
-    iconAnchor: [100, 48],
+    html: `<div class="bg-white text-slate-900 border border-slate-300 shadow-md px-3 py-1 rounded-md font-bold text-[11px] whitespace-nowrap flex items-center justify-center cursor-pointer hover:border-emerald-500 hover:text-emerald-700 transition-colors">Barangay San Jose Boundary ℹ️</div>`,
+    iconSize: [210, 26],
+    iconAnchor: [105, 48],
   });
 }
 
@@ -271,6 +275,12 @@ const ADMIN_MAP_CSS = `
 .sagip-legend-scroll::-webkit-scrollbar-thumb:hover {
   background: #6ee7b7;
 }
+.san-jose-interactive-area {
+  cursor: pointer !important;
+}
+.san-jose-interactive-boundary {
+  cursor: pointer !important;
+}
 `;
 
 /* -------------------------------------------------------------------------- */
@@ -298,14 +308,15 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
 
   /* --- UI state --- */
   const [selected, setSelected] = React.useState<WorkspaceHouseholdOut | null>(null);
+  const [selectedAreaName, setSelectedAreaName] = React.useState<string | null>(null);
+  const [showBarangaySummary, setShowBarangaySummary] = React.useState(false);
   const [listTab, setListTab] = React.useState<ListTab>("mapped");
-  const [legendExpanded, setLegendExpanded] = React.useState(true);
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth < 1024) {
-      setLegendExpanded(false);
+  const [legendExpanded, setLegendExpanded] = React.useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth >= 1024;
     }
-  }, []);
+    return true;
+  });
 
   /* --- area boundaries layer --- */
   const areaBoundariesQuery = useQuery({
@@ -484,31 +495,87 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
               />
             ) : null}
 
-            {/* Area divisions (Areas 1–6) */}
+            {/* Area divisions (Areas 1–6) with interactive hover glow and click modal */}
             {showAreas && areaBoundariesQuery.data ? (
               <GeoJSON
                 key="areas-boundaries"
                 data={areaBoundariesQuery.data as GeoJSON.GeoJsonObject}
-                style={(feature) =>
-                  distinctAreaStyle(
+                style={(feature) => ({
+                  ...distinctAreaStyle(
                     (feature?.properties as { name?: string })?.name ?? "",
-                  )
-                }
+                  ),
+                  className: "san-jose-interactive-area",
+                })}
+                onEachFeature={(feature, layer) => {
+                  const areaName =
+                    (feature.properties as { name?: string })?.name ?? "Area";
+                  layer.bindTooltip(
+                    `<div class="font-bold text-xs text-emerald-300">${areaName}</div><div class="text-[10px] text-slate-300">Click to view Area Summary</div>`,
+                    { sticky: true, opacity: 0.95 }
+                  );
+                  layer.on({
+                    mouseover: (e) => {
+                      const l = e.target as L.Path;
+                      l.setStyle({
+                        color: "#34d399",
+                        weight: 3.5,
+                        dashArray: "",
+                        fillOpacity: 0.28,
+                      });
+                      l.bringToFront();
+                    },
+                    mouseout: (e) => {
+                      const l = e.target as L.Path;
+                      l.setStyle(distinctAreaStyle(areaName));
+                    },
+                    click: () => {
+                      setSelectedAreaName(areaName);
+                    },
+                  });
+                }}
               />
             ) : null}
 
-            {/* San Jose boundary */}
+            {/* San Jose boundary with interactive hover glow and click modal */}
             <GeoJSON
               data={SAN_JOSE_OUTER_BOUNDARY_GEOJSON as GeoJSON.GeoJsonObject}
-              interactive={false}
               pane="topBoundaryPane"
-              style={() => BOUNDARY_LINE_STYLE}
+              style={() => ({
+                ...BOUNDARY_LINE_STYLE,
+                className: "san-jose-interactive-boundary",
+              })}
+              onEachFeature={(feature, layer) => {
+                layer.bindTooltip(
+                  `<div class="font-bold text-xs text-emerald-300">Barangay San Jose Boundary</div><div class="text-[10px] text-slate-300">Click to view Barangay Summary</div>`,
+                  { sticky: true, opacity: 0.95 }
+                );
+                layer.on({
+                  mouseover: (e) => {
+                    const l = e.target as L.Path;
+                    l.setStyle({
+                      color: "#22c55e",
+                      weight: 6,
+                      dashArray: "12, 6",
+                      opacity: 1,
+                    });
+                  },
+                  mouseout: (e) => {
+                    const l = e.target as L.Path;
+                    l.setStyle(BOUNDARY_LINE_STYLE);
+                  },
+                  click: () => {
+                    setShowBarangaySummary(true);
+                  },
+                });
+              }}
             />
             <Marker
               position={[14.7615, 121.133]}
               icon={createBoundaryLabelIcon()}
-              interactive={false}
               pane="topBoundaryPane"
+              eventHandlers={{
+                click: () => setShowBarangaySummary(true),
+              }}
             />
 
             {/* Household pins — circular pins with white border (pane: householdPane, z-index 660) */}
@@ -869,10 +936,35 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
 
           {/* Filters panel (non-collapsible) */}
           <div className="rounded-xl border border-primary-800/60 bg-primary-950/95 p-4 text-white shadow-xl backdrop-blur-md">
-            <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary-400">
-              <Filter className="size-3.5 text-primary-400" aria-hidden />
-              Filters
-            </p>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary-400">
+                <Filter className="size-3.5 text-primary-400" aria-hidden />
+                Filters
+              </p>
+              {(search ||
+                area !== "all" ||
+                risk !== "all" ||
+                safety !== "all" ||
+                support !== "all" ||
+                capacity !== "all") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch("");
+                    setArea("all");
+                    setRisk("all");
+                    setSafety("all");
+                    setSupport("all");
+                    setCapacity("all");
+                  }}
+                  className="inline-flex items-center gap-1 rounded-md bg-emerald-900/60 px-2 py-0.5 text-[11px] font-bold text-emerald-300 border border-emerald-700/50 hover:bg-emerald-800/80 hover:text-emerald-100 transition-colors shadow-2xs"
+                  title="Reset all filters to default"
+                >
+                  <RotateCcw className="size-3" aria-hidden />
+                  Reset
+                </button>
+              )}
+            </div>
             <div className="flex flex-col gap-3">
               {/* Search */}
               <div className="relative">
@@ -943,28 +1035,6 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                   { value: "available", label: "With Available Space" },
                 ]}
               />
-
-              {(search ||
-                area !== "all" ||
-                risk !== "all" ||
-                safety !== "all" ||
-                support !== "all" ||
-                capacity !== "all") && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearch("");
-                    setArea("all");
-                    setRisk("all");
-                    setSafety("all");
-                    setSupport("all");
-                    setCapacity("all");
-                  }}
-                  className="text-xs font-bold text-emerald-300 hover:text-white hover:underline pt-1 text-left"
-                >
-                  Clear All Filters
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -1035,6 +1105,38 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
         household={selected}
         enriched={enrichedMap.get(selected?.household_id ?? "")}
         onClose={() => setSelected(null)}
+      />
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Area spatial summary dialog                                        */}
+      {/* ------------------------------------------------------------------ */}
+      <AreaSummaryModal
+        areaName={selectedAreaName}
+        data={data}
+        enriched={enriched}
+        facilities={facilitiesQuery.data || []}
+        sirens={sirensQuery.data || []}
+        onClose={() => setSelectedAreaName(null)}
+        onFilterArea={(areaId) => {
+          setArea(areaId);
+          setSelectedAreaName(null);
+        }}
+      />
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Barangay San Jose jurisdiction overview dialog                     */}
+      {/* ------------------------------------------------------------------ */}
+      <BarangaySummaryModal
+        open={showBarangaySummary}
+        data={data}
+        enriched={enriched}
+        facilities={facilitiesQuery.data || []}
+        sirens={sirensQuery.data || []}
+        onClose={() => setShowBarangaySummary(false)}
+        onSelectArea={(name) => {
+          setShowBarangaySummary(false);
+          setSelectedAreaName(name);
+        }}
       />
     </div>
   );
@@ -1229,12 +1331,12 @@ function CompactHouseholdTooltip({
     >
       {/* Top Header: Reference No + Risk Badge with bottom divider */}
       <div className="flex items-center justify-between gap-1.5 border-b border-neutral-100 pb-2">
-        <span className="font-mono text-xs font-black text-neutral-950 tracking-tight">
+        <span className="shrink-0 rounded-md bg-neutral-100 px-2 py-0.5 font-mono text-[11px] font-black tracking-tight text-neutral-900 border border-neutral-200 shadow-2xs">
           {household.reference_no}
         </span>
         <span
           className={cn(
-            "shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wide",
+            "shrink-0 rounded-md px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wide shadow-2xs",
             isSafe
               ? "bg-slate-100 text-slate-700 border border-slate-300"
               : risk === 3
@@ -1697,7 +1799,7 @@ function HouseholdDialog({
     <>
       {/* Main detail dialog */}
       <Dialog open={household !== null} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-2xl">
+        <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-2xl bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl p-5 sm:p-6">
           <DialogHeader className="shrink-0 border-b border-neutral-100 pb-4">
             <div className="flex items-start gap-3">
               <div
@@ -1871,7 +1973,7 @@ function HouseholdDialog({
           }
         }}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl p-5 sm:p-6">
           <DialogHeader>
             <DialogTitle>{pending?.title}</DialogTitle>
             <DialogDescription>
@@ -1929,5 +2031,544 @@ function HouseholdDialog({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Area Spatial Summary Modal                                                 */
+/* -------------------------------------------------------------------------- */
+
+function AreaSummaryModal({
+  areaName,
+  data,
+  enriched,
+  facilities,
+  sirens,
+  onClose,
+  onFilterArea,
+}: {
+  areaName: string | null;
+  data: EmergencyWorkspaceOut;
+  enriched: EnrichedHousehold[];
+  facilities: PublicFacility[];
+  sirens: PublicSiren[];
+  onClose: () => void;
+  onFilterArea: (areaId: string) => void;
+}) {
+  if (!areaName) return null;
+
+  const areaHouseholds = enriched.filter((e) => e.household.area_name === areaName);
+  const areaId = areaHouseholds[0]?.household.area_id ?? "";
+  const totalHouseholds = areaHouseholds.length;
+  const allMembers = areaHouseholds.flatMap((e) => e.household.members);
+  const totalResidents = allMembers.length;
+  const safeMembers = allMembers.filter((m) => m.status === "safe").length;
+  const safePct = totalResidents > 0 ? Math.round((safeMembers / totalResidents) * 100) : 0;
+  const needsRescueMembers = allMembers.filter((m) => m.status === "needs_rescue").length;
+  const unaccountedMembers = allMembers.filter((m) => m.status === "unaccounted").length;
+
+  const highRiskCount = areaHouseholds.filter((e) => e.risk === 3).length;
+  const medRiskCount = areaHouseholds.filter((e) => e.risk === 2).length;
+  const lowRiskCount = areaHouseholds.filter((e) => e.risk === 1).length;
+
+  const pwdCount = allMembers.filter((m) =>
+    m.vulnerability_flags.some((f) => f.toLowerCase().includes("pwd")),
+  ).length;
+  const seniorCount = allMembers.filter((m) =>
+    m.vulnerability_flags.some((f) => f.toLowerCase().includes("senior")),
+  ).length;
+  const childCount = allMembers.filter((m) =>
+    m.vulnerability_flags.some((f) => f.toLowerCase().includes("child") || f.toLowerCase().includes("infant")),
+  ).length;
+  const pregnantCount = allMembers.filter((m) =>
+    m.vulnerability_flags.some((f) => f.toLowerCase().includes("pregnant")),
+  ).length;
+  const bedriddenCount = allMembers.filter((m) =>
+    m.vulnerability_flags.some((f) => f.toLowerCase().includes("bedridden") || f.toLowerCase().includes("mobility")),
+  ).length;
+  const totalSpecialNeedsCount = allMembers.filter((m) => (m.vulnerability_flags || []).length > 0).length;
+
+  // Local facilities matching area
+  const areaCenters = data.evacuation_centers.filter((c) =>
+    c.facility.address?.toLowerCase().includes(areaName.toLowerCase()) ||
+    c.facility.name.toLowerCase().includes(areaName.toLowerCase()),
+  );
+  const areaFacilities = facilities.filter(
+    (f) =>
+      f.type !== "evacuation_center" &&
+      (f.address?.toLowerCase().includes(areaName.toLowerCase()) ||
+        f.name.toLowerCase().includes(areaName.toLowerCase())),
+  );
+  const areaSirens = sirens.filter((s) =>
+    s.name.toLowerCase().includes(areaName.toLowerCase()),
+  );
+
+  return (
+    <Dialog open={Boolean(areaName)} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-5 sm:p-6 bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
+        <DialogHeader className="border-b border-slate-100 pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 pr-6">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="rounded-md bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 text-xs">
+                  Area Division
+                </span>
+                <span className="text-xs font-semibold text-slate-500">Barangay San Jose</span>
+              </div>
+              <DialogTitle className="mt-1 text-xl sm:text-2xl font-black text-slate-950 flex items-center gap-2">
+                <MapPin className="size-6 text-emerald-600 shrink-0" />
+                {areaName} Spatial Summary
+              </DialogTitle>
+            </div>
+            <Badge tone="danger" className="shrink-0 font-bold text-xs">
+              {data.event.name} ({data.event.type})
+            </Badge>
+          </div>
+          <DialogDescription className="text-xs text-slate-600 mt-1">
+            Demographic profile, real-time safety status, special needs, and emergency resources in {areaName}.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-5 py-2">
+          {/* 4 KPI Summary Grid */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 flex flex-col">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                <Users className="size-3 text-slate-500" />
+                Households
+              </span>
+              <span className="text-xl font-black text-slate-950 mt-0.5">{totalHouseholds}</span>
+              <span className="text-[10.5px] font-medium text-slate-500">{totalResidents} Citizens</span>
+            </div>
+
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 flex flex-col">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1">
+                <CheckCircle2 className="size-3 text-emerald-700" />
+                Safety Status
+              </span>
+              <span className="text-xl font-black text-emerald-800 mt-0.5">{safePct}%</span>
+              <span className="text-[10.5px] font-bold text-emerald-700">{safeMembers} of {totalResidents} Safe</span>
+            </div>
+
+            <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 flex flex-col">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1">
+                <AlertTriangle className="size-3 text-amber-700" />
+                Special Needs
+              </span>
+              <span className="text-xl font-black text-amber-900 mt-0.5">{totalSpecialNeedsCount}</span>
+              <span className="text-[10.5px] font-medium text-amber-800">Members with Needs</span>
+            </div>
+
+            <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-3 flex flex-col">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-rose-800 flex items-center gap-1">
+                <Shield className="size-3 text-rose-700" />
+                High Flood Risk
+              </span>
+              <span className="text-xl font-black text-rose-900 mt-0.5">{highRiskCount}</span>
+              <span className="text-[10.5px] font-medium text-rose-800">Of {totalHouseholds} Households</span>
+            </div>
+          </div>
+
+          {/* Safety Status Breakdown Progress */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-800 mb-2">
+              <span>Safety Accountability Progress</span>
+              <span className="text-emerald-700">{safeMembers} / {totalResidents} Citizens Safe ({safePct}%)</span>
+            </div>
+            <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200 flex">
+              <div
+                className="bg-emerald-600 transition-all duration-300"
+                style={{ width: `${safePct}%` }}
+                title={`Safe: ${safeMembers}`}
+              />
+              <div
+                className="bg-rose-500 transition-all duration-300"
+                style={{ width: `${totalResidents > 0 ? (needsRescueMembers / totalResidents) * 100 : 0}%` }}
+                title={`Needs Rescue: ${needsRescueMembers}`}
+              />
+              <div
+                className="bg-slate-400 transition-all duration-300"
+                style={{ width: `${totalResidents > 0 ? (unaccountedMembers / totalResidents) * 100 : 0}%` }}
+                title={`Pending: ${unaccountedMembers}`}
+              />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5 text-[11px] text-slate-600">
+              <span className="inline-flex items-center gap-1.5 font-bold text-emerald-800">
+                <span className="size-2 rounded-full bg-emerald-600" />
+                Safe: {safeMembers}
+              </span>
+              <span className="inline-flex items-center gap-1.5 font-bold text-rose-800">
+                <span className="size-2 rounded-full bg-rose-500" />
+                Needs Rescue: {needsRescueMembers}
+              </span>
+              <span className="inline-flex items-center gap-1.5 font-bold text-slate-700">
+                <span className="size-2 rounded-full bg-slate-400" />
+                Pending Check-In: {unaccountedMembers}
+              </span>
+            </div>
+          </div>
+
+          {/* Two-column details: Special Needs Breakdown & Hazard Exposure */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Special Needs breakdown */}
+            <div className="rounded-xl border border-amber-200/90 bg-amber-50/40 p-3.5 flex flex-col gap-2">
+              <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5 uppercase tracking-wider">
+                <AlertTriangle className="size-3.5 text-amber-600 shrink-0" />
+                Special Needs Demographics
+              </span>
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {seniorCount > 0 && (
+                  <span className="rounded-md bg-amber-100 border border-amber-300 px-2 py-0.5 text-xs font-bold text-amber-900">
+                    {seniorCount} Senior Citizen{seniorCount > 1 ? "s" : ""}
+                  </span>
+                )}
+                {pwdCount > 0 && (
+                  <span className="rounded-md bg-amber-100 border border-amber-300 px-2 py-0.5 text-xs font-bold text-amber-900">
+                    {pwdCount} PWD
+                  </span>
+                )}
+                {childCount > 0 && (
+                  <span className="rounded-md bg-amber-100 border border-amber-300 px-2 py-0.5 text-xs font-bold text-amber-900">
+                    {childCount} Child{childCount > 1 ? "ren" : ""}
+                  </span>
+                )}
+                {pregnantCount > 0 && (
+                  <span className="rounded-md bg-amber-100 border border-amber-300 px-2 py-0.5 text-xs font-bold text-amber-900">
+                    {pregnantCount} Pregnant
+                  </span>
+                )}
+                {bedriddenCount > 0 && (
+                  <span className="rounded-md bg-amber-100 border border-amber-300 px-2 py-0.5 text-xs font-bold text-amber-900">
+                    {bedriddenCount} Bedridden
+                  </span>
+                )}
+                {totalSpecialNeedsCount === 0 && (
+                  <span className="text-xs text-slate-500 italic">No special needs recorded in this area.</span>
+                )}
+              </div>
+            </div>
+
+            {/* Flood Hazard Exposure */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 flex flex-col gap-2">
+              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
+                <Shield className="size-3.5 text-emerald-700 shrink-0" />
+                NOAH Flood Exposure
+              </span>
+              <div className="flex flex-col gap-1.5 mt-1 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-rose-800 font-bold">
+                    <span className="size-2.5 rounded-full bg-rose-600" />
+                    High Flood Risk:
+                  </span>
+                  <span className="font-extrabold text-slate-950">{highRiskCount} Households</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-amber-800 font-bold">
+                    <span className="size-2.5 rounded-full bg-amber-500" />
+                    Medium Flood Risk:
+                  </span>
+                  <span className="font-extrabold text-slate-950">{medRiskCount} Households</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-emerald-800 font-bold">
+                    <span className="size-2.5 rounded-full bg-emerald-600" />
+                    Low Flood Risk:
+                  </span>
+                  <span className="font-extrabold text-slate-950">{lowRiskCount} Households</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Area Resources: Evacuation Centers & Facilities */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 flex flex-col gap-2.5">
+            <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
+              <Building2 className="size-3.5 text-emerald-700 shrink-0" />
+              Evacuation Centers & Civic Facilities ({areaCenters.length + areaFacilities.length + areaSirens.length})
+            </span>
+
+            {areaCenters.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {areaCenters.map((center) => {
+                  const cap = center.capacity ?? 0;
+                  const capPct = cap > 0 ? Math.round((center.occupancy / cap) * 100) : 0;
+                  return (
+                    <div key={center.id} className="rounded-lg border border-slate-200 bg-white p-2.5 flex flex-col gap-1 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs text-slate-950 flex items-center gap-1.5">
+                          <Home className="size-3.5 text-emerald-700" />
+                          {center.facility.name}
+                        </span>
+                        <span className={cn(
+                          "rounded-md px-1.5 py-0.5 text-[9.5px] font-black uppercase",
+                          center.is_at_capacity ? "bg-rose-100 text-rose-800 border border-rose-200" : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                        )}>
+                          {center.is_at_capacity ? "At Capacity" : cap > 0 ? `${cap - center.occupancy} Available` : "Open"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-600">
+                        <span>Occupancy: {center.occupancy} / {cap > 0 ? cap : "Open"} {cap > 0 ? `(${capPct}%)` : ""}</span>
+                        <span className="text-slate-500 text-[10px]">{center.facility.address}</span>
+                      </div>
+                      {cap > 0 && (
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                          <div className={cn("h-full", capPct > 90 ? "bg-rose-600" : "bg-emerald-600")} style={{ width: `${Math.min(capPct, 100)}%` }} />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            {areaSirens.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {areaSirens.map((siren) => (
+                  <span key={siren.id} className="inline-flex items-center gap-1 rounded-md bg-slate-100 border border-slate-200 px-2 py-1 text-xs font-bold text-slate-800 shadow-2xs">
+                    <Siren className={cn("size-3.5", siren.status === "sounding" ? "text-rose-600 animate-pulse" : "text-slate-500")} />
+                    {siren.name} ({siren.status === "sounding" ? "Sounding" : "Idle"})
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {areaFacilities.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {areaFacilities.map((f) => (
+                  <span key={f.id} className="rounded-md bg-white border border-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-700 shadow-2xs">
+                    {f.name} ({statusLabel(f.type)})
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {areaCenters.length === 0 && areaFacilities.length === 0 && areaSirens.length === 0 && (
+              <p className="text-xs text-slate-500 italic">No standalone evacuation centers or public facilities registered directly inside this area boundary.</p>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter className="border-t border-slate-100 pt-4 flex flex-row items-center justify-between sm:justify-between gap-2">
+          {areaId && (
+            <Button
+              type="button"
+              className="rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5"
+              onClick={() => {
+                onFilterArea(areaId);
+                onClose();
+              }}
+            >
+              <Filter className="size-3.5" />
+              Filter Map to {areaName}
+            </Button>
+          )}
+          <Button variant="outline" type="button" onClick={onClose} className="rounded-xl text-xs font-bold border-slate-200">
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Barangay San Jose Overview Modal                                           */
+/* -------------------------------------------------------------------------- */
+
+function BarangaySummaryModal({
+  open,
+  data,
+  enriched,
+  facilities,
+  sirens,
+  onClose,
+  onSelectArea,
+}: {
+  open: boolean;
+  data: EmergencyWorkspaceOut;
+  enriched: EnrichedHousehold[];
+  facilities: PublicFacility[];
+  sirens: PublicSiren[];
+  onClose: () => void;
+  onSelectArea: (areaName: string) => void;
+}) {
+  const totalHouseholds = data.households.length;
+  const allMembers = data.households.flatMap((h) => h.members);
+  const totalCitizens = allMembers.length;
+  const safeCitizens = allMembers.filter((m) => m.status === "safe").length;
+  const safePct = totalCitizens > 0 ? Math.round((safeCitizens / totalCitizens) * 100) : 0;
+
+  const totalCapUsed = data.evacuation_centers.reduce((acc, c) => acc + c.occupancy, 0);
+  const totalCapMax = data.evacuation_centers.reduce((acc, c) => acc + (c.capacity ?? 0), 0);
+  const evacCapPct = totalCapMax > 0 ? Math.round((totalCapUsed / totalCapMax) * 100) : 0;
+
+  // Group by Area
+  const areaNames = Array.from(
+    new Set(data.households.map((h) => h.area_name)),
+  ).sort();
+
+  const areaGroups = areaNames.map((areaName) => {
+    const households = enriched.filter((e) => e.household.area_name === areaName);
+    const members = households.flatMap((e) => e.household.members);
+    const safe = members.filter((m) => m.status === "safe").length;
+    const highRisk = households.filter((e) => e.risk === 3).length;
+    return {
+      areaName,
+      householdCount: households.length,
+      residentCount: members.length,
+      safeCount: safe,
+      safePct: members.length > 0 ? Math.round((safe / members.length) * 100) : 0,
+      highRiskCount: highRisk,
+    };
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-5 sm:p-6 bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
+        <DialogHeader className="border-b border-slate-100 pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 pr-6">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="rounded-md bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 text-xs">
+                  Municipality of Rodriguez (Montalban), Rizal
+                </span>
+              </div>
+              <DialogTitle className="mt-1 text-xl sm:text-2xl font-black text-slate-950 flex items-center gap-2">
+                <Shield className="size-6 text-emerald-600 shrink-0" />
+                Barangay San Jose Comprehensive Summary
+              </DialogTitle>
+            </div>
+            <Badge tone="danger" className="shrink-0 font-bold text-xs">
+              {data.event.name} ({data.event.type})
+            </Badge>
+          </div>
+          <DialogDescription className="text-xs text-slate-600 mt-1">
+            Barangay-wide jurisdiction overview, emergency readiness, area breakdown, and aggregate evacuation capacity.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-5 py-2">
+          {/* 4 Executive Jurisdiction KPIs */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 flex flex-col">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                <Users className="size-3 text-slate-500" />
+                Total Population
+              </span>
+              <span className="text-2xl font-black text-slate-950 mt-0.5">{totalCitizens}</span>
+              <span className="text-[11px] font-medium text-slate-500">{totalHouseholds} Households (6 Areas)</span>
+            </div>
+
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5 flex flex-col">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1">
+                <CheckCircle2 className="size-3 text-emerald-700" />
+                Accounted For
+              </span>
+              <span className="text-2xl font-black text-emerald-800 mt-0.5">{safePct}%</span>
+              <span className="text-[11px] font-bold text-emerald-700">{safeCitizens} Citizens Confirmed Safe</span>
+            </div>
+
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5 flex flex-col">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1">
+                <Home className="size-3 text-emerald-700" />
+                Evacuation Network
+              </span>
+              <span className="text-2xl font-black text-emerald-900 mt-0.5">{totalCapUsed} / {totalCapMax}</span>
+              <span className="text-[11px] font-bold text-emerald-700">{data.evacuation_centers.length} Centers ({evacCapPct}% Full)</span>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 flex flex-col">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                <Siren className="size-3 text-slate-600" />
+                Alert & Civic Grid
+              </span>
+              <span className="text-2xl font-black text-slate-950 mt-0.5">{sirens.length} Sirens</span>
+              <span className="text-[11px] font-medium text-slate-500">{facilities.length} Public Facilities</span>
+            </div>
+          </div>
+
+          {/* Area Comparison Matrix */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                Area Divisions Breakdown (Areas 1–6)
+              </span>
+              <span className="text-[11px] text-slate-500">Click any row to view full area profile</span>
+            </div>
+
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+                  <tr>
+                    <th className="py-2.5 px-3">Area</th>
+                    <th className="py-2.5 px-3">Households</th>
+                    <th className="py-2.5 px-3">Population</th>
+                    <th className="py-2.5 px-3">Safe %</th>
+                    <th className="py-2.5 px-3">High Risk</th>
+                    <th className="py-2.5 px-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+                  {areaGroups.map((row) => (
+                    <tr
+                      key={row.areaName}
+                      className="hover:bg-emerald-50/40 cursor-pointer transition-colors"
+                      onClick={() => {
+                        onClose();
+                        onSelectArea(row.areaName);
+                      }}
+                    >
+                      <td className="py-2 px-3 font-bold text-slate-950 flex items-center gap-1.5">
+                        <MapPin className="size-3 text-emerald-600" />
+                        {row.areaName}
+                      </td>
+                      <td className="py-2 px-3">{row.householdCount}</td>
+                      <td className="py-2 px-3">{row.residentCount}</td>
+                      <td className="py-2 px-3">
+                        <span className={cn(
+                          "font-bold",
+                          row.safePct >= 80 ? "text-emerald-700" : row.safePct >= 50 ? "text-amber-700" : "text-rose-700"
+                        )}>
+                          {row.safePct}% ({row.safeCount})
+                        </span>
+                      </td>
+                      <td className="py-2 px-3">
+                        {row.highRiskCount > 0 ? (
+                          <span className="rounded-md bg-rose-100 border border-rose-200 px-1.5 py-0.5 text-[10px] font-bold text-rose-800">
+                            {row.highRiskCount} High
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-[11px]">0</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onClose();
+                            onSelectArea(row.areaName);
+                          }}
+                        >
+                          View Area →
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="border-t border-slate-100 pt-4 flex flex-row items-center justify-end gap-2">
+          <Button variant="outline" type="button" onClick={onClose} className="rounded-xl text-xs font-bold border-slate-200">
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
