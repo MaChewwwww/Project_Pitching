@@ -94,7 +94,7 @@ export default function RegisteredCitizensPage() {
               row.is_head ? "text-emerald-700" : "text-orange-700"
             }`}
           >
-            {row.is_head ? "Household Head" : title(row.relationship_to_head)}
+            {row.is_head ? "Household Head" : "Household Member"}
           </p>
         </div>
       ),

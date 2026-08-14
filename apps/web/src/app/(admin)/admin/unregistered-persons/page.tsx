@@ -146,8 +146,11 @@ export default function AdminUnregisteredPersonsPage() {
           resolvedEventId ? (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
-                  <UserPlus className="size-4" />
+                <Button
+                  size="sm"
+                  className="h-10 cursor-pointer gap-2 rounded-full border border-emerald-600/30 bg-emerald-700 px-4 font-bold text-white shadow-md shadow-emerald-900/15 transition-all hover:bg-emerald-800 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
+                >
+                  <UserPlus aria-hidden className="size-4 stroke-[2.5]" />
                   Record person
                 </Button>
               </DialogTrigger>
