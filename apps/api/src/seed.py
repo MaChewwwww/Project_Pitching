@@ -1454,23 +1454,42 @@ async def seed_households(session, areas: dict[str, Area]) -> None:
         session.add(household)
         await session.flush()
 
+        today_date = _now().date()
+        head_is_senior = rng.random() < 0.15
+        head_age = rng.randint(60, 80) if head_is_senior else rng.randint(22, 59)
+        head_birth = today_date - timedelta(days=head_age * 365 + rng.randint(0, 360))
         session.add(
             Member(
                 household_id=household.id,
                 full_name=head_name,
+                birth_date=head_birth,
                 is_head=True,
                 sex=rng.choice(["male", "female"]),
-                is_senior=rng.random() < 0.15,
+                is_senior=head_is_senior,
             )
         )
         for _ in range(rng.randint(1, 4)):
+            is_ch = rng.random() < 0.3
+            is_snr = False if is_ch else (rng.random() < 0.1)
+            if is_ch:
+                # 40% infant/toddler (0-4), 60% child (5-17)
+                ch_age = rng.randint(0, 4) if rng.random() < 0.4 else rng.randint(5, 17)
+                m_birth = today_date - timedelta(days=ch_age * 365 + rng.randint(0, 360))
+            elif is_snr:
+                snr_age = rng.randint(60, 85)
+                m_birth = today_date - timedelta(days=snr_age * 365 + rng.randint(0, 360))
+            else:
+                ad_age = rng.randint(18, 59)
+                m_birth = today_date - timedelta(days=ad_age * 365 + rng.randint(0, 360))
+
             session.add(
                 Member(
                     household_id=household.id,
                     full_name=f"{rng.choice(FIRST_NAMES)} {head_name.split()[-1]}",
+                    birth_date=m_birth,
                     sex=rng.choice(["male", "female"]),
-                    is_child=rng.random() < 0.3,
-                    is_senior=rng.random() < 0.1,
+                    is_child=is_ch,
+                    is_senior=is_snr,
                     is_pwd=rng.random() < 0.05,
                     is_pregnant=rng.random() < 0.03,
                     has_chronic_condition=rng.random() < 0.08,

@@ -24,16 +24,19 @@ import {
   ChevronRight,
   Clock,
   Database,
+  ExternalLink,
   Filter,
   Home,
   Layers,
   MapPin,
   MapPinOff,
+  Phone,
   RotateCcw,
   Search,
   Shield,
   Siren,
   Users,
+  UserPlus,
   UserX,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -62,6 +65,9 @@ import {
 } from "@/lib/hazard-geojson";
 import type {
   EmergencyWorkspaceOut,
+  SafetyStatusAdminIn,
+  UnregisteredPersonIn,
+  UnregisteredPersonOut,
   WorkspaceHouseholdOut,
 } from "@/lib/api/safety-types";
 import {
@@ -74,8 +80,7 @@ import {
   SAN_JOSE_OUTER_BOUNDARY_GEOJSON,
 } from "@/lib/map";
 import { api, toDisplayError } from "@/lib/api/client";
-import type { SafetyStatusAdminIn } from "@/lib/api/safety-types";
-import type { AreaBoundaryFeature, PublicEmergencyEvent, PublicFacility } from "@/lib/api/public-types";
+import type { AreaBoundaryFeature, Page, PublicEmergencyEvent, PublicFacility } from "@/lib/api/public-types";
 import "@/lib/leaflet-setup";
 import "leaflet/dist/leaflet.css";
 
@@ -1182,7 +1187,11 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
             />
           )}
           {listTab === "walkins" && (
-            <WalkInListPanel pins={data.unregistered_pins} />
+            <UnregisteredPersonsPanel
+              eventId={data.event.id}
+              data={data}
+              readOnly={data.is_read_only}
+            />
           )}
         </div>
       </div>
@@ -1427,7 +1436,9 @@ function formatVulnerabilityFlag(flag: string): string {
     senior: "Senior Citizen",
     senior_citizen: "Senior Citizen",
     pregnant: "Pregnant",
-    infant: "Infant",
+    infant: "Infant / Toddler",
+    toddler: "Infant / Toddler",
+    infant_toddler: "Infant / Toddler",
     child: "Child",
     solo_parent: "Solo Parent",
     lactating: "Lactating Mother",
@@ -1717,7 +1728,7 @@ function HouseholdCard({
       role="button"
       tabIndex={0}
       className={cn(
-        "group relative flex flex-col justify-between rounded-2xl border bg-white p-4 transition-all duration-200 text-left outline-none cursor-pointer",
+        "group relative flex h-full flex-col justify-between rounded-2xl border bg-white p-4 transition-all duration-200 text-left outline-none cursor-pointer",
         "hover:shadow-lg hover:-translate-y-0.5",
         isNeedsRescue
           ? "border-rose-300 bg-rose-50/20 hover:border-rose-400 hover:bg-rose-50/40"
@@ -1735,117 +1746,120 @@ function HouseholdCard({
         aria-hidden
       />
 
-      <div className="pl-2 flex flex-col gap-3">
-        {/* Top Header: Reference number, Mapped badge, Risk badge, Safety status badge */}
-        <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-100 pb-2.5">
-          <div className="flex items-center gap-1.5">
-            <span className="font-mono text-[11px] font-black tracking-tight text-slate-800 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md shadow-2xs">
-              {household.reference_no}
-            </span>
-            {household.location ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-emerald-800">
-                <MapPin className="size-2.5 text-emerald-600" />
-                Mapped
+      <div className="pl-2 flex flex-1 flex-col justify-between gap-3">
+        {/* Top Header & Details Section */}
+        <div className="flex flex-col gap-3">
+          {/* Top Header: Reference number, Mapped badge, Risk badge, Safety status badge */}
+          <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-100 pb-2.5">
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-[11px] font-black tracking-tight text-slate-800 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md shadow-2xs">
+                {household.reference_no}
               </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-slate-600">
-                <MapPinOff className="size-2.5 text-slate-500" />
-                No GPS Pin
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            {/* Flood risk pill */}
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider border shadow-2xs",
-                risk === 3
-                  ? "bg-rose-50 text-rose-800 border-rose-200"
-                  : risk === 2
-                    ? "bg-amber-50 text-amber-900 border-amber-200"
-                    : "bg-emerald-50 text-emerald-900 border-emerald-200",
-              )}
-            >
-              {riskLabel(risk)} Risk
-            </span>
-
-            {/* Safety status pill */}
-            {isAllSafe ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-2xs">
-                <CheckCircle2 className="size-3" />
-                All Safe
-              </span>
-            ) : isNeedsRescue ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-2xs animate-pulse">
-                <AlertTriangle className="size-3" />
-                Needs Rescue
-              </span>
-            ) : isPartiallySafe ? (
-              <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-950 border border-amber-300">
-                {safeMembers}/{totalMembers} Safe
-              </span>
-            ) : (
-              <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700 border border-slate-200">
-                Pending
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Middle Body: Household Head + Address */}
-        <div>
-          <div className="flex items-center justify-between gap-2">
-            <h4 className="text-[14.5px] font-black text-slate-900 group-hover:text-emerald-800 transition-colors truncate">
-              {household.head_name}
-            </h4>
-            <span className="text-[11px] font-bold text-slate-400 shrink-0">
-              {totalMembers} {totalMembers === 1 ? "member" : "members"}
-            </span>
-          </div>
-
-          {/* Complete Address */}
-          <div className="mt-1.5 flex items-start gap-1.5 text-xs text-slate-600 leading-snug">
-            <MapPin className="size-3.5 text-slate-400 shrink-0 mt-0.5" />
-            <span className="font-medium text-slate-700">
-              {household.street_address ? (
-                <>
-                  <span className="font-bold text-slate-900">{household.street_address}</span>
-                  <span className="text-slate-400">, </span>
-                </>
-              ) : null}
-              <span>{household.area_name}</span>
-            </span>
-          </div>
-
-          {/* Special Needs Tags */}
-          {specialNeeds.length > 0 && (
-            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-              <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-amber-900">
-                Special Needs:
-              </span>
-              {specialNeeds.map((flag) => (
-                <span
-                  key={flag}
-                  className="rounded-md bg-amber-100/90 border border-amber-300/80 px-1.5 py-0.5 text-[10px] font-bold text-amber-950 shadow-2xs"
-                >
-                  {formatVulnerabilityFlag(flag)}
+              {household.location ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-emerald-800">
+                  <MapPin className="size-2.5 text-emerald-600" />
+                  Mapped
                 </span>
-              ))}
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-slate-600">
+                  <MapPinOff className="size-2.5 text-slate-500" />
+                  No GPS Pin
+                </span>
+              )}
             </div>
-          )}
 
-          {/* Evacuation Center assignment */}
-          {assignedCenters.length > 0 && (
-            <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-indigo-50 border border-indigo-200/80 px-2.5 py-1 text-[11px] font-bold text-indigo-950">
-              <Building2 className="size-3.5 text-indigo-600 shrink-0" />
-              <span className="truncate">Evacuation: {assignedCenters.join(", ")}</span>
+            <div className="flex items-center gap-1.5">
+              {/* Flood risk pill */}
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider border shadow-2xs",
+                  risk === 3
+                    ? "bg-rose-50 text-rose-800 border-rose-200"
+                    : risk === 2
+                      ? "bg-amber-50 text-amber-900 border-amber-200"
+                      : "bg-emerald-50 text-emerald-900 border-emerald-200",
+                )}
+              >
+                {riskLabel(risk)} Risk
+              </span>
+
+              {/* Safety status pill */}
+              {isAllSafe ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-2xs">
+                  <CheckCircle2 className="size-3" />
+                  All Safe
+                </span>
+              ) : isNeedsRescue ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-2xs animate-pulse">
+                  <AlertTriangle className="size-3" />
+                  Needs Rescue
+                </span>
+              ) : isPartiallySafe ? (
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-950 border border-amber-300">
+                  {safeMembers}/{totalMembers} Safe
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700 border border-slate-200">
+                  Pending
+                </span>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Middle Body: Household Head + Address */}
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="text-[14.5px] font-black text-slate-900 group-hover:text-emerald-800 transition-colors truncate">
+                {household.head_name}
+              </h4>
+              <span className="text-[11px] font-bold text-slate-400 shrink-0">
+                {totalMembers} {totalMembers === 1 ? "member" : "members"}
+              </span>
+            </div>
+
+            {/* Complete Address */}
+            <div className="mt-1.5 flex items-start gap-1.5 text-xs text-slate-600 leading-snug">
+              <MapPin className="size-3.5 text-slate-400 shrink-0 mt-0.5" />
+              <span className="font-medium text-slate-700">
+                {household.street_address ? (
+                  <>
+                    <span className="font-bold text-slate-900">{household.street_address}</span>
+                    <span className="text-slate-400">, </span>
+                  </>
+                ) : null}
+                <span>{household.area_name}</span>
+              </span>
+            </div>
+
+            {/* Special Needs Tags */}
+            {specialNeeds.length > 0 && (
+              <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-amber-900">
+                  Special Needs:
+                </span>
+                {specialNeeds.map((flag) => (
+                  <span
+                    key={flag}
+                    className="rounded-md bg-amber-100/90 border border-amber-300/80 px-1.5 py-0.5 text-[10px] font-bold text-amber-950 shadow-2xs"
+                  >
+                    {formatVulnerabilityFlag(flag)}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Evacuation Center assignment */}
+            {assignedCenters.length > 0 && (
+              <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-indigo-50 border border-indigo-200/80 px-2.5 py-1 text-[11px] font-bold text-indigo-950">
+                <Building2 className="size-3.5 text-indigo-600 shrink-0" />
+                <span className="truncate">Evacuation: {assignedCenters.join(", ")}</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Bottom Section: Multi-color progress bar + action footer */}
-        <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+        {/* Bottom Section: Multi-color progress bar + action footer (consistently at bottom) */}
+        <div className="mt-auto pt-2 border-t border-slate-100 flex flex-col gap-2">
           {/* Progress bar */}
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 flex">
             {safePct > 0 && (
@@ -1938,70 +1952,8 @@ function HouseholdListPanel({
   const startIndex = (currentPage - 1) * pageSize;
   const pageItems = items.slice(startIndex, startIndex + pageSize);
 
-  const totalSafe = items.filter((i) => i.household.all_safe).length;
-  const totalRescue = items.filter((i) => i.household.members.some((m) => m.status === "needs_rescue")).length;
-
   return (
     <div className="flex flex-col gap-3.5">
-      {/* Header bar with summary & pagination */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3">
-        <div className="flex items-center gap-2 text-xs">
-          <span className="font-extrabold text-slate-900">
-            {items.length} {items.length === 1 ? "Household" : "Households"}
-          </span>
-          <span className="text-slate-300">·</span>
-          <span className="text-emerald-700 font-bold">
-            {totalSafe} All Safe
-          </span>
-          {totalRescue > 0 && (
-            <>
-              <span className="text-slate-300">·</span>
-              <span className="text-rose-700 font-bold flex items-center gap-1">
-                <AlertTriangle className="size-3" />
-                {totalRescue} Need Rescue
-              </span>
-            </>
-          )}
-          {readOnly && (
-            <>
-              <span className="text-slate-300">·</span>
-              <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-600">
-                Read-Only
-              </span>
-            </>
-          )}
-        </div>
-
-        {totalPages > 1 && (
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
-            <span className="text-[11px] text-slate-400 mr-1">
-              Showing {startIndex + 1}–{Math.min(startIndex + pageSize, items.length)} of {items.length}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="h-7 px-2 text-xs rounded-lg cursor-pointer"
-            >
-              <ChevronLeft className="size-3.5" />
-            </Button>
-            <span className="px-1.5 text-[11px] font-bold text-slate-700">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="h-7 px-2 text-xs rounded-lg cursor-pointer"
-            >
-              <ChevronRight className="size-3.5" />
-            </Button>
-          </div>
-        )}
-      </div>
-
       {/* Grid of cards */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {pageItems.map(({ household, risk }) => (
@@ -2049,92 +2001,849 @@ function HouseholdListPanel({
   );
 }
 
-/* --- Walk-in / Unregistered persons list ----------------------------------- */
+/* --- Walk-in / Unregistered persons list & management --------------------- */
 
-function WalkInListPanel({
-  pins,
+function CreateWalkInForm({
+  eventId,
+  data,
+  onClose,
 }: {
-  pins: EmergencyWorkspaceOut["unregistered_pins"];
+  eventId: string;
+  data: EmergencyWorkspaceOut;
+  onClose: () => void;
 }) {
-  if (pins.length === 0) {
-    return (
-      <div className="flex flex-col items-center gap-3 py-10 text-center">
-        <div className="grid size-12 place-items-center rounded-2xl bg-neutral-100 text-neutral-400">
-          <UserX className="size-5" aria-hidden />
-        </div>
-        <div>
-          <p className="text-sm font-bold text-neutral-700">No walk-ins recorded</p>
-          <p className="mt-0.5 text-xs text-neutral-500">
-            Unregistered persons who present at an evacuation center or field operation appear here.
-          </p>
-        </div>
-      </div>
-    );
+  const queryClient = useQueryClient();
+  const [selectedEventId, setSelectedEventId] = React.useState(eventId || data.event.id);
+  const [selectedCenterId, setSelectedCenterId] = React.useState(data.evacuation_centers[0]?.id ?? "none");
+  const [fullName, setFullName] = React.useState("");
+  const [contactNumber, setContactNumber] = React.useState("");
+  const [initialStatus, setInitialStatus] = React.useState<"safe" | "needs_rescue">("safe");
+  const [locationNote, setLocationNote] = React.useState("");
+
+  // Special needs states
+  const [isInfant, setIsInfant] = React.useState(false);
+  const [isChild, setIsChild] = React.useState(false);
+  const [isSenior, setIsSenior] = React.useState(false);
+  const [isPwd, setIsPwd] = React.useState(false);
+  const [isPregnant, setIsPregnant] = React.useState(false);
+  const [isLactating, setIsLactating] = React.useState(false);
+  const [hasChronicCondition, setHasChronicCondition] = React.useState(false);
+  const [chronicNote, setChronicNote] = React.useState("");
+  const [isBedridden, setIsBedridden] = React.useState(false);
+
+  // Active events query
+  const eventsQuery = useQuery({
+    queryKey: ["public", "active-emergency-events"],
+    queryFn: () =>
+      api
+        .get<PublicEmergencyEvent[]>("/public/emergency-events/active")
+        .then((r) => r.data),
+  });
+
+  const activeEvents = React.useMemo(() => {
+    if (eventsQuery.data && eventsQuery.data.length > 0) {
+      return eventsQuery.data;
+    }
+    return data.event ? [data.event] : [];
+  }, [eventsQuery.data, data.event]);
+
+  const mutation = useMutation({
+    mutationFn: async (payload: UnregisteredPersonIn) => {
+      return api.post<UnregisteredPersonOut>("/admin/unregistered-persons", payload);
+    },
+    onSuccess: async () => {
+      toast.success(`Walk-in "${fullName}" recorded and checked in.`);
+      onClose();
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin", "unregistered-persons"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "emergency-workspace"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "accounted-for"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] }),
+      ]);
+    },
+    onError: (err) => {
+      toast.error(toDisplayError(err).detail || "Failed to record walk-in person");
+    },
+  });
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!fullName.trim()) {
+      toast.error("Please enter the person's full name.");
+      return;
+    }
+
+    mutation.mutate({
+      event_id: selectedEventId || eventId || null,
+      evac_center_id: selectedCenterId === "none" || !selectedCenterId ? null : selectedCenterId,
+      full_name: fullName.trim(),
+      contact_number: contactNumber.trim() || null,
+      location_note: locationNote.trim() || null,
+      initial_status: initialStatus,
+      is_child: isChild || isInfant,
+      is_senior: isSenior,
+      is_pwd: isPwd,
+      is_pregnant: isPregnant,
+      is_lactating: isLactating,
+      has_chronic_condition: hasChronicCondition,
+      chronic_condition_note: chronicNote.trim() || null,
+      is_bedridden: isBedridden,
+    });
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-xs font-medium text-neutral-500">
-        {pins.length} unregistered person{pins.length !== 1 ? "s" : ""} · Walk-in records
-      </p>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {pins.map((person) => {
-          const needsRescue = person.status === "needs_rescue";
-          const isSafe = person.status === "safe";
-          return (
-            <div
-              key={person.id}
-              className={cn(
-                "relative rounded-xl border p-3 text-left",
-                needsRescue
-                  ? "border-rose-200 bg-rose-50/60"
-                  : isSafe
-                    ? "border-emerald-200 bg-emerald-50/40"
-                    : "border-neutral-200 bg-white",
-              )}
-            >
-              {/* Purple accent bar for walk-ins */}
-              <div
-                className="absolute top-0 left-0 h-full w-1 rounded-l-xl bg-violet-500"
-                style={{ opacity: 0.7 }}
-                aria-hidden
-              />
-              <div className="pl-2">
-                <div className="flex items-start justify-between gap-1">
-                  <p className="truncate text-xs font-black text-neutral-900">
-                    {person.full_name}
-                  </p>
-                  <span
-                    className={cn(
-                      "shrink-0 rounded-md px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wide",
-                      needsRescue
-                        ? "bg-rose-600 text-white"
-                        : isSafe
-                          ? "bg-emerald-600 text-white"
-                          : "bg-neutral-100 text-neutral-600",
-                    )}
-                  >
-                    {statusLabel(person.status)}
-                  </span>
-                </div>
-                {person.evac_center_name && (
-                  <p className="mt-1 text-[10.5px] text-primary-700">
-                    At {person.evac_center_name}
-                  </p>
-                )}
-                {person.vulnerability_flags.length > 0 && (
-                  <p className="mt-1 text-[10.5px] text-neutral-500">
-                    {person.vulnerability_flags.map(formatVulnerabilityFlag).join(", ")}
-                  </p>
-                )}
-                <span className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-violet-700">
-                  Walk-in
-                </span>
-              </div>
-            </div>
-          );
-        })}
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2">
+      {/* Emergency Event Selection */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+          <span>Emergency Event <span className="text-rose-500">*</span></span>
+          <span className="text-[11px] font-normal text-slate-400">Required</span>
+        </label>
+        <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+          <SelectTrigger className="h-9 text-xs rounded-xl bg-slate-50 border-slate-300 font-medium">
+            <SelectValue placeholder="Select Emergency Event" />
+          </SelectTrigger>
+          <SelectContent>
+            {activeEvents.map((evt) => (
+              <SelectItem key={evt.id} value={evt.id}>
+                {evt.name} {evt.type ? `(${evt.type})` : ""}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+
+      {/* Evacuation Center Selection */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+          <span>Evacuation Center <span className="text-rose-500">*</span></span>
+          <span className="text-[11px] font-normal text-slate-400">Walk-in Location</span>
+        </label>
+        <Select value={selectedCenterId} onValueChange={setSelectedCenterId}>
+          <SelectTrigger className="h-9 text-xs rounded-xl bg-slate-50 border-slate-300 font-medium">
+            <SelectValue placeholder="Select Evacuation Center" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None / Field Operation</SelectItem>
+            {data.evacuation_centers.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.facility.name} ({c.occupancy}/{c.capacity ?? "∞"} occupants)
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Full Name & Contact Number */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-bold text-slate-700">
+            Full Name <span className="text-rose-500">*</span>
+          </label>
+          <input
+            type="text"
+            required
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="Juan Dela Cruz"
+            className="h-9 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-bold text-slate-700">
+            Contact Number <span className="text-[11px] font-normal text-slate-400">(Optional)</span>
+          </label>
+          <input
+            type="tel"
+            value={contactNumber}
+            onChange={(e) => setContactNumber(e.target.value)}
+            placeholder="0912 345 6789"
+            className="h-9 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          />
+        </div>
+      </div>
+
+      {/* Initial Status */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-bold text-slate-700">
+          Safety Status
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setInitialStatus("safe")}
+            className={cn(
+              "flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition-all cursor-pointer",
+              initialStatus === "safe"
+                ? "border-emerald-500 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-500"
+                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
+            )}
+          >
+            <CheckCircle2 className="size-4 text-emerald-600" />
+            Safe (Checked In)
+          </button>
+          <button
+            type="button"
+            onClick={() => setInitialStatus("needs_rescue")}
+            className={cn(
+              "flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition-all cursor-pointer",
+              initialStatus === "needs_rescue"
+                ? "border-rose-500 bg-rose-50 text-rose-900 ring-1 ring-rose-500"
+                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
+            )}
+          >
+            <AlertTriangle className="size-4 text-rose-600" />
+            Needs Rescue
+          </button>
+        </div>
+      </div>
+
+      {/* Support / Special Needs */}
+      <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/50 p-3">
+        <label className="text-xs font-bold text-slate-800">
+          Special Needs / Priority Demographics
+        </label>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={isInfant}
+              onChange={(e) => setIsInfant(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+            />
+            Infant / Toddler (0–4 y/o)
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={isChild}
+              onChange={(e) => setIsChild(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+            />
+            Child (5–17 y/o)
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={isSenior}
+              onChange={(e) => setIsSenior(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+            />
+            Senior Citizen (60+ y/o)
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={isPwd}
+              onChange={(e) => setIsPwd(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+            />
+            PWD
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={isPregnant}
+              onChange={(e) => setIsPregnant(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+            />
+            Pregnant
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={isLactating}
+              onChange={(e) => setIsLactating(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+            />
+            Lactating Mother
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={hasChronicCondition}
+              onChange={(e) => setHasChronicCondition(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+            />
+            Chronic Condition
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={isBedridden}
+              onChange={(e) => setIsBedridden(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+            />
+            Bedridden / Mobility-limited
+          </label>
+        </div>
+        {hasChronicCondition && (
+          <input
+            type="text"
+            value={chronicNote}
+            onChange={(e) => setChronicNote(e.target.value)}
+            placeholder="Specify condition / maintenance medication..."
+            className="mt-1 h-8 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          />
+        )}
+      </div>
+
+      {/* Location / Origin Notes */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-bold text-slate-700">
+          Origin Address / Location Notes <span className="text-[11px] font-normal text-slate-400">(Optional)</span>
+        </label>
+        <input
+          type="text"
+          value={locationNote}
+          onChange={(e) => setLocationNote(e.target.value)}
+          placeholder="e.g. Block 3 Area 2 Riverside, evacuated due to creek rise"
+          className="h-9 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+        />
+      </div>
+
+      <DialogFooter className="mt-2 flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onClose}
+          className="h-9 rounded-xl px-4 text-xs font-bold cursor-pointer"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          size="sm"
+          disabled={mutation.isPending}
+          className="h-9 rounded-xl bg-emerald-600 px-5 text-xs font-bold text-white hover:bg-emerald-700 cursor-pointer shadow-xs"
+        >
+          {mutation.isPending ? "Recording..." : "Save & Check In Walk-In"}
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
+function CreateWalkInModal({
+  open,
+  onOpenChange,
+  eventId,
+  data,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  eventId: string;
+  data: EmergencyWorkspaceOut;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl p-6">
+        <DialogHeader>
+          <div className="flex items-center gap-2 text-violet-700 font-bold text-xs uppercase tracking-wider">
+            <UserPlus className="size-4" />
+            Walk-in Registration
+          </div>
+          <DialogTitle className="text-lg font-black text-slate-900">
+            Record Evacuation Walk-In
+          </DialogTitle>
+          <DialogDescription className="text-xs text-slate-500">
+            Record an unregistered citizen arriving at an evacuation center or triage station. This data will be available on the admin registry and accounted for in the live response.
+          </DialogDescription>
+        </DialogHeader>
+
+        {open && (
+          <CreateWalkInForm
+            eventId={eventId}
+            data={data}
+            onClose={() => onOpenChange(false)}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function UnregisteredPersonsPanel({
+  eventId,
+  data,
+  readOnly,
+}: {
+  eventId: string;
+  data: EmergencyWorkspaceOut;
+  readOnly: boolean;
+}) {
+  const [createModalOpen, setCreateModalOpen] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+  const [statusFilter, setStatusFilter] = React.useState("all");
+  const [centerFilter, setCenterFilter] = React.useState("all");
+  const [supportFilter, setSupportFilter] = React.useState("all");
+  const [page, setPage] = React.useState(1);
+  const pageSize = 15;
+
+  const peopleQuery = useQuery({
+    queryKey: ["admin", "unregistered-persons", eventId],
+    queryFn: () =>
+      api
+        .get<Page<UnregisteredPersonOut>>("/admin/unregistered-persons", {
+          params: {
+            event_id: eventId,
+            include_converted: true,
+            size: 100,
+          },
+        })
+        .then((res) => res.data),
+    enabled: Boolean(eventId),
+  });
+
+  const people: UnregisteredPersonOut[] = React.useMemo(() => {
+    if (peopleQuery.data?.items && peopleQuery.data.items.length > 0) {
+      return peopleQuery.data.items;
+    }
+    // Fallback to data.unregistered_pins if query is loading or fallback needed
+    return data.unregistered_pins.map((pin) => ({
+      id: pin.id,
+      event_id: eventId,
+      created_at: new Date().toISOString(),
+      full_name: pin.full_name,
+      contact_number: null,
+      location: pin.location,
+      location_note: null,
+      status: pin.status,
+      recorded_by_name: null,
+      converted_household_id: null,
+      converted_member_id: null,
+      is_child: pin.vulnerability_flags.includes("is_child"),
+      is_senior: pin.vulnerability_flags.includes("is_senior"),
+      is_pwd: pin.vulnerability_flags.includes("is_pwd"),
+      is_pregnant: pin.vulnerability_flags.includes("is_pregnant"),
+      is_lactating: pin.vulnerability_flags.includes("is_lactating"),
+      has_chronic_condition: pin.vulnerability_flags.includes("has_chronic_condition"),
+      chronic_condition_note: null,
+      is_bedridden: pin.vulnerability_flags.includes("is_bedridden"),
+      evac_center_id: pin.evac_center_id ?? null,
+      evac_center_name: pin.evac_center_name ?? null,
+    }));
+  }, [peopleQuery.data, data.unregistered_pins, eventId]);
+
+  const filtered = React.useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return people.filter((p) => {
+      const matchesSearch =
+        !q ||
+        p.full_name.toLowerCase().includes(q) ||
+        (p.contact_number && p.contact_number.toLowerCase().includes(q)) ||
+        (p.evac_center_name && p.evac_center_name.toLowerCase().includes(q)) ||
+        (p.location_note && p.location_note.toLowerCase().includes(q));
+
+      const matchesStatus =
+        statusFilter === "all" || p.status === statusFilter;
+
+      const matchesCenter =
+        centerFilter === "all" ||
+        (centerFilter === "none"
+          ? !p.evac_center_id
+          : p.evac_center_id === centerFilter);
+
+      const hasSpecialNeeds =
+        p.is_child ||
+        p.is_senior ||
+        p.is_pwd ||
+        p.is_pregnant ||
+        p.is_lactating ||
+        p.has_chronic_condition ||
+        p.is_bedridden;
+
+      const matchesSupport =
+        supportFilter === "all" ||
+        (supportFilter === "with_special_needs" && hasSpecialNeeds) ||
+        (supportFilter === "without_special_needs" && !hasSpecialNeeds) ||
+        (supportFilter === "pwd" && p.is_pwd) ||
+        (supportFilter === "senior" && p.is_senior) ||
+        (supportFilter === "child" && p.is_child) ||
+        (supportFilter === "pregnant" && p.is_pregnant) ||
+        (supportFilter === "bedridden" && p.is_bedridden);
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesCenter &&
+        matchesSupport
+      );
+    });
+  }, [people, search, statusFilter, centerFilter, supportFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+  const pageItems = filtered.slice(startIndex, startIndex + pageSize);
+
+  const safeCount = people.filter((p) => p.status === "safe").length;
+  const rescueCount = people.filter((p) => p.status === "needs_rescue").length;
+  const atCentersCount = people.filter((p) => p.evac_center_id).length;
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Top Toolbar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Left summary pill indicators */}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-900 shadow-2xs">
+            <UserX className="size-3.5 text-violet-700" />
+            {people.length} Walk-in Person{people.length !== 1 ? "s" : ""}
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-900 shadow-2xs">
+            <CheckCircle2 className="size-3.5 text-emerald-700" />
+            {safeCount} Safe
+          </span>
+          {rescueCount > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-900 shadow-2xs">
+              <AlertTriangle className="size-3.5 text-rose-700" />
+              {rescueCount} Need Rescue
+            </span>
+          )}
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 shadow-2xs">
+            <Building2 className="size-3.5 text-slate-500" />
+            {atCentersCount} at Evacuation Centers
+          </span>
+        </div>
+
+        {/* Right action button */}
+        <div className="flex items-center gap-2">
+          {!readOnly && (
+            <Button
+              size="sm"
+              onClick={() => setCreateModalOpen(true)}
+              className="h-8.5 rounded-xl bg-emerald-600 px-3.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <UserPlus className="size-3.5" />
+              Record Walk-In Person
+            </Button>
+          )}
+          <a
+            href="/admin/unregistered-persons"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-8.5 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-900 transition-colors"
+          >
+            Registry View
+            <ArrowRight className="size-3 text-slate-400" />
+          </a>
+        </div>
+      </div>
+
+      {/* Filter controls */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-4 bg-slate-50/80 p-2.5 rounded-xl border border-slate-200">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+          <input
+            type="search"
+            placeholder="Search by name, phone, notes..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="h-8 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-xs placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          />
+        </div>
+
+        <Select
+          value={centerFilter}
+          onValueChange={(v) => {
+            setCenterFilter(v);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="h-8 text-xs bg-white border-slate-200">
+            <SelectValue placeholder="All Evac Centers" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Evacuation Centers</SelectItem>
+            <SelectItem value="none">No Center Assigned</SelectItem>
+            {data.evacuation_centers.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.facility.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => {
+            setStatusFilter(v);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="h-8 text-xs bg-white border-slate-200">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="safe">Safe</SelectItem>
+            <SelectItem value="needs_rescue">Needs Rescue</SelectItem>
+            <SelectItem value="unaccounted">Unaccounted</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={supportFilter}
+          onValueChange={(v) => {
+            setSupportFilter(v);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="h-8 text-xs bg-white border-slate-200">
+            <SelectValue placeholder="Special Needs" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Demographics</SelectItem>
+            <SelectItem value="with_special_needs">With Special Needs</SelectItem>
+            <SelectItem value="without_special_needs">No Special Needs</SelectItem>
+            <SelectItem value="pwd">PWD</SelectItem>
+            <SelectItem value="senior">Senior Citizen</SelectItem>
+            <SelectItem value="child">Child / Infant</SelectItem>
+            <SelectItem value="pregnant">Pregnant</SelectItem>
+            <SelectItem value="bedridden">Bedridden</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Table Container */}
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-600 font-bold uppercase tracking-wider text-[10.5px]">
+                <th className="py-3 px-3.5">Name</th>
+                <th className="py-3 px-3">Safety Status</th>
+                <th className="py-3 px-3">Evacuation Center</th>
+                <th className="py-3 px-3">Contact</th>
+                <th className="py-3 px-3">Special Needs</th>
+                <th className="py-3 px-3">Origin / Location</th>
+                <th className="py-3 px-3">Recorded Time</th>
+                <th className="py-3 px-3.5 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {pageItems.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-slate-500">
+                    <div className="flex flex-col items-center gap-2">
+                      <UserX className="size-8 text-slate-300" />
+                      <p className="text-sm font-bold text-slate-700">No walk-in records found</p>
+                      <p className="text-xs text-slate-500 max-w-sm">
+                        {search || centerFilter !== "all" || statusFilter !== "all"
+                          ? "No unregistered persons match the active search or filter criteria."
+                          : "No unregistered persons have checked in for this emergency event yet."}
+                      </p>
+                      {!readOnly && (
+                        <Button
+                          size="sm"
+                          onClick={() => setCreateModalOpen(true)}
+                          className="mt-2 h-8 rounded-lg bg-emerald-600 px-3 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 cursor-pointer"
+                        >
+                          <UserPlus className="size-3.5 mr-1.5" />
+                          Record First Walk-In Person
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                pageItems.map((person) => {
+                  const needsRescue = person.status === "needs_rescue";
+                  const isSafe = person.status === "safe";
+
+                  const flags: string[] = [];
+                  if (person.is_child) flags.push("Child");
+                  if (person.is_senior) flags.push("Senior Citizen");
+                  if (person.is_pwd) flags.push("PWD");
+                  if (person.is_pregnant) flags.push("Pregnant");
+                  if (person.is_lactating) flags.push("Lactating");
+                  if (person.has_chronic_condition) flags.push("Chronic Condition");
+                  if (person.is_bedridden) flags.push("Bedridden");
+
+                  return (
+                    <tr
+                      key={person.id}
+                      className={cn(
+                        "hover:bg-slate-50/70 transition-colors group",
+                        needsRescue && "bg-rose-50/30",
+                      )}
+                    >
+                      {/* Name */}
+                      <td className="py-2.5 px-3.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-slate-900 group-hover:text-emerald-950">
+                            {person.full_name}
+                          </span>
+                          <span className="inline-flex items-center rounded-full bg-violet-50 px-1.5 py-0.2 text-[9px] font-bold text-violet-700 border border-violet-200">
+                            Walk-In
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-2.5 px-3">
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10.5px] font-bold border",
+                            isSafe
+                              ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                              : needsRescue
+                                ? "bg-rose-50 text-rose-800 border-rose-300"
+                                : "bg-slate-100 text-slate-700 border-slate-300",
+                          )}
+                        >
+                          {isSafe ? (
+                            <CheckCircle2 className="size-3 text-emerald-600" />
+                          ) : needsRescue ? (
+                            <AlertTriangle className="size-3 text-rose-600" />
+                          ) : (
+                            <Clock className="size-3 text-slate-500" />
+                          )}
+                          {statusLabel(person.status)}
+                        </span>
+                      </td>
+
+                      {/* Evac Center */}
+                      <td className="py-2.5 px-3">
+                        {person.evac_center_name ? (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-900 bg-emerald-50/80 px-2 py-0.5 rounded-md border border-emerald-200/70">
+                            <Building2 className="size-3 text-emerald-600 shrink-0" />
+                            <span className="truncate max-w-[170px]">
+                              {person.evac_center_name}
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-xs italic">
+                            No Center Assigned
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Contact */}
+                      <td className="py-2.5 px-3 font-mono text-[11.5px] text-slate-600">
+                        {person.contact_number ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Phone className="size-3 text-slate-400" />
+                            {person.contact_number}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </td>
+
+                      {/* Special Needs */}
+                      <td className="py-2.5 px-3">
+                        {flags.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {flags.map((f) => (
+                              <span
+                                key={f}
+                                className="rounded-md bg-amber-100 border border-amber-300 px-1.5 py-0.2 text-[10px] font-bold text-amber-900"
+                              >
+                                {f}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 text-xs">None</span>
+                        )}
+                      </td>
+
+                      {/* Origin / Notes */}
+                      <td className="py-2.5 px-3 text-slate-600 text-xs max-w-[180px]">
+                        {person.location_note ? (
+                          <span className="truncate block" title={person.location_note}>
+                            {person.location_note}
+                          </span>
+                        ) : person.location ? (
+                          <span className="text-slate-500 italic">Pinned on Map</span>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </td>
+
+                      {/* Recorded Time */}
+                      <td className="py-2.5 px-3 text-[11px] text-slate-500">
+                        <div>{new Date(person.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                        {person.recorded_by_name && (
+                          <div className="text-[10px] text-slate-400 truncate max-w-[110px]">
+                            by {person.recorded_by_name}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-2.5 px-3.5 text-right">
+                        {person.converted_member_id ? (
+                          <a
+                            href={`/admin/citizens/${person.converted_member_id}`}
+                            className="text-primary-700 font-bold hover:underline inline-flex items-center gap-1 text-[11px]"
+                          >
+                            Member Profile
+                            <ExternalLink className="size-3" />
+                          </a>
+                        ) : (
+                          <span className="text-slate-400 text-[11px] font-medium">
+                            Unconverted
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Bottom pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-slate-100 p-3 text-xs">
+            <span className="text-[11.5px] font-medium text-slate-500">
+              Showing {startIndex + 1}–{Math.min(startIndex + pageSize, filtered.length)} of {filtered.length} walk-in records
+            </span>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="h-7.5 px-2.5 text-xs rounded-lg cursor-pointer font-bold"
+              >
+                <ChevronLeft className="size-3.5 mr-1" />
+                Previous
+              </Button>
+              <span className="px-2 text-xs font-bold text-slate-700">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                className="h-7.5 px-2.5 text-xs rounded-lg cursor-pointer font-bold"
+              >
+                Next
+                <ChevronRight className="size-3.5 ml-1" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Record Walk-In Modal */}
+      <CreateWalkInModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        eventId={eventId}
+        data={data}
+      />
     </div>
   );
 }
@@ -2724,8 +3433,15 @@ function AreaSummaryModal({
   const seniorCount = allMembers.filter((m) =>
     m.vulnerability_flags.some((f) => f.toLowerCase().includes("senior")),
   ).length;
+  const infantCount = allMembers.filter((m) =>
+    m.vulnerability_flags.some(
+      (f) => f.toLowerCase().includes("infant") || f.toLowerCase().includes("toddler"),
+    ),
+  ).length;
   const childCount = allMembers.filter((m) =>
-    m.vulnerability_flags.some((f) => f.toLowerCase().includes("child") || f.toLowerCase().includes("infant")),
+    m.vulnerability_flags.some(
+      (f) => f.toLowerCase() === "is_child" || f.toLowerCase() === "child",
+    ),
   ).length;
   const pregnantCount = allMembers.filter((m) =>
     m.vulnerability_flags.some((f) => f.toLowerCase().includes("pregnant")),
@@ -2816,11 +3532,11 @@ function AreaSummaryModal({
                   isEvacFull ? "text-rose-900" : isEvacLow ? "text-amber-900" : "text-emerald-900"
                 )}>{totalAreaCap > 0 ? totalAreaAvailable : areaCenters.length}</span>
                 <div className={cn(
-                  "flex flex-col text-[10.5px] font-bold leading-[13px] text-right",
+                  "flex flex-col text-[10.5px] font-medium leading-[13px] text-right",
                   isEvacFull ? "text-rose-700" : isEvacLow ? "text-amber-700" : "text-emerald-700"
                 )}>
-                  <span>{totalAreaCap > 0 ? "Available of" : `${areaCenters.length} Centers`}</span>
-                  <span>{totalAreaCap > 0 ? `${totalAreaCap} Capacity` : "Open Network"}</span>
+                  <span>{totalAreaCap > 0 ? `${totalAreaCap}` : `${areaCenters.length} Centers`}</span>
+                  <span className="font-bold">{totalAreaCap > 0 ? "Capacity" : "Open Network"}</span>
                 </div>
               </div>
             </div>
@@ -2906,6 +3622,11 @@ function AreaSummaryModal({
                 {pwdCount > 0 && (
                   <span className="rounded-md bg-amber-100 border border-amber-300 px-2 py-0.5 text-xs font-bold text-amber-900">
                     {pwdCount} PWD
+                  </span>
+                )}
+                {infantCount > 0 && (
+                  <span className="rounded-md bg-amber-100 border border-amber-300 px-2 py-0.5 text-xs font-bold text-amber-900">
+                    {infantCount} Infant / Toddler{infantCount > 1 ? "s" : ""} (0–4 y/o)
                   </span>
                 )}
                 {childCount > 0 && (

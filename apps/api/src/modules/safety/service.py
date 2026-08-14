@@ -79,6 +79,7 @@ RESCUE_TRANSITIONS: dict[str, set[str]] = {
 _NON_DIGITS_RE = re.compile(r"\D")
 
 VULNERABILITY_FLAGS = (
+    "is_infant",
     "is_child",
     "is_senior",
     "is_pwd",
@@ -90,7 +91,32 @@ VULNERABILITY_FLAGS = (
 
 
 def _member_flags(member: Member) -> list[str]:
-    return [flag for flag in VULNERABILITY_FLAGS if getattr(member, flag)]
+    flags: list[str] = []
+    if getattr(member, "birth_date", None) is not None:
+        today = datetime.now(UTC).date()
+        birth = member.birth_date
+        had_birthday = (today.month, today.day) >= (birth.month, birth.day)
+        age = today.year - birth.year - (0 if had_birthday else 1)
+        if 0 <= age <= 4:
+            flags.append("is_infant")
+        elif age < 18:
+            flags.append("is_child")
+    elif getattr(member, "is_child", False):
+        flags.append("is_child")
+
+    if getattr(member, "is_senior", False):
+        flags.append("is_senior")
+    if getattr(member, "is_pwd", False):
+        flags.append("is_pwd")
+    if getattr(member, "is_pregnant", False):
+        flags.append("is_pregnant")
+    if getattr(member, "is_lactating", False):
+        flags.append("is_lactating")
+    if getattr(member, "has_chronic_condition", False):
+        flags.append("has_chronic_condition")
+    if getattr(member, "is_bedridden", False):
+        flags.append("is_bedridden")
+    return flags
 
 
 def _event_out(event: EmergencyEvent) -> PublicEmergencyEvent:
