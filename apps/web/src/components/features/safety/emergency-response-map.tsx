@@ -19,6 +19,7 @@ import {
   ArrowRight,
   CheckCircle2,
   ChevronDown,
+  Clock,
   Database,
   Filter,
   Home,
@@ -69,6 +70,7 @@ import {
   SAN_JOSE_OUTER_BOUNDARY_GEOJSON,
 } from "@/lib/map";
 import { api, toDisplayError } from "@/lib/api/client";
+import { getActiveEmergencyEvents } from "@/lib/api/public";
 import type { SafetyStatusAdminIn } from "@/lib/api/safety-types";
 import type { AreaBoundaryFeature, PublicFacility } from "@/lib/api/public-types";
 import "@/lib/leaflet-setup";
@@ -435,7 +437,42 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
 
   const mappedHouseholds = filtered.filter((e) => e.household.location);
   const unmappedHouseholds = filtered.filter((e) => !e.household.location);
-  const safeCount = filtered.filter((e) => e.household.all_safe).length;
+
+  const totalHouseholds = filtered.length;
+  const totalCitizens = filtered.reduce(
+    (sum, e) => sum + e.household.members.length,
+    0,
+  );
+
+  const safeHouseholds = filtered.filter((e) => e.household.all_safe).length;
+  const safeCitizens = filtered.reduce(
+    (sum, e) =>
+      sum + e.household.members.filter((m) => m.status === "safe").length,
+    0,
+  );
+
+  const specialNeedsHouseholds = filtered.filter((e) =>
+    e.household.members.some((m) => (m.vulnerability_flags || []).length > 0),
+  ).length;
+  const specialNeedsCitizens = filtered.reduce(
+    (sum, e) =>
+      sum +
+      e.household.members.filter(
+        (m) => (m.vulnerability_flags || []).length > 0,
+      ).length,
+    0,
+  );
+
+  const pendingHouseholds = Math.max(0, totalHouseholds - safeHouseholds);
+  const pendingCitizens = Math.max(0, totalCitizens - safeCitizens);
+
+  const safePct =
+    totalHouseholds > 0
+      ? Math.round((safeHouseholds / totalHouseholds) * 100)
+      : 0;
+
+  const pendingPct =
+    totalHouseholds > 0 ? Math.max(0, 100 - safePct) : 0;
 
   /* --- derived enriched lookup --- */
   const enrichedMap = React.useMemo(() => {
@@ -450,41 +487,61 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
       {/* Metrics bar (occupies full width across both columns)               */}
       {/* ------------------------------------------------------------------ */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <SidebarStat
+        <MetricCard
           icon={Users}
           label="In Scope"
-          value={filtered.length}
-          sub={`${data.households.length} Total`}
+          value={totalHouseholds}
+          unit="Households"
+          sub={`${totalCitizens} Citizens registered`}
+          badge={
+            <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-slate-700 border border-slate-200">
+              Barangay
+            </span>
+          }
           tone="neutral"
         />
-        <SidebarStat
-          icon={MapPin}
-          label="Mapped"
-          value={mappedHouseholds.length}
-          sub={`${unmappedHouseholds.length} Without Pin`}
-          tone="neutral"
-        />
-        <SidebarStat
-          icon={CheckCircle2}
-          label="All Safe"
-          value={safeCount}
+        <MetricCard
+          icon={Shield}
+          label="Special Needs"
+          value={specialNeedsCitizens}
+          unit="Citizens"
           sub={
-            filtered.length > 0
-              ? `${((safeCount / filtered.length) * 100).toFixed(0)}% Of Scope`
-              : "—"
+            specialNeedsHouseholds > 0
+              ? `${specialNeedsHouseholds} ${specialNeedsHouseholds === 1 ? "Household" : "Households"} with PWD/Seniors`
+              : "No Vulnerable Flags"
+          }
+          badge={
+            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-amber-900 border border-amber-300">
+              Priority Care
+            </span>
+          }
+          tone={specialNeedsCitizens > 0 ? "warning" : "neutral"}
+        />
+        <MetricCard
+          icon={CheckCircle2}
+          label="Confirmed Safe"
+          value={safeHouseholds}
+          unit="Households"
+          sub={`${safeCitizens} Citizens verified safe`}
+          badge={
+            <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-300">
+              {safePct}% Safe
+            </span>
           }
           tone="success"
         />
-        <SidebarStat
-          icon={Users}
-          label="Pending Check-In"
-          value={filtered.length - safeCount}
-          sub={
-            filtered.length > 0
-              ? `${(((filtered.length - safeCount) / filtered.length) * 100).toFixed(0)}% Pending`
-              : "—"
+        <MetricCard
+          icon={Clock}
+          label="Pending Contact"
+          value={pendingHouseholds}
+          unit="Households"
+          sub={`${pendingCitizens} Citizens awaiting status`}
+          badge={
+            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-amber-900 border border-amber-300">
+              {pendingPct}% Pending
+            </span>
           }
-          tone="neutral"
+          tone={pendingHouseholds > 0 ? "warning" : "neutral"}
         />
       </div>
 
@@ -1229,40 +1286,85 @@ function CustomFilterSelect({
   );
 }
 
-function SidebarStat({
+function MetricCard({
   icon: Icon,
   label,
   value,
+  unit,
   sub,
-  tone,
+  badge,
+  tone = "neutral",
 }: {
-  icon: typeof Users;
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
-  value: number;
+  value: number | string;
+  unit?: string;
   sub: string;
-  tone: "neutral" | "success" | "danger";
+  badge?: React.ReactNode;
+  tone?: "neutral" | "success" | "danger" | "warning";
 }) {
-  const toneClass =
-    tone === "success"
-      ? "text-emerald-700 bg-emerald-50 border-emerald-200/80"
-      : tone === "danger"
-        ? "text-rose-700 bg-rose-50 border-rose-200/80"
-        : "text-neutral-700 bg-white border-neutral-200/80";
+  const toneClasses = {
+    neutral: {
+      card: "bg-white border-slate-200/90 text-slate-900 shadow-2xs hover:border-slate-300/90",
+      iconBox: "bg-slate-100 text-slate-700",
+      sub: "text-slate-500",
+    },
+    success: {
+      card: "bg-emerald-50/50 border-emerald-200/80 text-emerald-950 shadow-2xs hover:border-emerald-300",
+      iconBox: "bg-emerald-100 text-emerald-700",
+      sub: "text-emerald-700 font-medium",
+    },
+    danger: {
+      card: "bg-rose-50/70 border-rose-200 text-rose-950 shadow-2xs hover:border-rose-300",
+      iconBox: "bg-rose-100 text-rose-700",
+      sub: "text-rose-700 font-medium",
+    },
+    warning: {
+      card: "bg-amber-50/40 border-amber-200/80 text-amber-950 shadow-2xs hover:border-amber-300",
+      iconBox: "bg-amber-100 text-amber-800",
+      sub: "text-amber-800 font-medium",
+    },
+  }[tone];
+
   return (
     <div
       className={cn(
-        "flex flex-col gap-1 rounded-xl border p-3 shadow-2xs transition-colors",
-        toneClass,
+        "flex flex-col justify-between rounded-2xl border p-3.5 sm:p-4 transition-all",
+        toneClasses.card,
       )}
     >
-      <div className="flex items-center gap-1.5">
-        <Icon className="size-3.5 shrink-0 opacity-70" aria-hidden />
-        <span className="text-[10.5px] font-bold uppercase tracking-wider opacity-70">
-          {label}
-        </span>
+      <div className="flex items-center justify-between gap-1.5">
+        <div className="flex items-center gap-2 min-w-0">
+          <div
+            className={cn(
+              "grid size-7 place-items-center rounded-lg shadow-2xs shrink-0",
+              toneClasses.iconBox,
+            )}
+            aria-hidden
+          >
+            <Icon className="size-3.5" />
+          </div>
+          <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 truncate">
+            {label}
+          </span>
+        </div>
+        <div className="shrink-0">{badge}</div>
       </div>
-      <span className="text-2xl font-black leading-none tabular-nums">{value}</span>
-      <span className="text-[10.5px] font-medium opacity-60">{sub}</span>
+
+      <div className="my-1.5 sm:my-2 flex items-baseline gap-1.5">
+        <span className="text-2xl sm:text-3xl font-black tracking-tight tabular-nums">
+          {value}
+        </span>
+        {unit ? (
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+            {unit}
+          </span>
+        ) : null}
+      </div>
+
+      <div className="flex items-center justify-between text-xs min-w-0">
+        <span className={cn("text-[11.5px] truncate", toneClasses.sub)}>{sub}</span>
+      </div>
     </div>
   );
 }
@@ -1755,6 +1857,7 @@ function HouseholdDialog({
 }) {
   const queryClient = useQueryClient();
   const [centerId, setCenterId] = React.useState("");
+  const [selectedEventId, setSelectedEventId] = React.useState("");
   const [pending, setPending] = React.useState<{
     scope: "member" | "household";
     status: "safe" | "needs_rescue";
@@ -1762,6 +1865,23 @@ function HouseholdDialog({
     title: string;
   } | null>(null);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
+
+  const activeEventsQuery = useQuery({
+    queryKey: ["public", "active-emergency-events"],
+    queryFn: getActiveEmergencyEvents,
+  });
+  const activeEvents = React.useMemo(
+    () => activeEventsQuery.data ?? [],
+    [activeEventsQuery.data],
+  );
+
+  const effectiveEventId = React.useMemo(() => {
+    if (selectedEventId && activeEvents.some((e) => e.id === selectedEventId)) {
+      return selectedEventId;
+    }
+    const match = activeEvents.find((e) => e.id === data.event.id);
+    return match ? match.id : (activeEvents[0]?.id ?? "");
+  }, [selectedEventId, activeEvents, data.event.id]);
 
   const mutation = useMutation({
     mutationFn: (payload: SafetyStatusAdminIn) =>
@@ -1786,13 +1906,14 @@ function HouseholdDialog({
         queryClient.invalidateQueries({ queryKey: ["admin", "rescue-requests"] }),
         queryClient.invalidateQueries({ queryKey: ["portal", "safety"] }),
         queryClient.invalidateQueries({ queryKey: ["admin", "emergency-events"] }),
+        queryClient.invalidateQueries({ queryKey: ["public", "active-emergency-events"] }),
       ]);
     },
     onError: (error) => toast.error(toDisplayError(error).detail),
   });
 
   const base = {
-    event_id: data.event.id,
+    event_id: effectiveEventId || data.event.id,
     household_id: household?.household_id,
     evac_center_id: centerId || null,
   };
@@ -2135,6 +2256,45 @@ function HouseholdDialog({
               ))}
           </div>
 
+          {/* Active Emergency Event Selector */}
+          <div className="flex flex-col gap-1.5 text-xs font-semibold text-neutral-700">
+            <span className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+              <Siren className="size-3.5 text-emerald-600 shrink-0" />
+              Active Emergency Event
+              <span className="text-rose-500">*</span>
+            </span>
+
+            {activeEvents.length > 1 ? (
+              <select
+                value={effectiveEventId}
+                onChange={(e) => setSelectedEventId(e.target.value)}
+                className="focus-visible:ring-emerald-500 min-h-10 rounded-lg border border-neutral-200 bg-white px-3 text-sm font-normal focus-visible:ring-2 focus-visible:outline-none cursor-pointer"
+                required
+              >
+                {activeEvents.map((evt) => (
+                  <option key={evt.id} value={evt.id}>
+                    {evt.name} ({evt.type.toUpperCase()})
+                  </option>
+                ))}
+              </select>
+            ) : activeEvents.length === 1 ? (
+              <div className="flex items-center justify-between rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-normal text-slate-800">
+                <span className="font-semibold text-slate-900">{activeEvents[0].name}</span>
+                <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800 border border-emerald-300">
+                  {activeEvents[0].type}
+                </span>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 font-medium">
+                No active emergency event is currently ongoing. Safety check-in requires an active event.
+              </div>
+            )}
+
+            <span className="text-[11px] font-normal text-neutral-500 leading-tight">
+              Links this check-in directly to the selected incident record for downstream response analysis and post-disaster logs.
+            </span>
+          </div>
+
           {pending?.status === "safe" ? (
             <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600">
               Optional Evacuation Center
@@ -2171,7 +2331,7 @@ function HouseholdDialog({
               Cancel
             </Button>
             <Button
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || activeEvents.length === 0 || !effectiveEventId}
               onClick={submitPending}
               className={
                 pending?.status === "needs_rescue"
