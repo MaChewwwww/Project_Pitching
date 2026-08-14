@@ -21,6 +21,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import type { HouseholdDetailOut, RegistryMemberDetailOut } from "@/lib/api/registry-types";
@@ -119,18 +126,21 @@ export default function PromoteCitizenPage() {
               <Label>
                 Area <span className="text-red-600">*</span>
               </Label>
-              <select
+              <Select
                 value={form.area_id}
-                onChange={(e) => setForm((v) => ({ ...v, area_id: e.target.value }))}
-                className="mt-1.5 h-10 w-full rounded-md border border-emerald-200/80 bg-white px-3 text-sm font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                onValueChange={(val) => setForm((v) => ({ ...v, area_id: val }))}
               >
-                <option value="">Select Area</option>
-                {(areas.data ?? []).map((area) => (
-                  <option key={area.id} value={area.id}>
-                    {area.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="mt-1.5 h-10 w-full rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
+                  <SelectValue placeholder="Select Area" />
+                </SelectTrigger>
+                <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
+                  {(areas.data ?? []).map((area) => (
+                    <SelectItem key={area.id} value={area.id}>
+                      {area.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>

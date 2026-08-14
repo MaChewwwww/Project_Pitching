@@ -39,6 +39,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useRequireRole } from "@/lib/auth/use-require-role";
@@ -479,15 +486,18 @@ function HouseholdTab({
                     onChange={(val) => setDestination(val)}
                     placeholder="Search Destination Household"
                   />
-                  <select
-                    value={relationship}
-                    onChange={(e) => setRelationship(e.target.value)}
-                    className="h-10 w-full rounded-md border border-neutral-200 px-3 text-sm"
-                  >
-                    {["Spouse", "Child", "Parent", "Sibling", "Grandparent", "Grandchild", "Others"].map((item) => (
-                      <option key={item}>{item}</option>
-                    ))}
-                  </select>
+                  <Select value={relationship} onValueChange={setRelationship}>
+                    <SelectTrigger className="h-10 w-full rounded-lg border-neutral-200 bg-white text-sm font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
+                      <SelectValue placeholder="Select relationship" />
+                    </SelectTrigger>
+                    <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
+                      {["Spouse", "Child", "Parent", "Sibling", "Grandparent", "Grandchild", "Others"].map((item) => (
+                        <SelectItem key={item} value={item}>
+                          {item}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Button disabled={!destination || transfer.isPending} onClick={() => transfer.mutate()}>
                     Confirm Transfer
                   </Button>
