@@ -67,6 +67,22 @@ const EmergencyResponseMap = dynamic(
 );
 
 const eventTypes = ["flood", "earthquake", "typhoon", "fire", "other"] as const;
+
+function getEventTypeBadgeClass(type: string): string {
+  switch (type.toLowerCase()) {
+    case "flood":
+      return "bg-sky-500/25 text-sky-100 border-sky-300/50 shadow-2xs";
+    case "fire":
+      return "bg-rose-500/25 text-rose-100 border-rose-300/50 shadow-2xs";
+    case "typhoon":
+    case "severe_weather":
+      return "bg-amber-500/25 text-amber-100 border-amber-300/50 shadow-2xs";
+    case "earthquake":
+      return "bg-stone-500/25 text-stone-100 border-stone-300/50 shadow-2xs";
+    default:
+      return "bg-teal-500/25 text-teal-100 border-teal-300/50 shadow-2xs";
+  }
+}
 const tabs = ["overview", "events", "map", "accounted-for"] as const;
 type Tab = (typeof tabs)[number];
 
@@ -318,7 +334,7 @@ export default function AdminEmergencyEventsPage() {
                   {/* High-Contrast Icon Container */}
                   <div className="grid size-13 shrink-0 place-items-center rounded-2xl bg-white text-emerald-950 shadow-lg ring-4 ring-white/10">
                     {selected.type === "flood" ? (
-                      <Waves className="size-7 text-emerald-800" />
+                      <Waves className="size-7 text-sky-600" />
                     ) : selected.type === "fire" ? (
                       <Flame className="size-7 text-rose-600" />
                     ) : (
@@ -330,18 +346,22 @@ export default function AdminEmergencyEventsPage() {
                     {/* High-Contrast Badges */}
                     <div className="flex flex-wrap items-center gap-2">
                       {selected.is_active ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-600 text-white px-3 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm border border-rose-400/40">
-                          <span className="size-1.5 rounded-full bg-white animate-ping" />
+                        <span className="inline-flex items-center gap-2 rounded-full bg-rose-600 text-white px-3 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm border border-rose-400/40">
+                          <span className="relative flex size-2 shrink-0">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                            <span className="relative inline-flex size-2 rounded-full bg-white" />
+                          </span>
                           LIVE EMERGENCY
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-800 text-neutral-300 px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border border-neutral-700">
-                          <span className="size-1.5 rounded-full bg-neutral-400" />
+                        <span className="inline-flex items-center gap-2 rounded-full bg-neutral-800 text-neutral-300 px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border border-neutral-700">
+                          <span className="size-2 rounded-full bg-neutral-400 shrink-0" />
                           ARCHIVED / ENDED
                         </span>
                       )}
 
-                      <span className="inline-flex items-center rounded-full bg-white/20 text-white border border-white/30 px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider backdrop-blur-md shadow-2xs">
+                      {/* Dynamic Event Type Badge */}
+                      <span className={`inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border ${getEventTypeBadgeClass(selected.type)}`}>
                         {selected.type}
                       </span>
                     </div>
@@ -352,8 +372,8 @@ export default function AdminEmergencyEventsPage() {
                         {selected.name}
                       </h2>
                       <span className="text-xs text-emerald-200/50 font-medium hidden sm:inline">•</span>
-                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-100 bg-emerald-950/60 border border-emerald-700/50 px-2.5 py-1 rounded-lg">
-                        <Clock className="size-3.5 text-emerald-400" />
+                      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-100/90 font-medium">
+                        <Clock className="size-3.5 text-emerald-300/80 shrink-0" />
                         Started {new Date(selected.started_at).toLocaleString()}
                       </span>
                     </div>
@@ -384,11 +404,14 @@ export default function AdminEmergencyEventsPage() {
                                     : "bg-white/10 text-white border-white/20 hover:bg-white/20 shadow-2xs"
                                 }`}
                               >
-                                <span
-                                  className={`size-2 rounded-full ${
-                                    isSelected ? "bg-neutral-950 animate-ping" : "bg-emerald-400"
-                                  }`}
-                                />
+                                {isSelected ? (
+                                  <span className="relative flex size-2 shrink-0">
+                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-950 opacity-75" />
+                                    <span className="relative inline-flex size-2 rounded-full bg-neutral-950" />
+                                  </span>
+                                ) : (
+                                  <span className="size-2 rounded-full bg-emerald-400 shrink-0" />
+                                )}
                                 <span className="truncate max-w-[140px]">{e.name}</span>
                               </button>
                             );
@@ -839,11 +862,14 @@ function EventSearchSelect({
           <div className="flex items-center gap-2 truncate">
             {selectedEvent ? (
               <>
-                <span
-                  className={`size-2 rounded-full shrink-0 ${
-                    selectedEvent.is_active ? "bg-emerald-400 animate-pulse" : "bg-neutral-400"
-                  }`}
-                />
+                {selectedEvent.is_active ? (
+                  <span className="relative flex size-2 shrink-0">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
+                  </span>
+                ) : (
+                  <span className="size-2 rounded-full bg-neutral-400 shrink-0" />
+                )}
                 <span className="truncate font-bold">{selectedEvent.name}</span>
                 {!selectedEvent.is_active ? (
                   <span className="text-[10px] text-emerald-200/60 font-medium shrink-0">(Ended)</span>
@@ -882,8 +908,11 @@ function EventSearchSelect({
           {/* Active Events Section */}
           <div>
             <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-400 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <span className="size-1.5 rounded-full bg-emerald-400 animate-ping" />
+              <span className="flex items-center gap-2">
+                <span className="relative flex size-2 shrink-0">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
+                </span>
                 Active Emergency Events
               </span>
               <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-500/30">
@@ -912,11 +941,18 @@ function EventSearchSelect({
                       }`}
                     >
                       <div className="flex items-center gap-2 truncate">
-                        <span className={`size-2 rounded-full shrink-0 ${isSelected ? "bg-white" : "bg-emerald-400"}`} />
+                        {isSelected ? (
+                          <span className="relative flex size-2 shrink-0">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                            <span className="relative inline-flex size-2 rounded-full bg-white" />
+                          </span>
+                        ) : (
+                          <span className="size-2 rounded-full bg-emerald-400 shrink-0" />
+                        )}
                         <span className="truncate">{e.name}</span>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-white/10 text-emerald-200 border border-white/10">
+                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border ${getEventTypeBadgeClass(e.type)}`}>
                           {e.type}
                         </span>
                         {isSelected ? <Check className="size-3.5 text-white" /> : null}
@@ -962,7 +998,7 @@ function EventSearchSelect({
                         <span className="truncate">{e.name}</span>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] capitalize px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-400 border border-neutral-700">
+                        <span className={`text-[10px] capitalize px-2 py-0.5 rounded-md border ${getEventTypeBadgeClass(e.type)}`}>
                           {e.type}
                         </span>
                         <span className="text-[10px] text-neutral-500 font-semibold">Ended</span>
