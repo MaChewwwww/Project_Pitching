@@ -28,6 +28,7 @@ import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
+import { SearchableHouseholdSelect } from "@/components/features/admin/searchable-household-select";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
 import {
   Dialog,
@@ -301,6 +302,16 @@ function HouseholdTab({
   const [relationship, setRelationship] = React.useState("Others");
   const client = useQueryClient();
 
+  const makeHeadMember = useMutation({
+    mutationFn: (memberId: string) => api.post(`/admin/members/${memberId}/make-head`),
+    onSuccess: () => {
+      toast.success("New household head assigned");
+      client.invalidateQueries({ queryKey: ["admin", "citizen", citizen.id] });
+      client.invalidateQueries({ queryKey: ["admin", "citizens"] });
+    },
+    onError: (error) => toast.error(toDisplayError(error).detail),
+  });
+
   const transfer = useMutation({
     mutationFn: () =>
       api.post(`/admin/members/${citizen.id}/transfer`, {
@@ -357,24 +368,74 @@ function HouseholdTab({
                 <h3 className="mt-1 font-bold">{household?.members.length ?? 0} Members</h3>
               </div>
             </div>
-            <div className="mt-4 divide-y rounded-xl border">
+            <div className="mt-4 space-y-2">
               {household?.members.map((member) => (
-                <Link
+                <div
                   key={member.id}
-                  href={`/admin/citizens/${member.id}` as Route}
-                  className={`flex items-center justify-between gap-3 p-3 transition-colors hover:bg-neutral-50 ${
-                    member.id === citizen.id ? "bg-emerald-50 ring-1 ring-inset ring-emerald-200" : ""
+                  className={`flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors ${
+                    member.id === citizen.id
+                      ? "border-emerald-300 bg-emerald-50/80 ring-1 ring-emerald-200"
+                      : "border-neutral-200/90 bg-white hover:bg-neutral-50"
                   }`}
                 >
-                  <div>
-                    <p className="font-semibold">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-neutral-950">
                       {member.full_name}
-                      {member.id === citizen.id ? " · Current Citizen" : ""}
+                      {member.id === citizen.id ? (
+                        <span className="ml-2 text-xs font-bold text-emerald-700">· Current Citizen</span>
+                      ) : null}
                     </p>
-                    <p className="text-xs text-neutral-500">{member.is_head ? "Household Head" : member.relationship_to_head}</p>
+                    <p className="mt-0.5 text-xs text-neutral-500">
+                      {member.is_head ? (
+                        <span className="font-bold text-amber-700">Household Head</span>
+                      ) : (
+                        member.relationship_to_head ?? "Household Member"
+                      )}
+                    </p>
                   </div>
-                  <Eye className="size-4 text-emerald-700" />
-                </Link>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {!member.is_head ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={makeHeadMember.isPending || Boolean(citizen.household_head_user_id)}
+                        className="h-8 cursor-pointer gap-1.5 rounded-lg border-amber-300 bg-amber-50 px-2.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-100 hover:text-amber-900 disabled:opacity-50"
+                        title={
+                          citizen.household_head_user_id
+                            ? "Linked account head cannot be replaced directly"
+                            : `Assign ${member.full_name} as Household Head`
+                        }
+                        aria-label={`Assign ${member.full_name} as Household Head`}
+                        onClick={() => makeHeadMember.mutate(member.id)}
+                      >
+                        <Crown aria-hidden className="size-3.5 shrink-0 text-amber-600" />
+                        <span className="hidden sm:inline">Make Head</span>
+                      </Button>
+                    ) : null}
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="size-8 min-h-8 px-0 text-sky-700 hover:bg-sky-50 hover:text-sky-800"
+                      title={`View ${member.full_name}`}
+                    >
+                      <Link href={`/admin/citizens/${member.id}` as Route}>
+                        <Eye aria-hidden className="size-3.5" />
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="size-8 min-h-8 px-0 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                      title={`Edit ${member.full_name}`}
+                    >
+                      <Link href={`/admin/citizens/${member.id}/edit` as Route}>
+                        <Pencil aria-hidden className="size-3.5" />
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
           </CardContent>
@@ -400,20 +461,12 @@ function HouseholdTab({
                     </Button>
                   }
                 >
-                  <select
+                  <SearchableHouseholdSelect
+                    households={households.filter((item) => item.id !== citizen.household_id)}
                     value={destination}
-                    onChange={(e) => setDestination(e.target.value)}
-                    className="h-10 w-full rounded-md border border-neutral-200 px-3 text-sm"
-                  >
-                    <option value="">Choose Destination</option>
-                    {households
-                      .filter((item) => item.id !== citizen.household_id)
-                      .map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.reference_no} · {item.head_name}
-                        </option>
-                      ))}
-                  </select>
+                    onChange={(val) => setDestination(val)}
+                    placeholder="Search Destination Household"
+                  />
                   <select
                     value={relationship}
                     onChange={(e) => setRelationship(e.target.value)}
