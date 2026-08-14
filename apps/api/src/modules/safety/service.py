@@ -335,6 +335,277 @@ async def get_my_safety(
     return MySafetyOut(event=household_safety.event, household=household_safety)
 
 
+async def _household_flags(session: AsyncSession, household_id: uuid.UUID) -> set[str]:
+    members = (
+        (
+            await session.execute(
+                select(Member).where(
+                    Member.household_id == household_id, Member.deleted_at.is_(None)
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    flags: set[str] = set()
+    for member in members:
+        flags.update(_member_flags(member))
+    return flags
+
+
+async def _sync_household_rescue(
+    session: AsyncSession,
+    *,
+    event: EmergencyEvent,
+    household_id: uuid.UUID,
+    member_ids_needing_rescue: list[uuid.UUID],
+    actor: AuthenticatedUser,
+    ip: str | None,
+) -> None:
+    """When members are flagged as needing rescue, ensure an active RescueRequest
+    exists for this household and emergency event in the rescue queue with computed priority."""
+    if not member_ids_needing_rescue:
+        return
+    household = await registry_service.get_household_or_404(session, household_id)
+    members = (
+        (
+            await session.execute(
+                select(Member).where(
+                    Member.id.in_(member_ids_needing_rescue), Member.deleted_at.is_(None)
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    member_names = [m.full_name for m in members]
+
+    existing = (
+        (
+            await session.execute(
+                select(RescueRequest).where(
+                    RescueRequest.event_id == event.id,
+                    RescueRequest.household_id == household_id,
+                    RescueRequest.status.in_(("pending", "verified", "dispatched")),
+                )
+            )
+        )
+        .scalars()
+        .first()
+    )
+
+    flags = await _household_flags(session, household_id)
+    people_count = len(member_ids_needing_rescue)
+    priority, _ = triage_priority(flags=flags, people_count=people_count)
+
+    names_summary = ", ".join(member_names) if member_names else f"{people_count} member(s)"
+    desc = (
+        f"Rescue flagged for household {household.reference_no} "
+        f"({names_summary}) via emergency response map."
+    )
+
+    if existing:
+        existing.people_count = people_count
+        existing.description = desc
+        if not existing.priority_is_manual:
+            existing.priority = priority
+        await write_audit(
+            session,
+            actor_user_id=actor.id,
+            action="rescue_request.update",
+            entity_type="rescue_request",
+            entity_id=existing.id,
+            changes={
+                "people_count": people_count,
+                "description": desc,
+                "priority": existing.priority,
+            },
+            ip=ip,
+        )
+    else:
+        req = RescueRequest(
+            event_id=event.id,
+            household_id=household_id,
+            requester_name=household.head_name or "Household Head",
+            contact_number=household.contact_number,
+            location=household.location,
+            location_note=household.street_address,
+            description=desc,
+            people_count=people_count,
+            status="pending",
+            priority=priority,
+            priority_is_manual=False,
+            source_ip=ip,
+        )
+        session.add(req)
+        await session.flush()
+        await write_audit(
+            session,
+            actor_user_id=actor.id,
+            action="rescue_request.create",
+            entity_type="rescue_request",
+            entity_id=req.id,
+            changes={
+                "household_id": str(household_id),
+                "people_count": people_count,
+                "priority": priority,
+            },
+            ip=ip,
+        )
+
+
+async def _resolve_household_rescue_if_all_safe(
+    session: AsyncSession,
+    *,
+    event: EmergencyEvent,
+    household_id: uuid.UUID,
+    actor: AuthenticatedUser,
+    ip: str | None,
+) -> None:
+    """When all members of a household are safe, resolve any open RescueRequest."""
+    members = (
+        (
+            await session.execute(
+                select(Member.id).where(
+                    Member.household_id == household_id, Member.deleted_at.is_(None)
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    if not members:
+        return
+    status_map = await current_status_map(session, event_id=event.id, member_ids=list(members))
+    all_safe = len(status_map) == len(members) and all(
+        s.status == "safe" for s in status_map.values()
+    )
+    if not all_safe:
+        return
+
+    open_rescues = (
+        (
+            await session.execute(
+                select(RescueRequest).where(
+                    RescueRequest.event_id == event.id,
+                    RescueRequest.household_id == household_id,
+                    RescueRequest.status.in_(("pending", "verified", "dispatched")),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    for req in open_rescues:
+        req.status = "resolved"
+        req.resolved_at = datetime.now(UTC)
+        req.resolution_note = "Resolved: Household confirmed safe via emergency check-in."
+        await write_audit(
+            session,
+            actor_user_id=actor.id,
+            action="rescue_request.update",
+            entity_type="rescue_request",
+            entity_id=req.id,
+            changes={"status": "resolved", "resolution_note": req.resolution_note},
+            ip=ip,
+        )
+
+
+async def _sync_unregistered_rescue(
+    session: AsyncSession,
+    *,
+    event: EmergencyEvent,
+    person: UnregisteredPerson,
+    status: str,
+    actor: AuthenticatedUser,
+    ip: str | None,
+) -> None:
+    """Sync rescue request state for unregistered person."""
+    if status == "needs_rescue":
+        existing = (
+            (
+                await session.execute(
+                    select(RescueRequest).where(
+                        RescueRequest.event_id == event.id,
+                        RescueRequest.requester_name == person.full_name,
+                        RescueRequest.household_id.is_(None),
+                        RescueRequest.status.in_(("pending", "verified", "dispatched")),
+                    )
+                )
+            )
+            .scalars()
+            .first()
+        )
+
+        flags: set[str] = set()
+        for flag in VULNERABILITY_FLAGS:
+            if getattr(person, flag, False):
+                flags.add(flag)
+        priority, _ = triage_priority(flags=flags, people_count=1)
+        desc = (
+            f"Rescue flagged for unregistered walk-in {person.full_name} "
+            "via emergency workspace."
+        )
+
+        if not existing:
+            req = RescueRequest(
+                event_id=event.id,
+                household_id=None,
+                requester_name=person.full_name,
+                contact_number=person.contact_number,
+                location=person.location,
+                location_note=person.location_note,
+                description=desc,
+                people_count=1,
+                status="pending",
+                priority=priority,
+                priority_is_manual=False,
+                source_ip=ip,
+            )
+            session.add(req)
+            await session.flush()
+            await write_audit(
+                session,
+                actor_user_id=actor.id,
+                action="rescue_request.create",
+                entity_type="rescue_request",
+                entity_id=req.id,
+                changes={"requester_name": person.full_name, "priority": priority},
+                ip=ip,
+            )
+    elif status == "safe":
+        open_rescues = (
+            (
+                await session.execute(
+                    select(RescueRequest).where(
+                        RescueRequest.event_id == event.id,
+                        RescueRequest.requester_name == person.full_name,
+                        RescueRequest.household_id.is_(None),
+                        RescueRequest.status.in_(("pending", "verified", "dispatched")),
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        for req in open_rescues:
+            req.status = "resolved"
+            req.resolved_at = datetime.now(UTC)
+            req.resolution_note = (
+                "Resolved: Unregistered person confirmed safe via emergency check-in."
+            )
+            await write_audit(
+                session,
+                actor_user_id=actor.id,
+                action="rescue_request.update",
+                entity_type="rescue_request",
+                entity_id=req.id,
+                changes={"status": "resolved", "resolution_note": req.resolution_note},
+                ip=ip,
+            )
+
+
 async def set_member_statuses(
     session: AsyncSession,
     *,
@@ -375,6 +646,22 @@ async def set_member_statuses(
             member_ids=member_ids,
             evac_center_id=evac_center_id,
             actor=actor,
+        )
+        await _resolve_household_rescue_if_all_safe(
+            session,
+            event=event,
+            household_id=household_id,
+            actor=actor,
+            ip=ip,
+        )
+    elif status == "needs_rescue":
+        await _sync_household_rescue(
+            session,
+            event=event,
+            household_id=household_id,
+            member_ids_needing_rescue=member_ids,
+            actor=actor,
+            ip=ip,
         )
     await session.commit()
     return await get_household_safety(session, event=event, household_id=household_id)
@@ -430,6 +717,22 @@ async def set_household_status(
             evac_center_id=evac_center_id,
             actor=actor,
         )
+        await _resolve_household_rescue_if_all_safe(
+            session,
+            event=event,
+            household_id=household_id,
+            actor=actor,
+            ip=ip,
+        )
+    elif status == "needs_rescue":
+        await _sync_household_rescue(
+            session,
+            event=event,
+            household_id=household_id,
+            member_ids_needing_rescue=list(live_ids),
+            actor=actor,
+            ip=ip,
+        )
     await session.commit()
     return await get_household_safety(session, event=event, household_id=household_id)
 
@@ -467,6 +770,14 @@ async def set_unregistered_status(
             evac_center_id=evac_center_id,
             actor=actor,
         )
+    await _sync_unregistered_rescue(
+        session,
+        event=event,
+        person=person,
+        status=status,
+        actor=actor,
+        ip=ip,
+    )
     await session.commit()
     return row
 
@@ -1165,24 +1476,6 @@ async def _match_household(session: AsyncSession, contact_number: str | None) ->
     )
     matches = [h for h in rows if _normalize_phone(h.contact_number) == target]
     return matches[0] if len(matches) == 1 else None
-
-
-async def _household_flags(session: AsyncSession, household_id: uuid.UUID) -> set[str]:
-    members = (
-        (
-            await session.execute(
-                select(Member).where(
-                    Member.household_id == household_id, Member.deleted_at.is_(None)
-                )
-            )
-        )
-        .scalars()
-        .all()
-    )
-    flags: set[str] = set()
-    for member in members:
-        flags.update(_member_flags(member))
-    return flags
 
 
 async def _ensure_triaged(session: AsyncSession, rows: list[RescueRequest]) -> None:

@@ -17,8 +17,13 @@ thing that actually decides whether anything persists.
 
 from __future__ import annotations
 
+import asyncio
+import sys
 import uuid
 from collections.abc import AsyncGenerator
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient

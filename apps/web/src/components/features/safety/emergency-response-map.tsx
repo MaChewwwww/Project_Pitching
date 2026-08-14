@@ -329,7 +329,11 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
   const [showFacilities, setShowFacilities] = React.useState(false);
 
   /* --- UI state --- */
-  const [selected, setSelected] = React.useState<WorkspaceHouseholdOut | null>(null);
+  const [selectedHouseholdId, setSelectedHouseholdId] = React.useState<string | null>(null);
+  const selected = React.useMemo(() => {
+    if (!selectedHouseholdId) return null;
+    return data.households.find((h) => h.household_id === selectedHouseholdId) ?? null;
+  }, [data.households, selectedHouseholdId]);
   const [selectedAreaName, setSelectedAreaName] = React.useState<string | null>(null);
   const [showBarangaySummary, setShowBarangaySummary] = React.useState(false);
   const [listTab, setListTab] = React.useState<ListTab>("mapped");
@@ -495,18 +499,23 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
           <div className="admin-emergency-map relative h-[480px] sm:h-[580px] lg:h-[680px] w-full overflow-hidden">
             <style>{ADMIN_MAP_CSS}</style>
             <MapContainer
-            center={[14.7415, 121.1315]}
-            zoom={14}
-            zoomControl={false}
-            className="h-full w-full min-h-[500px]"
-            scrollWheelZoom
-            minZoom={11}
-            maxZoom={18}
-            attributionControl={false}
-          >
-            <ZoomControl position="topright" />
-            <EmergencyMapPanes />
-            <TileLayer url={DARK_TILE_URL} attribution={DARK_TILE_ATTRIBUTION} />
+              center={[14.7415, 121.1315]}
+              zoom={14}
+              zoomControl={false}
+              className="h-full w-full min-h-[500px]"
+              scrollWheelZoom
+              minZoom={11}
+              maxZoom={22}
+              attributionControl={false}
+            >
+              <ZoomControl position="topright" />
+              <EmergencyMapPanes />
+              <TileLayer
+                url={DARK_TILE_URL}
+                attribution={DARK_TILE_ATTRIBUTION}
+                maxZoom={22}
+                maxNativeZoom={19}
+              />
 
             {/* Flood hazard overlay */}
             {showHazard && hazard.status === "ready" ? (
@@ -611,9 +620,11 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                       weight: 2.5,
                     }}
                     eventHandlers={{
-                      click: () => setSelected(household),
+                      click: () => setSelectedHouseholdId(household.household_id),
                       add: (event) =>
-                        makeKeyboardReachable(event.target, () => setSelected(household)),
+                        makeKeyboardReachable(event.target, () =>
+                          setSelectedHouseholdId(household.household_id),
+                        ),
                     }}
                   >
                     <Tooltip
@@ -1092,7 +1103,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
               items={mappedHouseholds}
               emptyTitle="No mapped households"
               emptyDescription="No households with GPS coordinates match the current filters."
-              onSelect={(h) => setSelected(h)}
+              onSelect={(h) => setSelectedHouseholdId(h.household_id)}
               readOnly={data.is_read_only}
             />
           )}
@@ -1101,7 +1112,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
               items={unmappedHouseholds}
               emptyTitle="No households without a location"
               emptyDescription="All households in the current filter have GPS pins on the map."
-              onSelect={(h) => setSelected(h)}
+              onSelect={(h) => setSelectedHouseholdId(h.household_id)}
               readOnly={data.is_read_only}
             />
           )}
@@ -1118,7 +1129,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
         data={data}
         household={selected}
         enriched={enrichedMap.get(selected?.household_id ?? "")}
-        onClose={() => setSelected(null)}
+        onClose={() => setSelectedHouseholdId(null)}
       />
 
       {/* ------------------------------------------------------------------ */}
@@ -1322,6 +1333,7 @@ function CompactHouseholdTooltip({
   const isSafe = household.all_safe;
   const accentColor = isSafe ? "#64748B" : riskColor(risk);
   const safeTotal = household.members.filter((m) => m.status === "safe").length;
+  const rescueTotal = household.members.filter((m) => m.status === "needs_rescue").length;
   const totalMembers = household.members.length;
 
   const specialNeeds = Array.from(
@@ -1338,24 +1350,22 @@ function CompactHouseholdTooltip({
         maxWidth: 315,
       }}
     >
-      {/* Top Header: Reference No + Risk Badge with bottom divider */}
+      {/* Top Header: Reference No + Risk Category Badge with bottom divider */}
       <div className="flex items-center justify-between gap-1.5 border-b border-neutral-100 pb-2">
         <span className="shrink-0 rounded-md bg-neutral-100 px-2 py-0.5 font-mono text-[11px] font-black tracking-tight text-neutral-900 border border-neutral-200 shadow-2xs">
           {household.reference_no}
         </span>
         <span
           className={cn(
-            "shrink-0 rounded-md px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wide shadow-2xs",
-            isSafe
-              ? "bg-slate-100 text-slate-700 border border-slate-300"
-              : risk === 3
-                ? "bg-rose-100 text-rose-800 border border-rose-300"
-                : risk === 2
-                  ? "bg-amber-100 text-amber-800 border border-amber-300"
-                  : "bg-emerald-100 text-emerald-800 border border-emerald-300",
+            "shrink-0 rounded-md px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wide border shadow-2xs",
+            risk === 3
+              ? "bg-rose-100 text-rose-800 border-rose-300"
+              : risk === 2
+                ? "bg-amber-100 text-amber-800 border-amber-300"
+                : "bg-emerald-100 text-emerald-800 border-emerald-300",
           )}
         >
-          {isSafe ? "All Safe" : `${riskLabel(risk)} Risk`}
+          {riskLabel(risk)} Risk
         </span>
       </div>
 
@@ -1398,14 +1408,18 @@ function CompactHouseholdTooltip({
             "font-black",
             isSafe
               ? "text-emerald-700"
-              : safeTotal > 0
-                ? "text-amber-700"
-                : "text-neutral-700",
+              : rescueTotal > 0
+                ? "text-rose-700"
+                : safeTotal > 0
+                  ? "text-amber-700"
+                  : "text-neutral-700",
           )}
         >
           {isSafe
             ? "✓ All Safe"
-            : `${safeTotal}/${totalMembers} Safe`}
+            : rescueTotal > 0
+              ? `⚠️ ${rescueTotal} Need Rescue`
+              : `${safeTotal}/${totalMembers} Safe`}
         </span>
       </div>
     </div>
@@ -1748,19 +1762,25 @@ function HouseholdDialog({
     mutationFn: (payload: SafetyStatusAdminIn) =>
       api.post("/admin/safety-status", payload),
     onSuccess: async () => {
-      toast.success("Safety status updated");
+      toast.success(
+        pending?.status === "needs_rescue"
+          ? "Flagged for emergency rescue and queued in Rescue Queue"
+          : "Safety status updated (Checked in as Safe)",
+      );
       setConfirmOpen(false);
       setPending(null);
       setCenterId("");
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ["admin", "emergency-workspace", data.event.id],
+          queryKey: ["admin", "emergency-workspace"],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["admin", "accounted-for", data.event.id],
+          queryKey: ["admin", "accounted-for"],
         }),
         queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "rescue-requests"] }),
         queryClient.invalidateQueries({ queryKey: ["portal", "safety"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "emergency-events"] }),
       ]);
     },
     onError: (error) => toast.error(toDisplayError(error).detail),
@@ -1799,125 +1819,172 @@ function HouseholdDialog({
   if (!household) return null;
 
   const risk = enriched?.risk ?? 1;
-  const riskSource = enriched?.riskSource ?? "Household survey fallback";
   const totalMembers = household.members.length;
   const safeMembers = household.members.filter((m) => m.status === "safe").length;
+  const rescueMembers = household.members.filter((m) => m.status === "needs_rescue").length;
+  const unaccountedMembers = totalMembers - safeMembers - rescueMembers;
 
   return (
     <>
       {/* Main detail dialog */}
       <Dialog open={household !== null} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-2xl bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl p-5 sm:p-6">
-          <DialogHeader className="shrink-0 border-b border-neutral-100 pb-4">
-            <div className="flex items-start gap-3">
+        <DialogContent className="w-full sm:max-w-xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
+          <DialogHeader className="shrink-0 border-b border-slate-100 p-5 sm:p-6 pb-4 bg-white pr-12">
+            <div className="flex items-center gap-3">
               <div
-                className="mt-0.5 grid size-10 shrink-0 place-items-center rounded-xl shadow-sm"
+                className="grid size-10 shrink-0 place-items-center rounded-xl shadow-xs"
                 style={{
-                  backgroundColor: household.all_safe ? "#F1F5F9" : `${riskColor(risk)}22`,
-                  color: household.all_safe ? "#6B7280" : riskColor(risk),
+                  backgroundColor: household.all_safe
+                    ? "#ECFDF5"
+                    : rescueMembers > 0
+                      ? "#FFF1F2"
+                      : `${riskColor(risk)}18`,
+                  color: household.all_safe
+                    ? "#059669"
+                    : rescueMembers > 0
+                      ? "#E11D48"
+                      : riskColor(risk),
                 }}
                 aria-hidden
               >
-                <Home className="size-5" />
+                {household.all_safe ? (
+                  <CheckCircle2 className="size-5" />
+                ) : rescueMembers > 0 ? (
+                  <AlertTriangle className="size-5" />
+                ) : (
+                  <Home className="size-5" />
+                )}
               </div>
               <div className="min-w-0 flex-1">
-                <DialogTitle className="text-base font-black text-neutral-900">
-                  {household.reference_no} · {household.head_name}
-                </DialogTitle>
-                <DialogDescription className="mt-0.5 text-xs text-neutral-500">
-                  {household.area_name}
-                  {household.street_address ? ` · ${household.street_address}` : ""}
-                </DialogDescription>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <DialogTitle className="text-base sm:text-lg font-black text-slate-950 tracking-tight flex items-center gap-2">
+                    <span>{household.reference_no} · {household.head_name}</span>
+                    {rescueMembers > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 text-white px-2 py-0.5 text-[9px] font-black uppercase tracking-wider shadow-2xs">
+                        <AlertTriangle className="size-2.5" />
+                        Needs Rescue
+                      </span>
+                    )}
+                  </DialogTitle>
                   <span
-                    className="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide"
-                    style={{
-                      backgroundColor: `${riskColor(risk)}22`,
-                      color: riskColor(risk),
-                    }}
+                    className={cn(
+                      "inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide border shrink-0",
+                      risk === 3
+                        ? "bg-rose-50 text-rose-800 border-rose-200"
+                        : risk === 2
+                          ? "bg-amber-50 text-amber-800 border-amber-200"
+                          : "bg-emerald-50 text-emerald-800 border-emerald-200",
+                    )}
                   >
                     {riskLabel(risk)} Flood Risk
                   </span>
-                  <span className="text-[10px] text-neutral-400">{riskSource}</span>
-                  <span className="text-[10px] font-medium text-neutral-500">
-                    {safeMembers}/{totalMembers} confirmed safe
-                  </span>
                 </div>
+                <DialogDescription className="mt-0.5 text-xs font-medium text-slate-500 flex items-center gap-1.5 flex-wrap">
+                  <span className="font-semibold text-slate-700">{household.area_name}</span>
+                  {household.street_address && (
+                    <>
+                      <span>·</span>
+                      <span>{household.street_address}</span>
+                    </>
+                  )}
+                </DialogDescription>
               </div>
             </div>
           </DialogHeader>
 
           {/* Scrollable member roster */}
-          <div className="flex-1 overflow-y-auto sagip-modal-scroll">
-            <div className="divide-y divide-neutral-100">
+          <div className="flex-1 overflow-y-auto sagip-modal-scroll px-5 sm:px-6 py-2">
+            <div className="divide-y divide-slate-100">
               {household.members.map((member) => (
-                <div key={member.member_id} className="flex flex-col gap-2 px-1 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div
+                  key={member.member_id}
+                  className="flex flex-col gap-2 py-3.5 sm:flex-row sm:items-center sm:justify-between"
+                >
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-neutral-900">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-bold text-slate-900">
                         {member.full_name}
-                        {member.is_head ? (
-                          <span className="ml-1 text-[10px] font-bold text-neutral-400">(Head)</span>
-                        ) : null}
                       </span>
+                      {member.is_head && (
+                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
+                          Head
+                        </span>
+                      )}
                       <span
                         className={cn(
-                          "rounded-md px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide",
+                          "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide border",
                           member.status === "safe"
-                            ? "bg-emerald-100 text-emerald-800"
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                             : member.status === "needs_rescue"
-                              ? "bg-rose-100 text-rose-800"
-                              : "bg-amber-100 text-amber-800",
+                              ? "bg-rose-50 text-rose-800 border-rose-200 shadow-2xs animate-pulse"
+                              : "bg-amber-50 text-amber-800 border-amber-200",
                         )}
                       >
+                        {member.status === "safe" ? (
+                          <CheckCircle2 className="size-3 text-emerald-600" />
+                        ) : member.status === "needs_rescue" ? (
+                          <AlertTriangle className="size-3 text-rose-600" />
+                        ) : (
+                          <Users className="size-3 text-amber-600" />
+                        )}
                         {statusLabel(member.status)}
                       </span>
                     </div>
                     {member.vulnerability_flags.length > 0 && (
-                      <p className="mt-0.5 text-[11px] text-neutral-500">
-                        {member.vulnerability_flags.map(formatVulnerabilityFlag).join(", ")}
-                      </p>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {member.vulnerability_flags.map((flag) => (
+                          <span
+                            key={flag}
+                            className="rounded bg-slate-100 border border-slate-200 px-1.5 py-0.2 text-[10px] font-medium text-slate-600"
+                          >
+                            {formatVulnerabilityFlag(flag)}
+                          </span>
+                        ))}
+                      </div>
                     )}
                     {member.evac_center_name && (
-                      <p className="mt-0.5 text-[11px] text-primary-700">
+                      <p className="mt-1 text-[11px] font-medium text-emerald-700 flex items-center gap-1">
+                        <Home className="size-3 text-emerald-600" />
                         At {member.evac_center_name}
                       </p>
                     )}
                   </div>
-                  {!data.is_read_only && (
+                  {!data.is_read_only && member.status !== "safe" && (
                     <div className="flex shrink-0 gap-1.5">
                       <Button
                         size="sm"
                         variant="outline"
                         disabled={mutation.isPending}
-                        className="h-7 rounded-full px-2.5 text-[11px] font-bold text-emerald-700 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-400"
+                        className="h-7 rounded-lg px-2.5 text-[11px] font-bold text-emerald-700 border-emerald-200 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all cursor-pointer shadow-2xs"
                         onClick={() =>
                           openConfirm({
                             scope: "member",
                             status: "safe",
                             memberIds: [member.member_id],
-                            title: `Mark ${member.full_name} safe`,
+                            title: `Mark ${member.full_name} Safe`,
                           })
                         }
                       >
                         Safe
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={mutation.isPending}
-                        className="h-7 rounded-full px-2.5 text-[11px] font-bold text-rose-700 border-rose-200 hover:bg-rose-50 hover:border-rose-400"
-                        onClick={() =>
-                          openConfirm({
-                            scope: "member",
-                            status: "needs_rescue",
-                            memberIds: [member.member_id],
-                            title: `Flag ${member.full_name} — needs rescue`,
-                          })
-                        }
-                      >
-                        Rescue
-                      </Button>
+                      {member.status !== "needs_rescue" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={mutation.isPending}
+                          className="h-7 rounded-lg px-2.5 text-[11px] font-bold text-rose-700 border-rose-200 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all cursor-pointer shadow-2xs"
+                          onClick={() =>
+                            openConfirm({
+                              scope: "member",
+                              status: "needs_rescue",
+                              memberIds: [member.member_id],
+                              title: `Flag ${member.full_name} — Needs Rescue`,
+                            })
+                          }
+                        >
+                          Rescue
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1927,44 +1994,70 @@ function HouseholdDialog({
 
           {/* Bulk actions footer */}
           {!data.is_read_only ? (
-            <div className="shrink-0 border-t border-neutral-100 pt-4 flex flex-col gap-2">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
-                Whole household
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  disabled={mutation.isPending}
-                  className="h-9 rounded-full text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
-                  onClick={() =>
-                    openConfirm({
-                      scope: "household",
-                      status: "safe",
-                      memberIds: household.members.map((m) => m.member_id),
-                      title: "Mark the whole household safe",
-                    })
-                  }
-                >
-                  Mark all safe
-                </Button>
-                <Button
-                  variant="outline"
-                  disabled={mutation.isPending}
-                  className="h-9 rounded-full text-sm font-bold text-rose-700 border-rose-200 hover:bg-rose-50"
-                  onClick={() =>
-                    openConfirm({
-                      scope: "household",
-                      status: "needs_rescue",
-                      memberIds: household.members.map((m) => m.member_id),
-                      title: "Flag the whole household — needs rescue",
-                    })
-                  }
-                >
-                  All need rescue
-                </Button>
+            <div className="shrink-0 border-t border-slate-100 bg-slate-50/50 p-4 sm:p-5 flex flex-col gap-2.5">
+              <div className="flex items-center justify-between">
+                <p className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">
+                  Whole Household ({totalMembers} {totalMembers === 1 ? "Member" : "Members"})
+                </p>
+                <div className="flex items-center gap-2 text-xs font-bold">
+                  <span className="text-emerald-700 flex items-center gap-1">
+                    <CheckCircle2 className="size-3.5" />
+                    {safeMembers}/{totalMembers} Confirmed Safe
+                  </span>
+                  {rescueMembers > 0 && (
+                    <span className="text-rose-700 flex items-center gap-1">
+                      <AlertTriangle className="size-3.5" />
+                      {rescueMembers} Rescue
+                    </span>
+                  )}
+                  {unaccountedMembers > 0 && (
+                    <span className="text-slate-500">
+                      {unaccountedMembers} Unaccounted
+                    </span>
+                  )}
+                </div>
               </div>
+              {safeMembers === totalMembers && totalMembers > 0 ? (
+                <div className="flex items-center gap-2 rounded-xl bg-emerald-50/90 border border-emerald-200 p-3 text-xs font-bold text-emerald-800 shadow-2xs">
+                  <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+                  <span>All Household Members Are Confirmed Safe</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    disabled={mutation.isPending}
+                    className="h-9.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs cursor-pointer"
+                    onClick={() =>
+                      openConfirm({
+                        scope: "household",
+                        status: "safe",
+                        memberIds: household.members.map((m) => m.member_id),
+                        title: "Mark Whole Household Safe",
+                      })
+                    }
+                  >
+                    Mark All Safe
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={mutation.isPending || (rescueMembers === totalMembers && totalMembers > 0)}
+                    className="h-9.5 rounded-xl text-xs font-bold text-rose-700 border-rose-300 hover:bg-rose-50 shadow-2xs cursor-pointer disabled:opacity-50"
+                    onClick={() =>
+                      openConfirm({
+                        scope: "household",
+                        status: "needs_rescue",
+                        memberIds: household.members.map((m) => m.member_id),
+                        title: "Flag Whole Household — Needs Rescue",
+                      })
+                    }
+                  >
+                    All Need Rescue
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
-            <p className="shrink-0 rounded-lg bg-neutral-100 p-3 text-xs text-neutral-600 border-t border-neutral-100 mt-2">
+            <p className="shrink-0 rounded-lg bg-slate-100 p-3 text-xs text-slate-600 border-t border-slate-100 m-4">
               This event has ended. Safety records are read-only.
             </p>
           )}
@@ -1983,45 +2076,81 @@ function HouseholdDialog({
       >
         <DialogContent className="sm:max-w-md bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl p-5 sm:p-6">
           <DialogHeader>
-            <DialogTitle>{pending?.title}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {pending?.status === "needs_rescue" ? (
+                <span className="flex size-7 items-center justify-center rounded-lg bg-rose-100 text-rose-700">
+                  <AlertTriangle className="size-4" />
+                </span>
+              ) : (
+                <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                  <CheckCircle2 className="size-4" />
+                </span>
+              )}
+              {pending?.title}
+            </DialogTitle>
             <DialogDescription>
               {pending?.scope === "household"
                 ? "Confirm the exact live roster below. If it changed since you opened this dialog, the server will reject the bulk action."
                 : "Confirm this individual event-scoped safety update."}
             </DialogDescription>
           </DialogHeader>
+
+          {pending?.status === "needs_rescue" ? (
+            <div className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50/80 p-3 text-xs text-rose-900 shadow-2xs">
+              <AlertTriangle className="size-4 text-rose-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Emergency Rescue Flag</p>
+                <p className="text-[11px] text-rose-800 mt-0.5 leading-relaxed">
+                  This will flag the subject(s) in need of urgent assistance and dispatch an entry to the Rescue Queue for field responders.
+                </p>
+              </div>
+            </div>
+          ) : null}
+
           <div className="max-h-40 overflow-y-auto rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-sm">
             {household.members
               .filter((m) => pending?.memberIds.includes(m.member_id))
               .map((m) => (
-                <div key={m.member_id} className="py-1 text-sm text-neutral-800">
-                  {m.full_name}
-                  {m.is_head ? " (head)" : ""}
+                <div
+                  key={m.member_id}
+                  className="py-1 text-sm font-medium text-neutral-800 flex items-center justify-between"
+                >
+                  <span>
+                    {m.full_name}
+                    {m.is_head ? " (Head)" : ""}
+                  </span>
+                  <span className="text-xs font-semibold text-neutral-500 capitalize">
+                    Current: {statusLabel(m.status)}
+                  </span>
                 </div>
               ))}
           </div>
-          <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600">
-            Optional evacuation center
-            <select
-              value={centerId}
-              onChange={(e) => setCenterId(e.target.value)}
-              className="focus-visible:ring-primary-500 min-h-10 rounded-lg border border-neutral-200 bg-white px-3 text-sm focus-visible:ring-2 focus-visible:outline-none"
-            >
-              <option value="">No new center assignment</option>
-              {data.evacuation_centers
-                .filter((c) => c.is_open)
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.facility.name} · {c.occupancy}/{c.capacity ?? "?"}
-                    {c.is_at_capacity ? " · at capacity" : ""}
-                  </option>
-                ))}
-            </select>
-            <span className="font-normal text-neutral-500">
-              Leave blank to keep any existing physical assignment unchanged.
-            </span>
-          </label>
-          <DialogFooter>
+
+          {pending?.status === "safe" ? (
+            <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600">
+              Optional Evacuation Center
+              <select
+                value={centerId}
+                onChange={(e) => setCenterId(e.target.value)}
+                className="focus-visible:ring-emerald-500 min-h-10 rounded-lg border border-neutral-200 bg-white px-3 text-sm focus-visible:ring-2 focus-visible:outline-none cursor-pointer"
+              >
+                <option value="">No New Center Assignment</option>
+                {data.evacuation_centers
+                  .filter((c) => c.is_open)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.facility.name} · {c.occupancy}/{c.capacity ?? "?"}
+                      {c.is_at_capacity ? " · At Capacity" : ""}
+                    </option>
+                  ))}
+              </select>
+              <span className="font-normal text-neutral-500">
+                Leave blank to keep any existing physical assignment unchanged.
+              </span>
+            </label>
+          ) : null}
+
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button
               variant="outline"
               disabled={mutation.isPending}
@@ -2032,8 +2161,20 @@ function HouseholdDialog({
             >
               Cancel
             </Button>
-            <Button disabled={mutation.isPending} onClick={submitPending}>
-              {mutation.isPending ? "Saving…" : "Confirm update"}
+            <Button
+              disabled={mutation.isPending}
+              onClick={submitPending}
+              className={
+                pending?.status === "needs_rescue"
+                  ? "bg-rose-600 hover:bg-rose-700 text-white font-bold cursor-pointer"
+                  : "bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-pointer"
+              }
+            >
+              {mutation.isPending
+                ? "Saving…"
+                : pending?.status === "needs_rescue"
+                  ? "Confirm Rescue Flag"
+                  : "Confirm Safe Check-In"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2123,9 +2264,9 @@ function AreaSummaryModal({
 
   return (
     <Dialog open={Boolean(areaName)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-full sm:max-w-2xl md:max-w-3xl max-h-[90vh] overflow-y-auto sagip-modal-scroll p-5 sm:p-6 bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
-        <DialogHeader className="border-b border-slate-100 pb-4">
-          <div className="flex flex-col gap-1 pr-6">
+      <DialogContent className="w-full sm:max-w-2xl md:max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
+        <DialogHeader className="border-b border-slate-100 p-5 sm:p-6 pb-4 shrink-0 bg-white pr-10 sm:pr-12">
+          <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <span className="rounded-md bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 text-xs">
                 Area Division
@@ -2142,7 +2283,7 @@ function AreaSummaryModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-5 py-2">
+        <div className="flex-1 overflow-y-auto sagip-modal-scroll p-5 sm:p-6 flex flex-col gap-5">
           {/* 4 KPI Summary Grid */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 flex flex-col justify-between gap-1.5 shadow-2xs">
@@ -2425,9 +2566,9 @@ function BarangaySummaryModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="w-full sm:max-w-3xl md:max-w-4xl max-h-[90vh] overflow-y-auto sagip-modal-scroll p-5 sm:p-6 bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
-        <DialogHeader className="border-b border-slate-100 pb-4">
-          <div className="flex flex-col gap-1 pr-6">
+      <DialogContent className="w-full sm:max-w-3xl md:max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
+        <DialogHeader className="border-b border-slate-100 p-5 sm:p-6 pb-4 shrink-0 bg-white pr-10 sm:pr-12">
+          <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <span className="rounded-md bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 text-xs">
                 Municipality of Rodriguez (Montalban), Rizal
@@ -2443,7 +2584,7 @@ function BarangaySummaryModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-5 py-2">
+        <div className="flex-1 overflow-y-auto sagip-modal-scroll p-5 sm:p-6 flex flex-col gap-5">
           {/* 4 Executive Jurisdiction KPIs */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 flex flex-col justify-between gap-1.5 shadow-2xs">
@@ -2521,7 +2662,7 @@ function BarangaySummaryModal({
               <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
                 Area Divisions Breakdown (Areas 1–6)
               </span>
-              <span className="text-[11px] text-slate-500">Click any row to view full area profile</span>
+              <span className="text-[11px] text-slate-500">Area-level summary & hazard exposure</span>
             </div>
 
             <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
@@ -2541,11 +2682,7 @@ function BarangaySummaryModal({
                   {areaGroups.map((row) => (
                     <tr
                       key={row.areaName}
-                      className="hover:bg-emerald-50/40 cursor-pointer transition-colors"
-                      onClick={() => {
-                        onClose();
-                        onSelectArea(row.areaName);
-                      }}
+                      className="hover:bg-slate-50/80 transition-colors"
                     >
                       <td className="py-2.5 px-3 font-bold text-slate-950 flex items-center gap-1.5">
                         <MapPin className="size-3 text-emerald-600" />
@@ -2584,9 +2721,8 @@ function BarangaySummaryModal({
                           type="button"
                           size="sm"
                           variant="outline"
-                          className="h-7 rounded-lg border-emerald-300 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 px-2.5 text-xs font-bold transition-all shadow-2xs flex items-center gap-1 ml-auto"
-                          onClick={(e) => {
-                            e.stopPropagation();
+                          className="h-7 rounded-lg border-emerald-300 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 px-2.5 text-xs font-bold transition-all shadow-2xs flex items-center gap-1 ml-auto cursor-pointer"
+                          onClick={() => {
                             onClose();
                             onSelectArea(row.areaName);
                           }}
