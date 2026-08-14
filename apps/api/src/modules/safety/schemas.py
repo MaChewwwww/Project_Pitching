@@ -12,7 +12,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-from src.modules.evacuation.schemas import PublicEmergencyEvent
+from src.modules.evacuation.schemas import PublicEmergencyEvent, PublicEvacCenter
 from src.modules.geo.schemas import GeoJsonPoint
 
 SafetyStatusValue = Literal["safe", "needs_rescue", "unaccounted"]
@@ -26,6 +26,8 @@ class SafetyStatusSelfIn(BaseModel):
     in `service.py`), so a resident cannot forge `"assisted"` and impersonate
     barangay confirmation."""
 
+    event_id: uuid.UUID | None = None
+    evac_center_id: uuid.UUID | None = None
     status: SafetyStatusValue
     scope: Literal["member", "household"]
     member_ids: list[uuid.UUID] = Field(default_factory=list)
@@ -48,6 +50,8 @@ class SafetyStatusAdminIn(BaseModel):
     acts on someone else's household, so it can't be inferred from the
     caller)."""
 
+    event_id: uuid.UUID | None = None
+    evac_center_id: uuid.UUID | None = None
     status: SafetyStatusValue
     scope: Literal["member", "household", "unregistered"]
     household_id: uuid.UUID | None = None
@@ -119,6 +123,52 @@ class AccountedForOut(BaseModel):
     # caller could accidentally sum them into the registered coverage figures.
     unregistered_safe: int
     unregistered_needs_rescue: int
+
+
+class WorkspaceMemberOut(BaseModel):
+    member_id: uuid.UUID
+    full_name: str
+    is_head: bool
+    status: SafetyStatusValue
+    set_method: SetMethod | None
+    vulnerability_flags: list[str]
+    evac_center_id: uuid.UUID | None
+    evac_center_name: str | None
+
+
+class WorkspaceHouseholdOut(BaseModel):
+    household_id: uuid.UUID
+    reference_no: str
+    head_name: str
+    area_id: uuid.UUID
+    area_name: str
+    street_address: str | None
+    location: GeoJsonPoint | None
+    waterway_proximity: str | None
+    members: list[WorkspaceMemberOut]
+    safe_count: int
+    needs_rescue_count: int
+    unaccounted_count: int
+    all_safe: bool
+
+
+class WorkspaceUnregisteredOut(BaseModel):
+    id: uuid.UUID
+    full_name: str
+    location: GeoJsonPoint
+    status: SafetyStatusValue
+    vulnerability_flags: list[str]
+    evac_center_id: uuid.UUID | None
+    evac_center_name: str | None
+
+
+class EmergencyWorkspaceOut(BaseModel):
+    event: PublicEmergencyEvent
+    is_read_only: bool
+    households: list[WorkspaceHouseholdOut]
+    unregistered_pins: list[WorkspaceUnregisteredOut]
+    unmapped_household_count: int
+    evacuation_centers: list[PublicEvacCenter]
 
 
 class RescueRequestPublicIn(BaseModel):
@@ -212,21 +262,33 @@ class RescueRequestPatch(BaseModel):
 
 
 class UnregisteredPersonIn(BaseModel):
-    """`POST /admin/unregistered-persons` (FR-SAF-012). BR-5.10: "a name and
-    location is enough" — do not add fields the requirement doesn't ask for.
-    `event_id` is never accepted here; it comes from the active event."""
+    """`POST /admin/unregistered-persons` (FR-SAF-012/020).
 
+    Name and event are required; contact, location, support needs, and physical
+    evacuation-center assignment are operationally optional.
+    """
+
+    event_id: uuid.UUID | None = None
+    evac_center_id: uuid.UUID | None = None
     full_name: str = Field(min_length=1, max_length=120)
     contact_number: str | None = Field(default=None, max_length=40)
     latitude: float | None = Field(default=None, ge=-90, le=90)
     longitude: float | None = Field(default=None, ge=-180, le=180)
     location_note: str | None = Field(default=None, max_length=300)
     initial_status: Literal["safe", "needs_rescue"]
+    is_child: bool = False
+    is_senior: bool = False
+    is_pwd: bool = False
+    is_pregnant: bool = False
+    is_lactating: bool = False
+    has_chronic_condition: bool = False
+    chronic_condition_note: str | None = Field(default=None, max_length=300)
+    is_bedridden: bool = False
 
     @model_validator(mode="after")
-    def _findable(self) -> UnregisteredPersonIn:
-        if self.latitude is None and self.longitude is None and not self.location_note:
-            raise ValueError("Give a location pin or describe where they are.")
+    def _complete_optional_pin(self) -> UnregisteredPersonIn:
+        if (self.latitude is None) != (self.longitude is None):
+            raise ValueError("Provide both latitude and longitude, or leave both blank.")
         return self
 
 
@@ -236,10 +298,25 @@ class UnregisteredPersonPatch(BaseModel):
     latitude: float | None = None
     longitude: float | None = None
     location_note: str | None = None
+    is_child: bool | None = None
+    is_senior: bool | None = None
+    is_pwd: bool | None = None
+    is_pregnant: bool | None = None
+    is_lactating: bool | None = None
+    has_chronic_condition: bool | None = None
+    chronic_condition_note: str | None = None
+    is_bedridden: bool | None = None
+
+    @model_validator(mode="after")
+    def _complete_optional_pin(self) -> UnregisteredPersonPatch:
+        if (self.latitude is None) != (self.longitude is None):
+            raise ValueError("Provide both latitude and longitude, or leave both blank.")
+        return self
 
 
 class UnregisteredPersonOut(BaseModel):
     id: uuid.UUID
+    event_id: uuid.UUID
     created_at: datetime
     full_name: str
     contact_number: str | None
@@ -250,6 +327,17 @@ class UnregisteredPersonOut(BaseModel):
     status: SafetyStatusValue
     recorded_by_name: str | None
     converted_household_id: uuid.UUID | None
+    converted_member_id: uuid.UUID | None
+    is_child: bool
+    is_senior: bool
+    is_pwd: bool
+    is_pregnant: bool
+    is_lactating: bool
+    has_chronic_condition: bool
+    chronic_condition_note: str | None
+    is_bedridden: bool
+    evac_center_id: uuid.UUID | None
+    evac_center_name: str | None
 
 
 IncidentType = Literal[
@@ -263,6 +351,7 @@ class IncidentReportIn(BaseModel):
     requests don't carry a JSON body — then handed to the service alongside
     the `UploadFile`, if any."""
 
+    event_id: uuid.UUID | None = None
     type: IncidentType
     description: str = Field(min_length=1, max_length=1000)
     latitude: float | None = Field(default=None, ge=-90, le=90)

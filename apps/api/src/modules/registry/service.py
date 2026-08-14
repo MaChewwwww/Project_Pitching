@@ -31,30 +31,32 @@ from src.modules.registry.models import Household, HouseholdMerge, Member
 from src.modules.registry.reference import format_household_number
 from src.modules.registry.schemas import (
     DuplicateCandidate,
+    HouseholdActivityItem,
+    HouseholdActivityOut,
     HouseholdCreateBhw,
     HouseholdCreateResponse,
     HouseholdCreateSelf,
     HouseholdDetailOut,
-    HouseholdActivityItem,
-    HouseholdActivityOut,
+    HouseholdFromUnregisteredIn,
     HouseholdMergeRequest,
     HouseholdOut,
+    HouseholdSafetySummary,
     HouseholdUpdate,
     HouseholdWorkspaceUpdate,
-    HouseholdSafetySummary,
+    MemberFromUnregisteredIn,
     MemberIn,
-    MemberSafetyOut,
     MemberOut,
     MemberPromoteIn,
+    MemberSafetyOut,
     MemberTransferIn,
     MemberUpdate,
-    RegistryMemberOut,
-    RegistryMemberDetailOut,
     RegistryMemberActivityOut,
     RegistryMemberAgeSummary,
     RegistryMemberAreaSummary,
-    RegistryMemberSupportSummary,
+    RegistryMemberDetailOut,
+    RegistryMemberOut,
     RegistryMemberSummary,
+    RegistryMemberSupportSummary,
     RegistrySummary,
 )
 from src.modules.users import service as users_service
@@ -185,9 +187,7 @@ async def _validate_pin_area(
     if matched is None:
         raise ConflictError("Place the household pin within Barangay San Jose.")
     if matched.id != area_id:
-        raise ConflictError(
-            f"This pin is inside {matched.name}; choose that area or move the pin."
-        )
+        raise ConflictError(f"This pin is inside {matched.name}; choose that area or move the pin.")
 
 
 def _member_out(member: Member) -> MemberOut:
@@ -540,7 +540,11 @@ async def create_household_self(
 
 
 async def create_household_bhw(
-    session: AsyncSession, *, user: AuthenticatedUser, body: HouseholdCreateBhw
+    session: AsyncSession,
+    *,
+    user: AuthenticatedUser,
+    body: HouseholdCreateBhw,
+    commit: bool = True,
 ) -> HouseholdCreateResponse:
     if user.role == "bhw" and body.area_id not in user.assigned_area_ids:
         raise PermissionDeniedError("You can only register households in your assigned area.")
@@ -611,7 +615,8 @@ async def create_household_bhw(
             "duplicate_candidate_count": len(duplicates),
         },
     )
-    await session.commit()
+    if commit:
+        await session.commit()
 
     return HouseholdCreateResponse(
         household=await _household_out(
@@ -928,10 +933,16 @@ async def update_household_workspace(
     )
 
     roster = (
-        await session.execute(
-            select(Member).where(Member.household_id == household.id, Member.deleted_at.is_(None))
+        (
+            await session.execute(
+                select(Member).where(
+                    Member.household_id == household.id, Member.deleted_at.is_(None)
+                )
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     head = next((member for member in roster if member.is_head), None)
     if head is None:
         raise ConflictError("This household has no active head profile.")
@@ -945,7 +956,14 @@ async def update_household_workspace(
         raise ConflictError("One or more citizens no longer belong to this household.")
     for data in body.members:
         if data.id is None:
-            session.add(_new_member(data, household_id=household.id, is_head=False, derive_age_from_birthdate=False))
+            session.add(
+                _new_member(
+                    data,
+                    household_id=household.id,
+                    is_head=False,
+                    derive_age_from_birthdate=False,
+                )
+            )
         else:
             _apply_member_update(existing[data.id], data)
             existing[data.id].is_head = False
@@ -997,28 +1015,43 @@ async def get_household_activity(
             )
         ).scalars()
     )
-    safety = None
-    active_event = await session.scalar(
-        select(EmergencyEvent).where(EmergencyEvent.is_active.is_(True)).limit(1)
+    safety: list[HouseholdSafetySummary] = []
+    events = list(
+        (
+            await session.execute(
+                select(EmergencyEvent)
+                .where(
+                    (EmergencyEvent.is_active.is_(True))
+                    | EmergencyEvent.id.in_(
+                        select(SafetyStatus.event_id).where(SafetyStatus.member_id.in_(member_ids))
+                    )
+                )
+                .order_by(EmergencyEvent.started_at.desc())
+                .limit(20)
+            )
+        ).scalars()
     )
-    if active_event and member_ids:
+    for event in events:
         rows = (
             await session.execute(
                 select(SafetyStatus.status, func.count(SafetyStatus.id))
                 .where(
-                    SafetyStatus.event_id == active_event.id,
+                    SafetyStatus.event_id == event.id,
                     SafetyStatus.member_id.in_(member_ids),
                     SafetyStatus.superseded_at.is_(None),
                 )
                 .group_by(SafetyStatus.status)
             )
         ).all()
-        counts = {status: count for status, count in rows}
-        safety = HouseholdSafetySummary(
-            event_name=active_event.name,
-            safe=counts.get("safe", 0),
-            needs_rescue=counts.get("needs_rescue", 0),
-            unaccounted=max(0, len(member_ids) - sum(counts.values())),
+        counts = dict(rows)
+        safety.append(
+            HouseholdSafetySummary(
+                event_id=event.id,
+                event_name=event.name,
+                safe=counts.get("safe", 0),
+                needs_rescue=counts.get("needs_rescue", 0),
+                unaccounted=max(0, len(member_ids) - sum(counts.values())),
+            )
         )
 
     evacuation_rows = []
@@ -1047,13 +1080,17 @@ async def get_household_activity(
             )
 
     rescue_rows = (
-        await session.execute(
-            select(RescueRequest)
-            .where(RescueRequest.household_id == household.id)
-            .order_by(RescueRequest.created_at.desc())
-            .limit(12)
+        (
+            await session.execute(
+                select(RescueRequest)
+                .where(RescueRequest.household_id == household.id)
+                .order_by(RescueRequest.created_at.desc())
+                .limit(12)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     rescues = [
         HouseholdActivityItem(
             id=row.id,
@@ -1069,13 +1106,17 @@ async def get_household_activity(
     incidents = []
     if household.head_user_id is not None:
         incident_rows = (
-            await session.execute(
-                select(IncidentReport)
-                .where(IncidentReport.reported_by_user_id == household.head_user_id)
-                .order_by(IncidentReport.created_at.desc())
-                .limit(12)
+            (
+                await session.execute(
+                    select(IncidentReport)
+                    .where(IncidentReport.reported_by_user_id == household.head_user_id)
+                    .order_by(IncidentReport.created_at.desc())
+                    .limit(12)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         incidents = [
             HouseholdActivityItem(
                 id=row.id,
@@ -1168,16 +1209,27 @@ async def get_member_summary(
             name=area_name,
             citizens=(previous.citizens if previous else 0) + 1,
         )
+
     def has_support(member: Member) -> bool:
-        return any((member.is_pwd, member.is_pregnant, member.is_lactating,
-                    member.has_chronic_condition, member.is_bedridden))
+        return any(
+            (
+                member.is_pwd,
+                member.is_pregnant,
+                member.is_lactating,
+                member.has_chronic_condition,
+                member.is_bedridden,
+            )
+        )
+
     children = sum(member.is_child for member in members)
     seniors = sum(member.is_senior for member in members)
     return RegistryMemberSummary(
         citizens=len(members),
         household_heads=sum(member.is_head for member in members),
         household_members=sum(not member.is_head for member in members),
-        complete_profiles=sum(member.birth_date is not None and member.sex is not None for member in members),
+        complete_profiles=sum(
+            member.birth_date is not None and member.sex is not None for member in members
+        ),
         no_contact_number=sum(not member.contact_number for member in members),
         with_support_needs=sum(has_support(member) for member in members),
         age_groups=RegistryMemberAgeSummary(
@@ -1225,7 +1277,8 @@ async def get_member(
             select(func.count(Member.id)).where(
                 Member.household_id == household.id, Member.deleted_at.is_(None)
             )
-        ) or 0,
+        )
+        or 0,
     )
     return RegistryMemberDetailOut(
         **base.model_dump(), household=household_out, updated_at=member.updated_at
@@ -1240,23 +1293,42 @@ async def get_member_activity(
     from src.modules.geo.models import Facility
     from src.modules.safety.models import IncidentReport, RescueRequest, SafetyStatus
 
-    active_event = await session.scalar(
-        select(EmergencyEvent).where(EmergencyEvent.is_active.is_(True)).limit(1)
+    event_rows = list(
+        (
+            await session.execute(
+                select(EmergencyEvent)
+                .where(
+                    (EmergencyEvent.is_active.is_(True))
+                    | EmergencyEvent.id.in_(
+                        select(SafetyStatus.event_id).where(SafetyStatus.member_id == member_id)
+                    )
+                )
+                .order_by(EmergencyEvent.started_at.desc())
+                .limit(20)
+            )
+        ).scalars()
     )
-    safety = None
-    if active_event is not None:
+    safety = []
+    for event in event_rows:
         status = await session.scalar(
             select(SafetyStatus).where(
-                SafetyStatus.event_id == active_event.id,
+                SafetyStatus.event_id == event.id,
                 SafetyStatus.member_id == member_id,
                 SafetyStatus.superseded_at.is_(None),
             )
         )
-        safety = MemberSafetyOut(
-            event_name=active_event.name,
-            status=cast(Literal["safe", "needs_rescue", "unaccounted"], status.status) if status else "unaccounted",
-            set_method=status.set_method if status else None,
-            set_at=status.set_at if status else None,
+        safety.append(
+            MemberSafetyOut(
+                event_id=event.id,
+                event_name=event.name,
+                status=(
+                    cast(Literal["safe", "needs_rescue", "unaccounted"], status.status)
+                    if status
+                    else "unaccounted"
+                ),
+                set_method=status.set_method if status else None,
+                set_at=status.set_at if status else None,
+            )
         )
     checkins = (
         await session.execute(
@@ -1265,35 +1337,69 @@ async def get_member_activity(
             .join(Facility, Facility.id == EvacCenter.facility_id)
             .join(EmergencyEvent, EmergencyEvent.id == EvacCheckin.event_id)
             .where(EvacCheckin.member_id == member_id)
-            .order_by(EvacCheckin.checked_in_at.desc()).limit(20)
+            .order_by(EvacCheckin.checked_in_at.desc())
+            .limit(20)
         )
     ).all()
-    rescues = (await session.execute(
-        select(RescueRequest).where(RescueRequest.household_id == detail.household_id)
-        .order_by(RescueRequest.created_at.desc()).limit(20)
-    )).scalars().all()
+    rescues = (
+        (
+            await session.execute(
+                select(RescueRequest)
+                .where(RescueRequest.household_id == detail.household_id)
+                .order_by(RescueRequest.created_at.desc())
+                .limit(20)
+            )
+        )
+        .scalars()
+        .all()
+    )
     reports = []
     if detail.household_head_user_id is not None:
-        reports = list((await session.execute(
-            select(IncidentReport)
-            .where(IncidentReport.reported_by_user_id == detail.household_head_user_id)
-            .order_by(IncidentReport.created_at.desc()).limit(20)
-        )).scalars())
+        reports = list(
+            (
+                await session.execute(
+                    select(IncidentReport)
+                    .where(IncidentReport.reported_by_user_id == detail.household_head_user_id)
+                    .order_by(IncidentReport.created_at.desc())
+                    .limit(20)
+                )
+            ).scalars()
+        )
     return RegistryMemberActivityOut(
         safety=safety,
-        evacuations=[HouseholdActivityItem(
-            id=row.id, kind="evacuation", title=f"Checked in at {center}", detail=event,
-            status="Checked out" if row.checked_out_at else "Currently checked in",
-            occurred_at=row.checked_in_at,
-        ) for row, center, event in checkins],
-        household_rescues=[HouseholdActivityItem(
-            id=row.id, kind="rescue", title=f"Rescue request from {row.requester_name}",
-            detail=row.description, status=row.status, occurred_at=row.created_at,
-        ) for row in rescues],
-        household_reports=[HouseholdActivityItem(
-            id=row.id, kind="incident", title=row.type.replace("_", " ").title(),
-            detail=row.description, status=row.status, occurred_at=row.created_at,
-        ) for row in reports],
+        evacuations=[
+            HouseholdActivityItem(
+                id=row.id,
+                kind="evacuation",
+                title=f"Checked in at {center}",
+                detail=event,
+                status="Checked out" if row.checked_out_at else "Currently checked in",
+                occurred_at=row.checked_in_at,
+            )
+            for row, center, event in checkins
+        ],
+        household_rescues=[
+            HouseholdActivityItem(
+                id=row.id,
+                kind="rescue",
+                title=f"Rescue request from {row.requester_name}",
+                detail=row.description,
+                status=row.status,
+                occurred_at=row.created_at,
+            )
+            for row in rescues
+        ],
+        household_reports=[
+            HouseholdActivityItem(
+                id=row.id,
+                kind="incident",
+                title=row.type.replace("_", " ").title(),
+                detail=row.description,
+                status=row.status,
+                occurred_at=row.created_at,
+            )
+            for row in reports
+        ],
     )
 
 
@@ -1330,9 +1436,7 @@ async def update_member(
     member.birth_date = body.birth_date
     member.sex = body.sex
     member.contact_number = (
-        body.contact_number.strip()
-        if body.contact_number and body.contact_number.strip()
-        else None
+        body.contact_number.strip() if body.contact_number and body.contact_number.strip() else None
     )
     member.relationship_to_head = body.relationship_to_head
     member.is_child, member.is_senior = (
@@ -1365,6 +1469,7 @@ async def add_member(
     body: MemberIn,
     actor: AuthenticatedUser,
     resident: bool = False,
+    commit: bool = True,
 ) -> RegistryMemberOut:
     household = await get_household_or_404(session, household_id)
     if actor.is_area_scoped and household.area_id not in actor.assigned_area_ids:
@@ -1387,9 +1492,109 @@ async def add_member(
         entity_id=member.id,
         changes={"household_id": str(household.id)},
     )
-    await session.commit()
+    if commit:
+        await session.commit()
     area_name = await session.scalar(select(Area.name).where(Area.id == household.area_id))
     return _member_directory_out(member, household=household, area_name=area_name or "Unknown area")
+
+
+def _member_from_unregistered(person, *, birth_date: date, sex: str, relationship: str | None):
+    return MemberIn(
+        full_name=person.full_name,
+        birth_date=birth_date,
+        sex=sex,
+        contact_number=person.contact_number,
+        relationship_to_head=relationship,
+        is_child=person.is_child,
+        is_senior=person.is_senior,
+        is_pwd=person.is_pwd,
+        is_pregnant=person.is_pregnant,
+        is_lactating=person.is_lactating,
+        has_chronic_condition=person.has_chronic_condition,
+        chronic_condition_note=person.chronic_condition_note,
+        is_bedridden=person.is_bedridden,
+    )
+
+
+async def add_member_from_unregistered(
+    session: AsyncSession,
+    *,
+    household_id: uuid.UUID,
+    body: MemberFromUnregisteredIn,
+    actor: AuthenticatedUser,
+) -> RegistryMemberOut:
+    from src.modules.safety import service as safety_service
+
+    person = await safety_service.get_unregistered_or_404(session, body.unregistered_person_id)
+    if person.converted_member_id is not None:
+        raise ConflictError("This unregistered person has already been converted.")
+    member = await add_member(
+        session,
+        household_id=household_id,
+        body=_member_from_unregistered(
+            person,
+            birth_date=body.birth_date,
+            sex=body.sex,
+            relationship=body.relationship_to_head,
+        ),
+        actor=actor,
+        commit=False,
+    )
+    await safety_service.finalize_unregistered_conversion(
+        session,
+        unregistered_id=person.id,
+        household_id=household_id,
+        member_id=member.id,
+        member_name=member.full_name,
+        actor=actor,
+    )
+    await session.commit()
+    return member
+
+
+async def create_household_from_unregistered(
+    session: AsyncSession,
+    *,
+    body: HouseholdFromUnregisteredIn,
+    actor: AuthenticatedUser,
+) -> HouseholdCreateResponse:
+    from src.modules.safety import service as safety_service
+
+    person = await safety_service.get_unregistered_or_404(session, body.unregistered_person_id)
+    if person.converted_member_id is not None:
+        raise ConflictError("This unregistered person has already been converted.")
+    response = await create_household_bhw(
+        session,
+        user=actor,
+        body=HouseholdCreateBhw(
+            head_name=person.full_name,
+            contact_number=person.contact_number,
+            area_id=body.area_id,
+            street_address=body.street_address,
+            waterway_proximity=body.waterway_proximity,
+            latitude=body.latitude,
+            longitude=body.longitude,
+            head_member=_member_from_unregistered(
+                person,
+                birth_date=body.birth_date,
+                sex=body.sex,
+                relationship=None,
+            ),
+            members=body.members,
+        ),
+        commit=False,
+    )
+    member = response.members[0]
+    await safety_service.finalize_unregistered_conversion(
+        session,
+        unregistered_id=person.id,
+        household_id=response.household.id,
+        member_id=member.id,
+        member_name=member.full_name,
+        actor=actor,
+    )
+    await session.commit()
+    return response
 
 
 async def archive_member(

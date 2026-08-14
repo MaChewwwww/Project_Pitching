@@ -9,6 +9,7 @@ import json
 import logging
 import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -180,8 +181,15 @@ def _export_openapi() -> None:
     sys.stdout.write("\n")
 
 
+def _export_openapi_file(path: str) -> None:
+    """Local, non-Docker schema generation for constrained development environments."""
+    Path(path).write_text(json.dumps(app.openapi(), indent=2) + "\n", encoding="utf-8")
+
+
 if __name__ == "__main__":
-    if "--export-openapi" in sys.argv:
+    if "--export-openapi-file" in sys.argv:
+        _export_openapi_file(sys.argv[sys.argv.index("--export-openapi-file") + 1])
+    elif "--export-openapi" in sys.argv:
         _export_openapi()
     else:
         import uvicorn

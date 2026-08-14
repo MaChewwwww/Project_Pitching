@@ -132,6 +132,23 @@ call an external reverse-geocoder. Registry writes reject pins outside San Jose 
 selected area disagrees with the boundary match; synthetic seed households use a point on their
 assigned area polygon for the same reason.
 
+## Concurrent emergency operations
+
+`evacuation/service.py` owns event resolution and physical center occupancy. `list_active_events`
+is ordered newest-first; `require_active_event(event_id)` rejects ended selections, and its legacy
+no-ID path returns `409` when more than one event is active. Occupancy queries never filter to one
+event: the partial unique indexes on `evac_checkin` make each registered member or walk-in one
+physical occupant even while several emergencies are active.
+
+`safety/service.py` owns event-specific status history and the PII workspace projection. The
+workspace applies BHW area scope before loading rosters. SK users reach only the aggregate
+Accounted For route. Center assignment from a safety write delegates to evacuation with commit
+deferred so whole-household acknowledgement and check-in changes remain one transaction.
+
+Walk-in conversion remains registry-owned. Registry creates the official member/household, then
+calls safety to transfer current status and evacuation identity before the single commit. The
+unregistered row is retained with both conversion FKs and excluded from live walk-in totals.
+
 ## The registry module will get big
 
 36 requirements land in `registry` — it is the module most likely to become a monolith inside

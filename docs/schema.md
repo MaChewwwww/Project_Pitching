@@ -284,26 +284,26 @@ CREATE UNIQUE INDEX idx_hazard_period_level ON flood_hazard(return_period, level
 
 ### `household` (FR-REG-001 … 011)
 
-| Column                                   | Type                  | Constraints                           | Notes                                                                                          |
-| ---------------------------------------- | --------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `id`                                     | UUID                  | PK                                    |                                                                                                |
-| `reference_no`                           | TEXT                  | UNIQUE NOT NULL                       | Household Number in `M-SJ-000-000` format, generated at creation (FR-REG-006)                  |
-| `head_name`                              | TEXT                  | NOT NULL                              |                                                                                                |
-| `head_user_id`                           | UUID                  | UNIQUE FK → `user` ON DELETE SET NULL | **Null for BHW-created records**                                                               |
-| `contact_number`                         | TEXT                  |                                       | Nullable (FR-REG-005)                                                                          |
-| `is_unreachable_by_phone`                | BOOLEAN               | NOT NULL DEFAULT false                | Derived on write; feeds capacity scoring                                                       |
-| `area_id`                                | UUID                  | NOT NULL FK → `area`                  |                                                                                                |
-| `psgc_barangay_code`                     | TEXT                  | FK → `psgc(code)`                     |                                                                                                |
-| `street_address`                         | TEXT                  |                                       |                                                                                                |
-| `location`                               | GEOMETRY(Point, 4326) |                                       | Nullable — pin is optional                                                                     |
+| Column                                   | Type                  | Constraints                           | Notes                                                                                                                                                                                     |
+| ---------------------------------------- | --------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                                     | UUID                  | PK                                    |                                                                                                                                                                                           |
+| `reference_no`                           | TEXT                  | UNIQUE NOT NULL                       | Household Number in `M-SJ-000-000` format, generated at creation (FR-REG-006)                                                                                                             |
+| `head_name`                              | TEXT                  | NOT NULL                              |                                                                                                                                                                                           |
+| `head_user_id`                           | UUID                  | UNIQUE FK → `user` ON DELETE SET NULL | **Null for BHW-created records**                                                                                                                                                          |
+| `contact_number`                         | TEXT                  |                                       | Nullable (FR-REG-005)                                                                                                                                                                     |
+| `is_unreachable_by_phone`                | BOOLEAN               | NOT NULL DEFAULT false                | Derived on write; feeds capacity scoring                                                                                                                                                  |
+| `area_id`                                | UUID                  | NOT NULL FK → `area`                  |                                                                                                                                                                                           |
+| `psgc_barangay_code`                     | TEXT                  | FK → `psgc(code)`                     |                                                                                                                                                                                           |
+| `street_address`                         | TEXT                  |                                       |                                                                                                                                                                                           |
+| `location`                               | GEOMETRY(Point, 4326) |                                       | Nullable — pin is optional                                                                                                                                                                |
 | `waterway_proximity`                     | TEXT                  |                                       | Nullable band: the flood hazard map supplies the initial `very_near` · `near` · `far` default; staff/residents may correct it from field observation; migration `0013_waterway_proximity` |
-| `source`                                 | TEXT                  | NOT NULL CHECK                        | `self` · `bhw` — required for the coverage metric                                              |
-| `created_by_user_id`                     | UUID                  | FK → `user` ON DELETE SET NULL        | The BHW, where applicable (FR-REG-007)                                                         |
-| `verified_at`                            | TIMESTAMPTZ           |                                       |                                                                                                |
-| `verified_by_user_id`                    | UUID                  | FK → `user`                           |                                                                                                |
-| `stale_at`                               | TIMESTAMPTZ           |                                       | Set by the daily job (R-2)                                                                     |
-| `merged_into_id`                         | UUID                  | FK → `household`                      | Set when merged as a duplicate                                                                 |
-| `created_at`, `updated_at`, `deleted_at` | TIMESTAMPTZ           |                                       |                                                                                                |
+| `source`                                 | TEXT                  | NOT NULL CHECK                        | `self` · `bhw` — required for the coverage metric                                                                                                                                         |
+| `created_by_user_id`                     | UUID                  | FK → `user` ON DELETE SET NULL        | The BHW, where applicable (FR-REG-007)                                                                                                                                                    |
+| `verified_at`                            | TIMESTAMPTZ           |                                       |                                                                                                                                                                                           |
+| `verified_by_user_id`                    | UUID                  | FK → `user`                           |                                                                                                                                                                                           |
+| `stale_at`                               | TIMESTAMPTZ           |                                       | Set by the daily job (R-2)                                                                                                                                                                |
+| `merged_into_id`                         | UUID                  | FK → `household`                      | Set when merged as a duplicate                                                                                                                                                            |
+| `created_at`, `updated_at`, `deleted_at` | TIMESTAMPTZ           |                                       |                                                                                                                                                                                           |
 
 ```sql
 CREATE INDEX idx_household_area     ON household(area_id) WHERE deleted_at IS NULL;
@@ -611,11 +611,7 @@ CREATE INDEX idx_announcement_active ON announcement(kind, published_at DESC)
 
 `id`, `name`, `type` (CHECK: `flood` · `earthquake` · `typhoon` · `fire` · `other`), `started_at`, `ended_at`, `is_active`, `declared_by_user_id`.
 
-Scopes safety statuses, rescue requests, incident reports, and donation drives so that "accounted for" always means _for this event_.
-
-```sql
-CREATE UNIQUE INDEX idx_one_active_event ON emergency_event((true)) WHERE is_active;
-```
+Scopes safety statuses, rescue requests, incident reports, and donation drives so that "accounted for" always means _for this event_. Multiple rows may be active concurrently; operational requests carry an explicit `event_id`. Migration `0023_concurrent_emergency_operations` drops the former `idx_one_active_event` singleton constraint.
 
 ### `safety_status` (FR-SAF-001 … 007) — **implemented, migration `0008_safety_core`**
 
@@ -659,16 +655,25 @@ CREATE UNIQUE INDEX uq_safety_current_unreg ON safety_status(event_id, unregiste
 | `created_at`             | TIMESTAMPTZ           | NOT NULL DEFAULT now()                            | Not in the original design — recording _when_ is otherwise unrecoverable |
 | `updated_at`             | TIMESTAMPTZ           | NOT NULL DEFAULT now()                            |                                                                          |
 | `event_id`               | UUID                  | NOT NULL FK → `emergency_event` ON DELETE CASCADE |                                                                          |
-| `full_name`              | TEXT                  | NOT NULL                                          | **Name and location is enough**                                          |
+| `full_name`              | TEXT                  | NOT NULL                                          | Name is the only required identity field                                 |
 | `contact_number`         | TEXT                  |                                                   |                                                                          |
 | `location`               | GEOMETRY(Point, 4326) |                                                   |                                                                          |
 | `location_note`          | TEXT                  |                                                   | Free text — "near Wawa bridge"                                           |
 | `recorded_by_user_id`    | UUID                  | FK → `user` ON DELETE SET NULL                    |                                                                          |
-| `converted_household_id` | UUID                  | FK → `household` ON DELETE SET NULL               | FR-SAF-014 — conversion itself is cut, Aug 2026 (see below)              |
+| `converted_household_id` | UUID                  | FK → `household` ON DELETE SET NULL               | Set once by registry-owned conversion                                    |
+| `converted_member_id`    | UUID                  | FK → `member` ON DELETE SET NULL                  | Official identity created by conversion                                  |
+| `is_child`               | BOOLEAN               | NOT NULL DEFAULT false                            | Operational support flag                                                 |
+| `is_senior`              | BOOLEAN               | NOT NULL DEFAULT false                            | Operational support flag                                                 |
+| `is_pwd`                 | BOOLEAN               | NOT NULL DEFAULT false                            | Operational support flag                                                 |
+| `is_pregnant`            | BOOLEAN               | NOT NULL DEFAULT false                            | Operational support flag                                                 |
+| `is_lactating`           | BOOLEAN               | NOT NULL DEFAULT false                            | Operational support flag                                                 |
+| `has_chronic_condition`  | BOOLEAN               | NOT NULL DEFAULT false                            | Operational support flag                                                 |
+| `chronic_condition_note` | TEXT                  |                                                   | Optional condition/medication note                                       |
+| `is_bedridden`           | BOOLEAN               | NOT NULL DEFAULT false                            | Mobility-limited support flag                                            |
 
 Indexes: `idx_unregistered_event(event_id)`, `idx_unregistered_location` GiST.
 
-> Counted separately from registered residents so coverage figures stay honest (FR-SAF-013).
+> Contact, location note, and map pin are optional. Converted rows remain historical and auditable but are excluded from live unregistered totals. The new member receives the equivalent event safety status and any open physical check-in.
 
 ### `rescue_request` (FR-SAF-008 … 010) — **implemented, migration `0008_safety_core`**
 
@@ -717,24 +722,30 @@ CREATE INDEX idx_rescue_location ON rescue_request USING GIST(location);
 
 ### `evac_checkin` (FR-EVC-004, 005)
 
-| Column                   | Type        | Constraints            | Notes                                        |
-| ------------------------ | ----------- | ---------------------- | -------------------------------------------- |
-| `id`                     | UUID        | PK                     |                                              |
-| `evac_center_id`         | UUID        | NOT NULL FK            |                                              |
-| `event_id`               | UUID        | NOT NULL FK            |                                              |
-| `member_id`              | UUID        | FK → `member`          | Null for unregistered                        |
-| `unregistered_person_id` | UUID        | FK                     | Null for registered                          |
-| `person_name`            | TEXT        | NOT NULL               | Denormalised — needed when neither FK is set |
-| `checked_in_at`          | TIMESTAMPTZ | NOT NULL DEFAULT now() |                                              |
-| `checked_out_at`         | TIMESTAMPTZ |                        |                                              |
-| `recorded_by_user_id`    | UUID        | FK → `user`            |                                              |
+| Column                   | Type        | Constraints            | Notes                               |
+| ------------------------ | ----------- | ---------------------- | ----------------------------------- |
+| `id`                     | UUID        | PK                     |                                     |
+| `evac_center_id`         | UUID        | NOT NULL FK            |                                     |
+| `event_id`               | UUID        | NOT NULL FK            |                                     |
+| `member_id`              | UUID        | FK → `member`          | Null for unregistered               |
+| `unregistered_person_id` | UUID        | FK                     | Null for registered                 |
+| `person_name`            | TEXT        | NOT NULL               | Denormalised display/audit snapshot |
+| `checked_in_at`          | TIMESTAMPTZ | NOT NULL DEFAULT now() |                                     |
+| `checked_out_at`         | TIMESTAMPTZ |                        |                                     |
+| `recorded_by_user_id`    | UUID        | FK → `user`            |                                     |
 
 ```sql
 CREATE INDEX idx_checkin_occupancy ON evac_checkin(evac_center_id)
   WHERE checked_out_at IS NULL;
+ALTER TABLE evac_checkin ADD CONSTRAINT chk_evac_checkin_subject_exactly_one
+  CHECK (num_nonnulls(member_id, unregistered_person_id) = 1);
+CREATE UNIQUE INDEX uq_evac_checkin_open_member ON evac_checkin(member_id)
+  WHERE checked_out_at IS NULL AND member_id IS NOT NULL;
+CREATE UNIQUE INDEX uq_evac_checkin_open_unregistered ON evac_checkin(unregistered_person_id)
+  WHERE checked_out_at IS NULL AND unregistered_person_id IS NOT NULL;
 ```
 
-> Occupancy is `COUNT(*) WHERE checked_out_at IS NULL` — derived, never a stored counter that can drift.
+> Occupancy is the global physical `COUNT(*) WHERE checked_out_at IS NULL`, not a sum of per-event statuses. A person can have only one open check-in across concurrent events. Ending an intermediate event preserves it; ending the final active event checks out all open rows.
 
 ### `evac_supply` (FR-EVC-006, 007)
 
@@ -902,14 +913,14 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;      -- fuzzy name matching for duplicat
 
 ## 14. Index Summary
 
-| Kind               | Tables                                                                                    | Purpose                                                                                                                                  |
-| ------------------ | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **GiST spatial**   | `area.geom`, `household.location`, `facility.location`, `flood_hazard.geom`               | Every `ST_Contains` / `ST_Distance` query                                                                                                |
-| **GIN trigram**    | `household.head_name`                                                                     | Duplicate detection (FR-REG-010)                                                                                                         |
-| **Partial**        | active alerts, open rescues, current occupancy, unread notifications, current assessments | Keeps hot queries scanning only live rows                                                                                                |
-| **Composite**      | `reading(metric, source, observed_at DESC)`                                               | Latest-reading lookup, hit on every page                                                                                                 |
-| **Unique**         | `forecast(source, metric, horizon, valid_at)`                                             | Makes each fetch an upsert, so a refreshed series replaces the old one instead of accumulating duplicate predictions for the same moment |
-| **Unique partial** | one head per household, one current assessment, one active event                          | Invariants enforced by the database                                                                                                      |
+| Kind               | Tables                                                                                                                          | Purpose                                                                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **GiST spatial**   | `area.geom`, `household.location`, `facility.location`, `flood_hazard.geom`                                                     | Every `ST_Contains` / `ST_Distance` query                                                                                                |
+| **GIN trigram**    | `household.head_name`                                                                                                           | Duplicate detection (FR-REG-010)                                                                                                         |
+| **Partial**        | active alerts, open rescues, current occupancy, unread notifications, current assessments                                       | Keeps hot queries scanning only live rows                                                                                                |
+| **Composite**      | `reading(metric, source, observed_at DESC)`                                                                                     | Latest-reading lookup, hit on every page                                                                                                 |
+| **Unique**         | `forecast(source, metric, horizon, valid_at)`                                                                                   | Makes each fetch an upsert, so a refreshed series replaces the old one instead of accumulating duplicate predictions for the same moment |
+| **Unique partial** | one head per household, one current assessment, one current safety row per event/subject, one open physical check-in per person | Invariants enforced by the database                                                                                                      |
 
 ---
 

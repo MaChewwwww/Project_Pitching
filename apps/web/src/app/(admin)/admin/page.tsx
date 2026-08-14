@@ -25,7 +25,6 @@ import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { api } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { PublicEmergencyEvent } from "@/lib/api/public-types";
-import type { AccountedForOut } from "@/lib/api/safety-types";
 
 /** The console landing screen — quick links to every resource this pass covers. */
 
@@ -98,11 +97,11 @@ const TILES: {
   {
     href: "/admin/emergency-events",
     label: "Emergency Events",
-    description: "Declare or end the active event (FR-SAF-018/019)",
+    description: "Declare and manage concurrent emergency events",
     icon: Siren,
   },
   {
-    href: "/admin/safety",
+    href: "/admin/emergency-events?tab=accounted-for",
     label: "Accounted For",
     description: "Registered vs. unaccounted, by area (FR-SAF-011)",
     icon: ShieldCheck,
@@ -122,11 +121,11 @@ const TILES: {
  * and there is nothing to show the officer in that state anyway.
  */
 function LiveSummary() {
-  const { data: activeEvent } = useQuery({
+  const { data: activeEvents } = useQuery({
     queryKey: ["public", "emergency-events", "active"],
     queryFn: () =>
       api
-        .get<PublicEmergencyEvent | null>("/public/emergency-events/active")
+        .get<PublicEmergencyEvent[]>("/public/emergency-events/active")
         .then((r) => r.data),
     refetchInterval: 15_000,
   });
@@ -140,31 +139,29 @@ function LiveSummary() {
     refetchInterval: 15_000,
   });
 
-  const { data: accountedFor } = useQuery({
-    queryKey: ["admin", "accounted-for", "dashboard-tile"],
-    queryFn: () => api.get<AccountedForOut>("/admin/accounted-for").then((r) => r.data),
-    enabled: !!activeEvent,
-    refetchInterval: 15_000,
-  });
-
   return (
     <div className="grid gap-4 sm:grid-cols-3">
       <Card radius="lg">
         <CardContent className="flex flex-col gap-1">
           <Siren aria-hidden className="text-primary-600 size-5" />
           <span className="text-h3 font-bold text-neutral-900">
-            {activeEvent ? activeEvent.name : "None"}
+            {activeEvents?.length ?? 0}
           </span>
-          <span className="text-caption text-neutral-500">Active event</span>
+          <span className="text-caption text-neutral-500">Active emergency events</span>
         </CardContent>
       </Card>
       <Card radius="lg">
         <CardContent className="flex flex-col gap-1">
           <ShieldCheck aria-hidden className="size-5 text-neutral-500" />
           <span className="text-h3 font-bold text-neutral-900">
-            {accountedFor ? accountedFor.registered_total.unaccounted : "—"}
+            {activeEvents?.[0]?.name ?? "None"}
           </span>
-          <span className="text-caption text-neutral-500">Unaccounted</span>
+          <Link
+            href="/admin/emergency-events"
+            className="text-caption text-primary-700 font-semibold underline"
+          >
+            Open response workspace
+          </Link>
         </CardContent>
       </Card>
       <Card radius="lg">

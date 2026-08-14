@@ -90,6 +90,7 @@ export const announcementDetailSchema = publicAnnouncementSchema.extend({
 /* --- emergency events (FR-SAF-018) -------------------------------------------- */
 
 export const publicEmergencyEventSchema = z.object({
+  id: z.string(),
   name: z.string(),
   type: z.enum(["flood", "earthquake", "typhoon", "fire", "other"]),
   started_at: z.string(),

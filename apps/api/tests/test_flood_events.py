@@ -6,9 +6,13 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 from factories import get_area, make_event
+from sqlalchemy import func, select
 
 from src.core.deps import AuthenticatedUser
+from src.modules.evacuation import service as evacuation_service
+from src.modules.evacuation.schemas import EmergencyEventDeclare
 from src.modules.weather import service
+from src.modules.weather.models import FloodEvent
 from src.modules.weather.schemas import FloodEventIn
 
 
@@ -96,3 +100,31 @@ async def test_delete_requires_admin_and_reports_missing_records(admin_client, b
     assert (await client.delete(f"/api/v1/admin/flood-events/{event_id}")).status_code == 401
     assert (await bhw_client.delete(f"/api/v1/admin/flood-events/{event_id}")).status_code == 403
     assert (await admin_client.delete(f"/api/v1/admin/flood-events/{event_id}")).status_code == 404
+
+
+async def test_only_flood_declarations_create_linked_history(session, demo_users):
+    actor = _actor(demo_users["admin"])
+    flood = await evacuation_service.declare_event(
+        session,
+        body=EmergencyEventDeclare(name="Linked flood", type="flood"),
+        actor=actor,
+        ip=None,
+    )
+    typhoon = await evacuation_service.declare_event(
+        session,
+        body=EmergencyEventDeclare(name="Not flood history", type="typhoon"),
+        actor=actor,
+        ip=None,
+    )
+    assert (
+        await session.scalar(
+            select(func.count(FloodEvent.id)).where(FloodEvent.emergency_event_id == flood.id)
+        )
+        == 1
+    )
+    assert (
+        await session.scalar(
+            select(func.count(FloodEvent.id)).where(FloodEvent.emergency_event_id == typhoon.id)
+        )
+        == 0
+    )

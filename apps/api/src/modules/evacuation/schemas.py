@@ -22,6 +22,7 @@ EventType = Literal["flood", "earthquake", "typhoon", "fire", "other"]
 class PublicEmergencyEvent(BaseModel):
     """No `declared_by_*` — that is barangay-staff information, not public (FR-SAF-018)."""
 
+    id: uuid.UUID
     name: str
     type: EventType
     started_at: datetime
@@ -31,9 +32,6 @@ class EmergencyEventDeclare(BaseModel):
     name: str
     type: EventType
     started_at: datetime | None = None
-    # Closing a live event is a side effect big enough that a caller must opt in
-    # explicitly, not have it happen implicitly because they forgot one was open.
-    supersede_active: bool = False
 
 
 class EmergencyEventOut(BaseModel):
@@ -45,6 +43,7 @@ class EmergencyEventOut(BaseModel):
     is_active: bool
     declared_by_user_id: uuid.UUID | None
     declared_by_name: str | None
+    occupancy_reset_count: int = 0
 
 
 class PublicEvacCenter(BaseModel):
@@ -54,8 +53,7 @@ class PublicEvacCenter(BaseModel):
     notes: str | None
     contact_number: str | None
     facility: PublicFacility
-    # `evac_checkin` is deferred (FR-SAF-012 scope) — occupancy is always 0 until
-    # it lands. Truthful today: nobody is checked in outside a declared event.
+    # Open physical check-ins are global across concurrent emergency events.
     occupancy: int
     occupancy_pct: float | None
     is_at_capacity: bool
@@ -99,4 +97,3 @@ class PortalEvacuationStatusOut(BaseModel):
     is_currently_evacuated: bool
     active_checkin: EvacCheckinOut | None
     history: list[EvacCheckinOut]
-

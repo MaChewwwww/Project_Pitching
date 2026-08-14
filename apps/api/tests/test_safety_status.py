@@ -147,6 +147,43 @@ async def test_household_bulk_succeeds_with_the_full_roster(session, demo_users)
     assert all(m.set_method == "household_bulk" for m in result.members)
 
 
+async def test_member_statuses_are_isolated_per_event(session, demo_users):
+    area = await get_area(session)
+    household = await make_household(session, area=area)
+    flood = await make_event(session, name="Flood")
+    fire = await make_event(session, name="Fire", type="fire")
+    admin = _actor(demo_users["admin"])
+    member_id = (await _member_ids(session, household))[0]
+
+    await service.set_member_statuses(
+        session,
+        event=flood,
+        household_id=household.id,
+        member_ids=[member_id],
+        status="safe",
+        actor=admin,
+        set_method="assisted",
+        evac_center_id=None,
+        ip=None,
+    )
+    await service.set_member_statuses(
+        session,
+        event=fire,
+        household_id=household.id,
+        member_ids=[member_id],
+        status="needs_rescue",
+        actor=admin,
+        set_method="assisted",
+        evac_center_id=None,
+        ip=None,
+    )
+
+    flood_view = await service.get_household_safety(session, event=flood, household_id=household.id)
+    fire_view = await service.get_household_safety(session, event=fire, household_id=household.id)
+    assert flood_view.members[0].status == "safe"
+    assert fire_view.members[0].status == "needs_rescue"
+
+
 async def test_me_endpoint_ignores_client_supplied_set_method(head_client, session, demo_users):
     """`set_method` is never accepted from the client — posting one anyway
     must still store `self`, or a resident could forge barangay confirmation

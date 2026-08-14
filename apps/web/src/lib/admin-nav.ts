@@ -54,6 +54,11 @@ export const ADMIN_CATEGORIES: AdminNavCategory[] = [
     items: [
       { href: "/admin/households" as Route, label: "Household List", icon: Home },
       { href: "/admin/citizens" as Route, label: "Registered Citizens", icon: Users },
+      {
+        href: "/admin/unregistered-persons" as Route,
+        label: "Unregistered Persons",
+        icon: UserPlus,
+      },
     ],
   },
   {
@@ -68,13 +73,7 @@ export const ADMIN_CATEGORIES: AdminNavCategory[] = [
         label: "Emergency Events",
         icon: Siren,
       },
-      { href: "/admin/safety" as Route, label: "Accounted For", icon: ShieldCheck },
       { href: "/admin/rescue-requests" as Route, label: "Rescue Queue", icon: LifeBuoy },
-      {
-        href: "/admin/unregistered-persons" as Route,
-        label: "Unregistered Persons",
-        icon: UserPlus,
-      },
       {
         href: "/admin/incident-reports" as Route,
         label: "Incident Reports",
@@ -210,10 +209,11 @@ export function resolveAdminBreadcrumbs(pathname: string): AdminCrumb[] {
                   : index === 0
                     ? "Citizen Details"
                     : (LEAF_LABELS[segment] ?? "Citizen Details")
-          : (LEAF_LABELS[segment] ?? "Edit");
+            : (LEAF_LABELS[segment] ?? "Edit");
     const href =
       (link.href === "/admin/households" || link.href === "/admin/citizens") &&
-      index === 0 && rest.length > 1
+      index === 0 &&
+      rest.length > 1
         ? `${link.href}/${segment}`
         : undefined;
     crumbs.push({ label, href: href as Route | undefined });

@@ -32,10 +32,10 @@ admin_router = APIRouter(tags=["evacuation"])
 
 @public_router.get(
     "/emergency-events/active",
-    summary="The currently active emergency event, if any (FR-SAF-018)",
+    summary="Active emergency events, newest first (FR-SAF-018/020)",
 )
-async def public_active_event(session: DbSessionDep) -> PublicEmergencyEvent | None:
-    return await service.get_public_active_event(session)
+async def public_active_event(session: DbSessionDep) -> list[PublicEmergencyEvent]:
+    return await service.get_public_active_events(session)
 
 
 @admin_router.get(
@@ -71,8 +71,8 @@ async def admin_end_event(
     event_id: uuid.UUID, request: Request, session: DbSessionDep, user: CurrentUser
 ) -> EmergencyEventOut:
     ip = request.client.host if request.client else None
-    event = await service.end_event(session, event_id, actor=user, ip=ip)
-    return await service.event_out(session, event)
+    event, reset_count = await service.end_event(session, event_id, actor=user, ip=ip)
+    return await service.event_out(session, event, occupancy_reset_count=reset_count)
 
 
 @public_router.get(

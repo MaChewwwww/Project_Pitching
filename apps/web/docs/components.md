@@ -321,6 +321,30 @@ contact number is optional; the API normalizes a missing number to the `No Conta
 The fixed action bar keeps a compact icon timeline on the left, lighting each step when its required fields
 are complete, while the color-coded cancel, clear, and create actions stay right-aligned.
 
+### Emergency event operations workspace
+
+`/admin/emergency-events` owns event selection and the addressable `Overview`, `Map`, and
+`Accounted For` tabs through `?event=<uuid>&tab=...`. Active rows expose management actions;
+ended rows keep the same read model as read-only history. `/admin/safety` only redirects to the
+embedded Accounted For tab. The event selector separates active events from history rather than
+assuming one global event.
+
+`EmergencyResponseMap` is an isolated client-only Leaflet component. It intersects household pins
+with the staged NOAH layer in the browser and labels the stored survey fallback when the layer is
+missing or no polygon is available. Desktop hover and keyboard focus use the same roster content as
+the touch sheet. Optional pins are handled by the adjacent searchable unmapped list. Map filters are
+operational state, not URL state; the selected event and tab are URL state.
+
+Safety actions start in the household detail sheet. Each per-member or exact-roster bulk confirmation
+dialog carries its own optional evacuation-center selector; the bulk dialog repeats the acknowledged
+live roster before submission. Mutation success invalidates the selected workspace, Accounted For,
+center occupancy, and portal safety queries together. Center capacity is visibly advisory.
+
+`/admin/unregistered-persons` remains its own route under Community Registry. Event, safety,
+conversion, support-need, and center filters operate over retained emergency records. Conversion to
+an existing household is an inline dialog; creation routes through the full assisted household
+workspace with known name/contact/support flags prefilled.
+
 ### Portal splash loading
 
 `AdminGate` and `PortalGate` reuse `PageSplashLoader` with a 1.5-second minimum presentation.

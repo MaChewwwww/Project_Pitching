@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -43,6 +43,7 @@ import type {
   HouseholdWorkspaceUpdate,
 } from "@/lib/api/registry-types";
 import { cn } from "@/lib/utils";
+import type { UnregisteredPersonOut } from "@/lib/api/safety-types";
 
 const LocationPicker = dynamic(
   () => import("@/components/features/registry/location-picker"),
@@ -272,7 +273,13 @@ const REGISTRATION_STEPS = [
 ] as const;
 
 /** FR-REG-002/003/004/024/025 — one BHW-assisted household visit. */
-export function HouseholdWorkspace({ household }: { household?: HouseholdDetailOut }) {
+export function HouseholdWorkspace({
+  household,
+  unregisteredPerson,
+}: {
+  household?: HouseholdDetailOut;
+  unregisteredPerson?: UnregisteredPersonOut;
+}) {
   useRequireRole("admin", "bhw");
   const { user } = useAuth();
   const router = useRouter();
@@ -307,7 +314,19 @@ export function HouseholdWorkspace({ household }: { household?: HouseholdDetailO
   } = form;
   React.useEffect(() => {
     if (household) reset(valuesFromHousehold(household));
-  }, [household, reset]);
+    else if (unregisteredPerson) {
+      reset({
+        ...emptyValues,
+        head_name: unregisteredPerson.full_name,
+        contact_number: unregisteredPerson.contact_number ?? "",
+        head_is_pwd: unregisteredPerson.is_pwd,
+        head_is_pregnant: unregisteredPerson.is_pregnant,
+        head_is_lactating: unregisteredPerson.is_lactating,
+        head_has_chronic_condition: unregisteredPerson.has_chronic_condition,
+        head_is_bedridden: unregisteredPerson.is_bedridden,
+      });
+    }
+  }, [household, reset, unregisteredPerson]);
   const watchedValues = useWatch({ control });
   const memberEntries = watchedValues.members ?? [];
   const completedSteps = {
@@ -337,7 +356,19 @@ export function HouseholdWorkspace({ household }: { household?: HouseholdDetailO
             `/admin/households/${household?.id}/workspace`,
             body,
           )
-        : api.post<HouseholdCreateResponse>("/admin/households", body)
+        : unregisteredPerson
+          ? api.post<HouseholdCreateResponse>("/admin/households/from-unregistered", {
+              unregistered_person_id: unregisteredPerson.id,
+              area_id: body.area_id,
+              street_address: body.street_address,
+              waterway_proximity: body.waterway_proximity,
+              latitude: body.latitude,
+              longitude: body.longitude,
+              birth_date: body.head_member.birth_date,
+              sex: body.head_member.sex,
+              members: body.members,
+            })
+          : api.post<HouseholdCreateResponse>("/admin/households", body)
       ).then((response) => response.data),
     onSuccess: (result) => {
       setConfirmationOpen(false);
@@ -394,7 +425,9 @@ export function HouseholdWorkspace({ household }: { household?: HouseholdDetailO
         description={
           isEdit
             ? "Update the household, map location, waterway proximity, and citizen roster in one workspace."
-            : "Record a household, its location, waterway proximity, and every known member in one barangay visit."
+            : unregisteredPerson
+              ? `Complete the official household record for ${unregisteredPerson.full_name}. Known contact and support details are prefilled from the emergency record.`
+              : "Record a household, its location, waterway proximity, and every known member in one barangay visit."
         }
       />
 
@@ -976,5 +1009,33 @@ export function HouseholdWorkspace({ household }: { household?: HouseholdDetailO
 }
 
 export default function NewHouseholdPage() {
-  return <HouseholdWorkspace />;
+  const searchParams = useSearchParams();
+  const unregisteredId = searchParams.get("from_unregistered");
+  const personQuery = useQuery({
+    queryKey: ["admin", "unregistered-person", unregisteredId],
+    queryFn: () =>
+      api
+        .get<UnregisteredPersonOut>(`/admin/unregistered-persons/${unregisteredId}`)
+        .then((response) => response.data),
+    enabled: Boolean(unregisteredId),
+  });
+  if (unregisteredId && personQuery.isLoading) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center text-sm text-neutral-500">
+          Loading emergency record…
+        </CardContent>
+      </Card>
+    );
+  }
+  if (unregisteredId && personQuery.isError) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center text-sm text-red-700">
+          The unregistered-person record could not be loaded.
+        </CardContent>
+      </Card>
+    );
+  }
+  return <HouseholdWorkspace unregisteredPerson={personQuery.data} />;
 }

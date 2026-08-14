@@ -57,16 +57,21 @@ import type {
   RegistryMemberDetailOut,
 } from "@/lib/api/registry-types";
 
-const LocationPicker = dynamic(() => import("@/components/features/registry/location-picker"), {
-  ssr: false,
-  loading: () => <div className="h-56 animate-pulse rounded-xl bg-neutral-100" />,
-});
+const LocationPicker = dynamic(
+  () => import("@/components/features/registry/location-picker"),
+  {
+    ssr: false,
+    loading: () => <div className="h-56 animate-pulse rounded-xl bg-neutral-100" />,
+  },
+);
 
 const tabs = ["overview", "household", "activity"] as const;
 type Tab = (typeof tabs)[number];
 
 const formatDate = (value?: string | null) =>
-  value ? new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(new Date(value)) : "Not Recorded";
+  value
+    ? new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(new Date(value))
+    : "Not Recorded";
 
 const age = (birth?: string | null) =>
   birth ? Math.floor((Date.now() - new Date(birth).getTime()) / 31557600000) : null;
@@ -92,23 +97,33 @@ export default function CitizenDetailPage() {
 
   const citizen = useQuery({
     queryKey: ["admin", "citizen", id],
-    queryFn: () => api.get<RegistryMemberDetailOut>(`/admin/members/${id}`).then((r) => r.data),
+    queryFn: () =>
+      api.get<RegistryMemberDetailOut>(`/admin/members/${id}`).then((r) => r.data),
   });
 
   const household = useQuery({
     queryKey: ["admin", "citizen", id, "household"],
-    queryFn: () => api.get<HouseholdDetailOut>(`/admin/households/${citizen.data!.household_id}`).then((r) => r.data),
+    queryFn: () =>
+      api
+        .get<HouseholdDetailOut>(`/admin/households/${citizen.data!.household_id}`)
+        .then((r) => r.data),
     enabled: Boolean(citizen.data),
   });
 
   const activity = useQuery({
     queryKey: ["admin", "citizen", id, "activity"],
-    queryFn: () => api.get<RegistryMemberActivityOut>(`/admin/members/${id}/activity`).then((r) => r.data),
+    queryFn: () =>
+      api
+        .get<RegistryMemberActivityOut>(`/admin/members/${id}/activity`)
+        .then((r) => r.data),
   });
 
   const households = useQuery({
     queryKey: ["admin", "households", "transfer-options"],
-    queryFn: () => api.get<{ items: HouseholdOut[] }>("/admin/households", { params: { size: 1000 } }).then((r) => r.data.items),
+    queryFn: () =>
+      api
+        .get<{ items: HouseholdOut[] }>("/admin/households", { params: { size: 1000 } })
+        .then((r) => r.data.items),
   });
 
   const remove = useMutation({
@@ -132,11 +147,19 @@ export default function CitizenDetailPage() {
     onError: (error) => toast.error(toDisplayError(error).detail),
   });
 
-  if (citizen.isLoading) return <div className="min-h-72 animate-pulse rounded-2xl bg-white" />;
-  if (!citizen.data) return <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">Citizen could not be loaded.</div>;
+  if (citizen.isLoading)
+    return <div className="min-h-72 animate-pulse rounded-2xl bg-white" />;
+  if (!citizen.data)
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">
+        Citizen could not be loaded.
+      </div>
+    );
 
   const row = citizen.data;
-  const current = tabs.includes(search.get("tab") as Tab) ? (search.get("tab") as Tab) : "overview";
+  const current = tabs.includes(search.get("tab") as Tab)
+    ? (search.get("tab") as Tab)
+    : "overview";
 
   return (
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-4 pb-10">
@@ -145,13 +168,23 @@ export default function CitizenDetailPage() {
         description={`${row.full_name} · ${row.household_reference_no} · ${row.area_name}`}
         action={
           <div className="flex flex-wrap justify-end gap-2">
-            <Button asChild size="sm" variant="outline" className="cursor-pointer gap-1.5">
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="cursor-pointer gap-1.5"
+            >
               <Link href={`/admin/households/${row.household_id}` as Route}>
                 <Home className="size-4" />
                 Household Context
               </Link>
             </Button>
-            <Button asChild size="sm" variant="warning" className="cursor-pointer gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100">
+            <Button
+              asChild
+              size="sm"
+              variant="warning"
+              className="cursor-pointer gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+            >
               <Link href={`/admin/citizens/${id}/edit` as Route}>
                 <Pencil className="size-4" />
                 Edit Citizen
@@ -182,7 +215,10 @@ export default function CitizenDetailPage() {
         }
       />
 
-      <nav className="grid overflow-hidden rounded-2xl border border-emerald-200 bg-white sm:grid-cols-3" aria-label="Citizen detail sections">
+      <nav
+        className="grid overflow-hidden rounded-2xl border border-emerald-200 bg-white sm:grid-cols-3"
+        aria-label="Citizen detail sections"
+      >
         {(
           [
             ["overview", UserRound, "Overview"],
@@ -192,7 +228,11 @@ export default function CitizenDetailPage() {
         ).map(([key, Icon, label]) => (
           <button
             key={key}
-            onClick={() => router.replace(`/admin/citizens/${id}?tab=${key}` as Route, { scroll: false })}
+            onClick={() =>
+              router.replace(`/admin/citizens/${id}?tab=${key}` as Route, {
+                scroll: false,
+              })
+            }
             className={`flex h-14 cursor-pointer items-center justify-center gap-2 border-b-2 text-sm font-bold transition-colors ${
               current === key
                 ? "border-emerald-600 bg-emerald-50 text-emerald-800"
@@ -239,7 +279,8 @@ function Overview({ citizen }: { citizen: RegistryMemberDetailOut }) {
             <div>
               <p className="text-xl font-bold text-neutral-900">{citizen.full_name}</p>
               <p className="mt-1 text-sm text-neutral-500">
-                {citizen.is_head ? "Household Head" : citizen.relationship_to_head} · Registered {formatDate(citizen.created_at)}
+                {citizen.is_head ? "Household Head" : citizen.relationship_to_head} ·
+                Registered {formatDate(citizen.created_at)}
               </p>
             </div>
           </div>
@@ -251,10 +292,18 @@ function Overview({ citizen }: { citizen: RegistryMemberDetailOut }) {
             />
             <Info
               label="Sex"
-              value={citizen.sex ? citizen.sex[0].toUpperCase() + citizen.sex.slice(1) : "Not Recorded"}
+              value={
+                citizen.sex
+                  ? citizen.sex[0].toUpperCase() + citizen.sex.slice(1)
+                  : "Not Recorded"
+              }
               icon={UserRound}
             />
-            <Info label="Contact Number" value={citizen.contact_number ?? "No Contact Number"} icon={Phone} />
+            <Info
+              label="Contact Number"
+              value={citizen.contact_number ?? "No Contact Number"}
+              icon={Phone}
+            />
           </div>
         </CardContent>
       </Card>
@@ -282,7 +331,10 @@ function Overview({ citizen }: { citizen: RegistryMemberDetailOut }) {
             </p>
           ) : null}
           <p className="mt-5 border-t border-neutral-100 pt-3 text-xs text-neutral-500">
-            Account Link: {citizen.household_head_user_id && citizen.is_head ? "Linked household-head account" : "No direct account link"}
+            Account Link:{" "}
+            {citizen.household_head_user_id && citizen.is_head
+              ? "Linked household-head account"
+              : "No direct account link"}
             <br />
             Profile updated {formatDate(citizen.updated_at)}
           </p>
@@ -333,7 +385,9 @@ function HouseholdTab({
     onError: (error) => toast.error(toDisplayError(error).detail),
   });
 
-  const point = household?.location ? { lat: household.location.coordinates[1], lng: household.location.coordinates[0] } : null;
+  const point = household?.location
+    ? { lat: household.location.coordinates[1], lng: household.location.coordinates[0] }
+    : null;
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
@@ -342,8 +396,12 @@ function HouseholdTab({
           <CardContent className="p-5">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs font-bold tracking-wider text-sky-700 uppercase">Household Context</p>
-                <h2 className="mt-1 text-xl font-bold">{citizen.household_reference_no}</h2>
+                <p className="text-xs font-bold tracking-wider text-sky-700 uppercase">
+                  Household Context
+                </p>
+                <h2 className="mt-1 text-xl font-bold">
+                  {citizen.household_reference_no}
+                </h2>
                 <p className="mt-1 text-sm text-neutral-500">
                   Headed by {citizen.household_head_name} · {citizen.area_name}
                 </p>
@@ -358,7 +416,12 @@ function HouseholdTab({
             </p>
             {point ? (
               <div className="mt-3 overflow-hidden rounded-xl">
-                <LocationPicker value={point} onChange={() => undefined} readOnly caption="Saved household map location." />
+                <LocationPicker
+                  value={point}
+                  onChange={() => undefined}
+                  readOnly
+                  caption="Saved household map location."
+                />
               </div>
             ) : (
               <p className="mt-3 rounded-xl border border-dashed border-amber-200 p-8 text-center text-sm text-amber-700">
@@ -371,8 +434,12 @@ function HouseholdTab({
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold tracking-wider text-emerald-700 uppercase">Current Household Roster</p>
-                <h3 className="mt-1 font-bold">{household?.members.length ?? 0} Members</h3>
+                <p className="text-xs font-bold tracking-wider text-emerald-700 uppercase">
+                  Current Household Roster
+                </p>
+                <h3 className="mt-1 font-bold">
+                  {household?.members.length ?? 0} Members
+                </h3>
               </div>
             </div>
             <div className="mt-4 space-y-2">
@@ -389,14 +456,16 @@ function HouseholdTab({
                     <p className="font-semibold text-neutral-950">
                       {member.full_name}
                       {member.id === citizen.id ? (
-                        <span className="ml-2 text-xs font-bold text-emerald-700">· Current Citizen</span>
+                        <span className="ml-2 text-xs font-bold text-emerald-700">
+                          · Current Citizen
+                        </span>
                       ) : null}
                     </p>
                     <p className="mt-0.5 text-xs text-neutral-500">
                       {member.is_head ? (
                         <span className="font-bold text-amber-700">Household Head</span>
                       ) : (
-                        member.relationship_to_head ?? "Household Member"
+                        (member.relationship_to_head ?? "Household Member")
                       )}
                     </p>
                   </div>
@@ -404,11 +473,15 @@ function HouseholdTab({
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={member.is_head || makeHeadMember.isPending || Boolean(citizen.household_head_user_id)}
+                      disabled={
+                        member.is_head ||
+                        makeHeadMember.isPending ||
+                        Boolean(citizen.household_head_user_id)
+                      }
                       className={`size-8 min-h-8 px-0 transition-colors ${
                         member.is_head
-                          ? "border-amber-300/80 bg-amber-100/70 text-amber-700 opacity-90 cursor-not-allowed"
-                          : "border-amber-200 bg-amber-50/80 text-amber-800 hover:bg-amber-100 hover:border-amber-300 cursor-pointer"
+                          ? "cursor-not-allowed border-amber-300/80 bg-amber-100/70 text-amber-700 opacity-90"
+                          : "cursor-pointer border-amber-200 bg-amber-50/80 text-amber-800 hover:border-amber-300 hover:bg-amber-100"
                       }`}
                       title={
                         member.is_head
@@ -427,7 +500,9 @@ function HouseholdTab({
                       <Crown
                         aria-hidden
                         className={`size-3.5 shrink-0 ${
-                          member.is_head ? "text-amber-600 fill-amber-500/40" : "text-amber-600"
+                          member.is_head
+                            ? "fill-amber-500/40 text-amber-600"
+                            : "text-amber-600"
                         }`}
                       />
                     </Button>
@@ -462,12 +537,18 @@ function HouseholdTab({
       </div>
       <Card className="h-fit border-amber-200 bg-gradient-to-br from-amber-50/50 to-white">
         <CardContent className="p-5">
-          <p className="text-xs font-bold tracking-wider text-amber-700 uppercase">Lifecycle Actions</p>
+          <p className="text-xs font-bold tracking-wider text-amber-700 uppercase">
+            Lifecycle Actions
+          </p>
           <h3 className="mt-1 font-bold">Household Placement</h3>
-          <p className="mt-1 text-xs text-neutral-500">These actions preserve the citizen ID and linked history.</p>
+          <p className="mt-1 text-xs text-neutral-500">
+            These actions preserve the citizen ID and linked history.
+          </p>
           <div className="mt-5 space-y-3">
             {citizen.is_head ? (
-              <p className="rounded-xl border bg-white p-3 text-sm text-neutral-700">This citizen is the current household head.</p>
+              <p className="rounded-xl border bg-white p-3 text-sm text-neutral-700">
+                This citizen is the current household head.
+              </p>
             ) : (
               <>
                 <LifecycleDialog
@@ -481,7 +562,9 @@ function HouseholdTab({
                   }
                 >
                   <SearchableHouseholdSelect
-                    households={households.filter((item) => item.id !== citizen.household_id)}
+                    households={households.filter(
+                      (item) => item.id !== citizen.household_id,
+                    )}
                     value={destination}
                     onChange={(val) => setDestination(val)}
                     placeholder="Search Destination Household"
@@ -490,15 +573,29 @@ function HouseholdTab({
                     <SelectTrigger className="h-10 w-full rounded-lg border-neutral-200 bg-white text-sm font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">
                       <SelectValue placeholder="Select relationship" />
                     </SelectTrigger>
-                    <SelectContent align="start" className="w-[var(--radix-select-trigger-width)] min-w-[12rem]">
-                      {["Spouse", "Child", "Parent", "Sibling", "Grandparent", "Grandchild", "Others"].map((item) => (
+                    <SelectContent
+                      align="start"
+                      className="w-[var(--radix-select-trigger-width)] min-w-[12rem]"
+                    >
+                      {[
+                        "Spouse",
+                        "Child",
+                        "Parent",
+                        "Sibling",
+                        "Grandparent",
+                        "Grandchild",
+                        "Others",
+                      ].map((item) => (
                         <SelectItem key={item} value={item}>
                           {item}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button disabled={!destination || transfer.isPending} onClick={() => transfer.mutate()}>
+                  <Button
+                    disabled={!destination || transfer.isPending}
+                    onClick={() => transfer.mutate()}
+                  >
                     Confirm Transfer
                   </Button>
                 </LifecycleDialog>
@@ -511,7 +608,11 @@ function HouseholdTab({
                   <Crown className="size-4" />
                   Make Household Head
                 </Button>
-                <Button asChild variant="outline" className="w-full justify-start gap-2 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="w-full justify-start gap-2 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                >
                   <Link href={`/admin/citizens/${citizen.id}/promote` as Route}>
                     <Home className="size-4" />
                     Create New Household
@@ -526,7 +627,13 @@ function HouseholdTab({
   );
 }
 
-function ActivityTab({ activity, loading }: { activity?: RegistryMemberActivityOut; loading: boolean }) {
+function ActivityTab({
+  activity,
+  loading,
+}: {
+  activity?: RegistryMemberActivityOut;
+  loading: boolean;
+}) {
   if (loading) return <div className="min-h-64 animate-pulse rounded-2xl bg-white" />;
   return (
     <div className="space-y-4">
@@ -536,17 +643,34 @@ function ActivityTab({ activity, loading }: { activity?: RegistryMemberActivityO
             <ShieldCheck className="size-5 text-violet-600" />
             Current Emergency Status
           </p>
-          {activity?.safety ? (
-            <div className="mt-4 flex items-center justify-between rounded-xl bg-white p-4 shadow-2xs">
-              <div>
-                <b className="text-neutral-900">{activity.safety.event_name}</b>
-                <p className="text-xs text-neutral-500">
-                  {activity.safety.set_method ? `Recorded via ${activity.safety.set_method}` : "No status has been recorded"}
-                </p>
-              </div>
-              <Badge tone={activity.safety.status === "safe" ? "success" : activity.safety.status === "needs_rescue" ? "danger" : "warning"}>
-                {activity.safety.status.replaceAll("_", " ")}
-              </Badge>
+          {activity?.safety.length ? (
+            <div className="mt-4 space-y-2">
+              {activity.safety.map((eventSafety) => (
+                <div
+                  key={eventSafety.event_id}
+                  className="flex items-center justify-between rounded-xl bg-white p-4 shadow-2xs"
+                >
+                  <div>
+                    <b className="text-neutral-900">{eventSafety.event_name}</b>
+                    <p className="text-xs text-neutral-500">
+                      {eventSafety.set_method
+                        ? `Recorded via ${eventSafety.set_method}`
+                        : "No status has been recorded"}
+                    </p>
+                  </div>
+                  <Badge
+                    tone={
+                      eventSafety.status === "safe"
+                        ? "success"
+                        : eventSafety.status === "needs_rescue"
+                          ? "danger"
+                          : "warning"
+                    }
+                  >
+                    {eventSafety.status.replaceAll("_", " ")}
+                  </Badge>
+                </div>
+              ))}
             </div>
           ) : (
             <p className="mt-3 text-sm text-neutral-500">No active emergency event.</p>
@@ -554,7 +678,12 @@ function ActivityTab({ activity, loading }: { activity?: RegistryMemberActivityO
         </CardContent>
       </Card>
       <div className="grid gap-4 lg:grid-cols-3">
-        <ActivityCard title="Evacuation History" icon={Home} items={activity?.evacuations ?? []} empty="No member-linked evacuation check-ins." />
+        <ActivityCard
+          title="Evacuation History"
+          icon={Home}
+          items={activity?.evacuations ?? []}
+          empty="No member-linked evacuation check-ins."
+        />
         <ActivityCard
           title="Household-Linked Rescue Requests"
           icon={Activity}
@@ -572,7 +701,17 @@ function ActivityTab({ activity, loading }: { activity?: RegistryMemberActivityO
   );
 }
 
-function ActivityCard({ title, icon: Icon, items, empty }: { title: string; icon: typeof Home; items: HouseholdActivityItem[]; empty: string }) {
+function ActivityCard({
+  title,
+  icon: Icon,
+  items,
+  empty,
+}: {
+  title: string;
+  icon: typeof Home;
+  items: HouseholdActivityItem[];
+  empty: string;
+}) {
   return (
     <Card>
       <CardContent className="p-5">
@@ -600,7 +739,15 @@ function ActivityCard({ title, icon: Icon, items, empty }: { title: string; icon
   );
 }
 
-function Info({ label, value, icon: Icon }: { label: string; value: string; icon: typeof UserRound }) {
+function Info({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  icon: typeof UserRound;
+}) {
   return (
     <div className="rounded-xl border border-emerald-100 bg-white p-3">
       <p className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-neutral-500 uppercase">

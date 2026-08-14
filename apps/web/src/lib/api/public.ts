@@ -119,7 +119,7 @@ export async function getActiveAlert(): Promise<PublicAnnouncement | null> {
 }
 
 /**
- * The currently declared emergency, or null when none is active (FR-SAF-018).
+ * Active emergencies, newest first (FR-SAF-018/020).
  *
  * `GET /public/emergency-events/active`
  *
@@ -128,15 +128,15 @@ export async function getActiveAlert(): Promise<PublicAnnouncement | null> {
  * portal safety check-in, the rescue form) read it once per load rather than
  * banner-polling for it.
  */
-export async function getActiveEmergencyEvent(): Promise<PublicEmergencyEvent | null> {
+export async function getActiveEmergencyEvents(): Promise<PublicEmergencyEvent[]> {
   try {
     return await serverGet(
       "/public/emergency-events/active",
-      publicEmergencyEventSchema.nullable(),
+      publicEmergencyEventSchema.array(),
     );
   } catch (error) {
     logDegraded("/public/emergency-events/active", error);
-    return null;
+    return [];
   }
 }
 

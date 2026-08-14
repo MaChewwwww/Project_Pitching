@@ -15,6 +15,8 @@ import type {
   SafetyStatusSelfIn,
   SafetyStatusValue,
 } from "@/lib/api/safety-types";
+import type { PublicEmergencyEvent, PublicEvacCenter } from "@/lib/api/public-types";
+import * as React from "react";
 
 /**
  * FR-SAF-001…003 — self-service safety check-in. `PortalGate` guarantees the
@@ -23,10 +25,34 @@ import type {
  */
 export default function PortalSafetyPage() {
   const queryClient = useQueryClient();
+  const [eventId, setEventId] = React.useState("");
+  const [centerId, setCenterId] = React.useState("");
+
+  const activeEventsQuery = useQuery({
+    queryKey: ["public", "active-emergency-events"],
+    queryFn: () =>
+      api
+        .get<PublicEmergencyEvent[]>("/public/emergency-events/active")
+        .then((response) => response.data),
+  });
+  const centersQuery = useQuery({
+    queryKey: ["public", "evacuation-centers"],
+    queryFn: () =>
+      api
+        .get<{ items: PublicEvacCenter[] }>("/public/evacuation-centers", {
+          params: { size: 100 },
+        })
+        .then((response) => response.data.items),
+  });
+  const resolvedEventId = eventId || activeEventsQuery.data?.[0]?.id || "";
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["me", "safety"],
-    queryFn: () => api.get<MySafetyOut>("/me/safety").then((r) => r.data),
+    queryKey: ["me", "safety", resolvedEventId],
+    queryFn: () =>
+      api
+        .get<MySafetyOut>("/me/safety", { params: { event_id: resolvedEventId } })
+        .then((r) => r.data),
+    enabled: Boolean(resolvedEventId),
   });
 
   const submitMutation = useMutation({
@@ -34,6 +60,7 @@ export default function PortalSafetyPage() {
     onSuccess: () => {
       toast.success("Status updated");
       queryClient.invalidateQueries({ queryKey: ["me", "safety"] });
+      queryClient.invalidateQueries({ queryKey: ["public", "evacuation-centers"] });
     },
     onError: (error) => {
       toast.error(toDisplayError(error).detail);
@@ -48,9 +75,26 @@ export default function PortalSafetyPage() {
         description="Let the barangay know who in your household is safe, and who still needs help."
       />
 
-      {isLoading ? (
+      {activeEventsQuery.data && activeEventsQuery.data.length > 1 ? (
+        <label className="flex flex-col gap-1 text-sm font-semibold text-neutral-700">
+          Emergency event
+          <select
+            value={resolvedEventId}
+            onChange={(event) => setEventId(event.target.value)}
+            className="focus-visible:ring-primary-500 min-h-11 rounded-lg border border-neutral-200 bg-white px-3 font-normal focus-visible:ring-2 focus-visible:outline-none"
+          >
+            {activeEventsQuery.data.map((event) => (
+              <option key={event.id} value={event.id}>
+                {event.name} · {event.type}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+
+      {isLoading || activeEventsQuery.isLoading ? (
         <p className="text-body-sm text-neutral-500">Loading…</p>
-      ) : isError ? (
+      ) : isError || activeEventsQuery.isError ? (
         <Card>
           <CardContent className="flex flex-col gap-3">
             <p className="text-body-sm text-neutral-600">
@@ -59,7 +103,9 @@ export default function PortalSafetyPage() {
             <button
               type="button"
               className="text-body-sm text-primary-700 font-semibold underline"
-              onClick={() => refetch()}
+              onClick={() => {
+                void Promise.all([refetch(), activeEventsQuery.refetch()]);
+              }}
             >
               Try again
             </button>
@@ -97,6 +143,8 @@ export default function PortalSafetyPage() {
                 status,
                 scope: "member",
                 member_ids: [memberId],
+                event_id: resolvedEventId,
+                evac_center_id: centerId || null,
               })
             }
             onMarkHousehold={(status, acknowledgedMemberIds) =>
@@ -104,9 +152,31 @@ export default function PortalSafetyPage() {
                 status,
                 scope: "household",
                 acknowledged_member_ids: acknowledgedMemberIds,
+                event_id: resolvedEventId,
+                evac_center_id: centerId || null,
               })
             }
           />
+
+          <label className="flex flex-col gap-1 text-sm font-semibold text-neutral-700">
+            Optional evacuation center
+            <select
+              value={centerId}
+              onChange={(event) => setCenterId(event.target.value)}
+              className="focus-visible:ring-primary-500 min-h-11 rounded-lg border border-neutral-200 bg-white px-3 font-normal focus-visible:ring-2 focus-visible:outline-none"
+            >
+              <option value="">No new center assignment</option>
+              {centersQuery.data?.map((center) => (
+                <option key={center.id} value={center.id}>
+                  {center.facility.name} · {center.occupancy}/{center.capacity ?? "?"}
+                  {center.is_at_capacity ? " · at capacity" : ""}
+                </option>
+              ))}
+            </select>
+            <span className="text-xs font-normal text-neutral-500">
+              Selecting a center records physical occupancy. Capacity is advisory.
+            </span>
+          </label>
 
           <PortalEvacuationStatusCard />
         </>

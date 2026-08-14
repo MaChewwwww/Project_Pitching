@@ -129,11 +129,11 @@ export interface AnnouncementDetail extends PublicAnnouncement {
 export type EmergencyEventType = "flood" | "earthquake" | "typhoon" | "fire" | "other";
 
 /**
- * The currently declared emergency, scoping every safety check-in and rescue
- * request (FR-SAF-018). No `declared_by_*` — that is barangay-staff
- * information, not public.
+ * One active emergency in the newest-first public list (FR-SAF-018/020).
+ * No `declared_by_*` — that is barangay-staff information, not public.
  */
 export interface PublicEmergencyEvent {
+  id: string;
   name: string;
   type: EmergencyEventType;
   started_at: string;

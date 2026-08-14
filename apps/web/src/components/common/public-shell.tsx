@@ -14,7 +14,7 @@ import type {
 export interface PublicShellProps {
   children: React.ReactNode;
   activeAlert: PublicAnnouncement | null;
-  emergencyEvent?: PublicEmergencyEvent | null;
+  emergencyEvents?: PublicEmergencyEvent[];
   hotlines: PublicHotline[];
   primaryHotline: PublicHotline;
 }
@@ -22,7 +22,7 @@ export interface PublicShellProps {
 export function PublicShell({
   children,
   activeAlert,
-  emergencyEvent,
+  emergencyEvents,
   hotlines,
   primaryHotline,
 }: PublicShellProps) {
@@ -34,7 +34,7 @@ export function PublicShell({
       <div className="sticky top-0 z-50">
         <EmergencyAlertBanner
           alert={activeAlert}
-          emergencyEvent={emergencyEvent}
+          emergencyEvents={emergencyEvents}
           primaryHotline={primaryHotline}
           hotlines={hotlines}
         />

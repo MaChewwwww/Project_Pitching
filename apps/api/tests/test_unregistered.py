@@ -4,13 +4,16 @@ rescue, in one action, without touching the registered coverage figures.
 
 from __future__ import annotations
 
+from datetime import date
+
 import pytest
 from factories import get_area, make_event, make_household
-from pydantic import ValidationError
 from sqlalchemy import select
 
 from src.core.deps import AuthenticatedUser
 from src.core.errors import ConflictError
+from src.modules.registry import service as registry_service
+from src.modules.registry.schemas import MemberFromUnregisteredIn
 from src.modules.safety import service
 from src.modules.safety.models import SafetyStatus
 from src.modules.safety.schemas import UnregisteredPersonIn, UnregisteredPersonPatch
@@ -76,9 +79,11 @@ async def test_registered_totals_do_not_move_when_an_unregistered_person_is_adde
     assert after.unregistered_safe >= 1
 
 
-async def test_missing_location_and_note_is_rejected():
-    with pytest.raises(ValidationError):
-        UnregisteredPersonIn(full_name="No location given", initial_status="safe")
+async def test_location_is_optional():
+    body = UnregisteredPersonIn(full_name="No location given", initial_status="safe", is_pwd=True)
+    assert body.latitude is None
+    assert body.location_note is None
+    assert body.is_pwd is True
 
 
 async def test_update_edits_details_without_touching_status(session, demo_users):
@@ -102,3 +107,57 @@ async def test_update_edits_details_without_touching_status(session, demo_users)
     )
     assert updated.full_name == "Corrected Name"
     assert updated.status == "safe"
+
+
+async def test_conversion_transfers_status_once_and_keeps_history(session, demo_users):
+    area = await get_area(session)
+    household = await make_household(session, area=area)
+    event = await make_event(session)
+    admin = _actor(demo_users["admin"])
+    person = await service.create_unregistered(
+        session,
+        body=UnregisteredPersonIn(
+            event_id=event.id,
+            full_name="Walk-in Resident",
+            initial_status="safe",
+            is_pwd=True,
+        ),
+        actor=admin,
+        ip=None,
+    )
+    member = await registry_service.add_member_from_unregistered(
+        session,
+        household_id=household.id,
+        body=MemberFromUnregisteredIn(
+            unregistered_person_id=person.id,
+            birth_date=date(1990, 1, 1),
+            sex="female",
+            relationship_to_head="Sibling",
+        ),
+        actor=admin,
+    )
+    converted = await service.get_unregistered_or_404(session, person.id)
+    assert converted.converted_member_id == member.id
+    assert converted.converted_household_id == household.id
+    assert member.is_pwd is True
+    member_status = await session.scalar(
+        select(SafetyStatus).where(
+            SafetyStatus.event_id == event.id,
+            SafetyStatus.member_id == member.id,
+            SafetyStatus.superseded_at.is_(None),
+        )
+    )
+    assert member_status.status == "safe"
+
+    with pytest.raises(ConflictError):
+        await registry_service.add_member_from_unregistered(
+            session,
+            household_id=household.id,
+            body=MemberFromUnregisteredIn(
+                unregistered_person_id=person.id,
+                birth_date=date(1990, 1, 1),
+                sex="female",
+                relationship_to_head="Sibling",
+            ),
+            actor=admin,
+        )

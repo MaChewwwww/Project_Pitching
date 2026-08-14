@@ -4,7 +4,7 @@ import * as React from "react";
 import dynamic from "next/dynamic";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { api, toDisplayError } from "@/lib/api/client";
 import type { UnregisteredPersonIn, UnregisteredPersonOut } from "@/lib/api/safety-types";
+import type { PublicEvacCenter } from "@/lib/api/public-types";
 
 const LocationPicker = dynamic(
   () => import("@/components/features/registry/location-picker"),
@@ -34,29 +35,41 @@ const LocationPicker = dynamic(
  * fields beyond what the requirement asks for: no age, no household guess,
  * nothing that would turn a doorway conversation into a form.
  */
-const schema = z
-  .object({
-    full_name: z.string().min(1, "Enter a name"),
-    contact_number: z.string().optional(),
-    location: z.object({ lat: z.number(), lng: z.number() }).nullable(),
-    location_note: z.string().optional(),
-    initial_status: z.enum(["safe", "needs_rescue"]),
-  })
-  .superRefine((values, ctx) => {
-    if (!values.location && !values.location_note) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Give a location pin or describe where they are.",
-        path: ["location_note"],
-      });
-    }
-  });
+const schema = z.object({
+  full_name: z.string().min(1, "Enter a name"),
+  contact_number: z.string().optional(),
+  location: z.object({ lat: z.number(), lng: z.number() }).nullable(),
+  location_note: z.string().optional(),
+  initial_status: z.enum(["safe", "needs_rescue"]),
+  evac_center_id: z.string().optional(),
+  is_child: z.boolean(),
+  is_senior: z.boolean(),
+  is_pwd: z.boolean(),
+  is_pregnant: z.boolean(),
+  is_lactating: z.boolean(),
+  has_chronic_condition: z.boolean(),
+  chronic_condition_note: z.string().optional(),
+  is_bedridden: z.boolean(),
+});
 
 type FormValues = z.infer<typeof schema>;
 
-export function UnregisteredPersonForm({ onDone }: { onDone: () => void }) {
+export function UnregisteredPersonForm({
+  onDone,
+  eventId,
+}: {
+  onDone: () => void;
+  eventId: string;
+}) {
   const queryClient = useQueryClient();
   const [serverError, setServerError] = React.useState<string | null>(null);
+  const centersQuery = useQuery({
+    queryKey: ["admin", "evacuation-centers"],
+    queryFn: () =>
+      api
+        .get<PublicEvacCenter[]>("/admin/evacuation-centers")
+        .then((response) => response.data),
+  });
 
   const {
     control,
@@ -71,6 +84,15 @@ export function UnregisteredPersonForm({ onDone }: { onDone: () => void }) {
       location: null,
       location_note: "",
       initial_status: "safe",
+      evac_center_id: "",
+      is_child: false,
+      is_senior: false,
+      is_pwd: false,
+      is_pregnant: false,
+      is_lactating: false,
+      has_chronic_condition: false,
+      chronic_condition_note: "",
+      is_bedridden: false,
     },
   });
 
@@ -94,6 +116,16 @@ export function UnregisteredPersonForm({ onDone }: { onDone: () => void }) {
       longitude: values.location?.lng ?? null,
       location_note: values.location_note || null,
       initial_status: values.initial_status,
+      event_id: eventId,
+      evac_center_id: values.evac_center_id || null,
+      is_child: values.is_child,
+      is_senior: values.is_senior,
+      is_pwd: values.is_pwd,
+      is_pregnant: values.is_pregnant,
+      is_lactating: values.is_lactating,
+      has_chronic_condition: values.has_chronic_condition,
+      chronic_condition_note: values.chronic_condition_note || null,
+      is_bedridden: values.is_bedridden,
     });
   }
 
@@ -113,7 +145,7 @@ export function UnregisteredPersonForm({ onDone }: { onDone: () => void }) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label>Location</Label>
+        <Label>Location (optional)</Label>
         <Controller
           control={control}
           name="location"
@@ -128,12 +160,70 @@ export function UnregisteredPersonForm({ onDone }: { onDone: () => void }) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="location_note">Or describe the location</Label>
+        <Label htmlFor="location_note">Location note (optional)</Label>
         <Input id="location_note" {...register("location_note")} />
         {errors.location_note ? (
           <p className="text-danger text-xs">{errors.location_note.message}</p>
         ) : null}
       </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label>Evacuation center (optional)</Label>
+        <Controller
+          control={control}
+          name="evac_center_id"
+          render={({ field }) => (
+            <Select
+              value={field.value || "none"}
+              onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No center assignment</SelectItem>
+                {centersQuery.data
+                  ?.filter((center) => center.is_open)
+                  .map((center) => (
+                    <SelectItem key={center.id} value={center.id}>
+                      {center.facility.name} · {center.occupancy}/{center.capacity ?? "?"}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+      </div>
+
+      <fieldset className="rounded-lg border border-neutral-200 p-3">
+        <legend className="px-1 text-sm font-semibold text-neutral-800">
+          Support needs
+        </legend>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          {[
+            ["is_child", "Child"],
+            ["is_senior", "Senior"],
+            ["is_pwd", "PWD"],
+            ["is_pregnant", "Pregnant"],
+            ["is_lactating", "Lactating"],
+            ["has_chronic_condition", "Chronic condition"],
+            ["is_bedridden", "Mobility-limited"],
+          ].map(([name, label]) => (
+            <label key={name} className="flex min-h-10 items-center gap-2">
+              <input
+                type="checkbox"
+                {...register(name as keyof FormValues)}
+                className="accent-primary-700 size-4"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+        <div className="mt-2">
+          <Label htmlFor="chronic_condition_note">Condition note (optional)</Label>
+          <Input id="chronic_condition_note" {...register("chronic_condition_note")} />
+        </div>
+      </fieldset>
 
       <div className="flex flex-col gap-1.5">
         <Label>Status</Label>

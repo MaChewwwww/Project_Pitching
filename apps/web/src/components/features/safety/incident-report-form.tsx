@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Camera, X } from "lucide-react";
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api, toDisplayError } from "@/lib/api/client";
+import type { PublicEmergencyEvent } from "@/lib/api/public-types";
 import type { IncidentReportOut, IncidentType } from "@/lib/api/safety-types";
 
 const LocationPicker = dynamic(
@@ -84,12 +85,22 @@ export function IncidentReportForm({ onDone }: { onDone: () => void }) {
   const [photoPreview, setPhotoPreview] = React.useState<string | null>(null);
   const [photoError, setPhotoError] = React.useState<string | null>(null);
   const [serverError, setServerError] = React.useState<string | null>(null);
+  const [eventId, setEventId] = React.useState("");
+  const { data: activeEvents = [] } = useQuery({
+    queryKey: ["public", "active-emergency-events"],
+    queryFn: () =>
+      api
+        .get<PublicEmergencyEvent[]>("/public/emergency-events/active")
+        .then((response) => response.data),
+  });
+  const resolvedEventId =
+    eventId || (activeEvents.length === 1 ? activeEvents[0].id : "");
 
   const {
     control,
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -140,6 +151,10 @@ export function IncidentReportForm({ onDone }: { onDone: () => void }) {
 
   function onSubmit(values: FormValues) {
     setServerError(null);
+    if (activeEvents.length > 1 && !resolvedEventId) {
+      setServerError("Select which active emergency this report belongs to.");
+      return;
+    }
     const formData = new FormData();
     formData.append("type", values.type);
     formData.append("description", values.description);
@@ -148,12 +163,39 @@ export function IncidentReportForm({ onDone }: { onDone: () => void }) {
       formData.append("longitude", String(values.location.lng));
     }
     if (values.location_note) formData.append("location_note", values.location_note);
+    if (resolvedEventId) formData.append("event_id", resolvedEventId);
     if (photo) formData.append("photo", photo);
     mutation.mutate(formData);
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
+      {activeEvents.length > 0 ? (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="incident-event">Emergency event</Label>
+          <select
+            id="incident-event"
+            value={resolvedEventId}
+            onChange={(event) => setEventId(event.target.value)}
+            className="focus-visible:ring-primary-500 min-h-10 rounded-lg border border-neutral-200 bg-white px-3 text-sm focus-visible:ring-2 focus-visible:outline-none"
+          >
+            {activeEvents.length > 1 ? (
+              <option value="">Select an active event</option>
+            ) : null}
+            {activeEvents.map((event) => (
+              <option key={event.id} value={event.id}>
+                {event.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-neutral-500">
+            {activeEvents.length > 1
+              ? "Several emergencies are active, so this report must be linked explicitly."
+              : "This report will be linked to the active emergency."}
+          </p>
+        </div>
+      ) : null}
+
       <div className="flex flex-col gap-1.5">
         <Label>Type</Label>
         <Controller
@@ -250,8 +292,8 @@ export function IncidentReportForm({ onDone }: { onDone: () => void }) {
 
       {serverError ? <p className="text-danger text-body-sm">{serverError}</p> : null}
 
-      <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">
-        {isSubmitting ? "Submitting…" : "Submit report"}
+      <Button type="submit" disabled={mutation.isPending} className="mt-2 w-full">
+        {mutation.isPending ? "Submitting…" : "Submit report"}
       </Button>
     </form>
   );

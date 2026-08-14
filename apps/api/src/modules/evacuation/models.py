@@ -6,9 +6,9 @@ requirement needs is a doc gap to flag, not something to freelance around.
 Register every new models module in `src/db/models_registry.py`, or Alembic
 autogenerate will emit a migration that drops its table.
 
-`evac_checkin` is deliberately deferred — it FKs `member` and `unregistered_person`
-(FR-SAF-012), neither of which exists yet in this pass. `PublicEvacCenter.occupancy`
-is therefore always 0 until that lands (FR-EVC-004/005).
+`evac_checkin` identifies either a registered member or an unregistered walk-in.
+Its partial indexes enforce one open physical location per person across all
+concurrent emergency events (FR-EVC-004/005).
 """
 
 from __future__ import annotations
@@ -16,7 +16,17 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, Text, func, text
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Text,
+    func,
+    text,
+)
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -86,16 +96,34 @@ class EvacCheckin(UUIDPrimaryKeyMixin, Base):
         PGUUID(as_uuid=True), ForeignKey("member.id", ondelete="CASCADE"), nullable=True
     )
     unregistered_person_id: Mapped[uuid.UUID | None] = mapped_column(
-        PGUUID(as_uuid=True), ForeignKey("unregistered_person.id", ondelete="CASCADE"), nullable=True
+        PGUUID(as_uuid=True),
+        ForeignKey("unregistered_person.id", ondelete="CASCADE"),
+        nullable=True,
     )
     person_name: Mapped[str] = mapped_column(Text, nullable=False)
     checked_in_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
-    checked_out_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    checked_out_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     recorded_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("user.id", ondelete="SET NULL"), nullable=True
     )
 
+    __table_args__ = (
+        CheckConstraint(
+            "num_nonnulls(member_id, unregistered_person_id) = 1",
+            name="chk_evac_checkin_subject_exactly_one",
+        ),
+        Index(
+            "uq_evac_checkin_open_member",
+            "member_id",
+            unique=True,
+            postgresql_where=text("checked_out_at IS NULL AND member_id IS NOT NULL"),
+        ),
+        Index(
+            "uq_evac_checkin_open_unregistered",
+            "unregistered_person_id",
+            unique=True,
+            postgresql_where=text("checked_out_at IS NULL AND unregistered_person_id IS NOT NULL"),
+        ),
+    )

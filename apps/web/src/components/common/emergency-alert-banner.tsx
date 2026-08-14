@@ -27,7 +27,7 @@ export interface EmergencyAlertBannerProps {
    * alert has since expired while the event is still active. Falls back to a
    * generic evacuation banner rather than showing nothing (NFR-AVL-004).
    */
-  emergencyEvent?: PublicEmergencyEvent | null;
+  emergencyEvents?: PublicEmergencyEvent[];
   /** Primary hotline fallback if `hotlines` array is unsupplied. */
   primaryHotline?: PublicHotline;
   /** Array of active hotlines from public query. */
@@ -36,7 +36,7 @@ export interface EmergencyAlertBannerProps {
 
 export function EmergencyAlertBanner({
   alert,
-  emergencyEvent,
+  emergencyEvents = [],
   primaryHotline,
   hotlines,
 }: EmergencyAlertBannerProps) {
@@ -44,7 +44,7 @@ export function EmergencyAlertBanner({
   const nowTimestamp = React.useSyncExternalStore(
     () => () => {},
     () => Date.now(),
-    () => 0
+    () => 0,
   );
 
   const activeAlert = React.useMemo(() => {
@@ -56,6 +56,7 @@ export function EmergencyAlertBanner({
     return diffMs >= 0 && diffMs <= 24 * 60 * 60 * 1000 ? alert : null;
   }, [alert, nowTimestamp]);
 
+  const emergencyEvent = emergencyEvents[0] ?? null;
   if (!activeAlert && !emergencyEvent) return null;
 
   const severity = activeAlert?.severity || (emergencyEvent ? "emergency" : "info");
@@ -66,7 +67,9 @@ export function EmergencyAlertBanner({
 
   const title = activeAlert
     ? activeAlert.title
-    : `${emergencyEvent!.type} emergency declared`;
+    : `${emergencyEvent!.type} emergency declared${
+        emergencyEvents.length > 1 ? ` +${emergencyEvents.length - 1} more active` : ""
+      }`;
   const instruction = activeAlert
     ? activeAlert.instruction
     : "An emergency has been declared for the barangay. Follow official instructions and monitor this site for updates.";
@@ -91,12 +94,12 @@ export function EmergencyAlertBanner({
       aria-live="assertive"
       aria-atomic="true"
       className={cn(
-        "border-b shadow-md transition-all relative z-20 opacity-100",
+        "relative z-20 border-b opacity-100 shadow-md transition-all",
         severity === "info"
-          ? "bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 border-amber-500 text-amber-950"
+          ? "border-amber-500 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-amber-950"
           : severity === "warning"
-          ? "bg-gradient-to-r from-orange-500 via-amber-600 to-orange-600 border-orange-700 text-white"
-          : "bg-gradient-to-r from-red-700 via-red-600 to-rose-700 border-red-800 text-white"
+            ? "border-orange-700 bg-gradient-to-r from-orange-500 via-amber-600 to-orange-600 text-white"
+            : "border-red-800 bg-gradient-to-r from-red-700 via-red-600 to-rose-700 text-white",
       )}
     >
       <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-6">
@@ -105,7 +108,9 @@ export function EmergencyAlertBanner({
           <span
             className={cn(
               "grid size-10 shrink-0 place-items-center rounded-xl shadow-xs",
-              severity === "info" ? "bg-amber-950/15 text-amber-950" : "bg-white/20 text-white"
+              severity === "info"
+                ? "bg-amber-950/15 text-amber-950"
+                : "bg-white/20 text-white",
             )}
           >
             <BannerIcon
@@ -126,7 +131,7 @@ export function EmergencyAlertBanner({
                     "text-overline shrink-0 rounded-md border px-2 py-0.5 font-bold tracking-wider uppercase",
                     severity === "info"
                       ? "border-amber-950/30 bg-amber-950 text-white"
-                      : "border-white/30 bg-white/20 text-white"
+                      : "border-white/30 bg-white/20 text-white",
                   )}
                 >
                   {levelText}
@@ -135,7 +140,7 @@ export function EmergencyAlertBanner({
               <span
                 className={cn(
                   "text-caption hidden font-medium lg:inline-block",
-                  severity === "info" ? "text-amber-950/80" : "text-white/80"
+                  severity === "info" ? "text-amber-950/80" : "text-white/80",
                 )}
               >
                 • {meta}
@@ -146,7 +151,7 @@ export function EmergencyAlertBanner({
               <p
                 className={cn(
                   "text-body-sm line-clamp-1 leading-snug font-medium",
-                  severity === "info" ? "text-amber-950 font-semibold" : "text-white/95"
+                  severity === "info" ? "font-semibold text-amber-950" : "text-white/95",
                 )}
               >
                 {instruction}
@@ -168,8 +173,8 @@ export function EmergencyAlertBanner({
                     severity === "info"
                       ? "bg-amber-950 text-white hover:bg-black focus-visible:ring-amber-950/50"
                       : severity === "warning"
-                      ? "bg-white text-orange-700 hover:bg-neutral-100 focus-visible:ring-white/50"
-                      : "bg-white text-red-700 hover:bg-neutral-100 focus-visible:ring-white/50"
+                        ? "bg-white text-orange-700 hover:bg-neutral-100 focus-visible:ring-white/50"
+                        : "bg-white text-red-700 hover:bg-neutral-100 focus-visible:ring-white/50",
                   )}
                 >
                   <Phone aria-hidden className="size-4" strokeWidth={2.5} />

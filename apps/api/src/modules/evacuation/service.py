@@ -1,8 +1,8 @@
 """Business logic and transaction boundaries for the evacuation module (FR-EVC-*).
 
-Services own the transaction and may query their own module's models. A service
-never imports another module's `models.py` — cross-module access goes through
-the owning service (AGENTS.md Section 5).
+Services own transaction boundaries. Read-only identity/facility joins may use
+another module's models; writes remain behind the owning service boundary
+(AGENTS.md Section 5).
 """
 
 from __future__ import annotations
@@ -10,12 +10,12 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.audit import write_audit
 from src.core.deps import AuthenticatedUser
-from src.core.errors import ConflictError, NotFoundError
+from src.core.errors import ConflictError, NotFoundError, PermissionDeniedError
 from src.core.pagination import Page, page_meta, paginate
 from src.modules.evacuation.models import EmergencyEvent, EvacCenter, EvacCheckin
 from src.modules.evacuation.schemas import (
@@ -33,17 +33,11 @@ from src.modules.geo.service import point_to_geojson
 
 
 async def _occupancy_counts(session: AsyncSession) -> dict[uuid.UUID, int]:
-    """Calculate active check-ins (where checked_out_at IS NULL) for the currently active event."""
-    active_event = await get_active_event(session)
-    if active_event is None:
-        return {}
+    """Count physical people once, independent of how many events are active."""
     rows = (
         await session.execute(
             select(EvacCheckin.evac_center_id, func.count(EvacCheckin.id))
-            .where(
-                EvacCheckin.event_id == active_event.id,
-                EvacCheckin.checked_out_at.is_(None),
-            )
+            .where(EvacCheckin.checked_out_at.is_(None))
             .group_by(EvacCheckin.evac_center_id)
         )
     ).all()
@@ -97,7 +91,9 @@ async def list_evac_centers(
 ) -> Page[PublicEvacCenter]:
     occ_map = await _occupancy_counts(session)
     rows = await _rows(session, open_only=open_only)
-    items = [_to_public(ec, f, name, geojson, occ_map.get(ec.id, 0)) for ec, f, name, geojson in rows]
+    items = [
+        _to_public(ec, f, name, geojson, occ_map.get(ec.id, 0)) for ec, f, name, geojson in rows
+    ]
     total = len(items)
     start = (page - 1) * size
     return Page[PublicEvacCenter](items=items[start : start + size], **page_meta(total, page, size))
@@ -106,7 +102,9 @@ async def list_evac_centers(
 async def list_evac_centers_admin(session: AsyncSession) -> list[PublicEvacCenter]:
     occ_map = await _occupancy_counts(session)
     rows = await _rows(session, open_only=False)
-    return [_to_public(ec, f, name, geojson, occ_map.get(ec.id, 0)) for ec, f, name, geojson in rows]
+    return [
+        _to_public(ec, f, name, geojson, occ_map.get(ec.id, 0)) for ec, f, name, geojson in rows
+    ]
 
 
 async def count_total(session: AsyncSession) -> int:
@@ -138,7 +136,9 @@ async def get_event_names(
     return {row[0]: row[1] for row in rows}
 
 
-async def event_out(session: AsyncSession, event: EmergencyEvent) -> EmergencyEventOut:
+async def event_out(
+    session: AsyncSession, event: EmergencyEvent, *, occupancy_reset_count: int = 0
+) -> EmergencyEventOut:
     declared_by_name = None
     if event.declared_by_user_id is not None:
         from src.modules.users.models import User
@@ -155,11 +155,27 @@ async def event_out(session: AsyncSession, event: EmergencyEvent) -> EmergencyEv
         is_active=event.is_active,
         declared_by_user_id=event.declared_by_user_id,
         declared_by_name=declared_by_name,
+        occupancy_reset_count=occupancy_reset_count,
     )
 
 
 async def get_active_event(session: AsyncSession) -> EmergencyEvent | None:
-    return await session.scalar(select(EmergencyEvent).where(EmergencyEvent.is_active.is_(True)))
+    """Compatibility read: return an event only when selection is unambiguous."""
+    events = await list_active_events(session, limit=2)
+    return events[0] if len(events) == 1 else None
+
+
+async def list_active_events(
+    session: AsyncSession, *, limit: int | None = None
+) -> list[EmergencyEvent]:
+    stmt = (
+        select(EmergencyEvent)
+        .where(EmergencyEvent.is_active.is_(True))
+        .order_by(EmergencyEvent.started_at.desc(), EmergencyEvent.id.desc())
+    )
+    if limit is not None:
+        stmt = stmt.limit(limit)
+    return list((await session.execute(stmt)).scalars().all())
 
 
 async def get_event_or_404(session: AsyncSession, event_id: uuid.UUID) -> EmergencyEvent:
@@ -169,11 +185,21 @@ async def get_event_or_404(session: AsyncSession, event_id: uuid.UUID) -> Emerge
     return event
 
 
-async def require_active_event(session: AsyncSession) -> EmergencyEvent:
-    event = await get_active_event(session)
-    if event is None:
+async def require_active_event(
+    session: AsyncSession, event_id: uuid.UUID | None = None
+) -> EmergencyEvent:
+    if event_id is not None:
+        event = await get_event_or_404(session, event_id)
+        if not event.is_active:
+            raise ConflictError("The selected emergency event has ended.")
+        return event
+
+    events = await list_active_events(session, limit=2)
+    if not events:
         raise ConflictError("There is no active emergency event.")
-    return event
+    if len(events) > 1:
+        raise ConflictError("Multiple emergency events are active. Select an event.")
+    return events[0]
 
 
 async def list_events(
@@ -192,31 +218,6 @@ async def declare_event(
     actor: AuthenticatedUser,
     ip: str | None,
 ) -> EmergencyEvent:
-    active = await get_active_event(session)
-    if active is not None:
-        if not body.supersede_active:
-            raise ConflictError(
-                "An emergency event is already active. End it before declaring a new one."
-            )
-        active.is_active = False
-        active.ended_at = datetime.now(UTC)
-        if active.type in ("flood", "typhoon"):
-            from src.modules.weather import service as weather_service
-
-            await weather_service.finalize_flood_event_from_emergency(
-                session, emergency_event_id=active.id, ended_at=active.ended_at
-            )
-        await write_audit(
-            session,
-            actor_user_id=actor.id,
-            action="emergency_event.superseded",
-            entity_type="emergency_event",
-            entity_id=active.id,
-            changes={"name": active.name},
-            ip=ip,
-        )
-        await session.flush()
-
     event = EmergencyEvent(
         name=body.name,
         type=body.type,
@@ -227,7 +228,7 @@ async def declare_event(
     session.add(event)
     await session.flush()
 
-    if event.type in ("flood", "typhoon"):
+    if event.type == "flood":
         from src.modules.weather import service as weather_service
 
         await weather_service.create_flood_event_from_emergency(
@@ -252,7 +253,7 @@ async def declare_event(
 
 async def end_event(
     session: AsyncSession, event_id: uuid.UUID, *, actor: AuthenticatedUser, ip: str | None
-) -> EmergencyEvent:
+) -> tuple[EmergencyEvent, int]:
     event = await session.get(EmergencyEvent, event_id)
     if event is None:
         raise NotFoundError("Emergency event not found.")
@@ -261,12 +262,24 @@ async def end_event(
     event.is_active = False
     event.ended_at = datetime.now(UTC)
 
-    if event.type in ("flood", "typhoon"):
+    if event.type == "flood":
         from src.modules.weather import service as weather_service
 
         await weather_service.finalize_flood_event_from_emergency(
             session, emergency_event_id=event.id, ended_at=event.ended_at
         )
+
+    remaining_active = await session.scalar(
+        select(func.count(EmergencyEvent.id)).where(EmergencyEvent.is_active.is_(True))
+    )
+    reset_count = 0
+    if remaining_active == 0:
+        result = await session.execute(
+            update(EvacCheckin)
+            .where(EvacCheckin.checked_out_at.is_(None))
+            .values(checked_out_at=event.ended_at, updated_at=event.ended_at)
+        )
+        reset_count = result.rowcount or 0
 
     await write_audit(
         session,
@@ -274,17 +287,20 @@ async def end_event(
         action="emergency_event.end",
         entity_type="emergency_event",
         entity_id=event.id,
+        changes={"occupancy_reset_count": reset_count},
         ip=ip,
     )
     await session.commit()
-    return event
+    return event, reset_count
 
 
-async def get_public_active_event(session: AsyncSession) -> PublicEmergencyEvent | None:
-    event = await get_active_event(session)
-    if event is None:
-        return None
-    return PublicEmergencyEvent(name=event.name, type=event.type, started_at=event.started_at)
+async def get_public_active_events(session: AsyncSession) -> list[PublicEmergencyEvent]:
+    return [
+        PublicEmergencyEvent(
+            id=event.id, name=event.name, type=event.type, started_at=event.started_at
+        )
+        for event in await list_active_events(session)
+    ]
 
 
 async def create_evac_center(
@@ -359,7 +375,11 @@ async def _checkin_to_out(session: AsyncSession, checkin: EvacCheckin) -> EvacCh
 
 
 async def create_checkin(
-    session: AsyncSession, body: EvacCheckinCreate, *, actor: AuthenticatedUser
+    session: AsyncSession,
+    body: EvacCheckinCreate,
+    *,
+    actor: AuthenticatedUser,
+    commit: bool = True,
 ) -> EvacCheckinOut:
     center = await session.get(EvacCenter, body.evac_center_id)
     if center is None:
@@ -370,15 +390,78 @@ async def create_checkin(
         active_event = await require_active_event(session)
         event_id = active_event.id
     else:
-        event = await get_event_or_404(session, event_id)
+        event = await require_active_event(session, event_id)
         event_id = event.id
+
+    if (body.member_id is None) == (body.unregistered_person_id is None):
+        raise ConflictError("Select exactly one registered or unregistered person.")
+
+    if body.member_id is not None:
+        from src.modules.registry.models import Household, Member  # read-only validation
+
+        member = await session.scalar(
+            select(Member).where(Member.id == body.member_id, Member.deleted_at.is_(None))
+        )
+        if member is None:
+            raise NotFoundError("Registered member not found.")
+        if actor.is_area_scoped:
+            allowed = await session.scalar(
+                select(Household.id).where(
+                    Household.id == member.household_id,
+                    Household.area_id.in_(actor.assigned_area_ids),
+                    Household.deleted_at.is_(None),
+                )
+            )
+            if allowed is None:
+                raise PermissionDeniedError("This member is outside your assigned area.")
+        subject_name = member.full_name
+    else:
+        from src.modules.safety.models import UnregisteredPerson  # read-only validation
+
+        person = await session.get(UnregisteredPerson, body.unregistered_person_id)
+        if person is None:
+            raise NotFoundError("Unregistered person not found.")
+        if person.event_id != event_id:
+            raise ConflictError("This unregistered person belongs to a different event.")
+        if person.converted_member_id is not None:
+            raise ConflictError("This person has already been converted to an official member.")
+        subject_name = person.full_name
+
+    subject_filter = (
+        EvacCheckin.member_id == body.member_id
+        if body.member_id is not None
+        else EvacCheckin.unregistered_person_id == body.unregistered_person_id
+    )
+    existing = await session.scalar(
+        select(EvacCheckin).where(subject_filter, EvacCheckin.checked_out_at.is_(None))
+    )
+    if existing is not None:
+        moved = existing.evac_center_id != body.evac_center_id
+        existing.evac_center_id = body.evac_center_id
+        existing.event_id = event_id
+        existing.person_name = subject_name
+        existing.recorded_by_user_id = actor.id
+        existing.updated_at = datetime.now(UTC)
+        await write_audit(
+            session,
+            actor_user_id=actor.id,
+            action="evac_checkin.move" if moved else "evac_checkin.retain",
+            entity_type="evac_checkin",
+            entity_id=existing.id,
+            changes={"evac_center_id": str(existing.evac_center_id), "event_id": str(event_id)},
+        )
+        if commit:
+            await session.commit()
+        else:
+            await session.flush()
+        return await _checkin_to_out(session, existing)
 
     checkin = EvacCheckin(
         evac_center_id=body.evac_center_id,
         event_id=event_id,
         member_id=body.member_id,
         unregistered_person_id=body.unregistered_person_id,
-        person_name=body.person_name,
+        person_name=subject_name,
         checked_in_at=body.checked_in_at or datetime.now(UTC),
         recorded_by_user_id=actor.id,
     )
@@ -392,7 +475,10 @@ async def create_checkin(
         entity_id=checkin.id,
         changes={"person_name": checkin.person_name},
     )
-    await session.commit()
+    if commit:
+        await session.commit()
+    else:
+        await session.flush()
     return await _checkin_to_out(session, checkin)
 
 
@@ -415,6 +501,29 @@ async def checkout_checkin(
     )
     await session.commit()
     return await _checkin_to_out(session, checkin)
+
+
+async def transfer_unregistered_checkin(
+    session: AsyncSession,
+    *,
+    unregistered_person_id: uuid.UUID,
+    member_id: uuid.UUID,
+    person_name: str,
+) -> None:
+    """Preserve a physical arrival while replacing its temporary registry identity."""
+    checkin = await session.scalar(
+        select(EvacCheckin).where(
+            EvacCheckin.unregistered_person_id == unregistered_person_id,
+            EvacCheckin.checked_out_at.is_(None),
+        )
+    )
+    if checkin is None:
+        return
+    checkin.unregistered_person_id = None
+    checkin.member_id = member_id
+    checkin.person_name = person_name
+    checkin.updated_at = datetime.now(UTC)
+    await session.flush()
 
 
 async def list_checkins_for_center(
@@ -440,17 +549,15 @@ async def get_portal_evacuation_status(
 ) -> PortalEvacuationStatusOut:
     from src.modules.registry.models import Household, Member
 
-    household = await session.scalar(
-        select(Household).where(Household.head_user_id == actor.id)
-    )
+    household = await session.scalar(select(Household).where(Household.head_user_id == actor.id))
 
     member_ids: list[uuid.UUID] = []
     if household:
         members = (
-            await session.execute(
-                select(Member.id).where(Member.household_id == household.id)
-            )
-        ).scalars().all()
+            (await session.execute(select(Member.id).where(Member.household_id == household.id)))
+            .scalars()
+            .all()
+        )
         member_ids = list(members)
 
     if not member_ids:

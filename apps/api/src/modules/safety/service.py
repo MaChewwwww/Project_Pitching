@@ -31,9 +31,9 @@ from src.core.pagination import Page, page_meta
 from src.core.uploads import save_upload
 from src.domain.triage import triage_priority
 from src.modules.evacuation import service as evacuation_service
-from src.modules.evacuation.models import EmergencyEvent
-from src.modules.evacuation.schemas import PublicEmergencyEvent
-from src.modules.geo.models import Area  # join-only (AGENTS.md Section 5)
+from src.modules.evacuation.models import EmergencyEvent, EvacCenter, EvacCheckin
+from src.modules.evacuation.schemas import EvacCheckinCreate, PublicEmergencyEvent
+from src.modules.geo.models import Area, Facility  # join-only (AGENTS.md Section 5)
 from src.modules.geo.service import point_to_geojson
 from src.modules.registry import service as registry_service
 from src.modules.registry.models import Household, Member  # join-only
@@ -46,6 +46,7 @@ from src.modules.safety.models import (
 from src.modules.safety.schemas import (
     AccountedForOut,
     AreaAccountedFor,
+    EmergencyWorkspaceOut,
     HouseholdSafetyOut,
     IncidentReportIn,
     IncidentReportOut,
@@ -61,6 +62,9 @@ from src.modules.safety.schemas import (
     UnregisteredPersonIn,
     UnregisteredPersonOut,
     UnregisteredPersonPatch,
+    WorkspaceHouseholdOut,
+    WorkspaceMemberOut,
+    WorkspaceUnregisteredOut,
 )
 
 # pending -> verified -> dispatched -> resolved; any state -> dismissed.
@@ -90,7 +94,59 @@ def _member_flags(member: Member) -> list[str]:
 
 
 def _event_out(event: EmergencyEvent) -> PublicEmergencyEvent:
-    return PublicEmergencyEvent(name=event.name, type=event.type, started_at=event.started_at)
+    return PublicEmergencyEvent(
+        id=event.id, name=event.name, type=event.type, started_at=event.started_at
+    )
+
+
+async def _assign_member_centers(
+    session: AsyncSession,
+    *,
+    event: EmergencyEvent,
+    member_ids: list[uuid.UUID],
+    evac_center_id: uuid.UUID | None,
+    actor: AuthenticatedUser,
+) -> None:
+    if evac_center_id is None or not member_ids:
+        return
+    members = (
+        await session.execute(select(Member.id, Member.full_name).where(Member.id.in_(member_ids)))
+    ).all()
+    for member_id, full_name in members:
+        await evacuation_service.create_checkin(
+            session,
+            EvacCheckinCreate(
+                evac_center_id=evac_center_id,
+                event_id=event.id,
+                member_id=member_id,
+                person_name=full_name,
+            ),
+            actor=actor,
+            commit=False,
+        )
+
+
+async def _assign_unregistered_center(
+    session: AsyncSession,
+    *,
+    event: EmergencyEvent,
+    person: UnregisteredPerson,
+    evac_center_id: uuid.UUID | None,
+    actor: AuthenticatedUser,
+) -> None:
+    if evac_center_id is None:
+        return
+    await evacuation_service.create_checkin(
+        session,
+        EvacCheckinCreate(
+            evac_center_id=evac_center_id,
+            event_id=event.id,
+            unregistered_person_id=person.id,
+            person_name=person.full_name,
+        ),
+        actor=actor,
+        commit=False,
+    )
 
 
 async def _user_names(session: AsyncSession, user_ids: set[uuid.UUID]) -> dict[uuid.UUID, str]:
@@ -191,21 +247,31 @@ async def current_status_map(
     if not member_ids:
         return {}
     rows = (
-        await session.execute(
-            select(SafetyStatus).where(
-                SafetyStatus.event_id == event_id,
-                SafetyStatus.member_id.in_(member_ids),
-                SafetyStatus.superseded_at.is_(None),
+        (
+            await session.execute(
+                select(SafetyStatus).where(
+                    SafetyStatus.event_id == event_id,
+                    SafetyStatus.member_id.in_(member_ids),
+                    SafetyStatus.superseded_at.is_(None),
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     return {row.member_id: row for row in rows}
 
 
 async def get_household_safety(
-    session: AsyncSession, *, event: EmergencyEvent, household_id: uuid.UUID
+    session: AsyncSession,
+    *,
+    event: EmergencyEvent,
+    household_id: uuid.UUID,
+    user: AuthenticatedUser | None = None,
 ) -> HouseholdSafetyOut:
     household = await registry_service.get_household_or_404(session, household_id)
+    if user is not None and user.is_area_scoped and household.area_id not in user.assigned_area_ids:
+        raise PermissionDeniedError("This household is outside your assigned area.")
     members = (
         (
             await session.execute(
@@ -248,12 +314,18 @@ async def get_household_safety(
     )
 
 
-async def get_my_safety(session: AsyncSession, *, user: AuthenticatedUser) -> MySafetyOut:
+async def get_my_safety(
+    session: AsyncSession,
+    *,
+    user: AuthenticatedUser,
+    event_id: uuid.UUID | None = None,
+) -> MySafetyOut:
     from src.modules.evacuation import service as evacuation_service
 
-    event = await evacuation_service.get_active_event(session)
-    if event is None:
+    active_events = await evacuation_service.list_active_events(session)
+    if not active_events:
         return MySafetyOut(event=None, household=None)
+    event = await evacuation_service.require_active_event(session, event_id)
 
     household = await registry_service.household_for_user_id(session, user.id)
     if household is None:
@@ -272,8 +344,20 @@ async def set_member_statuses(
     status: str,
     actor: AuthenticatedUser,
     set_method: str,
-    ip: str | None,
+    evac_center_id: uuid.UUID | None = None,
+    ip: str | None = None,
 ) -> HouseholdSafetyOut:
+    live_ids = set(
+        (
+            await session.execute(
+                select(Member.id).where(
+                    Member.household_id == household_id, Member.deleted_at.is_(None)
+                )
+            )
+        ).scalars()
+    )
+    if not set(member_ids) <= live_ids:
+        raise ConflictError("One or more selected members are not in this household.")
     for member_id in member_ids:
         await _write_one_status(
             session,
@@ -283,6 +367,14 @@ async def set_member_statuses(
             actor=actor,
             set_method=set_method,
             ip=ip,
+        )
+    if status == "safe":
+        await _assign_member_centers(
+            session,
+            event=event,
+            member_ids=member_ids,
+            evac_center_id=evac_center_id,
+            actor=actor,
         )
     await session.commit()
     return await get_household_safety(session, event=event, household_id=household_id)
@@ -297,7 +389,8 @@ async def set_household_status(
     actor: AuthenticatedUser,
     set_method: str,
     acknowledged_member_ids: list[uuid.UUID],
-    ip: str | None,
+    evac_center_id: uuid.UUID | None = None,
+    ip: str | None = None,
 ) -> HouseholdSafetyOut:
     """FR-SAF-003, enforced server-side: `acknowledged_member_ids` must equal
     the household's live roster exactly. BR-5.1b's whole argument is that an
@@ -329,6 +422,14 @@ async def set_household_status(
             set_method=set_method,
             ip=ip,
         )
+    if status == "safe":
+        await _assign_member_centers(
+            session,
+            event=event,
+            member_ids=list(live_ids),
+            evac_center_id=evac_center_id,
+            actor=actor,
+        )
     await session.commit()
     return await get_household_safety(session, event=event, household_id=household_id)
 
@@ -341,8 +442,14 @@ async def set_unregistered_status(
     status: str,
     actor: AuthenticatedUser,
     set_method: str,
+    evac_center_id: uuid.UUID | None = None,
     ip: str | None,
 ) -> SafetyStatus:
+    person = await get_unregistered_or_404(session, unregistered_person_id)
+    if person.event_id != event.id:
+        raise ConflictError("This unregistered person belongs to a different emergency event.")
+    if person.converted_member_id is not None:
+        raise ConflictError("This person has already been converted to an official member.")
     row = await _write_one_status(
         session,
         event_id=event.id,
@@ -352,6 +459,14 @@ async def set_unregistered_status(
         set_method=set_method,
         ip=ip,
     )
+    if status == "safe":
+        await _assign_unregistered_center(
+            session,
+            event=event,
+            person=person,
+            evac_center_id=evac_center_id,
+            actor=actor,
+        )
     await session.commit()
     return row
 
@@ -378,6 +493,7 @@ async def submit_self_status(
             actor=user,
             set_method=set_method,
             acknowledged_member_ids=body.acknowledged_member_ids,
+            evac_center_id=body.evac_center_id,
             ip=ip,
         )
 
@@ -402,6 +518,7 @@ async def submit_self_status(
         status=body.status,
         actor=user,
         set_method=set_method,
+        evac_center_id=body.evac_center_id,
         ip=ip,
     )
 
@@ -424,6 +541,7 @@ async def submit_admin_status(
             status=body.status,
             actor=actor,
             set_method=set_method,
+            evac_center_id=body.evac_center_id,
             ip=ip,
         )
         return None
@@ -431,6 +549,12 @@ async def submit_admin_status(
     household_id = body.household_id
     if household_id is None:
         raise PermissionDeniedError("household_id is required for this scope.")
+    household_stmt = select(Household.id).where(
+        Household.id == household_id, Household.deleted_at.is_(None)
+    )
+    household_stmt = apply_area_scope(household_stmt, actor, Household.area_id)
+    if await session.scalar(household_stmt) is None:
+        raise PermissionDeniedError("This household is outside your assigned area.")
 
     if body.scope == "household":
         return await set_household_status(
@@ -441,6 +565,7 @@ async def submit_admin_status(
             actor=actor,
             set_method=set_method,
             acknowledged_member_ids=body.acknowledged_member_ids,
+            evac_center_id=body.evac_center_id,
             ip=ip,
         )
     return await set_member_statuses(
@@ -451,6 +576,7 @@ async def submit_admin_status(
         status=body.status,
         actor=actor,
         set_method=set_method,
+        evac_center_id=body.evac_center_id,
         ip=ip,
     )
 
@@ -541,6 +667,11 @@ async def accounted_for_summary(
                     SafetyStatus.event_id == event.id,
                     SafetyStatus.unregistered_person_id.is_not(None),
                     SafetyStatus.superseded_at.is_(None),
+                    SafetyStatus.unregistered_person_id.in_(
+                        select(UnregisteredPerson.id).where(
+                            UnregisteredPerson.converted_member_id.is_(None)
+                        )
+                    ),
                 )
             )
         )
@@ -555,6 +686,165 @@ async def accounted_for_summary(
         registered_total=total,
         unregistered_safe=sum(1 for s in unreg_statuses if s == "safe"),
         unregistered_needs_rescue=sum(1 for s in unreg_statuses if s == "needs_rescue"),
+    )
+
+
+async def emergency_workspace(
+    session: AsyncSession, *, event: EmergencyEvent, user: AuthenticatedUser
+) -> EmergencyWorkspaceOut:
+    """PII-bearing event workspace. The router excludes SK; BHW scope is applied here."""
+    household_stmt = (
+        select(Household, Area.name, func.ST_AsGeoJSON(Household.location))
+        .join(Area, Household.area_id == Area.id)
+        .where(Household.deleted_at.is_(None))
+        .order_by(Area.name, Household.reference_no)
+    )
+    household_stmt = apply_area_scope(household_stmt, user, Household.area_id)
+    household_rows = (await session.execute(household_stmt)).all()
+    household_ids = [household.id for household, _area_name, _location in household_rows]
+
+    members = []
+    if household_ids:
+        members = list(
+            (
+                await session.execute(
+                    select(Member)
+                    .where(Member.household_id.in_(household_ids), Member.deleted_at.is_(None))
+                    .order_by(Member.is_head.desc(), Member.full_name)
+                )
+            ).scalars()
+        )
+    status_map = await current_status_map(
+        session, event_id=event.id, member_ids=[member.id for member in members]
+    )
+    open_assignments: dict[uuid.UUID, tuple[uuid.UUID, str]] = {}
+    if members:
+        checkin_rows = (
+            await session.execute(
+                select(EvacCheckin.member_id, EvacCenter.id, Facility.name)
+                .join(EvacCenter, EvacCheckin.evac_center_id == EvacCenter.id)
+                .join(Facility, EvacCenter.facility_id == Facility.id)
+                .where(
+                    EvacCheckin.member_id.in_([member.id for member in members]),
+                    EvacCheckin.checked_out_at.is_(None),
+                )
+            )
+        ).all()
+        open_assignments = {
+            member_id: (center_id, center_name)
+            for member_id, center_id, center_name in checkin_rows
+        }
+
+    members_by_household: dict[uuid.UUID, list[WorkspaceMemberOut]] = {
+        household_id: [] for household_id in household_ids
+    }
+    for member in members:
+        status_row = status_map.get(member.id)
+        assignment = open_assignments.get(member.id)
+        members_by_household[member.household_id].append(
+            WorkspaceMemberOut(
+                member_id=member.id,
+                full_name=member.full_name,
+                is_head=member.is_head,
+                status=status_row.status if status_row else "unaccounted",
+                set_method=status_row.set_method if status_row else None,
+                vulnerability_flags=_member_flags(member),
+                evac_center_id=assignment[0] if assignment else None,
+                evac_center_name=assignment[1] if assignment else None,
+            )
+        )
+
+    household_items: list[WorkspaceHouseholdOut] = []
+    unmapped_count = 0
+    for household, area_name, location_json in household_rows:
+        roster = members_by_household[household.id]
+        safe_count = sum(member.status == "safe" for member in roster)
+        rescue_count = sum(member.status == "needs_rescue" for member in roster)
+        unaccounted_count = len(roster) - safe_count - rescue_count
+        location = point_to_geojson(location_json)
+        if location is None:
+            unmapped_count += 1
+        household_items.append(
+            WorkspaceHouseholdOut(
+                household_id=household.id,
+                reference_no=household.reference_no,
+                head_name=household.head_name,
+                area_id=household.area_id,
+                area_name=area_name,
+                street_address=household.street_address,
+                location=location,
+                waterway_proximity=household.waterway_proximity,
+                members=roster,
+                safe_count=safe_count,
+                needs_rescue_count=rescue_count,
+                unaccounted_count=unaccounted_count,
+                all_safe=bool(roster) and safe_count == len(roster),
+            )
+        )
+
+    unregistered_rows = list(
+        (
+            await session.execute(
+                select(UnregisteredPerson).where(
+                    UnregisteredPerson.event_id == event.id,
+                    UnregisteredPerson.location.is_not(None),
+                    UnregisteredPerson.converted_member_id.is_(None),
+                )
+            )
+        ).scalars()
+    )
+    unreg_status_rows = (
+        await session.execute(
+            select(SafetyStatus).where(
+                SafetyStatus.event_id == event.id,
+                SafetyStatus.unregistered_person_id.in_([row.id for row in unregistered_rows]),
+                SafetyStatus.superseded_at.is_(None),
+            )
+        )
+    ).scalars()
+    unreg_status_map = {row.unregistered_person_id: row for row in unreg_status_rows}
+    unreg_assignments: dict[uuid.UUID, tuple[uuid.UUID, str]] = {}
+    if unregistered_rows:
+        rows = (
+            await session.execute(
+                select(EvacCheckin.unregistered_person_id, EvacCenter.id, Facility.name)
+                .join(EvacCenter, EvacCheckin.evac_center_id == EvacCenter.id)
+                .join(Facility, EvacCenter.facility_id == Facility.id)
+                .where(
+                    EvacCheckin.unregistered_person_id.in_([row.id for row in unregistered_rows]),
+                    EvacCheckin.checked_out_at.is_(None),
+                )
+            )
+        ).all()
+        unreg_assignments = {
+            person_id: (center_id, center_name) for person_id, center_id, center_name in rows
+        }
+    unregistered_pins = []
+    for person in unregistered_rows:
+        status_row = unreg_status_map.get(person.id)
+        assignment = unreg_assignments.get(person.id)
+        location = point_to_geojson(person.location)
+        if location is None:
+            continue
+        unregistered_pins.append(
+            WorkspaceUnregisteredOut(
+                id=person.id,
+                full_name=person.full_name,
+                location=location,
+                status=status_row.status if status_row else "unaccounted",
+                vulnerability_flags=[flag for flag in VULNERABILITY_FLAGS if getattr(person, flag)],
+                evac_center_id=assignment[0] if assignment else None,
+                evac_center_name=assignment[1] if assignment else None,
+            )
+        )
+
+    return EmergencyWorkspaceOut(
+        event=_event_out(event),
+        is_read_only=not event.is_active,
+        households=household_items,
+        unregistered_pins=unregistered_pins,
+        unmapped_household_count=unmapped_count,
+        evacuation_centers=await evacuation_service.list_evac_centers_admin(session),
     )
 
 
@@ -611,15 +901,77 @@ async def get_unregistered_or_404(
     return person
 
 
-async def _unregistered_out(
+async def finalize_unregistered_conversion(
+    session: AsyncSession,
+    *,
+    unregistered_id: uuid.UUID,
+    household_id: uuid.UUID,
+    member_id: uuid.UUID,
+    member_name: str,
+    actor: AuthenticatedUser,
+    ip: str | None = None,
+) -> None:
+    """Complete FR-SAF-014 inside the registry-owned conversion transaction."""
+    person = await session.scalar(
+        select(UnregisteredPerson).where(UnregisteredPerson.id == unregistered_id).with_for_update()
+    )
+    if person is None:
+        raise NotFoundError("Unregistered person record not found.")
+    if person.converted_member_id is not None:
+        raise ConflictError("This unregistered person has already been converted.")
+
+    current = await session.scalar(
+        select(SafetyStatus).where(
+            SafetyStatus.event_id == person.event_id,
+            SafetyStatus.unregistered_person_id == person.id,
+            SafetyStatus.superseded_at.is_(None),
+        )
+    )
+    if current is not None:
+        current.superseded_at = datetime.now(UTC)
+        await session.flush()
+        await _write_one_status(
+            session,
+            event_id=person.event_id,
+            member_id=member_id,
+            status=current.status,
+            actor=actor,
+            set_method="assisted",
+            ip=ip,
+        )
+
+    await evacuation_service.transfer_unregistered_checkin(
+        session,
+        unregistered_person_id=person.id,
+        member_id=member_id,
+        person_name=member_name,
+    )
+    person.converted_household_id = household_id
+    person.converted_member_id = member_id
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="unregistered_person.convert",
+        entity_type="unregistered_person",
+        entity_id=person.id,
+        changes={"household_id": str(household_id), "member_id": str(member_id)},
+        ip=ip,
+    )
+    await session.flush()
+
+
+async def unregistered_out(
     session: AsyncSession, person: UnregisteredPerson
 ) -> UnregisteredPersonOut:
     status_row = (
         await session.execute(
-            select(SafetyStatus).where(
-                SafetyStatus.unregistered_person_id == person.id,
-                SafetyStatus.superseded_at.is_(None),
+            select(SafetyStatus)
+            .where(SafetyStatus.unregistered_person_id == person.id)
+            .order_by(
+                SafetyStatus.superseded_at.is_(None).desc(),
+                SafetyStatus.set_at.desc(),
             )
+            .limit(1)
         )
     ).scalar_one_or_none()
 
@@ -628,19 +980,42 @@ async def _unregistered_out(
         names = await _user_names(session, {person.recorded_by_user_id})
         recorded_name = names.get(person.recorded_by_user_id)
 
+    assignment = (
+        await session.execute(
+            select(EvacCheckin.evac_center_id, Facility.name)
+            .join(EvacCenter, EvacCheckin.evac_center_id == EvacCenter.id)
+            .join(Facility, EvacCenter.facility_id == Facility.id)
+            .where(
+                EvacCheckin.unregistered_person_id == person.id,
+                EvacCheckin.checked_out_at.is_(None),
+            )
+        )
+    ).one_or_none()
+
     return UnregisteredPersonOut(
         id=person.id,
+        event_id=person.event_id,
         created_at=person.created_at,
         full_name=person.full_name,
         contact_number=person.contact_number,
         location=point_to_geojson(person.location),
         location_note=person.location_note,
-        # `create_unregistered` always writes an initial status in the same
-        # transaction, so this falls back only if that invariant is ever
-        # broken by a direct insert — never silently mislabel a real gap.
+        # Converted rows have no current temporary status, so expose their
+        # last historical value while live totals continue to exclude them.
         status=status_row.status if status_row else "unaccounted",
         recorded_by_name=recorded_name,
         converted_household_id=person.converted_household_id,
+        converted_member_id=person.converted_member_id,
+        is_child=person.is_child,
+        is_senior=person.is_senior,
+        is_pwd=person.is_pwd,
+        is_pregnant=person.is_pregnant,
+        is_lactating=person.is_lactating,
+        has_chronic_condition=person.has_chronic_condition,
+        chronic_condition_note=person.chronic_condition_note,
+        is_bedridden=person.is_bedridden,
+        evac_center_id=assignment[0] if assignment else None,
+        evac_center_name=assignment[1] if assignment else None,
     )
 
 
@@ -648,25 +1023,26 @@ async def list_unregistered(
     session: AsyncSession,
     *,
     event_id: uuid.UUID | None = None,
+    include_converted: bool = False,
     page: int = 1,
     size: int = 20,
 ) -> Page[UnregisteredPersonOut]:
     stmt = select(UnregisteredPerson).order_by(UnregisteredPerson.created_at.desc())
     if event_id is not None:
         stmt = stmt.where(UnregisteredPerson.event_id == event_id)
+    if not include_converted:
+        stmt = stmt.where(UnregisteredPerson.converted_member_id.is_(None))
     total = (await session.execute(select(func.count()).select_from(stmt.subquery()))).scalar_one()
     rows = (await session.execute(stmt.limit(size).offset((page - 1) * size))).scalars().all()
-    items = [await _unregistered_out(session, row) for row in rows]
+    items = [await unregistered_out(session, row) for row in rows]
     return Page[UnregisteredPersonOut](items=items, **page_meta(total, page, size))
 
 
 async def create_unregistered(
     session: AsyncSession, *, body: UnregisteredPersonIn, actor: AuthenticatedUser, ip: str | None
 ) -> UnregisteredPersonOut:
-    """FR-SAF-012 — one action records the person **and** their initial
-    status (safe or needing rescue), not two. `event_id` always comes from
-    the active event, never the client."""
-    event = await evacuation_service.require_active_event(session)
+    """Record the walk-in and initial event-scoped status in one transaction."""
+    event = await evacuation_service.require_active_event(session, body.event_id)
     location = (
         func.ST_SetSRID(func.ST_MakePoint(body.longitude, body.latitude), 4326)
         if body.latitude is not None and body.longitude is not None
@@ -679,6 +1055,14 @@ async def create_unregistered(
         location=location,
         location_note=body.location_note,
         recorded_by_user_id=actor.id,
+        is_child=body.is_child,
+        is_senior=body.is_senior,
+        is_pwd=body.is_pwd,
+        is_pregnant=body.is_pregnant,
+        is_lactating=body.is_lactating,
+        has_chronic_condition=body.has_chronic_condition,
+        chronic_condition_note=body.chronic_condition_note,
+        is_bedridden=body.is_bedridden,
     )
     session.add(person)
     await session.flush()
@@ -699,9 +1083,10 @@ async def create_unregistered(
         status=body.initial_status,
         actor=actor,
         set_method="assisted",
+        evac_center_id=body.evac_center_id,
         ip=ip,
     )
-    return await _unregistered_out(session, person)
+    return await unregistered_out(session, person)
 
 
 async def update_unregistered(
@@ -721,6 +1106,12 @@ async def update_unregistered(
         person.location_note = body.location_note
     if body.latitude is not None and body.longitude is not None:
         person.location = func.ST_SetSRID(func.ST_MakePoint(body.longitude, body.latitude), 4326)
+    for field in VULNERABILITY_FLAGS:
+        value = getattr(body, field)
+        if value is not None:
+            setattr(person, field, value)
+    if body.chronic_condition_note is not None:
+        person.chronic_condition_note = body.chronic_condition_note
 
     await session.flush()
     await write_audit(
@@ -732,7 +1123,7 @@ async def update_unregistered(
         ip=ip,
     )
     await session.commit()
-    return await _unregistered_out(session, person)
+    return await unregistered_out(session, person)
 
 
 def _normalize_phone(value: str) -> str:
@@ -744,9 +1135,7 @@ def _normalize_phone(value: str) -> str:
     return digits
 
 
-async def _match_household(
-    session: AsyncSession, contact_number: str | None
-) -> Household | None:
+async def _match_household(session: AsyncSession, contact_number: str | None) -> Household | None:
     """FR-SAF-010's triage input, exact normalised match on
     `household.contact_number` only — never fuzzy. `pg_trgm` similarity is
     right for spotting duplicate registrations at a desk; attaching the
@@ -764,12 +1153,16 @@ async def _match_household(
     if not target:
         return None
     rows = (
-        await session.execute(
-            select(Household).where(
-                Household.deleted_at.is_(None), Household.contact_number.is_not(None)
+        (
+            await session.execute(
+                select(Household).where(
+                    Household.deleted_at.is_(None), Household.contact_number.is_not(None)
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     matches = [h for h in rows if _normalize_phone(h.contact_number) == target]
     return matches[0] if len(matches) == 1 else None
 
@@ -803,15 +1196,12 @@ async def _ensure_triaged(session: AsyncSession, rows: list[RescueRequest]) -> N
     untriaged = [r for r in rows if r.priority is None]
     if not untriaged:
         return
-    active_event = await evacuation_service.get_active_event(session)
     for row in untriaged:
         household = await _match_household(session, row.contact_number)
         flags: set[str] = set()
         if household is not None:
             row.household_id = household.id
             flags = await _household_flags(session, household.id)
-        if active_event is not None and row.event_id is None:
-            row.event_id = active_event.id
         priority, _factors = triage_priority(flags=flags, people_count=row.people_count)
         row.priority = priority
         row.priority_is_manual = False
@@ -947,8 +1337,10 @@ async def update_rescue_request(
 
 async def open_rescue_count(session: AsyncSession) -> int:
     """For the admin dashboard tile (S6)."""
-    stmt = select(func.count()).select_from(RescueRequest).where(
-        RescueRequest.status.in_(("pending", "verified", "dispatched"))
+    stmt = (
+        select(func.count())
+        .select_from(RescueRequest)
+        .where(RescueRequest.status.in_(("pending", "verified", "dispatched")))
     )
     return (await session.execute(stmt)).scalar_one()
 
@@ -967,12 +1359,8 @@ async def _incident_report_out(session: AsyncSession, row: IncidentReport) -> In
         location_note=row.location_note,
         photo_url=f"/uploads/{row.photo_path}" if row.photo_path else None,
         status=row.status,
-        reported_by_name=(
-            names.get(row.reported_by_user_id) if row.reported_by_user_id else None
-        ),
-        verified_by_name=(
-            names.get(row.verified_by_user_id) if row.verified_by_user_id else None
-        ),
+        reported_by_name=(names.get(row.reported_by_user_id) if row.reported_by_user_id else None),
+        verified_by_name=(names.get(row.verified_by_user_id) if row.verified_by_user_id else None),
         verified_at=row.verified_at,
         dismissal_reason=row.dismissal_reason,
     )
@@ -993,11 +1381,20 @@ async def create_incident_report(
     *photo* upload, and one would hand the internet a write to a volume
     Caddy serves. Someone in danger uses `/rescue`, not this.
 
-    `event_id` uses whatever event is active, if any — a report, like a
-    rescue request, may reasonably precede a declared event.
+    An explicit active event is honored. A legacy omission is auto-resolved
+    only when exactly one event is active; with none, the report remains
+    event-null, and with several the caller must choose.
     """
+    event = None
+    if body.event_id is not None:
+        event = await evacuation_service.require_active_event(session, body.event_id)
+    else:
+        active_events = await evacuation_service.list_active_events(session, limit=2)
+        if len(active_events) == 1:
+            event = active_events[0]
+        elif len(active_events) > 1:
+            raise ConflictError("Multiple emergency events are active. Select one for this report.")
     photo_path = await save_upload(photo, subdir="incident-reports") if photo is not None else None
-    event = await evacuation_service.get_active_event(session)
     location = (
         func.ST_SetSRID(func.ST_MakePoint(body.longitude, body.latitude), 4326)
         if body.latitude is not None and body.longitude is not None

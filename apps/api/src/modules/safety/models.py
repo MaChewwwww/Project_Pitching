@@ -43,12 +43,7 @@ INCIDENT_STATUSES = ("pending", "verified", "dismissed")
 
 
 class UnregisteredPerson(UUIDPrimaryKeyMixin, TimestampMixin, Base):
-    """FR-SAF-012/013 — recorded with a name and a location, nothing else.
-
-    schema.md does not list `created_at`/`updated_at` for this table, but
-    "when was this recorded" is otherwise unrecoverable, so `TimestampMixin`
-    is added here — a flagged doc gap, not a freelanced column.
-    """
+    """FR-SAF-012/013/014 — event-scoped walk-in awaiting registry conversion."""
 
     __tablename__ = "unregistered_person"
 
@@ -64,11 +59,25 @@ class UnregisteredPerson(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     recorded_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("user.id", ondelete="SET NULL"), nullable=True
     )
-    # FR-SAF-014 (convert to a full registration) is cut from this pass — this
-    # column is kept because the table shape without it would need a migration
-    # to add later, and it costs nothing to leave nullable and unused.
     converted_household_id: Mapped[uuid.UUID | None] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("household.id", ondelete="SET NULL"), nullable=True
+    )
+    converted_member_id: Mapped[uuid.UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("member.id", ondelete="SET NULL"), nullable=True
+    )
+    is_child: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    is_senior: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    is_pwd: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    is_pregnant: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    is_lactating: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
+    has_chronic_condition: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
+    chronic_condition_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_bedridden: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
     )
 
     __table_args__ = (
@@ -144,9 +153,7 @@ class SafetyStatus(UUIDPrimaryKeyMixin, Base):
             "event_id",
             "unregistered_person_id",
             unique=True,
-            postgresql_where=text(
-                "superseded_at IS NULL AND unregistered_person_id IS NOT NULL"
-            ),
+            postgresql_where=text("superseded_at IS NULL AND unregistered_person_id IS NOT NULL"),
         ),
     )
 

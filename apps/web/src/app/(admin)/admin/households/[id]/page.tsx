@@ -456,11 +456,15 @@ export default function HouseholdDetailPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={member.is_head || makeHead.isPending || Boolean(household.head_user_id)}
+                      disabled={
+                        member.is_head ||
+                        makeHead.isPending ||
+                        Boolean(household.head_user_id)
+                      }
                       className={`size-9 min-h-9 px-0 transition-colors ${
                         member.is_head
-                          ? "border-amber-300/80 bg-amber-100/70 text-amber-700 opacity-90 cursor-not-allowed"
-                          : "border-amber-200 bg-amber-50/80 text-amber-800 hover:bg-amber-100 hover:border-amber-300 cursor-pointer"
+                          ? "cursor-not-allowed border-amber-300/80 bg-amber-100/70 text-amber-700 opacity-90"
+                          : "cursor-pointer border-amber-200 bg-amber-50/80 text-amber-800 hover:border-amber-300 hover:bg-amber-100"
                       }`}
                       title={
                         member.is_head
@@ -479,7 +483,9 @@ export default function HouseholdDetailPage() {
                       <Crown
                         aria-hidden
                         className={`size-4 shrink-0 ${
-                          member.is_head ? "text-amber-600 fill-amber-500/40" : "text-amber-600"
+                          member.is_head
+                            ? "fill-amber-500/40 text-amber-600"
+                            : "text-amber-600"
                         }`}
                       />
                     </Button>
@@ -543,32 +549,36 @@ export default function HouseholdDetailPage() {
                 <h2 className="mt-1 text-lg font-bold text-neutral-950">Safety Status</h2>
               </div>
             </div>
-            {activity?.safety ? (
-              <>
-                <p className="mt-4 text-sm font-semibold text-neutral-900">
-                  {activity.safety.event_name}
-                </p>
-                <div className="mt-3 grid grid-cols-3 divide-x divide-neutral-100 rounded-xl border border-neutral-200 bg-neutral-50/50">
-                  <p className="p-3 text-center text-xs text-neutral-500">
-                    <b className="block text-lg text-emerald-700">
-                      {activity.safety.safe}
-                    </b>
-                    Safe
-                  </p>
-                  <p className="p-3 text-center text-xs text-neutral-500">
-                    <b className="block text-lg text-red-700">
-                      {activity.safety.needs_rescue}
-                    </b>
-                    Needs Rescue
-                  </p>
-                  <p className="p-3 text-center text-xs text-neutral-500">
-                    <b className="block text-lg text-neutral-700">
-                      {activity.safety.unaccounted}
-                    </b>
-                    Unaccounted
-                  </p>
-                </div>
-              </>
+            {activity?.safety.length ? (
+              <div className="mt-4 space-y-3">
+                {activity.safety.map((eventSafety) => (
+                  <div key={eventSafety.event_id}>
+                    <p className="mt-4 text-sm font-semibold text-neutral-900">
+                      {eventSafety.event_name}
+                    </p>
+                    <div className="mt-3 grid grid-cols-3 divide-x divide-neutral-100 rounded-xl border border-neutral-200 bg-neutral-50/50">
+                      <p className="p-3 text-center text-xs text-neutral-500">
+                        <b className="block text-lg text-emerald-700">
+                          {eventSafety.safe}
+                        </b>
+                        Safe
+                      </p>
+                      <p className="p-3 text-center text-xs text-neutral-500">
+                        <b className="block text-lg text-red-700">
+                          {eventSafety.needs_rescue}
+                        </b>
+                        Needs Rescue
+                      </p>
+                      <p className="p-3 text-center text-xs text-neutral-500">
+                        <b className="block text-lg text-neutral-700">
+                          {eventSafety.unaccounted}
+                        </b>
+                        Unaccounted
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <p className="mt-4 text-sm text-neutral-500">
                 No active emergency safety record for this household.

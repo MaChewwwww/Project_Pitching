@@ -20,7 +20,6 @@ export interface EmergencyEventDeclare {
   /** Closing a live event is a side effect big enough to require an explicit
    * opt-in — omitting this when one is already active gets a 409, not a
    * silent auto-close. */
-  supersede_active?: boolean;
 }
 
 export interface EmergencyEventOut {
@@ -32,6 +31,7 @@ export interface EmergencyEventOut {
   is_active: boolean;
   declared_by_user_id: string | null;
   declared_by_name: string | null;
+  occupancy_reset_count: number;
 }
 
 /* --- safety check-in (FR-SAF-001…007, 011, 013) --------------------------- */
@@ -40,6 +40,8 @@ export type SafetyStatusValue = "safe" | "needs_rescue" | "unaccounted";
 export type SetMethod = "self" | "assisted" | "household_bulk";
 
 export interface SafetyStatusSelfIn {
+  event_id?: string | null;
+  evac_center_id?: string | null;
   status: SafetyStatusValue;
   scope: "member" | "household";
   /** Required when `scope === "member"`. */
@@ -50,6 +52,8 @@ export interface SafetyStatusSelfIn {
 }
 
 export interface SafetyStatusAdminIn {
+  event_id?: string | null;
+  evac_center_id?: string | null;
   status: SafetyStatusValue;
   scope: "member" | "household" | "unregistered";
   household_id?: string | null;
@@ -167,12 +171,22 @@ export interface RescueRequestPatch {
 /* --- unregistered persons (FR-SAF-012/013) ---------------------------------- */
 
 export interface UnregisteredPersonIn {
+  event_id?: string | null;
+  evac_center_id?: string | null;
   full_name: string;
   contact_number?: string | null;
   latitude?: number | null;
   longitude?: number | null;
   location_note?: string | null;
   initial_status: "safe" | "needs_rescue";
+  is_child?: boolean;
+  is_senior?: boolean;
+  is_pwd?: boolean;
+  is_pregnant?: boolean;
+  is_lactating?: boolean;
+  has_chronic_condition?: boolean;
+  chronic_condition_note?: string | null;
+  is_bedridden?: boolean;
 }
 
 export interface UnregisteredPersonPatch {
@@ -185,6 +199,7 @@ export interface UnregisteredPersonPatch {
 
 export interface UnregisteredPersonOut {
   id: string;
+  event_id: string;
   created_at: string;
   full_name: string;
   contact_number: string | null;
@@ -193,6 +208,61 @@ export interface UnregisteredPersonOut {
   status: SafetyStatusValue;
   recorded_by_name: string | null;
   converted_household_id: string | null;
+  converted_member_id: string | null;
+  is_child: boolean;
+  is_senior: boolean;
+  is_pwd: boolean;
+  is_pregnant: boolean;
+  is_lactating: boolean;
+  has_chronic_condition: boolean;
+  chronic_condition_note: string | null;
+  is_bedridden: boolean;
+  evac_center_id: string | null;
+  evac_center_name: string | null;
+}
+
+export interface WorkspaceMemberOut {
+  member_id: string;
+  full_name: string;
+  is_head: boolean;
+  status: SafetyStatusValue;
+  set_method: SetMethod | null;
+  vulnerability_flags: string[];
+  evac_center_id: string | null;
+  evac_center_name: string | null;
+}
+
+export interface WorkspaceHouseholdOut {
+  household_id: string;
+  reference_no: string;
+  head_name: string;
+  area_id: string;
+  area_name: string;
+  street_address: string | null;
+  location: GeoJsonPoint | null;
+  waterway_proximity: "very_near" | "near" | "far" | null;
+  members: WorkspaceMemberOut[];
+  safe_count: number;
+  needs_rescue_count: number;
+  unaccounted_count: number;
+  all_safe: boolean;
+}
+
+export interface EmergencyWorkspaceOut {
+  event: PublicEmergencyEvent;
+  is_read_only: boolean;
+  households: WorkspaceHouseholdOut[];
+  unregistered_pins: Array<{
+    id: string;
+    full_name: string;
+    location: GeoJsonPoint;
+    status: SafetyStatusValue;
+    vulnerability_flags: string[];
+    evac_center_id: string | null;
+    evac_center_name: string | null;
+  }>;
+  unmapped_household_count: number;
+  evacuation_centers: import("./public-types").PublicEvacCenter[];
 }
 
 /* --- incident reports (FR-SAF-015/016) -------------------------------------- */

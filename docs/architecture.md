@@ -213,17 +213,17 @@ erDiagram
 
 **`household`** — the anchor.
 
-| Column                         | Notes                                                         |
-| ------------------------------ | ------------------------------------------------------------- |
+| Column                         | Notes                                                                         |
+| ------------------------------ | ----------------------------------------------------------------------------- |
 | `id`, `reference_no`           | Household Number in `M-SJ-000-000` format, generated at creation (FR-REG-006) |
-| `head_name`, `contact_number`  | Contact nullable (FR-REG-005)                                 |
-| `unreachable_by_phone`         | Derived on write; feeds capacity scoring                      |
-| `area_id`                      | FK; **also derivable** via `ST_Contains` when a geotag exists |
-| `location`                     | `GEOMETRY(Point, 4326)`, nullable                             |
-| `address_psgc`                 | PSGC codes + free-text street                                 |
-| `verified_at`, `verified_by`   | Verification does not gate service (FR-REG-011)               |
-| `created_by_user_id`, `source` | `self` or `bhw` — needed for the coverage metric              |
-| `deleted_at`                   | Soft delete (NFR-DAT-004)                                     |
+| `head_name`, `contact_number`  | Contact nullable (FR-REG-005)                                                 |
+| `unreachable_by_phone`         | Derived on write; feeds capacity scoring                                      |
+| `area_id`                      | FK; **also derivable** via `ST_Contains` when a geotag exists                 |
+| `location`                     | `GEOMETRY(Point, 4326)`, nullable                                             |
+| `address_psgc`                 | PSGC codes + free-text street                                                 |
+| `verified_at`, `verified_by`   | Verification does not gate service (FR-REG-011)                               |
+| `created_by_user_id`, `source` | `self` or `bhw` — needed for the coverage metric                              |
+| `deleted_at`                   | Soft delete (NFR-DAT-004)                                                     |
 
 **`member`** — carries the vulnerability flags directly as booleans (`is_child`, `is_senior`, `is_pwd`, `is_pregnant`, `has_chronic_condition`, `is_bedridden`). Booleans rather than a lookup table because the set is fixed by BR-1.32, small, and queried on every classification pass.
 
@@ -292,13 +292,13 @@ GROUP BY h.id;
 
 ### 5.4 Derived vs configured — the distinction the BRD insists on
 
-| Figure                        | Origin                                                                               | Table       |
-| ----------------------------- | ------------------------------------------------------------------------------------ | ----------- |
-| Registered households         | `COUNT(*)` at query time                                                             | `household` |
-| Registered members            | `COUNT(*)` at query time                                                             | `member`    |
+| Figure                        | Origin                                                                                                              | Table       |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------- |
+| Registered households         | `COUNT(*)` at query time                                                                                            | `household` |
+| Registered members            | `COUNT(*)` at query time                                                                                            | `member`    |
 | Waterway-proximity demo bands | Static flood-hazard map default (`very_near`/`near`/`far`), editable by field observation, aggregated at query time | `household` |
-| **Barangay-wide households**  | Admin-entered                                                                        | `config`    |
-| **Barangay-wide population**  | Admin-entered                                                                        | `config`    |
+| **Barangay-wide households**  | Admin-entered                                                                                                       | `config`    |
+| **Barangay-wide population**  | Admin-entered                                                                                                       | `config`    |
 
 Never stored as duplicate columns, never conflated (NFR-DAT-005, FR-ANL-003). Coverage is always presented as _derived over configured_.
 
@@ -353,7 +353,7 @@ GET  /public/area-stats                 area-level aggregates only
 GET  /public/donation-drives
 GET  /public/donation-drives/{slug}     implemented — FR-DON-017
 POST /public/rescue-requests            implemented — FR-SAF-009, no account, rate limited
-GET  /public/emergency-events/active    implemented — active emergency event or null
+GET  /public/emergency-events/active    implemented — newest-first list of active events
 GET  /public/activities
 GET  /public/activities/{slug}          implemented — FR-ACT-012
 GET  /public/guides
@@ -393,6 +393,7 @@ PATCH /me/household                 implemented — resident head edits their ho
 POST  /me/household/members
 PATCH /me/household/members/{id}
 POST  /me/safety-status            implemented — per member or whole household (FR-SAF-001..007)
+GET   /me/safety                   implemented — selected-event household safety state
 POST  /me/incident-reports          implemented — photo upload + report details (FR-SAF-015)
 GET   /me/go-bag
 PUT   /me/go-bag
@@ -410,6 +411,8 @@ GET   /admin/households/{id}         implemented — detail plus active member r
 PATCH /admin/households/{id}         implemented — admin/BHW edit with area-scope enforcement
 GET   /admin/households/summary      implemented — scoped coverage metrics for registry workspaces
 POST  /admin/households/{id}/members implemented — add a citizen to an existing household
+POST  /admin/households/{id}/members/from-unregistered implemented — one-time walk-in conversion
+POST  /admin/households/from-unregistered implemented — full assisted household conversion
 DELETE /admin/households/{id}        implemented — admin-only archive
 GET   /admin/members                 implemented — active citizen directory, area-scoped for BHW
 GET   /admin/members/summary         implemented — area-scoped population, profile, support, and area totals
@@ -434,6 +437,7 @@ those members are created in the same transaction and appear in the registered c
 GET   /admin/emergency-events        implemented — list events (FR-SAF-018/019)
 POST  /admin/emergency-events        implemented — declare an event
 POST  /admin/emergency-events/{id}/end implemented — end active event
+GET   /admin/emergency-events/{id}/workspace implemented — area-scoped PII response workspace
 GET   /admin/rescue-requests         implemented — queue with triage ordering (FR-SAF-010)
 GET   /admin/rescue-requests/open-count implemented — tile count
 PATCH /admin/rescue-requests/{id}    implemented — update status / manual priority
@@ -442,6 +446,7 @@ GET   /admin/accounted-for           implemented — live counts by area (FR-SAF
 GET   /admin/unregistered-persons    implemented — list unregistered (FR-SAF-012)
 POST  /admin/unregistered-persons    implemented — record unregistered person
 PATCH /admin/unregistered-persons/{id} implemented — update status
+GET   /admin/unregistered-persons/{id} implemented — conversion prefill record
 GET   /admin/incident-reports        implemented — list incident reports (FR-SAF-016)
 PATCH /admin/incident-reports/{id}   implemented — verify or dismiss report
 POST  /admin/alerts
@@ -487,6 +492,13 @@ PATCH  /admin/{announcements|activities|donation-drives}/{id}/images/{image_id}
 PUT    /admin/{announcements|activities|donation-drives}/{id}/images/order
 DELETE /admin/{announcements|activities|donation-drives}/{id}/images/{image_id}
 ```
+
+Emergency-event selection is explicit across safety, walk-in, check-in, and resident operations.
+An omitted `event_id` resolves only when exactly one event is active; two or more return `409`.
+Anonymous rescue submissions remain event-null and triage never guesses an event. Physical
+evacuation occupancy counts open check-ins globally, so concurrent event summaries cannot
+double-count one person. Ending the final active event checks out all open rows; intermediate
+closure preserves them. Flood declarations alone create and finalize protected Flood History rows.
 
 `POST` is multipart and reuses `core/uploads.py`: JPEG, PNG, or WebP; magic-byte validation;
 5 MB per file; UUID storage names. `PATCH` selects the single cover.
@@ -656,15 +668,15 @@ Three implementations — `OpenMeteoSource`, `PagasaSource`, `ManualSource` — 
 
 Single-replica `cron` container. Jobs are plain Python functions invoked by the container's scheduler.
 
-| Job                       | Cadence                | Writes               | Requirement |
-| ------------------------- | ---------------------- | -------------------- | ----------- |
-| `fetch_weather`           | 20 min                 | `reading`, `forecast` | FR-WX-003   |
+| Job                       | Cadence                | Writes                               | Requirement |
+| ------------------------- | ---------------------- | ------------------------------------ | ----------- |
+| `fetch_weather`           | 20 min                 | `reading`, `forecast`                | FR-WX-003   |
 | `fetch_river_level`       | 15 min                 | `reading` on a new gauge measurement | FR-WX-008   |
-| `fetch_tcws_signal`       | 30 min                 | `reading`            | FR-WX-008   |
-| `evaluate_thresholds`     | after each river fetch | `alert_prompt`       | FR-WX-009   |
-| `flag_stale_records`      | daily 02:00            | `household.stale_at` | R-2         |
-| `send_activity_reminders` | daily 08:00            | `notification`       | FR-ACT-005  |
-| `backup_database`         | daily 03:00            | off-box dump         | NFR-AVL-005 |
+| `fetch_tcws_signal`       | 30 min                 | `reading`                            | FR-WX-008   |
+| `evaluate_thresholds`     | after each river fetch | `alert_prompt`                       | FR-WX-009   |
+| `flag_stale_records`      | daily 02:00            | `household.stale_at`                 | R-2         |
+| `send_activity_reminders` | daily 08:00            | `notification`                       | FR-ACT-005  |
+| `backup_database`         | daily 03:00            | off-box dump                         | NFR-AVL-005 |
 
 **Job discipline**
 

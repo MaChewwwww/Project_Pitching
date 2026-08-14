@@ -159,6 +159,25 @@ class AdminMemberCreate(MemberIn):
     relationship_to_head: str = Field(min_length=1)
 
 
+class MemberFromUnregisteredIn(BaseModel):
+    unregistered_person_id: uuid.UUID
+    birth_date: date
+    sex: Literal["male", "female"]
+    relationship_to_head: str = Field(min_length=1)
+
+
+class HouseholdFromUnregisteredIn(BaseModel):
+    unregistered_person_id: uuid.UUID
+    area_id: uuid.UUID
+    street_address: str = Field(min_length=1)
+    waterway_proximity: Literal["very_near", "near", "far"] | None = None
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    birth_date: date
+    sex: Literal["male", "female"]
+    members: list[MemberIn] = []
+
+
 class MemberUpdate(BaseModel):
     full_name: str = Field(min_length=1)
     birth_date: date | None = None
@@ -229,6 +248,7 @@ class HouseholdActivityItem(BaseModel):
 
 
 class HouseholdSafetySummary(BaseModel):
+    event_id: uuid.UUID
     event_name: str
     safe: int
     needs_rescue: int
@@ -236,7 +256,7 @@ class HouseholdSafetySummary(BaseModel):
 
 
 class HouseholdActivityOut(BaseModel):
-    safety: HouseholdSafetySummary | None = None
+    safety: list[HouseholdSafetySummary] = Field(default_factory=list)
     evacuations: list[HouseholdActivityItem] = Field(default_factory=list)
     rescues: list[HouseholdActivityItem] = Field(default_factory=list)
     incident_reports: list[HouseholdActivityItem] = Field(default_factory=list)
@@ -335,6 +355,7 @@ class RegistryMemberDetailOut(RegistryMemberOut):
 
 
 class MemberSafetyOut(BaseModel):
+    event_id: uuid.UUID
     event_name: str
     status: Literal["safe", "needs_rescue", "unaccounted"]
     set_method: str | None = None
@@ -342,7 +363,7 @@ class MemberSafetyOut(BaseModel):
 
 
 class RegistryMemberActivityOut(BaseModel):
-    safety: MemberSafetyOut | None = None
+    safety: list[MemberSafetyOut] = Field(default_factory=list)
     evacuations: list[HouseholdActivityItem] = Field(default_factory=list)
     household_rescues: list[HouseholdActivityItem] = Field(default_factory=list)
     household_reports: list[HouseholdActivityItem] = Field(default_factory=list)

@@ -17,25 +17,27 @@ from src.core.pagination import Page
 from src.db.session import DbSessionDep
 from src.modules.registry import service
 from src.modules.registry.schemas import (
+    AdminMemberCreate,
+    AdminMemberUpdate,
     DuplicateCandidate,
+    HouseholdActivityOut,
     HouseholdCreateBhw,
     HouseholdCreateResponse,
     HouseholdCreateSelf,
     HouseholdDetailOut,
-    HouseholdActivityOut,
+    HouseholdFromUnregisteredIn,
     HouseholdMergeRequest,
     HouseholdOut,
     HouseholdUpdate,
     HouseholdWorkspaceUpdate,
-    AdminMemberCreate,
-    AdminMemberUpdate,
+    MemberFromUnregisteredIn,
     MemberIn,
     MemberPromoteIn,
     MemberTransferIn,
     MemberUpdate,
-    RegistryMemberOut,
-    RegistryMemberDetailOut,
     RegistryMemberActivityOut,
+    RegistryMemberDetailOut,
+    RegistryMemberOut,
     RegistryMemberSummary,
     RegistrySummary,
 )
@@ -223,6 +225,33 @@ async def admin_add_member(
     return await service.add_member(session, household_id=household_id, body=body, actor=user)
 
 
+@admin_router.post(
+    "/{household_id}/members/from-unregistered",
+    dependencies=[Depends(require_role("admin", "bhw"))],
+    summary="Convert a walk-in into an existing household member (FR-SAF-014)",
+)
+async def admin_add_member_from_unregistered(
+    household_id: uuid.UUID,
+    body: MemberFromUnregisteredIn,
+    session: DbSessionDep,
+    user: CurrentUser,
+) -> RegistryMemberOut:
+    return await service.add_member_from_unregistered(
+        session, household_id=household_id, body=body, actor=user
+    )
+
+
+@admin_router.post(
+    "/from-unregistered",
+    dependencies=[Depends(require_role("admin", "bhw"))],
+    summary="Create a household from an unregistered walk-in (FR-SAF-014)",
+)
+async def admin_create_household_from_unregistered(
+    body: HouseholdFromUnregisteredIn, session: DbSessionDep, user: CurrentUser
+) -> HouseholdCreateResponse:
+    return await service.create_household_from_unregistered(session, body=body, actor=user)
+
+
 @admin_router.delete("/{household_id}", dependencies=[Depends(require_role("admin"))])
 async def admin_archive_household(
     household_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
@@ -270,9 +299,7 @@ async def admin_list_members(
     dependencies=[Depends(require_role("admin", "bhw"))],
     summary="Area-scoped citizen registry summary",
 )
-async def admin_member_summary(
-    session: DbSessionDep, user: CurrentUser
-) -> RegistryMemberSummary:
+async def admin_member_summary(session: DbSessionDep, user: CurrentUser) -> RegistryMemberSummary:
     return await service.get_member_summary(session, user=user)
 
 

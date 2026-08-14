@@ -119,6 +119,23 @@ export function waterwayProximityForPoint(
   return "far";
 }
 
+export function hazardLevelForPoint(
+  data: HazardFeatureCollection | null,
+  latitude: number,
+  longitude: number,
+): 1 | 2 | 3 | null {
+  if (!data) return null;
+  let highestLevel = 0;
+  for (const feature of data.features) {
+    if (!pointInGeometry([longitude, latitude], feature.geometry)) continue;
+    highestLevel = Math.max(highestLevel, Number(feature.properties?.Var ?? 0));
+  }
+  if (highestLevel === 0) return null;
+  if (highestLevel >= 3) return 3;
+  if (highestLevel === 2) return 2;
+  return 1;
+}
+
 export type HazardLoadState =
   | { status: "loading"; data: null }
   | { status: "ready"; data: HazardFeatureCollection }

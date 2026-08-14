@@ -24,6 +24,7 @@ from src.modules.evacuation import service as evacuation_service
 from src.modules.safety import service
 from src.modules.safety.schemas import (
     AccountedForOut,
+    EmergencyWorkspaceOut,
     HouseholdSafetyOut,
     IncidentReportIn,
     IncidentReportOut,
@@ -52,6 +53,18 @@ def _client_ip(request: Request) -> str | None:
     return request.client.host if request.client else None
 
 
+@admin_router.get(
+    "/emergency-events/{event_id}/workspace",
+    dependencies=[Depends(require_role("admin", "bhw"))],
+    summary="Event-selected household response workspace (FR-SAF-020, FR-MAP-015)",
+)
+async def admin_emergency_workspace(
+    event_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> EmergencyWorkspaceOut:
+    event = await evacuation_service.get_event_or_404(session, event_id)
+    return await service.emergency_workspace(session, event=event, user=user)
+
+
 @public_router.post(
     "/rescue-requests",
     status_code=201,
@@ -67,8 +80,10 @@ async def public_rescue_request(
 
 
 @me_router.get("/safety", summary="My household's safety status for the active event")
-async def my_safety(session: DbSessionDep, user: CurrentUser) -> MySafetyOut:
-    return await service.get_my_safety(session, user=user)
+async def my_safety(
+    session: DbSessionDep, user: CurrentUser, event_id: uuid.UUID | None = None
+) -> MySafetyOut:
+    return await service.get_my_safety(session, user=user, event_id=event_id)
 
 
 @me_router.post(
@@ -79,7 +94,7 @@ async def my_safety(session: DbSessionDep, user: CurrentUser) -> MySafetyOut:
 async def submit_my_safety_status(
     body: SafetyStatusSelfIn, request: Request, session: DbSessionDep, user: CurrentUser
 ) -> HouseholdSafetyOut:
-    event = await evacuation_service.require_active_event(session)
+    event = await evacuation_service.require_active_event(session, body.event_id)
     return await service.submit_self_status(
         session, event=event, user=user, body=body, ip=_client_ip(request)
     )
@@ -91,10 +106,15 @@ async def submit_my_safety_status(
     summary="A household's current safety status (admin/BHW view)",
 )
 async def admin_household_safety(
-    household_id: uuid.UUID, session: DbSessionDep
+    household_id: uuid.UUID,
+    session: DbSessionDep,
+    user: CurrentUser,
+    event_id: uuid.UUID | None = None,
 ) -> HouseholdSafetyOut:
-    event = await evacuation_service.require_active_event(session)
-    return await service.get_household_safety(session, event=event, household_id=household_id)
+    event = await evacuation_service.require_active_event(session, event_id)
+    return await service.get_household_safety(
+        session, event=event, household_id=household_id, user=user
+    )
 
 
 @admin_router.post(
@@ -105,7 +125,7 @@ async def admin_household_safety(
 async def admin_submit_safety_status(
     body: SafetyStatusAdminIn, request: Request, session: DbSessionDep, user: CurrentUser
 ) -> HouseholdSafetyOut | None:
-    event = await evacuation_service.require_active_event(session)
+    event = await evacuation_service.require_active_event(session, body.event_id)
     return await service.submit_admin_status(
         session, event=event, actor=user, body=body, ip=_client_ip(request)
     )
@@ -176,10 +196,22 @@ async def admin_update_rescue_request(
 async def admin_list_unregistered(
     session: DbSessionDep,
     event_id: uuid.UUID | None = None,
+    include_converted: bool = False,
     page: int = 1,
     size: int = 20,
 ) -> Page[UnregisteredPersonOut]:
-    return await service.list_unregistered(session, event_id=event_id, page=page, size=size)
+    resolved_event_id = event_id
+    if resolved_event_id is None:
+        resolved_event_id = (await evacuation_service.require_active_event(session)).id
+    else:
+        await evacuation_service.get_event_or_404(session, resolved_event_id)
+    return await service.list_unregistered(
+        session,
+        event_id=resolved_event_id,
+        include_converted=include_converted,
+        page=page,
+        size=size,
+    )
 
 
 @admin_router.post(
@@ -191,6 +223,18 @@ async def admin_create_unregistered(
     body: UnregisteredPersonIn, request: Request, session: DbSessionDep, user: CurrentUser
 ) -> UnregisteredPersonOut:
     return await service.create_unregistered(session, body=body, actor=user, ip=_client_ip(request))
+
+
+@admin_router.get(
+    "/unregistered-persons/{unregistered_id}",
+    dependencies=[Depends(require_role("admin", "bhw"))],
+    summary="Get one unregistered-person record for registry conversion",
+)
+async def admin_get_unregistered(
+    unregistered_id: uuid.UUID, session: DbSessionDep
+) -> UnregisteredPersonOut:
+    person = await service.get_unregistered_or_404(session, unregistered_id)
+    return await service.unregistered_out(session, person)
 
 
 @admin_router.patch(
@@ -226,6 +270,7 @@ async def me_create_incident_report(
     latitude: float | None = Form(default=None),  # noqa: B008
     longitude: float | None = Form(default=None),  # noqa: B008
     location_note: str | None = Form(default=None),  # noqa: B008
+    event_id: uuid.UUID | None = Form(default=None),  # noqa: B008
     photo: UploadFile | None = File(default=None),  # noqa: B008
 ) -> IncidentReportOut:
     body = IncidentReportIn(
@@ -234,6 +279,7 @@ async def me_create_incident_report(
         latitude=latitude,
         longitude=longitude,
         location_note=location_note,
+        event_id=event_id,
     )
     return await service.create_incident_report(
         session, body=body, photo=photo, actor=user, ip=_client_ip(request)

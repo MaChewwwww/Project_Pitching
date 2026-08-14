@@ -98,11 +98,12 @@ auth-on-the-server complexity for zero user-visible gain.
 
 Three need `dynamic(..., { ssr: false })`, for different reasons:
 
-| Component                       | Reason                                                                |
-| ------------------------------- | --------------------------------------------------------------------- |
-| `HazardMap` (Leaflet)           | Touches `window` at import time                                       |
-| `ZoneMap3D` (React Three Fiber) | Same, **plus** gated on viewport ≥ `md` and `hardwareConcurrency > 4` |
-| Recharts                        | Heavy. It must never reach the landing bundle (NFR-PERF-007)          |
+| Component                        | Reason                                                                             |
+| -------------------------------- | ---------------------------------------------------------------------------------- |
+| `HazardMap` (Leaflet)            | Touches `window` at import time                                                    |
+| `EmergencyResponseMap` (Leaflet) | Private event workspace; dynamically imported so admin SSR never evaluates Leaflet |
+| `ZoneMap3D` (React Three Fiber)  | Same, **plus** gated on viewport ≥ `md` and `hardwareConcurrency > 4`              |
+| Recharts                         | Heavy. It must never reach the landing bundle (NFR-PERF-007)                       |
 
 The 3D map's gate is a product decision, not an optimisation. On a low-end Android it stutters
 and drains battery, so below `md` it renders a static image or the 2D map, with an explicit

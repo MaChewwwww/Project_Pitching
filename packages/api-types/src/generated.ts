@@ -387,7 +387,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The currently active emergency event, if any (FR-SAF-018) */
+        /** Active emergency events, newest first (FR-SAF-018/020) */
         get: operations["public_active_event_api_v1_public_emergency_events_active_get"];
         put?: never;
         post?: never;
@@ -1566,6 +1566,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/households/{household_id}/members/from-unregistered": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Convert a walk-in into an existing household member (FR-SAF-014) */
+        post: operations["admin_add_member_from_unregistered_api_v1_admin_households__household_id__members_from_unregistered_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/households/from-unregistered": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a household from an unregistered walk-in (FR-SAF-014) */
+        post: operations["admin_create_household_from_unregistered_api_v1_admin_households_from_unregistered_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/households/merge": {
         parameters: {
             query?: never;
@@ -1704,6 +1738,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/emergency-events/{event_id}/workspace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Event-selected household response workspace (FR-SAF-020, FR-MAP-015) */
+        get: operations["admin_emergency_workspace_api_v1_admin_emergency_events__event_id__workspace_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/households/{household_id}/safety": {
         parameters: {
             query?: never;
@@ -1831,7 +1882,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get one unregistered-person record for registry conversion */
+        get: operations["admin_get_unregistered_api_v1_admin_unregistered_persons__unregistered_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2466,6 +2518,8 @@ export interface components {
             longitude?: number | null;
             /** Location Note */
             location_note?: string | null;
+            /** Event Id */
+            event_id?: string | null;
             /** Photo */
             photo?: string | null;
         };
@@ -2594,11 +2648,6 @@ export interface components {
             type: "flood" | "earthquake" | "typhoon" | "fire" | "other";
             /** Started At */
             started_at?: string | null;
-            /**
-             * Supersede Active
-             * @default false
-             */
-            supersede_active: boolean;
         };
         /** EmergencyEventOut */
         EmergencyEventOut: {
@@ -2627,6 +2676,25 @@ export interface components {
             declared_by_user_id: string | null;
             /** Declared By Name */
             declared_by_name: string | null;
+            /**
+             * Occupancy Reset Count
+             * @default 0
+             */
+            occupancy_reset_count: number;
+        };
+        /** EmergencyWorkspaceOut */
+        EmergencyWorkspaceOut: {
+            event: components["schemas"]["PublicEmergencyEvent"];
+            /** Is Read Only */
+            is_read_only: boolean;
+            /** Households */
+            households: components["schemas"]["WorkspaceHouseholdOut"][];
+            /** Unregistered Pins */
+            unregistered_pins: components["schemas"]["WorkspaceUnregisteredOut"][];
+            /** Unmapped Household Count */
+            unmapped_household_count: number;
+            /** Evacuation Centers */
+            evacuation_centers: components["schemas"]["PublicEvacCenter"][];
         };
         /** EvacCenterIn */
         EvacCenterIn: {
@@ -2962,7 +3030,8 @@ export interface components {
         };
         /** HouseholdActivityOut */
         HouseholdActivityOut: {
-            safety?: components["schemas"]["HouseholdSafetySummary"] | null;
+            /** Safety */
+            safety?: components["schemas"]["HouseholdSafetySummary"][];
             /** Evacuations */
             evacuations?: components["schemas"]["HouseholdActivityItem"][];
             /** Rescues */
@@ -3096,6 +3165,42 @@ export interface components {
              */
             members: components["schemas"]["MemberOut"][];
         };
+        /** HouseholdFromUnregisteredIn */
+        HouseholdFromUnregisteredIn: {
+            /**
+             * Unregistered Person Id
+             * Format: uuid
+             */
+            unregistered_person_id: string;
+            /**
+             * Area Id
+             * Format: uuid
+             */
+            area_id: string;
+            /** Street Address */
+            street_address: string;
+            /** Waterway Proximity */
+            waterway_proximity?: ("very_near" | "near" | "far") | null;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /**
+             * Birth Date
+             * Format: date
+             */
+            birth_date: string;
+            /**
+             * Sex
+             * @enum {string}
+             */
+            sex: "male" | "female";
+            /**
+             * Members
+             * @default []
+             */
+            members: components["schemas"]["MemberIn"][];
+        };
         /** HouseholdMergeRequest */
         HouseholdMergeRequest: {
             /**
@@ -3178,6 +3283,11 @@ export interface components {
         };
         /** HouseholdSafetySummary */
         HouseholdSafetySummary: {
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
             /** Event Name */
             event_name: string;
             /** Safe */
@@ -3345,6 +3455,26 @@ export interface components {
              * @default []
              */
             assigned_area_ids: string[];
+        };
+        /** MemberFromUnregisteredIn */
+        MemberFromUnregisteredIn: {
+            /**
+             * Unregistered Person Id
+             * Format: uuid
+             */
+            unregistered_person_id: string;
+            /**
+             * Birth Date
+             * Format: date
+             */
+            birth_date: string;
+            /**
+             * Sex
+             * @enum {string}
+             */
+            sex: "male" | "female";
+            /** Relationship To Head */
+            relationship_to_head: string;
         };
         /**
          * MemberIn
@@ -3915,6 +4045,11 @@ export interface components {
          * @description No `declared_by_*` — that is barangay-staff information, not public (FR-SAF-018).
          */
         PublicEmergencyEvent: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
             /** Name */
             name: string;
             /**
@@ -4252,7 +4387,8 @@ export interface components {
         };
         /** RegistryMemberActivityOut */
         RegistryMemberActivityOut: {
-            safety?: components["schemas"]["src__modules__registry__schemas__MemberSafetyOut"] | null;
+            /** Safety */
+            safety?: components["schemas"]["src__modules__registry__schemas__MemberSafetyOut"][];
             /** Evacuations */
             evacuations?: components["schemas"]["HouseholdActivityItem"][];
             /** Household Rescues */
@@ -4610,6 +4746,10 @@ export interface components {
          *     caller).
          */
         SafetyStatusAdminIn: {
+            /** Event Id */
+            event_id?: string | null;
+            /** Evac Center Id */
+            evac_center_id?: string | null;
             /**
              * Status
              * @enum {string}
@@ -4637,6 +4777,10 @@ export interface components {
          *     barangay confirmation.
          */
         SafetyStatusSelfIn: {
+            /** Event Id */
+            event_id?: string | null;
+            /** Evac Center Id */
+            evac_center_id?: string | null;
             /**
              * Status
              * @enum {string}
@@ -4702,11 +4846,16 @@ export interface components {
         };
         /**
          * UnregisteredPersonIn
-         * @description `POST /admin/unregistered-persons` (FR-SAF-012). BR-5.10: "a name and
-         *     location is enough" — do not add fields the requirement doesn't ask for.
-         *     `event_id` is never accepted here; it comes from the active event.
+         * @description `POST /admin/unregistered-persons` (FR-SAF-012/020).
+         *
+         *     Name and event are required; contact, location, support needs, and physical
+         *     evacuation-center assignment are operationally optional.
          */
         UnregisteredPersonIn: {
+            /** Event Id */
+            event_id?: string | null;
+            /** Evac Center Id */
+            evac_center_id?: string | null;
             /** Full Name */
             full_name: string;
             /** Contact Number */
@@ -4722,6 +4871,43 @@ export interface components {
              * @enum {string}
              */
             initial_status: "safe" | "needs_rescue";
+            /**
+             * Is Child
+             * @default false
+             */
+            is_child: boolean;
+            /**
+             * Is Senior
+             * @default false
+             */
+            is_senior: boolean;
+            /**
+             * Is Pwd
+             * @default false
+             */
+            is_pwd: boolean;
+            /**
+             * Is Pregnant
+             * @default false
+             */
+            is_pregnant: boolean;
+            /**
+             * Is Lactating
+             * @default false
+             */
+            is_lactating: boolean;
+            /**
+             * Has Chronic Condition
+             * @default false
+             */
+            has_chronic_condition: boolean;
+            /** Chronic Condition Note */
+            chronic_condition_note?: string | null;
+            /**
+             * Is Bedridden
+             * @default false
+             */
+            is_bedridden: boolean;
         };
         /** UnregisteredPersonOut */
         UnregisteredPersonOut: {
@@ -4730,6 +4916,11 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
             /**
              * Created At
              * Format: date-time
@@ -4751,6 +4942,28 @@ export interface components {
             recorded_by_name: string | null;
             /** Converted Household Id */
             converted_household_id: string | null;
+            /** Converted Member Id */
+            converted_member_id: string | null;
+            /** Is Child */
+            is_child: boolean;
+            /** Is Senior */
+            is_senior: boolean;
+            /** Is Pwd */
+            is_pwd: boolean;
+            /** Is Pregnant */
+            is_pregnant: boolean;
+            /** Is Lactating */
+            is_lactating: boolean;
+            /** Has Chronic Condition */
+            has_chronic_condition: boolean;
+            /** Chronic Condition Note */
+            chronic_condition_note: string | null;
+            /** Is Bedridden */
+            is_bedridden: boolean;
+            /** Evac Center Id */
+            evac_center_id: string | null;
+            /** Evac Center Name */
+            evac_center_name: string | null;
         };
         /** UnregisteredPersonPatch */
         UnregisteredPersonPatch: {
@@ -4764,6 +4977,22 @@ export interface components {
             longitude?: number | null;
             /** Location Note */
             location_note?: string | null;
+            /** Is Child */
+            is_child?: boolean | null;
+            /** Is Senior */
+            is_senior?: boolean | null;
+            /** Is Pwd */
+            is_pwd?: boolean | null;
+            /** Is Pregnant */
+            is_pregnant?: boolean | null;
+            /** Is Lactating */
+            is_lactating?: boolean | null;
+            /** Has Chronic Condition */
+            has_chronic_condition?: boolean | null;
+            /** Chronic Condition Note */
+            chronic_condition_note?: string | null;
+            /** Is Bedridden */
+            is_bedridden?: boolean | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -4777,6 +5006,65 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** WorkspaceHouseholdOut */
+        WorkspaceHouseholdOut: {
+            /**
+             * Household Id
+             * Format: uuid
+             */
+            household_id: string;
+            /** Reference No */
+            reference_no: string;
+            /** Head Name */
+            head_name: string;
+            /**
+             * Area Id
+             * Format: uuid
+             */
+            area_id: string;
+            /** Area Name */
+            area_name: string;
+            /** Street Address */
+            street_address: string | null;
+            location: components["schemas"]["GeoJsonPoint"] | null;
+            /** Waterway Proximity */
+            waterway_proximity: string | null;
+            /** Members */
+            members: components["schemas"]["WorkspaceMemberOut"][];
+            /** Safe Count */
+            safe_count: number;
+            /** Needs Rescue Count */
+            needs_rescue_count: number;
+            /** Unaccounted Count */
+            unaccounted_count: number;
+            /** All Safe */
+            all_safe: boolean;
+        };
+        /** WorkspaceMemberOut */
+        WorkspaceMemberOut: {
+            /**
+             * Member Id
+             * Format: uuid
+             */
+            member_id: string;
+            /** Full Name */
+            full_name: string;
+            /** Is Head */
+            is_head: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "safe" | "needs_rescue" | "unaccounted";
+            /** Set Method */
+            set_method: ("self" | "assisted" | "household_bulk") | null;
+            /** Vulnerability Flags */
+            vulnerability_flags: string[];
+            /** Evac Center Id */
+            evac_center_id: string | null;
+            /** Evac Center Name */
+            evac_center_name: string | null;
         };
         /**
          * WorkspaceMemberUpdate
@@ -4837,8 +5125,35 @@ export interface components {
             /** Id */
             id?: string | null;
         };
+        /** WorkspaceUnregisteredOut */
+        WorkspaceUnregisteredOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Full Name */
+            full_name: string;
+            location: components["schemas"]["GeoJsonPoint"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "safe" | "needs_rescue" | "unaccounted";
+            /** Vulnerability Flags */
+            vulnerability_flags: string[];
+            /** Evac Center Id */
+            evac_center_id: string | null;
+            /** Evac Center Name */
+            evac_center_name: string | null;
+        };
         /** MemberSafetyOut */
         src__modules__registry__schemas__MemberSafetyOut: {
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
             /** Event Name */
             event_name: string;
             /**
@@ -5468,7 +5783,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PublicEmergencyEvent"] | null;
+                    "application/json": components["schemas"]["PublicEmergencyEvent"][];
                 };
             };
         };
@@ -5882,7 +6197,9 @@ export interface operations {
     };
     my_safety_api_v1_me_safety_get: {
         parameters: {
-            query?: never;
+            query?: {
+                event_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -5896,6 +6213,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MySafetyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -8456,6 +8782,74 @@ export interface operations {
             };
         };
     };
+    admin_add_member_from_unregistered_api_v1_admin_households__household_id__members_from_unregistered_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                household_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberFromUnregisteredIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistryMemberOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_create_household_from_unregistered_api_v1_admin_households_from_unregistered_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdFromUnregisteredIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdCreateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     admin_merge_households_api_v1_admin_households_merge_post: {
         parameters: {
             query?: never;
@@ -8776,9 +9170,42 @@ export interface operations {
             };
         };
     };
-    admin_household_safety_api_v1_admin_households__household_id__safety_get: {
+    admin_emergency_workspace_api_v1_admin_emergency_events__event_id__workspace_get: {
         parameters: {
             query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmergencyWorkspaceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_household_safety_api_v1_admin_households__household_id__safety_get: {
+        parameters: {
+            query?: {
+                event_id?: string | null;
+            };
             header?: never;
             path: {
                 household_id: string;
@@ -8965,6 +9392,7 @@ export interface operations {
         parameters: {
             query?: {
                 event_id?: string | null;
+                include_converted?: boolean;
                 page?: number;
                 size?: number;
             };
@@ -9006,6 +9434,37 @@ export interface operations {
                 "application/json": components["schemas"]["UnregisteredPersonIn"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnregisteredPersonOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_get_unregistered_api_v1_admin_unregistered_persons__unregistered_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unregistered_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

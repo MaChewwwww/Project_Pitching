@@ -130,12 +130,13 @@ export interface RegistryMemberSummary {
 }
 
 export interface RegistryMemberActivityOut {
-  safety: {
+  safety: Array<{
+    event_id: string;
     event_name: string;
     status: "safe" | "needs_rescue" | "unaccounted";
     set_method: string | null;
     set_at: string | null;
-  } | null;
+  }>;
   evacuations: HouseholdActivityItem[];
   household_rescues: HouseholdActivityItem[];
   household_reports: HouseholdActivityItem[];
@@ -171,12 +172,13 @@ export interface HouseholdActivityItem {
 }
 
 export interface HouseholdActivityOut {
-  safety: {
+  safety: Array<{
+    event_id: string;
     event_name: string;
     safe: number;
     needs_rescue: number;
     unaccounted: number;
-  } | null;
+  }>;
   evacuations: HouseholdActivityItem[];
   rescues: HouseholdActivityItem[];
   incident_reports: HouseholdActivityItem[];
