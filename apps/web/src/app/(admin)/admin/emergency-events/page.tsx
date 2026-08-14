@@ -194,15 +194,14 @@ export default function AdminEmergencyEventsPage() {
       render: (row) => (
         <div className="flex items-center gap-2">
           <span
-            className={`grid size-7 place-items-center rounded-lg ${
-              row.type === "flood"
+            className={`grid size-7 place-items-center rounded-lg ${row.type === "flood"
                 ? "bg-sky-100 text-sky-700"
                 : row.type === "fire"
-                ? "bg-rose-100 text-rose-700"
-                : row.type === "earthquake"
-                ? "bg-amber-100 text-amber-700"
-                : "bg-emerald-100 text-emerald-700"
-            }`}
+                  ? "bg-rose-100 text-rose-700"
+                  : row.type === "earthquake"
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-emerald-100 text-emerald-700"
+              }`}
           >
             {row.type === "flood" ? (
               <Waves className="size-4" />
@@ -253,7 +252,7 @@ export default function AdminEmergencyEventsPage() {
   return (
     <div className="flex flex-col gap-6">
       <AdminPageHeader
-        title="Emergency Events Workspace"
+        title="Emergency Events"
         description="Command center for real-time incident tracking, area safety ledgers, spatial response mapping, and evacuation operations."
         action={
           canManageEvents ? (
@@ -324,11 +323,10 @@ export default function AdminEmergencyEventsPage() {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider border ${
-                          selected.is_active
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider border ${selected.is_active
                             ? "bg-emerald-400/20 text-emerald-200 border-emerald-400/30"
                             : "bg-white/10 text-emerald-100/70 border-white/15"
-                        }`}
+                          }`}
                       >
                         {selected.is_active ? (
                           <>
@@ -373,16 +371,14 @@ export default function AdminEmergencyEventsPage() {
                             key={e.id}
                             type="button"
                             onClick={() => setSelection(e.id)}
-                            className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer border ${
-                              isSelected
+                            className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer border ${isSelected
                                 ? "bg-emerald-500 text-neutral-950 border-emerald-300/40 shadow-md shadow-emerald-950/40 scale-105"
                                 : "bg-white/10 text-white border-white/20 hover:bg-white/20 shadow-2xs"
-                            }`}
+                              }`}
                           >
                             <span
-                              className={`size-2 rounded-full ${
-                                isSelected ? "bg-neutral-950 animate-ping" : "bg-emerald-400"
-                              }`}
+                              className={`size-2 rounded-full ${isSelected ? "bg-neutral-950 animate-ping" : "bg-emerald-400"
+                                }`}
                             />
                             <span className="truncate max-w-[160px]">{e.name}</span>
                           </button>
@@ -422,192 +418,188 @@ export default function AdminEmergencyEventsPage() {
             </div>
           ) : null}
 
-            {/* 3. Connected Underline Tabs Header Bar */}
-            <div className="border-b border-neutral-200 bg-white">
-              <div role="tablist" className="flex overflow-x-auto px-3">
-                {/* Tab 1: Overview Metrics */}
-                <button
-                  role="tab"
-                  aria-selected={tab === "overview"}
-                  onClick={() => setSelection(selected?.id ?? "", "overview")}
-                  className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${
-                    tab === "overview"
-                      ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
-                      : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+          {/* 3. Connected Underline Tabs Header Bar */}
+          <div className="border-b border-neutral-200 bg-white">
+            <div role="tablist" className="flex overflow-x-auto px-3">
+              {/* Tab 1: Overview Metrics */}
+              <button
+                role="tab"
+                aria-selected={tab === "overview"}
+                onClick={() => setSelection(selected?.id ?? "", "overview")}
+                className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${tab === "overview"
+                    ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
+                    : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
                   }`}
-                >
-                  <Activity aria-hidden className="size-4 shrink-0" />
-                  Overview Metrics
-                </button>
+              >
+                <Activity aria-hidden className="size-4 shrink-0" />
+                Overview Metrics
+              </button>
 
-                {/* Tab 2: Emergency Events */}
-                <button
-                  role="tab"
-                  aria-selected={tab === "events"}
-                  onClick={() => setSelection(selected?.id ?? "", "events")}
-                  className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${
-                    tab === "events"
-                      ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
-                      : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+              {/* Tab 2: Emergency Events */}
+              <button
+                role="tab"
+                aria-selected={tab === "events"}
+                onClick={() => setSelection(selected?.id ?? "", "events")}
+                className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${tab === "events"
+                    ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
+                    : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
                   }`}
-                >
-                  <Siren aria-hidden className="size-4 shrink-0" />
-                  Emergency Events
-                  {events.length > 0 ? (
-                    <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] leading-none font-black text-emerald-800">
-                      {events.length}
-                    </span>
-                  ) : null}
-                </button>
-
-                {/* Tab 3: Response Map */}
-                {canSeePii ? (
-                  <button
-                    role="tab"
-                    aria-selected={tab === "map"}
-                    onClick={() => setSelection(selected?.id ?? "", "map")}
-                    className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${
-                      tab === "map"
-                        ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
-                        : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
-                    }`}
-                  >
-                    <Map aria-hidden className="size-4 shrink-0" />
-                    Response Map
-                  </button>
+              >
+                <Siren aria-hidden className="size-4 shrink-0" />
+                Emergency Events
+                {events.length > 0 ? (
+                  <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] leading-none font-black text-emerald-800">
+                    {events.length}
+                  </span>
                 ) : null}
+              </button>
 
-                {/* Tab 4: Safety Ledger */}
+              {/* Tab 3: Response Map */}
+              {canSeePii ? (
                 <button
                   role="tab"
-                  aria-selected={tab === "accounted-for"}
-                  onClick={() => setSelection(selected?.id ?? "", "accounted-for")}
-                  className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${
-                    tab === "accounted-for"
+                  aria-selected={tab === "map"}
+                  onClick={() => setSelection(selected?.id ?? "", "map")}
+                  className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${tab === "map"
                       ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
                       : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
-                  }`}
+                    }`}
                 >
-                  <CircleCheck aria-hidden className="size-4 shrink-0" />
-                  Safety Ledger
+                  <Map aria-hidden className="size-4 shrink-0" />
+                  Response Map
                 </button>
-              </div>
-            </div>
-
-            {/* 4. Tab Content Panel Container */}
-            <div className="bg-slate-50/50 p-5 sm:p-7">
-              {/* Overview Metrics Tab */}
-              {tab === "overview" && selected ? (
-                <Overview
-                  event={selected}
-                  activeCount={activeCount}
-                  workspace={workspaceQuery.data}
-                  canSeePii={canSeePii}
-                  loading={workspaceQuery.isLoading}
-                  error={workspaceQuery.isError}
-                  retry={() => workspaceQuery.refetch()}
-                />
               ) : null}
 
-              {/* Emergency Events Directory Tab */}
-              {tab === "events" ? (
-                <div className="flex flex-col gap-5">
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-neutral-200 pb-4">
-                    <div>
-                      <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                        <List className="size-4 text-emerald-600" />
-                        Emergency Events Ledger & History
-                      </h3>
-                      <p className="text-xs text-neutral-500">
-                        Select an event to load its active workspace, safety ledger, and spatial response map.
-                      </p>
-                    </div>
-                    <Badge tone="info">{events.length} Registered Events</Badge>
-                  </div>
-
-                  <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-                    <ResourceTable
-                      columns={columns}
-                      data={events}
-                      isLoading={false}
-                      isError={false}
-                      emptyTitle="No emergency events declared"
-                      getRowKey={(row) => row.id}
-                      rowActions={(row) => (
-                        <Button
-                          size="sm"
-                          variant={row.id === selected?.id ? "secondary" : "outline"}
-                          className={row.id === selected?.id ? "bg-emerald-100 text-emerald-900 font-bold border-emerald-200" : ""}
-                          onClick={() => setSelection(row.id, "overview")}
-                        >
-                          {row.id === selected?.id ? "Active Workspace" : "Open Workspace"}
-                        </Button>
-                      )}
-                    />
-                  </div>
-                </div>
-              ) : null}
-
-              {/* Response Map Tab */}
-              {tab === "map" && canSeePii ? (
-                <div className="flex flex-col gap-4">
-                  {selected ? (
-                    <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 border border-neutral-200 text-xs shadow-2xs">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-neutral-700">Active Map Context:</span>
-                        <Badge tone={selected.is_active ? "danger" : "neutral"}>{selected.name}</Badge>
-                        <span className="capitalize text-neutral-500">({selected.type})</span>
-                      </div>
-                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelection(selected.id, "events")}>
-                        Change Event
-                      </Button>
-                    </div>
-                  ) : null}
-                  {workspaceQuery.isLoading ? (
-                    <WorkspaceLoading label="Loading spatial response map and household locations…" />
-                  ) : workspaceQuery.isError ? (
-                    <WorkspaceError
-                      label="The response map could not be loaded."
-                      onRetry={() => workspaceQuery.refetch()}
-                    />
-                  ) : workspaceQuery.data ? (
-                    <EmergencyResponseMap data={workspaceQuery.data} />
-                  ) : null}
-                </div>
-              ) : null}
-
-              {/* Safety Ledger Tab */}
-              {tab === "accounted-for" ? (
-                <div className="flex flex-col gap-4">
-                  {selected ? (
-                    <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 border border-neutral-200 text-xs shadow-2xs">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-neutral-700">Active Ledger Event:</span>
-                        <Badge tone={selected.is_active ? "danger" : "neutral"}>{selected.name}</Badge>
-                        <span className="capitalize text-neutral-500">({selected.type})</span>
-                      </div>
-                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelection(selected.id, "events")}>
-                        Change Event
-                      </Button>
-                    </div>
-                  ) : null}
-                  {accountedQuery.isLoading ? (
-                    <WorkspaceLoading label="Loading Accounted For safety ledger…" />
-                  ) : accountedQuery.isError ? (
-                    <WorkspaceError
-                      label="The selected event safety ledger could not be loaded."
-                      onRetry={() => accountedQuery.refetch()}
-                    />
-                  ) : accountedQuery.data ? (
-                    <AccountedForPanel data={accountedQuery.data} />
-                  ) : null}
-                </div>
-              ) : null}
+              {/* Tab 4: Safety Ledger */}
+              <button
+                role="tab"
+                aria-selected={tab === "accounted-for"}
+                onClick={() => setSelection(selected?.id ?? "", "accounted-for")}
+                className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${tab === "accounted-for"
+                    ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
+                    : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+                  }`}
+              >
+                <CircleCheck aria-hidden className="size-4 shrink-0" />
+                Safety Ledger
+              </button>
             </div>
           </div>
-        )}
-      </div>
-    );
+
+          {/* 4. Tab Content Panel Container */}
+          <div className="bg-slate-50/50 p-5 sm:p-7">
+            {/* Overview Metrics Tab */}
+            {tab === "overview" && selected ? (
+              <Overview
+                event={selected}
+                activeCount={activeCount}
+                workspace={workspaceQuery.data}
+                canSeePii={canSeePii}
+                loading={workspaceQuery.isLoading}
+                error={workspaceQuery.isError}
+                retry={() => workspaceQuery.refetch()}
+              />
+            ) : null}
+
+            {/* Emergency Events Directory Tab */}
+            {tab === "events" ? (
+              <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-neutral-200 pb-4">
+                  <div>
+                    <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                      <List className="size-4 text-emerald-600" />
+                      Emergency Events Ledger & History
+                    </h3>
+                    <p className="text-xs text-neutral-500">
+                      Select an event to load its active workspace, safety ledger, and spatial response map.
+                    </p>
+                  </div>
+                  <Badge tone="info">{events.length} Registered Events</Badge>
+                </div>
+
+                <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                  <ResourceTable
+                    columns={columns}
+                    data={events}
+                    isLoading={false}
+                    isError={false}
+                    emptyTitle="No emergency events declared"
+                    getRowKey={(row) => row.id}
+                    rowActions={(row) => (
+                      <Button
+                        size="sm"
+                        variant={row.id === selected?.id ? "secondary" : "outline"}
+                        className={row.id === selected?.id ? "bg-emerald-100 text-emerald-900 font-bold border-emerald-200" : ""}
+                        onClick={() => setSelection(row.id, "overview")}
+                      >
+                        {row.id === selected?.id ? "Active Workspace" : "Open Workspace"}
+                      </Button>
+                    )}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            {/* Response Map Tab */}
+            {tab === "map" && canSeePii ? (
+              <div className="flex flex-col gap-4">
+                {selected ? (
+                  <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 border border-neutral-200 text-xs shadow-2xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-neutral-700">Active Map Context:</span>
+                      <Badge tone={selected.is_active ? "danger" : "neutral"}>{selected.name}</Badge>
+                      <span className="capitalize text-neutral-500">({selected.type})</span>
+                    </div>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelection(selected.id, "events")}>
+                      Change Event
+                    </Button>
+                  </div>
+                ) : null}
+                {workspaceQuery.isLoading ? (
+                  <WorkspaceLoading label="Loading spatial response map and household locations…" />
+                ) : workspaceQuery.isError ? (
+                  <WorkspaceError
+                    label="The response map could not be loaded."
+                    onRetry={() => workspaceQuery.refetch()}
+                  />
+                ) : workspaceQuery.data ? (
+                  <EmergencyResponseMap data={workspaceQuery.data} />
+                ) : null}
+              </div>
+            ) : null}
+
+            {/* Safety Ledger Tab */}
+            {tab === "accounted-for" ? (
+              <div className="flex flex-col gap-4">
+                {selected ? (
+                  <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 border border-neutral-200 text-xs shadow-2xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-neutral-700">Active Ledger Event:</span>
+                      <Badge tone={selected.is_active ? "danger" : "neutral"}>{selected.name}</Badge>
+                      <span className="capitalize text-neutral-500">({selected.type})</span>
+                    </div>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelection(selected.id, "events")}>
+                      Change Event
+                    </Button>
+                  </div>
+                ) : null}
+                {accountedQuery.isLoading ? (
+                  <WorkspaceLoading label="Loading Accounted For safety ledger…" />
+                ) : accountedQuery.isError ? (
+                  <WorkspaceError
+                    label="The selected event safety ledger could not be loaded."
+                    onRetry={() => accountedQuery.refetch()}
+                  />
+                ) : accountedQuery.data ? (
+                  <AccountedForPanel data={accountedQuery.data} />
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function Overview({
@@ -753,22 +745,20 @@ function TimelineStep({
 }) {
   return (
     <div
-      className={`flex items-center gap-3 rounded-xl p-3 border transition-all ${
-        current
+      className={`flex items-center gap-3 rounded-xl p-3 border transition-all ${current
           ? "bg-emerald-50/80 border-emerald-300 text-emerald-900 shadow-sm ring-1 ring-emerald-400/50"
           : completed
-          ? "bg-neutral-50 border-neutral-200 text-neutral-700"
-          : "bg-neutral-50/40 border-neutral-100 text-neutral-400"
-      }`}
+            ? "bg-neutral-50 border-neutral-200 text-neutral-700"
+            : "bg-neutral-50/40 border-neutral-100 text-neutral-400"
+        }`}
     >
       <span
-        className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-black ${
-          current
+        className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-black ${current
             ? "bg-emerald-600 text-white"
             : completed
-            ? "bg-neutral-200 text-neutral-800"
-            : "bg-neutral-100 text-neutral-400"
-        }`}
+              ? "bg-neutral-200 text-neutral-800"
+              : "bg-neutral-100 text-neutral-400"
+          }`}
       >
         {step}
       </span>

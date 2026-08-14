@@ -1124,23 +1124,23 @@ export default function AdminWeatherReadingsPage() {
         description="Monitor the live weather feed, record field readings, and review threshold breaches before issuing public guidance."
       />
 
-      <Card className="overflow-visible p-0">
+      <Card className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm flex flex-col">
         <Tabs value={activeTab} onValueChange={selectTab} className="w-full">
-          {/* Tab bar — plain div so shadcn TabsList defaults don't interfere */}
-          <div className="border-b border-neutral-200">
+          {/* Connected Underline Tab Bar */}
+          <div className="border-b border-neutral-200 bg-white">
             <div
               role="tablist"
-              className="flex"
+              className="flex border-b border-neutral-200 bg-white overflow-x-auto scrollbar-none"
             >
               {/* Overview */}
               <button
                 role="tab"
                 aria-selected={activeTab === "overview"}
                 onClick={() => selectTab("overview")}
-                className={`inline-flex h-12 flex-1 items-center justify-center gap-2 border-b-2 px-4 text-sm font-medium transition-colors ${
+                className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all cursor-pointer ${
                   activeTab === "overview"
-                    ? "border-emerald-600 text-emerald-700"
-                    : "border-transparent text-neutral-500 hover:text-neutral-900"
+                    ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
+                    : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
                 }`}
               >
                 <Gauge aria-hidden className="size-4 shrink-0" />
@@ -1153,16 +1153,16 @@ export default function AdminWeatherReadingsPage() {
                   role="tab"
                   aria-selected={activeTab === "river-alert"}
                   onClick={() => selectTab("river-alert")}
-                  className={`inline-flex h-12 flex-1 items-center justify-center gap-2 border-b-2 px-4 text-sm font-medium transition-colors ${
+                  className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all cursor-pointer ${
                     activeTab === "river-alert"
-                      ? "border-emerald-600 text-emerald-700"
-                      : "border-transparent text-neutral-500 hover:text-neutral-900"
+                      ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
+                      : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
                   }`}
                 >
                   <Droplets aria-hidden className="size-4 shrink-0" />
                   River Alert
                   {pendingPromptCount > 0 ? (
-                    <span className="ml-0.5 min-w-5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] leading-none font-bold text-emerald-800">
+                    <span className="ml-1 rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 text-xs font-bold">
                       {pendingPromptCount}
                     </span>
                   ) : null}
@@ -1174,10 +1174,10 @@ export default function AdminWeatherReadingsPage() {
                 role="tab"
                 aria-selected={activeTab === "manual-entry"}
                 onClick={() => selectTab("manual-entry")}
-                className={`inline-flex h-12 flex-1 items-center justify-center gap-2 border-b-2 px-4 text-sm font-medium transition-colors ${
+                className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all cursor-pointer ${
                   activeTab === "manual-entry"
-                    ? "border-emerald-600 text-emerald-700"
-                    : "border-transparent text-neutral-500 hover:text-neutral-900"
+                    ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
+                    : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
                 }`}
               >
                 <PenLine aria-hidden className="size-4 shrink-0" />
@@ -1186,8 +1186,8 @@ export default function AdminWeatherReadingsPage() {
             </div>
           </div>
 
-          {/* Tab content */}
-          <div className="p-4 sm:p-6">
+          {/* Tab content panel */}
+          <div className="bg-slate-50/50 p-5 sm:p-7 flex-1">
             <TabsContent value="overview" className="mt-0">
               <OverviewPanel
                 weather={weather}
