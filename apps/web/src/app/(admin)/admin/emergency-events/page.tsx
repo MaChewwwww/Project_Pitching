@@ -11,6 +11,7 @@ import {
   CircleCheck,
   Clock,
   Flame,
+  List,
   Map,
   Plus,
   RefreshCw,
@@ -62,7 +63,7 @@ const EmergencyResponseMap = dynamic(
 );
 
 const eventTypes = ["flood", "earthquake", "typhoon", "fire", "other"] as const;
-const tabs = ["overview", "map", "accounted-for"] as const;
+const tabs = ["overview", "events", "map", "accounted-for"] as const;
 type Tab = (typeof tabs)[number];
 
 const declareSchema = z.object({
@@ -133,7 +134,7 @@ export default function AdminEmergencyEventsPage() {
       api
         .get<EmergencyWorkspaceOut>(`/admin/emergency-events/${selected!.id}/workspace`)
         .then((response) => response.data),
-    enabled: Boolean(selected && canSeePii && (tab === "map" || tab === "overview")),
+    enabled: Boolean(selected && canSeePii && (tab === "map" || tab === "overview" || tab === "events")),
   });
   const accountedQuery = useQuery({
     queryKey: ["admin", "accounted-for", selected?.id],
@@ -182,7 +183,8 @@ export default function AdminEmergencyEventsPage() {
   });
 
   const setSelection = (eventId: string, nextTab: Tab = tab) => {
-    router.replace(`/admin/emergency-events?event=${eventId}&tab=${nextTab}`);
+    const targetId = eventId || (selected?.id ?? "");
+    router.replace(`/admin/emergency-events?event=${targetId}&tab=${nextTab}`);
   };
 
   const columns: ResourceColumn<EmergencyEventOut>[] = [
@@ -254,8 +256,8 @@ export default function AdminEmergencyEventsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Page Header */}
       <AdminPageHeader
+        icon={Siren}
         title="Emergency Events Workspace"
         description="Command center for real-time incident tracking, area safety ledgers, spatial response mapping, and evacuation operations."
         action={
@@ -303,158 +305,236 @@ export default function AdminEmergencyEventsPage() {
         </Card>
       ) : (
         <>
-          {/* Executive Command Header / Event Selector Banner */}
-          <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div
-              className={`p-5 lg:p-6 ${
-                selected?.is_active
-                  ? "bg-gradient-to-r from-rose-950 via-[#064e3b] to-[#043e2e] text-white"
-                  : "bg-gradient-to-r from-slate-900 via-neutral-900 to-neutral-800 text-white"
-              }`}
-            >
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                {/* Event Metadata Hero */}
-                <div className="flex items-start gap-4">
-                  <div
-                    className={`grid size-12 shrink-0 place-items-center rounded-2xl shadow-lg border ${
-                      selected?.is_active
-                        ? "bg-rose-600 text-white border-rose-400/30 animate-pulse"
-                        : "bg-neutral-800 text-neutral-300 border-neutral-700"
+          {/* Active Emergency Event Hero Banner (Placed ABOVE Tabs) */}
+          {selected ? (
+            <Card radius="lg" className="border-neutral-200 bg-white shadow-sm overflow-hidden">
+              <CardContent
+                className={`p-5 lg:p-6 border-l-4 ${
+                  selected.is_active
+                    ? "border-l-rose-500 bg-gradient-to-r from-rose-50/40 via-white to-white"
+                    : "border-l-neutral-400 bg-neutral-50/40"
+                }`}
+              >
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                  {/* Event Metadata Hero */}
+                  <div className="flex items-start gap-4">
+                    <div
+                      className={`grid size-12 shrink-0 place-items-center rounded-2xl border ${
+                        selected.is_active
+                          ? "bg-rose-100 text-rose-700 border-rose-200 shadow-sm"
+                          : "bg-neutral-100 text-neutral-600 border-neutral-200"
+                      }`}
+                    >
+                      {selected.type === "flood" ? (
+                        <Waves className="size-6" />
+                      ) : selected.type === "fire" ? (
+                        <Flame className="size-6" />
+                      ) : (
+                        <Siren className="size-6" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-xs font-bold uppercase tracking-wider ${
+                            selected.is_active
+                              ? "bg-rose-100 text-rose-800 border border-rose-200"
+                              : "bg-neutral-200 text-neutral-700 border border-neutral-300"
+                          }`}
+                        >
+                          {selected.is_active ? (
+                            <>
+                              <span className="size-2 rounded-full bg-rose-600 animate-ping" />
+                              LIVE EMERGENCY RESPONSE
+                            </>
+                          ) : (
+                            "READ-ONLY ARCHIVE"
+                          )}
+                        </span>
+                        <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold capitalize text-neutral-700 border border-neutral-200">
+                          {selected.type}
+                        </span>
+                      </div>
+
+                      <h2 className="mt-1.5 text-xl font-bold tracking-tight text-neutral-900 lg:text-2xl">
+                        {selected.name}
+                      </h2>
+
+                      <div className="mt-1.5 flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-neutral-500 font-medium">
+                        <span className="flex items-center gap-1">
+                          <Clock className="size-3.5 text-neutral-400" />
+                          Started: {new Date(selected.started_at).toLocaleString()}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Users className="size-3.5 text-neutral-400" />
+                          Declared by: {selected.declared_by_name ?? "BDRRMC Officer"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Event Selector Pills Bar & Actions (Replaces Dropdown) */}
+                  <div className="flex flex-col gap-3 shrink-0 lg:items-end">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
+                          Active Events ({events.filter((e) => e.is_active).length})
+                        </span>
+                        {events.filter((e) => !e.is_active).length > 0 ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-medium text-neutral-400">History:</span>
+                            <select
+                              value={selected && !selected.is_active ? selected.id : ""}
+                              onChange={(e) => e.target.value && setSelection(e.target.value)}
+                              className="h-7 rounded-lg border border-neutral-300 bg-white px-2 text-[11px] font-semibold text-neutral-700 focus:border-emerald-600 focus:outline-none"
+                            >
+                              <option value="">Select past event…</option>
+                              {events
+                                .filter((e) => !e.is_active)
+                                .map((e) => (
+                                  <option key={e.id} value={e.id}>
+                                    ⚪ {e.name} (Ended)
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+                        ) : null}
+                      </div>
+
+                      {/* Interactive Active Event Chips */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        {events
+                          .filter((e) => e.is_active)
+                          .map((e) => {
+                            const isSelected = e.id === selected?.id;
+                            return (
+                              <button
+                                key={e.id}
+                                type="button"
+                                onClick={() => setSelection(e.id)}
+                                className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer border ${
+                                  isSelected
+                                    ? "bg-rose-600 text-white border-rose-700 shadow-md ring-2 ring-rose-400/30"
+                                    : "bg-white text-neutral-800 border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 shadow-sm"
+                                }`}
+                              >
+                                <span
+                                  className={`size-2 rounded-full ${
+                                    isSelected ? "bg-white animate-ping" : "bg-rose-500"
+                                  }`}
+                                />
+                                <span className="truncate max-w-[200px]">{e.name}</span>
+                                <span
+                                  className={`rounded-full px-1.5 py-0.5 text-[10px] uppercase font-extrabold ${
+                                    isSelected ? "bg-rose-700 text-rose-100" : "bg-neutral-100 text-neutral-600"
+                                  }`}
+                                >
+                                  {e.type}
+                                </span>
+                              </button>
+                            );
+                          })}
+
+                        {events.filter((e) => e.is_active).length === 0 ? (
+                          <span className="text-xs text-neutral-400 italic">No active response events running.</span>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {selected?.is_active && canManageEvents ? (
+                      <div className="pt-1">
+                        <EndEventDialog
+                          event={selected}
+                          activeCount={activeCount}
+                          pending={endMutation.isPending}
+                          onConfirm={() => endMutation.mutate(selected.id)}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {/* Workspace Card Container with Weather & River Readings style underline tabs */}
+          <Card className="overflow-visible p-0 border border-neutral-200 bg-white shadow-sm">
+            {/* Underline Tabs Header Bar */}
+            <div className="border-b border-neutral-200 bg-white rounded-t-2xl">
+              <div role="tablist" className="flex overflow-x-auto">
+                {/* Tab 1: Overview Metrics */}
+                <button
+                  role="tab"
+                  aria-selected={tab === "overview"}
+                  onClick={() => setSelection(selected?.id ?? "", "overview")}
+                  className={`inline-flex h-12 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-4 text-sm font-bold transition-colors ${
+                    tab === "overview"
+                      ? "border-emerald-600 text-emerald-700 bg-emerald-50/20"
+                      : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+                  }`}
+                >
+                  <Activity aria-hidden className="size-4 shrink-0" />
+                  Overview Metrics
+                </button>
+
+                {/* Tab 2: Emergency Events */}
+                <button
+                  role="tab"
+                  aria-selected={tab === "events"}
+                  onClick={() => setSelection(selected?.id ?? "", "events")}
+                  className={`inline-flex h-12 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-4 text-sm font-bold transition-colors ${
+                    tab === "events"
+                      ? "border-emerald-600 text-emerald-700 bg-emerald-50/20"
+                      : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+                  }`}
+                >
+                  <Siren aria-hidden className="size-4 shrink-0" />
+                  Emergency Events
+                  {events.length > 0 ? (
+                    <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] leading-none font-bold text-emerald-800">
+                      {events.length}
+                    </span>
+                  ) : null}
+                </button>
+
+                {/* Tab 3: Response Map */}
+                {canSeePii ? (
+                  <button
+                    role="tab"
+                    aria-selected={tab === "map"}
+                    onClick={() => setSelection(selected?.id ?? "", "map")}
+                    className={`inline-flex h-12 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-4 text-sm font-bold transition-colors ${
+                      tab === "map"
+                        ? "border-emerald-600 text-emerald-700 bg-emerald-50/20"
+                        : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
                     }`}
                   >
-                    {selected?.type === "flood" ? (
-                      <Waves className="size-6" />
-                    ) : selected?.type === "fire" ? (
-                      <Flame className="size-6" />
-                    ) : (
-                      <Siren className="size-6" />
-                    )}
-                  </div>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-xs font-black uppercase tracking-wider ${
-                          selected?.is_active
-                            ? "bg-rose-500/20 text-rose-300 border border-rose-400/40"
-                            : "bg-neutral-700 text-neutral-300 border border-neutral-600"
-                        }`}
-                      >
-                        {selected?.is_active ? (
-                          <>
-                            <span className="size-2 rounded-full bg-rose-400 animate-ping" />
-                            LIVE EMERGENCY RESPONSE
-                          </>
-                        ) : (
-                          "READ-ONLY ARCHIVE"
-                        )}
-                      </span>
-                      <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-semibold capitalize text-neutral-200 backdrop-blur-sm">
-                        {selected?.type}
-                      </span>
-                    </div>
+                    <Map aria-hidden className="size-4 shrink-0" />
+                    Response Map
+                  </button>
+                ) : null}
 
-                    <h1 className="mt-1.5 text-xl font-black tracking-tight text-white lg:text-2xl">
-                      {selected?.name}
-                    </h1>
-
-                    <div className="mt-2 flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-emerald-100/80">
-                      <span className="flex items-center gap-1">
-                        <Clock className="size-3.5" />
-                        Started: {selected ? new Date(selected.started_at).toLocaleString() : "—"}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Users className="size-3.5" />
-                        Declared by: {selected?.declared_by_name ?? "BDRRMC Officer"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Event Selector Dropdown & Actions */}
-                <div className="flex flex-col gap-3 shrink-0 sm:flex-row sm:items-center">
-                  <div className="flex flex-col gap-1 min-w-[240px]">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-200/70">
-                      Switch Active / Historical Event
-                    </span>
-                    <select
-                      value={selected?.id ?? ""}
-                      onChange={(event) => setSelection(event.target.value)}
-                      className="min-h-11 w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-bold text-white shadow-inner focus:border-emerald-400 focus:bg-neutral-900 focus:outline-none backdrop-blur-md"
-                    >
-                      <optgroup label="Active Events" className="bg-neutral-900 text-white">
-                        {events
-                          .filter((event) => event.is_active)
-                          .map((event) => (
-                            <option key={event.id} value={event.id}>
-                              🔴 {event.name} ({event.type})
-                            </option>
-                          ))}
-                      </optgroup>
-                      <optgroup label="Historical Events" className="bg-neutral-900 text-neutral-300">
-                        {events
-                          .filter((event) => !event.is_active)
-                          .map((event) => (
-                            <option key={event.id} value={event.id}>
-                              ⚪ {event.name} (Ended)
-                            </option>
-                          ))}
-                      </optgroup>
-                    </select>
-                  </div>
-
-                  {selected?.is_active && canManageEvents ? (
-                    <div className="pt-4 sm:pt-0">
-                      <EndEventDialog
-                        event={selected}
-                        activeCount={activeCount}
-                        pending={endMutation.isPending}
-                        onConfirm={() => endMutation.mutate(selected.id)}
-                      />
-                    </div>
-                  ) : null}
-                </div>
+                {/* Tab 4: Safety Ledger */}
+                <button
+                  role="tab"
+                  aria-selected={tab === "accounted-for"}
+                  onClick={() => setSelection(selected?.id ?? "", "accounted-for")}
+                  className={`inline-flex h-12 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-4 text-sm font-bold transition-colors ${
+                    tab === "accounted-for"
+                      ? "border-emerald-600 text-emerald-700 bg-emerald-50/20"
+                      : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+                  }`}
+                >
+                  <CircleCheck aria-hidden className="size-4 shrink-0" />
+                  Safety Ledger
+                </button>
               </div>
             </div>
 
-            {/* Segmented Workspace Navigation */}
-            {selected ? (
-              <div className="border-t border-neutral-200 bg-neutral-50/80 px-4 py-2">
-                <nav
-                  aria-label="Emergency workspace"
-                  className="flex gap-2 overflow-x-auto"
-                >
-                  <WorkspaceTab
-                    active={tab === "overview"}
-                    icon={Activity}
-                    onClick={() => setSelection(selected.id, "overview")}
-                  >
-                    Overview & Command Metrics
-                  </WorkspaceTab>
-                  {canSeePii ? (
-                    <WorkspaceTab
-                      active={tab === "map"}
-                      icon={Map}
-                      onClick={() => setSelection(selected.id, "map")}
-                    >
-                      Response Map & Spatial View
-                    </WorkspaceTab>
-                  ) : null}
-                  <WorkspaceTab
-                    active={tab === "accounted-for"}
-                    icon={CircleCheck}
-                    onClick={() => setSelection(selected.id, "accounted-for")}
-                  >
-                    Accounted For Safety Ledger
-                  </WorkspaceTab>
-                </nav>
-              </div>
-            ) : null}
-          </div>
-
-          {/* Active Workspace View Tab Content */}
-          {selected ? (
-            <>
-              {tab === "overview" ? (
+            {/* Tab Content Panel Container */}
+            <div className="p-4 sm:p-6">
+              {/* Overview Metrics Tab */}
+              {tab === "overview" && selected ? (
                 <Overview
                   event={selected}
                   activeCount={activeCount}
@@ -463,37 +543,105 @@ export default function AdminEmergencyEventsPage() {
                   loading={workspaceQuery.isLoading}
                   error={workspaceQuery.isError}
                   retry={() => workspaceQuery.refetch()}
-                  columns={columns}
-                  events={events}
-                  setSelection={setSelection}
                 />
               ) : null}
+
+              {/* Emergency Events Directory Tab */}
+              {tab === "events" ? (
+                <div className="flex flex-col gap-5">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-neutral-200 pb-4">
+                    <div>
+                      <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                        <List className="size-4 text-emerald-600" />
+                        Emergency Events Ledger & History
+                      </h3>
+                      <p className="text-xs text-neutral-500">
+                        Select an event to load its active workspace, safety ledger, and spatial response map.
+                      </p>
+                    </div>
+                    <Badge tone="info">{events.length} Registered Events</Badge>
+                  </div>
+
+                  <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                    <ResourceTable
+                      columns={columns}
+                      data={events}
+                      isLoading={false}
+                      isError={false}
+                      emptyTitle="No emergency events declared"
+                      getRowKey={(row) => row.id}
+                      rowActions={(row) => (
+                        <Button
+                          size="sm"
+                          variant={row.id === selected?.id ? "secondary" : "outline"}
+                          className={row.id === selected?.id ? "bg-emerald-100 text-emerald-900 font-bold border-emerald-200" : ""}
+                          onClick={() => setSelection(row.id, "overview")}
+                        >
+                          {row.id === selected?.id ? "Active Workspace" : "Open Workspace"}
+                        </Button>
+                      )}
+                    />
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Response Map Tab */}
               {tab === "map" && canSeePii ? (
-                workspaceQuery.isLoading ? (
-                  <WorkspaceLoading label="Loading spatial response map and household locations…" />
-                ) : workspaceQuery.isError ? (
-                  <WorkspaceError
-                    label="The response map could not be loaded."
-                    onRetry={() => workspaceQuery.refetch()}
-                  />
-                ) : workspaceQuery.data ? (
-                  <EmergencyResponseMap data={workspaceQuery.data} />
-                ) : null
+                <div className="flex flex-col gap-4">
+                  {selected ? (
+                    <div className="flex items-center justify-between rounded-xl bg-neutral-50 px-4 py-2.5 border border-neutral-200 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-neutral-700">Active Map Context:</span>
+                        <Badge tone={selected.is_active ? "danger" : "neutral"}>{selected.name}</Badge>
+                        <span className="capitalize text-neutral-500">({selected.type})</span>
+                      </div>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelection(selected.id, "events")}>
+                        Change Event
+                      </Button>
+                    </div>
+                  ) : null}
+                  {workspaceQuery.isLoading ? (
+                    <WorkspaceLoading label="Loading spatial response map and household locations…" />
+                  ) : workspaceQuery.isError ? (
+                    <WorkspaceError
+                      label="The response map could not be loaded."
+                      onRetry={() => workspaceQuery.refetch()}
+                    />
+                  ) : workspaceQuery.data ? (
+                    <EmergencyResponseMap data={workspaceQuery.data} />
+                  ) : null}
+                </div>
               ) : null}
+
+              {/* Safety Ledger Tab */}
               {tab === "accounted-for" ? (
-                accountedQuery.isLoading ? (
-                  <WorkspaceLoading label="Loading Accounted For safety ledger…" />
-                ) : accountedQuery.isError ? (
-                  <WorkspaceError
-                    label="The selected event safety ledger could not be loaded."
-                    onRetry={() => accountedQuery.refetch()}
-                  />
-                ) : accountedQuery.data ? (
-                  <AccountedForPanel data={accountedQuery.data} />
-                ) : null
+                <div className="flex flex-col gap-4">
+                  {selected ? (
+                    <div className="flex items-center justify-between rounded-xl bg-neutral-50 px-4 py-2.5 border border-neutral-200 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-neutral-700">Active Ledger Event:</span>
+                        <Badge tone={selected.is_active ? "danger" : "neutral"}>{selected.name}</Badge>
+                        <span className="capitalize text-neutral-500">({selected.type})</span>
+                      </div>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelection(selected.id, "events")}>
+                        Change Event
+                      </Button>
+                    </div>
+                  ) : null}
+                  {accountedQuery.isLoading ? (
+                    <WorkspaceLoading label="Loading Accounted For safety ledger…" />
+                  ) : accountedQuery.isError ? (
+                    <WorkspaceError
+                      label="The selected event safety ledger could not be loaded."
+                      onRetry={() => accountedQuery.refetch()}
+                    />
+                  ) : accountedQuery.data ? (
+                    <AccountedForPanel data={accountedQuery.data} />
+                  ) : null}
+                </div>
               ) : null}
-            </>
-          ) : null}
+            </div>
+          </Card>
         </>
       )}
     </div>
@@ -508,9 +656,6 @@ function Overview({
   loading,
   error,
   retry,
-  columns,
-  events,
-  setSelection,
 }: {
   event: EmergencyEventOut;
   activeCount: number;
@@ -519,9 +664,6 @@ function Overview({
   loading: boolean;
   error: boolean;
   retry: () => void;
-  columns: ResourceColumn<EmergencyEventOut>[];
-  events: EmergencyEventOut[];
-  setSelection: (id: string, tab?: Tab) => void;
 }) {
   const householdsCount = workspace?.households.length ?? 0;
   const safeCount = workspace?.households.filter((h) => h.all_safe).length ?? 0;
@@ -630,37 +772,6 @@ function Overview({
           ) : null}
         </CardContent>
       </Card>
-
-      {/* Emergency Events Master Table */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-neutral-900">All Emergency Events Ledger</h3>
-          <span className="text-xs font-semibold text-neutral-500">
-            Total: {events.length} event records
-          </span>
-        </div>
-
-        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-          <ResourceTable
-            columns={columns}
-            data={events}
-            isLoading={false}
-            isError={false}
-            emptyTitle="No emergency events declared"
-            getRowKey={(row) => row.id}
-            rowActions={(row) => (
-              <Button
-                size="sm"
-                variant={row.id === event.id ? "secondary" : "outline"}
-                className={row.id === event.id ? "bg-emerald-100 text-emerald-900 font-bold border-emerald-200" : ""}
-                onClick={() => setSelection(row.id)}
-              >
-                {row.id === event.id ? "Active Workspace" : "Select Event"}
-              </Button>
-            )}
-          />
-        </div>
-      </div>
     </div>
   );
 }
@@ -704,34 +815,6 @@ function TimelineStep({
         <p className="text-[10px] text-neutral-500 truncate">{desc}</p>
       </div>
     </div>
-  );
-}
-
-function WorkspaceTab({
-  active,
-  icon: Icon,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  icon: typeof Activity;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-current={active ? "page" : undefined}
-      onClick={onClick}
-      className={`focus-visible:ring-primary-500 flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-xs font-bold transition-all focus-visible:ring-2 focus-visible:outline-none ${
-        active
-          ? "bg-[#064e3b] text-white shadow-md"
-          : "text-neutral-600 hover:bg-neutral-200/60 hover:text-neutral-900"
-      }`}
-    >
-      <Icon className="size-4" />
-      {children}
-    </button>
   );
 }
 
