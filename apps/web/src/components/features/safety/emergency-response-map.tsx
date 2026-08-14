@@ -1829,7 +1829,7 @@ function HouseholdDialog({
       {/* Main detail dialog */}
       <Dialog open={household !== null} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="w-full sm:max-w-xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
-          <DialogHeader className="shrink-0 border-b border-slate-100 p-5 sm:p-6 pb-4 bg-white pr-12">
+          <DialogHeader className="shrink-0 border-b border-slate-100 p-5 sm:p-6 pb-4 bg-white pr-14 sm:pr-16">
             <div className="flex items-center gap-3">
               <div
                 className="grid size-10 shrink-0 place-items-center rounded-xl shadow-xs"
@@ -1858,7 +1858,7 @@ function HouseholdDialog({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
                   <DialogTitle className="text-base sm:text-lg font-black text-slate-950 tracking-tight flex items-center gap-2">
-                    <span>{household.reference_no} · {household.head_name}</span>
+                    <span>{household.reference_no}</span>
                     {rescueMembers > 0 && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 text-white px-2 py-0.5 text-[9px] font-black uppercase tracking-wider shadow-2xs">
                         <AlertTriangle className="size-2.5" />
@@ -1935,7 +1935,7 @@ function HouseholdDialog({
                         {member.vulnerability_flags.map((flag) => (
                           <span
                             key={flag}
-                            className="rounded bg-slate-100 border border-slate-200 px-1.5 py-0.2 text-[10px] font-medium text-slate-600"
+                            className="rounded-md bg-amber-100 border border-amber-300 text-amber-900 font-bold px-1.5 py-0.5 text-[10px] shadow-2xs"
                           >
                             {formatVulnerabilityFlag(flag)}
                           </span>
