@@ -99,6 +99,26 @@ function getEventTypeBadgeClass(type: string, isLightPopover = false): string {
       return "bg-teal-500/25 text-teal-100 border-teal-300/50 shadow-2xs";
   }
 }
+
+function getActivePillStyle(type: string, isSelected: boolean): string {
+  if (!isSelected) {
+    return "bg-white/10 text-white border-white/20 hover:bg-white/20 shadow-2xs";
+  }
+  switch (type.toLowerCase()) {
+    case "flood":
+      return "bg-sky-400 text-sky-950 border-sky-200 shadow-md scale-105 font-black";
+    case "fire":
+      return "bg-rose-500 text-white border-rose-300 shadow-md scale-105 font-black";
+    case "typhoon":
+    case "severe_weather":
+      return "bg-amber-400 text-amber-950 border-amber-200 shadow-md scale-105 font-black";
+    case "earthquake":
+      return "bg-stone-300 text-stone-950 border-stone-100 shadow-md scale-105 font-black";
+    default:
+      return "bg-teal-400 text-teal-950 border-teal-200 shadow-md scale-105 font-black";
+  }
+}
+
 const tabs = ["overview", "events", "map", "accounted-for"] as const;
 type Tab = (typeof tabs)[number];
 
@@ -400,26 +420,21 @@ export default function AdminEmergencyEventsPage() {
                 <div className="flex flex-wrap items-center gap-3 lg:justify-end shrink-0 pt-3 lg:pt-0 border-t border-emerald-800/40 lg:border-t-0">
                   {/* Active Events Quick Pills */}
                   {events.filter((e) => e.is_active).length > 0 ? (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-200/90">
-                        ACTIVE ({events.filter((e) => e.is_active).length}):
-                      </span>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {events
-                          .filter((e) => e.is_active)
-                          .map((e) => {
-                            const isSelected = e.id === selected?.id;
-                            return (
-                              <button
-                                key={e.id}
-                                type="button"
-                                onClick={() => setSelection(e.id)}
-                                className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold transition-all cursor-pointer border ${
-                                  isSelected
-                                    ? "bg-emerald-400 text-neutral-950 border-emerald-200 shadow-md scale-105"
-                                    : "bg-white/10 text-white border-white/20 hover:bg-white/20 shadow-2xs"
-                                }`}
-                              >
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {events
+                        .filter((e) => e.is_active)
+                        .map((e) => {
+                          const isSelected = e.id === selected?.id;
+                          return (
+                            <button
+                              key={e.id}
+                              type="button"
+                              onClick={() => setSelection(e.id)}
+                              className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold transition-all cursor-pointer border ${getActivePillStyle(
+                                e.type,
+                                isSelected,
+                              )}`}
+                            >
                                 {isSelected ? (
                                   <span className="relative flex size-2 shrink-0">
                                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-950 opacity-75" />
@@ -432,7 +447,6 @@ export default function AdminEmergencyEventsPage() {
                               </button>
                             );
                           })}
-                      </div>
                     </div>
                   ) : null}
 
@@ -868,28 +882,29 @@ function EventSearchSelect({
     (e) => e.name.toLowerCase().includes(query) || e.type.toLowerCase().includes(query)
   );
 
+  const isShowingActive = !selectedEvent || selectedEvent.is_active;
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="h-10 rounded-xl border border-white/50 bg-white/95 px-3.5 text-xs font-bold text-neutral-900 shadow-md hover:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60 flex items-center justify-between gap-3 min-w-[210px] max-w-[280px] cursor-pointer transition-all shrink-0 backdrop-blur-md"
+          className="h-10 rounded-xl border border-white/50 bg-white/95 px-3.5 text-xs font-bold text-neutral-900 shadow-md hover:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60 flex items-center justify-between gap-3 min-w-[220px] max-w-[290px] cursor-pointer transition-all shrink-0 backdrop-blur-md"
         >
           <div className="flex items-center gap-2 truncate">
-            {selectedEvent ? (
+            {isShowingActive ? (
               <>
-                {selectedEvent.is_active ? (
-                  <span className="relative flex size-2 shrink-0">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-600 opacity-75" />
-                    <span className="relative inline-flex size-2 rounded-full bg-emerald-600" />
-                  </span>
-                ) : (
-                  <span className="size-2 rounded-full bg-neutral-400 shrink-0" />
-                )}
+                <span className="relative flex size-2 shrink-0">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-600 opacity-75" />
+                  <span className="relative inline-flex size-2 rounded-full bg-emerald-600" />
+                </span>
+                <span className="truncate font-black text-neutral-900">Current Active Emergencies</span>
+              </>
+            ) : selectedEvent ? (
+              <>
+                <span className="size-2 rounded-full bg-neutral-400 shrink-0" />
                 <span className="truncate font-black text-neutral-900">{selectedEvent.name}</span>
-                {!selectedEvent.is_active ? (
-                  <span className="text-[10px] text-neutral-500 font-semibold shrink-0">(Ended)</span>
-                ) : null}
+                <span className="text-[10px] text-neutral-500 font-semibold shrink-0">(Ended)</span>
               </>
             ) : (
               <span className="text-neutral-500 font-semibold">Select event archive…</span>
@@ -921,6 +936,31 @@ function EventSearchSelect({
         </div>
 
         <div className="max-h-72 overflow-y-auto space-y-3 pr-1 scrollbar-thin">
+          {/* Top Option: Current Active Emergencies */}
+          <button
+            type="button"
+            onClick={() => {
+              if (activeEvents.length > 0) {
+                onSelect(activeEvents[0].id);
+              }
+              setOpen(false);
+            }}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-left transition-all cursor-pointer border ${
+              isShowingActive
+                ? "bg-emerald-50 text-emerald-950 border-emerald-300/80 shadow-2xs"
+                : "bg-neutral-50 text-neutral-800 border-neutral-200 hover:bg-emerald-50 hover:border-emerald-200"
+            }`}
+          >
+            <div className="flex items-center gap-2 truncate">
+              <span className="relative flex size-2 shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-600 opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-emerald-600" />
+              </span>
+              <span className="truncate font-black">Current Active Emergencies</span>
+            </div>
+            {isShowingActive ? <Check className="size-4 text-emerald-700 shrink-0" /> : null}
+          </button>
+
           {/* Active Events Section */}
           <div>
             <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-800 flex items-center justify-between">
@@ -1053,10 +1093,10 @@ function EndEventDialog({
         size="sm"
         variant="outline"
         disabled
-        className="h-10 px-4 font-bold text-xs bg-rose-950/20 text-rose-300/40 border border-rose-900/30 opacity-60 cursor-not-allowed shrink-0"
+        className="h-10 px-4 font-extrabold text-xs bg-white/15 text-white/80 border border-white/30 cursor-not-allowed shrink-0 backdrop-blur-md shadow-2xs"
         title="This event has already ended"
       >
-        End Event
+        Ended Event
       </Button>
     );
   }
