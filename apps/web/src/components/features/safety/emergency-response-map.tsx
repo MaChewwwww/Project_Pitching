@@ -17,14 +17,18 @@ import type { Layer } from "leaflet";
 import {
   AlertTriangle,
   ArrowRight,
+  Building2,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Database,
   Filter,
   Home,
   Layers,
   MapPin,
+  MapPinOff,
   RotateCcw,
   Search,
   Shield,
@@ -1661,6 +1665,244 @@ function SirenTooltip({ siren }: { siren: PublicSiren }) {
 
 /* --- Household list panel (mapped / unmapped) ------------------------------ */
 
+function HouseholdCard({
+  household,
+  risk,
+  onSelect,
+  readOnly,
+}: {
+  household: WorkspaceHouseholdOut;
+  risk: Risk;
+  onSelect: () => void;
+  readOnly: boolean;
+}) {
+  const totalMembers = household.members.length;
+  const safeMembers = household.members.filter((m) => m.status === "safe").length;
+  const rescueMembers = household.members.filter((m) => m.status === "needs_rescue").length;
+  const unaccountedMembers = totalMembers - safeMembers - rescueMembers;
+
+  const isAllSafe = household.all_safe || (safeMembers === totalMembers && totalMembers > 0);
+  const isNeedsRescue = rescueMembers > 0;
+  const isPartiallySafe = !isAllSafe && safeMembers > 0;
+
+  // Extract all unique vulnerability flags across all members
+  const specialNeeds = Array.from(
+    new Set(household.members.flatMap((m) => m.vulnerability_flags || []).filter(Boolean)),
+  );
+
+  // Extract unique assigned evacuation centers if any
+  const assignedCenters = Array.from(
+    new Set(
+      household.members
+        .map((m) => m.evac_center_name)
+        .filter((n): n is string => Boolean(n)),
+    ),
+  );
+
+  const safePct = totalMembers > 0 ? (safeMembers / totalMembers) * 100 : 0;
+  const rescuePct = totalMembers > 0 ? (rescueMembers / totalMembers) * 100 : 0;
+  const unaccountedPct = totalMembers > 0 ? (unaccountedMembers / totalMembers) * 100 : 0;
+
+  const accentColor = isAllSafe ? "#10B981" : isNeedsRescue ? "#EF4444" : riskColor(risk);
+
+  return (
+    <div
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      className={cn(
+        "group relative flex flex-col justify-between rounded-2xl border bg-white p-4 transition-all duration-200 text-left outline-none cursor-pointer",
+        "hover:shadow-lg hover:-translate-y-0.5",
+        isNeedsRescue
+          ? "border-rose-300 bg-rose-50/20 hover:border-rose-400 hover:bg-rose-50/40"
+          : isAllSafe
+            ? "border-emerald-200/90 bg-emerald-50/20 hover:border-emerald-400 hover:bg-emerald-50/35"
+            : isPartiallySafe
+              ? "border-amber-200/90 bg-amber-50/15 hover:border-amber-400 hover:bg-amber-50/30"
+              : "border-slate-200/90 hover:border-emerald-500/60 hover:bg-slate-50/30",
+      )}
+    >
+      {/* Left accent bar */}
+      <div
+        className="absolute top-3 bottom-3 left-0 w-1.5 rounded-r-full transition-all group-hover:w-2"
+        style={{ backgroundColor: accentColor }}
+        aria-hidden
+      />
+
+      <div className="pl-2 flex flex-col gap-3">
+        {/* Top Header: Reference number, Mapped badge, Risk badge, Safety status badge */}
+        <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-100 pb-2.5">
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-[11px] font-black tracking-tight text-slate-800 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md shadow-2xs">
+              {household.reference_no}
+            </span>
+            {household.location ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-emerald-800">
+                <MapPin className="size-2.5 text-emerald-600" />
+                Mapped
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-slate-600">
+                <MapPinOff className="size-2.5 text-slate-500" />
+                No GPS Pin
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {/* Flood risk pill */}
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider border shadow-2xs",
+                risk === 3
+                  ? "bg-rose-50 text-rose-800 border-rose-200"
+                  : risk === 2
+                    ? "bg-amber-50 text-amber-900 border-amber-200"
+                    : "bg-emerald-50 text-emerald-900 border-emerald-200",
+              )}
+            >
+              {riskLabel(risk)} Risk
+            </span>
+
+            {/* Safety status pill */}
+            {isAllSafe ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-2xs">
+                <CheckCircle2 className="size-3" />
+                All Safe
+              </span>
+            ) : isNeedsRescue ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-2xs animate-pulse">
+                <AlertTriangle className="size-3" />
+                Needs Rescue
+              </span>
+            ) : isPartiallySafe ? (
+              <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-950 border border-amber-300">
+                {safeMembers}/{totalMembers} Safe
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700 border border-slate-200">
+                Pending
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Middle Body: Household Head + Address */}
+        <div>
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="text-[14.5px] font-black text-slate-900 group-hover:text-emerald-800 transition-colors truncate">
+              {household.head_name}
+            </h4>
+            <span className="text-[11px] font-bold text-slate-400 shrink-0">
+              {totalMembers} {totalMembers === 1 ? "member" : "members"}
+            </span>
+          </div>
+
+          {/* Complete Address */}
+          <div className="mt-1.5 flex items-start gap-1.5 text-xs text-slate-600 leading-snug">
+            <MapPin className="size-3.5 text-slate-400 shrink-0 mt-0.5" />
+            <span className="font-medium text-slate-700">
+              {household.street_address ? (
+                <>
+                  <span className="font-bold text-slate-900">{household.street_address}</span>
+                  <span className="text-slate-400">, </span>
+                </>
+              ) : null}
+              <span>{household.area_name}</span>
+            </span>
+          </div>
+
+          {/* Special Needs Tags */}
+          {specialNeeds.length > 0 && (
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+              <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-amber-900">
+                Special Needs:
+              </span>
+              {specialNeeds.map((flag) => (
+                <span
+                  key={flag}
+                  className="rounded-md bg-amber-100/90 border border-amber-300/80 px-1.5 py-0.5 text-[10px] font-bold text-amber-950 shadow-2xs"
+                >
+                  {formatVulnerabilityFlag(flag)}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Evacuation Center assignment */}
+          {assignedCenters.length > 0 && (
+            <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-indigo-50 border border-indigo-200/80 px-2.5 py-1 text-[11px] font-bold text-indigo-950">
+              <Building2 className="size-3.5 text-indigo-600 shrink-0" />
+              <span className="truncate">Evacuation: {assignedCenters.join(", ")}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Section: Multi-color progress bar + action footer */}
+        <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+          {/* Progress bar */}
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 flex">
+            {safePct > 0 && (
+              <div
+                style={{ width: `${safePct}%` }}
+                className="h-full bg-emerald-500 transition-all duration-300"
+                title={`${safeMembers} Safe`}
+              />
+            )}
+            {rescuePct > 0 && (
+              <div
+                style={{ width: `${rescuePct}%` }}
+                className="h-full bg-rose-500 transition-all duration-300"
+                title={`${rescueMembers} Needs Rescue`}
+              />
+            )}
+            {unaccountedPct > 0 && (
+              <div
+                style={{ width: `${unaccountedPct}%` }}
+                className="h-full bg-slate-200 transition-all duration-300"
+                title={`${unaccountedMembers} Unaccounted`}
+              />
+            )}
+          </div>
+
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-slate-500">
+              {isAllSafe ? (
+                <span className="text-emerald-700 font-bold flex items-center gap-1">
+                  <CheckCircle2 className="size-3.5" /> All {totalMembers} Confirmed Safe
+                </span>
+              ) : isNeedsRescue ? (
+                <span className="text-rose-700 font-bold flex items-center gap-1">
+                  <AlertTriangle className="size-3.5" /> {rescueMembers} Needs Rescue · {safeMembers} Safe
+                </span>
+              ) : safeMembers > 0 ? (
+                <span className="text-amber-800 font-bold">
+                  {safeMembers}/{totalMembers} Confirmed Safe
+                </span>
+              ) : (
+                <span className="text-slate-500">
+                  {unaccountedMembers} Unaccounted
+                </span>
+              )}
+            </span>
+
+            <span className="inline-flex items-center gap-0.5 text-xs font-bold text-emerald-700 group-hover:text-emerald-800 group-hover:translate-x-0.5 transition-all">
+              {readOnly ? "View Details" : "Check In"}
+              <ChevronRight className="size-3.5" />
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function HouseholdListPanel({
   items,
   emptyTitle,
@@ -1674,87 +1916,135 @@ function HouseholdListPanel({
   onSelect: (h: WorkspaceHouseholdOut) => void;
   readOnly: boolean;
 }) {
+  const [page, setPage] = React.useState(1);
+  const pageSize = 18;
+
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 py-10 text-center">
-        <div className="grid size-12 place-items-center rounded-2xl bg-neutral-100 text-neutral-400">
-          <Home className="size-5" aria-hidden />
+      <div className="flex flex-col items-center gap-3 py-12 text-center">
+        <div className="grid size-14 place-items-center rounded-2xl bg-neutral-100 text-neutral-400 shadow-2xs">
+          <Home className="size-6" aria-hidden />
         </div>
         <div>
-          <p className="text-sm font-bold text-neutral-700">{emptyTitle}</p>
-          <p className="mt-0.5 text-xs text-neutral-500">{emptyDescription}</p>
+          <p className="text-sm font-bold text-neutral-800">{emptyTitle}</p>
+          <p className="mt-0.5 text-xs text-neutral-500 max-w-sm">{emptyDescription}</p>
         </div>
       </div>
     );
   }
 
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+  const pageItems = items.slice(startIndex, startIndex + pageSize);
+
+  const totalSafe = items.filter((i) => i.household.all_safe).length;
+  const totalRescue = items.filter((i) => i.household.members.some((m) => m.status === "needs_rescue")).length;
+
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-xs font-medium text-neutral-500">
-        {items.length} household{items.length !== 1 ? "s" : ""}
-        {readOnly ? " · Read-only" : ""}
-      </p>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map(({ household, risk }) => {
-          const totalMembers = household.members.length;
-          const safeMembers = household.members.filter((m) => m.status === "safe").length;
-          return (
-            <button
-              key={household.household_id}
-              type="button"
-              onClick={() => onSelect(household)}
-              className={cn(
-                "group relative rounded-xl border p-3 text-left transition-all duration-150 hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none",
-                household.all_safe
-                  ? "border-emerald-200 bg-emerald-50/40 hover:border-emerald-300"
-                  : "border-neutral-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/20",
-              )}
+    <div className="flex flex-col gap-3.5">
+      {/* Header bar with summary & pagination */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3">
+        <div className="flex items-center gap-2 text-xs">
+          <span className="font-extrabold text-slate-900">
+            {items.length} {items.length === 1 ? "Household" : "Households"}
+          </span>
+          <span className="text-slate-300">·</span>
+          <span className="text-emerald-700 font-bold">
+            {totalSafe} All Safe
+          </span>
+          {totalRescue > 0 && (
+            <>
+              <span className="text-slate-300">·</span>
+              <span className="text-rose-700 font-bold flex items-center gap-1">
+                <AlertTriangle className="size-3" />
+                {totalRescue} Need Rescue
+              </span>
+            </>
+          )}
+          {readOnly && (
+            <>
+              <span className="text-slate-300">·</span>
+              <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-600">
+                Read-Only
+              </span>
+            </>
+          )}
+        </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+            <span className="text-[11px] text-slate-400 mr-1">
+              Showing {startIndex + 1}–{Math.min(startIndex + pageSize, items.length)} of {items.length}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="h-7 px-2 text-xs rounded-lg cursor-pointer"
             >
-              {/* Risk accent bar */}
-              <div
-                className="absolute top-0 left-0 h-full w-1 rounded-l-xl"
-                style={{
-                  backgroundColor: household.all_safe ? "#64748B" : riskColor(risk),
-                  opacity: 0.7,
-                }}
-                aria-hidden
-              />
-              <div className="pl-2">
-                <div className="flex items-start justify-between gap-1">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-black text-neutral-900">
-                      {household.reference_no}
-                    </p>
-                    <p className="truncate text-[11px] text-neutral-600">
-                      {household.head_name}
-                    </p>
-                  </div>
-                  <span
-                    className={cn(
-                      "shrink-0 rounded-md px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wide",
-                      household.all_safe
-                        ? "bg-emerald-600 text-white"
-                        : safeMembers > 0
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-amber-100 text-amber-800",
-                    )}
-                  >
-                    {household.all_safe ? "All Safe" : safeMembers > 0 ? "Partially Safe" : "Pending Check-In"}
-                  </span>
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <span className="text-[10.5px] text-neutral-500">
-                    {household.area_name} · {totalMembers} Member{totalMembers !== 1 ? "s" : ""}
-                  </span>
-                  <span className="text-[10.5px] font-medium text-neutral-500">
-                    {safeMembers}/{totalMembers} Confirmed Safe
-                  </span>
-                </div>
-              </div>
-            </button>
-          );
-        })}
+              <ChevronLeft className="size-3.5" />
+            </Button>
+            <span className="px-1.5 text-[11px] font-bold text-slate-700">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="h-7 px-2 text-xs rounded-lg cursor-pointer"
+            >
+              <ChevronRight className="size-3.5" />
+            </Button>
+          </div>
+        )}
       </div>
+
+      {/* Grid of cards */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {pageItems.map(({ household, risk }) => (
+          <HouseholdCard
+            key={household.household_id}
+            household={household}
+            risk={risk}
+            onSelect={() => onSelect(household)}
+            readOnly={readOnly}
+          />
+        ))}
+      </div>
+
+      {/* Bottom pagination if more than 1 page */}
+      {totalPages > 1 && (
+        <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+          <span className="text-[11.5px] font-medium text-slate-500">
+            Page {currentPage} of {totalPages} ({items.length} total)
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="h-8 px-3 text-xs rounded-lg cursor-pointer font-bold"
+            >
+              <ChevronLeft className="size-3.5 mr-1" />
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="h-8 px-3 text-xs rounded-lg cursor-pointer font-bold"
+            >
+              Next
+              <ChevronRight className="size-3.5 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
