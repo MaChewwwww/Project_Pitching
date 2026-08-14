@@ -100,24 +100,7 @@ function getEventTypeBadgeClass(type: string, isLightPopover = false): string {
   }
 }
 
-function getActivePillStyle(type: string, isSelected: boolean): string {
-  if (!isSelected) {
-    return "bg-white/10 text-white border-white/20 hover:bg-white/20 shadow-2xs";
-  }
-  switch (type.toLowerCase()) {
-    case "flood":
-      return "bg-sky-400 text-sky-950 border-sky-200 shadow-md scale-105 font-black";
-    case "fire":
-      return "bg-rose-500 text-white border-rose-300 shadow-md scale-105 font-black";
-    case "typhoon":
-    case "severe_weather":
-      return "bg-amber-400 text-amber-950 border-amber-200 shadow-md scale-105 font-black";
-    case "earthquake":
-      return "bg-stone-300 text-stone-950 border-stone-100 shadow-md scale-105 font-black";
-    default:
-      return "bg-teal-400 text-teal-950 border-teal-200 shadow-md scale-105 font-black";
-  }
-}
+
 
 const tabs = ["overview", "events", "map", "accounted-for"] as const;
 type Tab = (typeof tabs)[number];
@@ -379,8 +362,8 @@ export default function AdminEmergencyEventsPage() {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    {/* High-Contrast Badges */}
-                    <div className="flex flex-wrap items-center gap-2">
+                    {/* High-Contrast Badges & Date */}
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
                       {selected.is_active ? (
                         <span className="inline-flex items-center gap-2 rounded-full bg-rose-600 text-white px-3 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm border border-rose-400/40">
                           <span className="relative flex size-2 shrink-0">
@@ -396,59 +379,43 @@ export default function AdminEmergencyEventsPage() {
                         </span>
                       )}
 
-                      {/* Dynamic Event Type Badge */}
-                      <span className={`inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border ${getEventTypeBadgeClass(selected.type)}`}>
-                        {selected.type}
-                      </span>
-                    </div>
+                      {/* Dynamic Event Type Badge(s) */}
+                      {selected.is_active && activeEvents.length > 0 ? (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {Array.from(new Set(activeEvents.map((e) => e.type))).map((type) => (
+                            <span
+                              key={type}
+                              className={`inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border ${getEventTypeBadgeClass(type)}`}
+                            >
+                              {type}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className={`inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border ${getEventTypeBadgeClass(selected.type)}`}>
+                          {selected.type}
+                        </span>
+                      )}
 
-                    {/* Title and Time */}
-                    <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-                      <h2 className="text-2xl font-black text-white tracking-tight leading-none drop-shadow-xs">
-                        {selected.name}
-                      </h2>
-                      <span className="text-xs text-emerald-200/40 font-medium hidden sm:inline select-none">•</span>
-                      <div className="flex items-center gap-1.5 text-xs text-emerald-100/90 font-medium leading-none">
+                      {/* Date / Time Moved to Top Badge Row */}
+                      <div className="flex items-center gap-1.5 text-xs text-emerald-100/90 font-medium leading-none ml-1">
                         <Clock className="size-3.5 text-emerald-300/80 shrink-0" />
                         <span>Started {new Date(selected.started_at).toLocaleString()}</span>
                       </div>
                     </div>
+
+                    {/* Title with Concatenated Active Emergency Names */}
+                    <h2 className="text-2xl font-black text-white tracking-tight leading-none drop-shadow-xs">
+                      {selected.is_active && activeEvents.length > 0
+                        ? activeEvents.map((e) => e.name).join(" | ")
+                        : selected.name}
+                    </h2>
                   </div>
                 </div>
 
                 {/* Right Side Actions & Searchable Dropdown */}
                 <div className="flex flex-wrap items-center gap-3 lg:justify-end shrink-0 pt-3 lg:pt-0 border-t border-emerald-800/40 lg:border-t-0">
-                  {/* Active Events Quick Pills */}
-                  {events.filter((e) => e.is_active).length > 0 ? (
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {events
-                        .filter((e) => e.is_active)
-                        .map((e) => {
-                          const isSelected = e.id === selected?.id;
-                          return (
-                            <button
-                              key={e.id}
-                              type="button"
-                              onClick={() => setSelection(e.id)}
-                              className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold transition-all cursor-pointer border ${getActivePillStyle(
-                                e.type,
-                                isSelected,
-                              )}`}
-                            >
-                                {isSelected ? (
-                                  <span className="relative flex size-2 shrink-0">
-                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-950 opacity-75" />
-                                    <span className="relative inline-flex size-2 rounded-full bg-neutral-950" />
-                                  </span>
-                                ) : (
-                                  <span className="size-2 rounded-full bg-emerald-400 shrink-0" />
-                                )}
-                                <span className="truncate max-w-[140px]">{e.name}</span>
-                              </button>
-                            );
-                          })}
-                    </div>
-                  ) : null}
+
 
                   {/* Custom Searchable Categorized Dropdown */}
                   <EventSearchSelect
@@ -936,34 +903,22 @@ function EventSearchSelect({
         </div>
 
         <div className="max-h-72 overflow-y-auto space-y-3 pr-1 scrollbar-thin">
-          {/* Top Option: Current Active Emergencies */}
-          <button
-            type="button"
-            onClick={() => {
-              if (activeEvents.length > 0) {
-                onSelect(activeEvents[0].id);
-              }
-              setOpen(false);
-            }}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-left transition-all cursor-pointer border ${
-              isShowingActive
-                ? "bg-emerald-500/25 text-emerald-100 border-emerald-400/50 shadow-2xs"
-                : "bg-emerald-950/60 text-emerald-200 border-emerald-800/60 hover:bg-emerald-900/60"
-            }`}
-          >
-            <div className="flex items-center gap-2 truncate">
-              <span className="relative flex size-2 shrink-0">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
-              </span>
-              <span className="truncate font-black">Current Active Emergencies</span>
-            </div>
-            {isShowingActive ? <Check className="size-4 text-emerald-300 shrink-0" /> : null}
-          </button>
-
           {/* Active Events Section */}
           <div>
-            <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-400 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => {
+                if (activeEvents.length > 0) {
+                  onSelect(activeEvents[0].id);
+                }
+                setOpen(false);
+              }}
+              className={`w-full px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-between transition-all cursor-pointer border ${
+                isShowingActive
+                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-2xs"
+                  : "text-emerald-400 hover:bg-emerald-900/50 border-transparent hover:border-emerald-800/40"
+              }`}
+            >
               <span className="flex items-center gap-2">
                 <span className="relative flex size-2 shrink-0">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
@@ -974,7 +929,7 @@ function EventSearchSelect({
               <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-extrabold text-emerald-200 border border-emerald-500/30">
                 {filteredActive.length}
               </span>
-            </div>
+            </button>
 
             {filteredActive.length === 0 ? (
               <div className="px-3 py-2 text-xs text-emerald-300/50 italic">No active events match search</div>
@@ -1093,7 +1048,7 @@ function EndEventDialog({
         size="sm"
         variant="outline"
         disabled
-        className="h-10 px-4 font-extrabold text-xs bg-white/15 text-white/80 border border-white/30 cursor-not-allowed shrink-0 backdrop-blur-md shadow-2xs"
+        className="h-10 px-4 font-black text-xs bg-white/40 text-white border border-white/70 cursor-not-allowed shrink-0 backdrop-blur-md shadow-sm disabled:opacity-100"
         title="This event has already ended"
       >
         Ended Event
