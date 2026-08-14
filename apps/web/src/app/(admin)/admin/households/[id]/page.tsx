@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   Archive,
@@ -16,6 +16,7 @@ import {
   Droplets,
   Eye,
   FileText,
+  LayoutDashboard,
   MapPin,
   Pencil,
   Plus,
@@ -77,6 +78,13 @@ function memberInitials(name: string) {
     .toUpperCase();
 }
 
+const HOUSEHOLD_DETAIL_TABS = ["overview", "members", "operations"] as const;
+type HouseholdDetailTab = (typeof HOUSEHOLD_DETAIL_TABS)[number];
+
+function isHouseholdDetailTab(value: string | null): value is HouseholdDetailTab {
+  return HOUSEHOLD_DETAIL_TABS.some((tab) => tab === value);
+}
+
 function ActivityList({
   items,
   empty,
@@ -110,6 +118,7 @@ export default function HouseholdDetailPage() {
   useRequireRole("admin", "bhw");
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const client = useQueryClient();
   const [selectedMemberId, setSelectedMemberId] = React.useState<string | null>(null);
@@ -169,6 +178,13 @@ export default function HouseholdDetailPage() {
   const selectedMember = household.members.find(
     (member) => member.id === selectedMemberId,
   );
+  const tabFromQuery = searchParams.get("tab");
+  const activeTab: HouseholdDetailTab = isHouseholdDetailTab(tabFromQuery)
+    ? tabFromQuery
+    : "overview";
+  const selectTab = (tab: HouseholdDetailTab) => {
+    router.replace(`/admin/households/${id}?tab=${tab}`, { scroll: false });
+  };
   const risk =
     household.waterway_proximity === "very_near"
       ? "High"
@@ -193,7 +209,7 @@ export default function HouseholdDetailPage() {
         description={`${household.head_name} · ${household.area_name ?? "Area not recorded"}`}
         action={
           <div className="flex flex-wrap justify-end gap-2">
-            <Button asChild size="sm" variant="outline">
+            <Button asChild size="sm" variant="secondary">
               <Link href={`/admin/households/${id}/edit`}>
                 <Pencil aria-hidden className="size-4" />
                 Edit Household
@@ -216,7 +232,44 @@ export default function HouseholdDetailPage() {
         }
       />
 
-      <section className="grid items-start gap-4 lg:grid-cols-12">
+      <Card className="overflow-visible border-emerald-200/80 bg-white p-0" topAccent>
+        <nav
+          aria-label="Household detail sections"
+          className="grid grid-cols-3 divide-x divide-neutral-200"
+        >
+          {[
+            { id: "overview" as const, label: "Overview", icon: LayoutDashboard },
+            { id: "members" as const, label: "Members", icon: UsersRound },
+            { id: "operations" as const, label: "Operations", icon: ClipboardCheck },
+          ].map(({ id: tab, label, icon: Icon }) => (
+            <button
+              key={tab}
+              type="button"
+              aria-current={activeTab === tab ? "page" : undefined}
+              onClick={() => selectTab(tab)}
+              className={`relative flex min-h-13 items-center justify-center gap-2 px-3 text-xs font-bold transition-colors sm:text-sm ${
+                activeTab === tab
+                  ? "bg-emerald-50/70 text-emerald-800 after:absolute after:inset-x-4 after:bottom-0 after:h-0.5 after:rounded-full after:bg-emerald-600"
+                  : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
+              }`}
+            >
+              <Icon aria-hidden className="size-4 shrink-0" />
+              <span>{label}</span>
+              {tab === "members" ? (
+                <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] leading-none text-emerald-800">
+                  {household.member_count}
+                </span>
+              ) : null}
+            </button>
+          ))}
+        </nav>
+      </Card>
+
+      <section
+        className={
+          activeTab === "overview" ? "grid items-start gap-4 lg:grid-cols-12" : "hidden"
+        }
+      >
         <Card
           className="border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white lg:col-span-7"
           topAccent
@@ -331,8 +384,21 @@ export default function HouseholdDetailPage() {
         </Card>
       </section>
 
-      <section className="grid items-start gap-4 lg:grid-cols-12">
-        <Card className="lg:col-span-7">
+      <section
+        className={
+          activeTab === "members" || activeTab === "operations"
+            ? "grid items-start gap-4 lg:grid-cols-12"
+            : "hidden"
+        }
+      >
+        <Card
+          className={
+            activeTab === "members"
+              ? "border-emerald-200/80 bg-gradient-to-br from-white via-white to-emerald-50/50 lg:col-span-12"
+              : "hidden"
+          }
+          topAccent
+        >
           <CardContent className="p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -428,7 +494,11 @@ export default function HouseholdDetailPage() {
           </CardContent>
         </Card>
         <Card
-          className="border-violet-200/80 bg-gradient-to-br from-violet-50/70 via-white to-white lg:col-span-5"
+          className={
+            activeTab === "operations"
+              ? "border-violet-200/80 bg-gradient-to-br from-violet-50/70 via-white to-white lg:col-span-12"
+              : "hidden"
+          }
           topAccent
         >
           <CardContent className="p-5">
@@ -476,19 +546,21 @@ export default function HouseholdDetailPage() {
         </Card>
       </section>
 
-      {activityQuery.isLoading ? (
+      {activeTab === "operations" && activityQuery.isLoading ? (
         <p className="rounded-xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-800">
           Loading linked operational records…
         </p>
       ) : null}
-      {activityQuery.isError ? (
+      {activeTab === "operations" && activityQuery.isError ? (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Linked operational records could not be loaded. Household details remain
           available.
         </p>
       ) : null}
 
-      <section className="grid gap-4 lg:grid-cols-3">
+      <section
+        className={activeTab === "operations" ? "grid gap-4 lg:grid-cols-3" : "hidden"}
+      >
         <Card className="border-sky-200/80 bg-gradient-to-br from-sky-50/40 via-white to-white">
           <CardContent className="p-5">
             <p className="flex items-center gap-2 text-sm font-bold text-neutral-950">
