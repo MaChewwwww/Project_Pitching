@@ -7,7 +7,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   AlertTriangle,
-  Check,
   CheckCircle2,
   ChevronDown,
   CircleCheck,
@@ -133,7 +132,6 @@ export default function AdminEmergencyEventsPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const selectedId = searchParams.get("event");
   const requestedTab = searchParams.get("tab");
   const tab: Tab = tabs.includes(requestedTab as Tab)
     ? (requestedTab as Tab)
@@ -150,17 +148,20 @@ export default function AdminEmergencyEventsPage() {
         })
         .then((response) => response.data.items),
   });
+  const selectedId = searchParams.get("event") ?? "";
   const events = React.useMemo(() => eventsQuery.data ?? [], [eventsQuery.data]);
-  const selected = events.find((event) => event.id === selectedId) ?? null;
   const activeEvents = React.useMemo(() => events.filter((event) => event.is_active), [events]);
   const activeCount = activeEvents.length;
 
+  const isAllActiveOverview = selectedId === "all" || selectedId === "active" || (!selectedId && activeEvents.length > 1);
+  const selected = events.find((event) => event.id === selectedId) ?? activeEvents[0] ?? events[0] ?? null;
+
   React.useEffect(() => {
-    if (events.length === 0 || selected) return;
-    const initial = events.find((event) => event.is_active) ?? events[0];
+    if (events.length === 0 || selectedId) return;
+    const initial = activeEvents.length > 1 ? "all" : (activeEvents[0]?.id ?? events[0]?.id ?? "");
     const safeTab = !canSeePii && tab === "map" ? "overview" : tab;
-    router.replace(`/admin/emergency-events?event=${initial.id}&tab=${safeTab}`);
-  }, [canSeePii, events, router, selected, tab]);
+    router.replace(`/admin/emergency-events?event=${initial}&tab=${safeTab}`);
+  }, [canSeePii, events, activeEvents, router, selectedId, tab]);
 
   React.useEffect(() => {
     if (!canSeePii && selected && tab === "map") {
@@ -381,7 +382,7 @@ export default function AdminEmergencyEventsPage() {
                       )}
 
                       {/* Dynamic Event Type Badge(s) */}
-                      {selected.is_active && activeEvents.length > 0 ? (
+                      {isAllActiveOverview && activeEvents.length > 0 ? (
                         <div className="flex flex-wrap items-center gap-1.5">
                           {Array.from(new Set(activeEvents.map((e) => e.type))).map((type) => (
                             <span
@@ -399,15 +400,15 @@ export default function AdminEmergencyEventsPage() {
                       )}
 
                       {/* Date / Time Moved to Top Badge Row */}
-                      <div className="flex items-center gap-1.5 text-xs text-emerald-100/90 font-medium leading-none ml-1">
-                        <Clock className="size-3.5 text-emerald-300/80 shrink-0" />
+                      <div className="flex items-center gap-1.5 text-xs text-white font-bold leading-none ml-1">
+                        <Clock className="size-3.5 text-white shrink-0" />
                         <span>Started {new Date(selected.started_at).toLocaleString()}</span>
                       </div>
                     </div>
 
-                    {/* Title with Concatenated Active Emergency Names */}
+                    {/* Title */}
                     <h2 className="text-2xl font-black text-white tracking-tight leading-none drop-shadow-xs">
-                      {selected.is_active && activeEvents.length > 0
+                      {isAllActiveOverview && activeEvents.length > 0
                         ? activeEvents.map((e) => e.name).join(" | ")
                         : selected.name}
                     </h2>
@@ -421,7 +422,8 @@ export default function AdminEmergencyEventsPage() {
                   {/* Custom Searchable Categorized Dropdown */}
                   <EventSearchSelect
                     events={events}
-                    selectedId={selected.id}
+                    selectedId={selectedId}
+                    isAllActiveOverview={isAllActiveOverview}
                     onSelect={(id) => setSelection(id)}
                   />
 
@@ -826,13 +828,31 @@ function OverviewStat({
   );
 }
 
+function getEventDotColor(type: string): string {
+  switch (type.toLowerCase()) {
+    case "flood":
+      return "bg-sky-400";
+    case "fire":
+      return "bg-rose-500";
+    case "typhoon":
+    case "severe_weather":
+      return "bg-amber-400";
+    case "earthquake":
+      return "bg-stone-300";
+    default:
+      return "bg-white";
+  }
+}
+
 function EventSearchSelect({
   events,
   selectedId,
+  isAllActiveOverview,
   onSelect,
 }: {
   events: EmergencyEventOut[];
-  selectedId: string | null;
+  selectedId: string;
+  isAllActiveOverview: boolean;
   onSelect: (id: string) => void;
 }) {
   const [open, setOpen] = React.useState(false);
@@ -850,8 +870,6 @@ function EventSearchSelect({
     (e) => e.name.toLowerCase().includes(query) || e.type.toLowerCase().includes(query)
   );
 
-  const isShowingActive = !selectedEvent || selectedEvent.is_active;
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -860,7 +878,7 @@ function EventSearchSelect({
           className="h-10 rounded-xl border border-emerald-600/50 bg-emerald-950/80 px-3.5 text-xs font-bold text-white shadow-inner hover:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 flex items-center justify-between gap-3 min-w-[220px] max-w-[290px] cursor-pointer transition-all shrink-0 backdrop-blur-md"
         >
           <div className="flex items-center gap-2 truncate">
-            {isShowingActive ? (
+            {isAllActiveOverview ? (
               <>
                 <span className="relative flex size-2 shrink-0">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
@@ -870,9 +888,18 @@ function EventSearchSelect({
               </>
             ) : selectedEvent ? (
               <>
-                <span className="size-2 rounded-full bg-neutral-400 shrink-0" />
+                {selectedEvent.is_active ? (
+                  <span className="relative flex size-2 shrink-0">
+                    <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${getEventDotColor(selectedEvent.type)} opacity-75`} />
+                    <span className={`relative inline-flex size-2 rounded-full ${getEventDotColor(selectedEvent.type)}`} />
+                  </span>
+                ) : (
+                  <span className="size-2 rounded-full bg-neutral-400 shrink-0" />
+                )}
                 <span className="truncate font-black text-white">{selectedEvent.name}</span>
-                <span className="text-[10px] text-emerald-200/70 font-semibold shrink-0">(Ended)</span>
+                {!selectedEvent.is_active ? (
+                  <span className="text-[10px] text-emerald-200/70 font-semibold shrink-0">(Ended)</span>
+                ) : null}
               </>
             ) : (
               <span className="text-emerald-200/70 font-semibold">Select event archive…</span>
@@ -909,13 +936,11 @@ function EventSearchSelect({
             <button
               type="button"
               onClick={() => {
-                if (activeEvents.length > 0) {
-                  onSelect(activeEvents[0].id);
-                }
+                onSelect("all");
                 setOpen(false);
               }}
               className={`w-full px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-between transition-all cursor-pointer border ${
-                isShowingActive
+                isAllActiveOverview
                   ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-2xs"
                   : "text-emerald-400 hover:bg-emerald-900/50 border-transparent hover:border-emerald-800/40"
               }`}
@@ -937,7 +962,8 @@ function EventSearchSelect({
             ) : (
               <div className="mt-1 space-y-1">
                 {filteredActive.map((e) => {
-                  const isSelected = e.id === selectedId;
+                  const isSelected = !isAllActiveOverview && e.id === selectedId;
+                  const dotColor = getEventDotColor(e.type);
                   return (
                     <button
                       key={e.id}
@@ -953,21 +979,16 @@ function EventSearchSelect({
                       }`}
                     >
                       <div className="flex items-center gap-2 truncate">
-                        {isSelected ? (
-                          <span className="relative flex size-2 shrink-0">
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-                            <span className="relative inline-flex size-2 rounded-full bg-white" />
-                          </span>
-                        ) : (
-                          <span className="size-2 rounded-full bg-emerald-400 shrink-0" />
-                        )}
+                        <span className="relative flex size-2 shrink-0">
+                          <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${dotColor} opacity-75`} />
+                          <span className={`relative inline-flex size-2 rounded-full ${isSelected ? "bg-white" : dotColor}`} />
+                        </span>
                         <span className="truncate">{e.name}</span>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border ${getEventTypeBadgeClass(e.type, false)}`}>
                           {e.type}
                         </span>
-                        {isSelected ? <Check className="size-3.5 text-white" /> : null}
                       </div>
                     </button>
                   );
@@ -990,7 +1011,7 @@ function EventSearchSelect({
             ) : (
               <div className="mt-1 space-y-1">
                 {filteredEnded.map((e) => {
-                  const isSelected = e.id === selectedId;
+                  const isSelected = !isAllActiveOverview && e.id === selectedId;
                   return (
                     <button
                       key={e.id}
@@ -1014,7 +1035,6 @@ function EventSearchSelect({
                           {e.type}
                         </span>
                         <span className="text-[10px] text-emerald-300/50 font-medium">Ended</span>
-                        {isSelected ? <Check className="size-3.5 text-white" /> : null}
                       </div>
                     </button>
                   );
