@@ -284,7 +284,11 @@ data prefilled. One save updates the household, head profile, existing members, 
 removal remains an admin-only confirmed archive. The detail page shows only linked safety, evacuation,
 rescue, and resident-head incident report records, keeping unfinished operational modules factual.
 The detail layout uses the full console width, keeps the saved map beside the household record, and
-omits a redundant back action because the breadcrumb provides the return path.
+omits a redundant back action because the breadcrumb provides the return path. Its member roster is a
+compact `Current Household Members` surface: each row exposes icon-only view, edit, and protected
+remove actions, while the view dialog carries the less-frequent head-assignment action and the full
+member facts. The detail cards use the same colored operational accents as the registry and weather
+workspaces so the page reads as a working dossier rather than a plain record dump.
 
 `/admin/households/new` is the BHW-assisted creation workspace. It uses the announcement-style
 primary work surface with identity and head details on the left, while the right rail keeps the

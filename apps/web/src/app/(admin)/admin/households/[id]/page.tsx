@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,10 +9,12 @@ import { toast } from "sonner";
 import {
   Archive,
   BellRing,
+  CalendarDays,
   CircleAlert,
   ClipboardCheck,
   Clock3,
   Droplets,
+  Eye,
   FileText,
   MapPin,
   Pencil,
@@ -22,6 +25,7 @@ import {
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -31,6 +35,14 @@ import type {
   HouseholdActivityOut,
   HouseholdDetailOut,
 } from "@/lib/api/registry-types";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const LocationPicker = dynamic(
   () => import("@/components/features/registry/location-picker"),
@@ -53,6 +65,16 @@ function memberFlags(member: HouseholdDetailOut["members"][number]) {
     member.has_chronic_condition && "Chronic Condition",
     member.is_bedridden && "Mobility-Limited",
   ].filter(Boolean) as string[];
+}
+
+function memberInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 }
 
 function ActivityList({
@@ -90,6 +112,7 @@ export default function HouseholdDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
   const client = useQueryClient();
+  const [selectedMemberId, setSelectedMemberId] = React.useState<string | null>(null);
   const householdQuery = useQuery({
     queryKey: ["admin", "household", id],
     queryFn: () =>
@@ -118,6 +141,16 @@ export default function HouseholdDetailPage() {
     },
     onError: (error) => toast.error(toDisplayError(error).detail),
   });
+  const archiveMember = useMutation({
+    mutationFn: (memberId: string) => api.delete(`/admin/members/${memberId}`),
+    onSuccess: () => {
+      toast.success("Household member removed");
+      setSelectedMemberId(null);
+      client.invalidateQueries({ queryKey: ["admin", "household", id] });
+      client.invalidateQueries({ queryKey: ["admin", "registry-summary"] });
+    },
+    onError: (error) => toast.error(toDisplayError(error).detail),
+  });
 
   if (householdQuery.isLoading)
     return (
@@ -133,6 +166,9 @@ export default function HouseholdDetailPage() {
     );
   const household = householdQuery.data;
   const activity = activityQuery.data;
+  const selectedMember = household.members.find(
+    (member) => member.id === selectedMemberId,
+  );
   const risk =
     household.waterway_proximity === "very_near"
       ? "High"
@@ -153,7 +189,7 @@ export default function HouseholdDetailPage() {
   return (
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-4 pb-10">
       <AdminPageHeader
-        title={household.reference_no}
+        title="Household Details"
         description={`${household.head_name} · ${household.area_name ?? "Area not recorded"}`}
         action={
           <div className="flex flex-wrap justify-end gap-2">
@@ -181,7 +217,10 @@ export default function HouseholdDetailPage() {
       />
 
       <section className="grid items-start gap-4 lg:grid-cols-12">
-        <Card className="border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white lg:col-span-7">
+        <Card
+          className="border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white lg:col-span-7"
+          topAccent
+        >
           <CardContent className="p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex items-start gap-3">
@@ -189,7 +228,7 @@ export default function HouseholdDetailPage() {
                   <UsersRound aria-hidden className="size-5" />
                 </span>
                 <div>
-                  <p className="text-overline text-emerald-700">Household Record</p>
+                  <p className="text-overline text-emerald-700">Household Snapshot</p>
                   <h2 className="mt-1 text-xl font-bold text-neutral-950">
                     {household.head_name}
                   </h2>
@@ -244,7 +283,10 @@ export default function HouseholdDetailPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-sky-200/80 bg-white lg:col-span-5">
+        <Card
+          className="border-sky-200/80 bg-gradient-to-br from-sky-50/70 via-white to-white lg:col-span-5"
+          topAccent
+        >
           <CardContent className="p-5">
             <div className="flex items-start gap-3">
               <span className="grid size-10 place-items-center rounded-xl bg-sky-100 text-sky-700">
@@ -294,23 +336,30 @@ export default function HouseholdDetailPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-overline text-neutral-500">Citizen Roster</p>
-                <h2 className="mt-1 text-lg font-bold text-neutral-950">Members</h2>
+                <p className="text-overline text-emerald-700">
+                  Current Household Members
+                </p>
+                <h2 className="mt-1 text-lg font-bold text-neutral-950">
+                  {household.member_count} member{household.member_count === 1 ? "" : "s"}
+                </h2>
               </div>
               <Button asChild size="sm">
                 <Link href={`/admin/citizens/new?household_id=${id}`}>
                   <Plus aria-hidden className="size-4" />
-                  Add Citizen
+                  Add Household Member
                 </Link>
               </Button>
             </div>
-            <div className="mt-4 divide-y divide-neutral-100 rounded-xl border border-neutral-200">
+            <div className="mt-4 space-y-2">
               {household.members.map((member) => (
                 <div
                   key={member.id}
-                  className="flex flex-wrap items-center justify-between gap-3 p-3.5"
+                  className="flex items-center gap-3 rounded-xl border border-neutral-200/90 bg-gradient-to-r from-white to-emerald-50/40 p-3 transition-colors hover:border-emerald-200 hover:bg-emerald-50/50"
                 >
-                  <div className="min-w-0">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-800">
+                    {memberInitials(member.full_name)}
+                  </span>
+                  <div className="min-w-0 flex-1">
                     <p className="font-semibold text-neutral-950">
                       {member.full_name}
                       {member.is_head ? (
@@ -335,22 +384,42 @@ export default function HouseholdDetailPage() {
                       </p>
                     ) : null}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button asChild size="sm" variant="outline">
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="size-9 min-h-9 px-0 text-sky-700 hover:bg-sky-50 hover:text-sky-800"
+                      title={`View ${member.full_name}`}
+                      aria-label={`View ${member.full_name}`}
+                      onClick={() => setSelectedMemberId(member.id)}
+                    >
+                      <Eye aria-hidden className="size-4" />
+                    </Button>
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="size-9 min-h-9 px-0 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                      title={`Edit ${member.full_name}`}
+                      aria-label={`Edit ${member.full_name}`}
+                    >
                       <Link href={`/admin/citizens/${member.id}/edit`}>
-                        <Pencil aria-hidden className="size-3.5" />
-                        Edit
+                        <Pencil aria-hidden className="size-4" />
                       </Link>
                     </Button>
-                    {!member.is_head && !household.head_user_id ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={makeHead.isPending}
-                        onClick={() => makeHead.mutate(member.id)}
-                      >
-                        Make Head
-                      </Button>
+                    {user?.role === "admin" ? (
+                      <ConfirmDeleteButton
+                        itemLabel={member.full_name}
+                        actionLabel={
+                          member.is_head
+                            ? "Household head cannot be removed"
+                            : "Remove household member"
+                        }
+                        onConfirm={() => archiveMember.mutate(member.id)}
+                        iconOnly
+                        disabled={member.is_head || archiveMember.isPending}
+                        className="size-9 min-h-9 rounded-lg border border-red-200 bg-red-50 px-0 text-red-600 hover:bg-red-100 hover:text-red-700"
+                      />
                     ) : null}
                   </div>
                 </div>
@@ -358,7 +427,10 @@ export default function HouseholdDetailPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="lg:col-span-5">
+        <Card
+          className="border-violet-200/80 bg-gradient-to-br from-violet-50/70 via-white to-white lg:col-span-5"
+          topAccent
+        >
           <CardContent className="p-5">
             <div className="flex items-start gap-3">
               <span className="grid size-10 place-items-center rounded-xl bg-violet-100 text-violet-700">
@@ -417,7 +489,7 @@ export default function HouseholdDetailPage() {
       ) : null}
 
       <section className="grid gap-4 lg:grid-cols-3">
-        <Card>
+        <Card className="border-sky-200/80 bg-gradient-to-br from-sky-50/40 via-white to-white">
           <CardContent className="p-5">
             <p className="flex items-center gap-2 text-sm font-bold text-neutral-950">
               <Clock3 aria-hidden className="size-4 text-sky-700" />
@@ -431,7 +503,7 @@ export default function HouseholdDetailPage() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-amber-200/80 bg-gradient-to-br from-amber-50/40 via-white to-white">
           <CardContent className="p-5">
             <p className="flex items-center gap-2 text-sm font-bold text-neutral-950">
               <BellRing aria-hidden className="size-4 text-amber-700" />
@@ -445,7 +517,7 @@ export default function HouseholdDetailPage() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-violet-200/80 bg-gradient-to-br from-violet-50/40 via-white to-white">
           <CardContent className="p-5">
             <p className="flex items-center gap-2 text-sm font-bold text-neutral-950">
               <FileText aria-hidden className="size-4 text-violet-700" />
@@ -464,6 +536,87 @@ export default function HouseholdDetailPage() {
           </CardContent>
         </Card>
       </section>
+
+      <Dialog
+        open={Boolean(selectedMember)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedMemberId(null);
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          {selectedMember ? (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  <span className="grid size-10 place-items-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-800">
+                    {memberInitials(selectedMember.full_name)}
+                  </span>
+                  {selectedMember.full_name}
+                </DialogTitle>
+                <DialogDescription>
+                  {selectedMember.is_head
+                    ? "Head of Household"
+                    : (selectedMember.relationship_to_head ?? "Household member")}
+                  {selectedMember.is_head
+                    ? " · Current household lead"
+                    : " · Current household member"}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
+                  <p className="text-overline text-neutral-500">Sex</p>
+                  <p className="mt-1 text-sm font-semibold text-neutral-900">
+                    {selectedMember.sex
+                      ? selectedMember.sex[0].toUpperCase() + selectedMember.sex.slice(1)
+                      : "Not Recorded"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
+                  <p className="text-overline text-neutral-500">Birthday</p>
+                  <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-neutral-900">
+                    <CalendarDays aria-hidden className="size-3.5 text-emerald-700" />
+                    {selectedMember.birth_date
+                      ? formatDate(selectedMember.birth_date)
+                      : "Not Recorded"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3 sm:col-span-2">
+                  <p className="text-overline text-neutral-500">Contact Number</p>
+                  <p className="mt-1 text-sm font-semibold text-neutral-900">
+                    {selectedMember.contact_number ?? "No Contact Number"}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <p className="text-overline text-neutral-500">Readiness Flags</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {memberFlags(selectedMember).length ? (
+                    memberFlags(selectedMember).map((flag) => (
+                      <Badge key={flag} tone="warning">
+                        {flag}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-sm text-neutral-500">No flags recorded</span>
+                  )}
+                </div>
+              </div>
+              {!selectedMember.is_head && !household.head_user_id ? (
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={makeHead.isPending}
+                    onClick={() => makeHead.mutate(selectedMember.id)}
+                  >
+                    Make Head of Household
+                  </Button>
+                </div>
+              ) : null}
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
