@@ -35,9 +35,11 @@ import {
   Search,
   Shield,
   Siren,
+  SlidersHorizontal,
   Users,
   UserPlus,
   UserX,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -1439,7 +1441,8 @@ function formatVulnerabilityFlag(flag: string): string {
     infant: "Infant / Toddler",
     toddler: "Infant / Toddler",
     infant_toddler: "Infant / Toddler",
-    child: "Child",
+    child: "Minor",
+    minor: "Minor",
     solo_parent: "Solo Parent",
     lactating: "Lactating Mother",
     bedridden: "Bedridden",
@@ -2017,7 +2020,6 @@ function CreateWalkInForm({
   const [selectedCenterId, setSelectedCenterId] = React.useState(data.evacuation_centers[0]?.id ?? "none");
   const [fullName, setFullName] = React.useState("");
   const [contactNumber, setContactNumber] = React.useState("");
-  const [initialStatus, setInitialStatus] = React.useState<"safe" | "needs_rescue">("safe");
   const [locationNote, setLocationNote] = React.useState("");
 
   // Special needs states
@@ -2079,7 +2081,7 @@ function CreateWalkInForm({
       full_name: fullName.trim(),
       contact_number: contactNumber.trim() || null,
       location_note: locationNote.trim() || null,
-      initial_status: initialStatus,
+      initial_status: "safe",
       is_child: isChild || isInfant,
       is_senior: isSenior,
       is_pwd: isPwd,
@@ -2092,18 +2094,22 @@ function CreateWalkInForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-1">
       {/* Emergency Event Selection */}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
           <span>Emergency Event <span className="text-rose-500">*</span></span>
-          <span className="text-[11px] font-normal text-slate-400">Required</span>
+          <span className="text-[11px] font-normal text-slate-400">Active Disaster Response</span>
         </label>
         <Select value={selectedEventId} onValueChange={setSelectedEventId}>
-          <SelectTrigger className="h-9 text-xs rounded-xl bg-slate-50 border-slate-300 font-medium">
+          <SelectTrigger className="h-9 w-full text-xs rounded-xl bg-white border-slate-300 font-medium">
             <SelectValue placeholder="Select Emergency Event" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent
+            position="popper"
+            sideOffset={4}
+            className="z-50 w-[var(--radix-select-trigger-width)] max-h-60 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+          >
             {activeEvents.map((evt) => (
               <SelectItem key={evt.id} value={evt.id}>
                 {evt.name} {evt.type ? `(${evt.type})` : ""}
@@ -2117,13 +2123,17 @@ function CreateWalkInForm({
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
           <span>Evacuation Center <span className="text-rose-500">*</span></span>
-          <span className="text-[11px] font-normal text-slate-400">Walk-in Location</span>
+          <span className="text-[11px] font-normal text-slate-400">Walk-in Triage Location</span>
         </label>
         <Select value={selectedCenterId} onValueChange={setSelectedCenterId}>
-          <SelectTrigger className="h-9 text-xs rounded-xl bg-slate-50 border-slate-300 font-medium">
+          <SelectTrigger className="h-9 w-full text-xs rounded-xl bg-white border-slate-300 font-medium">
             <SelectValue placeholder="Select Evacuation Center" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent
+            position="popper"
+            sideOffset={4}
+            className="z-50 w-[var(--radix-select-trigger-width)] max-h-60 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+          >
             <SelectItem value="none">None / Field Operation</SelectItem>
             {data.evacuation_centers.map((c) => (
               <SelectItem key={c.id} value={c.id}>
@@ -2164,41 +2174,6 @@ function CreateWalkInForm({
         </div>
       </div>
 
-      {/* Initial Status */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-bold text-slate-700">
-          Safety Status
-        </label>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => setInitialStatus("safe")}
-            className={cn(
-              "flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition-all cursor-pointer",
-              initialStatus === "safe"
-                ? "border-emerald-500 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-500"
-                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
-            )}
-          >
-            <CheckCircle2 className="size-4 text-emerald-600" />
-            Safe (Checked In)
-          </button>
-          <button
-            type="button"
-            onClick={() => setInitialStatus("needs_rescue")}
-            className={cn(
-              "flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition-all cursor-pointer",
-              initialStatus === "needs_rescue"
-                ? "border-rose-500 bg-rose-50 text-rose-900 ring-1 ring-rose-500"
-                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
-            )}
-          >
-            <AlertTriangle className="size-4 text-rose-600" />
-            Needs Rescue
-          </button>
-        </div>
-      </div>
-
       {/* Support / Special Needs */}
       <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/50 p-3">
         <label className="text-xs font-bold text-slate-800">
@@ -2221,7 +2196,7 @@ function CreateWalkInForm({
               onChange={(e) => setIsChild(e.target.checked)}
               className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
             />
-            Child (5–17 y/o)
+            Minor (5–17 y/o)
           </label>
           <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
             <input
@@ -2289,16 +2264,16 @@ function CreateWalkInForm({
         )}
       </div>
 
-      {/* Location / Origin Notes */}
+      {/* Origin Address */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-bold text-slate-700">
-          Origin Address / Location Notes <span className="text-[11px] font-normal text-slate-400">(Optional)</span>
+        <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+          <span>Origin Address <span className="text-[11px] font-normal text-slate-400">(Optional)</span></span>
         </label>
         <input
           type="text"
           value={locationNote}
           onChange={(e) => setLocationNote(e.target.value)}
-          placeholder="e.g. Block 3 Area 2 Riverside, evacuated due to creek rise"
+          placeholder="e.g. Block 3 Area 2 Riverside, Sitio San Jose"
           className="h-9 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
         />
       </div>
@@ -2341,10 +2316,6 @@ function CreateWalkInModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl p-6">
         <DialogHeader>
-          <div className="flex items-center gap-2 text-violet-700 font-bold text-xs uppercase tracking-wider">
-            <UserPlus className="size-4" />
-            Walk-in Registration
-          </div>
           <DialogTitle className="text-lg font-black text-slate-900">
             Record Evacuation Walk-In
           </DialogTitle>
@@ -2461,7 +2432,9 @@ function UnregisteredPersonsPanel({
         (supportFilter === "without_special_needs" && !hasSpecialNeeds) ||
         (supportFilter === "pwd" && p.is_pwd) ||
         (supportFilter === "senior" && p.is_senior) ||
+        (supportFilter === "minor" && p.is_child) ||
         (supportFilter === "child" && p.is_child) ||
+        (supportFilter === "infant" && (p.is_child || !p.is_senior)) ||
         (supportFilter === "pregnant" && p.is_pregnant) ||
         (supportFilter === "bedridden" && p.is_bedridden);
 
@@ -2479,173 +2452,203 @@ function UnregisteredPersonsPanel({
   const startIndex = (currentPage - 1) * pageSize;
   const pageItems = filtered.slice(startIndex, startIndex + pageSize);
 
-  const safeCount = people.filter((p) => p.status === "safe").length;
-  const rescueCount = people.filter((p) => p.status === "needs_rescue").length;
-  const atCentersCount = people.filter((p) => p.evac_center_id).length;
+  const isFiltered = Boolean(
+    search ||
+      centerFilter !== "all" ||
+      statusFilter !== "all" ||
+      supportFilter !== "all",
+  );
+
+  function resetFilters() {
+    setSearch("");
+    setCenterFilter("all");
+    setStatusFilter("all");
+    setSupportFilter("all");
+    setPage(1);
+  }
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Top Toolbar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* Left summary pill indicators */}
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="inline-flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-900 shadow-2xs">
-            <UserX className="size-3.5 text-violet-700" />
-            {people.length} Walk-in Person{people.length !== 1 ? "s" : ""}
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-900 shadow-2xs">
-            <CheckCircle2 className="size-3.5 text-emerald-700" />
-            {safeCount} Safe
-          </span>
-          {rescueCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-900 shadow-2xs">
-              <AlertTriangle className="size-3.5 text-rose-700" />
-              {rescueCount} Need Rescue
-            </span>
-          )}
-          <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 shadow-2xs">
-            <Building2 className="size-3.5 text-slate-500" />
-            {atCentersCount} at Evacuation Centers
-          </span>
+      {/* Attached DataTable Container */}
+      <section className="overflow-hidden rounded-[14px] border border-primary-200/80 bg-white shadow-sm-card">
+        {/* Attached Search, Filters & Action Toolbar */}
+        <div className="border-b border-primary-100/80 bg-gradient-to-r from-emerald-50/50 via-white to-teal-50/30 p-3 sm:px-4">
+          <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
+            {/* Search and Filters */}
+            <div className="flex flex-1 flex-wrap items-center gap-2">
+              {/* Search input */}
+              <label className="relative block min-w-[200px] flex-1 sm:max-w-xs md:max-w-sm">
+                <span className="sr-only">Search walk-in records</span>
+                <Search
+                  aria-hidden
+                  className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-neutral-400"
+                />
+                <input
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  placeholder="Search name, phone, notes..."
+                  className="h-9.5 w-full rounded-full border border-neutral-200/90 bg-white/95 pr-9 pl-9.5 text-xs shadow-2xs transition outline-none placeholder:text-neutral-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 sm:text-sm"
+                />
+                {search ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearch("");
+                      setPage(1);
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 cursor-pointer"
+                    aria-label="Clear search"
+                  >
+                    <X aria-hidden className="size-3.5" />
+                  </button>
+                ) : null}
+              </label>
+
+              {/* Evacuation Center Selector */}
+              <Select
+                value={centerFilter}
+                onValueChange={(v) => {
+                  setCenterFilter(v);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="inline-flex h-9 w-fit min-w-[145px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
+                  <Building2 aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
+                  <SelectValue placeholder="All Centers" />
+                </SelectTrigger>
+                <SelectContent className="z-50 min-w-52 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                  <SelectItem value="all">All Evacuation Centers</SelectItem>
+                  <SelectItem value="none">No Center Assigned</SelectItem>
+                  {data.evacuation_centers.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.facility.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Status Selector */}
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => {
+                  setStatusFilter(v);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="inline-flex h-9 w-fit min-w-[125px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
+                  <Shield aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent className="z-50 min-w-40 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="safe">Safe</SelectItem>
+                  <SelectItem value="needs_rescue">Needs Rescue</SelectItem>
+                  <SelectItem value="unaccounted">Unaccounted</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Special Needs Demographics Selector */}
+              <Select
+                value={supportFilter}
+                onValueChange={(v) => {
+                  setSupportFilter(v);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="inline-flex h-9 w-fit min-w-[140px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
+                  <SlidersHorizontal aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
+                  <SelectValue placeholder="Demographics" />
+                </SelectTrigger>
+                <SelectContent className="z-50 min-w-52 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                  <SelectItem value="all">All Demographics</SelectItem>
+                  <SelectItem value="with_special_needs">With Special Needs</SelectItem>
+                  <SelectItem value="without_special_needs">No Special Needs</SelectItem>
+                  <SelectItem value="senior">Senior Citizen (60+)</SelectItem>
+                  <SelectItem value="pwd">PWD</SelectItem>
+                  <SelectItem value="minor">Minor (5–17 y/o)</SelectItem>
+                  <SelectItem value="infant">Infant / Toddler (0–4 y/o)</SelectItem>
+                  <SelectItem value="pregnant">Pregnant</SelectItem>
+                  <SelectItem value="bedridden">Bedridden</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {isFiltered && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={resetFilters}
+                  className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+                >
+                  <X aria-hidden className="size-3.5 shrink-0 text-neutral-500" />
+                  <span>Reset</span>
+                </Button>
+              )}
+            </div>
+
+            {/* Right Action Buttons */}
+            <div className="flex items-center gap-2 max-lg:justify-end">
+              {!readOnly && (
+                <Button
+                  size="sm"
+                  onClick={() => setCreateModalOpen(true)}
+                  className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white shadow-xs transition-all hover:bg-emerald-700"
+                >
+                  <UserPlus className="size-3.5" />
+                  Record Walk-In Person
+                </Button>
+              )}
+              <a
+                href="/admin/unregistered-persons"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-full border border-neutral-200/90 bg-white/95 px-3.5 text-xs font-semibold text-neutral-700 shadow-2xs transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+              >
+                Registry View
+                <ArrowRight className="size-3 text-neutral-400" />
+              </a>
+            </div>
+          </div>
         </div>
 
-        {/* Right action button */}
-        <div className="flex items-center gap-2">
-          {!readOnly && (
-            <Button
-              size="sm"
-              onClick={() => setCreateModalOpen(true)}
-              className="h-8.5 rounded-xl bg-emerald-600 px-3.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <UserPlus className="size-3.5" />
-              Record Walk-In Person
-            </Button>
-          )}
-          <a
-            href="/admin/unregistered-persons"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex h-8.5 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-900 transition-colors"
-          >
-            Registry View
-            <ArrowRight className="size-3 text-slate-400" />
-          </a>
-        </div>
-      </div>
-
-      {/* Filter controls */}
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-4 bg-slate-50/80 p-2.5 rounded-xl border border-slate-200">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
-          <input
-            type="search"
-            placeholder="Search by name, phone, notes..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="h-8 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-xs placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-          />
-        </div>
-
-        <Select
-          value={centerFilter}
-          onValueChange={(v) => {
-            setCenterFilter(v);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="h-8 text-xs bg-white border-slate-200">
-            <SelectValue placeholder="All Evac Centers" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Evacuation Centers</SelectItem>
-            <SelectItem value="none">No Center Assigned</SelectItem>
-            {data.evacuation_centers.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.facility.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={statusFilter}
-          onValueChange={(v) => {
-            setStatusFilter(v);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="h-8 text-xs bg-white border-slate-200">
-            <SelectValue placeholder="All Statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="safe">Safe</SelectItem>
-            <SelectItem value="needs_rescue">Needs Rescue</SelectItem>
-            <SelectItem value="unaccounted">Unaccounted</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={supportFilter}
-          onValueChange={(v) => {
-            setSupportFilter(v);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="h-8 text-xs bg-white border-slate-200">
-            <SelectValue placeholder="Special Needs" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Demographics</SelectItem>
-            <SelectItem value="with_special_needs">With Special Needs</SelectItem>
-            <SelectItem value="without_special_needs">No Special Needs</SelectItem>
-            <SelectItem value="pwd">PWD</SelectItem>
-            <SelectItem value="senior">Senior Citizen</SelectItem>
-            <SelectItem value="child">Child / Infant</SelectItem>
-            <SelectItem value="pregnant">Pregnant</SelectItem>
-            <SelectItem value="bedridden">Bedridden</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Table Container */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xs">
+        {/* Table View */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-600 font-bold uppercase tracking-wider text-[10.5px]">
-                <th className="py-3 px-3.5">Name</th>
-                <th className="py-3 px-3">Safety Status</th>
-                <th className="py-3 px-3">Evacuation Center</th>
-                <th className="py-3 px-3">Contact</th>
-                <th className="py-3 px-3">Special Needs</th>
-                <th className="py-3 px-3">Origin / Location</th>
-                <th className="py-3 px-3">Recorded Time</th>
-                <th className="py-3 px-3.5 text-right">Action</th>
+            <thead className="bg-primary-900 shadow-[0_1px_0_0_var(--color-primary-800)] text-primary-50">
+              <tr className="hover:bg-primary-900 border-primary-800">
+                <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Name</th>
+                <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Safety Status</th>
+                <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Evacuation Center</th>
+                <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Contact</th>
+                <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Special Needs</th>
+                <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Origin / Location</th>
+                <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Recorded Time</th>
+                <th className="h-11 px-4 text-right text-[11px] font-bold tracking-[0.08em] uppercase text-white">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-primary-100/80">
               {pageItems.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-500">
-                    <div className="flex flex-col items-center gap-2">
-                      <UserX className="size-8 text-slate-300" />
-                      <p className="text-sm font-bold text-slate-700">No walk-in records found</p>
-                      <p className="text-xs text-slate-500 max-w-sm">
-                        {search || centerFilter !== "all" || statusFilter !== "all"
-                          ? "No unregistered persons match the active search or filter criteria."
+                  <td colSpan={8} className="py-14 text-center">
+                    <div className="flex flex-col items-center gap-2.5">
+                      <div className="grid size-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-700 shadow-2xs">
+                        <UserX className="size-6 text-emerald-700" />
+                      </div>
+                      <p className="text-sm font-bold text-neutral-900">No walk-in records found</p>
+                      <p className="text-xs text-neutral-500 max-w-sm">
+                        {isFiltered
+                          ? "No unregistered persons match your active filter criteria."
                           : "No unregistered persons have checked in for this emergency event yet."}
                       </p>
                       {!readOnly && (
                         <Button
                           size="sm"
                           onClick={() => setCreateModalOpen(true)}
-                          className="mt-2 h-8 rounded-lg bg-emerald-600 px-3 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 cursor-pointer"
+                          className="mt-2 inline-flex h-8.5 cursor-pointer items-center gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white shadow-xs hover:bg-emerald-700"
                         >
-                          <UserPlus className="size-3.5 mr-1.5" />
+                          <UserPlus className="size-3.5" />
                           Record First Walk-In Person
                         </Button>
                       )}
@@ -2653,12 +2656,12 @@ function UnregisteredPersonsPanel({
                   </td>
                 </tr>
               ) : (
-                pageItems.map((person) => {
+                pageItems.map((person, index) => {
                   const needsRescue = person.status === "needs_rescue";
                   const isSafe = person.status === "safe";
 
                   const flags: string[] = [];
-                  if (person.is_child) flags.push("Child");
+                  if (person.is_child) flags.push("Minor");
                   if (person.is_senior) flags.push("Senior Citizen");
                   if (person.is_pwd) flags.push("PWD");
                   if (person.is_pregnant) flags.push("Pregnant");
@@ -2670,126 +2673,129 @@ function UnregisteredPersonsPanel({
                     <tr
                       key={person.id}
                       className={cn(
-                        "hover:bg-slate-50/70 transition-colors group",
-                        needsRescue && "bg-rose-50/30",
+                        "border-primary-100/80 transition-colors hover:bg-primary-50/80",
+                        index % 2 === 1 && "bg-emerald-50/35",
+                        needsRescue && "bg-rose-50/40 hover:bg-rose-50/70",
                       )}
                     >
                       {/* Name */}
-                      <td className="py-2.5 px-3.5">
+                      <td className="py-3 px-4 font-bold text-neutral-900">
                         <div className="flex items-center gap-2">
-                          <span className="font-extrabold text-slate-900 group-hover:text-emerald-950">
+                          <span className="font-extrabold text-neutral-900">
                             {person.full_name}
                           </span>
-                          <span className="inline-flex items-center rounded-full bg-violet-50 px-1.5 py-0.2 text-[9px] font-bold text-violet-700 border border-violet-200">
+                          <span className="inline-flex items-center rounded-full bg-violet-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-violet-700 border border-violet-200/80">
                             Walk-In
                           </span>
                         </div>
                       </td>
 
                       {/* Status */}
-                      <td className="py-2.5 px-3">
+                      <td className="py-3 px-4">
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10.5px] font-bold border",
+                            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold border",
                             isSafe
-                              ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                              ? "bg-emerald-100/90 text-emerald-900 border-emerald-300"
                               : needsRescue
-                                ? "bg-rose-50 text-rose-800 border-rose-300"
-                                : "bg-slate-100 text-slate-700 border-slate-300",
+                                ? "bg-rose-100 text-rose-900 border-rose-300"
+                                : "bg-neutral-100 text-neutral-700 border-neutral-300",
                           )}
                         >
                           {isSafe ? (
-                            <CheckCircle2 className="size-3 text-emerald-600" />
+                            <CheckCircle2 className="size-3.5 text-emerald-700" />
                           ) : needsRescue ? (
-                            <AlertTriangle className="size-3 text-rose-600" />
+                            <AlertTriangle className="size-3.5 text-rose-700" />
                           ) : (
-                            <Clock className="size-3 text-slate-500" />
+                            <Clock className="size-3.5 text-neutral-500" />
                           )}
                           {statusLabel(person.status)}
                         </span>
                       </td>
 
-                      {/* Evac Center */}
-                      <td className="py-2.5 px-3">
+                      {/* Evacuation Center */}
+                      <td className="py-3 px-4">
                         {person.evac_center_name ? (
-                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-900 bg-emerald-50/80 px-2 py-0.5 rounded-md border border-emerald-200/70">
-                            <Building2 className="size-3 text-emerald-600 shrink-0" />
-                            <span className="truncate max-w-[170px]">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-950 bg-emerald-100/60 px-2.5 py-1 rounded-lg border border-emerald-200/90">
+                            <Building2 className="size-3.5 text-emerald-700 shrink-0" />
+                            <span className="truncate max-w-[180px]">
                               {person.evac_center_name}
                             </span>
                           </span>
                         ) : (
-                          <span className="text-slate-400 text-xs italic">
+                          <span className="text-neutral-400 text-xs italic">
                             No Center Assigned
                           </span>
                         )}
                       </td>
 
                       {/* Contact */}
-                      <td className="py-2.5 px-3 font-mono text-[11.5px] text-slate-600">
+                      <td className="py-3 px-4 font-mono text-xs text-neutral-700">
                         {person.contact_number ? (
-                          <span className="inline-flex items-center gap-1">
-                            <Phone className="size-3 text-slate-400" />
+                          <span className="inline-flex items-center gap-1.5">
+                            <Phone className="size-3.5 text-neutral-400" />
                             {person.contact_number}
                           </span>
                         ) : (
-                          <span className="text-slate-400">—</span>
+                          <span className="text-neutral-400">—</span>
                         )}
                       </td>
 
                       {/* Special Needs */}
-                      <td className="py-2.5 px-3">
+                      <td className="py-3 px-4">
                         {flags.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
                             {flags.map((f) => (
                               <span
                                 key={f}
-                                className="rounded-md bg-amber-100 border border-amber-300 px-1.5 py-0.2 text-[10px] font-bold text-amber-900"
+                                className="rounded-md bg-amber-100 border border-amber-300 px-1.5 py-0.5 text-[10px] font-bold text-amber-900"
                               >
                                 {f}
                               </span>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-slate-400 text-xs">None</span>
+                          <span className="text-neutral-400 text-xs">None</span>
                         )}
                       </td>
 
                       {/* Origin / Notes */}
-                      <td className="py-2.5 px-3 text-slate-600 text-xs max-w-[180px]">
+                      <td className="py-3 px-4 text-neutral-700 text-xs max-w-[200px]">
                         {person.location_note ? (
                           <span className="truncate block" title={person.location_note}>
                             {person.location_note}
                           </span>
                         ) : person.location ? (
-                          <span className="text-slate-500 italic">Pinned on Map</span>
+                          <span className="text-neutral-500 italic">Pinned on Map</span>
                         ) : (
-                          <span className="text-slate-400">—</span>
+                          <span className="text-neutral-400">—</span>
                         )}
                       </td>
 
                       {/* Recorded Time */}
-                      <td className="py-2.5 px-3 text-[11px] text-slate-500">
-                        <div>{new Date(person.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                      <td className="py-3 px-4 text-[11px] text-neutral-600">
+                        <div className="font-semibold text-neutral-800">
+                          {new Date(person.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </div>
                         {person.recorded_by_name && (
-                          <div className="text-[10px] text-slate-400 truncate max-w-[110px]">
+                          <div className="text-[10px] text-neutral-400 truncate max-w-[120px]">
                             by {person.recorded_by_name}
                           </div>
                         )}
                       </td>
 
                       {/* Actions */}
-                      <td className="py-2.5 px-3.5 text-right">
+                      <td className="py-3 px-4 text-right">
                         {person.converted_member_id ? (
                           <a
                             href={`/admin/citizens/${person.converted_member_id}`}
-                            className="text-primary-700 font-bold hover:underline inline-flex items-center gap-1 text-[11px]"
+                            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors"
                           >
-                            Member Profile
+                            Official Profile
                             <ExternalLink className="size-3" />
                           </a>
                         ) : (
-                          <span className="text-slate-400 text-[11px] font-medium">
+                          <span className="text-neutral-400 text-xs font-medium italic">
                             Unconverted
                           </span>
                         )}
@@ -2802,24 +2808,24 @@ function UnregisteredPersonsPanel({
           </table>
         </div>
 
-        {/* Bottom pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-100 p-3 text-xs">
-            <span className="text-[11.5px] font-medium text-slate-500">
-              Showing {startIndex + 1}–{Math.min(startIndex + pageSize, filtered.length)} of {filtered.length} walk-in records
-            </span>
-            <div className="flex items-center gap-1">
+        {/* Attached Pagination Footer */}
+        <div className="border-t border-primary-100/80 bg-neutral-50/80 px-4 py-3 flex items-center justify-between text-xs">
+          <span className="text-[11.5px] font-medium text-neutral-500">
+            Showing {filtered.length === 0 ? 0 : startIndex + 1}–{Math.min(startIndex + pageSize, filtered.length)} of {filtered.length} walk-in records
+          </span>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1.5">
               <Button
                 variant="outline"
                 size="sm"
                 disabled={currentPage <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="h-7.5 px-2.5 text-xs rounded-lg cursor-pointer font-bold"
+                className="h-8 rounded-full px-3 text-xs font-bold cursor-pointer border-neutral-200 bg-white hover:bg-neutral-100"
               >
                 <ChevronLeft className="size-3.5 mr-1" />
                 Previous
               </Button>
-              <span className="px-2 text-xs font-bold text-slate-700">
+              <span className="px-2 text-xs font-bold text-neutral-700">
                 Page {currentPage} of {totalPages}
               </span>
               <Button
@@ -2827,15 +2833,15 @@ function UnregisteredPersonsPanel({
                 size="sm"
                 disabled={currentPage >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="h-7.5 px-2.5 text-xs rounded-lg cursor-pointer font-bold"
+                className="h-8 rounded-full px-3 text-xs font-bold cursor-pointer border-neutral-200 bg-white hover:bg-neutral-100"
               >
                 Next
                 <ChevronRight className="size-3.5 ml-1" />
               </Button>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </section>
 
       {/* Record Walk-In Modal */}
       <CreateWalkInModal
@@ -3631,7 +3637,7 @@ function AreaSummaryModal({
                 )}
                 {childCount > 0 && (
                   <span className="rounded-md bg-amber-100 border border-amber-300 px-2 py-0.5 text-xs font-bold text-amber-900">
-                    {childCount} Child{childCount > 1 ? "ren" : ""}
+                    {childCount} Minor{childCount > 1 ? "s" : ""} (5–17 y/o)
                   </span>
                 )}
                 {pregnantCount > 0 && (

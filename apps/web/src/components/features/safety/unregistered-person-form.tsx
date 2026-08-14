@@ -42,6 +42,7 @@ const schema = z.object({
   location_note: z.string().optional(),
   initial_status: z.enum(["safe", "needs_rescue"]),
   evac_center_id: z.string().optional(),
+  is_infant: z.boolean().optional(),
   is_child: z.boolean(),
   is_senior: z.boolean(),
   is_pwd: z.boolean(),
@@ -85,6 +86,7 @@ export function UnregisteredPersonForm({
       location_note: "",
       initial_status: "safe",
       evac_center_id: "",
+      is_infant: false,
       is_child: false,
       is_senior: false,
       is_pwd: false,
@@ -118,7 +120,7 @@ export function UnregisteredPersonForm({
       initial_status: values.initial_status,
       event_id: eventId,
       evac_center_id: values.evac_center_id || null,
-      is_child: values.is_child,
+      is_child: Boolean(values.is_child || values.is_infant),
       is_senior: values.is_senior,
       is_pwd: values.is_pwd,
       is_pregnant: values.is_pregnant,
@@ -178,15 +180,15 @@ export function UnregisteredPersonForm({
               onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="No center assigned" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No center assignment</SelectItem>
+                <SelectItem value="none">No center assigned</SelectItem>
                 {centersQuery.data
                   ?.filter((center) => center.is_open)
                   .map((center) => (
                     <SelectItem key={center.id} value={center.id}>
-                      {center.facility.name} · {center.occupancy}/{center.capacity ?? "?"}
+                      {center.facility.name} ({center.occupancy}/{center.capacity ?? "∞"})
                     </SelectItem>
                   ))}
               </SelectContent>
@@ -201,8 +203,9 @@ export function UnregisteredPersonForm({
         </legend>
         <div className="grid grid-cols-2 gap-2 text-sm">
           {[
-            ["is_child", "Child"],
-            ["is_senior", "Senior"],
+            ["is_infant", "Infant / Toddler (0–4 y/o)"],
+            ["is_child", "Minor (5–17 y/o)"],
+            ["is_senior", "Senior (60+ y/o)"],
             ["is_pwd", "PWD"],
             ["is_pregnant", "Pregnant"],
             ["is_lactating", "Lactating"],
