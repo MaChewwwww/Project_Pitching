@@ -37,7 +37,7 @@ type Ring = readonly Coordinate[];
 type PolygonCoordinates = readonly Ring[];
 type MultiPolygonCoordinates = readonly PolygonCoordinates[];
 
-interface HazardGeometry {
+export interface HazardGeometry {
   type: "Polygon" | "MultiPolygon";
   coordinates: PolygonCoordinates | MultiPolygonCoordinates;
 }
@@ -99,7 +99,7 @@ function pointInPolygon(point: Coordinate, polygon: PolygonCoordinates): boolean
   );
 }
 
-function pointInGeometry(point: Coordinate, geometry: HazardGeometry | null): boolean {
+export function pointInGeometry(point: Coordinate, geometry: HazardGeometry | null): boolean {
   if (!geometry) return false;
   if (geometry.type === "Polygon") {
     return pointInPolygon(point, geometry.coordinates as PolygonCoordinates);
