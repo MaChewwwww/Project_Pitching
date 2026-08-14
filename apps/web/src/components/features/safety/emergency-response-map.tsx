@@ -940,7 +940,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
         {/* ---------------------------------------------------------------- */}
         {/* Sidebar (Column 2)                                                */}
         {/* ---------------------------------------------------------------- */}
-        <div className="flex flex-col gap-3.5 w-full lg:w-80 lg:shrink-0">
+        <div className="flex flex-col gap-3.5 w-full lg:w-[320px] lg:min-w-[320px] lg:max-w-[320px] lg:shrink-0">
 
           {/* Layers panel */}
           <div className="w-full rounded-xl border border-primary-800/60 bg-primary-950/95 p-4 text-white shadow-xl backdrop-blur-md">
@@ -961,34 +961,39 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
 
           {/* Filters panel (non-collapsible) */}
           <div className="w-full rounded-xl border border-primary-800/60 bg-primary-950/95 p-4 text-white shadow-xl backdrop-blur-md">
-            <div className="mb-3 flex items-center justify-between min-h-6">
+            <div className="mb-3 flex items-center justify-between h-6">
               <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary-400">
                 <Filter className="size-3.5 text-primary-400" aria-hidden />
                 Filters
               </p>
-              {(search ||
-                area !== "all" ||
-                risk !== "all" ||
-                safety !== "all" ||
-                support !== "all" ||
-                capacity !== "all") && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearch("");
-                    setArea("all");
-                    setRisk("all");
-                    setSafety("all");
-                    setSupport("all");
-                    setCapacity("all");
-                  }}
-                  className="inline-flex items-center gap-1 rounded-md bg-emerald-900/60 px-2 py-0.5 text-[11px] font-bold text-emerald-300 border border-emerald-700/50 hover:bg-emerald-800/80 hover:text-emerald-100 transition-colors shadow-2xs cursor-pointer"
-                  title="Reset all filters to default"
-                >
-                  <RotateCcw className="size-3" aria-hidden />
-                  Reset
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setArea("all");
+                  setRisk("all");
+                  setSafety("all");
+                  setSupport("all");
+                  setCapacity("all");
+                }}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded bg-emerald-900/80 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-700/60 hover:bg-emerald-800 hover:text-white transition-all shadow-2xs cursor-pointer shrink-0",
+                  Boolean(
+                    search ||
+                    area !== "all" ||
+                    risk !== "all" ||
+                    safety !== "all" ||
+                    support !== "all" ||
+                    capacity !== "all",
+                  )
+                    ? "opacity-100 visible"
+                    : "opacity-0 invisible pointer-events-none",
+                )}
+                title="Reset all filters to default"
+              >
+                <RotateCcw className="size-2.5" aria-hidden />
+                Reset
+              </button>
             </div>
             <div className="flex flex-col gap-3">
               {/* Search */}
