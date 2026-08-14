@@ -39,6 +39,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { hazardLevelForPoint, useHazardGeoJson } from "@/lib/hazard-geojson";
 import type {
   EmergencyWorkspaceOut,
@@ -91,7 +98,9 @@ function riskLabel(risk: Risk) {
 }
 
 function statusLabel(status: string) {
-  return status.replaceAll("_", " ");
+  return status
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function cn(...classes: (string | boolean | undefined)[]) {
@@ -133,25 +142,25 @@ function EmergencyMapPanes() {
 }
 
 function createEvacCenterIcon(isAtCapacity: boolean) {
-  const bgColor = isAtCapacity ? "#EF4444" : "#10B981";
-  const size = 22;
-  const iconSize = 13;
+  const bgColor = isAtCapacity ? "#DC2626" : "#059669";
+  const width = 24;
+  const height = 30;
 
   return L.divIcon({
     className: "evac-center-pin-icon",
     html: `
-      <div class="flex items-center justify-center rounded-[5px] text-white transition-transform hover:scale-125 cursor-pointer border border-white/95 shadow-md"
-           style="width:${size}px; height:${size}px; background-color:${bgColor};">
-        <svg xmlns="http://www.w3.org/2000/svg" width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <path d="M12 18v-4"/>
-          <path d="M9 18v-2"/>
-          <path d="M15 18v-2"/>
+      <div class="transition-transform hover:scale-110 cursor-pointer" style="width:${width}px; height:${height}px;">
+        <svg width="${width}" height="${height}" viewBox="0 0 24 30" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 5px rgba(0,0,0,0.55));">
+          <path d="M12 0.75C5.787 0.75 0.75 5.787 0.75 12C0.75 18.5 10.5 28.75 12 29.25C13.5 28.75 23.25 18.5 23.25 12C23.25 5.787 18.213 0.75 12 0.75Z" fill="${bgColor}" stroke="#FFFFFF" stroke-width="1.5"/>
+          <path d="M12 5.5L5.5 11H8V17H16V11H18.5L12 5.5Z" fill="#FFFFFF"/>
+          <rect x="10.5" y="13" width="3" height="4" rx="0.5" fill="${bgColor}"/>
         </svg>
       </div>
     `,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
+    iconSize: [width, height],
+    iconAnchor: [width / 2, height],
+    popupAnchor: [0, -height],
+    tooltipAnchor: [0, -height],
   });
 }
 
@@ -192,18 +201,18 @@ const ADMIN_MAP_CSS = `
   border: none !important;
 }
 .admin-emergency-map .leaflet-tooltip {
-  background: #052e16;
-  color: #f8fafc;
-  border: 1px solid #166534;
+  background: transparent !important;
+  color: #f8fafc !important;
+  border: none !important;
   border-radius: 0.5rem;
-  padding: 8px 10px;
-  font-size: 11.5px;
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
-  max-width: 240px;
+  padding: 0 !important;
+  box-shadow: none !important;
+  max-width: 280px;
   pointer-events: none;
 }
-.admin-emergency-map .leaflet-tooltip-top::before {
-  border-top-color: #166534;
+.admin-emergency-map .leaflet-tooltip::before,
+.admin-emergency-map .leaflet-tooltip::after {
+  display: none !important;
 }
 .admin-emergency-map .leaflet-control-attribution {
   display: none;
@@ -355,14 +364,14 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
           icon={Users}
           label="In Scope"
           value={filtered.length}
-          sub={`${data.households.length} total`}
+          sub={`${data.households.length} Total`}
           tone="neutral"
         />
         <SidebarStat
           icon={MapPin}
           label="Mapped"
           value={mappedHouseholds.length}
-          sub={`${unmappedHouseholds.length} without pin`}
+          sub={`${unmappedHouseholds.length} Without Pin`}
           tone="neutral"
         />
         <SidebarStat
@@ -371,18 +380,18 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
           value={safeCount}
           sub={
             filtered.length > 0
-              ? `${((safeCount / filtered.length) * 100).toFixed(0)}% of scope`
+              ? `${((safeCount / filtered.length) * 100).toFixed(0)}% Of Scope`
               : "—"
           }
           tone="success"
         />
         <SidebarStat
           icon={Users}
-          label="Pending Check-in"
+          label="Pending Check-In"
           value={filtered.length - safeCount}
           sub={
             filtered.length > 0
-              ? `${(((filtered.length - safeCount) / filtered.length) * 100).toFixed(0)}% pending`
+              ? `${(((filtered.length - safeCount) / filtered.length) * 100).toFixed(0)}% Pending`
               : "—"
           }
           tone="neutral"
@@ -507,9 +516,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                         }}
                       >
                         <Tooltip direction="top" opacity={1}>
-                          <b>{facility.name}</b>
-                          <br />
-                          <span className="capitalize">{statusLabel(facility.type)}</span>
+                          <FacilityTooltip facility={facility} />
                         </Tooltip>
                       </CircleMarker>
                     );
@@ -529,12 +536,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                       pane="evacPane"
                     >
                       <Tooltip direction="top" opacity={1}>
-                        <b>{center.facility.name}</b>
-                        <br />
-                        <span>
-                          {center.occupancy}/{center.capacity ?? "?"} occupants
-                          {center.is_at_capacity ? " · At capacity" : ""}
-                        </span>
+                        <EvacCenterTooltip center={center} />
                       </Tooltip>
                     </Marker>
                   );
@@ -558,16 +560,16 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                   <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
                     Flood Hazard (NOAH)
                   </p>
-                  <ul className="flex flex-col gap-1">
+                  <ul className="flex flex-col gap-1.5">
                     {HAZARD_LEVELS.map((level) => (
                       <li key={level.level} className="flex items-center gap-2">
                         <span
                           aria-hidden
-                          className="size-3 shrink-0 rounded-sm"
-                          style={{ backgroundColor: level.color, opacity: 0.9 }}
+                          className="h-2.5 w-4 shrink-0 rounded-[2px] border border-white/30 shadow-2xs"
+                          style={{ backgroundColor: level.color, opacity: 0.85 }}
                         />
                         <span className="text-emerald-100/90">
-                          <span className="font-semibold">{level.label}</span> ({level.depth})
+                          <span className="font-semibold">{level.label} Hazard</span> ({level.depth})
                         </span>
                       </li>
                     ))}
@@ -602,35 +604,24 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                   </p>
                   <ul className="flex flex-col gap-1">
                     <li className="flex items-center gap-2">
-                      <span aria-hidden className="flex size-3.5 items-center justify-center rounded-[3px] border border-white/60 text-white" style={{ backgroundColor: "#10B981" }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="7.5" height="7.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                      <span aria-hidden className="flex shrink-0 items-center justify-center">
+                        <svg width="12" height="15" viewBox="0 0 24 30" fill="none">
+                          <path d="M12 0.75C5.787 0.75 0.75 5.787 0.75 12C0.75 18.5 10.5 28.75 12 29.25C13.5 28.75 23.25 18.5 23.25 12C23.25 5.787 18.213 0.75 12 0.75Z" fill="#059669" stroke="#FFFFFF" strokeWidth="1.5"/>
+                          <path d="M12 5.5L5.5 11H8V17H16V11H18.5L12 5.5Z" fill="#FFFFFF"/>
+                          <rect x="10.5" y="13" width="3" height="4" rx="0.5" fill="#059669"/>
                         </svg>
                       </span>
-                      <span className="text-emerald-100/90">Available capacity</span>
+                      <span className="text-emerald-100/90">Available Capacity</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span aria-hidden className="flex size-3.5 items-center justify-center rounded-[3px] border border-white/60 text-white" style={{ backgroundColor: "#EF4444" }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="7.5" height="7.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                      <span aria-hidden className="flex shrink-0 items-center justify-center">
+                        <svg width="12" height="15" viewBox="0 0 24 30" fill="none">
+                          <path d="M12 0.75C5.787 0.75 0.75 5.787 0.75 12C0.75 18.5 10.5 28.75 12 29.25C13.5 28.75 23.25 18.5 23.25 12C23.25 5.787 18.213 0.75 12 0.75Z" fill="#DC2626" stroke="#FFFFFF" strokeWidth="1.5"/>
+                          <path d="M12 5.5L5.5 11H8V17H16V11H18.5L12 5.5Z" fill="#FFFFFF"/>
+                          <rect x="10.5" y="13" width="3" height="4" rx="0.5" fill="#DC2626"/>
                         </svg>
                       </span>
-                      <span className="text-emerald-100/90">At/over capacity</span>
-                    </li>
-                  </ul>
-                </div>
-              )}
-
-              {/* Other Public Facilities */}
-              {showFacilities && (
-                <div className="border-t border-emerald-900/60 pt-1.5">
-                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
-                    Other Facilities
-                  </p>
-                  <ul className="flex flex-col gap-1">
-                    <li className="flex items-center gap-2">
-                      <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-slate-400 bg-slate-100" />
-                      <span className="text-emerald-100/90">Clinics, Police, Fire</span>
+                      <span className="text-emerald-100/90">At / Over Capacity</span>
                     </li>
                   </ul>
                 </div>
@@ -645,19 +636,34 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                   <ul className="flex flex-col gap-1">
                     <li className="flex items-center gap-2">
                       <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60" style={{ backgroundColor: "#15803D" }} />
-                      <span className="text-emerald-100/90">Low flood risk</span>
+                      <span className="text-emerald-100/90">Low Flood Risk</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60" style={{ backgroundColor: "#F59E0B" }} />
-                      <span className="text-emerald-100/90">Medium flood risk</span>
+                      <span className="text-emerald-100/90">Medium Flood Risk</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60" style={{ backgroundColor: "#EF4444" }} />
-                      <span className="text-emerald-100/90">High flood risk</span>
+                      <span className="text-emerald-100/90">High Flood Risk</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60" style={{ backgroundColor: "#64748B" }} />
-                      <span className="text-emerald-100/90">All safe (checked in)</span>
+                      <span className="text-emerald-100/90">All Safe (Checked In)</span>
+                    </li>
+                  </ul>
+                </div>
+              )}
+
+              {/* Other Public Facilities */}
+              {showFacilities && (
+                <div className="border-t border-emerald-900/60 pt-1.5">
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                    Other Facilities
+                  </p>
+                  <ul className="flex flex-col gap-1">
+                    <li className="flex items-center gap-2">
+                      <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-slate-400 bg-slate-100" />
+                      <span className="text-emerald-100/90">Barangay & Public Facilities</span>
                     </li>
                   </ul>
                 </div>
@@ -698,88 +704,132 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
               Layers
             </p>
             <fieldset className="flex flex-col gap-2">
-              <legend className="sr-only">Map layer visibility</legend>
-              <LayerCheckbox checked={showHazard} onChange={setShowHazard} label="Flood hazard (5-year)" />
-              <LayerCheckbox checked={showAreas} onChange={setShowAreas} label="Area list" />
-              <LayerCheckbox checked={showCenters} onChange={setShowCenters} label="Evacuation facilities" />
-              <LayerCheckbox checked={showFacilities} onChange={setShowFacilities} label="Other facilities" />
+              <legend className="sr-only">Map Layer Visibility</legend>
+              <LayerCheckbox checked={showHazard} onChange={setShowHazard} label="Flood Hazard (5-Year)" />
+              <LayerCheckbox checked={showAreas} onChange={setShowAreas} label="Area List" />
+              <LayerCheckbox checked={showCenters} onChange={setShowCenters} label="Evacuation Facilities" />
               <LayerCheckbox checked={showHouseholds} onChange={setShowHouseholds} label="Households" />
+              <LayerCheckbox checked={showFacilities} onChange={setShowFacilities} label="Other Facilities" />
             </fieldset>
           </div>
 
-          {/* Filters panel */}
-          <div className="rounded-xl border border-neutral-200 bg-white shadow-sm overflow-hidden">
+          {/* Filters panel matching dark emerald card style */}
+          <div className="rounded-xl border border-primary-800/60 bg-primary-950/95 text-white shadow-xl backdrop-blur-md overflow-hidden">
             <button
               type="button"
               onClick={() => setFiltersExpanded((v) => !v)}
-              className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-neutral-50 transition-colors"
+              className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-primary-900/40 transition-colors"
               aria-expanded={filtersExpanded}
             >
-              <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-neutral-500">
-                <Filter className="size-3.5" aria-hidden />
+              <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary-400">
+                <Filter className="size-3.5 text-primary-400" aria-hidden />
                 Filters
               </p>
               <ChevronDown
-                className={cn("size-4 text-neutral-400 transition-transform duration-200", filtersExpanded && "rotate-180")}
+                className={cn(
+                  "size-4 text-primary-400 transition-transform duration-200",
+                  filtersExpanded && "rotate-180",
+                )}
                 aria-hidden
               />
             </button>
             {filtersExpanded && (
-              <div className="px-4 pb-4 flex flex-col gap-3 border-t border-neutral-100">
+              <div className="px-4 pb-4 flex flex-col gap-3.5 border-t border-primary-800/60 pt-3">
                 {/* Search */}
-                <div className="relative pt-3">
-                  <Search className="pointer-events-none absolute top-6 left-3 size-4 text-neutral-400" aria-hidden />
+                <div className="relative">
+                  <Search
+                    className="pointer-events-none absolute top-2.5 left-3 size-4 text-primary-400"
+                    aria-hidden
+                  />
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Household, head, or member"
-                    className="focus-visible:ring-primary-500 min-h-10 w-full rounded-lg border border-neutral-200 bg-white pr-3 pl-9 text-sm focus-visible:ring-2 focus-visible:outline-none"
+                    placeholder="Search Household, Head, Or Member..."
+                    className="h-9 w-full rounded-lg border border-primary-700/60 bg-primary-900/60 pr-3 pl-9 text-xs text-white placeholder:text-primary-300/40 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none"
                     aria-label="Search households"
                   />
                 </div>
-                <FilterSelect label="Area" value={area} onChange={setArea}>
-                  <option value="all">All areas</option>
-                  {areas.map(([id, name]) => (
-                    <option key={id} value={id}>{name}</option>
-                  ))}
-                </FilterSelect>
-                <FilterSelect label="Risk level" value={risk} onChange={setRisk}>
-                  <option value="all">All risks</option>
-                  <option value="3">High</option>
-                  <option value="2">Medium</option>
-                  <option value="1">Low</option>
-                </FilterSelect>
-                <FilterSelect label="Safety status" value={safety} onChange={setSafety}>
-                  <option value="all">All safety states</option>
-                  <option value="safe">All safe</option>
-                  <option value="rescue">Needs rescue</option>
-                  <option value="unaccounted">Unaccounted</option>
-                </FilterSelect>
-                <FilterSelect label="Special needs" value={support} onChange={setSupport}>
-                  <option value="all">All support needs</option>
-                  <option value="is_child">Child</option>
-                  <option value="is_senior">Senior</option>
-                  <option value="is_pwd">PWD</option>
-                  <option value="is_pregnant">Pregnant</option>
-                  <option value="is_lactating">Lactating</option>
-                  <option value="is_bedridden">Mobility-limited</option>
-                  <option value="has_chronic_condition">Chronic condition</option>
-                </FilterSelect>
-                <FilterSelect label="Center capacity" value={capacity} onChange={setCapacity}>
-                  <option value="all">All centers</option>
-                  <option value="over">At/over capacity</option>
-                  <option value="available">Below capacity</option>
-                </FilterSelect>
-                {(search || area !== "all" || risk !== "all" || safety !== "all" || support !== "all" || capacity !== "all") && (
+
+                <CustomFilterSelect
+                  label="Area"
+                  value={area}
+                  onValueChange={setArea}
+                  options={[
+                    { value: "all", label: "All Areas" },
+                    ...areas.map(([id, name]) => ({ value: id, label: name })),
+                  ]}
+                />
+
+                <CustomFilterSelect
+                  label="Risk Level"
+                  value={risk}
+                  onValueChange={setRisk}
+                  options={[
+                    { value: "all", label: "All Risk Levels" },
+                    { value: "3", label: "High Risk" },
+                    { value: "2", label: "Medium Risk" },
+                    { value: "1", label: "Low Risk" },
+                  ]}
+                />
+
+                <CustomFilterSelect
+                  label="Safety Status"
+                  value={safety}
+                  onValueChange={setSafety}
+                  options={[
+                    { value: "all", label: "All Safety Statuses" },
+                    { value: "safe", label: "All Safe" },
+                    { value: "rescue", label: "Needs Rescue" },
+                    { value: "unaccounted", label: "Unaccounted" },
+                  ]}
+                />
+
+                <CustomFilterSelect
+                  label="Special Needs"
+                  value={support}
+                  onValueChange={setSupport}
+                  options={[
+                    { value: "all", label: "All Support Needs" },
+                    { value: "is_child", label: "Children (Under 18)" },
+                    { value: "is_senior", label: "Senior Citizens (60+)" },
+                    { value: "is_pwd", label: "Persons With Disabilities (PWD)" },
+                    { value: "is_pregnant", label: "Pregnant" },
+                    { value: "is_lactating", label: "Lactating" },
+                    { value: "is_bedridden", label: "Mobility-Limited / Bedridden" },
+                    { value: "has_chronic_condition", label: "Chronic Health Condition" },
+                  ]}
+                />
+
+                <CustomFilterSelect
+                  label="Center Capacity"
+                  value={capacity}
+                  onValueChange={setCapacity}
+                  options={[
+                    { value: "all", label: "All Evacuation Centers" },
+                    { value: "over", label: "At / Over Capacity" },
+                    { value: "available", label: "With Available Space" },
+                  ]}
+                />
+
+                {(search ||
+                  area !== "all" ||
+                  risk !== "all" ||
+                  safety !== "all" ||
+                  support !== "all" ||
+                  capacity !== "all") && (
                   <button
                     type="button"
                     onClick={() => {
-                      setSearch(""); setArea("all"); setRisk("all");
-                      setSafety("all"); setSupport("all"); setCapacity("all");
+                      setSearch("");
+                      setArea("all");
+                      setRisk("all");
+                      setSafety("all");
+                      setSupport("all");
+                      setCapacity("all");
                     }}
-                    className="text-xs font-bold text-emerald-700 hover:text-emerald-900 text-left"
+                    className="text-xs font-bold text-emerald-400 hover:text-emerald-300 hover:underline pt-1 text-left"
                   >
-                    Clear all filters
+                    Clear All Filters
                   </button>
                 )}
               </div>
@@ -884,28 +934,39 @@ function LayerCheckbox({
   );
 }
 
-function FilterSelect({
+function CustomFilterSelect({
   label,
   value,
-  onChange,
-  children,
+  onValueChange,
+  options,
 }: {
   label: string;
   value: string;
-  onChange: (value: string) => void;
-  children: React.ReactNode;
+  onValueChange: (v: string) => void;
+  options: { value: string; label: string }[];
 }) {
   return (
-    <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600">
-      <span>{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="focus-visible:ring-primary-500 min-h-9 rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-800 focus-visible:ring-2 focus-visible:outline-none"
-      >
-        {children}
-      </select>
-    </label>
+    <div className="flex flex-col gap-1">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-primary-300/80">
+        {label}
+      </span>
+      <Select value={value} onValueChange={onValueChange}>
+        <SelectTrigger className="h-8.5 w-full rounded-lg border border-primary-700/60 bg-primary-900/60 px-2.5 text-xs font-medium text-white shadow-inner hover:bg-primary-900/80 focus-visible:ring-emerald-400">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="border-primary-800 bg-primary-950 text-white shadow-2xl z-[1100] max-h-60">
+          {options.map((opt) => (
+            <SelectItem
+              key={opt.value}
+              value={opt.value}
+              className="cursor-pointer text-xs text-primary-100 hover:bg-primary-900 focus:bg-primary-900 focus:text-emerald-300"
+            >
+              {opt.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
 
@@ -985,7 +1046,7 @@ function ListTabButton({
   );
 }
 
-/* --- Compact tooltip shown on hover --------------------------------------- */
+/* --- Compact tooltips shown on hover with dynamic matching colors --- */
 
 function CompactHouseholdTooltip({
   household,
@@ -995,37 +1056,120 @@ function CompactHouseholdTooltip({
   risk: Risk;
   riskSource?: string;
 }) {
+  const isSafe = household.all_safe;
+  const color = isSafe ? "#64748B" : riskColor(risk);
   const safeTotal = household.members.filter((m) => m.status === "safe").length;
   const totalMembers = household.members.length;
+
   return (
-    <div style={{ minWidth: 160, maxWidth: 240 }}>
-      <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 2 }}>
-        {household.reference_no}
-      </div>
-      <div style={{ fontSize: 11, opacity: 0.8, marginBottom: 4 }}>
-        {household.head_name} · {household.area_name}
-      </div>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", fontSize: 11 }}>
+    <div
+      className="flex flex-col gap-1 rounded-xl p-2.5 text-white shadow-2xl backdrop-blur-md"
+      style={{
+        backgroundColor: "#090d16fa",
+        border: `1.5px solid ${color}`,
+        boxShadow: `0 10px 25px -5px rgba(0,0,0,0.7), 0 0 12px -2px ${color}55`,
+        minWidth: 170,
+        maxWidth: 240,
+      }}
+    >
+      <div
+        className="flex items-center justify-between gap-1.5 border-b pb-1.5"
+        style={{ borderColor: `${color}40` }}
+      >
+        <span className="truncate text-xs font-black text-white">{household.reference_no}</span>
         <span
-          style={{
-            background: riskColor(risk),
-            color: "#fff",
-            borderRadius: 4,
-            padding: "1px 6px",
-            fontWeight: 700,
-            fontSize: 10,
-          }}
+          className="rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white"
+          style={{ backgroundColor: color }}
         >
-          {riskLabel(risk)} risk
+          {isSafe ? "All Safe" : `${riskLabel(risk)} Risk`}
         </span>
-        {household.all_safe ? (
-          <span style={{ color: "#86efac", fontWeight: 600 }}>✓ All safe</span>
-        ) : (
-          <span style={{ opacity: 0.8 }}>
-            {safeTotal}/{totalMembers} safe
-          </span>
-        )}
       </div>
+      <div className="pt-0.5">
+        <p className="truncate text-[11px] font-bold text-slate-200">{household.head_name}</p>
+        <p className="truncate text-[10px] text-slate-400">{household.area_name}</p>
+      </div>
+      <div
+        className="mt-0.5 flex items-center justify-between border-t pt-1.5 text-[10px]"
+        style={{ borderColor: `${color}30` }}
+      >
+        <span className="text-slate-400">{totalMembers} Member{totalMembers !== 1 ? "s" : ""}</span>
+        <span className="font-bold" style={{ color: isSafe ? "#86efac" : "#f1f5f9" }}>
+          {isSafe ? "✓ All Safe" : `${safeTotal}/${totalMembers} Confirmed Safe`}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function EvacCenterTooltip({
+  center,
+}: {
+  center: EmergencyWorkspaceOut["evacuation_centers"][number];
+}) {
+  const isOver = center.is_at_capacity;
+  const color = isOver ? "#DC2626" : "#059669";
+
+  return (
+    <div
+      className="flex flex-col gap-1 rounded-xl p-2.5 text-white shadow-2xl backdrop-blur-md"
+      style={{
+        backgroundColor: "#090d16fa",
+        border: `1.5px solid ${color}`,
+        boxShadow: `0 10px 25px -5px rgba(0,0,0,0.7), 0 0 12px -2px ${color}55`,
+        minWidth: 180,
+        maxWidth: 260,
+      }}
+    >
+      <div
+        className="flex items-center justify-between gap-1.5 border-b pb-1.5"
+        style={{ borderColor: `${color}40` }}
+      >
+        <span className="truncate text-xs font-black text-white">{center.facility.name}</span>
+        <span
+          className="rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white"
+          style={{ backgroundColor: color }}
+        >
+          {isOver ? "At Capacity" : "Available"}
+        </span>
+      </div>
+      <div className="pt-0.5 text-[10.5px]">
+        <span className="text-slate-400">Occupancy: </span>
+        <span className="font-bold text-white">
+          {center.occupancy} / {center.capacity ?? "—"}
+        </span>
+      </div>
+      {center.facility.address ? (
+        <p className="truncate text-[10px] text-slate-400">{center.facility.address}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function FacilityTooltip({ facility }: { facility: PublicFacility }) {
+  const color = "#38BDF8"; // Sky Blue
+  return (
+    <div
+      className="flex flex-col gap-1 rounded-xl p-2.5 text-white shadow-2xl backdrop-blur-md"
+      style={{
+        backgroundColor: "#090d16fa",
+        border: `1.5px solid ${color}`,
+        boxShadow: `0 10px 25px -5px rgba(0,0,0,0.7), 0 0 12px -2px ${color}55`,
+        minWidth: 160,
+        maxWidth: 240,
+      }}
+    >
+      <div
+        className="flex items-center justify-between gap-1.5 border-b pb-1.5"
+        style={{ borderColor: `${color}40` }}
+      >
+        <span className="truncate text-xs font-black text-white">{facility.name}</span>
+      </div>
+      <p className="pt-0.5 text-[10.5px] font-semibold" style={{ color }}>
+        {statusLabel(facility.type)}
+      </p>
+      {facility.address ? (
+        <p className="truncate text-[10px] text-slate-400">{facility.address}</p>
+      ) : null}
     </div>
   );
 }
@@ -1111,15 +1255,15 @@ function HouseholdListPanel({
                           : "bg-amber-100 text-amber-800",
                     )}
                   >
-                    {household.all_safe ? "All Safe" : safeMembers > 0 ? "Partially Safe" : "Pending Check-in"}
+                    {household.all_safe ? "All Safe" : safeMembers > 0 ? "Partially Safe" : "Pending Check-In"}
                   </span>
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <span className="text-[10.5px] text-neutral-500">
-                    {household.area_name} · {totalMembers} member{totalMembers !== 1 ? "s" : ""}
+                    {household.area_name} · {totalMembers} Member{totalMembers !== 1 ? "s" : ""}
                   </span>
                   <span className="text-[10.5px] font-medium text-neutral-500">
-                    {safeMembers}/{totalMembers} safe
+                    {safeMembers}/{totalMembers} Confirmed Safe
                   </span>
                 </div>
               </div>
