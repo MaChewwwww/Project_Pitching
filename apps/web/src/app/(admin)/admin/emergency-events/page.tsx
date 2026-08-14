@@ -367,15 +367,15 @@ export default function AdminEmergencyEventsPage() {
                     </div>
 
                     {/* Title and Time */}
-                    <div className="flex flex-wrap items-center gap-3">
-                      <h2 className="text-2xl font-black text-white tracking-tight drop-shadow-xs">
+                    <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                      <h2 className="text-2xl font-black text-white tracking-tight leading-none drop-shadow-xs">
                         {selected.name}
                       </h2>
-                      <span className="text-xs text-emerald-200/50 font-medium hidden sm:inline">•</span>
-                      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-100/90 font-medium">
+                      <span className="text-xs text-emerald-200/40 font-medium hidden sm:inline select-none">•</span>
+                      <div className="flex items-center gap-1.5 text-xs text-emerald-100/90 font-medium leading-none">
                         <Clock className="size-3.5 text-emerald-300/80 shrink-0" />
-                        Started {new Date(selected.started_at).toLocaleString()}
-                      </span>
+                        <span>Started {new Date(selected.started_at).toLocaleString()}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
