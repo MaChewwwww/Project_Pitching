@@ -143,17 +143,22 @@ function EmergencyMapPanes() {
 
 function createEvacCenterIcon(isAtCapacity: boolean) {
   const bgColor = isAtCapacity ? "#DC2626" : "#059669";
-  const width = 24;
-  const height = 30;
+  const width = 18;
+  const height = 24;
 
   return L.divIcon({
     className: "evac-center-pin-icon",
     html: `
-      <div class="transition-transform hover:scale-110 cursor-pointer" style="width:${width}px; height:${height}px;">
-        <svg width="${width}" height="${height}" viewBox="0 0 24 30" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 5px rgba(0,0,0,0.55));">
-          <path d="M12 0.75C5.787 0.75 0.75 5.787 0.75 12C0.75 18.5 10.5 28.75 12 29.25C13.5 28.75 23.25 18.5 23.25 12C23.25 5.787 18.213 0.75 12 0.75Z" fill="${bgColor}" stroke="#FFFFFF" stroke-width="1.5"/>
-          <path d="M12 5.5L5.5 11H8V17H16V11H18.5L12 5.5Z" fill="#FFFFFF"/>
-          <rect x="10.5" y="13" width="3" height="4" rx="0.5" fill="${bgColor}"/>
+      <div class="transition-transform hover:scale-115 cursor-pointer" style="width:${width}px; height:${height}px;">
+        <svg width="${width}" height="${height}" viewBox="0 0 18 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));">
+          <path d="M9 0.75C4.444 0.75 0.75 4.444 0.75 9C0.75 14.5 7.8 22.8 9 23.25C10.2 22.8 17.25 14.5 17.25 9C17.25 4.444 13.556 0.75 9 0.75Z" fill="${bgColor}" stroke="#FFFFFF" stroke-width="1.25"/>
+          <!-- Civic Building / Center (Pediment, Columns, Base) -->
+          <polygon points="9,4.2 4.5,6.8 13.5,6.8" fill="#FFFFFF"/>
+          <rect x="4.5" y="7.1" width="9" height="0.75" rx="0.2" fill="#FFFFFF"/>
+          <rect x="5.2" y="8.2" width="1.3" height="3.2" rx="0.2" fill="#FFFFFF"/>
+          <rect x="8.35" y="8.2" width="1.3" height="3.2" rx="0.2" fill="#FFFFFF"/>
+          <rect x="11.5" y="8.2" width="1.3" height="3.2" rx="0.2" fill="#FFFFFF"/>
+          <rect x="4.2" y="11.8" width="9.6" height="0.85" rx="0.2" fill="#FFFFFF"/>
         </svg>
       </div>
     `,
@@ -319,8 +324,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
     const matchesSafety =
       safety === "all" ||
       (safety === "safe" && household.all_safe) ||
-      (safety === "rescue" && household.needs_rescue_count > 0) ||
-      (safety === "unaccounted" && household.unaccounted_count > 0);
+      (safety === "not_safe" && !household.all_safe);
     const matchesSupport =
       support === "all" ||
       household.members.some((m) => m.vulnerability_flags.includes(support));
@@ -605,23 +609,31 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                   <ul className="flex flex-col gap-1">
                     <li className="flex items-center gap-2">
                       <span aria-hidden className="flex shrink-0 items-center justify-center">
-                        <svg width="12" height="15" viewBox="0 0 24 30" fill="none">
-                          <path d="M12 0.75C5.787 0.75 0.75 5.787 0.75 12C0.75 18.5 10.5 28.75 12 29.25C13.5 28.75 23.25 18.5 23.25 12C23.25 5.787 18.213 0.75 12 0.75Z" fill="#059669" stroke="#FFFFFF" strokeWidth="1.5"/>
-                          <path d="M12 5.5L5.5 11H8V17H16V11H18.5L12 5.5Z" fill="#FFFFFF"/>
-                          <rect x="10.5" y="13" width="3" height="4" rx="0.5" fill="#059669"/>
+                        <svg width="11" height="15" viewBox="0 0 18 24" fill="none">
+                          <path d="M9 0.75C4.444 0.75 0.75 4.444 0.75 9C0.75 14.5 7.8 22.8 9 23.25C10.2 22.8 17.25 14.5 17.25 9C17.25 4.444 13.556 0.75 9 0.75Z" fill="#059669" stroke="#FFFFFF" strokeWidth="1.25"/>
+                          <polygon points="9,4.2 4.5,6.8 13.5,6.8" fill="#FFFFFF"/>
+                          <rect x="4.5" y="7.1" width="9" height="0.75" rx="0.2" fill="#FFFFFF"/>
+                          <rect x="5.2" y="8.2" width="1.3" height="3.2" rx="0.2" fill="#FFFFFF"/>
+                          <rect x="8.35" y="8.2" width="1.3" height="3.2" rx="0.2" fill="#FFFFFF"/>
+                          <rect x="11.5" y="8.2" width="1.3" height="3.2" rx="0.2" fill="#FFFFFF"/>
+                          <rect x="4.2" y="11.8" width="9.6" height="0.85" rx="0.2" fill="#FFFFFF"/>
                         </svg>
                       </span>
                       <span className="text-emerald-100/90">Available Capacity</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span aria-hidden className="flex shrink-0 items-center justify-center">
-                        <svg width="12" height="15" viewBox="0 0 24 30" fill="none">
-                          <path d="M12 0.75C5.787 0.75 0.75 5.787 0.75 12C0.75 18.5 10.5 28.75 12 29.25C13.5 28.75 23.25 18.5 23.25 12C23.25 5.787 18.213 0.75 12 0.75Z" fill="#DC2626" stroke="#FFFFFF" strokeWidth="1.5"/>
-                          <path d="M12 5.5L5.5 11H8V17H16V11H18.5L12 5.5Z" fill="#FFFFFF"/>
-                          <rect x="10.5" y="13" width="3" height="4" rx="0.5" fill="#DC2626"/>
+                        <svg width="11" height="15" viewBox="0 0 18 24" fill="none">
+                          <path d="M9 0.75C4.444 0.75 0.75 4.444 0.75 9C0.75 14.5 7.8 22.8 9 23.25C10.2 22.8 17.25 14.5 17.25 9C17.25 4.444 13.556 0.75 9 0.75Z" fill="#DC2626" stroke="#FFFFFF" strokeWidth="1.25"/>
+                          <polygon points="9,4.2 4.5,6.8 13.5,6.8" fill="#FFFFFF"/>
+                          <rect x="4.5" y="7.1" width="9" height="0.75" rx="0.2" fill="#FFFFFF"/>
+                          <rect x="5.2" y="8.2" width="1.3" height="3.2" rx="0.2" fill="#FFFFFF"/>
+                          <rect x="8.35" y="8.2" width="1.3" height="3.2" rx="0.2" fill="#FFFFFF"/>
+                          <rect x="11.5" y="8.2" width="1.3" height="3.2" rx="0.2" fill="#FFFFFF"/>
+                          <rect x="4.2" y="11.8" width="9.6" height="0.85" rx="0.2" fill="#FFFFFF"/>
                         </svg>
                       </span>
-                      <span className="text-emerald-100/90">At / Over Capacity</span>
+                      <span className="text-emerald-100/90">Overloading Capacity</span>
                     </li>
                   </ul>
                 </div>
@@ -738,14 +750,14 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                 {/* Search */}
                 <div className="relative">
                   <Search
-                    className="pointer-events-none absolute top-2.5 left-3 size-4 text-primary-400"
+                    className="pointer-events-none absolute top-2.5 left-3 size-4 text-slate-400"
                     aria-hidden
                   />
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search Household, Head, Or Member..."
-                    className="h-9 w-full rounded-lg border border-primary-700/60 bg-primary-900/60 pr-3 pl-9 text-xs text-white placeholder:text-primary-300/40 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none"
+                    className="h-9 w-full rounded-lg border border-slate-200 bg-white pr-3 pl-9 text-xs font-medium text-slate-900 placeholder:text-slate-400 shadow-xs focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
                     aria-label="Search households"
                   />
                 </div>
@@ -779,8 +791,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                   options={[
                     { value: "all", label: "All Safety Statuses" },
                     { value: "safe", label: "All Safe" },
-                    { value: "rescue", label: "Needs Rescue" },
-                    { value: "unaccounted", label: "Unaccounted" },
+                    { value: "not_safe", label: "Not Safe Yet" },
                   ]}
                 />
 
@@ -806,7 +817,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                   onValueChange={setCapacity}
                   options={[
                     { value: "all", label: "All Evacuation Centers" },
-                    { value: "over", label: "At / Over Capacity" },
+                    { value: "over", label: "Overloading Capacity" },
                     { value: "available", label: "With Available Space" },
                   ]}
                 />
@@ -947,19 +958,19 @@ function CustomFilterSelect({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-[10px] font-bold uppercase tracking-wider text-primary-300/80">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300/90">
         {label}
       </span>
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className="h-8.5 w-full rounded-lg border border-primary-700/60 bg-primary-900/60 px-2.5 text-xs font-medium text-white shadow-inner hover:bg-primary-900/80 focus-visible:ring-emerald-400">
-          <SelectValue />
+        <SelectTrigger className="h-8.5 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-900 shadow-xs hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-emerald-500">
+          <SelectValue className="text-slate-900" />
         </SelectTrigger>
-        <SelectContent className="border-primary-800 bg-primary-950 text-white shadow-2xl z-[1100] max-h-60">
+        <SelectContent className="border-slate-200 bg-white text-slate-900 shadow-2xl z-[1100] max-h-60 rounded-lg">
           {options.map((opt) => (
             <SelectItem
               key={opt.value}
               value={opt.value}
-              className="cursor-pointer text-xs text-primary-100 hover:bg-primary-900 focus:bg-primary-900 focus:text-emerald-300"
+              className="cursor-pointer text-xs font-medium text-slate-800 hover:bg-emerald-50 hover:text-emerald-900 focus:bg-emerald-50 focus:text-emerald-900"
             >
               {opt.label}
             </SelectItem>
@@ -1129,7 +1140,7 @@ function EvacCenterTooltip({
           className="rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white"
           style={{ backgroundColor: color }}
         >
-          {isOver ? "At Capacity" : "Available"}
+          {isOver ? "Overloading Capacity" : "Available"}
         </span>
       </div>
       <div className="pt-0.5 text-[10.5px]">
