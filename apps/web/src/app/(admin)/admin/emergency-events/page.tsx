@@ -236,12 +236,12 @@ export default function AdminEmergencyEventsPage() {
         <div className="flex items-center gap-2">
           <span
             className={`grid size-7 place-items-center rounded-lg ${row.type === "flood"
-                ? "bg-sky-100 text-sky-700"
-                : row.type === "fire"
-                  ? "bg-rose-100 text-rose-700"
-                  : row.type === "earthquake"
-                    ? "bg-amber-100 text-amber-700"
-                    : "bg-emerald-100 text-emerald-700"
+              ? "bg-sky-100 text-sky-700"
+              : row.type === "fire"
+                ? "bg-rose-100 text-rose-700"
+                : row.type === "earthquake"
+                  ? "bg-amber-100 text-amber-700"
+                  : "bg-emerald-100 text-emerald-700"
               }`}
           >
             {row.type === "flood" ? (
@@ -449,8 +449,8 @@ export default function AdminEmergencyEventsPage() {
                 aria-selected={tab === "overview"}
                 onClick={() => setSelection(selected?.id ?? "", "overview")}
                 className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${tab === "overview"
-                    ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
-                    : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+                  ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
+                  : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
                   }`}
               >
                 <Activity aria-hidden className="size-4 shrink-0" />
@@ -463,8 +463,8 @@ export default function AdminEmergencyEventsPage() {
                 aria-selected={tab === "events"}
                 onClick={() => setSelection(selected?.id ?? "", "events")}
                 className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${tab === "events"
-                    ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
-                    : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+                  ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
+                  : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
                   }`}
               >
                 <Siren aria-hidden className="size-4 shrink-0" />
@@ -483,8 +483,8 @@ export default function AdminEmergencyEventsPage() {
                   aria-selected={tab === "map"}
                   onClick={() => setSelection(selected?.id ?? "", "map")}
                   className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${tab === "map"
-                      ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
-                      : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+                    ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
+                    : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
                     }`}
                 >
                   <Map aria-hidden className="size-4 shrink-0" />
@@ -498,8 +498,8 @@ export default function AdminEmergencyEventsPage() {
                 aria-selected={tab === "accounted-for"}
                 onClick={() => setSelection(selected?.id ?? "", "accounted-for")}
                 className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${tab === "accounted-for"
-                    ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
-                    : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+                  ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
+                  : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
                   }`}
               >
                 <CircleCheck aria-hidden className="size-4 shrink-0" />
@@ -768,18 +768,18 @@ function TimelineStep({
   return (
     <div
       className={`flex items-center gap-3 rounded-xl p-3 border transition-all ${current
-          ? "bg-emerald-50/80 border-emerald-300 text-emerald-900 shadow-sm ring-1 ring-emerald-400/50"
-          : completed
-            ? "bg-neutral-50 border-neutral-200 text-neutral-700"
-            : "bg-neutral-50/40 border-neutral-100 text-neutral-400"
+        ? "bg-emerald-50/80 border-emerald-300 text-emerald-900 shadow-sm ring-1 ring-emerald-400/50"
+        : completed
+          ? "bg-neutral-50 border-neutral-200 text-neutral-700"
+          : "bg-neutral-50/40 border-neutral-100 text-neutral-400"
         }`}
     >
       <span
         className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-black ${current
-            ? "bg-emerald-600 text-white"
-            : completed
-              ? "bg-neutral-200 text-neutral-800"
-              : "bg-neutral-100 text-neutral-400"
+          ? "bg-emerald-600 text-white"
+          : completed
+            ? "bg-neutral-200 text-neutral-800"
+            : "bg-neutral-100 text-neutral-400"
           }`}
       >
         {step}
@@ -939,11 +939,10 @@ function EventSearchSelect({
                 onSelect("all");
                 setOpen(false);
               }}
-              className={`w-full px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-between transition-all cursor-pointer border ${
-                isAllActiveOverview
+              className={`w-full px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-between transition-all cursor-pointer border ${isAllActiveOverview
                   ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-2xs"
                   : "text-emerald-400 hover:bg-emerald-900/50 border-transparent hover:border-emerald-800/40"
-              }`}
+                }`}
             >
               <span className="flex items-center gap-2">
                 <span className="relative flex size-2 shrink-0">
@@ -972,11 +971,10 @@ function EventSearchSelect({
                         onSelect(e.id);
                         setOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-left transition-all cursor-pointer ${
-                        isSelected
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-left transition-all cursor-pointer ${isSelected
                           ? "bg-emerald-600 text-white font-bold shadow-sm"
                           : "hover:bg-emerald-900/60 text-emerald-100"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-2 truncate">
                         <span className="relative flex size-2 shrink-0">
@@ -1020,11 +1018,10 @@ function EventSearchSelect({
                         onSelect(e.id);
                         setOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-left transition-all cursor-pointer ${
-                        isSelected
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-left transition-all cursor-pointer ${isSelected
                           ? "bg-emerald-950 text-white font-bold shadow-sm border border-emerald-700"
                           : "hover:bg-emerald-900/40 text-emerald-200/80"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-2 truncate">
                         <span className="size-2 rounded-full bg-neutral-500 shrink-0" />
@@ -1069,7 +1066,7 @@ function EndEventDialog({
         size="sm"
         variant="outline"
         disabled
-        className="h-10 px-4 font-black text-xs bg-white/40 text-white border border-white/70 cursor-not-allowed shrink-0 backdrop-blur-md shadow-sm disabled:opacity-100"
+        className="h-10 px-4 font-black text-xs bg-slate-700/90 text-slate-100 border border-slate-500/80 cursor-not-allowed shrink-0 backdrop-blur-md shadow-sm disabled:opacity-100"
         title="This event has already ended"
       >
         Ended Event
