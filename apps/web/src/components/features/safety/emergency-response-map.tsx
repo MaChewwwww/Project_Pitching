@@ -16,6 +16,7 @@ import L from "leaflet";
 import type { Layer } from "leaflet";
 import {
   AlertTriangle,
+  ArrowRight,
   CheckCircle2,
   ChevronDown,
   Database,
@@ -32,7 +33,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import {
   Dialog,
@@ -278,6 +278,24 @@ const ADMIN_MAP_CSS = `
 }
 .sagip-legend-scroll::-webkit-scrollbar-thumb:hover {
   background: #6ee7b7;
+}
+.sagip-modal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #34d399 rgba(241, 245, 249, 0.8);
+}
+.sagip-modal-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.sagip-modal-scroll::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.8);
+  border-radius: 9999px;
+}
+.sagip-modal-scroll::-webkit-scrollbar-thumb {
+  background: #34d399;
+  border-radius: 9999px;
+}
+.sagip-modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: #10b981;
 }
 .san-jose-interactive-area {
   cursor: pointer !important;
@@ -1830,7 +1848,7 @@ function HouseholdDialog({
           </DialogHeader>
 
           {/* Scrollable member roster */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto sagip-modal-scroll">
             <div className="divide-y divide-neutral-100">
               {household.members.map((member) => (
                 <div key={member.member_id} className="flex flex-col gap-2 px-1 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -2096,9 +2114,16 @@ function AreaSummaryModal({
     return false;
   });
 
+  // Evacuation metrics in area
+  const totalAreaCap = areaCenters.reduce((acc, c) => acc + (c.capacity ?? 0), 0);
+  const totalAreaOccupancy = areaCenters.reduce((acc, c) => acc + c.occupancy, 0);
+  const totalAreaAvailable = Math.max(0, totalAreaCap - totalAreaOccupancy);
+  const isEvacFull = totalAreaCap > 0 && totalAreaAvailable === 0;
+  const isEvacLow = totalAreaCap > 0 && (totalAreaAvailable / totalAreaCap) < 0.2;
+
   return (
     <Dialog open={Boolean(areaName)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-full sm:max-w-2xl md:max-w-3xl max-h-[90vh] overflow-y-auto p-5 sm:p-6 bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
+      <DialogContent className="w-full sm:max-w-2xl md:max-w-3xl max-h-[90vh] overflow-y-auto sagip-modal-scroll p-5 sm:p-6 bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
         <DialogHeader className="border-b border-slate-100 pb-4">
           <div className="flex flex-col gap-1 pr-6">
             <div className="flex items-center gap-2">
@@ -2134,16 +2159,28 @@ function AreaSummaryModal({
               </div>
             </div>
 
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 flex flex-col justify-between gap-1.5 shadow-2xs">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1">
-                <CheckCircle2 className="size-3 text-emerald-700 shrink-0" />
-                Safety Status
+            <div className={cn(
+              "rounded-xl border p-3 flex flex-col justify-between gap-1.5 shadow-2xs",
+              isEvacFull ? "border-rose-200 bg-rose-50/60" : isEvacLow ? "border-amber-200 bg-amber-50/60" : "border-emerald-200 bg-emerald-50/60"
+            )}>
+              <span className={cn(
+                "text-[10px] font-bold uppercase tracking-wider flex items-center gap-1",
+                isEvacFull ? "text-rose-800" : isEvacLow ? "text-amber-800" : "text-emerald-800"
+              )}>
+                <Home className={cn("size-3 shrink-0", isEvacFull ? "text-rose-700" : isEvacLow ? "text-amber-700" : "text-emerald-700")} />
+                Evacuation Capacity
               </span>
               <div className="flex items-center justify-between gap-2">
-                <span className="text-3xl font-black text-emerald-800 tabular-nums leading-none shrink-0">{safePct}%</span>
-                <div className="flex flex-col text-[10.5px] font-bold leading-[13px] text-right text-emerald-700">
-                  <span>{safeMembers} of {totalResidents}</span>
-                  <span>Citizens Safe</span>
+                <span className={cn(
+                  "text-3xl font-black tabular-nums leading-none shrink-0",
+                  isEvacFull ? "text-rose-900" : isEvacLow ? "text-amber-900" : "text-emerald-900"
+                )}>{totalAreaCap > 0 ? totalAreaAvailable : areaCenters.length}</span>
+                <div className={cn(
+                  "flex flex-col text-[10.5px] font-bold leading-[13px] text-right",
+                  isEvacFull ? "text-rose-700" : isEvacLow ? "text-amber-700" : "text-emerald-700"
+                )}>
+                  <span>{totalAreaCap > 0 ? "Available of" : `${areaCenters.length} Centers`}</span>
+                  <span>{totalAreaCap > 0 ? `${totalAreaCap} Capacity` : "Open Network"}</span>
                 </div>
               </div>
             </div>
@@ -2181,7 +2218,12 @@ function AreaSummaryModal({
           <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
             <div className="flex items-center justify-between text-xs font-bold text-slate-800 mb-2">
               <span>Safety Accountability Progress</span>
-              <span className="text-emerald-700">{safeMembers} / {totalResidents} Citizens Safe ({safePct}%)</span>
+              <span className={cn(
+                "font-bold",
+                safePct < 50 ? "text-rose-600" : safePct < 80 ? "text-amber-600" : "text-emerald-700"
+              )}>
+                {safeMembers} / {totalResidents} Citizens Safe ({safePct}%)
+              </span>
             </div>
             <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200 flex">
               <div
@@ -2369,6 +2411,7 @@ function BarangaySummaryModal({
     const members = households.flatMap((e) => e.household.members);
     const safe = members.filter((m) => m.status === "safe").length;
     const highRisk = households.filter((e) => e.risk === 3).length;
+    const medRisk = households.filter((e) => e.risk === 2).length;
     return {
       areaName,
       householdCount: households.length,
@@ -2376,28 +2419,24 @@ function BarangaySummaryModal({
       safeCount: safe,
       safePct: members.length > 0 ? Math.round((safe / members.length) * 100) : 0,
       highRiskCount: highRisk,
+      medRiskCount: medRisk,
     };
   });
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="w-full sm:max-w-3xl md:max-w-4xl max-h-[90vh] overflow-y-auto p-5 sm:p-6 bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
+      <DialogContent className="w-full sm:max-w-3xl md:max-w-4xl max-h-[90vh] overflow-y-auto sagip-modal-scroll p-5 sm:p-6 bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
         <DialogHeader className="border-b border-slate-100 pb-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 pr-6">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-md bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 text-xs">
-                  Municipality of Rodriguez (Montalban), Rizal
-                </span>
-              </div>
-              <DialogTitle className="mt-1 text-xl sm:text-2xl font-black text-slate-950 flex items-center gap-2">
-                <Shield className="size-6 text-emerald-600 shrink-0" />
-                Barangay San Jose Comprehensive Summary
-              </DialogTitle>
+          <div className="flex flex-col gap-1 pr-6">
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 text-xs">
+                Municipality of Rodriguez (Montalban), Rizal
+              </span>
             </div>
-            <Badge tone="danger" className="shrink-0 font-bold text-xs">
-              {data.event.name} ({data.event.type})
-            </Badge>
+            <DialogTitle className="mt-1 text-xl sm:text-2xl font-black text-slate-950 flex items-center gap-2">
+              <Shield className="size-6 text-emerald-600 shrink-0" />
+              Barangay San Jose Comprehensive Summary
+            </DialogTitle>
           </div>
           <DialogDescription className="text-xs text-slate-600 mt-1">
             Barangay-wide jurisdiction overview, emergency readiness, area breakdown, and aggregate evacuation capacity.
@@ -2421,14 +2460,26 @@ function BarangaySummaryModal({
               </div>
             </div>
 
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5 flex flex-col justify-between gap-1.5 shadow-2xs">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1">
-                <CheckCircle2 className="size-3 text-emerald-700 shrink-0" />
+            <div className={cn(
+              "rounded-xl border p-3.5 flex flex-col justify-between gap-1.5 shadow-2xs",
+              safePct < 50 ? "border-rose-200 bg-rose-50/60" : safePct < 80 ? "border-amber-200 bg-amber-50/60" : "border-emerald-200 bg-emerald-50/60"
+            )}>
+              <span className={cn(
+                "text-[10px] font-bold uppercase tracking-wider flex items-center gap-1",
+                safePct < 50 ? "text-rose-800" : safePct < 80 ? "text-amber-800" : "text-emerald-800"
+              )}>
+                <CheckCircle2 className={cn("size-3 shrink-0", safePct < 50 ? "text-rose-700" : safePct < 80 ? "text-amber-700" : "text-emerald-700")} />
                 Accounted For
               </span>
               <div className="flex items-center justify-between gap-2">
-                <span className="text-3xl font-black text-emerald-800 tabular-nums leading-none shrink-0">{safePct}%</span>
-                <div className="flex flex-col text-[10.5px] font-bold leading-[13px] text-right text-emerald-700">
+                <span className={cn(
+                  "text-3xl font-black tabular-nums leading-none shrink-0",
+                  safePct < 50 ? "text-rose-900" : safePct < 80 ? "text-amber-900" : "text-emerald-900"
+                )}>{safePct}%</span>
+                <div className={cn(
+                  "flex flex-col text-[10.5px] font-bold leading-[13px] text-right",
+                  safePct < 50 ? "text-rose-700" : safePct < 80 ? "text-amber-700" : "text-emerald-700"
+                )}>
                   <span>{safeCitizens} Citizens</span>
                   <span>Confirmed Safe</span>
                 </div>
@@ -2482,6 +2533,7 @@ function BarangaySummaryModal({
                     <th className="py-2.5 px-3">Population</th>
                     <th className="py-2.5 px-3">Safe %</th>
                     <th className="py-2.5 px-3">High Risk</th>
+                    <th className="py-2.5 px-3">Medium Risk</th>
                     <th className="py-2.5 px-3 text-right">Action</th>
                   </tr>
                 </thead>
@@ -2495,13 +2547,13 @@ function BarangaySummaryModal({
                         onSelectArea(row.areaName);
                       }}
                     >
-                      <td className="py-2 px-3 font-bold text-slate-950 flex items-center gap-1.5">
+                      <td className="py-2.5 px-3 font-bold text-slate-950 flex items-center gap-1.5">
                         <MapPin className="size-3 text-emerald-600" />
                         {row.areaName}
                       </td>
-                      <td className="py-2 px-3">{row.householdCount}</td>
-                      <td className="py-2 px-3">{row.residentCount}</td>
-                      <td className="py-2 px-3">
+                      <td className="py-2.5 px-3">{row.householdCount}</td>
+                      <td className="py-2.5 px-3">{row.residentCount}</td>
+                      <td className="py-2.5 px-3">
                         <span className={cn(
                           "font-bold",
                           row.safePct >= 80 ? "text-emerald-700" : row.safePct >= 50 ? "text-amber-700" : "text-rose-700"
@@ -2509,7 +2561,7 @@ function BarangaySummaryModal({
                           {row.safePct}% ({row.safeCount})
                         </span>
                       </td>
-                      <td className="py-2 px-3">
+                      <td className="py-2.5 px-3">
                         {row.highRiskCount > 0 ? (
                           <span className="rounded-md bg-rose-100 border border-rose-200 px-1.5 py-0.5 text-[10px] font-bold text-rose-800">
                             {row.highRiskCount} High
@@ -2518,18 +2570,29 @@ function BarangaySummaryModal({
                           <span className="text-slate-400 text-[11px]">0</span>
                         )}
                       </td>
-                      <td className="py-2 px-3 text-right">
+                      <td className="py-2.5 px-3">
+                        {row.medRiskCount > 0 ? (
+                          <span className="rounded-md bg-amber-100 border border-amber-200 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+                            {row.medRiskCount} Med
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-[11px]">0</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
                         <Button
+                          type="button"
                           size="sm"
-                          variant="ghost"
-                          className="h-6 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100"
+                          variant="outline"
+                          className="h-7 rounded-lg border-emerald-300 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 px-2.5 text-xs font-bold transition-all shadow-2xs flex items-center gap-1 ml-auto"
                           onClick={(e) => {
                             e.stopPropagation();
                             onClose();
                             onSelectArea(row.areaName);
                           }}
                         >
-                          View Area →
+                          View Area
+                          <ArrowRight className="size-3" />
                         </Button>
                       </td>
                     </tr>
@@ -2539,12 +2602,6 @@ function BarangaySummaryModal({
             </div>
           </div>
         </div>
-
-        <DialogFooter className="border-t border-slate-100 pt-4 flex flex-row items-center justify-end gap-2">
-          <Button variant="outline" type="button" onClick={onClose} className="rounded-xl text-xs font-bold border-slate-200">
-            Close
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
