@@ -1960,7 +1960,6 @@ function HouseholdDialog({
   const totalMembers = household.members.length;
   const safeMembers = household.members.filter((m) => m.status === "safe").length;
   const rescueMembers = household.members.filter((m) => m.status === "needs_rescue").length;
-  const unaccountedMembers = totalMembers - safeMembers - rescueMembers;
 
   return (
     <>
@@ -2154,12 +2153,7 @@ function HouseholdDialog({
                   {rescueMembers > 0 && (
                     <span className="text-rose-700 flex items-center gap-1">
                       <AlertTriangle className="size-3.5" />
-                      {rescueMembers} Rescue
-                    </span>
-                  )}
-                  {unaccountedMembers > 0 && (
-                    <span className="text-slate-500">
-                      {unaccountedMembers} Unaccounted
+                      {rescueMembers} Needs Rescue
                     </span>
                   )}
                 </div>
@@ -2329,7 +2323,7 @@ function HouseholdDialog({
                 <SelectTrigger className="h-10 w-full rounded-xl border-slate-200 bg-white px-3 text-xs sm:text-sm font-medium text-slate-800 shadow-2xs hover:bg-slate-50 focus-visible:ring-emerald-500">
                   <SelectValue placeholder="No New Center Assignment" />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl border border-slate-200 bg-white shadow-xl p-1 z-50">
+                <SelectContent className="rounded-xl border border-slate-200 bg-white shadow-2xl p-1 z-[3000]">
                   <SelectItem
                     value="none"
                     className="rounded-lg px-3 py-2 text-xs font-medium cursor-pointer hover:bg-slate-100 transition-colors"
