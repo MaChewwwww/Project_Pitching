@@ -212,7 +212,8 @@ const ADMIN_MAP_CSS = `
   border-radius: 0.5rem;
   padding: 0 !important;
   box-shadow: none !important;
-  max-width: 280px;
+  max-width: 340px !important;
+  white-space: normal !important;
   pointer-events: none;
 }
 .admin-emergency-map .leaflet-tooltip::before,
@@ -413,10 +414,12 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
       {/* ------------------------------------------------------------------ */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
 
-        {/* Map canvas */}
-        <div className="admin-emergency-map relative h-[500px] sm:h-[580px] lg:h-[680px] flex-1 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
-          <style>{ADMIN_MAP_CSS}</style>
-          <MapContainer
+        {/* Column 1: Map canvas + mobile outside footer */}
+        <div className="flex flex-1 flex-col gap-2.5 min-w-0">
+          {/* Map canvas */}
+          <div className="admin-emergency-map relative h-[480px] sm:h-[580px] lg:h-[680px] w-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
+            <style>{ADMIN_MAP_CSS}</style>
+            <MapContainer
             center={[14.7415, 121.1315]}
             zoom={14}
             zoomControl={false}
@@ -715,27 +718,42 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
             )}
           </div>
 
-          {/* Data Sources attribution (docked footer on mobile, floating card on desktop) */}
-          <div
-            aria-label="Data sources attribution"
-            className="pointer-events-none absolute bottom-0 inset-x-0 sm:inset-x-auto sm:bottom-3 sm:right-3 z-[1000] flex flex-col gap-0.5 border-t sm:border border-emerald-900/80 bg-[#052e16]/95 px-2.5 py-1.5 sm:px-3 sm:py-2 text-[9px] sm:text-[10.5px] text-primary-200/90 sm:rounded-lg shadow-xl backdrop-blur-md"
-          >
-            <div className="flex items-center justify-between sm:justify-start gap-1.5 font-bold uppercase tracking-wider text-primary-300 text-[8.5px] sm:text-[10px]">
-              <span className="inline-flex items-center gap-1">
-                <Database className="size-2.5 sm:size-3 text-primary-400" aria-hidden />
+            {/* Desktop floating Data Sources card inside the map */}
+            <div
+              aria-label="Data sources attribution"
+              className="pointer-events-none absolute bottom-3 right-3 z-[1000] hidden sm:flex flex-col gap-0.5 rounded-lg border border-emerald-900/80 bg-[#052e16]/95 px-3 py-2 text-[10.5px] text-primary-200/80 shadow-xl backdrop-blur-sm"
+            >
+              <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-primary-300 text-[10px]">
+                <Database className="size-3 text-primary-400" aria-hidden />
                 Data Sources
+              </div>
+              <div>
+                <span className="font-semibold text-white/90">Locality:</span> Barangay San Jose, Rodriguez (Montalban), Rizal
+              </div>
+              <div>
+                <span className="font-semibold text-white/90">Data:</span> UP NOAH / LiPAD (ODC-ODbL)
+              </div>
+              <div className="text-[9.5px] text-primary-300/60 pt-0.5 border-t border-emerald-900/60 mt-0.5">
+                Map: Leaflet · © OpenStreetMap · CARTO
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile outside Map Footer (docked below the map canvas) */}
+          <div className="flex sm:hidden flex-col gap-1 rounded-xl border border-primary-800/60 bg-primary-950/95 p-3 text-[10px] text-primary-200/90 shadow-lg">
+            <div className="flex items-center justify-between font-bold uppercase tracking-wider text-primary-300 text-[9.5px]">
+              <span className="inline-flex items-center gap-1.5">
+                <Database className="size-3 text-primary-400" aria-hidden />
+                Data Sources & Attributions
               </span>
-              <span className="font-normal normal-case text-primary-300/80 sm:hidden">
-                Brgy. San Jose, Rodriguez, Rizal
+              <span className="font-medium normal-case text-primary-300/80">
+                Brgy. San Jose, Rizal
               </span>
             </div>
-            <div className="hidden sm:block">
-              <span className="font-semibold text-white/90">Locality:</span> Barangay San Jose, Rodriguez (Montalban), Rizal
+            <div className="text-[10px] text-white/90">
+              <span className="font-semibold text-primary-300">Data:</span> UP NOAH / LiPAD (ODC-ODbL)
             </div>
-            <div>
-              <span className="font-semibold text-white/90">Data:</span> UP NOAH / LiPAD (ODC-ODbL)
-            </div>
-            <div className="text-[8px] sm:text-[9.5px] text-primary-300/70 pt-0.5 border-t border-emerald-900/60 mt-0.5">
+            <div className="text-[9px] text-primary-300/60 pt-1 border-t border-primary-800/60 mt-0.5">
               Map: Leaflet · © OpenStreetMap · CARTO
             </div>
           </div>
@@ -1139,43 +1157,38 @@ function EvacCenterTooltip({
   center: EmergencyWorkspaceOut["evacuation_centers"][number];
 }) {
   const isOver = center.is_at_capacity;
+  const accentColor = isOver ? "#EF4444" : "#10B981";
 
   return (
     <div
-      className="flex flex-col gap-2 rounded-xl p-3 text-slate-900 shadow-2xl backdrop-blur-md border border-neutral-200/90"
+      className="flex flex-col rounded-2xl bg-white/98 p-3 text-slate-900 shadow-2xl backdrop-blur-md whitespace-normal break-words"
       style={{
-        backgroundColor: "#fffffffa",
-        minWidth: 230,
-        maxWidth: 290,
+        border: `1.5px solid ${accentColor}`,
+        boxShadow: `0 12px 30px -6px rgba(0,0,0,0.35), 0 0 16px -2px ${accentColor}45`,
+        width: 280,
+        maxWidth: 320,
       }}
     >
       <div>
-        <p className="text-xs font-black leading-snug text-neutral-900">
+        <p className="text-[12.5px] font-black leading-snug text-neutral-950 break-words">
           {center.facility.name}
         </p>
         {center.facility.address ? (
-          <p className="mt-0.5 text-[11px] leading-tight text-neutral-500">
+          <p className="mt-1 text-[11px] leading-snug text-neutral-500 break-words">
             {center.facility.address}
           </p>
         ) : null}
       </div>
 
-      <div className="flex items-center justify-between gap-2 border-t border-neutral-100 pt-2 text-[11px]">
-        <div className="flex items-center gap-1 text-neutral-600">
-          <span className="font-medium">Occupancy:</span>
-          <span className="font-black text-neutral-900">
+      <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-neutral-100 pt-2 text-[11px]">
+        <div className="flex items-center gap-1.5 text-neutral-600">
+          <span className="font-medium text-[10.5px]">Occupancy:</span>
+          <span className="font-black text-neutral-950">
             {center.occupancy} / {center.capacity ?? "—"}
           </span>
         </div>
-        <span
-          className={cn(
-            "shrink-0 rounded-md px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wide",
-            isOver
-              ? "bg-rose-100 text-rose-800 border border-rose-200"
-              : "bg-emerald-100 text-emerald-800 border border-emerald-200",
-          )}
-        >
-          {isOver ? "Overloading Capacity" : "Available"}
+        <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wide text-emerald-800 border border-emerald-300">
+          Evacuation Center
         </span>
       </div>
     </div>
@@ -1183,30 +1196,37 @@ function EvacCenterTooltip({
 }
 
 function FacilityTooltip({ facility }: { facility: PublicFacility }) {
-  const color = "#38BDF8"; // Sky Blue
+  const accentColor = "#0f172a"; // Slate 900 / Dark accent
+
   return (
     <div
-      className="flex flex-col gap-1 rounded-xl p-2.5 text-white shadow-2xl backdrop-blur-md"
+      className="flex flex-col rounded-2xl bg-white/98 p-3 text-slate-900 shadow-2xl backdrop-blur-md whitespace-normal break-words"
       style={{
-        backgroundColor: "#090d16fa",
-        border: `1.5px solid ${color}`,
-        boxShadow: `0 10px 25px -5px rgba(0,0,0,0.7), 0 0 12px -2px ${color}55`,
-        minWidth: 160,
-        maxWidth: 240,
+        border: `1.5px solid ${accentColor}`,
+        boxShadow: `0 12px 30px -6px rgba(0,0,0,0.35), 0 0 16px -2px rgba(15,23,42,0.35)`,
+        width: 270,
+        maxWidth: 310,
       }}
     >
-      <div
-        className="flex items-center justify-between gap-1.5 border-b pb-1.5"
-        style={{ borderColor: `${color}40` }}
-      >
-        <span className="truncate text-xs font-black text-white">{facility.name}</span>
+      <div>
+        <p className="text-[12.5px] font-black leading-snug text-neutral-950 break-words">
+          {facility.name}
+        </p>
+        {facility.address ? (
+          <p className="mt-1 text-[11px] leading-snug text-neutral-500 break-words">
+            {facility.address}
+          </p>
+        ) : null}
       </div>
-      <p className="pt-0.5 text-[10.5px] font-semibold" style={{ color }}>
-        {statusLabel(facility.type)}
-      </p>
-      {facility.address ? (
-        <p className="truncate text-[10px] text-slate-400">{facility.address}</p>
-      ) : null}
+
+      <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-neutral-100 pt-2 text-[11px]">
+        <span className="text-[10.5px] font-medium text-neutral-500">
+          Barangay Facility
+        </span>
+        <span className="shrink-0 rounded-full bg-slate-900 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wide text-white shadow-2xs">
+          {statusLabel(facility.type)}
+        </span>
+      </div>
     </div>
   );
 }
