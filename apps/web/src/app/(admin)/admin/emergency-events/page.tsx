@@ -269,9 +269,12 @@ export default function AdminEmergencyEventsPage() {
                 await declareMutation.mutateAsync(values);
               }}
               trigger={
-                <Button size="sm" className="bg-[#064e3b] hover:bg-[#043e2e]">
-                  <Plus className="size-4" />
-                  Declare Event
+                <Button
+                  size="sm"
+                  className="h-10 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-md shadow-emerald-900/15 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] transition-all px-4 gap-2 border border-emerald-600/30 max-sm:w-full max-sm:justify-center cursor-pointer"
+                >
+                  <Plus aria-hidden className="size-4 stroke-[2.5]" />
+                  <span>Declare Event</span>
                 </Button>
               }
             />
