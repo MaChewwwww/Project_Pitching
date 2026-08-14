@@ -220,7 +220,7 @@ export default function AdminEmergencyEventsPage() {
       key: "type",
       header: "Type",
       render: (row) => (
-        <Badge variant="outline" className="capitalize text-xs font-semibold">
+        <Badge outline tone="neutral" className="capitalize text-xs font-semibold">
           {row.type}
         </Badge>
       ),
@@ -230,11 +230,11 @@ export default function AdminEmergencyEventsPage() {
       header: "Status",
       render: (row) =>
         row.is_active ? (
-          <Badge variant="danger" className="font-bold text-xs uppercase tracking-wide">
+          <Badge tone="danger" className="font-bold text-xs uppercase tracking-wide">
             Active
           </Badge>
         ) : (
-          <Badge variant="outline" className="text-xs text-neutral-500 font-medium">
+          <Badge outline tone="neutral" className="text-xs text-neutral-500 font-medium">
             Ended
           </Badge>
         ),
