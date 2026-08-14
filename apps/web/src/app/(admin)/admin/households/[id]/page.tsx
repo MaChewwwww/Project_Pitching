@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import type { Route } from "next";
 import dynamic from "next/dynamic";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -13,6 +14,7 @@ import {
   CircleAlert,
   ClipboardCheck,
   Clock3,
+  Crown,
   Droplets,
   Eye,
   FileText,
@@ -183,7 +185,7 @@ export default function HouseholdDetailPage() {
     ? tabFromQuery
     : "overview";
   const selectTab = (tab: HouseholdDetailTab) => {
-    router.replace(`/admin/households/${id}?tab=${tab}`, { scroll: false });
+    router.replace(`/admin/households/${id}?tab=${tab}` as Route, { scroll: false });
   };
   const risk =
     household.waterway_proximity === "very_near"
@@ -210,7 +212,7 @@ export default function HouseholdDetailPage() {
         action={
           <div className="flex flex-wrap justify-end gap-2">
             <Button asChild size="sm" variant="warning">
-              <Link href={`/admin/households/${id}/edit`}>
+              <Link href={`/admin/households/${id}/edit` as Route}>
                 <Pencil aria-hidden className="size-4" />
                 Edit Household
               </Link>
@@ -410,7 +412,7 @@ export default function HouseholdDetailPage() {
                 </h2>
               </div>
               <Button asChild size="sm">
-                <Link href={`/admin/citizens/new?household_id=${id}`}>
+                <Link href={`/admin/citizens/new?household_id=${id}` as Route}>
                   <Plus aria-hidden className="size-4" />
                   Add Household Member
                 </Link>
@@ -450,7 +452,25 @@ export default function HouseholdDetailPage() {
                       </p>
                     ) : null}
                   </div>
-                  <div className="flex shrink-0 items-center gap-1.5">
+                  <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                    {!member.is_head ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={makeHead.isPending || Boolean(household.head_user_id)}
+                        className="h-9 cursor-pointer gap-1.5 rounded-lg border-amber-300 bg-amber-50 px-2.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-100 hover:text-amber-900 disabled:opacity-50"
+                        title={
+                          household.head_user_id
+                            ? "Linked account head cannot be replaced directly"
+                            : `Assign ${member.full_name} as Household Head`
+                        }
+                        aria-label={`Assign ${member.full_name} as Household Head`}
+                        onClick={() => makeHead.mutate(member.id)}
+                      >
+                        <Crown aria-hidden className="size-3.5 shrink-0 text-amber-600" />
+                        <span className="hidden sm:inline">Make Head</span>
+                      </Button>
+                    ) : null}
                     <Button
                       size="sm"
                       variant="outline"
@@ -469,11 +489,11 @@ export default function HouseholdDetailPage() {
                       title={`Edit ${member.full_name}`}
                       aria-label={`Edit ${member.full_name}`}
                     >
-                      <Link href={`/admin/citizens/${member.id}/edit`}>
+                      <Link href={`/admin/citizens/${member.id}/edit` as Route}>
                         <Pencil aria-hidden className="size-4" />
                       </Link>
                     </Button>
-                    {user?.role === "admin" ? (
+                    {user?.role === "admin" || user?.role === "superadmin" ? (
                       <ConfirmDeleteButton
                         itemLabel={member.full_name}
                         actionLabel={
