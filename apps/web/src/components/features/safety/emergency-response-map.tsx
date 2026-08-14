@@ -2,7 +2,16 @@
 
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CircleMarker, GeoJSON, MapContainer, TileLayer, Tooltip } from "react-leaflet";
+import {
+  CircleMarker,
+  GeoJSON,
+  MapContainer,
+  Marker,
+  TileLayer,
+  Tooltip,
+  useMap,
+} from "react-leaflet";
+import L from "leaflet";
 import type { Layer } from "leaflet";
 import { Filter, MapPin, Search, TriangleAlert, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -25,10 +34,18 @@ import type {
   EmergencyWorkspaceOut,
   WorkspaceHouseholdOut,
 } from "@/lib/api/safety-types";
-import { hazardStyle, OSM_TILE_ATTRIBUTION, OSM_TILE_URL } from "@/lib/map";
+import {
+  BOUNDARY_LINE_STYLE,
+  DARK_TILE_ATTRIBUTION,
+  DARK_TILE_URL,
+  hazardStyle,
+  SAN_JOSE_OUTER_BOUNDARY_GEOJSON,
+} from "@/lib/map";
 import { api, toDisplayError } from "@/lib/api/client";
 import type { SafetyStatusAdminIn } from "@/lib/api/safety-types";
 import type { PublicFacility } from "@/lib/api/public-types";
+import "@/lib/leaflet-setup";
+import "leaflet/dist/leaflet.css";
 
 type Risk = 1 | 2 | 3;
 
@@ -46,6 +63,57 @@ function statusLabel(status: string) {
   return status.replaceAll("_", " ");
 }
 
+/** Keep emergency operations maps visually consistent with the finalized public maps. */
+function EmergencyMapPanes() {
+  const map = useMap();
+
+  React.useEffect(() => {
+    if (!map.getPane("topBoundaryPane")) {
+      const pane = map.createPane("topBoundaryPane");
+      pane.style.zIndex = "550";
+    }
+
+    const tooltipPane = map.getPane("tooltipPane");
+    if (tooltipPane) tooltipPane.style.zIndex = "750";
+  }, [map]);
+
+  return null;
+}
+
+function createBoundaryLabelIcon() {
+  return L.divIcon({
+    className: "san-jose-boundary-badge-container",
+    html: `<div class="bg-white text-slate-900 border border-slate-300 shadow-md px-3 py-1 rounded-md font-bold text-[11px] whitespace-nowrap flex items-center justify-center">Barangay San Jose Boundary</div>`,
+    iconSize: [200, 26],
+    iconAnchor: [100, 48],
+  });
+}
+
+const ADMIN_MAP_CSS = `
+.admin-emergency-map .leaflet-container {
+  background: #090d16;
+}
+.admin-emergency-map .leaflet-tooltip {
+  background: #052e16;
+  color: #f8fafc;
+  border: 1px solid #166534;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+.admin-emergency-map .leaflet-tooltip-top::before {
+  border-top-color: #166534;
+}
+.admin-emergency-map .leaflet-tooltip .text-neutral-900 {
+  color: #f8fafc !important;
+}
+.admin-emergency-map .leaflet-tooltip .text-neutral-500 {
+  color: #cbd5e1 !important;
+}
+.admin-emergency-map .leaflet-control-attribution {
+  display: none;
+}
+`;
+
 export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) {
   const hazard = useHazardGeoJson(true);
   const [search, setSearch] = React.useState("");
@@ -57,6 +125,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
   const [capacity, setCapacity] = React.useState("all");
   const [facilityType, setFacilityType] = React.useState("all");
   const [showHazard, setShowHazard] = React.useState(true);
+  const [showHouseholds, setShowHouseholds] = React.useState(true);
   const [showCenters, setShowCenters] = React.useState(true);
   const [showFacilities, setShowFacilities] = React.useState(false);
   const [showWalkIns, setShowWalkIns] = React.useState(false);
@@ -203,6 +272,11 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
               label="Flood hazard"
             />
             <LayerToggle
+              checked={showHouseholds}
+              onChange={setShowHouseholds}
+              label="Households"
+            />
+            <LayerToggle
               checked={showCenters}
               onChange={setShowCenters}
               label="Evacuation centers"
@@ -221,53 +295,76 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
         </CardContent>
       </Card>
 
-      <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 shadow-sm">
+      <div className="admin-emergency-map relative overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-2xl">
+        <style>{ADMIN_MAP_CSS}</style>
         <MapContainer
           center={[14.7415, 121.1315]}
           zoom={14}
           className="h-[62vh] min-h-[440px] w-full"
           scrollWheelZoom
+          minZoom={11}
+          maxZoom={18}
+          attributionControl={false}
         >
-          <TileLayer url={OSM_TILE_URL} attribution={OSM_TILE_ATTRIBUTION} />
+          <EmergencyMapPanes />
+          <TileLayer url={DARK_TILE_URL} attribution={DARK_TILE_ATTRIBUTION} />
           {showHazard && hazard.status === "ready" ? (
             <GeoJSON
               data={hazard.data as GeoJSON.GeoJsonObject}
               style={(feature) => hazardStyle(Number(feature?.properties?.Var ?? 0))}
             />
           ) : null}
-          {filtered.map(({ household, risk: riskLevel, riskSource }) => {
-            if (!household.location) return null;
-            const [longitude, latitude] = household.location.coordinates;
-            const needsRescue = household.needs_rescue_count > 0;
-            return (
-              <CircleMarker
-                key={household.household_id}
-                center={[latitude, longitude]}
-                radius={needsRescue ? 10 : 8}
-                pathOptions={{
-                  fillColor: household.all_safe ? "#6B7280" : riskColor(riskLevel),
-                  fillOpacity: 0.95,
-                  color: needsRescue ? "#111827" : "#ffffff",
-                  weight: needsRescue ? 4 : 2,
-                  dashArray: needsRescue ? "3 2" : undefined,
-                }}
-                eventHandlers={{
-                  click: () => setSelected(household),
-                  add: (event) =>
-                    makeKeyboardReachable(event.target, () => setSelected(household)),
-                }}
-              >
-                <Tooltip direction="top" opacity={1} sticky>
-                  <HouseholdDetails
-                    household={household}
-                    risk={riskLevel}
-                    riskSource={riskSource}
-                    compact
-                  />
-                </Tooltip>
-              </CircleMarker>
-            );
-          })}
+          <GeoJSON
+            data={SAN_JOSE_OUTER_BOUNDARY_GEOJSON as GeoJSON.GeoJsonObject}
+            interactive={false}
+            pane="topBoundaryPane"
+            style={() => BOUNDARY_LINE_STYLE}
+          />
+          <Marker
+            position={[14.7615, 121.133]}
+            icon={createBoundaryLabelIcon()}
+            interactive={false}
+            pane="topBoundaryPane"
+          />
+          {showHouseholds &&
+            filtered.map(({ household, risk: riskLevel, riskSource }) => {
+              if (!household.location) return null;
+              const [longitude, latitude] = household.location.coordinates;
+              const needsRescue = household.needs_rescue_count > 0;
+              return (
+                <CircleMarker
+                  key={household.household_id}
+                  center={[latitude, longitude]}
+                  radius={needsRescue ? 10 : 8}
+                  pathOptions={{
+                    fillColor: household.all_safe ? "#6B7280" : riskColor(riskLevel),
+                    fillOpacity: 0.95,
+                    color: needsRescue ? "#111827" : "#ffffff",
+                    weight: needsRescue ? 4 : 2,
+                    dashArray: needsRescue ? "3 2" : undefined,
+                  }}
+                  eventHandlers={{
+                    click: () => setSelected(household),
+                    add: (event) =>
+                      makeKeyboardReachable(event.target, () => setSelected(household)),
+                  }}
+                >
+                  <Tooltip
+                    className="dark-leaflet-tooltip"
+                    direction="top"
+                    opacity={1}
+                    sticky
+                  >
+                    <HouseholdDetails
+                      household={household}
+                      risk={riskLevel}
+                      riskSource={riskSource}
+                      compact
+                    />
+                  </Tooltip>
+                </CircleMarker>
+              );
+            })}
           {showCenters
             ? visibleCenters.map((center) => {
                 const point = center.facility.location?.coordinates;
@@ -284,7 +381,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                       weight: 3,
                     }}
                   >
-                    <Tooltip>
+                    <Tooltip className="dark-leaflet-tooltip">
                       <b>{center.facility.name}</b>
                       <br />
                       {center.occupancy}/{center.capacity ?? "?"} occupants
@@ -309,7 +406,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                     weight: 2,
                   }}
                 >
-                  <Tooltip>
+                  <Tooltip className="dark-leaflet-tooltip">
                     <b>{person.full_name}</b>
                     <br />
                     {statusLabel(person.status)}
@@ -351,7 +448,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                         weight: 2,
                       }}
                     >
-                      <Tooltip>
+                      <Tooltip className="dark-leaflet-tooltip">
                         <b>{facility.name}</b>
                         <br />
                         {statusLabel(facility.type)}
@@ -361,6 +458,20 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                 })
             : null}
         </MapContainer>
+        <div
+          aria-label="Household map legend"
+          className="pointer-events-none absolute bottom-3 left-3 z-[1000] flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-emerald-900/80 bg-[#052e16]/95 px-3 py-2 text-[11px] font-medium text-slate-100 shadow-xl backdrop-blur-sm"
+        >
+          <span className="font-bold text-white">Households</span>
+          <LegendDot color="#FFED4A" label="Low risk" />
+          <LegendDot color="#F59E0B" label="Medium" />
+          <LegendDot color="#EF4444" label="High risk" />
+          <LegendDot color="#6B7280" label="All safe" />
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-2.5 rounded-full border-2 border-white bg-transparent" />
+            Rescue
+          </span>
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -498,6 +609,19 @@ function LayerToggle({
       <Checkbox checked={checked} onCheckedChange={(value) => onChange(value === true)} />
       <span>{label}</span>
     </label>
+  );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span
+        aria-hidden="true"
+        className="size-2.5 rounded-full border border-white/70"
+        style={{ backgroundColor: color }}
+      />
+      {label}
+    </span>
   );
 }
 
