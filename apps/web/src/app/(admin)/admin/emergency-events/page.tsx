@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
@@ -219,244 +220,207 @@ export default function AdminEmergencyEventsPage() {
       key: "type",
       header: "Type",
       render: (row) => (
-        <span className="inline-flex items-center rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold capitalize text-neutral-800 border border-neutral-200">
+        <Badge variant="outline" className="capitalize text-xs font-semibold">
           {row.type}
-        </span>
+        </Badge>
       ),
     },
     {
       key: "is_active",
       header: "Status",
-      render: (row) => (
-        <Badge tone={row.is_active ? "danger" : "neutral"}>
-          {row.is_active ? "Active Response" : "Ended"}
-        </Badge>
-      ),
+      render: (row) =>
+        row.is_active ? (
+          <Badge variant="danger" className="font-bold text-xs uppercase tracking-wide">
+            Active
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="text-xs text-neutral-500 font-medium">
+            Ended
+          </Badge>
+        ),
     },
     {
       key: "started_at",
-      header: "Started",
+      header: "Declared At",
       render: (row) => (
         <span className="text-xs text-neutral-600 font-medium">
           {new Date(row.started_at).toLocaleString()}
         </span>
       ),
     },
-    {
-      key: "declared_by_name",
-      header: "Declared By",
-      render: (row) => (
-        <span className="text-xs font-medium text-neutral-700">
-          {row.declared_by_name ?? "System Admin"}
-        </span>
-      ),
-    },
   ];
 
   return (
-    <div className="flex flex-col">
-      {/* Unified Connected Workspace Card Container */}
-      <div className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-xl">
-        {/* 1. Rich Green Gradient Header Banner */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-[#064e3b] via-[#043e2e] to-[#0d5c46] p-6 lg:p-8 text-white shadow-inner">
-          {/* Subtle background glow effect */}
-          <div className="pointer-events-none absolute -right-16 -top-16 size-72 rounded-full bg-emerald-500/10 blur-3xl" />
-          <div className="pointer-events-none absolute -left-16 -bottom-16 size-72 rounded-full bg-rose-500/10 blur-3xl" />
-
-          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="grid size-14 shrink-0 place-items-center rounded-2xl bg-white/10 text-white border border-white/20 shadow-md backdrop-blur-md">
-                <Siren className="size-8 text-emerald-300" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-emerald-400/20 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-emerald-200 border border-emerald-400/30">
-                    Command & Control Center
-                  </span>
-                </div>
-                <h1 className="mt-1 text-2xl font-black tracking-tight text-white lg:text-3xl">
-                  Emergency Events Workspace
-                </h1>
-                <p className="mt-1 max-w-2xl text-xs font-medium text-emerald-100/80 leading-relaxed">
-                  Real-time incident response operations, area safety tracking, spatial hazard mapping, and evacuation coordination for Barangay San Jose.
-                </p>
-              </div>
-            </div>
-
-            {canManageEvents ? (
-              <div className="shrink-0">
-                <ResourceFormDialog
-                  title="Declare Emergency Event"
-                  fields={declareFields}
-                  schema={declareSchema}
-                  defaultValues={{ name: "", type: "flood" as const }}
-                  onSubmit={async (values) => {
-                    await declareMutation.mutateAsync(values);
-                  }}
-                  trigger={
-                    <Button
-                      size="sm"
-                      className="h-11 rounded-full bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-black shadow-lg shadow-emerald-950/30 hover:shadow-xl active:scale-[0.98] transition-all px-5 gap-2 border border-emerald-300/40 cursor-pointer"
-                    >
-                      <Plus aria-hidden className="size-4 stroke-[3]" />
-                      <span>Declare Event</span>
-                    </Button>
-                  }
-                />
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        {eventsQuery.isLoading ? (
-          <div className="p-8">
-            <WorkspaceLoading label="Loading emergency events command center…" />
-          </div>
-        ) : eventsQuery.isError ? (
-          <div className="p-8">
-            <WorkspaceError
-              label="Emergency events could not be loaded."
-              onRetry={() => eventsQuery.refetch()}
+    <div className="flex flex-col gap-6">
+      <AdminPageHeader
+        title="Emergency Events Workspace"
+        description="Command center for real-time incident tracking, area safety ledgers, spatial response mapping, and evacuation operations."
+        action={
+          canManageEvents ? (
+            <ResourceFormDialog
+              title="Declare Emergency Event"
+              fields={declareFields}
+              schema={declareSchema}
+              defaultValues={{ name: "", type: "flood" as const }}
+              onSubmit={async (values) => {
+                await declareMutation.mutateAsync(values);
+              }}
+              trigger={
+                <Button
+                  size="sm"
+                  className="h-10 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-md shadow-emerald-900/15 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] transition-all px-4 gap-2 border border-emerald-600/30 max-sm:w-full max-sm:justify-center cursor-pointer"
+                >
+                  <Plus aria-hidden className="size-4 stroke-[2.5]" />
+                  <span>Declare Event</span>
+                </Button>
+              }
             />
-          </div>
-        ) : events.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
-              <Siren className="size-7" />
-            </div>
-            <h2 className="text-lg font-bold text-neutral-900">No emergency events active</h2>
-            <p className="mt-1 max-w-sm mx-auto text-sm text-neutral-500">
-              Declare an emergency event to activate the live response workspace and area safety tracker.
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* 2. Seamlessly Connected Active Emergency Event Bar */}
-            {selected ? (
-              <div
-                className={`border-t border-b px-6 py-4 transition-colors ${
-                  selected.is_active
-                    ? "border-rose-200/80 bg-gradient-to-r from-rose-50/70 via-amber-50/30 to-white"
-                    : "border-neutral-200 bg-neutral-50/70"
-                }`}
-              >
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  {/* Symmetrical Left Metadata */}
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`grid size-11 shrink-0 place-items-center rounded-2xl border shadow-sm ${
-                        selected.is_active
-                          ? "bg-rose-600 text-white border-rose-500 animate-pulse"
-                          : "bg-neutral-200 text-neutral-600 border-neutral-300"
-                      }`}
-                    >
-                      {selected.type === "flood" ? (
-                        <Waves className="size-5" />
-                      ) : selected.type === "fire" ? (
-                        <Flame className="size-5" />
-                      ) : (
-                        <Siren className="size-5" />
-                      )}
-                    </div>
-                    <div className="flex flex-col justify-center">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
-                            selected.is_active
-                              ? "bg-rose-100 text-rose-800 border border-rose-300"
-                              : "bg-neutral-200 text-neutral-700 border border-neutral-300"
-                          }`}
-                        >
-                          {selected.is_active ? (
-                            <>
-                              <span className="size-1.5 rounded-full bg-rose-600 animate-ping" />
-                              LIVE EMERGENCY
-                            </>
-                          ) : (
-                            "ARCHIVED"
-                          )}
-                        </span>
-                        <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold capitalize text-neutral-700 border border-neutral-200 shadow-2xs">
-                          {selected.type}
-                        </span>
-                      </div>
+          ) : null
+        }
+      />
 
-                      <div className="mt-1 flex items-center gap-3">
-                        <h2 className="text-lg font-black text-neutral-900 tracking-tight">
-                          {selected.name}
-                        </h2>
-                        <span className="text-xs text-neutral-400 font-medium hidden sm:inline">•</span>
-                        <span className="text-xs text-neutral-500 font-medium hidden sm:flex items-center gap-1">
-                          <Clock className="size-3.5 text-neutral-400" />
-                          Started {new Date(selected.started_at).toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
+      {eventsQuery.isLoading ? (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm">
+          <WorkspaceLoading label="Loading emergency events command center…" />
+        </div>
+      ) : eventsQuery.isError ? (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm">
+          <WorkspaceError
+            label="Emergency events could not be loaded."
+            onRetry={() => eventsQuery.refetch()}
+          />
+        </div>
+      ) : events.length === 0 ? (
+        <div className="rounded-2xl border border-neutral-200 bg-white p-12 text-center shadow-sm">
+          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
+            <Siren className="size-7" />
+          </div>
+          <h2 className="text-lg font-bold text-neutral-900">No emergency events active</h2>
+          <p className="mt-1 max-w-sm mx-auto text-sm text-neutral-500">
+            Declare an emergency event to activate the live response workspace and area safety tracker.
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm flex flex-col">
+          {/* 1. Active Event Context Bar with GREEN EMERALD THEME */}
+          {selected ? (
+            <div className="relative overflow-hidden bg-gradient-to-r from-[#064e3b] via-[#043e2e] to-[#0d5c46] p-5 sm:p-6 text-white shadow-inner border-b border-emerald-800/40">
+              {/* Subtle background ambient blur */}
+              <div aria-hidden className="pointer-events-none absolute -right-16 -top-16 size-72 rounded-full bg-emerald-500/10 blur-3xl" />
+              <div aria-hidden className="pointer-events-none absolute -left-16 -bottom-16 size-72 rounded-full bg-teal-400/10 blur-3xl" />
+
+              <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                {/* Left Side Metadata */}
+                <div className="flex items-center gap-4">
+                  <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white/10 text-emerald-300 border border-white/20 shadow-md backdrop-blur-md">
+                    {selected.type === "flood" ? (
+                      <Waves className="size-6" />
+                    ) : selected.type === "fire" ? (
+                      <Flame className="size-6" />
+                    ) : (
+                      <Siren className="size-6" />
+                    )}
                   </div>
-
-                  {/* Symmetrical Right Actions & Concurrent Event Chips */}
-                  <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center lg:justify-end shrink-0">
-                    {/* Concurrent Active Event Chips */}
+                  <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-                        Active ({events.filter((e) => e.is_active).length}):
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider border ${
+                          selected.is_active
+                            ? "bg-emerald-400/20 text-emerald-200 border-emerald-400/30"
+                            : "bg-white/10 text-emerald-100/70 border-white/15"
+                        }`}
+                      >
+                        {selected.is_active ? (
+                          <>
+                            <span className="size-1.5 rounded-full bg-emerald-400 animate-ping" />
+                            LIVE EMERGENCY
+                          </>
+                        ) : (
+                          "ARCHIVED"
+                        )}
                       </span>
-                      {events
-                        .filter((e) => e.is_active)
-                        .map((e) => {
-                          const isSelected = e.id === selected?.id;
-                          return (
-                            <button
-                              key={e.id}
-                              type="button"
-                              onClick={() => setSelection(e.id)}
-                              className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold transition-all cursor-pointer border ${
-                                isSelected
-                                  ? "bg-rose-700 text-white border-rose-800 shadow-sm ring-2 ring-rose-400/30"
-                                  : "bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 shadow-2xs"
-                              }`}
-                            >
-                              <span
-                                className={`size-2 rounded-full ${
-                                  isSelected ? "bg-white animate-ping" : "bg-rose-500"
-                                }`}
-                              />
-                              <span className="truncate max-w-[160px]">{e.name}</span>
-                            </button>
-                          );
-                        })}
+                      <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-bold capitalize text-emerald-100 border border-white/15">
+                        {selected.type}
+                      </span>
                     </div>
 
-                    {/* History Select */}
-                    {events.filter((e) => !e.is_active).length > 0 ? (
-                      <select
-                        value={selected && !selected.is_active ? selected.id : ""}
-                        onChange={(e) => e.target.value && setSelection(e.target.value)}
-                        className="h-8 rounded-xl border border-neutral-300 bg-white px-2.5 text-xs font-semibold text-neutral-700 shadow-2xs focus:border-emerald-600 focus:outline-none"
-                      >
-                        <option value="">History Archive…</option>
-                        {events
-                          .filter((e) => !e.is_active)
-                          .map((e) => (
-                            <option key={e.id} value={e.id}>
-                              ⚪ {e.name} (Ended)
-                            </option>
-                          ))}
-                      </select>
-                    ) : null}
-
-                    {selected?.is_active && canManageEvents ? (
-                      <EndEventDialog
-                        event={selected}
-                        activeCount={activeCount}
-                        pending={endMutation.isPending}
-                        onConfirm={() => endMutation.mutate(selected.id)}
-                      />
-                    ) : null}
+                    <div className="mt-1 flex flex-wrap items-center gap-3">
+                      <h2 className="text-xl font-extrabold text-white tracking-tight">
+                        {selected.name}
+                      </h2>
+                      <span className="text-xs text-emerald-200/50 font-medium hidden sm:inline">•</span>
+                      <span className="text-xs text-emerald-100/80 font-medium hidden sm:flex items-center gap-1">
+                        <Clock className="size-3.5 text-emerald-300/70" />
+                        Started {new Date(selected.started_at).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                 </div>
+
+                {/* Right Side Actions & Concurrent Event Switcher */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:justify-end shrink-0">
+                  {/* Active Events Switcher Pills */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-200/80">
+                      ACTIVE ({events.filter((e) => e.is_active).length}):
+                    </span>
+                    {events
+                      .filter((e) => e.is_active)
+                      .map((e) => {
+                        const isSelected = e.id === selected?.id;
+                        return (
+                          <button
+                            key={e.id}
+                            type="button"
+                            onClick={() => setSelection(e.id)}
+                            className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer border ${
+                              isSelected
+                                ? "bg-emerald-500 text-neutral-950 border-emerald-300/40 shadow-md shadow-emerald-950/40 scale-105"
+                                : "bg-white/10 text-white border-white/20 hover:bg-white/20 shadow-2xs"
+                            }`}
+                          >
+                            <span
+                              className={`size-2 rounded-full ${
+                                isSelected ? "bg-neutral-950 animate-ping" : "bg-emerald-400"
+                              }`}
+                            />
+                            <span className="truncate max-w-[160px]">{e.name}</span>
+                          </button>
+                        );
+                      })}
+                  </div>
+
+                  {/* History Select Dropdown */}
+                  {events.filter((e) => !e.is_active).length > 0 ? (
+                    <select
+                      value={selected && !selected.is_active ? selected.id : ""}
+                      onChange={(e) => e.target.value && setSelection(e.target.value)}
+                      className="h-9 rounded-xl border border-emerald-700/60 bg-emerald-950/60 px-3 text-xs font-semibold text-emerald-100 shadow-2xs focus:border-emerald-400 focus:outline-none cursor-pointer"
+                    >
+                      <option value="" className="bg-emerald-900 text-white">History Archive…</option>
+                      {events
+                        .filter((e) => !e.is_active)
+                        .map((e) => (
+                          <option key={e.id} value={e.id} className="bg-emerald-900 text-white">
+                            ⚪ {e.name} (Ended)
+                          </option>
+                        ))}
+                    </select>
+                  ) : null}
+
+                  {/* End Event Button */}
+                  {selected?.is_active && canManageEvents ? (
+                    <EndEventDialog
+                      event={selected}
+                      activeCount={activeCount}
+                      pending={endMutation.isPending}
+                      onConfirm={() => endMutation.mutate(selected.id)}
+                    />
+                  ) : null}
+                </div>
               </div>
-            ) : null}
+            </div>
+          ) : null}
 
             {/* 3. Connected Underline Tabs Header Bar */}
             <div className="border-b border-neutral-200 bg-white">
@@ -640,11 +604,10 @@ export default function AdminEmergencyEventsPage() {
                 </div>
               ) : null}
             </div>
-          </>
+          </div>
         )}
       </div>
-    </div>
-  );
+    );
 }
 
 function Overview({
