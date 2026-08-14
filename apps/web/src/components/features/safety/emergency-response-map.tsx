@@ -73,6 +73,14 @@ import "leaflet/dist/leaflet.css";
 type Risk = 1 | 2 | 3;
 type ListTab = "mapped" | "unmapped" | "walkins";
 
+export interface PublicSiren {
+  id: string;
+  name: string;
+  location: { type: "Point"; coordinates: [number, number] };
+  status: "idle" | "sounding";
+  area_id?: string | null;
+}
+
 interface EnrichedHousehold {
   household: WorkspaceHouseholdOut;
   risk: Risk;
@@ -197,7 +205,13 @@ function makeKeyboardReachable(layer: Layer, open: () => void) {
 /* Inline CSS injected into the map DOM                                        */
 /* -------------------------------------------------------------------------- */
 
-const ADMIN_MAP_CSS = `
+@keyframes sagip-ripple {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  100% { transform: scale(2.5); opacity: 0;   }
+}
+.sagip-siren-ripple {
+  animation: sagip-ripple 1.5s ease-out infinite;
+}
 .admin-emergency-map .leaflet-container {
   background: #090d16;
 }
@@ -264,6 +278,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
   const [showAreas, setShowAreas] = React.useState(true);
   const [showHouseholds, setShowHouseholds] = React.useState(true);
   const [showCenters, setShowCenters] = React.useState(true);
+  const [showSirens, setShowSirens] = React.useState(true);
   const [showFacilities, setShowFacilities] = React.useState(false);
 
   /* --- UI state --- */
@@ -295,6 +310,14 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
     queryFn: () =>
       api.get<PublicFacility[]>("/public/facilities").then((response) => response.data),
     enabled: showFacilities,
+  });
+
+  /* --- siren units layer --- */
+  const sirensQuery = useQuery({
+    queryKey: ["public", "sirens", "emergency-map"],
+    queryFn: () =>
+      api.get<PublicSiren[]>("/public/sirens").then((response) => response.data),
+    enabled: showSirens,
   });
 
   /* --- risk enrichment --- */
@@ -537,6 +560,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
               : null}
 
             {/* Evacuation center pins — squircle shelter badges (pane: evacPane, z-index 680, topmost) */}
+            {/* Evacuation Centers */}
             {showCenters
               ? visibleCenters.map((center) => {
                   const point = center.facility.location?.coordinates;
@@ -552,6 +576,32 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                         <EvacCenterTooltip center={center} />
                       </Tooltip>
                     </Marker>
+                  );
+                })
+              : null}
+
+            {/* Siren Units Layer */}
+            {showSirens
+              ? (sirensQuery.data ?? []).map((siren) => {
+                  const [lon, lat] = siren.location.coordinates;
+                  const isSounding = siren.status === "sounding";
+                  return (
+                    <CircleMarker
+                      key={siren.id}
+                      center={[lat, lon]}
+                      radius={8}
+                      pathOptions={{
+                        color: isSounding ? "#EF4444" : "#94A3B8",
+                        weight: isSounding ? 3 : 1.5,
+                        fillColor: isSounding ? "#EF4444" : "#64748B",
+                        fillOpacity: 0.9,
+                        className: isSounding ? "sagip-siren-ripple" : undefined,
+                      }}
+                    >
+                      <Tooltip direction="top" opacity={1}>
+                        <SirenTooltip siren={siren} />
+                      </Tooltip>
+                    </CircleMarker>
                   );
                 })
               : null}
@@ -673,6 +723,25 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                 </div>
               )}
 
+              {/* Siren Units */}
+              {showSirens && (
+                <div className="border-t border-emerald-900/60 pt-1.5">
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                    Siren Units
+                  </p>
+                  <ul className="flex flex-col gap-1">
+                    <li className="flex items-center gap-2">
+                      <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-slate-400 bg-slate-500" />
+                      <span className="text-emerald-100/90">Idle Siren</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-rose-300 bg-rose-500" />
+                      <span className="text-emerald-100/90">Sounding Siren</span>
+                    </li>
+                  </ul>
+                </div>
+              )}
+
               {/* Household Pins */}
               {showHouseholds && (
                 <div className="border-t border-emerald-900/60 pt-1.5">
@@ -774,7 +843,8 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
               <legend className="sr-only">Map Layer Visibility</legend>
               <LayerCheckbox checked={showHazard} onChange={setShowHazard} label="Flood Hazard (5-Year)" />
               <LayerCheckbox checked={showAreas} onChange={setShowAreas} label="Area List" />
-              <LayerCheckbox checked={showCenters} onChange={setShowCenters} label="Evacuation Facilities" />
+              <LayerCheckbox checked={showCenters} onChange={setShowCenters} label="Evacuation Centers" />
+              <LayerCheckbox checked={showSirens} onChange={setShowSirens} label="Siren Units" />
               <LayerCheckbox checked={showHouseholds} onChange={setShowHouseholds} label="Households" />
               <LayerCheckbox checked={showFacilities} onChange={setShowFacilities} label="Other Facilities" />
             </fieldset>
@@ -1107,44 +1177,89 @@ function CompactHouseholdTooltip({
   riskSource?: string;
 }) {
   const isSafe = household.all_safe;
-  const color = isSafe ? "#64748B" : riskColor(risk);
+  const accentColor = isSafe ? "#64748B" : riskColor(risk);
   const safeTotal = household.members.filter((m) => m.status === "safe").length;
   const totalMembers = household.members.length;
 
+  const specialNeeds = Array.from(
+    new Set(household.members.flatMap((m) => m.vulnerability_flags || []).filter(Boolean)),
+  );
+
   return (
     <div
-      className="flex flex-col gap-1 rounded-xl p-2.5 text-white shadow-2xl backdrop-blur-md"
+      className="flex flex-col rounded-2xl bg-white/98 p-3 text-slate-900 shadow-2xl backdrop-blur-md whitespace-normal break-words"
       style={{
-        backgroundColor: "#090d16fa",
-        border: `1.5px solid ${color}`,
-        boxShadow: `0 10px 25px -5px rgba(0,0,0,0.7), 0 0 12px -2px ${color}55`,
-        minWidth: 170,
-        maxWidth: 240,
+        border: `1.5px solid ${accentColor}`,
+        boxShadow: `0 12px 30px -6px rgba(0,0,0,0.35), 0 0 16px -2px ${accentColor}40`,
+        width: 275,
+        maxWidth: 315,
       }}
     >
-      <div
-        className="flex items-center justify-between gap-1.5 border-b pb-1.5"
-        style={{ borderColor: `${color}40` }}
-      >
-        <span className="truncate text-xs font-black text-white">{household.reference_no}</span>
+      <div className="flex items-center justify-between gap-1.5">
+        <span className="font-mono text-xs font-black text-neutral-900 tracking-tight">
+          {household.reference_no}
+        </span>
         <span
-          className="rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white"
-          style={{ backgroundColor: color }}
+          className={cn(
+            "shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wide",
+            isSafe
+              ? "bg-slate-100 text-slate-700 border border-slate-300"
+              : risk === 3
+                ? "bg-rose-100 text-rose-800 border border-rose-300"
+                : risk === 2
+                  ? "bg-amber-100 text-amber-800 border border-amber-300"
+                  : "bg-emerald-100 text-emerald-800 border border-emerald-300",
+          )}
         >
           {isSafe ? "All Safe" : `${riskLabel(risk)} Risk`}
         </span>
       </div>
-      <div className="pt-0.5">
-        <p className="truncate text-[11px] font-bold text-slate-200">{household.head_name}</p>
-        <p className="truncate text-[10px] text-slate-400">{household.area_name}</p>
+
+      <div className="mt-1">
+        <p className="text-[12.5px] font-black leading-snug text-neutral-950 break-words">
+          {household.head_name}
+        </p>
+        <p className="text-[11px] leading-tight text-neutral-500 break-words">
+          {household.street_address ? `${household.street_address}, ` : ""}{household.area_name}
+        </p>
       </div>
-      <div
-        className="mt-0.5 flex items-center justify-between border-t pt-1.5 text-[10px]"
-        style={{ borderColor: `${color}30` }}
-      >
-        <span className="text-slate-400">{totalMembers} Member{totalMembers !== 1 ? "s" : ""}</span>
-        <span className="font-bold" style={{ color: isSafe ? "#86efac" : "#f1f5f9" }}>
-          {isSafe ? "✓ All Safe" : `${safeTotal}/${totalMembers} Confirmed Safe`}
+
+      {specialNeeds.length > 0 && (
+        <div className="mt-2 rounded-lg bg-amber-50/90 border border-amber-200/80 p-1.5 flex flex-col gap-1">
+          <span className="inline-flex items-center gap-1 text-[9.5px] font-bold uppercase tracking-wider text-amber-800">
+            <AlertTriangle className="size-3 text-amber-600 shrink-0" aria-hidden />
+            Special Needs / Vulnerability
+          </span>
+          <div className="flex flex-wrap gap-1">
+            {specialNeeds.map((need) => (
+              <span
+                key={need}
+                className="rounded bg-white px-1.5 py-0.5 text-[9.5px] font-bold text-amber-900 border border-amber-300 shadow-2xs"
+              >
+                {statusLabel(need)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-2.5 flex items-center justify-between border-t border-neutral-100 pt-2 text-[11px]">
+        <span className="text-neutral-500 font-medium">
+          {totalMembers} Member{totalMembers !== 1 ? "s" : ""}
+        </span>
+        <span
+          className={cn(
+            "font-black",
+            isSafe
+              ? "text-emerald-700"
+              : safeTotal > 0
+                ? "text-amber-700"
+                : "text-neutral-700",
+          )}
+        >
+          {isSafe
+            ? "✓ All Safe"
+            : `${safeTotal}/${totalMembers} Safe`}
         </span>
       </div>
     </div>
@@ -1225,6 +1340,45 @@ function FacilityTooltip({ facility }: { facility: PublicFacility }) {
         </span>
         <span className="shrink-0 rounded-full bg-slate-900 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wide text-white shadow-2xs">
           {statusLabel(facility.type)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function SirenTooltip({ siren }: { siren: PublicSiren }) {
+  const isSounding = siren.status === "sounding";
+  const accentColor = isSounding ? "#EF4444" : "#64748B";
+
+  return (
+    <div
+      className="flex flex-col rounded-2xl bg-white/98 p-3 text-slate-900 shadow-2xl backdrop-blur-md whitespace-normal break-words"
+      style={{
+        border: `1.5px solid ${accentColor}`,
+        boxShadow: `0 12px 30px -6px rgba(0,0,0,0.35), 0 0 16px -2px ${accentColor}35`,
+        width: 250,
+        maxWidth: 290,
+      }}
+    >
+      <div>
+        <p className="text-[12.5px] font-black leading-snug text-neutral-950 break-words">
+          {siren.name}
+        </p>
+      </div>
+
+      <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-neutral-100 pt-2 text-[11px]">
+        <span className="text-[10.5px] font-medium text-neutral-500">
+          Siren Unit
+        </span>
+        <span
+          className={cn(
+            "shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wide",
+            isSounding
+              ? "bg-rose-100 text-rose-800 border border-rose-300"
+              : "bg-slate-100 text-slate-700 border border-slate-300",
+          )}
+        >
+          {isSounding ? "Sounding Siren" : "Idle Siren"}
         </span>
       </div>
     </div>
