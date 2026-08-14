@@ -224,7 +224,7 @@ export default function AdminEmergencyEventsPage() {
   });
 
   const setSelection = (eventId: string, nextTab: Tab = tab) => {
-    const targetId = eventId || (selected?.id ?? "");
+    const targetId = eventId || selectedId || (selected?.id ?? "");
     router.replace(`/admin/emergency-events?event=${targetId}&tab=${nextTab}`);
   };
 
@@ -447,7 +447,7 @@ export default function AdminEmergencyEventsPage() {
               <button
                 role="tab"
                 aria-selected={tab === "overview"}
-                onClick={() => setSelection(selected?.id ?? "", "overview")}
+                onClick={() => setSelection(selectedId, "overview")}
                 className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${tab === "overview"
                   ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
                   : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
@@ -461,7 +461,7 @@ export default function AdminEmergencyEventsPage() {
               <button
                 role="tab"
                 aria-selected={tab === "events"}
-                onClick={() => setSelection(selected?.id ?? "", "events")}
+                onClick={() => setSelection(selectedId, "events")}
                 className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${tab === "events"
                   ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
                   : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
@@ -481,7 +481,7 @@ export default function AdminEmergencyEventsPage() {
                 <button
                   role="tab"
                   aria-selected={tab === "map"}
-                  onClick={() => setSelection(selected?.id ?? "", "map")}
+                  onClick={() => setSelection(selectedId, "map")}
                   className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${tab === "map"
                     ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
                     : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
@@ -496,7 +496,7 @@ export default function AdminEmergencyEventsPage() {
               <button
                 role="tab"
                 aria-selected={tab === "accounted-for"}
-                onClick={() => setSelection(selected?.id ?? "", "accounted-for")}
+                onClick={() => setSelection(selectedId, "accounted-for")}
                 className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${tab === "accounted-for"
                   ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
                   : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
@@ -533,7 +533,7 @@ export default function AdminEmergencyEventsPage() {
                       Emergency Events Ledger & History
                     </h3>
                     <p className="text-xs text-neutral-500">
-                      Select an event to load its active workspace, safety ledger, and spatial response map.
+                      Directory of all registered emergency events and disaster response logs.
                     </p>
                   </div>
                   <Badge tone="info">{events.length} Registered Events</Badge>
@@ -547,16 +547,6 @@ export default function AdminEmergencyEventsPage() {
                     isError={false}
                     emptyTitle="No emergency events declared"
                     getRowKey={(row) => row.id}
-                    rowActions={(row) => (
-                      <Button
-                        size="sm"
-                        variant={row.id === selected?.id ? "secondary" : "outline"}
-                        className={row.id === selected?.id ? "bg-emerald-100 text-emerald-900 font-bold border-emerald-200" : ""}
-                        onClick={() => setSelection(row.id, "overview")}
-                      >
-                        {row.id === selected?.id ? "Active Workspace" : "Open Workspace"}
-                      </Button>
-                    )}
                   />
                 </div>
               </div>
