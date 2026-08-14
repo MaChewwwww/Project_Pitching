@@ -10,6 +10,7 @@ import {
   TileLayer,
   Tooltip,
   useMap,
+  ZoomControl,
 } from "react-leaflet";
 import L from "leaflet";
 import type { Layer } from "leaflet";
@@ -108,9 +109,17 @@ function EmergencyMapPanes() {
       const pane = map.createPane("topBoundaryPane");
       pane.style.zIndex = "550";
     }
-    if (!map.getPane("topMarkerPane")) {
-      const pane = map.createPane("topMarkerPane");
-      pane.style.zIndex = "670";
+    if (!map.getPane("householdPane")) {
+      const pane = map.createPane("householdPane");
+      pane.style.zIndex = "660"; // Layer 3 (Bottom): Households
+    }
+    if (!map.getPane("facilityPane")) {
+      const pane = map.createPane("facilityPane");
+      pane.style.zIndex = "670"; // Layer 2 (Middle): Other Facilities
+    }
+    if (!map.getPane("evacPane")) {
+      const pane = map.createPane("evacPane");
+      pane.style.zIndex = "680"; // Layer 1 (Topmost): Evacuation Centers
     }
     const tooltipPane = map.getPane("tooltipPane");
     if (tooltipPane) tooltipPane.style.zIndex = "750";
@@ -123,18 +132,21 @@ function EmergencyMapPanes() {
   return null;
 }
 
-function createHouseholdIcon(allSafe: boolean, risk: Risk) {
-  const bgColor = allSafe ? "#64748B" : riskColor(risk);
-  const size = 20;
-  const iconSize = 11;
+function createEvacCenterIcon(isAtCapacity: boolean) {
+  const bgColor = isAtCapacity ? "#EF4444" : "#10B981";
+  const size = 22;
+  const iconSize = 13;
 
   return L.divIcon({
-    className: "household-pin-icon",
+    className: "evac-center-pin-icon",
     html: `
       <div class="flex items-center justify-center rounded-[5px] text-white transition-transform hover:scale-125 cursor-pointer border border-white/95 shadow-md"
            style="width:${size}px; height:${size}px; background-color:${bgColor};">
-        <svg xmlns="http://www.w3.org/2000/svg" width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-          <path d="M10.707 2.293a1 1 0 0 1 1.414 0l8 8a1 1 0 0 1-1.414 1.414L18 11.086V20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-8.914l-.707.707a1 1 0 0 1-1.414-1.414l8-8z"/>
+        <svg xmlns="http://www.w3.org/2000/svg" width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <path d="M12 18v-4"/>
+          <path d="M9 18v-2"/>
+          <path d="M15 18v-2"/>
         </svg>
       </div>
     `,
@@ -175,7 +187,7 @@ const ADMIN_MAP_CSS = `
 .admin-emergency-map .leaflet-container {
   background: #090d16;
 }
-.household-pin-icon {
+.evac-center-pin-icon {
   background: transparent !important;
   border: none !important;
 }
@@ -196,10 +208,15 @@ const ADMIN_MAP_CSS = `
 .admin-emergency-map .leaflet-control-attribution {
   display: none;
 }
+.admin-emergency-map .leaflet-top.leaflet-right {
+  top: 4px;
+  right: 4px;
+}
 .admin-emergency-map .leaflet-control-zoom {
-  border: 1px solid rgba(74,222,128,0.25) !important;
+  border: 1px solid rgba(74,222,128,0.3) !important;
   border-radius: 8px !important;
   overflow: hidden;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5) !important;
 }
 .admin-emergency-map .leaflet-control-zoom a {
   background: #052e16 !important;
@@ -383,12 +400,14 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
           <MapContainer
             center={[14.7415, 121.1315]}
             zoom={14}
+            zoomControl={false}
             className="h-full w-full min-h-[500px]"
             scrollWheelZoom
             minZoom={11}
             maxZoom={18}
             attributionControl={false}
           >
+            <ZoomControl position="topright" />
             <EmergencyMapPanes />
             <TileLayer url={DARK_TILE_URL} attribution={DARK_TILE_ATTRIBUTION} />
 
@@ -428,20 +447,24 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
               pane="topBoundaryPane"
             />
 
-            {/* Household pins — distinct house-icon squircle badges */}
+            {/* Household pins — circular pins with white border (pane: householdPane, z-index 660) */}
             {showHouseholds &&
               filtered.map(({ household, risk: riskLevel, riskSource }) => {
                 if (!household.location) return null;
                 const [longitude, latitude] = household.location.coordinates;
+                const safeColor = "#64748B";
                 return (
-                  <Marker
+                  <CircleMarker
                     key={household.household_id}
-                    position={[latitude, longitude]}
-                    icon={createHouseholdIcon(
-                      household.all_safe,
-                      riskLevel,
-                    )}
-                    pane="topMarkerPane"
+                    center={[latitude, longitude]}
+                    radius={8}
+                    pane="householdPane"
+                    pathOptions={{
+                      fillColor: household.all_safe ? safeColor : riskColor(riskLevel),
+                      fillOpacity: 0.95,
+                      color: "#ffffff",
+                      weight: 2.5,
+                    }}
                     eventHandlers={{
                       click: () => setSelected(household),
                       add: (event) =>
@@ -459,43 +482,11 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                         riskSource={riskSource}
                       />
                     </Tooltip>
-                  </Marker>
+                  </CircleMarker>
                 );
               })}
 
-            {/* Evacuation center pins */}
-            {showCenters
-              ? visibleCenters.map((center) => {
-                  const point = center.facility.location?.coordinates;
-                  if (!point) return null;
-                  return (
-                    <CircleMarker
-                      key={center.id}
-                      center={[point[1], point[0]]}
-                      radius={8}
-                      pane="topMarkerPane"
-                      pathOptions={{
-                        color: "#ffffff",
-                        fillColor: center.is_at_capacity ? "#EF4444" : "#10B981",
-                        fillOpacity: 0.95,
-                        weight: 2.5,
-                      }}
-                    >
-                      <Tooltip direction="top" opacity={1}>
-                        <b>{center.facility.name}</b>
-                        <br />
-                        <span>
-                          {center.occupancy}/{center.capacity ?? "?"} occupants
-                          {center.is_at_capacity ? " · At capacity" : ""}
-                        </span>
-                      </Tooltip>
-                    </CircleMarker>
-                  );
-                })
-              : null}
-
-
-            {/* Other public facilities */}
+            {/* Other public facilities (pane: facilityPane, z-index 670) */}
             {showFacilities
               ? facilitiesQuery.data
                   ?.filter((f) => f.type !== "evacuation_center")
@@ -507,7 +498,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                         key={facility.id}
                         center={[point[1], point[0]]}
                         radius={8}
-                        pane="topMarkerPane"
+                        pane="facilityPane"
                         pathOptions={{
                           color: "#334155",
                           fillColor: "#F8FAFC",
@@ -524,30 +515,154 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                     );
                   })
               : null}
+
+            {/* Evacuation center pins — squircle shelter badges (pane: evacPane, z-index 680, topmost) */}
+            {showCenters
+              ? visibleCenters.map((center) => {
+                  const point = center.facility.location?.coordinates;
+                  if (!point) return null;
+                  return (
+                    <Marker
+                      key={center.id}
+                      position={[point[1], point[0]]}
+                      icon={createEvacCenterIcon(center.is_at_capacity)}
+                      pane="evacPane"
+                    >
+                      <Tooltip direction="top" opacity={1}>
+                        <b>{center.facility.name}</b>
+                        <br />
+                        <span>
+                          {center.occupancy}/{center.capacity ?? "?"} occupants
+                          {center.is_at_capacity ? " · At capacity" : ""}
+                        </span>
+                      </Tooltip>
+                    </Marker>
+                  );
+                })
+              : null}
           </MapContainer>
 
-          {/* Floating legend overlay */}
+          {/* Top-left full Legend card inside the map */}
           <div
             aria-label="Map legend"
-            className="pointer-events-none absolute bottom-3 left-3 z-[1000] flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-emerald-900/80 bg-[#052e16]/95 px-3 py-2 text-[11px] font-medium text-slate-100 shadow-xl backdrop-blur-sm"
+            className="absolute top-3.5 left-3.5 z-[1000] w-64 max-w-[calc(100%-6rem)] rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-3 text-white shadow-2xl backdrop-blur-md transition-all"
           >
-            <span className="font-bold text-white/90">Households</span>
-            <LegendHouse color="#15803D" label="Low risk" />
-            <LegendHouse color="#F59E0B" label="Medium" />
-            <LegendHouse color="#EF4444" label="High risk" />
-            <LegendHouse color="#64748B" label="All safe" />
-            {showCenters && (
-              <>
-                <span className="text-white/40">·</span>
-                <LegendDot color="#10B981" label="Evac center" />
-              </>
-            )}
-            {showFacilities && (
-              <>
-                <span className="text-white/40">·</span>
-                <LegendDot color="#F8FAFC" label="Facility" />
-              </>
-            )}
+            <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
+              <Shield className="size-3.5 text-emerald-400" aria-hidden />
+              Legend
+            </p>
+            <div className="flex flex-col gap-2 text-[11px]">
+              {/* Flood Hazard */}
+              {showHazard && (
+                <div>
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                    Flood Hazard (NOAH)
+                  </p>
+                  <ul className="flex flex-col gap-1">
+                    {HAZARD_LEVELS.map((level) => (
+                      <li key={level.level} className="flex items-center gap-2">
+                        <span
+                          aria-hidden
+                          className="size-3 shrink-0 rounded-sm"
+                          style={{ backgroundColor: level.color, opacity: 0.9 }}
+                        />
+                        <span className="text-emerald-100/90">
+                          <span className="font-semibold">{level.label}</span> ({level.depth})
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Map Boundaries */}
+              <div className={showHazard ? "border-t border-emerald-900/60 pt-1.5" : ""}>
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                  Map Boundaries
+                </p>
+                <ul className="flex flex-col gap-1">
+                  <li className="flex items-center gap-2">
+                    <span className="inline-block w-3.5 border-b-2 border-dashed border-emerald-400" />
+                    <span className="text-emerald-100/90">San Jose Boundary</span>
+                  </li>
+                  {showAreas && (
+                    <li className="flex items-center gap-2">
+                      <span className="inline-block w-3.5 border-b border-dashed border-slate-300" />
+                      <span className="text-emerald-100/90">Area Divisions (1–6)</span>
+                    </li>
+                  )}
+                </ul>
+              </div>
+
+              {/* Evacuation Centers */}
+              {showCenters && (
+                <div className="border-t border-emerald-900/60 pt-1.5">
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                    Evacuation Centers
+                  </p>
+                  <ul className="flex flex-col gap-1">
+                    <li className="flex items-center gap-2">
+                      <span aria-hidden className="flex size-3.5 items-center justify-center rounded-[3px] border border-white/60 text-white" style={{ backgroundColor: "#10B981" }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="7.5" height="7.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        </svg>
+                      </span>
+                      <span className="text-emerald-100/90">Available capacity</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span aria-hidden className="flex size-3.5 items-center justify-center rounded-[3px] border border-white/60 text-white" style={{ backgroundColor: "#EF4444" }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="7.5" height="7.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        </svg>
+                      </span>
+                      <span className="text-emerald-100/90">At/over capacity</span>
+                    </li>
+                  </ul>
+                </div>
+              )}
+
+              {/* Other Public Facilities */}
+              {showFacilities && (
+                <div className="border-t border-emerald-900/60 pt-1.5">
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                    Other Facilities
+                  </p>
+                  <ul className="flex flex-col gap-1">
+                    <li className="flex items-center gap-2">
+                      <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-slate-400 bg-slate-100" />
+                      <span className="text-emerald-100/90">Clinics, Police, Fire</span>
+                    </li>
+                  </ul>
+                </div>
+              )}
+
+              {/* Household Pins */}
+              {showHouseholds && (
+                <div className="border-t border-emerald-900/60 pt-1.5">
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                    Household Pins
+                  </p>
+                  <ul className="flex flex-col gap-1">
+                    <li className="flex items-center gap-2">
+                      <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60" style={{ backgroundColor: "#15803D" }} />
+                      <span className="text-emerald-100/90">Low flood risk</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60" style={{ backgroundColor: "#F59E0B" }} />
+                      <span className="text-emerald-100/90">Medium flood risk</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60" style={{ backgroundColor: "#EF4444" }} />
+                      <span className="text-emerald-100/90">High flood risk</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60" style={{ backgroundColor: "#64748B" }} />
+                      <span className="text-emerald-100/90">All safe (checked in)</span>
+                    </li>
+                  </ul>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Bottom-right Data Sources citation overlay */}
@@ -574,7 +689,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
         {/* ---------------------------------------------------------------- */}
         {/* Sidebar (Column 2)                                                */}
         {/* ---------------------------------------------------------------- */}
-        <div className="flex flex-col gap-3 lg:w-80 lg:shrink-0">
+        <div className="flex flex-col gap-3 lg:w-72 lg:shrink-0">
 
           {/* Layers panel */}
           <div className="rounded-xl border border-primary-800/60 bg-primary-950/95 p-4 text-white shadow-xl backdrop-blur-md">
@@ -586,124 +701,10 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
               <legend className="sr-only">Map layer visibility</legend>
               <LayerCheckbox checked={showHazard} onChange={setShowHazard} label="Flood hazard (5-year)" />
               <LayerCheckbox checked={showAreas} onChange={setShowAreas} label="Area list" />
-              <LayerCheckbox checked={showHouseholds} onChange={setShowHouseholds} label="Households" />
               <LayerCheckbox checked={showCenters} onChange={setShowCenters} label="Evacuation facilities" />
               <LayerCheckbox checked={showFacilities} onChange={setShowFacilities} label="Other facilities" />
+              <LayerCheckbox checked={showHouseholds} onChange={setShowHouseholds} label="Households" />
             </fieldset>
-          </div>
-
-          {/* Legend panel */}
-          <div className="rounded-xl border border-primary-800/60 bg-primary-950/95 p-4 text-white shadow-xl backdrop-blur-md">
-            <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary-400">
-              <Shield className="size-3.5 text-primary-400" aria-hidden />
-              Legend
-            </p>
-            <div className="mb-3">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-primary-300/60">
-                Flood Hazard (NOAH)
-              </p>
-              <ul className="flex flex-col gap-1.5">
-                {HAZARD_LEVELS.map((level) => (
-                  <li key={level.level} className="flex items-center gap-2">
-                    <span
-                      aria-hidden
-                      className="size-3.5 shrink-0 rounded-sm"
-                      style={{ backgroundColor: level.color, opacity: 0.9 }}
-                    />
-                    <span className="text-xs text-primary-100/80">
-                      <span className="font-semibold">{level.label} Hazard</span>{" "}
-                      ({level.depth})
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="border-t border-primary-800/60 pt-3">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-primary-300/60">
-                Household Pins
-              </p>
-              <ul className="flex flex-col gap-1.5">
-                <li className="flex items-center gap-2">
-                  <span aria-hidden className="flex size-4 items-center justify-center rounded-[3px] border border-white/60 text-white" style={{ backgroundColor: "#15803D" }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M10.707 2.293a1 1 0 0 1 1.414 0l8 8a1 1 0 0 1-1.414 1.414L18 11.086V20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-8.914l-.707.707a1 1 0 0 1-1.414-1.414l8-8z"/>
-                    </svg>
-                  </span>
-                  <span className="text-xs text-primary-100/80">Low flood risk</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span aria-hidden className="flex size-4 items-center justify-center rounded-[3px] border border-white/60 text-white" style={{ backgroundColor: "#F59E0B" }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M10.707 2.293a1 1 0 0 1 1.414 0l8 8a1 1 0 0 1-1.414 1.414L18 11.086V20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-8.914l-.707.707a1 1 0 0 1-1.414-1.414l8-8z"/>
-                    </svg>
-                  </span>
-                  <span className="text-xs text-primary-100/80">Medium flood risk</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span aria-hidden className="flex size-4 items-center justify-center rounded-[3px] border border-white/60 text-white" style={{ backgroundColor: "#EF4444" }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M10.707 2.293a1 1 0 0 1 1.414 0l8 8a1 1 0 0 1-1.414 1.414L18 11.086V20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-8.914l-.707.707a1 1 0 0 1-1.414-1.414l8-8z"/>
-                    </svg>
-                  </span>
-                  <span className="text-xs text-primary-100/80">High flood risk</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span aria-hidden className="flex size-4 items-center justify-center rounded-[3px] border border-white/60 text-white" style={{ backgroundColor: "#64748B" }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M10.707 2.293a1 1 0 0 1 1.414 0l8 8a1 1 0 0 1-1.414 1.414L18 11.086V20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-8.914l-.707.707a1 1 0 0 1-1.414-1.414l8-8z"/>
-                    </svg>
-                  </span>
-                  <span className="text-xs text-primary-100/80">All members safe (checked in)</span>
-                </li>
-              </ul>
-            </div>
-            <div className="border-t border-primary-800/60 pt-3">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-primary-300/60">
-                Map Boundaries
-              </p>
-              <ul className="flex flex-col gap-1.5">
-                <li className="flex items-center gap-2">
-                  <span className="inline-block w-4 border-b-2 border-dashed border-emerald-400" />
-                  <span className="text-xs text-primary-100/80">San Jose Boundary</span>
-                </li>
-                {showAreas && (
-                  <li className="flex items-center gap-2">
-                    <span className="inline-block w-4 border-b border-dashed border-slate-300" />
-                    <span className="text-xs text-primary-100/80">Area Divisions (1–6)</span>
-                  </li>
-                )}
-              </ul>
-            </div>
-            {showCenters && (
-              <div className="border-t border-primary-800/60 pt-3 mt-3">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-primary-300/60">
-                  Evacuation Centers
-                </p>
-                <ul className="flex flex-col gap-1.5">
-                  <li className="flex items-center gap-2">
-                    <span aria-hidden className="size-3.5 shrink-0 rounded-full border border-white/40" style={{ backgroundColor: "#10B981" }} />
-                    <span className="text-xs text-primary-100/80">Available capacity</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span aria-hidden className="size-3.5 shrink-0 rounded-full border border-white/40" style={{ backgroundColor: "#EF4444" }} />
-                    <span className="text-xs text-primary-100/80">At or over capacity</span>
-                  </li>
-                </ul>
-              </div>
-            )}
-            {showFacilities && (
-              <div className="border-t border-primary-800/60 pt-3 mt-3">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-primary-300/60">
-                  Other Public Facilities
-                </p>
-                <ul className="flex flex-col gap-1.5">
-                  <li className="flex items-center gap-2">
-                    <span aria-hidden className="size-3.5 shrink-0 rounded-full border border-slate-400 bg-slate-100" />
-                    <span className="text-xs text-primary-100/80">Clinics, Police, Fire, Barangay Hall</span>
-                  </li>
-                </ul>
-              </div>
-            )}
           </div>
 
           {/* Filters panel */}
@@ -860,36 +861,6 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
 /* -------------------------------------------------------------------------- */
 /* Sub-components                                                              */
 /* -------------------------------------------------------------------------- */
-
-function LegendDot({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span
-        aria-hidden
-        className="size-2.5 rounded-full border border-white/70"
-        style={{ backgroundColor: color }}
-      />
-      {label}
-    </span>
-  );
-}
-
-function LegendHouse({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span
-        aria-hidden
-        className="flex size-3.5 items-center justify-center rounded-[3px] border border-white/80 text-white shadow-2xs"
-        style={{ backgroundColor: color }}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M10.707 2.293a1 1 0 0 1 1.414 0l8 8a1 1 0 0 1-1.414 1.414L18 11.086V20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-8.914l-.707.707a1 1 0 0 1-1.414-1.414l8-8z"/>
-        </svg>
-      </span>
-      {label}
-    </span>
-  );
-}
 
 function LayerCheckbox({
   checked,
