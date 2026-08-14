@@ -67,8 +67,15 @@ ssh -i C:\Users\MaChew\.ssh\bgh_deployment_admin.pem azureuser@57.155.90.155 "su
 
 To push local code changes to the staging server and rebuild containers:
 
-### 1. Push Code to Server Remote
+### 1. Push Code to Server & Pull on VPS
 
+Option A: Push directly to GitHub `origin main` and pull on VPS:
+```powershell
+git push origin main
+ssh -i C:\Users\MaChew\.ssh\bgh_azure_ed25519 deploy@57.155.90.155 "cd /opt/bgh/Project_Pitching && git pull origin main && docker compose -p sagip-staging --env-file .env.staging -f infra/compose.yml up -d --build web api"
+```
+
+Option B: Push directly to Server bare repo over SSH:
 ```powershell
 $env:GIT_SSH_COMMAND="ssh -i C:/Users/MaChew/.ssh/bgh_azure_ed25519"
 git push ssh://deploy@57.155.90.155/opt/bgh/Project_Pitching main
@@ -82,10 +89,10 @@ To rebuild and restart specific services (e.g. `web` and `api`):
 ssh -o BatchMode=yes -i C:\Users\MaChew\.ssh\bgh_azure_ed25519 deploy@57.155.90.155 "cd /opt/bgh/Project_Pitching && docker compose -p sagip-staging --env-file .env.staging -f infra/compose.yml up -d --build api web"
 ```
 
-To rebuild the entire stack:
+To resolve container recreate conflicts or stale containers:
 
 ```powershell
-ssh -o BatchMode=yes -i C:\Users\MaChew\.ssh\bgh_azure_ed25519 deploy@57.155.90.155 "cd /opt/bgh/Project_Pitching && docker compose -p sagip-staging --env-file .env.staging -f infra/compose.yml up -d --build"
+ssh -i C:\Users\MaChew\.ssh\bgh_azure_ed25519 deploy@57.155.90.155 "cd /opt/bgh/Project_Pitching && docker compose -p sagip-staging --env-file .env.staging -f infra/compose.yml down --remove-orphans && docker compose -p sagip-staging --env-file .env.staging -f infra/compose.yml up -d --build"
 ```
 
 ---
