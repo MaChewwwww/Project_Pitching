@@ -506,8 +506,8 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
           unit="Citizens"
           sub={
             specialNeedsHouseholds > 0
-              ? `${specialNeedsHouseholds} ${specialNeedsHouseholds === 1 ? "Household" : "Households"} with PWD/Seniors`
-              : "No Vulnerable Flags"
+              ? `${specialNeedsHouseholds} ${specialNeedsHouseholds === 1 ? "Household" : "Households"} with special needs`
+              : "No Special Needs Flags"
           }
           badge={
             <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-amber-900 border border-amber-300">
@@ -561,7 +561,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
               className="h-full w-full min-h-[500px]"
               scrollWheelZoom
               minZoom={11}
-              maxZoom={22}
+              maxZoom={18}
               attributionControl={false}
             >
               <ZoomControl position="topright" />
@@ -569,8 +569,8 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
               <TileLayer
                 url={DARK_TILE_URL}
                 attribution={DARK_TILE_ATTRIBUTION}
-                maxZoom={22}
-                maxNativeZoom={19}
+                maxZoom={18}
+                maxNativeZoom={18}
               />
 
             {/* Flood hazard overlay */}
@@ -1350,19 +1350,27 @@ function MetricCard({
         <div className="shrink-0">{badge}</div>
       </div>
 
-      <div className="my-1.5 sm:my-2 flex items-baseline gap-1.5">
-        <span className="text-2xl sm:text-3xl font-black tracking-tight tabular-nums">
-          {value}
-        </span>
-        {unit ? (
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-            {unit}
+      <div className="mt-2 sm:mt-2.5 flex items-center justify-between gap-2">
+        <div className="flex items-baseline gap-1.5 shrink-0">
+          <span className="text-2xl sm:text-3xl font-black tracking-tight tabular-nums">
+            {value}
           </span>
-        ) : null}
-      </div>
-
-      <div className="flex items-center justify-between text-xs min-w-0">
-        <span className={cn("text-[11.5px] truncate", toneClasses.sub)}>{sub}</span>
+          {unit ? (
+            <span className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide">
+              {unit}
+            </span>
+          ) : null}
+        </div>
+        <div className="flex flex-col justify-center text-right min-w-0 flex-1 pl-1">
+          <span
+            className={cn(
+              "text-[10.5px] sm:text-[11.5px] font-semibold leading-tight line-clamp-2 text-right",
+              toneClasses.sub,
+            )}
+          >
+            {sub}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -2273,7 +2281,7 @@ function HouseholdDialog({
               <span className="text-rose-500">*</span>
             </span>
 
-            {activeEvents.length > 1 ? (
+            {activeEvents.length > 0 ? (
               <Select
                 value={effectiveEventId}
                 onValueChange={(val) => setSelectedEventId(val)}
@@ -2281,7 +2289,7 @@ function HouseholdDialog({
                 <SelectTrigger className="h-10 w-full rounded-xl border-slate-200 bg-white px-3 text-xs sm:text-sm font-medium text-slate-800 shadow-2xs hover:bg-slate-50 focus-visible:ring-emerald-500">
                   <SelectValue placeholder="Select Active Emergency Event..." />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl border border-slate-200 bg-white shadow-xl p-1 z-50">
+                <SelectContent className="rounded-xl border border-slate-200 bg-white shadow-2xl p-1 z-[3000]">
                   {activeEvents.map((evt) => (
                     <SelectItem
                       key={evt.id}
@@ -2298,13 +2306,6 @@ function HouseholdDialog({
                   ))}
                 </SelectContent>
               </Select>
-            ) : activeEvents.length === 1 ? (
-              <div className="flex items-center justify-between rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm font-normal text-slate-800 shadow-2xs">
-                <span className="font-bold text-slate-900">{activeEvents[0].name}</span>
-                <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-300">
-                  {activeEvents[0].type}
-                </span>
-              </div>
             ) : (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 font-medium">
                 No active emergency event is currently ongoing. Safety check-in requires an active event.

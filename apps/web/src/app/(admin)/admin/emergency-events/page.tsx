@@ -153,12 +153,17 @@ export default function AdminEmergencyEventsPage() {
   const activeEvents = React.useMemo(() => events.filter((event) => event.is_active), [events]);
   const activeCount = activeEvents.length;
 
-  const isAllActiveOverview = selectedId === "all" || selectedId === "active" || (!selectedId && activeEvents.length > 1);
-  const selected = events.find((event) => event.id === selectedId) ?? activeEvents[0] ?? events[0] ?? null;
+  const isSpecificEventSelected = Boolean(
+    selectedId && selectedId !== "all" && selectedId !== "active",
+  );
+  const isAllActiveOverview = !isSpecificEventSelected;
+  const selected = isSpecificEventSelected
+    ? (events.find((event) => event.id === selectedId) ?? null)
+    : (activeEvents[0] ?? events[0] ?? null);
 
   React.useEffect(() => {
     if (events.length === 0 || selectedId) return;
-    const initial = activeEvents.length > 1 ? "all" : (activeEvents[0]?.id ?? events[0]?.id ?? "");
+    const initial = activeEvents.length > 0 ? "all" : (events[0]?.id ?? "all");
     const safeTab = !canSeePii && tab === "map" ? "overview" : tab;
     router.replace(`/admin/emergency-events?event=${initial}&tab=${safeTab}`);
   }, [canSeePii, events, activeEvents, router, selectedId, tab]);
@@ -177,6 +182,40 @@ export default function AdminEmergencyEventsPage() {
         .then((response) => response.data),
     enabled: Boolean(selected && canSeePii && (tab === "map" || tab === "overview" || tab === "events")),
   });
+
+  const effectiveWorkspaceData = React.useMemo(() => {
+    if (!workspaceQuery.data) return undefined;
+    if (isAllActiveOverview && activeEvents.length === 0) {
+      // When viewing All Active Emergencies and there are 0 active events, reset live map to pristine/clean state
+      return {
+        ...workspaceQuery.data,
+        is_read_only: true,
+        event: {
+          ...workspaceQuery.data.event,
+          is_active: false,
+          name: "No Active Emergency",
+        },
+        households: workspaceQuery.data.households.map((h) => ({
+          ...h,
+          all_safe: false,
+          rescue_requested: false,
+          members: h.members.map((m) => ({
+            ...m,
+            status: "unaccounted" as const,
+            evac_center_id: null,
+            evac_center_name: null,
+          })),
+        })),
+        evacuation_centers: workspaceQuery.data.evacuation_centers.map((c) => ({
+          ...c,
+          occupancy: 0,
+          is_at_capacity: false,
+        })),
+        walkin_records: [],
+      };
+    }
+    return workspaceQuery.data;
+  }, [workspaceQuery.data, isAllActiveOverview, activeEvents.length]);
   const accountedQuery = useQuery({
     queryKey: ["admin", "accounted-for", selected?.id],
     queryFn: () =>
@@ -217,6 +256,31 @@ export default function AdminEmergencyEventsPage() {
         data.occupancy_reset_count > 0
           ? `Event ended; ${data.occupancy_reset_count} evacuees checked out`
           : "Event ended; physical occupancy preserved",
+      );
+      await invalidateOperations();
+    },
+    onError: (error) => toast.error(toDisplayError(error).detail),
+  });
+  const endAllMutation = useMutation({
+    mutationFn: async (eventsToEnd: EmergencyEventOut[]) => {
+      const results = await Promise.all(
+        eventsToEnd.map((e) =>
+          api
+            .post<EmergencyEventOut>(`/admin/emergency-events/${e.id}/end`)
+            .then((r) => r.data),
+        ),
+      );
+      return results;
+    },
+    onSuccess: async (results) => {
+      const totalReset = results.reduce(
+        (acc, r) => acc + (r.occupancy_reset_count || 0),
+        0,
+      );
+      toast.success(
+        totalReset > 0
+          ? `All ${results.length} active events ended; ${totalReset} evacuees checked out`
+          : `All ${results.length} active events ended successfully`,
       );
       await invalidateOperations();
     },
@@ -366,7 +430,12 @@ export default function AdminEmergencyEventsPage() {
                   <div className="flex flex-col gap-1.5">
                     {/* High-Contrast Badges & Date */}
                     <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
-                      {selected.is_active ? (
+                      {isAllActiveOverview && activeEvents.length === 0 ? (
+                        <span className="inline-flex items-center gap-2 rounded-full bg-emerald-950/80 text-emerald-300 px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-700/60 shadow-xs">
+                          <span className="size-2 rounded-full bg-emerald-400 shrink-0" />
+                          ALL CLEAR / STANDBY
+                        </span>
+                      ) : selected.is_active ? (
                         <span className="inline-flex items-center gap-2 rounded-full bg-rose-600 text-white px-3 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm border border-rose-400/40">
                           <span className="relative flex size-2 shrink-0">
                             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
@@ -393,6 +462,10 @@ export default function AdminEmergencyEventsPage() {
                             </span>
                           ))}
                         </div>
+                      ) : isAllActiveOverview && activeEvents.length === 0 ? (
+                        <span className="inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-700 bg-emerald-900/60 text-emerald-200">
+                          NORMAL STATUS
+                        </span>
                       ) : (
                         <span className={`inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border ${getEventTypeBadgeClass(selected.type)}`}>
                           {selected.type}
@@ -402,15 +475,21 @@ export default function AdminEmergencyEventsPage() {
                       {/* Date / Time Moved to Top Badge Row */}
                       <div className="flex items-center gap-1.5 text-xs text-white font-bold leading-none ml-1">
                         <Clock className="size-3.5 text-white shrink-0" />
-                        <span>Started {new Date(selected.started_at).toLocaleString()}</span>
+                        <span>
+                          {isAllActiveOverview && activeEvents.length === 0
+                            ? "All Systems Normal · Ready for Dispatch"
+                            : `Started ${new Date(selected.started_at).toLocaleString()}`}
+                        </span>
                       </div>
                     </div>
 
                     {/* Title */}
                     <h2 className="text-2xl font-black text-white tracking-tight leading-none drop-shadow-xs">
-                      {isAllActiveOverview && activeEvents.length > 0
-                        ? activeEvents.map((e) => e.name).join(" | ")
-                        : selected.name}
+                      {isAllActiveOverview && activeEvents.length === 0
+                        ? "No Active Emergencies Ongoing"
+                        : isAllActiveOverview && activeEvents.length > 0
+                          ? activeEvents.map((e) => e.name).join(" | ")
+                          : selected.name}
                     </h2>
                   </div>
                 </div>
@@ -430,10 +509,12 @@ export default function AdminEmergencyEventsPage() {
                   {/* End Event Button (Always Rendered) */}
                   <EndEventDialog
                     event={selected}
-                    activeCount={activeCount}
-                    pending={endMutation.isPending}
+                    activeEvents={activeEvents}
+                    isAllActiveOverview={isAllActiveOverview}
+                    pending={endMutation.isPending || endAllMutation.isPending}
                     canManage={canManageEvents}
-                    onConfirm={() => endMutation.mutate(selected.id)}
+                    onConfirmSingle={() => endMutation.mutate(selected.id)}
+                    onConfirmAll={() => endAllMutation.mutate(activeEvents)}
                   />
                 </div>
               </div>
@@ -522,7 +603,7 @@ export default function AdminEmergencyEventsPage() {
               <Overview
                 event={selected}
                 activeCount={activeCount}
-                workspace={workspaceQuery.data}
+                workspace={effectiveWorkspaceData}
                 canSeePii={canSeePii}
                 loading={workspaceQuery.isLoading}
                 error={workspaceQuery.isError}
@@ -569,8 +650,8 @@ export default function AdminEmergencyEventsPage() {
                     label="The response map could not be loaded."
                     onRetry={() => workspaceQuery.refetch()}
                   />
-                ) : workspaceQuery.data ? (
-                  <EmergencyResponseMap data={workspaceQuery.data} />
+                ) : effectiveWorkspaceData ? (
+                  <EmergencyResponseMap data={effectiveWorkspaceData} />
                 ) : null}
               </div>
             ) : null}
@@ -865,11 +946,19 @@ function EventSearchSelect({
           <div className="flex items-center gap-2 truncate">
             {isAllActiveOverview ? (
               <>
-                <span className="relative flex size-2 shrink-0">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
+                {activeEvents.length > 0 ? (
+                  <span className="relative flex size-2 shrink-0">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
+                  </span>
+                ) : (
+                  <span className="size-2 rounded-full bg-emerald-400/60 shrink-0" />
+                )}
+                <span className="truncate font-black text-white">
+                  {activeEvents.length > 0
+                    ? `Current Active Emergencies (${activeEvents.length})`
+                    : "Current Active Emergencies (0)"}
                 </span>
-                <span className="truncate font-black text-white">Current Active Emergencies</span>
               </>
             ) : selectedEvent ? (
               <>
@@ -1032,30 +1121,34 @@ function EventSearchSelect({
 
 function EndEventDialog({
   event,
-  activeCount,
+  activeEvents,
+  isAllActiveOverview,
   pending,
   canManage = true,
-  onConfirm,
+  onConfirmSingle,
+  onConfirmAll,
 }: {
   event: EmergencyEventOut;
-  activeCount: number;
+  activeEvents: EmergencyEventOut[];
+  isAllActiveOverview: boolean;
   pending: boolean;
   canManage?: boolean;
-  onConfirm: () => void;
+  onConfirmSingle: () => void;
+  onConfirmAll: () => void;
 }) {
-  const isEnabled = event.is_active && canManage && !pending;
+  const isEndingAll = isAllActiveOverview && activeEvents.length > 0;
+  const isSingleActive = !isAllActiveOverview && event.is_active;
+  const isEnabled = (isEndingAll || isSingleActive) && canManage && !pending;
 
-  if (!event.is_active) {
+  if (!isEndingAll && !event.is_active) {
     return (
-      <Button
-        size="sm"
-        variant="outline"
-        disabled
-        className="h-10 px-4 font-black text-xs bg-slate-700/90 text-slate-100 border border-slate-500/80 cursor-not-allowed shrink-0 backdrop-blur-md shadow-sm disabled:opacity-100"
-        title="This event has already ended"
+      <div
+        className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/15 bg-black/30 px-3.5 text-xs font-bold text-white/50 backdrop-blur-md select-none cursor-default shadow-xs"
+        title="This event has already concluded and is archived in read-only mode"
       >
-        Ended Event
-      </Button>
+        <span className="size-2 rounded-full bg-neutral-400/60 shrink-0" />
+        <span>Event Concluded</span>
+      </div>
     );
   }
 
@@ -1065,26 +1158,61 @@ function EndEventDialog({
         <Button
           size="sm"
           variant="danger"
-          className="h-10 px-4 font-extrabold text-xs bg-rose-600 hover:bg-rose-700 text-white shadow-md cursor-pointer shrink-0 transition-all active:scale-95"
+          className="h-10 px-4 font-black text-xs bg-rose-600 hover:bg-rose-700 text-white shadow-md cursor-pointer shrink-0 transition-all active:scale-95 border border-rose-500/40 gap-1.5"
           disabled={!isEnabled}
         >
-          End Event
+          <AlertTriangle className="size-3.5" />
+          <span>{isEndingAll ? "End All Events" : "End Event"}</span>
         </Button>
       </AlertDialogTrigger>
-      <AlertDialogContent>
+      <AlertDialogContent className="max-w-md bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl p-6">
         <AlertDialogHeader>
-          <AlertDialogTitle>End Emergency Event: {event.name}?</AlertDialogTitle>
-          <AlertDialogDescription>
-            {activeCount > 1
-              ? `${activeCount - 1} other active event(s) remain live. Physical evacuation occupancy will be preserved.`
-              : "This is the final active event. All open evacuation check-ins will be automatically checked out and center occupancy reset."}{" "}
-            Historical safety records and walk-ins are safely preserved.
+          <div className="flex items-center gap-3">
+            <div className="grid size-10 place-items-center rounded-xl bg-rose-100 text-rose-600 shrink-0 shadow-xs">
+              <AlertTriangle className="size-5 stroke-[2.5]" />
+            </div>
+            <div>
+              <AlertDialogTitle className="text-base font-black text-slate-950">
+                {isEndingAll
+                  ? `End All Active Emergency Events (${activeEvents.length})?`
+                  : `End Emergency Event: ${event.name}?`}
+              </AlertDialogTitle>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                {isEndingAll ? "Mass Emergency Incident Closure" : "Emergency Incident Closure"}
+              </p>
+            </div>
+          </div>
+          <AlertDialogDescription className="text-xs sm:text-sm text-slate-600 mt-3 leading-relaxed">
+            {isEndingAll ? (
+              <>
+                This will immediately conclude all <strong>{activeEvents.length} live emergency event(s)</strong> (
+                {activeEvents.map((e) => e.name).join(", ")}).
+                <br />
+                <br />
+                All open evacuation center check-ins will be automatically checked out and center occupancies reset to zero. Historical safety ledgers, audit logs, and walk-ins are safely preserved.
+              </>
+            ) : (
+              <>
+                {activeEvents.length > 1
+                  ? `${activeEvents.length - 1} other active emergency event(s) remain live in Barangay San Jose. Active physical evacuation occupancy will be preserved.`
+                  : "This is the final active emergency event. All open evacuation check-ins will be automatically checked out and center occupancy reset to zero."}
+                <br />
+                <br />
+                Historical safety records, walk-ins, and safety check-ins are safely preserved.
+              </>
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" onClick={onConfirm}>
-            Confirm & End Event
+        <AlertDialogFooter className="mt-4 gap-2 sm:gap-0">
+          <AlertDialogCancel className="rounded-xl border-slate-200 text-xs font-bold hover:bg-slate-100">
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
+            onClick={isEndingAll ? onConfirmAll : onConfirmSingle}
+            className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md"
+          >
+            {isEndingAll ? "Confirm & End All Events" : "Confirm & End Event"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
