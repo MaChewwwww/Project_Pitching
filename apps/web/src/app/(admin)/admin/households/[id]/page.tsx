@@ -209,7 +209,7 @@ export default function HouseholdDetailPage() {
         description={`${household.head_name} · ${household.area_name ?? "Area not recorded"}`}
         action={
           <div className="flex flex-wrap justify-end gap-2">
-            <Button asChild size="sm" variant="secondary">
+            <Button asChild size="sm" variant="warning">
               <Link href={`/admin/households/${id}/edit`}>
                 <Pencil aria-hidden className="size-4" />
                 Edit Household
