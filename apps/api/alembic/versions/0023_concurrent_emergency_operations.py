@@ -1,6 +1,6 @@
 """Concurrent emergency operations and physical occupancy invariants.
 
-Revision ID: 0023_concurrent_emergency_operations
+Revision ID: 0023_concurrent_ops
 Revises: 0022_member_contact_number
 Create Date: 2026-08-14
 
@@ -17,7 +17,7 @@ from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
-revision: str = "0023_concurrent_emergency_operations"
+revision: str = "0023_concurrent_ops"
 down_revision: str | None = "0022_member_contact_number"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
