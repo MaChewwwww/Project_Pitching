@@ -12,7 +12,11 @@ import { Button } from "@/components/common/button";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { CitizenRegistrySummary } from "@/components/features/admin/citizen-registry-summary";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
-import { ResourceTable, type ResourceColumn, type ResourceFilterChoice } from "@/components/features/admin/resource-table";
+import {
+  ResourceTable,
+  type ResourceColumn,
+  type ResourceFilterChoice,
+} from "@/components/features/admin/resource-table";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useRequireRole } from "@/lib/auth/use-require-role";
@@ -63,7 +67,8 @@ export default function RegisteredCitizensPage() {
 
   const summary = useQuery({
     queryKey: ["admin", "citizens", "summary"],
-    queryFn: () => api.get<RegistryMemberSummary>("/admin/members/summary").then((r) => r.data),
+    queryFn: () =>
+      api.get<RegistryMemberSummary>("/admin/members/summary").then((r) => r.data),
   });
 
   const remove = useMutation({
@@ -84,7 +89,11 @@ export default function RegisteredCitizensPage() {
       render: (row) => (
         <div className="min-w-48">
           <p className="font-bold text-neutral-950">{title(row.full_name)}</p>
-          <p className="mt-0.5 text-xs font-medium text-neutral-500">
+          <p
+            className={`mt-0.5 text-xs font-bold ${
+              row.is_head ? "text-emerald-700" : "text-orange-700"
+            }`}
+          >
             {row.is_head ? "Household Head" : title(row.relationship_to_head)}
           </p>
         </div>
@@ -115,7 +124,9 @@ export default function RegisteredCitizensPage() {
             <p className="font-semibold text-neutral-900">
               {ageVal !== null ? `${ageVal} yrs` : "Not Recorded"}
             </p>
-            <p className="text-xs text-neutral-500">{title(row.sex ?? "Sex not recorded")}</p>
+            <p className="text-xs text-neutral-500">
+              {title(row.sex ?? "Sex not recorded")}
+            </p>
           </div>
         );
       },
@@ -139,7 +150,7 @@ export default function RegisteredCitizensPage() {
             ))}
           </div>
         ) : (
-          <span className="text-xs text-neutral-400">None Recorded</span>
+          <span className="text-sm text-neutral-400">—</span>
         );
       },
     },
@@ -171,9 +182,13 @@ export default function RegisteredCitizensPage() {
     },
   ];
 
-  const filters = (rows: RegistryMemberOut[]): ResourceFilterChoice<RegistryMemberOut>[] => [
+  const filters = (
+    rows: RegistryMemberOut[],
+  ): ResourceFilterChoice<RegistryMemberOut>[] => [
     ...[...new Map(rows.map((row) => [row.area_id, row])).values()]
-      .sort((a, b) => a.area_name.localeCompare(b.area_name, undefined, { numeric: true }))
+      .sort((a, b) =>
+        a.area_name.localeCompare(b.area_name, undefined, { numeric: true }),
+      )
       .map((area) => ({
         value: `area:${area.area_id}`,
         label: area.area_name,
@@ -181,9 +196,21 @@ export default function RegisteredCitizensPage() {
       })),
     { value: "heads", label: "Household Heads", matches: (row) => row.is_head },
     { value: "members", label: "Household Members", matches: (row) => !row.is_head },
-    { value: "support", label: "With Support Needs", matches: (row) => supportLabels(row).length > 0 },
-    { value: "incomplete", label: "Incomplete Profiles", matches: (row) => !row.birth_date || !row.sex },
-    { value: "no-contact", label: "Missing Contact Number", matches: (row) => !row.contact_number },
+    {
+      value: "support",
+      label: "With Support Needs",
+      matches: (row) => supportLabels(row).length > 0,
+    },
+    {
+      value: "incomplete",
+      label: "Incomplete Profiles",
+      matches: (row) => !row.birth_date || !row.sex,
+    },
+    {
+      value: "no-contact",
+      label: "Missing Contact Number",
+      matches: (row) => !row.contact_number,
+    },
   ];
 
   return (
