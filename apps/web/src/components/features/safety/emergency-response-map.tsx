@@ -201,10 +201,7 @@ function makeKeyboardReachable(layer: Layer, open: () => void) {
   });
 }
 
-/* -------------------------------------------------------------------------- */
-/* Inline CSS injected into the map DOM                                        */
-/* -------------------------------------------------------------------------- */
-
+const ADMIN_MAP_CSS = `
 @keyframes sagip-ripple {
   0%   { transform: scale(1);   opacity: 0.7; }
   100% { transform: scale(2.5); opacity: 0;   }
