@@ -292,6 +292,19 @@ workspaces so the page reads as a working dossier rather than a plain record dum
 `Overview`, `Members`, and `Operations` tabs keep identity/location, roster management, and linked
 operational history separate; do not place those three groups on one continuously mixed canvas.
 
+The registered-citizen route is the person-focused counterpart, not a second household dashboard.
+`CitizenRegistrySummary` uses one citizen-only area ring with direct labels, plus separate population
+and support-readiness cards. Its directory keeps household context visible but routes view actions to
+the citizen detail page. Counted filters combine areas, household role, support needs, incomplete
+profiles, and missing contact numbers in the shared table dropdown.
+
+Citizen detail persists `Overview`, `Household`, and `Safety & Activity` in the query string. The
+Household tab owns transfer, head assignment, and adult promotion; profile editing deliberately does
+not mix lifecycle changes into identity fields. Person-linked evacuation and safety data remain
+visually separate from household-linked rescue requests and reports. Create and edit reuse one
+RHF/Zod workspace, confirmation dialog, green field accents, and sticky actions. Account-linked head
+names and head relationships render as protected values.
+
 `/admin/households/new` is the BHW-assisted creation workspace. It uses the announcement-style
 primary work surface with identity and head details on the left, while the right rail keeps the
 required street address, map pin, and waterway-proximity survey together. The survey exposes the

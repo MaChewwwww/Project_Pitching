@@ -412,12 +412,14 @@ GET   /admin/households/summary      implemented — scoped coverage metrics for
 POST  /admin/households/{id}/members implemented — add a citizen to an existing household
 DELETE /admin/households/{id}        implemented — admin-only archive
 GET   /admin/members                 implemented — active citizen directory, area-scoped for BHW
-GET   /admin/members/{id}            implemented — enriched citizen detail
+GET   /admin/members/summary         implemented — area-scoped population, profile, support, and area totals
+GET   /admin/members/{id}            implemented — enriched citizen and household snapshot
+GET   /admin/members/{id}/activity   implemented — member safety/evacuation plus labelled household context
 PATCH /admin/members/{id}            implemented — profile and vulnerability flag edit
 DELETE /admin/members/{id}           implemented — admin-only archive; heads require replacement
 POST  /admin/members/{id}/transfer   implemented — preserve member identity while moving households
 POST  /admin/members/{id}/make-head  implemented — replace an unlinked registry head
-POST  /admin/members/{id}/promote    implemented — create a household from an adult member
+POST  /admin/members/{id}/promote    implemented — create a mapped San Jose household from an adult member
 POST  /admin/households/{id}/vulnerability-override
 GET   /admin/households/{id}/duplicates implemented — fresh duplicate candidates for merge review
 POST  /admin/households/merge        implemented (FR-REG-010)

@@ -27,11 +27,16 @@ from src.modules.registry.schemas import (
     HouseholdOut,
     HouseholdUpdate,
     HouseholdWorkspaceUpdate,
+    AdminMemberCreate,
+    AdminMemberUpdate,
     MemberIn,
     MemberPromoteIn,
     MemberTransferIn,
     MemberUpdate,
     RegistryMemberOut,
+    RegistryMemberDetailOut,
+    RegistryMemberActivityOut,
+    RegistryMemberSummary,
     RegistrySummary,
 )
 
@@ -213,7 +218,7 @@ async def admin_get_household_activity(
 
 @admin_router.post("/{household_id}/members", dependencies=[Depends(require_role("admin", "bhw"))])
 async def admin_add_member(
-    household_id: uuid.UUID, body: MemberIn, session: DbSessionDep, user: CurrentUser
+    household_id: uuid.UUID, body: AdminMemberCreate, session: DbSessionDep, user: CurrentUser
 ) -> RegistryMemberOut:
     return await service.add_member(session, household_id=household_id, body=body, actor=user)
 
@@ -260,9 +265,20 @@ async def admin_list_members(
     )
 
 
+@members_admin_router.get(
+    "/summary",
+    dependencies=[Depends(require_role("admin", "bhw"))],
+    summary="Area-scoped citizen registry summary",
+)
+async def admin_member_summary(
+    session: DbSessionDep, user: CurrentUser
+) -> RegistryMemberSummary:
+    return await service.get_member_summary(session, user=user)
+
+
 @members_admin_router.patch("/{member_id}", dependencies=[Depends(require_role("admin", "bhw"))])
 async def admin_update_member(
-    member_id: uuid.UUID, body: MemberUpdate, session: DbSessionDep, user: CurrentUser
+    member_id: uuid.UUID, body: AdminMemberUpdate, session: DbSessionDep, user: CurrentUser
 ) -> RegistryMemberOut:
     return await service.update_member(session, member_id=member_id, body=body, actor=user)
 
@@ -270,8 +286,19 @@ async def admin_update_member(
 @members_admin_router.get("/{member_id}", dependencies=[Depends(require_role("admin", "bhw"))])
 async def admin_get_member(
     member_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
-) -> RegistryMemberOut:
+) -> RegistryMemberDetailOut:
     return await service.get_member(session, member_id=member_id, user=user)
+
+
+@members_admin_router.get(
+    "/{member_id}/activity",
+    dependencies=[Depends(require_role("admin", "bhw"))],
+    summary="Citizen safety and clearly labelled household-linked activity",
+)
+async def admin_get_member_activity(
+    member_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> RegistryMemberActivityOut:
+    return await service.get_member_activity(session, member_id=member_id, user=user)
 
 
 @members_admin_router.delete("/{member_id}", dependencies=[Depends(require_role("admin"))])

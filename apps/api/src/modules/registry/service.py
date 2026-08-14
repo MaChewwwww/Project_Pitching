@@ -43,11 +43,18 @@ from src.modules.registry.schemas import (
     HouseholdWorkspaceUpdate,
     HouseholdSafetySummary,
     MemberIn,
+    MemberSafetyOut,
     MemberOut,
     MemberPromoteIn,
     MemberTransferIn,
     MemberUpdate,
     RegistryMemberOut,
+    RegistryMemberDetailOut,
+    RegistryMemberActivityOut,
+    RegistryMemberAgeSummary,
+    RegistryMemberAreaSummary,
+    RegistryMemberSupportSummary,
+    RegistryMemberSummary,
     RegistrySummary,
 )
 from src.modules.users import service as users_service
@@ -1104,7 +1111,7 @@ async def list_members(
         .join(Household, Member.household_id == Household.id)
         .join(Area, Household.area_id == Area.id)
         .where(Member.deleted_at.is_(None), Household.deleted_at.is_(None))
-        .order_by(Member.created_at.desc())
+        .order_by(func.lower(Member.full_name), Member.id)
     )
     stmt = apply_area_scope(stmt, user, Household.area_id)
     if query:
@@ -1141,9 +1148,56 @@ async def list_members(
     return Page[RegistryMemberOut](items=items, **page_meta(total, page, size))
 
 
+async def get_member_summary(
+    session: AsyncSession, *, user: AuthenticatedUser
+) -> RegistryMemberSummary:
+    stmt = (
+        select(Member, Household.area_id, Area.name)
+        .join(Household, Member.household_id == Household.id)
+        .join(Area, Household.area_id == Area.id)
+        .where(Member.deleted_at.is_(None), Household.deleted_at.is_(None))
+    )
+    stmt = apply_area_scope(stmt, user, Household.area_id)
+    rows = (await session.execute(stmt)).all()
+    members = [row[0] for row in rows]
+    area_counts: dict[uuid.UUID, RegistryMemberAreaSummary] = {}
+    for _member, area_id, area_name in rows:
+        previous = area_counts.get(area_id)
+        area_counts[area_id] = RegistryMemberAreaSummary(
+            id=area_id,
+            name=area_name,
+            citizens=(previous.citizens if previous else 0) + 1,
+        )
+    def has_support(member: Member) -> bool:
+        return any((member.is_pwd, member.is_pregnant, member.is_lactating,
+                    member.has_chronic_condition, member.is_bedridden))
+    children = sum(member.is_child for member in members)
+    seniors = sum(member.is_senior for member in members)
+    return RegistryMemberSummary(
+        citizens=len(members),
+        household_heads=sum(member.is_head for member in members),
+        household_members=sum(not member.is_head for member in members),
+        complete_profiles=sum(member.birth_date is not None and member.sex is not None for member in members),
+        no_contact_number=sum(not member.contact_number for member in members),
+        with_support_needs=sum(has_support(member) for member in members),
+        age_groups=RegistryMemberAgeSummary(
+            children=children,
+            adults=max(0, len(members) - children - seniors),
+            seniors=seniors,
+        ),
+        support=RegistryMemberSupportSummary(
+            pwd=sum(member.is_pwd for member in members),
+            maternal=sum(member.is_pregnant or member.is_lactating for member in members),
+            chronic_condition=sum(member.has_chronic_condition for member in members),
+            mobility_limited=sum(member.is_bedridden for member in members),
+        ),
+        areas=sorted(area_counts.values(), key=lambda area: area.name),
+    )
+
+
 async def get_member(
     session: AsyncSession, *, member_id: uuid.UUID, user: AuthenticatedUser
-) -> RegistryMemberOut:
+) -> RegistryMemberDetailOut:
     row = (
         await session.execute(
             select(Member, Household, Area.name)
@@ -1161,7 +1215,86 @@ async def get_member(
     member, household, area_name = row
     if user.is_area_scoped and household.area_id not in user.assigned_area_ids:
         raise PermissionDeniedError("You can only view citizens in your assigned areas.")
-    return _member_directory_out(member, household=household, area_name=area_name)
+    base = _member_directory_out(member, household=household, area_name=area_name)
+    household_out = await _household_out(
+        session,
+        household,
+        area_name=area_name,
+        has_possible_duplicate=False,
+        member_count=await session.scalar(
+            select(func.count(Member.id)).where(
+                Member.household_id == household.id, Member.deleted_at.is_(None)
+            )
+        ) or 0,
+    )
+    return RegistryMemberDetailOut(
+        **base.model_dump(), household=household_out, updated_at=member.updated_at
+    )
+
+
+async def get_member_activity(
+    session: AsyncSession, *, member_id: uuid.UUID, user: AuthenticatedUser
+) -> RegistryMemberActivityOut:
+    detail = await get_member(session, member_id=member_id, user=user)
+    from src.modules.evacuation.models import EmergencyEvent, EvacCenter, EvacCheckin
+    from src.modules.geo.models import Facility
+    from src.modules.safety.models import IncidentReport, RescueRequest, SafetyStatus
+
+    active_event = await session.scalar(
+        select(EmergencyEvent).where(EmergencyEvent.is_active.is_(True)).limit(1)
+    )
+    safety = None
+    if active_event is not None:
+        status = await session.scalar(
+            select(SafetyStatus).where(
+                SafetyStatus.event_id == active_event.id,
+                SafetyStatus.member_id == member_id,
+                SafetyStatus.superseded_at.is_(None),
+            )
+        )
+        safety = MemberSafetyOut(
+            event_name=active_event.name,
+            status=cast(Literal["safe", "needs_rescue", "unaccounted"], status.status) if status else "unaccounted",
+            set_method=status.set_method if status else None,
+            set_at=status.set_at if status else None,
+        )
+    checkins = (
+        await session.execute(
+            select(EvacCheckin, Facility.name, EmergencyEvent.name)
+            .join(EvacCenter, EvacCenter.id == EvacCheckin.evac_center_id)
+            .join(Facility, Facility.id == EvacCenter.facility_id)
+            .join(EmergencyEvent, EmergencyEvent.id == EvacCheckin.event_id)
+            .where(EvacCheckin.member_id == member_id)
+            .order_by(EvacCheckin.checked_in_at.desc()).limit(20)
+        )
+    ).all()
+    rescues = (await session.execute(
+        select(RescueRequest).where(RescueRequest.household_id == detail.household_id)
+        .order_by(RescueRequest.created_at.desc()).limit(20)
+    )).scalars().all()
+    reports = []
+    if detail.household_head_user_id is not None:
+        reports = list((await session.execute(
+            select(IncidentReport)
+            .where(IncidentReport.reported_by_user_id == detail.household_head_user_id)
+            .order_by(IncidentReport.created_at.desc()).limit(20)
+        )).scalars())
+    return RegistryMemberActivityOut(
+        safety=safety,
+        evacuations=[HouseholdActivityItem(
+            id=row.id, kind="evacuation", title=f"Checked in at {center}", detail=event,
+            status="Checked out" if row.checked_out_at else "Currently checked in",
+            occurred_at=row.checked_in_at,
+        ) for row, center, event in checkins],
+        household_rescues=[HouseholdActivityItem(
+            id=row.id, kind="rescue", title=f"Rescue request from {row.requester_name}",
+            detail=row.description, status=row.status, occurred_at=row.created_at,
+        ) for row in rescues],
+        household_reports=[HouseholdActivityItem(
+            id=row.id, kind="incident", title=row.type.replace("_", " ").title(),
+            detail=row.description, status=row.status, occurred_at=row.created_at,
+        ) for row in reports],
+    )
 
 
 async def update_member(
@@ -1191,6 +1324,8 @@ async def update_member(
         raise PermissionDeniedError("You can only update citizens in your own household.")
     if member.is_head and household.head_user_id is not None and body.full_name != member.full_name:
         raise ConflictError("The linked household head's name is managed by their account.")
+    if not member.is_head and not body.relationship_to_head:
+        raise ConflictError("Relationship to the household head is required.")
     member.full_name = body.full_name
     member.birth_date = body.birth_date
     member.sex = body.sex
@@ -1370,9 +1505,9 @@ async def promote_member(
         head_name=member.full_name,
         head_user_id=None,
         contact_number=body.contact_number,
-        is_unreachable_by_phone=body.is_unreachable_by_phone,
+        is_unreachable_by_phone=not bool(body.contact_number and body.contact_number.strip()),
         area_id=area.id,
-        street_address=body.street_address,
+        street_address=body.street_address.strip(),
         waterway_proximity=body.waterway_proximity,
         location=location,
         source="bhw",

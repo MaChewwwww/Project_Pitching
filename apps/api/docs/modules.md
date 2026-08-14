@@ -103,7 +103,10 @@ delete their area links and emit the `flood_event.delete` audit action. Keep the
 ## Registry workspaces and lifecycle
 
 The admin registry has two read models: household rows (`GET /admin/households`) and enriched citizen
-rows (`GET /admin/members`). Detail serializers include household context so the web console does not
+rows (`GET /admin/members`). The static `/admin/members/summary` route must remain before the dynamic
+member route. Citizen detail includes the full household snapshot; `/activity` separates person-linked
+safety and evacuation records from household-linked rescue requests and reports so the console never
+implies that contextual records belong to one person. Detail serializers include household context so the web console does not
 need a second PII join. The summary endpoint is area-scoped and derives counts at request time; no
 coverage totals are stored.
 
@@ -119,7 +122,9 @@ All profile mutations go through `registry/service.py` and write an audit event.
 restricted to assigned areas for both the source and destination of a transfer. A linked resident head
 cannot be moved, demoted, archived, or renamed through the registry; a registry-managed head must be
 replaced with `POST /admin/members/{id}/make-head` before archive or transfer. `POST /admin/members/{id}/promote`
-creates a new BHW-assisted household while retaining the member UUID and downstream history.
+creates a new BHW-assisted household while retaining the member UUID and downstream history. Promotion
+requires an exact address, a selected waterway proximity, and a pin that resolves inside the selected
+San Jose area; a missing contact number derives the household's no-contact state rather than blocking it.
 
 Household map pins resolve through `GET /public/areas/resolve-point`, which checks the PostGIS
 boundaries and returns the matching area plus a coarse Barangay San Jose address label. It does not

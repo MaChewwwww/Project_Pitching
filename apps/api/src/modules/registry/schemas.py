@@ -151,6 +151,14 @@ class RegistryMemberOut(MemberOut):
     created_at: datetime
 
 
+class AdminMemberCreate(MemberIn):
+    """Complete citizen profile required by the admin registry workspace."""
+
+    birth_date: date
+    sex: Literal["male", "female"]
+    relationship_to_head: str = Field(min_length=1)
+
+
 class MemberUpdate(BaseModel):
     full_name: str = Field(min_length=1)
     birth_date: date | None = None
@@ -165,6 +173,13 @@ class MemberUpdate(BaseModel):
     has_chronic_condition: bool = False
     chronic_condition_note: str | None = None
     is_bedridden: bool = False
+
+
+class AdminMemberUpdate(MemberUpdate):
+    """Admin edits cannot create new incomplete registry records."""
+
+    birth_date: date
+    sex: Literal["male", "female"]
 
 
 class HouseholdUpdate(BaseModel):
@@ -238,6 +253,37 @@ class RegistrySummary(BaseModel):
     areas: list[dict[str, object]]
 
 
+class RegistryMemberAgeSummary(BaseModel):
+    children: int
+    adults: int
+    seniors: int
+
+
+class RegistryMemberSupportSummary(BaseModel):
+    pwd: int
+    maternal: int
+    chronic_condition: int
+    mobility_limited: int
+
+
+class RegistryMemberAreaSummary(BaseModel):
+    id: uuid.UUID
+    name: str
+    citizens: int
+
+
+class RegistryMemberSummary(BaseModel):
+    citizens: int
+    household_heads: int
+    household_members: int
+    complete_profiles: int
+    no_contact_number: int
+    with_support_needs: int
+    age_groups: RegistryMemberAgeSummary
+    support: RegistryMemberSupportSummary
+    areas: list[RegistryMemberAreaSummary]
+
+
 class MemberTransferIn(BaseModel):
     household_id: uuid.UUID
     relationship_to_head: str = Field(min_length=1)
@@ -246,19 +292,18 @@ class MemberTransferIn(BaseModel):
 class MemberPromoteIn(BaseModel):
     area_id: uuid.UUID
     contact_number: str | None = None
-    is_unreachable_by_phone: bool = False
-    street_address: str | None = None
-    waterway_proximity: Literal["very_near", "near", "far"] | None = None
-    latitude: float | None = Field(None, ge=-90, le=90)
-    longitude: float | None = Field(None, ge=-180, le=180)
+    street_address: str = Field(min_length=1)
+    waterway_proximity: Literal["very_near", "near", "far"]
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
 
-    @model_validator(mode="after")
-    def _contact_number_required_unless_unreachable(self) -> MemberPromoteIn:
-        if not self.is_unreachable_by_phone and not self.contact_number:
-            raise ValueError(
-                "Contact number is required unless the household is flagged unreachable by phone."
-            )
-        return self
+    @field_validator("street_address")
+    @classmethod
+    def _address_must_not_be_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Street address is required")
+        return value
 
 
 class HouseholdOut(BaseModel):
@@ -282,6 +327,25 @@ class HouseholdOut(BaseModel):
 
 class HouseholdDetailOut(HouseholdOut):
     members: list[MemberOut] = []
+
+
+class RegistryMemberDetailOut(RegistryMemberOut):
+    household: HouseholdOut
+    updated_at: datetime
+
+
+class MemberSafetyOut(BaseModel):
+    event_name: str
+    status: Literal["safe", "needs_rescue", "unaccounted"]
+    set_method: str | None = None
+    set_at: datetime | None = None
+
+
+class RegistryMemberActivityOut(BaseModel):
+    safety: MemberSafetyOut | None = None
+    evacuations: list[HouseholdActivityItem] = Field(default_factory=list)
+    household_rescues: list[HouseholdActivityItem] = Field(default_factory=list)
+    household_reports: list[HouseholdActivityItem] = Field(default_factory=list)
 
 
 class HouseholdCreateResponse(BaseModel):

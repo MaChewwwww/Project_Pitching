@@ -10,7 +10,13 @@ from pydantic import ValidationError
 
 from src.core.deps import AuthenticatedUser
 from src.modules.registry import service
-from src.modules.registry.schemas import HouseholdCreateBhw, MemberIn
+from src.modules.registry.schemas import (
+    AdminMemberCreate,
+    AdminMemberUpdate,
+    HouseholdCreateBhw,
+    MemberIn,
+    MemberPromoteIn,
+)
 
 
 def _actor(user) -> AuthenticatedUser:
@@ -157,3 +163,70 @@ async def test_bhw_creation_keeps_contact_reachable_when_number_is_present(sessi
 
     assert result.household.contact_number == "0917 000 0000"
     assert result.household.is_unreachable_by_phone is False
+
+
+def test_admin_citizen_create_and_update_require_complete_profile():
+    with pytest.raises(ValidationError):
+        AdminMemberCreate(full_name="Incomplete", relationship_to_head="Child")
+    with pytest.raises(ValidationError):
+        AdminMemberUpdate(full_name="Incomplete")
+
+
+async def test_citizen_summary_detail_and_empty_activity_are_area_scoped(session, demo_users):
+    area = await get_area(session)
+    actor = _actor(demo_users["admin"])
+    created = await service.create_household_bhw(
+        session, user=actor, body=_body(area_id=area.id, contact_number=None)
+    )
+    detail = await service.get_member(
+        session, member_id=created.members[0].id, user=actor
+    )
+    summary = await service.get_member_summary(session, user=actor)
+    activity = await service.get_member_activity(
+        session, member_id=created.members[0].id, user=actor
+    )
+
+    assert detail.household.id == created.household.id
+    assert detail.updated_at is not None
+    assert summary.citizens >= 1
+    assert summary.household_heads >= 1
+    assert any(item.id == area.id for item in summary.areas)
+    assert activity.safety is None
+    assert activity.evacuations == []
+    assert activity.household_rescues == []
+    assert activity.household_reports == []
+
+
+async def test_adult_promotion_preserves_member_identity_and_derives_no_contact(session, demo_users):
+    area = await get_area(session)
+    actor = _actor(demo_users["admin"])
+    source = await service.create_household_bhw(
+        session, user=actor, body=_body(area_id=area.id, contact_number="09170000000")
+    )
+    member = await service.add_member(
+        session,
+        household_id=source.household.id,
+        body=AdminMemberCreate(
+            full_name="Promotion Test Adult",
+            birth_date="1990-01-01",
+            sex="male",
+            relationship_to_head="Sibling",
+        ),
+        actor=actor,
+    )
+    promoted = await service.promote_member(
+        session,
+        member_id=member.id,
+        actor=actor,
+        body=MemberPromoteIn(
+            area_id=area.id,
+            street_address="12 Sampaguita St., Greenview Subdivision",
+            waterway_proximity="near",
+            latitude=14.735593,
+            longitude=121.130018,
+        ),
+    )
+
+    assert promoted.members[0].id == member.id
+    assert promoted.members[0].is_head is True
+    assert promoted.is_unreachable_by_phone is True

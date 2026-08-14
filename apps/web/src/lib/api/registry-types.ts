@@ -107,6 +107,40 @@ export interface RegistryMemberOut extends MemberOut {
   created_at: string;
 }
 
+export interface RegistryMemberDetailOut extends RegistryMemberOut {
+  household: HouseholdOut;
+  updated_at: string;
+}
+
+export interface RegistryMemberSummary {
+  citizens: number;
+  household_heads: number;
+  household_members: number;
+  complete_profiles: number;
+  no_contact_number: number;
+  with_support_needs: number;
+  age_groups: { children: number; adults: number; seniors: number };
+  support: {
+    pwd: number;
+    maternal: number;
+    chronic_condition: number;
+    mobility_limited: number;
+  };
+  areas: Array<{ id: string; name: string; citizens: number }>;
+}
+
+export interface RegistryMemberActivityOut {
+  safety: {
+    event_name: string;
+    status: "safe" | "needs_rescue" | "unaccounted";
+    set_method: string | null;
+    set_at: string | null;
+  } | null;
+  evacuations: HouseholdActivityItem[];
+  household_rescues: HouseholdActivityItem[];
+  household_reports: HouseholdActivityItem[];
+}
+
 export interface HouseholdUpdate {
   head_name?: string | null;
   contact_number: string | null;

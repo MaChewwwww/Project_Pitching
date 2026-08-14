@@ -1,27 +1,29 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, UserRoundPlus } from "lucide-react";
+import { Home, UserRoundPlus } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { RegistryMemberForm } from "@/components/features/admin/registry-member-form";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
-import type { HouseholdOut, MemberUpdate } from "@/lib/api/registry-types";
+import type { HouseholdOut, MemberUpdate, RegistryMemberOut } from "@/lib/api/registry-types";
 
-export default function NewCitizenPage() {
+export default function AddHouseholdMemberPage() {
   useRequireRole("admin", "bhw");
   const router = useRouter();
-  const params = useSearchParams();
-  const [householdId, setHouseholdId] = React.useState(params.get("household_id") ?? "");
-  const householdsQuery = useQuery({ queryKey: ["admin", "households", "citizen-create"], queryFn: () => api.get<{ items: HouseholdOut[] }>("/admin/households", { params: { size: 1000 } }).then((r) => r.data.items) });
-  const create = useMutation({ mutationFn: (values: MemberUpdate) => api.post(`/admin/households/${householdId}/members`, values), onSuccess: () => { toast.success("Citizen added to household"); router.push("/admin/citizens"); }, onError: (error) => { throw new Error(toDisplayError(error).detail); } });
-
-  return <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 pb-10"><AdminPageHeader title="Add registered citizen" description="Attach a citizen profile to an existing household while keeping the roster and support flags current." action={<Button asChild size="sm" variant="outline"><Link href="/admin/citizens"><ArrowLeft aria-hidden className="size-4" />Back to citizens</Link></Button>} /><Card><CardContent className="space-y-5"><div><label htmlFor="household" className="text-sm font-bold text-neutral-800">Household <span className="text-red-600">*</span></label><select id="household" value={householdId} onChange={(event) => setHouseholdId(event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm"><option value="">Choose a household</option>{(householdsQuery.data ?? []).map((household) => <option key={household.id} value={household.id}>{household.reference_no} · {household.head_name} · {household.area_name}</option>)}</select></div>{householdId ? <RegistryMemberForm key={householdId} submitLabel="Add citizen" onSubmit={(values) => { if (!householdId) return Promise.reject(new Error("Choose a household first.")); return create.mutateAsync(values).then(() => undefined); }} onCancel={() => router.push("/admin/citizens")} /> : <div className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 p-8 text-center"><UserRoundPlus aria-hidden className="mx-auto size-8 text-emerald-600" /><p className="mt-3 text-sm font-semibold text-neutral-800">Choose a household to begin</p><p className="mt-1 text-xs text-neutral-500">The new citizen will inherit the household&apos;s area and appear in both registry workspaces.</p></div>}</CardContent></Card></div>;
+  const search = useSearchParams();
+  const [householdId, setHouseholdId] = React.useState(search.get("household_id") ?? "");
+  const households = useQuery({ queryKey: ["admin", "households", "citizen-create"], queryFn: () => api.get<{ items: HouseholdOut[] }>("/admin/households", { params: { size: 1000 } }).then((r) => r.data.items) });
+  const create = useMutation({ mutationFn: (body: MemberUpdate) => api.post<RegistryMemberOut>(`/admin/households/${householdId}/members`, body), onSuccess: (response) => { toast.success("Household member added"); router.push(`/admin/citizens/${response.data.id}`); }, onError: (error) => { throw new Error(toDisplayError(error).detail); } });
+  const selected = households.data?.find((item) => item.id === householdId);
+  return <div className="flex flex-col gap-5 pb-10">
+    <AdminPageHeader title="Add Household Member" description="Create a complete citizen profile and place it in an existing registered household." />
+    <Card className="border-sky-200 bg-gradient-to-r from-sky-50 via-white to-emerald-50/50"><CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-sky-600 text-white"><Home className="size-5" /></span><div className="min-w-0 flex-1"><label htmlFor="household" className="text-sm font-bold">Household Placement <span className="text-red-600">*</span></label><p className="text-xs text-neutral-500">The citizen inherits this household’s area and location context.</p></div><select id="household" value={householdId} onChange={(event) => setHouseholdId(event.target.value)} className="h-10 min-w-0 rounded-md border border-emerald-200 bg-white px-3 text-sm sm:w-[420px]"><option value="">Choose a Household</option>{(households.data ?? []).map((household) => <option key={household.id} value={household.id}>{household.reference_no} · {household.head_name} · {household.area_name}</option>)}</select></CardContent></Card>
+    {selected ? <RegistryMemberForm submitLabel="Add Household Member" onSubmit={(values) => create.mutateAsync(values).then(() => undefined)} onCancel={() => router.push("/admin/citizens")} /> : <div className="rounded-2xl border border-dashed border-emerald-200 bg-white p-12 text-center"><UserRoundPlus className="mx-auto size-9 text-emerald-600" /><p className="mt-3 font-bold">Choose a Household to Begin</p><p className="mt-1 text-sm text-neutral-500">A citizen must belong to a registered household.</p></div>}
+  </div>;
 }

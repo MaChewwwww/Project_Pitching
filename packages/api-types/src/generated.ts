@@ -1600,6 +1600,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/members/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Area-scoped citizen registry summary */
+        get: operations["admin_member_summary_api_v1_admin_members_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/members/{member_id}": {
         parameters: {
             query?: never;
@@ -1617,6 +1634,23 @@ export interface paths {
         head?: never;
         /** Admin Update Member */
         patch: operations["admin_update_member_api_v1_admin_members__member_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/members/{member_id}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Citizen safety and clearly labelled household-linked activity */
+        get: operations["admin_get_member_activity_api_v1_admin_members__member_id__activity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/admin/members/{member_id}/transfer": {
@@ -2056,6 +2090,124 @@ export interface components {
             area_names: string[];
             /** Area Ids */
             area_ids: string[];
+        };
+        /**
+         * AdminMemberCreate
+         * @description Complete citizen profile required by the admin registry workspace.
+         */
+        AdminMemberCreate: {
+            /** Full Name */
+            full_name: string;
+            /**
+             * Birth Date
+             * Format: date
+             */
+            birth_date: string;
+            /**
+             * Sex
+             * @enum {string}
+             */
+            sex: "male" | "female";
+            /** Contact Number */
+            contact_number?: string | null;
+            /** Relationship To Head */
+            relationship_to_head: string;
+            /**
+             * Is Child
+             * @default false
+             */
+            is_child: boolean;
+            /**
+             * Is Senior
+             * @default false
+             */
+            is_senior: boolean;
+            /**
+             * Is Pwd
+             * @default false
+             */
+            is_pwd: boolean;
+            /**
+             * Is Pregnant
+             * @default false
+             */
+            is_pregnant: boolean;
+            /**
+             * Is Lactating
+             * @default false
+             */
+            is_lactating: boolean;
+            /**
+             * Has Chronic Condition
+             * @default false
+             */
+            has_chronic_condition: boolean;
+            /** Chronic Condition Note */
+            chronic_condition_note?: string | null;
+            /**
+             * Is Bedridden
+             * @default false
+             */
+            is_bedridden: boolean;
+        };
+        /**
+         * AdminMemberUpdate
+         * @description Admin edits cannot create new incomplete registry records.
+         */
+        AdminMemberUpdate: {
+            /** Full Name */
+            full_name: string;
+            /**
+             * Birth Date
+             * Format: date
+             */
+            birth_date: string;
+            /**
+             * Sex
+             * @enum {string}
+             */
+            sex: "male" | "female";
+            /** Contact Number */
+            contact_number?: string | null;
+            /** Relationship To Head */
+            relationship_to_head?: string | null;
+            /**
+             * Is Child
+             * @default false
+             */
+            is_child: boolean;
+            /**
+             * Is Senior
+             * @default false
+             */
+            is_senior: boolean;
+            /**
+             * Is Pwd
+             * @default false
+             */
+            is_pwd: boolean;
+            /**
+             * Is Pregnant
+             * @default false
+             */
+            is_pregnant: boolean;
+            /**
+             * Is Lactating
+             * @default false
+             */
+            is_lactating: boolean;
+            /**
+             * Has Chronic Condition
+             * @default false
+             */
+            has_chronic_condition: boolean;
+            /** Chronic Condition Note */
+            chronic_condition_note?: string | null;
+            /**
+             * Is Bedridden
+             * @default false
+             */
+            is_bedridden: boolean;
         };
         /** AlertPromptOut */
         AlertPromptOut: {
@@ -3022,7 +3174,7 @@ export interface components {
             /** Reference No */
             reference_no: string;
             /** Members */
-            members: components["schemas"]["MemberSafetyOut"][];
+            members: components["schemas"]["src__modules__safety__schemas__MemberSafetyOut"][];
         };
         /** HouseholdSafetySummary */
         HouseholdSafetySummary: {
@@ -3293,44 +3445,17 @@ export interface components {
             area_id: string;
             /** Contact Number */
             contact_number?: string | null;
-            /**
-             * Is Unreachable By Phone
-             * @default false
-             */
-            is_unreachable_by_phone: boolean;
             /** Street Address */
-            street_address?: string | null;
-            /** Waterway Proximity */
-            waterway_proximity?: ("very_near" | "near" | "far") | null;
-            /** Latitude */
-            latitude?: number | null;
-            /** Longitude */
-            longitude?: number | null;
-        };
-        /** MemberSafetyOut */
-        MemberSafetyOut: {
+            street_address: string;
             /**
-             * Member Id
-             * Format: uuid
-             */
-            member_id: string;
-            /** Full Name */
-            full_name: string;
-            /** Is Head */
-            is_head: boolean;
-            /**
-             * Status
+             * Waterway Proximity
              * @enum {string}
              */
-            status: "safe" | "needs_rescue" | "unaccounted";
-            /** Set Method */
-            set_method: ("self" | "assisted" | "household_bulk") | null;
-            /** Set At */
-            set_at: string | null;
-            /** Set By Name */
-            set_by_name: string | null;
-            /** Vulnerability Flags */
-            vulnerability_flags: string[];
+            waterway_proximity: "very_near" | "near" | "far";
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
         };
         /** MemberTransferIn */
         MemberTransferIn: {
@@ -4125,6 +4250,102 @@ export interface components {
             /** Full Name */
             full_name: string;
         };
+        /** RegistryMemberActivityOut */
+        RegistryMemberActivityOut: {
+            safety?: components["schemas"]["src__modules__registry__schemas__MemberSafetyOut"] | null;
+            /** Evacuations */
+            evacuations?: components["schemas"]["HouseholdActivityItem"][];
+            /** Household Rescues */
+            household_rescues?: components["schemas"]["HouseholdActivityItem"][];
+            /** Household Reports */
+            household_reports?: components["schemas"]["HouseholdActivityItem"][];
+        };
+        /** RegistryMemberAgeSummary */
+        RegistryMemberAgeSummary: {
+            /** Children */
+            children: number;
+            /** Adults */
+            adults: number;
+            /** Seniors */
+            seniors: number;
+        };
+        /** RegistryMemberAreaSummary */
+        RegistryMemberAreaSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Citizens */
+            citizens: number;
+        };
+        /** RegistryMemberDetailOut */
+        RegistryMemberDetailOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Full Name */
+            full_name: string;
+            /** Birth Date */
+            birth_date: string | null;
+            /** Sex */
+            sex: string | null;
+            /** Contact Number */
+            contact_number: string | null;
+            /** Relationship To Head */
+            relationship_to_head: string | null;
+            /** Is Head */
+            is_head: boolean;
+            /** Is Child */
+            is_child: boolean;
+            /** Is Senior */
+            is_senior: boolean;
+            /** Is Pwd */
+            is_pwd: boolean;
+            /** Is Pregnant */
+            is_pregnant: boolean;
+            /** Is Lactating */
+            is_lactating: boolean;
+            /** Has Chronic Condition */
+            has_chronic_condition: boolean;
+            /** Chronic Condition Note */
+            chronic_condition_note: string | null;
+            /** Is Bedridden */
+            is_bedridden: boolean;
+            /**
+             * Household Id
+             * Format: uuid
+             */
+            household_id: string;
+            /** Household Reference No */
+            household_reference_no: string;
+            /** Household Head Name */
+            household_head_name: string;
+            /** Household Head User Id */
+            household_head_user_id: string | null;
+            /**
+             * Area Id
+             * Format: uuid
+             */
+            area_id: string;
+            /** Area Name */
+            area_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            household: components["schemas"]["HouseholdOut"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /**
          * RegistryMemberOut
          * @description Admin/resident directory row enriched with household context.
@@ -4186,6 +4407,36 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** RegistryMemberSummary */
+        RegistryMemberSummary: {
+            /** Citizens */
+            citizens: number;
+            /** Household Heads */
+            household_heads: number;
+            /** Household Members */
+            household_members: number;
+            /** Complete Profiles */
+            complete_profiles: number;
+            /** No Contact Number */
+            no_contact_number: number;
+            /** With Support Needs */
+            with_support_needs: number;
+            age_groups: components["schemas"]["RegistryMemberAgeSummary"];
+            support: components["schemas"]["RegistryMemberSupportSummary"];
+            /** Areas */
+            areas: components["schemas"]["RegistryMemberAreaSummary"][];
+        };
+        /** RegistryMemberSupportSummary */
+        RegistryMemberSupportSummary: {
+            /** Pwd */
+            pwd: number;
+            /** Maternal */
+            maternal: number;
+            /** Chronic Condition */
+            chronic_condition: number;
+            /** Mobility Limited */
+            mobility_limited: number;
         };
         /** RegistrySummary */
         RegistrySummary: {
@@ -4585,6 +4836,45 @@ export interface components {
             is_bedridden: boolean;
             /** Id */
             id?: string | null;
+        };
+        /** MemberSafetyOut */
+        src__modules__registry__schemas__MemberSafetyOut: {
+            /** Event Name */
+            event_name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "safe" | "needs_rescue" | "unaccounted";
+            /** Set Method */
+            set_method?: string | null;
+            /** Set At */
+            set_at?: string | null;
+        };
+        /** MemberSafetyOut */
+        src__modules__safety__schemas__MemberSafetyOut: {
+            /**
+             * Member Id
+             * Format: uuid
+             */
+            member_id: string;
+            /** Full Name */
+            full_name: string;
+            /** Is Head */
+            is_head: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "safe" | "needs_rescue" | "unaccounted";
+            /** Set Method */
+            set_method: ("self" | "assisted" | "household_bulk") | null;
+            /** Set At */
+            set_at: string | null;
+            /** Set By Name */
+            set_by_name: string | null;
+            /** Vulnerability Flags */
+            vulnerability_flags: string[];
         };
     };
     responses: never;
@@ -8142,7 +8432,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MemberIn"];
+                "application/json": components["schemas"]["AdminMemberCreate"];
             };
         };
         responses: {
@@ -8235,6 +8525,26 @@ export interface operations {
             };
         };
     };
+    admin_member_summary_api_v1_admin_members_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistryMemberSummary"];
+                };
+            };
+        };
+    };
     admin_get_member_api_v1_admin_members__member_id__get: {
         parameters: {
             query?: never;
@@ -8252,7 +8562,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RegistryMemberOut"];
+                    "application/json": components["schemas"]["RegistryMemberDetailOut"];
                 };
             };
             /** @description Validation Error */
@@ -8310,7 +8620,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MemberUpdate"];
+                "application/json": components["schemas"]["AdminMemberUpdate"];
             };
         };
         responses: {
@@ -8321,6 +8631,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RegistryMemberOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_get_member_activity_api_v1_admin_members__member_id__activity_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistryMemberActivityOut"];
                 };
             };
             /** @description Validation Error */
