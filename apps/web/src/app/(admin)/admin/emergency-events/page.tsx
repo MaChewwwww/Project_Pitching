@@ -152,7 +152,8 @@ export default function AdminEmergencyEventsPage() {
   });
   const events = React.useMemo(() => eventsQuery.data ?? [], [eventsQuery.data]);
   const selected = events.find((event) => event.id === selectedId) ?? null;
-  const activeCount = events.filter((event) => event.is_active).length;
+  const activeEvents = React.useMemo(() => events.filter((event) => event.is_active), [events]);
+  const activeCount = activeEvents.length;
 
   React.useEffect(() => {
     if (events.length === 0 || selected) return;
