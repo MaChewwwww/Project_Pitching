@@ -70,9 +70,8 @@ import {
   SAN_JOSE_OUTER_BOUNDARY_GEOJSON,
 } from "@/lib/map";
 import { api, toDisplayError } from "@/lib/api/client";
-import { getActiveEmergencyEvents } from "@/lib/api/public";
 import type { SafetyStatusAdminIn } from "@/lib/api/safety-types";
-import type { AreaBoundaryFeature, PublicFacility } from "@/lib/api/public-types";
+import type { AreaBoundaryFeature, PublicEmergencyEvent, PublicFacility } from "@/lib/api/public-types";
 import "@/lib/leaflet-setup";
 import "leaflet/dist/leaflet.css";
 
@@ -1868,12 +1867,17 @@ function HouseholdDialog({
 
   const activeEventsQuery = useQuery({
     queryKey: ["public", "active-emergency-events"],
-    queryFn: getActiveEmergencyEvents,
+    queryFn: () =>
+      api
+        .get<PublicEmergencyEvent[]>("/public/emergency-events/active")
+        .then((r) => r.data),
   });
-  const activeEvents = React.useMemo(
-    () => activeEventsQuery.data ?? [],
-    [activeEventsQuery.data],
-  );
+  const activeEvents = React.useMemo(() => {
+    if (activeEventsQuery.data && activeEventsQuery.data.length > 0) {
+      return activeEventsQuery.data;
+    }
+    return data.event ? [data.event] : [];
+  }, [activeEventsQuery.data, data.event]);
 
   const effectiveEventId = React.useMemo(() => {
     if (selectedEventId && activeEvents.some((e) => e.id === selectedEventId)) {
@@ -1954,7 +1958,12 @@ function HouseholdDialog({
     <>
       {/* Main detail dialog */}
       <Dialog open={household !== null} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="w-full sm:max-w-xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl">
+        <DialogContent
+          className={cn(
+            "w-full sm:max-w-xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl transition-all duration-200",
+            confirmOpen && "filter blur-[2px] opacity-40 scale-[0.98] pointer-events-none",
+          )}
+        >
           <DialogHeader className="shrink-0 border-b border-slate-100 p-5 sm:p-6 pb-4 bg-white pr-14 sm:pr-16">
             <div className="flex items-center gap-3">
               <div
@@ -2250,7 +2259,7 @@ function HouseholdDialog({
                     {m.is_head ? " (Head)" : ""}
                   </span>
                   <span className="text-xs font-semibold text-neutral-500 capitalize">
-                    Current: {statusLabel(m.status)}
+                    {statusLabel(m.status)}
                   </span>
                 </div>
               ))}
@@ -2265,27 +2274,39 @@ function HouseholdDialog({
             </span>
 
             {activeEvents.length > 1 ? (
-              <select
+              <Select
                 value={effectiveEventId}
-                onChange={(e) => setSelectedEventId(e.target.value)}
-                className="focus-visible:ring-emerald-500 min-h-10 rounded-lg border border-neutral-200 bg-white px-3 text-sm font-normal focus-visible:ring-2 focus-visible:outline-none cursor-pointer"
-                required
+                onValueChange={(val) => setSelectedEventId(val)}
               >
-                {activeEvents.map((evt) => (
-                  <option key={evt.id} value={evt.id}>
-                    {evt.name} ({evt.type.toUpperCase()})
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-10 w-full rounded-xl border-slate-200 bg-white px-3 text-xs sm:text-sm font-medium text-slate-800 shadow-2xs hover:bg-slate-50 focus-visible:ring-emerald-500">
+                  <SelectValue placeholder="Select Active Emergency Event..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border border-slate-200 bg-white shadow-xl p-1 z-50">
+                  {activeEvents.map((evt) => (
+                    <SelectItem
+                      key={evt.id}
+                      value={evt.id}
+                      className="rounded-lg px-3 py-2 text-xs font-medium cursor-pointer hover:bg-slate-100 transition-colors"
+                    >
+                      <div className="flex items-center justify-between w-full gap-3">
+                        <span className="font-bold text-slate-900">{evt.name}</span>
+                        <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-300">
+                          {evt.type}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             ) : activeEvents.length === 1 ? (
-              <div className="flex items-center justify-between rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-normal text-slate-800">
-                <span className="font-semibold text-slate-900">{activeEvents[0].name}</span>
-                <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800 border border-emerald-300">
+              <div className="flex items-center justify-between rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm font-normal text-slate-800 shadow-2xs">
+                <span className="font-bold text-slate-900">{activeEvents[0].name}</span>
+                <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-300">
                   {activeEvents[0].type}
                 </span>
               </div>
             ) : (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 font-medium">
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 font-medium">
                 No active emergency event is currently ongoing. Safety check-in requires an active event.
               </div>
             )}
@@ -2296,27 +2317,49 @@ function HouseholdDialog({
           </div>
 
           {pending?.status === "safe" ? (
-            <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600">
-              Optional Evacuation Center
-              <select
-                value={centerId}
-                onChange={(e) => setCenterId(e.target.value)}
-                className="focus-visible:ring-emerald-500 min-h-10 rounded-lg border border-neutral-200 bg-white px-3 text-sm focus-visible:ring-2 focus-visible:outline-none cursor-pointer"
+            <div className="flex flex-col gap-1.5 text-xs font-semibold text-neutral-700">
+              <span className="font-medium text-neutral-600">
+                Optional Evacuation Center
+              </span>
+              <Select
+                value={centerId || "none"}
+                onValueChange={(val) => setCenterId(val === "none" ? "" : val)}
               >
-                <option value="">No New Center Assignment</option>
-                {data.evacuation_centers
-                  .filter((c) => c.is_open)
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.facility.name} · {c.occupancy}/{c.capacity ?? "?"}
-                      {c.is_at_capacity ? " · At Capacity" : ""}
-                    </option>
-                  ))}
-              </select>
+                <SelectTrigger className="h-10 w-full rounded-xl border-slate-200 bg-white px-3 text-xs sm:text-sm font-medium text-slate-800 shadow-2xs hover:bg-slate-50 focus-visible:ring-emerald-500">
+                  <SelectValue placeholder="No New Center Assignment" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border border-slate-200 bg-white shadow-xl p-1 z-50">
+                  <SelectItem
+                    value="none"
+                    className="rounded-lg px-3 py-2 text-xs font-medium cursor-pointer hover:bg-slate-100 transition-colors"
+                  >
+                    No New Center Assignment
+                  </SelectItem>
+                  {data.evacuation_centers
+                    .filter((c) => c.is_open)
+                    .map((c) => (
+                      <SelectItem
+                        key={c.id}
+                        value={c.id}
+                        className="rounded-lg px-3 py-2 text-xs font-medium cursor-pointer hover:bg-slate-100 transition-colors"
+                      >
+                        <div className="flex items-center justify-between w-full gap-3">
+                          <span className="font-semibold text-slate-900">
+                            {c.facility.name}
+                          </span>
+                          <span className="text-[11px] font-bold text-slate-500">
+                            {c.occupancy}/{c.capacity ?? "?"}
+                            {c.is_at_capacity ? " · At Capacity" : ""}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
               <span className="font-normal text-neutral-500">
                 Leave blank to keep any existing physical assignment unchanged.
               </span>
-            </label>
+            </div>
           ) : null}
 
           <DialogFooter className="gap-2 sm:gap-0">
