@@ -68,7 +68,23 @@ const EmergencyResponseMap = dynamic(
 
 const eventTypes = ["flood", "earthquake", "typhoon", "fire", "other"] as const;
 
-function getEventTypeBadgeClass(type: string): string {
+function getEventTypeBadgeClass(type: string, isLightPopover = false): string {
+  if (isLightPopover) {
+    switch (type.toLowerCase()) {
+      case "flood":
+        return "bg-sky-100 text-sky-900 border-sky-300 font-bold";
+      case "fire":
+        return "bg-rose-100 text-rose-900 border-rose-300 font-bold";
+      case "typhoon":
+      case "severe_weather":
+        return "bg-amber-100 text-amber-900 border-amber-300 font-bold";
+      case "earthquake":
+        return "bg-stone-100 text-stone-900 border-stone-300 font-bold";
+      default:
+        return "bg-teal-100 text-teal-900 border-teal-300 font-bold";
+    }
+  }
+
   switch (type.toLowerCase()) {
     case "flood":
       return "bg-sky-500/25 text-sky-100 border-sky-300/50 shadow-2xs";
@@ -857,47 +873,47 @@ function EventSearchSelect({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="h-10 rounded-xl border border-emerald-500/40 bg-emerald-950/80 px-3.5 text-xs font-semibold text-white shadow-inner hover:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 flex items-center justify-between gap-3 min-w-[210px] max-w-[280px] cursor-pointer transition-all shrink-0"
+          className="h-10 rounded-xl border border-white/50 bg-white/95 px-3.5 text-xs font-bold text-neutral-900 shadow-md hover:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60 flex items-center justify-between gap-3 min-w-[210px] max-w-[280px] cursor-pointer transition-all shrink-0 backdrop-blur-md"
         >
           <div className="flex items-center gap-2 truncate">
             {selectedEvent ? (
               <>
                 {selectedEvent.is_active ? (
                   <span className="relative flex size-2 shrink-0">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-600 opacity-75" />
+                    <span className="relative inline-flex size-2 rounded-full bg-emerald-600" />
                   </span>
                 ) : (
                   <span className="size-2 rounded-full bg-neutral-400 shrink-0" />
                 )}
-                <span className="truncate font-bold">{selectedEvent.name}</span>
+                <span className="truncate font-black text-neutral-900">{selectedEvent.name}</span>
                 {!selectedEvent.is_active ? (
-                  <span className="text-[10px] text-emerald-200/60 font-medium shrink-0">(Ended)</span>
+                  <span className="text-[10px] text-neutral-500 font-semibold shrink-0">(Ended)</span>
                 ) : null}
               </>
             ) : (
-              <span className="text-emerald-200/70 font-medium">Select event archive…</span>
+              <span className="text-neutral-500 font-semibold">Select event archive…</span>
             )}
           </div>
-          <ChevronDown className="size-4 shrink-0 text-emerald-300 opacity-80" />
+          <ChevronDown className="size-4 shrink-0 text-emerald-800 opacity-90" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 sm:w-96 rounded-2xl bg-neutral-900 text-white border border-emerald-700/60 p-3 shadow-2xl z-50">
+      <PopoverContent align="end" className="w-80 sm:w-96 rounded-2xl bg-white text-neutral-900 border border-neutral-200 p-3 shadow-2xl z-50">
         {/* Search Bar */}
-        <div className="flex items-center gap-2 rounded-xl bg-neutral-800/90 px-3 py-2 border border-neutral-700/80 mb-3">
-          <Search className="size-4 text-emerald-400 shrink-0" />
+        <div className="flex items-center gap-2 rounded-xl bg-neutral-100/90 px-3 py-2 border border-neutral-200 mb-3 focus-within:border-emerald-500 focus-within:bg-white transition-all">
+          <Search className="size-4 text-emerald-600 shrink-0" />
           <input
             type="text"
             placeholder="Search active or past events..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-transparent text-xs text-white placeholder-neutral-400 focus:outline-none"
+            className="w-full bg-transparent text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none"
           />
           {search ? (
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="text-[10px] text-neutral-400 hover:text-white px-1 font-bold cursor-pointer"
+              className="text-[10px] text-neutral-400 hover:text-neutral-800 px-1 font-bold cursor-pointer"
             >
               Clear
             </button>
@@ -907,21 +923,21 @@ function EventSearchSelect({
         <div className="max-h-72 overflow-y-auto space-y-3 pr-1 scrollbar-thin">
           {/* Active Events Section */}
           <div>
-            <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-400 flex items-center justify-between">
+            <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-800 flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <span className="relative flex size-2 shrink-0">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-600 opacity-75" />
+                  <span className="relative inline-flex size-2 rounded-full bg-emerald-600" />
                 </span>
                 Active Emergency Events
               </span>
-              <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-500/30">
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-800 border border-emerald-200">
                 {filteredActive.length}
               </span>
             </div>
 
             {filteredActive.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-neutral-500 italic">No active events match search</div>
+              <div className="px-3 py-2 text-xs text-neutral-400 italic">No active events match search</div>
             ) : (
               <div className="mt-1 space-y-1">
                 {filteredActive.map((e) => {
@@ -937,7 +953,7 @@ function EventSearchSelect({
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-left transition-all cursor-pointer ${
                         isSelected
                           ? "bg-emerald-600 text-white font-bold shadow-sm"
-                          : "hover:bg-neutral-800 text-neutral-200"
+                          : "hover:bg-emerald-50 text-neutral-800 hover:text-emerald-950"
                       }`}
                     >
                       <div className="flex items-center gap-2 truncate">
@@ -947,12 +963,12 @@ function EventSearchSelect({
                             <span className="relative inline-flex size-2 rounded-full bg-white" />
                           </span>
                         ) : (
-                          <span className="size-2 rounded-full bg-emerald-400 shrink-0" />
+                          <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
                         )}
                         <span className="truncate">{e.name}</span>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border ${getEventTypeBadgeClass(e.type)}`}>
+                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border ${getEventTypeBadgeClass(e.type, !isSelected)}`}>
                           {e.type}
                         </span>
                         {isSelected ? <Check className="size-3.5 text-white" /> : null}
@@ -966,15 +982,15 @@ function EventSearchSelect({
 
           {/* Past / Ended Events Section */}
           <div>
-            <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-neutral-400 flex items-center justify-between pt-2 border-t border-neutral-800">
+            <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-neutral-600 flex items-center justify-between pt-2 border-t border-neutral-100">
               <span>📜 History / Past Events</span>
-              <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-[10px] font-bold text-neutral-400 border border-neutral-700">
+              <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold text-neutral-600 border border-neutral-200">
                 {filteredEnded.length}
               </span>
             </div>
 
             {filteredEnded.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-neutral-500 italic">No past events match search</div>
+              <div className="px-3 py-2 text-xs text-neutral-400 italic">No past events match search</div>
             ) : (
               <div className="mt-1 space-y-1">
                 {filteredEnded.map((e) => {
@@ -989,19 +1005,19 @@ function EventSearchSelect({
                       }}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-left transition-all cursor-pointer ${
                         isSelected
-                          ? "bg-emerald-700 text-white font-bold shadow-sm"
-                          : "hover:bg-neutral-800 text-neutral-300"
+                          ? "bg-neutral-900 text-white font-bold shadow-sm"
+                          : "hover:bg-neutral-100 text-neutral-700"
                       }`}
                     >
                       <div className="flex items-center gap-2 truncate">
-                        <span className="size-2 rounded-full bg-neutral-500 shrink-0" />
+                        <span className="size-2 rounded-full bg-neutral-400 shrink-0" />
                         <span className="truncate">{e.name}</span>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-[10px] capitalize px-2 py-0.5 rounded-md border ${getEventTypeBadgeClass(e.type)}`}>
+                        <span className={`text-[10px] capitalize px-2 py-0.5 rounded-md border ${getEventTypeBadgeClass(e.type, !isSelected)}`}>
                           {e.type}
                         </span>
-                        <span className="text-[10px] text-neutral-500 font-semibold">Ended</span>
+                        <span className="text-[10px] text-neutral-400 font-medium">Ended</span>
                         {isSelected ? <Check className="size-3.5 text-white" /> : null}
                       </div>
                     </button>
