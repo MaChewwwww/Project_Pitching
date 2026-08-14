@@ -555,18 +555,6 @@ export default function AdminEmergencyEventsPage() {
             {/* Response Map Tab */}
             {tab === "map" && canSeePii ? (
               <div className="flex flex-col gap-4">
-                {selected ? (
-                  <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 border border-neutral-200 text-xs shadow-2xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-neutral-700">Active Map Context:</span>
-                      <Badge tone={selected.is_active ? "danger" : "neutral"}>{selected.name}</Badge>
-                      <span className="capitalize text-neutral-500">({selected.type})</span>
-                    </div>
-                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelection(selected.id, "events")}>
-                      Change Event
-                    </Button>
-                  </div>
-                ) : null}
                 {workspaceQuery.isLoading ? (
                   <WorkspaceLoading label="Loading spatial response map and household locations…" />
                 ) : workspaceQuery.isError ? (
