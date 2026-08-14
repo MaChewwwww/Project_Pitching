@@ -1165,6 +1165,26 @@ function ListTabButton({
 
 /* --- Compact tooltips shown on hover with dynamic matching colors --- */
 
+function formatVulnerabilityFlag(flag: string): string {
+  const clean = flag.replace(/^is[_\s]+/i, "").toLowerCase();
+  const map: Record<string, string> = {
+    pwd: "PWD",
+    senior: "Senior Citizen",
+    senior_citizen: "Senior Citizen",
+    pregnant: "Pregnant",
+    infant: "Infant",
+    child: "Child",
+    solo_parent: "Solo Parent",
+    lactating: "Lactating Mother",
+    bedridden: "Bedridden",
+    dialysis: "Dialysis Patient",
+  };
+  if (map[clean]) return map[clean];
+  return clean
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function CompactHouseholdTooltip({
   household,
   risk,
@@ -1222,18 +1242,18 @@ function CompactHouseholdTooltip({
       </div>
 
       {specialNeeds.length > 0 && (
-        <div className="mt-2 rounded-lg bg-amber-50/90 border border-amber-200/80 p-1.5 flex flex-col gap-1">
-          <span className="inline-flex items-center gap-1 text-[9.5px] font-bold uppercase tracking-wider text-amber-800">
+        <div className="mt-2 rounded-xl bg-amber-500/10 border border-amber-500/30 p-2 flex flex-col gap-1.5">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-900">
             <AlertTriangle className="size-3 text-amber-600 shrink-0" aria-hidden />
-            Special Needs / Vulnerability
+            Household Special Needs
           </span>
           <div className="flex flex-wrap gap-1">
             {specialNeeds.map((need) => (
               <span
                 key={need}
-                className="rounded bg-white px-1.5 py-0.5 text-[9.5px] font-bold text-amber-900 border border-amber-300 shadow-2xs"
+                className="rounded-md bg-amber-600 text-white px-2 py-0.5 text-[10px] font-bold shadow-2xs"
               >
-                {statusLabel(need)}
+                {formatVulnerabilityFlag(need)}
               </span>
             ))}
           </div>
@@ -1558,7 +1578,7 @@ function WalkInListPanel({
                 )}
                 {person.vulnerability_flags.length > 0 && (
                   <p className="mt-1 text-[10.5px] text-neutral-500">
-                    {person.vulnerability_flags.map(statusLabel).join(", ")}
+                    {person.vulnerability_flags.map(formatVulnerabilityFlag).join(", ")}
                   </p>
                 )}
                 <span className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-violet-700">
@@ -1727,7 +1747,7 @@ function HouseholdDialog({
                     </div>
                     {member.vulnerability_flags.length > 0 && (
                       <p className="mt-0.5 text-[11px] text-neutral-500">
-                        {member.vulnerability_flags.map(statusLabel).join(", ")}
+                        {member.vulnerability_flags.map(formatVulnerabilityFlag).join(", ")}
                       </p>
                     )}
                     {member.evac_center_name && (
