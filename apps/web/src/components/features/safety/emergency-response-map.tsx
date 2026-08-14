@@ -253,6 +253,24 @@ const ADMIN_MAP_CSS = `
 .admin-emergency-map .leaflet-control-zoom a:hover {
   background: #064e3b !important;
 }
+.sagip-legend-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #34d399 rgba(5, 46, 22, 0.6);
+}
+.sagip-legend-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+.sagip-legend-scroll::-webkit-scrollbar-track {
+  background: rgba(5, 46, 22, 0.6);
+  border-radius: 9999px;
+}
+.sagip-legend-scroll::-webkit-scrollbar-thumb {
+  background: #34d399;
+  border-radius: 9999px;
+}
+.sagip-legend-scroll::-webkit-scrollbar-thumb:hover {
+  background: #6ee7b7;
+}
 `;
 
 /* -------------------------------------------------------------------------- */
@@ -352,9 +370,13 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
       safety === "all" ||
       (safety === "safe" && household.all_safe) ||
       (safety === "not_safe" && !household.all_safe);
+    const hasSpecialNeeds = household.members.some(
+      (m) => (m.vulnerability_flags || []).length > 0,
+    );
     const matchesSupport =
       support === "all" ||
-      household.members.some((m) => m.vulnerability_flags.includes(support));
+      (support === "with_special_needs" && hasSpecialNeeds) ||
+      (support === "without_special_needs" && !hasSpecialNeeds);
     return (
       matchesSearch &&
       (area === "all" || household.area_id === area) &&
@@ -434,10 +456,10 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
       {/* ------------------------------------------------------------------ */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
 
-        {/* Column 1: Map canvas + mobile outside footer */}
-        <div className="flex flex-1 flex-col gap-2.5 min-w-0">
+        {/* Column 1: Map card with seamlessly docked mobile footer */}
+        <div className="flex flex-1 flex-col min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
           {/* Map canvas */}
-          <div className="admin-emergency-map relative h-[480px] sm:h-[580px] lg:h-[680px] w-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
+          <div className="admin-emergency-map relative h-[480px] sm:h-[580px] lg:h-[680px] w-full overflow-hidden">
             <style>{ADMIN_MAP_CSS}</style>
             <MapContainer
             center={[14.7415, 121.1315]}
@@ -610,7 +632,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
             className={cn(
               "absolute top-3.5 left-3.5 z-[1000] rounded-xl border border-emerald-900/80 bg-[#052e16]/95 text-white shadow-2xl backdrop-blur-md transition-all duration-200",
               legendExpanded
-                ? "w-64 max-w-[calc(100%-6rem)] max-h-[calc(100%-2rem)] overflow-y-auto p-3"
+                ? "w-64 max-w-[calc(100%-6rem)] max-h-[calc(100%-2rem)] overflow-y-auto sagip-legend-scroll p-3"
                 : "w-auto p-2"
             )}
           >
@@ -766,7 +788,7 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
                 </div>
               )}
 
-              {/* Other Public Facilities */}
+              {/* Other Facilities */}
               {showFacilities && (
                 <div className="border-t border-emerald-900/60 pt-1.5">
                   <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
@@ -805,22 +827,20 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
             </div>
           </div>
 
-          {/* Mobile outside Map Footer (docked below the map canvas) */}
-          <div className="flex sm:hidden flex-col gap-1 rounded-xl border border-primary-800/60 bg-primary-950/95 p-3 text-[10px] text-primary-200/90 shadow-lg">
-            <div className="flex items-center justify-between font-bold uppercase tracking-wider text-primary-300 text-[9.5px]">
-              <span className="inline-flex items-center gap-1.5">
-                <Database className="size-3 text-primary-400" aria-hidden />
-                Data Sources & Attributions
+          {/* Mobile Docked Map Footer (seamlessly attached beneath map canvas) */}
+          <div className="flex sm:hidden flex-col gap-1 border-t border-emerald-900/80 bg-[#052e16] px-3 py-2 text-[9.5px] text-emerald-200/90">
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1 font-bold text-emerald-300">
+                <Database className="size-3 text-emerald-400 shrink-0" aria-hidden />
+                UP NOAH / LiPAD (ODC-ODbL)
               </span>
-              <span className="font-medium normal-case text-primary-300/80">
+              <span className="font-medium text-emerald-300/80 shrink-0">
                 Brgy. San Jose, Rizal
               </span>
             </div>
-            <div className="text-[10px] text-white/90">
-              <span className="font-semibold text-primary-300">Data:</span> UP NOAH / LiPAD (ODC-ODbL)
-            </div>
-            <div className="text-[9px] text-primary-300/60 pt-1 border-t border-primary-800/60 mt-0.5">
-              Map: Leaflet · © OpenStreetMap · CARTO
+            <div className="flex items-center justify-between text-[8.5px] text-emerald-400/60 pt-0.5 border-t border-emerald-900/40">
+              <span>Map: Leaflet · © OpenStreetMap · CARTO</span>
+              <span>Barangay San Jose Platform</span>
             </div>
           </div>
         </div>
@@ -903,18 +923,13 @@ export function EmergencyResponseMap({ data }: { data: EmergencyWorkspaceOut }) 
               />
 
               <CustomFilterSelect
-                label="Special Needs"
+                label="Household With Special Needs"
                 value={support}
                 onValueChange={setSupport}
                 options={[
-                  { value: "all", label: "All Support Needs" },
-                  { value: "is_child", label: "Children (Under 18)" },
-                  { value: "is_senior", label: "Senior Citizens (60+)" },
-                  { value: "is_pwd", label: "Persons With Disabilities (PWD)" },
-                  { value: "is_pregnant", label: "Pregnant" },
-                  { value: "is_lactating", label: "Lactating" },
-                  { value: "is_bedridden", label: "Mobility-Limited / Bedridden" },
-                  { value: "has_chronic_condition", label: "Chronic Health Condition" },
+                  { value: "all", label: "All Households" },
+                  { value: "with_special_needs", label: "Household With Special Needs" },
+                  { value: "without_special_needs", label: "Household Without Special Needs" },
                 ]}
               />
 
@@ -1212,8 +1227,9 @@ function CompactHouseholdTooltip({
         maxWidth: 315,
       }}
     >
-      <div className="flex items-center justify-between gap-1.5">
-        <span className="font-mono text-xs font-black text-neutral-900 tracking-tight">
+      {/* Top Header: Reference No + Risk Badge with bottom divider */}
+      <div className="flex items-center justify-between gap-1.5 border-b border-neutral-100 pb-2">
+        <span className="font-mono text-xs font-black text-neutral-950 tracking-tight">
           {household.reference_no}
         </span>
         <span
@@ -1232,19 +1248,20 @@ function CompactHouseholdTooltip({
         </span>
       </div>
 
-      <div className="mt-1">
+      {/* Household Head & Address */}
+      <div className="pt-2">
         <p className="text-[12.5px] font-black leading-snug text-neutral-950 break-words">
           {household.head_name}
         </p>
-        <p className="text-[11px] leading-tight text-neutral-500 break-words">
+        <p className="mt-0.5 text-[11px] leading-tight text-neutral-500 break-words">
           {household.street_address ? `${household.street_address}, ` : ""}{household.area_name}
         </p>
       </div>
 
+      {/* Special Needs Section without icon */}
       {specialNeeds.length > 0 && (
         <div className="mt-2 rounded-xl bg-amber-500/10 border border-amber-500/30 p-2 flex flex-col gap-1.5">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-900">
-            <AlertTriangle className="size-3 text-amber-600 shrink-0" aria-hidden />
+          <span className="text-[10px] font-black uppercase tracking-wider text-amber-900">
             Household Special Needs
           </span>
           <div className="flex flex-wrap gap-1">
@@ -1260,8 +1277,9 @@ function CompactHouseholdTooltip({
         </div>
       )}
 
+      {/* Footer Metrics with bolder member count */}
       <div className="mt-2.5 flex items-center justify-between border-t border-neutral-100 pt-2 text-[11px]">
-        <span className="text-neutral-500 font-medium">
+        <span className="font-extrabold text-neutral-900">
           {totalMembers} Member{totalMembers !== 1 ? "s" : ""}
         </span>
         <span

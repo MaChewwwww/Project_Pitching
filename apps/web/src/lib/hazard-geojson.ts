@@ -60,18 +60,34 @@ export function loadHazardGeoJson(): Promise<HazardFeatureCollection | null> {
   return hazardDataPromise;
 }
 
-function pointInRing(point: Coordinate, ring: Ring): boolean {
+function pointInRing(point: Coordinate, ring: Ring, tolerance = 0.0002): boolean {
   let inside = false;
   const [x, y] = point;
+  let minDistanceSq = Infinity;
+
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
     const [xi, yi] = ring[i];
     const [xj, yj] = ring[j];
-    const crosses = yi > y !== yj > y;
+    const crosses = (yi > y) !== (yj > y);
     if (crosses && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
       inside = !inside;
     }
+
+    const dx = xj - xi;
+    const dy = yj - yi;
+    const l2 = dx * dx + dy * dy;
+    let distSq = 0;
+    if (l2 === 0) {
+      distSq = (x - xi) ** 2 + (y - yi) ** 2;
+    } else {
+      let t = ((x - xi) * dx + (y - yi) * dy) / l2;
+      t = Math.max(0, Math.min(1, t));
+      distSq = (x - (xi + t * dx)) ** 2 + (y - (yi + t * dy)) ** 2;
+    }
+    if (distSq < minDistanceSq) minDistanceSq = distSq;
   }
-  return inside;
+
+  return inside || minDistanceSq <= tolerance * tolerance;
 }
 
 function pointInPolygon(point: Coordinate, polygon: PolygonCoordinates): boolean {
@@ -79,7 +95,7 @@ function pointInPolygon(point: Coordinate, polygon: PolygonCoordinates): boolean
   return Boolean(
     outer &&
     pointInRing(point, outer) &&
-    holes.every((hole) => !pointInRing(point, hole)),
+    holes.every((hole) => !pointInRing(point, hole, 0)),
   );
 }
 
