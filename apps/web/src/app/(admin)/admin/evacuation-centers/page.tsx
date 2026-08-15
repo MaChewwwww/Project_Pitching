@@ -548,12 +548,12 @@ export default function AdminEvacuationCentersPage() {
         {/* Column 2: Filter and Capacity Sidebar */}
         <div className="flex w-full flex-col gap-3 lg:w-72 lg:shrink-0">
           {/* Map Layers */}
-          <div className="w-full rounded-2xl border border-slate-800 bg-slate-900/95 p-4 text-white shadow-xl backdrop-blur-md">
-            <p className="mb-3 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-100">
+          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
+            <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
               <Layers className="size-3.5 text-emerald-400" aria-hidden />
               GIS Overlays
             </p>
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-2">
               <LayerCheckbox
                 checked={showHazard}
                 onChange={setShowHazard}
@@ -568,9 +568,9 @@ export default function AdminEvacuationCentersPage() {
           </div>
 
           {/* Quick Filters */}
-          <div className="w-full rounded-2xl border border-slate-800 bg-slate-900/95 p-4 text-white shadow-xl backdrop-blur-md">
+          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
             <div className="mb-3 flex items-center justify-between h-6">
-              <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-100">
+              <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
                 <Filter className="size-3.5 text-emerald-400" aria-hidden />
                 Filter Workspace
               </p>
@@ -584,7 +584,7 @@ export default function AdminEvacuationCentersPage() {
                     setAreaFilter("all");
                     setOccupancyTier("all");
                   }}
-                  className="inline-flex items-center gap-1 rounded bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-300 border border-slate-700 hover:bg-slate-700 hover:text-white transition-all shadow-2xs cursor-pointer"
+                  className="inline-flex items-center gap-1 rounded bg-emerald-900/80 px-2 py-0.5 text-[10px] font-bold text-white border border-emerald-700/60 hover:bg-emerald-800 transition-all shadow-2xs cursor-pointer"
                 >
                   <RotateCcw className="size-2.5" />
                   Reset
@@ -594,11 +594,11 @@ export default function AdminEvacuationCentersPage() {
 
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-slate-300">
+                <label className="text-[10.5px] font-bold text-white">
                   Status
                 </label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-9 w-full rounded-lg border-slate-700 bg-slate-800 text-xs font-semibold text-white shadow-xs focus:ring-emerald-500">
+                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -611,11 +611,11 @@ export default function AdminEvacuationCentersPage() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-slate-300">
+                <label className="text-[10.5px] font-bold text-white">
                   Assigned Area
                 </label>
                 <Select value={areaFilter} onValueChange={setAreaFilter}>
-                  <SelectTrigger className="h-9 w-full rounded-lg border-slate-700 bg-slate-800 text-xs font-semibold text-white shadow-xs focus:ring-emerald-500">
+                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -630,11 +630,11 @@ export default function AdminEvacuationCentersPage() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-slate-300">
+                <label className="text-[10.5px] font-bold text-white">
                   Occupancy Tier
                 </label>
                 <Select value={occupancyTier} onValueChange={setOccupancyTier}>
-                  <SelectTrigger className="h-9 w-full rounded-lg border-slate-700 bg-slate-800 text-xs font-semibold text-white shadow-xs focus:ring-emerald-500">
+                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -649,17 +649,17 @@ export default function AdminEvacuationCentersPage() {
           </div>
 
           {/* Capacity Diagnostic Panel */}
-          <div className="w-full rounded-2xl border border-slate-800 bg-slate-900/95 p-4 text-white shadow-xl backdrop-blur-md">
+          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-3.5 text-white shadow-xl backdrop-blur-md">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-bold text-xs text-slate-100">
+              <span className="font-bold text-xs text-white">
                 Evacuation Readiness
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-800 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-200 border border-slate-700">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-950 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white border border-emerald-700/80">
                 <span className="size-1.5 rounded-full bg-emerald-400" />
                 {stats.openCount} Open
               </span>
             </div>
-            <p className="mt-2 text-xs text-slate-300 leading-relaxed">
+            <p className="mt-1.5 text-xs text-white/90 leading-relaxed">
               Total sheltered headcount:{" "}
               <strong className="text-white font-bold">
                 {stats.totalOccupancy.toLocaleString()}
@@ -671,14 +671,14 @@ export default function AdminEvacuationCentersPage() {
               capacity.
             </p>
 
-            <div className="mt-3 flex flex-col gap-1.5 border-t border-slate-800 pt-2.5">
-              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400">
+            <div className="mt-2.5 flex flex-col gap-1 border-t border-emerald-900/60 pt-2">
+              <div className="flex items-center justify-between text-[10px] font-semibold text-slate-300">
                 <span>Barangay Load</span>
-                <span className="tabular-nums font-bold text-slate-200">
+                <span className="tabular-nums font-bold text-white">
                   {stats.pctOccupied}%
                 </span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-950 border border-slate-800">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-950 border border-emerald-900/80">
                 <div
                   className={cn(
                     "h-full rounded-full transition-all duration-500",
