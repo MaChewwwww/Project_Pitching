@@ -108,7 +108,7 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
 
-  const accountHref = user?.role === "head" ? "/portal" : "/admin";
+  const accountHref = user?.role === "head" ? "/portal" : "/admin/households";
   const accountLabel = "Return to Portal";
 
   const isActive = (href: string) =>

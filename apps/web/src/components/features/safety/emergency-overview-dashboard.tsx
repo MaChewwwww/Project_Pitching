@@ -382,6 +382,41 @@ export function EmergencyOverviewDashboard({
     { name: "Mobility-Limited", value: vulnerabilityMetrics.mobilityLimited, color: DEMOGRAPHIC_COLORS.mobility },
   ].filter((d) => d.value > 0);
 
+  const totalDemographicSum = demographicChartData.reduce((acc, d) => acc + d.value, 0) || 1;
+  const enrichedDemographicChartData = demographicChartData.map((d) => ({
+    ...d,
+    pct: Math.round((d.value / totalDemographicSum) * 100),
+  }));
+
+  const renderDemographicCustomLabel = (props: {
+    cx?: number;
+    cy?: number;
+    midAngle?: number;
+    outerRadius?: number;
+    index?: number;
+  }) => {
+    const { cx = 0, cy = 0, midAngle = 0, outerRadius = 68, index = 0 } = props;
+    const RADIAN = Math.PI / 180;
+    const radius = outerRadius + 14;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    const item = enrichedDemographicChartData[index];
+    if (!item || item.pct < 3) return null;
+
+    return (
+      <text
+        x={x}
+        y={y}
+        fill="#0f172a"
+        textAnchor={x > cx ? "start" : "end"}
+        dominantBaseline="central"
+        className="text-[11px] font-black fill-slate-900"
+      >
+        {item.pct}%
+      </text>
+    );
+  };
+
   // Proximity donut chart data (FR-REG-062: Waterway-proximity onboarding survey)
   const proximityChartData = [
     {
@@ -824,46 +859,51 @@ export function EmergencyOverviewDashboard({
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
               {/* Donut Chart with Centered Metric */}
               <div className="relative h-56 sm:col-span-6 w-full flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={demographicChartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={48}
-                      outerRadius={72}
-                      paddingAngle={3}
-                      dataKey="value"
-                    >
-                      {demographicChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      content={({ active, payload }) => {
-                        if (!active || !payload || !payload.length) return null;
-                        const data = payload[0];
-                        return (
-                          <div className="rounded-xl border border-slate-200 bg-white p-2.5 shadow-lg text-xs font-semibold text-slate-900">
-                            <span className="flex items-center gap-2">
-                              <span className="size-2.5 rounded-full" style={{ backgroundColor: data.payload.color }} />
-                              {data.name}: <strong>{data.value}</strong>
-                            </span>
-                          </div>
-                        );
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-
-                {/* Donut Center Total & Label */}
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                {/* Donut Center Total & Label (z-0 background layer) */}
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center z-0">
                   <span className="text-xl sm:text-2xl font-black tracking-tight text-amber-950 tabular-nums leading-none">
                     {formatNumber(vulnerabilityMetrics.totalHighRisk)}
                   </span>
                   <span className="text-[9px] font-black uppercase tracking-widest text-amber-700/80 mt-1">
                     High Care
                   </span>
+                </div>
+
+                <div className="relative z-10 size-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart margin={{ top: 8, right: 18, bottom: 8, left: 18 }}>
+                      <Pie
+                        data={enrichedDemographicChartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={48}
+                        outerRadius={68}
+                        paddingAngle={3}
+                        dataKey="value"
+                        label={renderDemographicCustomLabel}
+                        labelLine={{ stroke: "#64748b", strokeWidth: 1.5 }}
+                      >
+                        {enrichedDemographicChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        wrapperStyle={{ zIndex: 50, pointerEvents: "none" }}
+                        content={({ active, payload }) => {
+                          if (!active || !payload || !payload.length) return null;
+                          const data = payload[0];
+                          return (
+                            <div className="rounded-xl border border-slate-200 bg-white/95 backdrop-blur-sm p-2.5 shadow-2xl text-xs font-semibold text-slate-900">
+                              <span className="flex items-center gap-2">
+                                <span className="size-2.5 rounded-full" style={{ backgroundColor: data.payload.color }} />
+                                {data.name}: <strong>{data.value}</strong>
+                              </span>
+                            </div>
+                          );
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
 
@@ -905,49 +945,52 @@ export function EmergencyOverviewDashboard({
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
               {/* Donut Chart with Center Total and Outside Callouts */}
               <div className="relative h-56 sm:col-span-6 w-full flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart margin={{ top: 8, right: 18, bottom: 8, left: 18 }}>
-                    <Pie
-                      data={proximityChartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={48}
-                      outerRadius={68}
-                      paddingAngle={3}
-                      dataKey="value"
-                      label={renderProximityCustomLabel}
-                      labelLine={{ stroke: "#64748b", strokeWidth: 1.5 }}
-                    >
-                      {proximityChartData.map((entry, index) => (
-                        <Cell key={`cell-prox-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      content={({ active, payload }) => {
-                        if (!active || !payload || !payload.length) return null;
-                        const data = payload[0];
-                        return (
-                          <div className="rounded-xl border border-slate-200 bg-white p-2.5 shadow-lg text-xs font-semibold text-slate-900">
-                            <span className="flex items-center gap-2">
-                              <span className="size-2.5 rounded-full" style={{ backgroundColor: data.payload.color }} />
-                              {data.name}: <strong>{data.value} households ({data.payload.pct}%)</strong>
-                            </span>
-                            <p className="text-[10px] text-slate-500 font-normal mt-0.5">{data.payload.desc}</p>
-                          </div>
-                        );
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-
-                {/* Donut Center Total & Label (Matches Image #2) */}
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                {/* Donut Center Total & Label (z-0 background layer) */}
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center z-0">
                   <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-950 tabular-nums leading-none">
                     {totalProx}
                   </span>
                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
                     Households
                   </span>
+                </div>
+
+                <div className="relative z-10 size-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart margin={{ top: 8, right: 18, bottom: 8, left: 18 }}>
+                      <Pie
+                        data={proximityChartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={48}
+                        outerRadius={68}
+                        paddingAngle={3}
+                        dataKey="value"
+                        label={renderProximityCustomLabel}
+                        labelLine={{ stroke: "#64748b", strokeWidth: 1.5 }}
+                      >
+                        {proximityChartData.map((entry, index) => (
+                          <Cell key={`cell-prox-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        wrapperStyle={{ zIndex: 50, pointerEvents: "none" }}
+                        content={({ active, payload }) => {
+                          if (!active || !payload || !payload.length) return null;
+                          const data = payload[0];
+                          return (
+                            <div className="rounded-xl border border-slate-200 bg-white/95 backdrop-blur-sm p-2.5 shadow-2xl text-xs font-semibold text-slate-900">
+                              <span className="flex items-center gap-2">
+                                <span className="size-2.5 rounded-full" style={{ backgroundColor: data.payload.color }} />
+                                {data.name}: <strong>{data.value} households ({data.payload.pct}%)</strong>
+                              </span>
+                              <p className="text-[10px] text-slate-500 font-normal mt-0.5">{data.payload.desc}</p>
+                            </div>
+                          );
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
 

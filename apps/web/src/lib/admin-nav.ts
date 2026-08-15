@@ -41,7 +41,7 @@ export interface AdminNavCategory {
 }
 
 export const ADMIN_ROOT = {
-  href: "/admin" as Route,
+  href: "/admin/households" as Route,
   label: "Barangay Admin",
   icon: LayoutDashboard,
 };

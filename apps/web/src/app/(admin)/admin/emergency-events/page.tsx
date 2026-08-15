@@ -17,7 +17,6 @@ import {
   Eye,
   Flame,
   Layers,
-  List,
   Map,
   Pencil,
   Plus,
@@ -779,30 +778,7 @@ export default function AdminEmergencyEventsPage() {
                   </div>
                 </div>
 
-                {/* 2. Directory Header & Quick Action Buttons */}
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-neutral-200 pb-4">
-                  <div>
-                    <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                      <List className="size-4 text-emerald-600" />
-                      Emergency Events Ledger & History
-                    </h3>
-                    <p className="text-xs text-neutral-500">
-                      Explore comprehensive records of previous emergencies, inspect disaster ledgers, or backfill paper manifests.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {canManageEvents ? (
-                      <DeclareEventDialog
-                        onSubmit={async (values) => {
-                          await declareMutation.mutateAsync(values);
-                        }}
-                        isPending={declareMutation.isPending}
-                      />
-                    ) : null}
-                  </div>
-                </div>
-
-                {/* 3. Overhauled ResourceTable with View, Edit, Backfill, and Delete Actions */}
+                {/* 2. Overhauled ResourceTable with View, Edit, Backfill, and Delete Actions */}
                 <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
                   <ResourceTable
                     columns={columns}
@@ -811,6 +787,16 @@ export default function AdminEmergencyEventsPage() {
                     isError={eventsQuery.isError}
                     onRetry={() => eventsQuery.refetch()}
                     searchPlaceholder="Search event name, hazard classification, or date..."
+                    toolbarAction={
+                      canManageEvents ? (
+                        <DeclareEventDialog
+                          onSubmit={async (values) => {
+                            await declareMutation.mutateAsync(values);
+                          }}
+                          isPending={declareMutation.isPending}
+                        />
+                      ) : null
+                    }
                     filterAllLabel="All Incident Types"
                     filterChoices={(rows) => {
                       const types = Array.from(new Set(rows.map((r) => r.type)));

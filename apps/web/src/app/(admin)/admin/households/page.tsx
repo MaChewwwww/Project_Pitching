@@ -193,21 +193,21 @@ export default function AdminHouseholdsPage() {
   return (
     <div className="flex flex-col gap-6 pb-10">
       <AdminPageHeader
-        title="Household list"
-          description="A living ledger of registered homes, their coverage, and the citizens linked to each record."
-          action={
-            <div className="flex flex-wrap gap-2">
-              {user?.role !== "sk" ? (
-                <Button
-                  asChild
-                  size="sm"
-                  className="h-10 cursor-pointer gap-2 rounded-full border border-emerald-600/30 bg-emerald-700 px-4 font-bold text-white shadow-md shadow-emerald-900/15 transition-all hover:bg-emerald-800 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
-                >
-                  <Link href="/admin/households/new"><Plus aria-hidden className="size-4 stroke-[2.5]" />New household</Link>
-                </Button>
-              ) : null}
-            </div>
-          }
+        title="Household List"
+        description="A living ledger of registered homes, their coverage, and the citizens linked to each record."
+        action={
+          <div className="flex flex-wrap gap-2">
+            {user?.role !== "sk" ? (
+              <Button
+                asChild
+                size="sm"
+                className="h-10 cursor-pointer gap-2 rounded-full border border-emerald-600/30 bg-emerald-700 px-4 font-bold text-white shadow-md shadow-emerald-900/15 transition-all hover:bg-emerald-800 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
+              >
+                <Link href="/admin/households/new"><Plus aria-hidden className="size-4 stroke-[2.5]" />New Household</Link>
+              </Button>
+            ) : null}
+          </div>
+        }
       />
 
       <HouseholdRegistrySummary

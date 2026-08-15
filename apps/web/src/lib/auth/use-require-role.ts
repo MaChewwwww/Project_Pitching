@@ -9,10 +9,10 @@ import { useAuth, type Role } from "./auth-context";
 /** Where a signed-in user belongs when they hit a screen their role can't use. */
 const ROLE_HOME: Record<Role, Route> = {
   head: "/portal",
-  bhw: "/admin",
-  admin: "/admin",
-  sk: "/admin",
-  superadmin: "/admin",
+  bhw: "/admin/households" as Route,
+  admin: "/admin/households" as Route,
+  sk: "/admin/households" as Route,
+  superadmin: "/admin/households" as Route,
 };
 
 /**

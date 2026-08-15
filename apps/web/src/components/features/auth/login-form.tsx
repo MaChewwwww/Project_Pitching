@@ -43,7 +43,7 @@ export function LoginForm() {
     setServerError(null);
     try {
       await login(values.email, values.password);
-      router.push("/admin");
+      router.push("/admin/households");
     } catch (error) {
       const problem = error as ProblemDetail;
       setServerError(problem.detail ?? "Could not sign in. Try again.");
