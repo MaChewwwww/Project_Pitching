@@ -2007,6 +2007,41 @@ function HouseholdListPanel({
   );
 }
 
+function getEventTypeBadge(type?: string) {
+  switch (type?.toLowerCase()) {
+    case "flood":
+      return {
+        label: "Flood",
+        className: "bg-sky-100 text-sky-800 border-sky-300",
+      };
+    case "typhoon":
+      return {
+        label: "Typhoon",
+        className: "bg-indigo-100 text-indigo-800 border-indigo-300",
+      };
+    case "fire":
+      return {
+        label: "Fire",
+        className: "bg-rose-100 text-rose-800 border-rose-300",
+      };
+    case "earthquake":
+      return {
+        label: "Earthquake",
+        className: "bg-amber-100 text-amber-800 border-amber-300",
+      };
+    case "landslide":
+      return {
+        label: "Landslide",
+        className: "bg-orange-100 text-orange-800 border-orange-300",
+      };
+    default:
+      return {
+        label: type ? type.charAt(0).toUpperCase() + type.slice(1) : "General",
+        className: "bg-purple-100 text-purple-800 border-purple-300",
+      };
+  }
+}
+
 /* --- Walk-in / Unregistered persons list & management --------------------- */
 
 function CreateWalkInForm({
@@ -2134,14 +2169,24 @@ function CreateWalkInForm({
                 <SelectLabel className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50/70 rounded-md my-1">
                   Active Emergency Events
                 </SelectLabel>
-                {activeEvents.map((evt) => (
-                  <SelectItem key={evt.id} value={evt.id}>
-                    <span className="font-semibold text-slate-900">{evt.name}</span>
-                    <span className="ml-1.5 inline-flex items-center rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9.5px] font-bold text-emerald-700">
-                      Active
-                    </span>
-                  </SelectItem>
-                ))}
+                {activeEvents.map((evt) => {
+                  const badge = getEventTypeBadge(evt.type);
+                  return (
+                    <SelectItem key={evt.id} value={evt.id} className="cursor-pointer py-2">
+                      <span className="font-semibold text-slate-900 truncate max-w-[180px]">{evt.name}</span>
+                      <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                        <span
+                          className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider ${badge.className}`}
+                        >
+                          {badge.label}
+                        </span>
+                        <span className="inline-flex items-center rounded-md border border-emerald-300 bg-emerald-100 px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-emerald-800">
+                          Active
+                        </span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectGroup>
             )}
 
@@ -2150,14 +2195,24 @@ function CreateWalkInForm({
                 <SelectLabel className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-100/80 rounded-md my-1">
                   Previous / Concluded Emergencies
                 </SelectLabel>
-                {concludedEvents.map((evt) => (
-                  <SelectItem key={evt.id} value={evt.id}>
-                    <span className="font-medium text-slate-700">{evt.name}</span>
-                    <span className="ml-1 text-[10px] text-slate-400">
-                      {evt.type ? `(${evt.type})` : ""} · Concluded
-                    </span>
-                  </SelectItem>
-                ))}
+                {concludedEvents.map((evt) => {
+                  const badge = getEventTypeBadge(evt.type);
+                  return (
+                    <SelectItem key={evt.id} value={evt.id} className="cursor-pointer py-2">
+                      <span className="font-medium text-slate-700 truncate max-w-[180px]">{evt.name}</span>
+                      <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                        <span
+                          className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider ${badge.className}`}
+                        >
+                          {badge.label}
+                        </span>
+                        <span className="inline-flex items-center rounded-md border border-slate-300 bg-slate-100 px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wider text-slate-600">
+                          Concluded
+                        </span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectGroup>
             )}
           </SelectContent>
@@ -2224,7 +2279,7 @@ function CreateWalkInForm({
         <label className="text-xs font-bold text-slate-800">
           Special Needs / Priority Demographics
         </label>
-        <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
           <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
             <input
               type="checkbox"
@@ -2359,7 +2414,7 @@ function CreateWalkInModal({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl p-6">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6">
         <DialogHeader>
           <DialogTitle className="text-lg font-black text-slate-900">
             Record Evacuation Walk-In

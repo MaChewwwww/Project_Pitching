@@ -180,6 +180,41 @@ function AddToHouseholdDialog({
   );
 }
 
+function getEventTypeBadge(type?: string) {
+  switch (type?.toLowerCase()) {
+    case "flood":
+      return {
+        label: "Flood",
+        className: "bg-sky-100 text-sky-800 border-sky-300",
+      };
+    case "typhoon":
+      return {
+        label: "Typhoon",
+        className: "bg-indigo-100 text-indigo-800 border-indigo-300",
+      };
+    case "fire":
+      return {
+        label: "Fire",
+        className: "bg-rose-100 text-rose-800 border-rose-300",
+      };
+    case "earthquake":
+      return {
+        label: "Earthquake",
+        className: "bg-amber-100 text-amber-800 border-amber-300",
+      };
+    case "landslide":
+      return {
+        label: "Landslide",
+        className: "bg-orange-100 text-orange-800 border-orange-300",
+      };
+    default:
+      return {
+        label: type ? type.charAt(0).toUpperCase() + type.slice(1) : "General",
+        className: "bg-purple-100 text-purple-800 border-purple-300",
+      };
+  }
+}
+
 export default function AdminUnregisteredPersonsPage() {
   useRequireRole("admin", "bhw");
   const queryClient = useQueryClient();
@@ -334,7 +369,7 @@ export default function AdminUnregisteredPersonsPage() {
                 <span>Record Walk-In Person</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg rounded-2xl p-6">
+            <DialogContent className="sm:max-w-2xl rounded-2xl p-6">
               <DialogHeader>
                 <DialogTitle className="text-lg font-black text-slate-900">
                   Record an Unregistered Person
@@ -422,15 +457,36 @@ export default function AdminUnregisteredPersonsPage() {
                 <SelectTrigger className="inline-flex h-9 w-fit min-w-[155px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
                   <SelectValue placeholder="Select Event" />
                 </SelectTrigger>
-                <SelectContent className="z-[3000] min-w-56 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                <SelectContent className="z-[3000] min-w-64 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
                   <SelectItem value="all">
-                    {activeEvent ? `${activeEvent.name} (Active)` : "Current Active Event"}
+                    <span className="font-semibold text-neutral-800">
+                      {activeEvent ? `${activeEvent.name} (Active)` : "Current Active Event"}
+                    </span>
                   </SelectItem>
-                  {eventsQuery.data?.map((event) => (
-                    <SelectItem key={event.id} value={event.id}>
-                      {event.name} {event.is_active ? "· Active" : "· Concluded"}
-                    </SelectItem>
-                  ))}
+                  {eventsQuery.data?.map((event) => {
+                    const badge = getEventTypeBadge(event.type);
+                    return (
+                      <SelectItem key={event.id} value={event.id} className="cursor-pointer py-1.5">
+                        <span className="font-medium text-slate-800 truncate max-w-[180px]">{event.name}</span>
+                        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                          <span
+                            className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider ${badge.className}`}
+                          >
+                            {badge.label}
+                          </span>
+                          {event.is_active ? (
+                            <span className="inline-flex items-center rounded-md border border-emerald-300 bg-emerald-100 px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-emerald-800">
+                              Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-md border border-slate-300 bg-slate-100 px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wider text-slate-600">
+                              Concluded
+                            </span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
 
