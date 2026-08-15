@@ -2232,12 +2232,26 @@ function CreateWalkInForm({
           <SelectContent
             position="popper"
             sideOffset={4}
-            className="z-[3000] w-[var(--radix-select-trigger-width)] max-h-60 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+            className="z-[3000] max-h-64 min-w-72 w-[var(--radix-select-trigger-width)] rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
           >
-            <SelectItem value="none">None / Field Operation</SelectItem>
+            <SelectItem value="none" className="cursor-pointer py-2">
+              <span className="text-slate-500">None / Field Operation</span>
+            </SelectItem>
             {data.evacuation_centers.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.facility.name} ({c.occupancy}/{c.capacity ?? "∞"} occupants)
+              <SelectItem key={c.id} value={c.id} className="cursor-pointer py-2">
+                <span className="font-medium text-slate-900 truncate max-w-[190px]">
+                  {c.facility.name}
+                </span>
+                <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                  {!c.is_open && (
+                    <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[9.5px] font-semibold text-slate-500">
+                      Closed
+                    </span>
+                  )}
+                  <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold text-slate-700 tabular-nums">
+                    {c.occupancy}/{c.capacity ?? "∞"}
+                  </span>
+                </div>
               </SelectItem>
             ))}
           </SelectContent>
@@ -2279,78 +2293,78 @@ function CreateWalkInForm({
         <label className="text-xs font-bold text-slate-800">
           Special Needs / Priority Demographics
         </label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5 text-xs">
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium hover:text-slate-900 transition-colors">
             <input
               type="checkbox"
               checked={isInfant}
               onChange={(e) => setIsInfant(e.target.checked)}
-              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5 shrink-0"
             />
-            Infant / Toddler (0–4 y/o)
+            <span>Infant / Toddler (0–4 y/o)</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
-            <input
-              type="checkbox"
-              checked={isChild}
-              onChange={(e) => setIsChild(e.target.checked)}
-              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
-            />
-            Minor (5–17 y/o)
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
-            <input
-              type="checkbox"
-              checked={isSenior}
-              onChange={(e) => setIsSenior(e.target.checked)}
-              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
-            />
-            Senior Citizen (60+ y/o)
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
-            <input
-              type="checkbox"
-              checked={isPwd}
-              onChange={(e) => setIsPwd(e.target.checked)}
-              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
-            />
-            PWD
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium hover:text-slate-900 transition-colors">
             <input
               type="checkbox"
               checked={isPregnant}
               onChange={(e) => setIsPregnant(e.target.checked)}
-              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5 shrink-0"
             />
-            Pregnant
+            <span>Pregnant</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium hover:text-slate-900 transition-colors">
+            <input
+              type="checkbox"
+              checked={isChild}
+              onChange={(e) => setIsChild(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5 shrink-0"
+            />
+            <span>Minor (5–17 y/o)</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium hover:text-slate-900 transition-colors">
             <input
               type="checkbox"
               checked={isLactating}
               onChange={(e) => setIsLactating(e.target.checked)}
-              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5 shrink-0"
             />
-            Lactating Mother
+            <span>Lactating Mother</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium hover:text-slate-900 transition-colors">
+            <input
+              type="checkbox"
+              checked={isSenior}
+              onChange={(e) => setIsSenior(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5 shrink-0"
+            />
+            <span>Senior Citizen (60+ y/o)</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium hover:text-slate-900 transition-colors">
             <input
               type="checkbox"
               checked={hasChronicCondition}
               onChange={(e) => setHasChronicCondition(e.target.checked)}
-              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5 shrink-0"
             />
-            Chronic Condition
+            <span>Chronic Condition</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium hover:text-slate-900 transition-colors">
+            <input
+              type="checkbox"
+              checked={isPwd}
+              onChange={(e) => setIsPwd(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5 shrink-0"
+            />
+            <span>Person with Disability (PWD)</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium hover:text-slate-900 transition-colors">
             <input
               type="checkbox"
               checked={isBedridden}
               onChange={(e) => setIsBedridden(e.target.checked)}
-              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5 shrink-0"
             />
-            Bedridden / Mobility-limited
+            <span>Bedridden / Mobility-limited</span>
           </label>
         </div>
         {hasChronicCondition && (
