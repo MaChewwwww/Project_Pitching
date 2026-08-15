@@ -2264,10 +2264,10 @@ function CreateWalkInForm({
         )}
       </div>
 
-      {/* Origin Address */}
+      {/* Location Address */}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-          <span>Origin Address <span className="text-[11px] font-normal text-slate-400">(Optional)</span></span>
+          <span>Location Address <span className="text-[11px] font-normal text-slate-400">(Optional)</span></span>
         </label>
         <input
           type="text"
@@ -2347,7 +2347,6 @@ function UnregisteredPersonsPanel({
 }) {
   const [createModalOpen, setCreateModalOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
-  const [statusFilter, setStatusFilter] = React.useState("all");
   const [centerFilter, setCenterFilter] = React.useState("all");
   const [supportFilter, setSupportFilter] = React.useState("all");
   const [page, setPage] = React.useState(1);
@@ -2408,9 +2407,6 @@ function UnregisteredPersonsPanel({
         (p.evac_center_name && p.evac_center_name.toLowerCase().includes(q)) ||
         (p.location_note && p.location_note.toLowerCase().includes(q));
 
-      const matchesStatus =
-        statusFilter === "all" || p.status === statusFilter;
-
       const matchesCenter =
         centerFilter === "all" ||
         (centerFilter === "none"
@@ -2440,12 +2436,11 @@ function UnregisteredPersonsPanel({
 
       return (
         matchesSearch &&
-        matchesStatus &&
         matchesCenter &&
         matchesSupport
       );
     });
-  }, [people, search, statusFilter, centerFilter, supportFilter]);
+  }, [people, search, centerFilter, supportFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -2455,14 +2450,12 @@ function UnregisteredPersonsPanel({
   const isFiltered = Boolean(
     search ||
       centerFilter !== "all" ||
-      statusFilter !== "all" ||
       supportFilter !== "all",
   );
 
   function resetFilters() {
     setSearch("");
     setCenterFilter("all");
-    setStatusFilter("all");
     setSupportFilter("all");
     setPage(1);
   }
@@ -2474,10 +2467,9 @@ function UnregisteredPersonsPanel({
         {/* Attached Search, Filters & Action Toolbar */}
         <div className="border-b border-primary-100/80 bg-gradient-to-r from-emerald-50/50 via-white to-teal-50/30 p-3 sm:px-4">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
-            {/* Search and Filters */}
-            <div className="flex flex-1 flex-wrap items-center gap-2">
-              {/* Search input */}
-              <label className="relative block min-w-[200px] flex-1 sm:max-w-xs md:max-w-sm">
+            {/* Search Input (Left) */}
+            <div className="flex items-center">
+              <label className="relative block min-w-[220px] sm:w-72 md:w-80">
                 <span className="sr-only">Search walk-in records</span>
                 <Search
                   aria-hidden
@@ -2506,7 +2498,10 @@ function UnregisteredPersonsPanel({
                   </button>
                 ) : null}
               </label>
+            </div>
 
+            {/* Filters & Action Button (Right Aligned) */}
+            <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2">
               {/* Evacuation Center Selector */}
               <Select
                 value={centerFilter}
@@ -2527,26 +2522,6 @@ function UnregisteredPersonsPanel({
                       {c.facility.name}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-
-              {/* Status Selector */}
-              <Select
-                value={statusFilter}
-                onValueChange={(v) => {
-                  setStatusFilter(v);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="inline-flex h-9 w-fit min-w-[125px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
-                  <Shield aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent className="z-50 min-w-40 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="safe">Safe</SelectItem>
-                  <SelectItem value="needs_rescue">Needs Rescue</SelectItem>
-                  <SelectItem value="unaccounted">Unaccounted</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -2586,29 +2561,17 @@ function UnregisteredPersonsPanel({
                   <span>Reset</span>
                 </Button>
               )}
-            </div>
 
-            {/* Right Action Buttons */}
-            <div className="flex items-center gap-2 max-lg:justify-end">
               {!readOnly && (
                 <Button
                   size="sm"
                   onClick={() => setCreateModalOpen(true)}
-                  className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white shadow-xs transition-all hover:bg-emerald-700"
+                  className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white shadow-xs transition-all hover:bg-emerald-700 ml-1"
                 >
                   <UserPlus className="size-3.5" />
                   Record Walk-In Person
                 </Button>
               )}
-              <a
-                href="/admin/unregistered-persons"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-full border border-neutral-200/90 bg-white/95 px-3.5 text-xs font-semibold text-neutral-700 shadow-2xs transition-colors hover:bg-neutral-100 hover:text-neutral-900"
-              >
-                Registry View
-                <ArrowRight className="size-3 text-neutral-400" />
-              </a>
             </div>
           </div>
         </div>
