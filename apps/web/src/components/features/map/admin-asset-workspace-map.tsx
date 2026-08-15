@@ -22,7 +22,6 @@ import {
   ExternalLink,
   MapPin,
   Megaphone,
-  Radio,
   School,
   Shield,
   Stethoscope,
@@ -122,9 +121,9 @@ const MAP_CSS = `
 .admin-asset-workspace-map .leaflet-popup-content-wrapper {
   background: #ffffff !important;
   color: #0f172a !important;
-  border: 1px solid #cbd5e1 !important;
-  border-radius: 18px !important;
-  box-shadow: 0 20px 30px -8px rgba(0, 0, 0, 0.6), 0 8px 16px -4px rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 20px !important;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
   padding: 0 !important;
   overflow: hidden;
 }
@@ -134,14 +133,32 @@ const MAP_CSS = `
 }
 .admin-asset-workspace-map .leaflet-popup-tip {
   background: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
+  border: 1px solid #e2e8f0 !important;
 }
 .admin-asset-workspace-map .leaflet-popup-close-button {
-  color: #64748b !important;
-  padding: 8px 10px !important;
+  top: 12px !important;
+  right: 12px !important;
+  color: #94a3b8 !important;
+  font-size: 16px !important;
+  padding: 0 !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 .admin-asset-workspace-map .leaflet-popup-close-button:hover {
   color: #0f172a !important;
+}
+.admin-asset-workspace-map .leaflet-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.admin-asset-workspace-map .leaflet-tooltip::before,
+.admin-asset-workspace-map .leaflet-tooltip::after {
+  display: none !important;
 }
 .sagip-legend-scroll {
   scrollbar-width: thin;
@@ -476,61 +493,127 @@ export function AdminAssetWorkspaceMap({
                 click: () => onSelect(item.id),
               }}
             >
-              <Tooltip direction="top" offset={[0, -16]} opacity={0.95}>
-                <div className="rounded-md border border-emerald-500/40 bg-slate-950/95 px-2.5 py-1 text-xs text-white shadow-xl">
-                  <p className="font-bold">{item.name}</p>
-                  <p className="text-[10.5px] text-emerald-300">
-                    {item.area_name ? `${item.area_name} • ` : ""}
-                    {item.statusLabel}
-                  </p>
+              <Tooltip direction="top" offset={[0, -18]} opacity={1}>
+                <div
+                  className="flex flex-col rounded-xl bg-white/98 p-2.5 text-slate-900 shadow-xl backdrop-blur-md whitespace-normal break-words pointer-events-none"
+                  style={{
+                    border: `1.5px solid ${
+                      item.tone === "rose"
+                        ? "#EF4444"
+                        : item.tone === "amber"
+                          ? "#F59E0B"
+                          : item.tone === "sky"
+                            ? "#0EA5E9"
+                            : "#10B981"
+                    }`,
+                    boxShadow:
+                      "0 12px 25px -4px rgba(0,0,0,0.35), 0 0 12px -2px rgba(0,0,0,0.1)",
+                    minWidth: 190,
+                    maxWidth: 260,
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-1.5 border-b border-neutral-100 pb-1.5">
+                    <span className="font-black text-xs text-neutral-950 truncate">
+                      {item.name}
+                    </span>
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wide",
+                        item.tone === "rose" &&
+                          "bg-rose-100 text-rose-800 border border-rose-200",
+                        item.tone === "amber" &&
+                          "bg-amber-100 text-amber-800 border border-amber-200",
+                        item.tone === "sky" &&
+                          "bg-sky-100 text-sky-800 border border-sky-200",
+                        item.tone === "emerald" &&
+                          "bg-emerald-100 text-emerald-800 border border-emerald-200",
+                        item.tone === "slate" &&
+                          "bg-slate-100 text-slate-700 border border-slate-200",
+                      )}
+                    >
+                      {item.statusLabel}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-1 text-[10.5px] text-neutral-500 font-medium">
+                    <MapPin className="size-2.5 text-neutral-400 shrink-0" />
+                    <span className="truncate">
+                      {item.area_name || "Barangay San Jose, Rodriguez"}
+                    </span>
+                  </div>
                 </div>
               </Tooltip>
 
               <Popup>
-                {/* Crisp White Card Container Matching Screenshot Style */}
-                <div className="flex w-72 flex-col gap-2.5 p-4 text-xs text-slate-900">
-                  {/* Top Row: Code Badge & Status Pill */}
-                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                    <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-[10.5px] font-bold text-slate-700">
-                      {itemCode}
-                    </span>
+                {/* Modern Popover Dossier Card */}
+                <div className="flex w-76 flex-col gap-3 p-4 text-xs text-slate-900">
+                  {/* Top Bar: Icon Badge, Code, and Status Badge */}
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5 pr-5">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={cn(
+                          "flex size-7 shrink-0 items-center justify-center rounded-lg shadow-2xs",
+                          item.tone === "rose" && "bg-rose-100 text-rose-700",
+                          item.tone === "amber" && "bg-amber-100 text-amber-700",
+                          item.tone === "sky" && "bg-sky-100 text-sky-700",
+                          item.tone === "emerald" && "bg-emerald-100 text-emerald-700",
+                          item.tone === "slate" && "bg-slate-100 text-slate-700",
+                        )}
+                      >
+                        {item.category === "siren" ? (
+                          <Megaphone className="size-3.5" />
+                        ) : item.category === "evacuation_center" ? (
+                          <School className="size-3.5" />
+                        ) : (
+                          <Building2 className="size-3.5" />
+                        )}
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-slate-600">
+                        {itemCode}
+                      </span>
+                    </div>
+
                     <span
                       className={cn(
-                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide",
-                        item.tone === "emerald" && "bg-emerald-100 text-emerald-800",
-                        item.tone === "rose" && "bg-rose-100 text-rose-800",
-                        item.tone === "amber" && "bg-amber-100 text-amber-800",
-                        item.tone === "sky" && "bg-sky-100 text-sky-800",
-                        item.tone === "slate" && "bg-slate-100 text-slate-700",
+                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[9.5px] font-black uppercase tracking-wider",
+                        item.tone === "emerald" &&
+                          "bg-emerald-100 text-emerald-900 border border-emerald-300",
+                        item.tone === "rose" &&
+                          "bg-rose-100 text-rose-900 border border-rose-300 animate-pulse",
+                        item.tone === "amber" &&
+                          "bg-amber-100 text-amber-900 border border-amber-300",
+                        item.tone === "sky" &&
+                          "bg-sky-100 text-sky-900 border border-sky-300",
+                        item.tone === "slate" &&
+                          "bg-slate-100 text-slate-800 border border-slate-300",
                       )}
                     >
                       {item.statusLabel}
                     </span>
                   </div>
 
-                  {/* Title & Location */}
+                  {/* Title & Location Header */}
                   <div>
-                    <h4 className="text-base font-black text-slate-900 leading-snug">
+                    <h4 className="text-sm font-black text-slate-900 leading-snug">
                       {item.name}
                     </h4>
-                    <p className="mt-0.5 text-xs text-slate-500 flex items-center gap-1 font-medium">
+                    <p className="mt-0.5 text-[11.5px] text-slate-500 flex items-center gap-1 font-medium">
                       <MapPin className="size-3 text-slate-400 shrink-0" />
                       {item.area_name || "Barangay San Jose, Rodriguez"}
                     </p>
                   </div>
 
-                  {/* Subdetail / Specs Card */}
+                  {/* Contextual Metric Strip */}
                   {item.category === "evacuation_center" && item.capacity ? (
                     <div className="rounded-xl border border-amber-200/80 bg-amber-50/50 p-3 text-xs flex flex-col gap-1.5">
                       <div className="flex items-center justify-between text-[10.5px] font-bold uppercase tracking-wider text-amber-900">
                         <span>Shelter Capacity</span>
-                        <span className="font-mono text-slate-900">
+                        <span className="font-mono text-slate-900 font-bold">
                           {item.occupancy ?? 0} / {item.capacity} Persons
                         </span>
                       </div>
                       <div className="h-2 w-full overflow-hidden rounded-full bg-amber-200/60">
                         <div
-                          className="h-full bg-emerald-600 rounded-full"
+                          className="h-full bg-emerald-600 rounded-full transition-all"
                           style={{
                             width: `${Math.min(
                               100,
@@ -541,28 +624,39 @@ export function AdminAssetWorkspaceMap({
                       </div>
                     </div>
                   ) : item.category === "siren" ? (
-                    <div className="rounded-xl border border-sky-200/80 bg-sky-50/60 p-3 text-xs flex flex-col gap-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-sky-900 flex items-center gap-1">
-                        <Radio className="size-3 text-sky-700" />
-                        Acoustic Coverage
-                      </p>
-                      <p className="text-[11.5px] font-semibold text-sky-950">
-                        500m Omnidirectional Alarm Reach
-                      </p>
-                      <p className="text-[10.5px] text-sky-800">
-                        {item.isSounding ? "Active alarm sounding broadcast" : "Armed and on standby for flood alerts"}
-                      </p>
+                    <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50/80 p-2.5">
+                      <div className="flex flex-col">
+                        <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-400">
+                          Acoustic Radius
+                        </span>
+                        <span className="mt-0.5 text-xs font-bold text-slate-900">
+                          500m Buffer
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-400">
+                          System State
+                        </span>
+                        <span
+                          className={cn(
+                            "mt-0.5 text-xs font-bold truncate",
+                            item.isSounding ? "text-rose-600 animate-pulse" : "text-emerald-700",
+                          )}
+                        >
+                          {item.isSounding ? "Sounding Alarm" : "Armed Standby"}
+                        </span>
+                      </div>
                     </div>
                   ) : item.subDetail ? (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-[11.5px] text-slate-600 leading-relaxed">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-[11px] text-slate-600 leading-relaxed">
                       {item.subDetail}
                     </div>
                   ) : null}
 
-                  {/* Actions Row */}
-                  <div className="mt-1 flex items-center justify-between gap-2 border-t border-slate-100 pt-2.5">
+                  {/* Action Buttons Row */}
+                  <div className="mt-0.5 flex items-center justify-between gap-2 border-t border-slate-100 pt-2.5">
                     {item.category === "siren" && (
-                      <div className="flex items-center gap-1.5">
+                      <div>
                         {item.isSounding ? (
                           <button
                             type="button"
@@ -570,10 +664,10 @@ export function AdminAssetWorkspaceMap({
                               e.stopPropagation();
                               item.onSilence?.(item.id);
                             }}
-                            className="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-700 transition-colors cursor-pointer shadow-xs"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-700 transition-all cursor-pointer shadow-2xs"
                           >
                             <VolumeX className="size-3.5" />
-                            Silence
+                            Silence Alarm
                           </button>
                         ) : (
                           <button
@@ -582,9 +676,9 @@ export function AdminAssetWorkspaceMap({
                               e.stopPropagation();
                               item.onTrigger?.(item.id);
                             }}
-                            className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors cursor-pointer shadow-xs"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 px-3 py-1.5 text-xs font-black text-slate-950 border border-amber-400 transition-all cursor-pointer shadow-2xs"
                           >
-                            <Volume2 className="size-3.5" />
+                            <Volume2 className="size-3.5 text-slate-950" />
                             Test Sound
                           </button>
                         )}
@@ -594,10 +688,10 @@ export function AdminAssetWorkspaceMap({
                     {item.detailUrl ? (
                       <Link
                         href={item.detailUrl as unknown as Parameters<typeof Link>[0]["href"]}
-                        className="ml-auto inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-800 transition-colors shadow-xs"
+                        className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-all shadow-2xs cursor-pointer"
                       >
                         Inspect Details
-                        <ExternalLink className="size-3" />
+                        <ExternalLink className="size-3 text-white" />
                       </Link>
                     ) : null}
                   </div>

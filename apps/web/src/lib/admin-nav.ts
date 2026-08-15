@@ -195,7 +195,13 @@ export function resolveAdminBreadcrumbs(pathname: string): AdminCrumb[] {
   for (let index = 0; index < rest.length; index += 1) {
     const segment = rest[index];
     const label =
-      link.href === "/admin/announcements"
+      link.href === "/admin/sirens"
+        ? segment === "edit"
+          ? "Edit Siren"
+          : index === 0
+            ? "Siren Details"
+            : (LEAF_LABELS[segment] ?? "Siren Details")
+        : link.href === "/admin/announcements"
         ? segment === "create-announcement"
           ? "Create Announcement"
           : "Edit Announcement"

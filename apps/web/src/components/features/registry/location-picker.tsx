@@ -11,7 +11,7 @@ import {
   useMap,
   useMapEvents,
 } from "react-leaflet";
-import { LocateFixed } from "lucide-react";
+import { LocateFixed, MapPinOff } from "lucide-react";
 
 import { Button } from "@/components/common/button";
 import { api } from "@/lib/api/client";
@@ -129,11 +129,14 @@ export default function LocationPicker({
   const [boundaryDialogOpen, setBoundaryDialogOpen] = React.useState(false);
 
   const onChangeRef = React.useRef(onChange);
-  onChangeRef.current = onChange;
   const onResolveRef = React.useRef(onResolve);
-  onResolveRef.current = onResolve;
   const onBoundaryViolationRef = React.useRef(onBoundaryViolation);
-  onBoundaryViolationRef.current = onBoundaryViolation;
+
+  React.useEffect(() => {
+    onChangeRef.current = onChange;
+    onResolveRef.current = onResolve;
+    onBoundaryViolationRef.current = onBoundaryViolation;
+  });
 
   const place = React.useCallback(
     (next: LatLng) => {
@@ -256,18 +259,31 @@ export default function LocationPicker({
       ) : null}
 
       <Dialog open={boundaryDialogOpen} onOpenChange={setBoundaryDialogOpen}>
-        <DialogContent className="max-w-md border-red-200">
-          <DialogHeader>
-            <DialogTitle className="text-red-800">
-              Location outside Barangay San Jose
-            </DialogTitle>
-            <DialogDescription>
-              That location is outside the Barangay San Jose boundary. Choose a point
-              inside the barangay to continue this household registration.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button type="button" onClick={() => setBoundaryDialogOpen(false)}>
+        <DialogContent
+          overlayClassName="z-[2100] bg-black/75 backdrop-blur-md"
+          className="z-[2101] max-w-[360px] sm:max-w-[360px] rounded-2xl border-slate-200 bg-white p-6 shadow-2xl text-center"
+        >
+          <div className="flex flex-col items-center text-center gap-2">
+            <div className="flex size-11 items-center justify-center rounded-full bg-rose-100 text-rose-700 mb-1">
+              <MapPinOff className="size-5.5" />
+            </div>
+            <DialogHeader className="items-center text-center">
+              <DialogTitle className="text-base font-bold text-slate-900">
+                Location outside Barangay San Jose
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-600 leading-relaxed mt-1">
+                That location is outside the Barangay San Jose boundary. Choose a point inside the barangay to continue.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          <DialogFooter className="sm:justify-center justify-center pt-2">
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => setBoundaryDialogOpen(false)}
+              className="h-9 px-6 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs cursor-pointer"
+            >
               Choose another location
             </Button>
           </DialogFooter>

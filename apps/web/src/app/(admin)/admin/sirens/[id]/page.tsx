@@ -6,7 +6,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
-  ArrowLeft,
   CheckCircle2,
   Copy,
   History,
@@ -28,6 +27,7 @@ import {
   AssetMetricCard,
 } from "@/components/features/admin/asset-metric-strip";
 import { AdminAssetWorkspaceMap } from "@/components/features/map/admin-asset-workspace-map-dynamic";
+import { EditSirenDialog } from "@/components/features/admin/edit-siren-dialog";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import { useSirenAudio } from "@/hooks/use-siren-audio";
@@ -242,37 +242,13 @@ export default function SirenDetailPage() {
 
   return (
     <div className="flex flex-col gap-6 pb-16">
-      {/* Back Link & Topbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-4">
-        <Link
-          href="/admin/sirens"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 hover:text-emerald-950 transition-colors"
-        >
-          <ArrowLeft className="size-3.5" />
-          Back to Siren Alert Network
-        </Link>
-
-        <div className="flex items-center gap-2">
-          <Link href={`/admin/sirens/${siren.id}/edit`}>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 border-slate-300 bg-white text-xs font-bold text-slate-800 hover:bg-slate-50"
-            >
-              <Pencil className="size-3.5" />
-              Edit Siren
-            </Button>
-          </Link>
-        </div>
-      </div>
-
       {/* Hero Header Card */}
       <div
         className={cn(
-          "flex flex-col justify-between gap-4 rounded-3xl border p-6 text-white shadow-xl transition-all lg:flex-row lg:items-center",
+          "flex flex-col justify-between gap-5 rounded-3xl border p-6 text-white shadow-xl transition-all lg:flex-row lg:items-center",
           isSounding
-            ? "border-rose-700 bg-gradient-to-br from-rose-900 via-rose-950 to-slate-950"
-            : "border-emerald-900/40 bg-gradient-to-br from-[#064e3b] via-[#065f46] to-[#022c22]",
+            ? "border-rose-600/80 bg-gradient-to-r from-slate-950 via-[#3d0909] to-slate-950 shadow-2xl"
+            : "border-emerald-900/50 bg-gradient-to-r from-emerald-950 via-slate-950 to-emerald-950",
         )}
       >
         <div className="flex items-start gap-4">
@@ -280,8 +256,8 @@ export default function SirenDetailPage() {
             className={cn(
               "grid size-14 shrink-0 place-items-center rounded-2xl border shadow-inner transition-all",
               isSounding
-                ? "bg-rose-500/30 text-rose-300 border-rose-400 animate-pulse"
-                : "bg-emerald-500/20 text-emerald-300 border-emerald-400/30",
+                ? "bg-rose-600/30 text-rose-300 border-rose-500 animate-pulse"
+                : "bg-emerald-500/20 text-emerald-300 border-emerald-400/40",
             )}
           >
             <Megaphone className="size-7" />
@@ -293,30 +269,30 @@ export default function SirenDetailPage() {
               </h1>
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold shadow-xs",
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-xs font-bold shadow-xs",
                   !siren.is_active
-                    ? "bg-slate-700 text-slate-200"
+                    ? "bg-slate-800 text-slate-300 border border-slate-700"
                     : isSounding
-                      ? "bg-rose-500 text-white animate-pulse"
-                      : "bg-emerald-400 text-emerald-950",
+                      ? "bg-rose-600 text-white border border-rose-400 shadow-sm animate-pulse"
+                      : "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40",
                 )}
               >
                 {isSounding ? (
                   <>
-                    <Volume2 className="size-3 text-white" />
+                    <Volume2 className="size-3.5 text-white" />
                     Broadcasting Alarm
                   </>
                 ) : !siren.is_active ? (
-                  "Inactive Unit"
+                  "Inactive Standby"
                 ) : (
                   <>
-                    <CheckCircle2 className="size-3 text-emerald-950" />
+                    <CheckCircle2 className="size-3.5 text-emerald-400" />
                     Standby Ready
                   </>
                 )}
               </span>
             </div>
-            <p className="mt-1 text-sm text-emerald-100/80">
+            <p className="mt-1 text-sm text-slate-200 font-medium">
               500m Acoustic Early Warning Radius • {areaName}
             </p>
           </div>
@@ -328,22 +304,22 @@ export default function SirenDetailPage() {
             isSounding ? (
               <Button
                 variant="danger"
-                className="h-10 gap-2 bg-rose-600 px-5 text-xs font-bold text-white hover:bg-rose-700 shadow-md cursor-pointer"
+                className="h-10 gap-2 rounded-xl bg-rose-600 px-5 text-xs font-bold text-white hover:bg-rose-500 border border-rose-400 shadow-md cursor-pointer animate-pulse"
                 onClick={() => silenceMutation.mutate()}
                 disabled={silenceMutation.isPending}
               >
-                <VolumeX className="size-4" />
-                Silence Siren Alarm
+                <VolumeX className="size-4 text-white" />
+                <span className="text-white">Silence Siren Alarm</span>
               </Button>
             ) : (
               <Button
                 variant="primary"
-                className="h-10 gap-2 bg-emerald-500 px-5 text-xs font-bold text-emerald-950 hover:bg-emerald-400 shadow-md cursor-pointer"
+                className="h-10 gap-2 rounded-xl bg-emerald-600 px-5 text-xs font-bold text-white hover:bg-emerald-500 border border-emerald-400/80 shadow-md cursor-pointer"
                 onClick={() => triggerMutation.mutate()}
                 disabled={triggerMutation.isPending}
               >
-                <Volume2 className="size-4" />
-                Trigger Alarm Simulation
+                <Volume2 className="size-4 text-white" />
+                <span className="text-white">Trigger Alarm Simulation</span>
               </Button>
             )
           ) : (
@@ -351,8 +327,9 @@ export default function SirenDetailPage() {
               variant="primary"
               onClick={() => reactivateMutation.mutate()}
               disabled={reactivateMutation.isPending}
-              className="bg-emerald-500 text-emerald-950 text-xs font-bold hover:bg-emerald-400"
+              className="h-10 rounded-xl bg-emerald-600 px-5 text-xs font-bold text-white hover:bg-emerald-500 border border-emerald-400"
             >
+              <Power className="size-4 text-white" />
               Reactivate Siren
             </Button>
           )}
@@ -412,13 +389,13 @@ export default function SirenDetailPage() {
         {/* Left 2 Cols: Simulation Bench & Trigger Logs */}
         <div className="flex flex-col gap-5 lg:col-span-2">
           {/* Audio Test Bench Card */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col gap-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
                 <Volume2 className="size-4 text-emerald-700" />
                 Acoustic Synthesizer Control Bench
               </h3>
-              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600">
+              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 border border-slate-200">
                 Web Audio API (Client-Side)
               </span>
             </div>
@@ -436,7 +413,7 @@ export default function SirenDetailPage() {
                   size="sm"
                   onClick={() => silenceMutation.mutate()}
                   disabled={silenceMutation.isPending}
-                  className="gap-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 animate-pulse"
+                  className="gap-1.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white animate-pulse shadow-xs cursor-pointer"
                 >
                   <VolumeX className="size-3.5" />
                   {silenceMutation.isPending ? "Silencing…" : "Stop Siren Alarm"}
@@ -448,9 +425,9 @@ export default function SirenDetailPage() {
                     size="sm"
                     onClick={() => drillMutation.mutate()}
                     disabled={drillMutation.isPending || !siren.is_active}
-                    className="gap-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700"
+                    className="gap-1.5 rounded-xl text-xs font-black bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-400 shadow-xs cursor-pointer"
                   >
-                    <Radio className="size-3.5" />
+                    <Radio className="size-3.5 text-slate-950" />
                     {drillMutation.isPending ? "Activating Drill…" : "Run Drill Simulation"}
                   </Button>
 
@@ -459,9 +436,9 @@ export default function SirenDetailPage() {
                     size="sm"
                     onClick={() => triggerMutation.mutate()}
                     disabled={triggerMutation.isPending || !siren.is_active}
-                    className="gap-1.5 text-xs font-bold text-rose-700 border-rose-200 hover:bg-rose-50"
+                    className="gap-1.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white border border-rose-500 shadow-xs cursor-pointer"
                   >
-                    <Volume2 className="size-3.5" />
+                    <Volume2 className="size-3.5 text-white" />
                     {triggerMutation.isPending ? "Triggering…" : "Sound Emergency Alarm"}
                   </Button>
                 </>
@@ -473,24 +450,27 @@ export default function SirenDetailPage() {
                 onClick={() => {
                   sirenAudio.start();
                   setTimeout(() => sirenAudio.stop(), 3000);
-                  toast.info("Playing 3-second diagnostic tone sweep");
+                  toast.info("Playing 3-second diagnostic tone sweep", {
+                    icon: "🔔",
+                    className: "border-blue-300 bg-blue-50 text-blue-950 font-medium",
+                  });
                 }}
-                className="gap-1 text-xs font-semibold text-slate-700 border-slate-300 ml-auto"
+                className="gap-1 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 border border-blue-400 ml-auto shadow-2xs cursor-pointer"
               >
-                <Activity className="size-3.5 text-amber-600" />
+                <Activity className="size-3.5 text-white" />
                 Play 3s Test Chime
               </Button>
             </div>
           </div>
 
           {/* Trigger Audit Timeline */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col gap-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
                 <History className="size-4 text-emerald-700" />
                 Siren Activation & Drill Audit Log
               </h3>
-              <span className="text-xs text-slate-500 font-semibold">
+              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 font-mono text-[10.5px] font-bold text-slate-700 border border-slate-200">
                 {audits.length} Recorded Events
               </span>
             </div>
@@ -501,39 +481,50 @@ export default function SirenDetailPage() {
                   const isDrill = log.classification === "Drill" || log.action.includes("drill");
                   const isSilence = log.action.includes("silence");
                   const isCreate = log.action.includes("create");
+                  const isDeactivate = log.action.includes("deactivate");
+                  const isReactivate = log.action.includes("reactivate");
+                  const isDelete = log.action.includes("delete");
 
                   return (
                     <div
                       key={log.id}
                       className={cn(
-                        "flex items-start gap-3 rounded-xl border p-3.5 text-xs",
+                        "flex items-start gap-3 rounded-xl border p-3.5 text-xs transition-all shadow-2xs",
                         isDrill
                           ? "border-sky-200 bg-sky-50/50"
                           : isSilence
                             ? "border-slate-200 bg-slate-50/60"
-                            : isCreate
+                            : isCreate || isReactivate
                               ? "border-emerald-200 bg-emerald-50/40"
-                              : "border-rose-200 bg-rose-50/50",
+                              : isDeactivate
+                                ? "border-neutral-200 bg-neutral-50/70"
+                                : isDelete
+                                  ? "border-rose-200 bg-rose-50/40"
+                                  : "border-rose-200 bg-rose-50/50",
                       )}
                     >
                       <div
                         className={cn(
-                          "grid size-8 shrink-0 place-items-center rounded-lg font-bold",
+                          "grid size-8 shrink-0 place-items-center rounded-lg font-bold shadow-2xs mt-0.5",
                           isDrill
                             ? "bg-sky-100 text-sky-700"
                             : isSilence
                               ? "bg-slate-200 text-slate-700"
-                              : isCreate
+                              : isCreate || isReactivate
                                 ? "bg-emerald-100 text-emerald-700"
-                                : "bg-rose-100 text-rose-700",
+                                : isDeactivate
+                                  ? "bg-neutral-200 text-neutral-700"
+                                  : "bg-rose-100 text-rose-700",
                         )}
                       >
                         {isDrill ? (
                           <Radio className="size-4" />
                         ) : isSilence ? (
                           <VolumeX className="size-4" />
-                        ) : isCreate ? (
+                        ) : isCreate || isReactivate ? (
                           <CheckCircle2 className="size-4" />
+                        ) : isDeactivate ? (
+                          <PowerOff className="size-4" />
                         ) : (
                           <Volume2 className="size-4" />
                         )}
@@ -550,18 +541,26 @@ export default function SirenDetailPage() {
                                   ? "Operational Alarm Silenced"
                                   : isCreate
                                     ? "Station Deployed & Geocoded"
-                                    : "Operational Emergency Alarm Triggered"}
+                                    : isDeactivate
+                                      ? "Station Unit Disabled"
+                                      : isReactivate
+                                        ? "Station Unit Reactivated"
+                                        : isDelete
+                                          ? "Station Soft-Deleted"
+                                          : "Operational Emergency Alarm Triggered"}
                             </p>
                             <span
                               className={cn(
-                                "rounded-full px-2 py-0.2 text-[9.5px] font-black uppercase tracking-wider",
+                                "rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider",
                                 isDrill
                                   ? "bg-sky-200/80 text-sky-800"
                                   : isSilence
                                     ? "bg-slate-200 text-slate-700"
-                                    : isCreate
+                                    : isCreate || isReactivate
                                       ? "bg-emerald-200 text-emerald-800"
-                                      : "bg-rose-200 text-rose-800",
+                                      : isDeactivate
+                                        ? "bg-neutral-200 text-neutral-800"
+                                        : "bg-rose-200 text-rose-800",
                               )}
                             >
                               {log.classification || (isDrill ? "Drill" : "Operational")}
@@ -578,7 +577,13 @@ export default function SirenDetailPage() {
                               ? "Acoustic alarm silenced by DRRM Command Center officer."
                               : isCreate
                                 ? `Siren station mounted and registered with 500m acoustic reach in ${areaName}.`
-                                : "Official DRRM operational flood emergency alarm broadcasted."}
+                                : isDeactivate
+                                  ? `Siren station placed into standby disabled state.`
+                                  : isReactivate
+                                    ? `Siren station reactivated and placed into active standby.`
+                                    : isDelete
+                                      ? `Siren station record soft-deleted from GIS views.`
+                                      : "Official DRRM operational flood emergency alarm broadcasted."}
                         </p>
                       </div>
                     </div>
@@ -645,20 +650,23 @@ export default function SirenDetailPage() {
           </div>
 
           {/* Quick Actions Card */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col gap-3">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col gap-3">
             <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-2">
               Station Management
             </h4>
 
-            <Link href={`/admin/sirens/${siren.id}/edit`}>
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 text-xs font-bold"
-              >
-                <Pencil className="size-3.5 text-amber-600" />
-                Edit Siren Coordinates & Label
-              </Button>
-            </Link>
+            <EditSirenDialog
+              siren={siren}
+              trigger={
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2 text-xs font-bold border-amber-300/80 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded-xl cursor-pointer"
+                >
+                  <Pencil className="size-3.5 text-amber-700" />
+                  Edit Siren Coordinates & Label
+                </Button>
+              }
+            />
 
             {siren.is_active ? (
               <Button
@@ -673,9 +681,9 @@ export default function SirenDetailPage() {
                   }
                 }}
                 disabled={deactivateMutation.isPending}
-                className="w-full justify-start gap-2 text-xs font-semibold text-slate-700 border-slate-200 bg-slate-50 hover:bg-slate-100 hover:text-amber-800 cursor-pointer"
+                className="w-full justify-start gap-2 text-xs font-bold border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-200 rounded-xl cursor-pointer"
               >
-                <PowerOff className="size-3.5 text-slate-500" />
+                <PowerOff className="size-3.5 text-neutral-600" />
                 Disable Siren Station
               </Button>
             ) : (
@@ -683,7 +691,7 @@ export default function SirenDetailPage() {
                 variant="outline"
                 onClick={() => reactivateMutation.mutate()}
                 disabled={reactivateMutation.isPending}
-                className="w-full justify-start gap-2 text-xs font-bold text-emerald-800 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 cursor-pointer"
+                className="w-full justify-start gap-2 text-xs font-bold text-emerald-800 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 rounded-xl cursor-pointer"
               >
                 <Power className="size-3.5 text-emerald-600" />
                 Reactivate Siren Station
@@ -702,7 +710,7 @@ export default function SirenDetailPage() {
                 }
               }}
               disabled={deleteMutation.isPending}
-              className="w-full justify-start gap-2 text-xs font-semibold text-rose-700 border-rose-200 bg-rose-50 hover:bg-rose-100 cursor-pointer"
+              className="w-full justify-start gap-2 text-xs font-bold text-rose-700 border-rose-200 bg-rose-50 hover:bg-rose-100 rounded-xl cursor-pointer"
             >
               <Trash2 className="size-3.5" />
               Delete Siren Station

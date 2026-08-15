@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
+  CheckCircle2,
   Crosshair,
   Eye,
   Filter,
+  History,
   Layers,
   MapPin,
   Megaphone,
@@ -45,6 +47,7 @@ import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import { useSirenAudio } from "@/hooks/use-siren-audio";
 import { DeploySirenDialog } from "@/components/features/admin/deploy-siren-dialog";
+import { EditSirenDialog } from "@/components/features/admin/edit-siren-dialog";
 import { cn } from "@/lib/utils";
 
 interface Siren {
@@ -56,6 +59,16 @@ interface Siren {
   area_name?: string | null;
   is_active: boolean;
   last_triggered_at?: string | null;
+}
+
+interface SirenAudit {
+  id: string;
+  action: string;
+  entity_id: string | null;
+  actor_user_id: string | null;
+  classification: string;
+  created_at: string;
+  changes?: Record<string, unknown> | null;
 }
 
 interface Area {
@@ -121,11 +134,17 @@ export default function AdminSirensPage() {
     queryFn: () => api.get<Area[]>("/admin/areas").then((r) => r.data),
   });
 
+  const { data: audits = [], isLoading: isAuditsLoading } = useQuery<SirenAudit[]>({
+    queryKey: ["admin", "sirens", "audits"],
+    queryFn: () => api.get<SirenAudit[]>("/admin/sirens/audits").then((r) => r.data),
+    refetchInterval: 10_000,
+  });
+
   const handleManualRefresh = async () => {
     setIsManualRefreshing(true);
     setCountdown(60);
     try {
-      await refetch();
+      await Promise.all([refetch(), queryClient.invalidateQueries({ queryKey: ["admin", "sirens", "audits"] })]);
     } finally {
       setTimeout(() => setIsManualRefreshing(false), 600);
     }
@@ -148,6 +167,7 @@ export default function AdminSirensPage() {
           : "Siren returned to idle",
       );
       queryClient.invalidateQueries({ queryKey: ["admin", "sirens"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens", "audits"] });
     },
     onError: (error) => {
       toast.error(toDisplayError(error).detail || "Failed to trigger siren");
@@ -160,6 +180,7 @@ export default function AdminSirensPage() {
       sirenAudio.stop();
       toast.success("Siren alarm silenced");
       queryClient.invalidateQueries({ queryKey: ["admin", "sirens"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens", "audits"] });
     },
     onError: (error) => {
       toast.error(toDisplayError(error).detail || "Failed to silence siren");
@@ -172,8 +193,12 @@ export default function AdminSirensPage() {
       sirenAudio.start();
       toast.warning(
         `🚨 Drill Simulation Active: ${res.data.affected_count} siren stations sounding (Audit Classified: Drill)`,
+        {
+          className: "border-amber-300 bg-amber-50 text-amber-950 font-medium",
+        },
       );
       queryClient.invalidateQueries({ queryKey: ["admin", "sirens"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens", "audits"] });
     },
     onError: (err) => {
       toast.error(toDisplayError(err).detail || "Failed to trigger drill simulation");
@@ -188,6 +213,7 @@ export default function AdminSirensPage() {
         `⏹ Drill Simulation Concluded: ${res.data.affected_count} siren stations silenced (Audit Classified: Drill)`,
       );
       queryClient.invalidateQueries({ queryKey: ["admin", "sirens"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens", "audits"] });
     },
     onError: (err) => {
       toast.error(toDisplayError(err).detail || "Failed to silence drill simulation");
@@ -199,6 +225,7 @@ export default function AdminSirensPage() {
     onSuccess: () => {
       toast.success("Siren unit disabled");
       queryClient.invalidateQueries({ queryKey: ["admin", "sirens"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens", "audits"] });
     },
     onError: (err) => {
       toast.error(toDisplayError(err).detail || "Could not disable siren");
@@ -210,6 +237,7 @@ export default function AdminSirensPage() {
     onSuccess: () => {
       toast.success("Siren station deleted");
       queryClient.invalidateQueries({ queryKey: ["admin", "sirens"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens", "audits"] });
     },
     onError: (err) => {
       toast.error(toDisplayError(err).detail || "Could not delete siren");
@@ -221,6 +249,7 @@ export default function AdminSirensPage() {
     onSuccess: () => {
       toast.success("Siren unit reactivated");
       queryClient.invalidateQueries({ queryKey: ["admin", "sirens"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens", "audits"] });
     },
     onError: (err) => {
       toast.error(toDisplayError(err).detail || "Could not reactivate siren");
@@ -606,9 +635,9 @@ export default function AdminSirensPage() {
                   size="sm"
                   disabled={triggerAllDrillMutation.isPending || stats.activeCount === 0}
                   onClick={() => triggerAllDrillMutation.mutate()}
-                  className="h-9 justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white shadow-md cursor-pointer"
+                  className="h-9 justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-xs font-black text-slate-950 border border-amber-400 shadow-md cursor-pointer disabled:bg-slate-800 disabled:text-slate-500 disabled:border-slate-700"
                 >
-                  <Radio className="size-3.5" />
+                  <Radio className="size-3.5 text-slate-950" />
                   {triggerAllDrillMutation.isPending
                     ? "Activating Drill…"
                     : `Start Barangay Drill (${stats.activeCount} Sirens)`}
@@ -621,11 +650,14 @@ export default function AdminSirensPage() {
                 onClick={() => {
                   sirenAudio.start();
                   setTimeout(() => sirenAudio.stop(), 3000);
-                  toast.info("Playing 3-second local test chime");
+                  toast.info("Playing 3-second local diagnostic chime", {
+                    icon: "🔔",
+                    className: "border-blue-300 bg-blue-50 text-blue-950 font-medium",
+                  });
                 }}
-                className="h-7.5 justify-center gap-1.5 border-slate-700 bg-slate-900/80 text-[11px] font-semibold text-slate-300 hover:bg-slate-800 cursor-pointer"
+                className="h-8 justify-center gap-1.5 border-blue-400 bg-blue-600 text-xs font-bold text-white hover:bg-blue-500 shadow-xs cursor-pointer"
               >
-                <Activity className="size-3 text-amber-400" />
+                <Activity className="size-3.5 text-white" />
                 Play 3s Diagnostic Chime
               </Button>
             </div>
@@ -695,192 +727,360 @@ export default function AdminSirensPage() {
         </div>
       </div>
 
-      {/* ResourceTable */}
-      <ResourceTable
-        columns={columns}
-        data={filteredSirens}
-        isLoading={isLoading}
-        isError={isError}
-        onRetry={refetch}
-        getRowKey={(row) => row.id}
-        selectedRowKey={selectedId}
-        onRowSelect={(row) => setSelectedId(row.id)}
-        searchPlaceholder="Search siren unit name, area, status…"
-        filterSlots={
-          <div className="flex flex-wrap items-center gap-2">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="inline-flex h-9 w-fit min-w-[130px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent align="end" className="min-w-44">
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="sounding">Sounding</SelectItem>
-                <SelectItem value="idle">Idle</SelectItem>
-                <SelectItem value="testing">Testing</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* 2-Column Lower Section: Column 1 (Siren Unit List) | Column 2 (Past Latest Events / History) */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-start">
+        {/* Column 1: Siren Management Table */}
+        <div className="flex flex-col gap-3 xl:col-span-7">
+          <ResourceTable
+            columns={columns}
+            data={filteredSirens}
+            isLoading={isLoading}
+            isError={isError}
+            onRetry={refetch}
+            getRowKey={(row) => row.id}
+            selectedRowKey={selectedId}
+            onRowSelect={(row) => setSelectedId(row.id)}
+            searchPlaceholder="Search siren unit name, area, status…"
+            filterSlots={
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="inline-flex h-9 w-fit min-w-[130px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
+                    <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                    <SelectValue placeholder="All Statuses" />
+                  </SelectTrigger>
+                  <SelectContent align="end" className="min-w-44">
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="sounding">Sounding</SelectItem>
+                    <SelectItem value="idle">Idle</SelectItem>
+                    <SelectItem value="testing">Testing</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
 
-            <Select value={areaFilter} onValueChange={setAreaFilter}>
-              <SelectTrigger className="inline-flex h-9 w-fit min-w-[120px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
-                <SelectValue placeholder="All Areas" />
-              </SelectTrigger>
-              <SelectContent align="end" className="min-w-40">
-                <SelectItem value="all">All Areas</SelectItem>
-                {SAN_JOSE_AREAS.map((area) => (
-                  <SelectItem key={area} value={area}>
-                    {area}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        }
-        toolbarAction={<DeploySirenDialog />}
-        rowActions={(row) => (
-          <div className="flex flex-wrap items-center gap-1.5">
-            {/* 1. Locate */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedId(row.id)}
-              aria-label={`Locate ${row.name}`}
-              className="h-8 gap-1.5 border-slate-300 bg-white px-2.5 text-xs font-bold text-slate-800 hover:bg-slate-50 cursor-pointer"
-              title="Locate on Map"
-            >
-              <Crosshair aria-hidden className="size-3.5 text-slate-700" />
-              Locate
-            </Button>
+                <Select value={areaFilter} onValueChange={setAreaFilter}>
+                  <SelectTrigger className="inline-flex h-9 w-fit min-w-[120px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
+                    <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                    <SelectValue placeholder="All Areas" />
+                  </SelectTrigger>
+                  <SelectContent align="end" className="min-w-40">
+                    <SelectItem value="all">All Areas</SelectItem>
+                    {SAN_JOSE_AREAS.map((area) => (
+                      <SelectItem key={area} value={area}>
+                        {area}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            }
+            toolbarAction={<DeploySirenDialog />}
+            rowActions={(row) => (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {/* 1. Locate (Icon Only) */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedId(row.id)}
+                  aria-label={`Locate ${row.name}`}
+                  className="h-8 w-8 p-0 border-slate-300 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shrink-0"
+                  title="Locate on Map"
+                >
+                  <Crosshair aria-hidden className="size-3.5 text-slate-700" />
+                </Button>
 
-            {/* 2. Details */}
-            <Link href={`/admin/sirens/${row.id}`}>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1.5 border-slate-300 bg-white px-2.5 text-xs font-bold text-slate-800 hover:bg-slate-50 hover:text-emerald-700 cursor-pointer"
-                title="View Siren Telemetry & History"
-              >
-                <Eye className="size-3.5" />
-                Details
-              </Button>
-            </Link>
+                {/* 2. Details (Green) */}
+                <Link href={`/admin/sirens/${row.id}`}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 border-emerald-300/90 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 hover:border-emerald-400 cursor-pointer"
+                    title="View Siren Telemetry & History"
+                  >
+                    <Eye className="size-3.5 text-emerald-700" />
+                    Details
+                  </Button>
+                </Link>
 
-            {/* 3. Trigger / Silence */}
-            {row.is_active ? (
-              <Button
-                variant={row.status === "sounding" ? "danger" : "outline"}
-                size="sm"
-                onClick={() =>
-                  row.status === "sounding"
-                    ? silenceMutation.mutate(row.id)
-                    : triggerMutation.mutate(row.id)
-                }
-                disabled={triggerMutation.isPending || silenceMutation.isPending}
-                className={cn(
-                  "h-8 gap-1.5 text-xs font-bold shadow-2xs px-2.5 cursor-pointer",
-                  row.status === "sounding"
-                    ? "bg-rose-600 text-white hover:bg-rose-700"
-                    : "border-emerald-600/60 bg-white text-emerald-800 hover:bg-emerald-50",
-                )}
-              >
-                {row.status === "sounding" ? (
-                  <>
-                    <VolumeX className="size-3.5" />
-                    Silence
-                  </>
+                {/* 3. Trigger / Silence (Orange) */}
+                {row.is_active ? (
+                  <Button
+                    variant={row.status === "sounding" ? "danger" : "outline"}
+                    size="sm"
+                    onClick={() =>
+                      row.status === "sounding"
+                        ? silenceMutation.mutate(row.id)
+                        : triggerMutation.mutate(row.id)
+                    }
+                    disabled={triggerMutation.isPending || silenceMutation.isPending}
+                    className={cn(
+                      "h-8 gap-1.5 text-xs font-bold shadow-2xs px-2.5 cursor-pointer",
+                      row.status === "sounding"
+                        ? "bg-rose-600 text-white hover:bg-rose-700"
+                        : "border-amber-400/90 bg-amber-50 text-amber-900 hover:bg-amber-100 hover:border-amber-500",
+                    )}
+                  >
+                    {row.status === "sounding" ? (
+                      <>
+                        <VolumeX className="size-3.5 text-white" />
+                        Silence
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="size-3.5 text-amber-700" />
+                        Trigger
+                      </>
+                    )}
+                  </Button>
                 ) : (
-                  <>
-                    <Volume2 className="size-3.5" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                    className="h-8 gap-1.5 border-slate-200 bg-slate-50 px-2.5 text-xs font-semibold text-slate-400 cursor-not-allowed"
+                    title="Cannot trigger disabled siren"
+                  >
+                    <Volume2 className="size-3.5 text-slate-400" />
                     Trigger
-                  </>
+                  </Button>
                 )}
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled
-                className="h-8 gap-1.5 border-slate-200 bg-slate-50 px-2.5 text-xs font-semibold text-slate-400 cursor-not-allowed"
-                title="Cannot trigger disabled siren"
-              >
-                <Volume2 className="size-3.5 text-slate-400" />
-                Trigger
-              </Button>
-            )}
 
-            {/* 4. Disable / Reactivate */}
-            {row.is_active ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      `Disable siren station "${row.name}"?\n\nThe station will be set to an inactive standby state.`,
-                    )
-                  ) {
-                    deactivateMutation.mutate(row.id);
+                {/* 4. Disable / Reactivate (Gray / Black) */}
+                {row.is_active ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          `Disable siren station "${row.name}"?\n\nThe station will be set to an inactive standby state.`,
+                        )
+                      ) {
+                        deactivateMutation.mutate(row.id);
+                      }
+                    }}
+                    disabled={deactivateMutation.isPending}
+                    className="h-8 gap-1.5 border-neutral-300 bg-neutral-100 px-2.5 text-xs font-bold text-neutral-800 hover:bg-neutral-200 hover:text-neutral-950 cursor-pointer"
+                    title="Disable Siren"
+                  >
+                    <PowerOff className="size-3.5 text-neutral-600" />
+                    Disable
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => reactivateMutation.mutate(row.id)}
+                    disabled={reactivateMutation.isPending}
+                    className="h-8 gap-1.5 border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 cursor-pointer"
+                    title="Reactivate Siren"
+                  >
+                    <Power className="size-3.5 text-emerald-600" />
+                    Reactivate
+                  </Button>
+                )}
+
+                {/* 5. Edit (Modal) */}
+                <EditSirenDialog
+                  siren={row}
+                  trigger={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 border-amber-300/80 bg-amber-50 px-2.5 text-xs font-bold text-amber-800 hover:bg-amber-100 cursor-pointer"
+                      title="Edit Siren"
+                    >
+                      <Pencil className="size-3.5" />
+                      Edit
+                    </Button>
                   }
-                }}
-                disabled={deactivateMutation.isPending}
-                className="h-8 gap-1.5 border-slate-300 bg-white px-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-amber-800 cursor-pointer"
-                title="Disable Siren"
-              >
-                <PowerOff className="size-3.5 text-slate-500" />
-                Disable
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => reactivateMutation.mutate(row.id)}
-                disabled={reactivateMutation.isPending}
-                className="h-8 gap-1.5 border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 cursor-pointer"
-                title="Reactivate Siren"
-              >
-                <Power className="size-3.5 text-emerald-600" />
-                Reactivate
-              </Button>
+                />
+
+                {/* 6. Delete */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        `Delete siren station "${row.name}"?\n\nThis will remove the unit from active GIS maps while safely preserving all historical audit logs and event records in the backend.`,
+                      )
+                    ) {
+                      deleteMutation.mutate(row.id);
+                    }
+                  }}
+                  disabled={deleteMutation.isPending}
+                  className="h-8 gap-1.5 border-rose-200 bg-rose-50/60 px-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 cursor-pointer"
+                  title="Delete Siren Station (Soft Delete)"
+                >
+                  <Trash2 className="size-3.5" />
+                  Delete
+                </Button>
+              </div>
             )}
+          />
+        </div>
 
-            {/* 5. Edit */}
-            <Link href={`/admin/sirens/${row.id}/edit`}>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1.5 border-amber-300/80 bg-amber-50 px-2.5 text-xs font-bold text-amber-800 hover:bg-amber-100 cursor-pointer"
-                title="Edit Siren"
-              >
-                <Pencil className="size-3.5" />
-                Edit
-              </Button>
-            </Link>
-
-            {/* 6. Delete */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (
-                  window.confirm(
-                    `Delete siren station "${row.name}"?\n\nThis will remove the unit from active GIS maps while safely preserving all historical audit logs and event records in the backend.`,
-                  )
-                ) {
-                  deleteMutation.mutate(row.id);
-                }
-              }}
-              disabled={deleteMutation.isPending}
-              className="h-8 gap-1.5 border-rose-200 bg-rose-50/60 px-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 cursor-pointer"
-              title="Delete Siren Station (Soft Delete)"
-            >
-              <Trash2 className="size-3.5" />
-              Delete
-            </Button>
+        {/* Column 2: Past Latest Events (History Timeline) */}
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs xl:col-span-5">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 shadow-2xs">
+                <History className="size-4" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-slate-900 leading-tight">
+                  Past Latest Events
+                </h3>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Live audit trail of siren triggers, drills, and station status changes
+                </p>
+              </div>
+            </div>
+            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 font-mono text-[10.5px] font-bold text-slate-700 border border-slate-200 shrink-0">
+              {audits.length} Events
+            </span>
           </div>
-        )}
-      />
+
+          {/* Scrollable Audit Feed */}
+          <div className="flex max-h-[560px] flex-col gap-2.5 overflow-y-auto pr-1 sagip-legend-scroll">
+            {isAuditsLoading ? (
+              <div className="flex flex-col gap-2 py-4">
+                {[1, 2, 3].map((n) => (
+                  <div
+                    key={n}
+                    className="h-16 animate-pulse rounded-xl bg-slate-100"
+                  />
+                ))}
+              </div>
+            ) : audits.length > 0 ? (
+              audits.map((log) => {
+                const isDrill =
+                  log.classification === "Drill" || log.action.includes("drill");
+                const isSilence = log.action.includes("silence");
+                const isCreate = log.action.includes("create");
+                const isDeactivate = log.action.includes("deactivate");
+                const isReactivate = log.action.includes("reactivate");
+                const isDelete = log.action.includes("delete");
+
+                const stationName =
+                  (typeof log.changes?.name === "string" && log.changes.name) ||
+                  allSirens.find((s) => s.id === log.entity_id)?.name ||
+                  (isDrill ? "All Active Siren Stations" : "Siren Station");
+
+                return (
+                  <div
+                    key={log.id}
+                    className={cn(
+                      "flex items-start gap-3 rounded-xl border p-3 text-xs transition-all shadow-2xs",
+                      isDrill
+                        ? "border-sky-200 bg-sky-50/40"
+                        : isSilence
+                          ? "border-slate-200 bg-slate-50/60"
+                          : isCreate || isReactivate
+                            ? "border-emerald-200 bg-emerald-50/40"
+                            : isDeactivate
+                              ? "border-neutral-200 bg-neutral-50/70"
+                              : isDelete
+                                ? "border-rose-200 bg-rose-50/40"
+                                : "border-rose-200 bg-rose-50/60",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "grid size-7.5 shrink-0 place-items-center rounded-lg font-bold shadow-2xs mt-0.5",
+                        isDrill
+                          ? "bg-sky-100 text-sky-700"
+                          : isSilence
+                            ? "bg-slate-200 text-slate-700"
+                            : isCreate || isReactivate
+                              ? "bg-emerald-100 text-emerald-700"
+                              : isDeactivate
+                                ? "bg-neutral-200 text-neutral-700"
+                                : "bg-rose-100 text-rose-700",
+                      )}
+                    >
+                      {isDrill ? (
+                        <Radio className="size-3.5" />
+                      ) : isSilence ? (
+                        <VolumeX className="size-3.5" />
+                      ) : isCreate || isReactivate ? (
+                        <CheckCircle2 className="size-3.5" />
+                      ) : isDeactivate ? (
+                        <PowerOff className="size-3.5" />
+                      ) : (
+                        <Volume2 className="size-3.5" />
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <p className="font-bold text-slate-900 truncate text-xs">
+                          {isDrill
+                            ? isSilence
+                              ? "Drill Concluded & Silenced"
+                              : "Drill Simulation Sounding"
+                            : isSilence
+                              ? "Operational Alarm Silenced"
+                              : isCreate
+                                ? "Station Deployed & Armed"
+                                : isDeactivate
+                                  ? "Station Unit Disabled"
+                                  : isReactivate
+                                    ? "Station Unit Reactivated"
+                                    : isDelete
+                                      ? "Station Soft-Deleted"
+                                      : "Emergency Alarm Activated"}
+                        </p>
+                        <span
+                          className={cn(
+                            "shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider",
+                            isDrill
+                              ? "bg-sky-100 text-sky-800 border border-sky-300"
+                              : isSilence
+                                ? "bg-slate-100 text-slate-700 border border-slate-300"
+                                : isCreate || isReactivate
+                                  ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                                  : isDeactivate
+                                    ? "bg-neutral-100 text-neutral-800 border border-neutral-300"
+                                    : "bg-rose-100 text-rose-800 border border-rose-300",
+                          )}
+                        >
+                          {log.classification || (isDrill ? "Drill" : "Operational")}
+                        </span>
+                      </div>
+
+                      <div className="mt-1 flex items-center justify-between gap-1 text-[11px] text-slate-500">
+                        <span className="font-medium truncate text-slate-700">
+                          {stationName}
+                        </span>
+                        <span className="shrink-0 font-mono text-[10.5px] text-slate-400">
+                          {new Date(log.created_at).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                            hour12: true,
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-1.5 py-12 text-center text-slate-400">
+                <History className="size-8 stroke-1 text-slate-300" />
+                <p className="text-xs font-bold text-slate-700">
+                  No Past Events Recorded Yet
+                </p>
+                <p className="text-[11px] text-slate-500 max-w-xs leading-relaxed">
+                  Trigger a siren test chime, run a drill simulation, or deploy stations to view real-time audit records here.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
