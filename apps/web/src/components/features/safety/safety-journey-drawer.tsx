@@ -55,37 +55,51 @@ export function SafetyJourneyDrawer({ subject, onClose }: SafetyJourneyDrawerPro
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-md p-0 flex flex-col h-full bg-slate-50 border-l border-slate-200 z-[2500]"
+        className="w-full sm:max-w-md p-0 gap-0 flex flex-col h-full bg-slate-50 border-l border-slate-200 z-[2500]"
         showCloseButton={false}
       >
         {/* Drawer Header */}
-        <div className="bg-white border-b border-slate-200 p-5 shrink-0 flex items-start justify-between">
-          <div className="flex flex-col min-w-0">
-            <SheetTitle className="text-base font-black text-slate-900 leading-tight">
-              {data?.full_name ?? subject?.name ?? "Resident Safety Journey"}
-            </SheetTitle>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-[11px] font-bold text-slate-500">
-                {subject?.type === "registered_member" ? "Registered Citizen" : "Unregistered Walk-In"}
-              </span>
+        <div className="bg-white border-b border-slate-200 px-5 py-4 shrink-0 flex items-center justify-between">
+          <div className="flex flex-col min-w-0 pr-2">
+            <div className="flex items-center gap-2">
+              <SheetTitle className="text-base font-black text-slate-900 leading-tight truncate">
+                {data?.full_name ?? subject?.name ?? "Resident Safety Journey"}
+              </SheetTitle>
               {data?.is_head && (
-                <span className="inline-flex items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9.5px] font-bold uppercase text-emerald-800 border border-emerald-200">
-                  Household Head
+                <span className="inline-flex items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9.5px] font-bold uppercase text-emerald-800 border border-emerald-200 shrink-0">
+                  Head
                 </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 mt-0.5 truncate">
+              <span>{subject?.type === "registered_member" ? "Registered Citizen" : "Unregistered Walk-In"}</span>
+              {data?.household_reference_no && (
+                <>
+                  <span>·</span>
+                  <span className="font-bold text-slate-700">{data.household_reference_no}</span>
+                </>
+              )}
+              {data?.area_name && (
+                <>
+                  <span>·</span>
+                  <span>{data.area_name}</span>
+                </>
               )}
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+            aria-label="Close drawer"
+            className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer shrink-0"
           >
             <X className="size-4" />
           </button>
         </div>
 
         {/* Drawer Body Scroll Area with Custom Scrollbar */}
-        <ScrollArea className="flex-1 min-h-0 h-full">
-          <div className="p-5 flex flex-col gap-5">
+        <ScrollArea type="always" className="flex-1 min-h-0 h-full custom-scrollbar">
+          <div className="p-4 sm:p-5 flex flex-col gap-4">
             {journeyQuery.isLoading ? (
               <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
                 <div className="size-8 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
@@ -183,7 +197,7 @@ export function SafetyJourneyDrawer({ subject, onClose }: SafetyJourneyDrawerPro
                       No status mutations recorded yet for this person.
                     </div>
                   ) : (
-                    <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                    <div className="relative pl-6 space-y-3.5 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
                       {data.timeline.map((entry, index) => {
                         const isLatest = index === 0;
                         return (
@@ -216,7 +230,7 @@ export function SafetyJourneyDrawer({ subject, onClose }: SafetyJourneyDrawerPro
                             </div>
 
                             {/* Event Card */}
-                            <div className={`rounded-xl border p-3.5 bg-white shadow-2xs transition-all ${isLatest ? "border-emerald-200/90 ring-2 ring-emerald-500/10" : "border-slate-200"}`}>
+                            <div className={`rounded-xl border p-3 bg-white shadow-2xs transition-all ${isLatest ? "border-emerald-200/90 ring-2 ring-emerald-500/10" : "border-slate-200"}`}>
                               <div className="flex items-start justify-between gap-3">
                                 <span className="text-xs font-bold text-slate-900">{entry.title}</span>
                                 <span className="text-[10px] font-semibold text-slate-400 tabular-nums shrink-0 whitespace-nowrap text-right">
@@ -226,7 +240,7 @@ export function SafetyJourneyDrawer({ subject, onClose }: SafetyJourneyDrawerPro
                               <p className="mt-1 text-[11.5px] text-slate-600 leading-snug">{entry.description}</p>
 
                               {entry.actor_name && (
-                                <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px] text-slate-400">
+                                <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10.5px] text-slate-400">
                                   <span>Recorded by:</span>
                                   <span className="font-semibold text-slate-700">{entry.actor_name}</span>
                                 </div>

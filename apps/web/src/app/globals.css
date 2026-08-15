@@ -1132,4 +1132,25 @@
   .animate-splash-progress {
     animation: splash-progress 2.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
+
+  /* --- Custom Smooth Green Scrollbar Utility --- */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #10b981 #f0fdf4;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #f0fdf4;
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #10b981;
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #059669;
+  }
 }
