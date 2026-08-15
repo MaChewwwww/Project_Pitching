@@ -68,6 +68,7 @@ import {
   type HazardGeometry,
 } from "@/lib/hazard-geojson";
 import type {
+  EmergencyEventOut,
   EmergencyWorkspaceOut,
   SafetyStatusAdminIn,
   UnregisteredPersonIn,
