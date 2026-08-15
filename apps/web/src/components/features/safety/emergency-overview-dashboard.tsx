@@ -466,9 +466,9 @@ export function EmergencyOverviewDashboard({
       {/* -------------------------------------------------------------------- */}
       {/* 1. Operational Command Telemetry Header Banner                       */}
       {/* -------------------------------------------------------------------- */}
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 p-6 sm:p-7 text-white shadow-xl">
-        <div className="absolute -right-16 -top-16 size-80 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
-        <div className="absolute -left-16 -bottom-16 size-80 rounded-full bg-sky-500/10 blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl border border-primary-800/60 bg-gradient-to-br from-primary-900 via-primary-950 to-primary-950 p-6 sm:p-7 text-white shadow-xl">
+        <div className="absolute -right-16 -top-16 size-80 rounded-full bg-primary-500/15 blur-3xl pointer-events-none" />
+        <div className="absolute -left-16 -bottom-16 size-80 rounded-full bg-primary-400/10 blur-3xl pointer-events-none" />
 
         <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           {/* Incident title and classification */}
@@ -1305,7 +1305,7 @@ function StandbyReadinessView({
   return (
     <div className="flex flex-col gap-6">
       {/* Hero Readiness Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 p-6 sm:p-8 text-white shadow-xl">
+      <div className="relative overflow-hidden rounded-3xl border border-primary-800/60 bg-gradient-to-br from-primary-900 via-primary-950 to-primary-950 p-6 sm:p-8 text-white shadow-xl">
         <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div className="flex flex-col gap-2.5 max-w-2xl">
             <div className="flex items-center gap-2">
