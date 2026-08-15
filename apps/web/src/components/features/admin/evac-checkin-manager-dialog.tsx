@@ -28,10 +28,12 @@ export function EvacCheckinManagerDialog({
   centerId,
   centerName,
   capacity,
+  trigger,
 }: {
   centerId: string;
   centerName: string;
   capacity: number | null;
+  trigger?: React.ReactNode;
 }) {
   const [open, setOpen] = React.useState(false);
   const [personName, setPersonName] = React.useState("");
@@ -186,10 +188,16 @@ export function EvacCheckinManagerDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5 font-bold">
-          <UserCheck className="size-4 text-emerald-600" />
-          Check-in Station
-        </Button>
+        {trigger ?? (
+          <Button
+            size="sm"
+            variant="primary"
+            className="h-8 gap-1.5 rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+          >
+            <UserCheck className="size-4 text-emerald-600" />
+            Check-in Station
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto p-6">
         <DialogHeader className="border-b border-neutral-100 pb-4">
