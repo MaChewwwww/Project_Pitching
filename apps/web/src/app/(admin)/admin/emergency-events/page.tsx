@@ -1028,7 +1028,7 @@ function EventSearchSelect({
           <ChevronDown className="size-4 shrink-0 text-emerald-300 opacity-90" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 sm:w-96 rounded-2xl bg-[#04281e] text-white border border-emerald-700/80 p-3 shadow-2xl z-50">
+      <PopoverContent align="end" className="w-80 sm:w-96 rounded-2xl bg-[#04281e] text-white border border-emerald-700/80 p-3 shadow-2xl z-[1500]">
         {/* Search Bar */}
         <div className="flex items-center gap-2 rounded-xl bg-emerald-950/90 px-3 py-2 border border-emerald-800/80 mb-3 focus-within:border-emerald-400 focus-within:bg-emerald-950 transition-all">
           <Search className="size-4 text-emerald-400 shrink-0" />
@@ -1050,7 +1050,7 @@ function EventSearchSelect({
           ) : null}
         </div>
 
-        <div className="max-h-72 overflow-y-auto space-y-3 pr-1 scrollbar-thin">
+        <div className="max-h-72 overflow-y-auto space-y-3 pr-1.5 custom-scrollbar-dark">
           {/* Active Events Section */}
           <div>
             <button
