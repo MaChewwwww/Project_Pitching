@@ -2586,7 +2586,7 @@ function UnregisteredPersonsPanel({
                 <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Evacuation Center</th>
                 <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Contact</th>
                 <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Special Needs</th>
-                <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Origin / Location</th>
+                <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Location Address</th>
                 <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Recorded Time</th>
                 <th className="h-11 px-4 text-right text-[11px] font-bold tracking-[0.08em] uppercase text-white">Action</th>
               </tr>

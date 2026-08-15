@@ -162,8 +162,12 @@ export function UnregisteredPersonForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="location_note">Location note (optional)</Label>
-        <Input id="location_note" {...register("location_note")} />
+        <Label htmlFor="location_note">Location Address (optional)</Label>
+        <Input
+          id="location_note"
+          placeholder="e.g. Block 3 Area 2 Riverside, Sitio San Jose"
+          {...register("location_note")}
+        />
         {errors.location_note ? (
           <p className="text-danger text-xs">{errors.location_note.message}</p>
         ) : null}
@@ -182,7 +186,11 @@ export function UnregisteredPersonForm({
               <SelectTrigger>
                 <SelectValue placeholder="No center assigned" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent
+                position="popper"
+                sideOffset={4}
+                className="z-50 w-[var(--radix-select-trigger-width)] max-h-60 rounded-xl border border-neutral-200 bg-white p-1 shadow-lg"
+              >
                 <SelectItem value="none">No center assigned</SelectItem>
                 {centersQuery.data
                   ?.filter((center) => center.is_open)
@@ -197,11 +205,11 @@ export function UnregisteredPersonForm({
         />
       </div>
 
-      <fieldset className="rounded-lg border border-neutral-200 p-3">
-        <legend className="px-1 text-sm font-semibold text-neutral-800">
-          Support needs
+      <fieldset className="rounded-xl border border-neutral-200 bg-slate-50/40 p-3.5">
+        <legend className="px-1.5 text-xs font-bold uppercase tracking-wider text-neutral-800">
+          Special Needs & Demographics
         </legend>
-        <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="grid grid-cols-2 gap-2 text-xs font-medium text-neutral-700 mt-1">
           {[
             ["is_infant", "Infant / Toddler (0–4 y/o)"],
             ["is_child", "Minor (5–17 y/o)"],
@@ -212,24 +220,31 @@ export function UnregisteredPersonForm({
             ["has_chronic_condition", "Chronic condition"],
             ["is_bedridden", "Mobility-limited"],
           ].map(([name, label]) => (
-            <label key={name} className="flex min-h-10 items-center gap-2">
+            <label key={name} className="flex min-h-8 items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 {...register(name as keyof FormValues)}
-                className="accent-primary-700 size-4"
+                className="accent-primary-700 size-4 rounded"
               />
               {label}
             </label>
           ))}
         </div>
-        <div className="mt-2">
-          <Label htmlFor="chronic_condition_note">Condition note (optional)</Label>
-          <Input id="chronic_condition_note" {...register("chronic_condition_note")} />
+        <div className="mt-3">
+          <Label htmlFor="chronic_condition_note" className="text-xs">
+            Condition note (optional)
+          </Label>
+          <Input
+            id="chronic_condition_note"
+            placeholder="e.g. Maintenance hypertensive meds, asthma inhaler..."
+            {...register("chronic_condition_note")}
+            className="mt-1"
+          />
         </div>
       </fieldset>
 
       <div className="flex flex-col gap-1.5">
-        <Label>Status</Label>
+        <Label>Safety Status</Label>
         <Controller
           control={control}
           name="initial_status"
@@ -238,19 +253,27 @@ export function UnregisteredPersonForm({
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="safe">Safe</SelectItem>
-                <SelectItem value="needs_rescue">Needs rescue</SelectItem>
+              <SelectContent
+                position="popper"
+                sideOffset={4}
+                className="z-50 w-[var(--radix-select-trigger-width)] rounded-xl border border-neutral-200 bg-white p-1 shadow-lg"
+              >
+                <SelectItem value="safe">Safe (Checked In)</SelectItem>
+                <SelectItem value="needs_rescue">Needs Rescue</SelectItem>
               </SelectContent>
             </Select>
           )}
         />
       </div>
 
-      {serverError ? <p className="text-danger text-body-sm">{serverError}</p> : null}
+      {serverError ? <p className="text-danger text-xs font-medium">{serverError}</p> : null}
 
-      <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">
-        {isSubmitting ? "Saving…" : "Record"}
+      <Button
+        type="submit"
+        disabled={isSubmitting}
+        className="mt-2 w-full h-10 rounded-xl bg-emerald-700 font-bold text-white shadow-sm hover:bg-emerald-800 cursor-pointer"
+      >
+        {isSubmitting ? "Saving…" : "Record Walk-In"}
       </Button>
     </form>
   );
