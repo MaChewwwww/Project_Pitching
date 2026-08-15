@@ -1,11 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   Building2,
-  Calendar,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -13,21 +12,32 @@ import {
   Download,
   Eye,
   HelpCircle,
-  History,
   Home,
   Layers,
+  MapPin,
   Phone,
   Printer,
   Search,
   ShieldAlert,
+  SlidersHorizontal,
   UserCheck,
+  UserPlus,
   Users,
+  UserX,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -37,30 +47,68 @@ import {
 } from "@/components/ui/select";
 import { api } from "@/lib/api/client";
 import { formatPhtDate, formatPhtDateTime, formatPhtTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type {
   EmergencyEventOut,
   SafetyLedgerPageOut,
+  UnregisteredPersonOut,
 } from "@/lib/api/safety-types";
-import type { PublicEvacCenter } from "@/lib/api/public-types";
+import type { Page, PublicEvacCenter } from "@/lib/api/public-types";
 import { SafetyJourneyDrawer } from "./safety-journey-drawer";
+import { UnregisteredPersonForm } from "./unregistered-person-form";
 
 interface SafetyLedgerTabProps {
   event: EmergencyEventOut | null;
-  events: EmergencyEventOut[];
-  onSelectEvent: (eventId: string) => void;
   canSeePii?: boolean;
+}
+
+function ListTabButton({
+  active,
+  onClick,
+  icon,
+  label,
+  count,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  count?: number;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={cn(
+        "inline-flex h-12 flex-1 min-w-[140px] items-center justify-center gap-1.5 border-b-2 px-4 text-xs font-extrabold transition-all cursor-pointer",
+        active
+          ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
+          : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50",
+      )}
+    >
+      {icon}
+      <span className="hidden sm:inline">{label}</span>
+      <span className="sm:hidden">{label.split(" ")[0]}</span>
+      {typeof count === "number" && count > 0 ? (
+        <span className="ml-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] leading-none font-black text-emerald-800">
+          {count}
+        </span>
+      ) : null}
+    </button>
+  );
 }
 
 export function SafetyLedgerTab({
   event,
-  events,
-  onSelectEvent,
 }: SafetyLedgerTabProps) {
+  const queryClient = useQueryClient();
   const [activeSubTab, setActiveSubTab] = React.useState<
     "stream" | "areas" | "centers" | "unregistered"
   >("stream");
 
-  // Filters
+  // Filters for Live Check-In Stream
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [subjectTypeFilter, setSubjectTypeFilter] = React.useState<string>("all");
@@ -69,6 +117,15 @@ export function SafetyLedgerTab({
   const [currentOnly, setCurrentOnly] = React.useState<boolean>(false);
   const [page, setPage] = React.useState(1);
   const pageSize = 15;
+
+  // Filters for Unregistered Persons Tab
+  const [unregSearch, setUnregSearch] = React.useState("");
+  const [unregCenterFilter, setUnregCenterFilter] = React.useState("all");
+  const [unregSupportFilter, setUnregSupportFilter] = React.useState("all");
+  const [unregPage, setUnregPage] = React.useState(1);
+
+  // Walk-in modal
+  const [recordWalkInOpen, setRecordWalkInOpen] = React.useState(false);
 
   // Selected subject for journey inspection drawer
   const [selectedSubject, setSelectedSubject] = React.useState<{
@@ -126,6 +183,21 @@ export function SafetyLedgerTab({
         .then((r) => r.data),
   });
 
+  // Dedicated Unregistered Persons Query for Sub-tab 4
+  const unregQuery = useQuery({
+    queryKey: ["admin", "unregistered-persons", event?.id],
+    queryFn: () =>
+      api
+        .get<Page<UnregisteredPersonOut>>("/admin/unregistered-persons", {
+          params: {
+            event_id: event?.id,
+            include_converted: true,
+            size: 100,
+          },
+        })
+        .then((res) => res.data),
+  });
+
   const ledgerData = ledgerQuery.data;
   const summary = ledgerData?.summary;
   const items = ledgerData?.items ?? [];
@@ -140,6 +212,81 @@ export function SafetyLedgerTab({
   const unaccountedCount = summary?.registered_total.unaccounted ?? 0;
   const unregSafe = summary?.unregistered_safe ?? 0;
   const unregRescue = summary?.unregistered_needs_rescue ?? 0;
+
+  const isStreamFiltered = Boolean(
+    search ||
+      statusFilter !== "all" ||
+      subjectTypeFilter !== "all" ||
+      areaFilter !== "all" ||
+      methodFilter !== "all" ||
+      currentOnly,
+  );
+
+  const resetStreamFilters = () => {
+    setSearch("");
+    setStatusFilter("all");
+    setSubjectTypeFilter("all");
+    setAreaFilter("all");
+    setMethodFilter("all");
+    setCurrentOnly(false);
+    setPage(1);
+  };
+
+  // Filtered Unregistered Persons for Tab 4
+  const unregFiltered = React.useMemo(() => {
+    const list: UnregisteredPersonOut[] = unregQuery.data?.items ?? [];
+    const q = unregSearch.trim().toLowerCase();
+    return list.filter((p: UnregisteredPersonOut) => {
+      const matchesSearch =
+        !q ||
+        p.full_name.toLowerCase().includes(q) ||
+        (p.contact_number && p.contact_number.toLowerCase().includes(q)) ||
+        (p.evac_center_name && p.evac_center_name.toLowerCase().includes(q)) ||
+        (p.location_note && p.location_note.toLowerCase().includes(q));
+
+      const matchesCenter =
+        unregCenterFilter === "all" ||
+        (unregCenterFilter === "none"
+          ? !p.evac_center_id
+          : p.evac_center_id === unregCenterFilter);
+
+      const hasSpecialNeeds =
+        p.is_child ||
+        p.is_senior ||
+        p.is_pwd ||
+        p.is_pregnant ||
+        p.is_lactating ||
+        p.has_chronic_condition ||
+        p.is_bedridden;
+
+      const matchesSupport =
+        unregSupportFilter === "all" ||
+        (unregSupportFilter === "with_special_needs" && hasSpecialNeeds) ||
+        (unregSupportFilter === "without_special_needs" && !hasSpecialNeeds) ||
+        (unregSupportFilter === "pwd" && p.is_pwd) ||
+        (unregSupportFilter === "senior" && p.is_senior) ||
+        (unregSupportFilter === "minor" && p.is_child) ||
+        (unregSupportFilter === "pregnant" && p.is_pregnant) ||
+        (unregSupportFilter === "bedridden" && p.is_bedridden);
+
+      return matchesSearch && matchesCenter && matchesSupport;
+    });
+  }, [unregQuery.data?.items, unregSearch, unregCenterFilter, unregSupportFilter]);
+
+  const unregTotalPages = Math.max(1, Math.ceil(unregFiltered.length / pageSize));
+  const unregCurrentPage = Math.min(unregPage, unregTotalPages);
+  const unregStartIndex = (unregCurrentPage - 1) * pageSize;
+  const unregPageItems = unregFiltered.slice(unregStartIndex, unregStartIndex + pageSize);
+  const isUnregFiltered = Boolean(
+    unregSearch || unregCenterFilter !== "all" || unregSupportFilter !== "all",
+  );
+
+  const resetUnregFilters = () => {
+    setUnregSearch("");
+    setUnregCenterFilter("all");
+    setUnregSupportFilter("all");
+    setUnregPage(1);
+  };
 
   // Export CSV generator
   const handleExportCSV = () => {
@@ -188,7 +335,7 @@ export function SafetyLedgerTab({
     link.setAttribute("href", encodedUri);
     link.setAttribute(
       "download",
-      `SAGIP_Safety_Ledger_${event?.name ?? "All_Events"}_${new Date().toISOString().slice(0, 10)}.csv`
+      `SAGIP_Safety_Ledger_${event?.name ?? "All_Events"}_${new Date().toISOString().slice(0, 10)}.csv`,
     );
     document.body.appendChild(link);
     link.click();
@@ -201,90 +348,9 @@ export function SafetyLedgerTab({
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* 1. Header Banner & Operational Switcher */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-col gap-1.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-              <History className="size-5 text-emerald-600" />
-              Disaster Safety Ledger & Audit Log
-            </h2>
-            {event ? (
-              <div className="flex items-center gap-1.5">
-                <span className="inline-flex items-center rounded-md border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-xs font-black uppercase tracking-wider text-emerald-800">
-                  {event.name}
-                </span>
-                <span className="inline-flex items-center rounded-md border border-slate-300 bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
-                  {event.type}
-                </span>
-                {event.is_active ? (
-                  <span className="inline-flex items-center rounded-md border border-rose-300 bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-800">
-                    Live Active
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center rounded-md border border-slate-300 bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
-                    Concluded
-                  </span>
-                )}
-              </div>
-            ) : (
-              <Badge tone="neutral">All Emergency Events Scope</Badge>
-            )}
-          </div>
-          <p className="text-xs text-slate-500">
-            Real-time audit stream of resident safety declarations, assisted check-ins, shelter triage, and rescue tickets.
-          </p>
-        </div>
-
-        {/* Action Controls */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Event Quick Select */}
-          <Select
-            value={event?.id ?? "all"}
-            onValueChange={(val) => onSelectEvent(val)}
-          >
-            <SelectTrigger className="h-9 w-fit min-w-[170px] rounded-xl border-slate-300 bg-slate-50 text-xs font-bold text-slate-800">
-              <Calendar className="size-3.5 text-slate-500 mr-1.5" />
-              <SelectValue placeholder="Select Event" />
-            </SelectTrigger>
-            <SelectContent className="z-[3000] min-w-[240px] rounded-xl bg-white border-slate-200 shadow-lg">
-              <SelectItem value="all" className="cursor-pointer py-2">
-                <span className="font-semibold text-slate-800">All Emergency Events</span>
-              </SelectItem>
-              {events.map((e) => (
-                <SelectItem key={e.id} value={e.id} className="cursor-pointer py-2">
-                  <span className="font-medium text-slate-900 truncate max-w-[170px]">{e.name}</span>
-                  <span className="text-[10px] text-slate-400 ml-2">({e.type})</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleExportCSV}
-            className="h-9 gap-1.5 rounded-xl border-slate-300 text-xs font-bold hover:bg-slate-50"
-          >
-            <Download className="size-3.5" />
-            <span>Export CSV</span>
-          </Button>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handlePrint}
-            className="h-9 gap-1.5 rounded-xl border-slate-300 text-xs font-bold hover:bg-slate-50"
-          >
-            <Printer className="size-3.5" />
-            <span>Print Report</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* 2. 5 Executive KPI Telemetry Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="flex flex-col gap-5">
+      {/* 1. 5 Executive KPI Telemetry Cards + Stacked Export/Print Actions */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {/* KPI 1: Total Registered Safe */}
         <Card radius="lg" className="border-emerald-200/80 bg-emerald-50/30">
           <CardContent className="flex flex-col gap-2 p-4">
@@ -363,7 +429,7 @@ export function SafetyLedgerTab({
         </Card>
 
         {/* KPI 5: Unregistered Walk-Ins (FR-SAF-013) */}
-        <Card radius="lg" className="border-purple-200/80 bg-purple-50/30 col-span-2 sm:col-span-1">
+        <Card radius="lg" className="border-purple-200/80 bg-purple-50/30">
           <CardContent className="flex flex-col gap-2 p-4">
             <div className="flex items-center justify-between">
               <span className="grid size-9 place-items-center rounded-xl bg-purple-100 text-purple-800 border border-purple-200">
@@ -381,590 +447,938 @@ export function SafetyLedgerTab({
             </div>
           </CardContent>
         </Card>
+
+        {/* KPI 6: Quick Actions Column: Export CSV & Print Report Vertically Stacked */}
+        <div className="flex flex-col gap-2 col-span-2 sm:col-span-1 justify-between h-full">
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 shadow-2xs transition-all hover:bg-emerald-50/50 hover:border-emerald-300 hover:text-emerald-900 cursor-pointer min-h-[50px]"
+          >
+            <Download className="size-4 text-emerald-600 shrink-0" />
+            <span>Export CSV</span>
+          </button>
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 shadow-2xs transition-all hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 cursor-pointer min-h-[50px]"
+          >
+            <Printer className="size-4 text-slate-600 shrink-0" />
+            <span>Print Report</span>
+          </button>
+        </div>
       </div>
 
-      {/* 3. Sub-View Segmented Navigation */}
-      <div className="flex border-b border-slate-200 bg-white rounded-2xl p-1.5 shadow-2xs gap-1">
-        <button
-          onClick={() => {
-            setActiveSubTab("stream");
-            setPage(1);
-          }}
-          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-            activeSubTab === "stream"
-              ? "bg-[#064e3b] text-white shadow-sm"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          }`}
-        >
-          <Clock className="size-3.5 shrink-0" />
-          <span>Live Check-In Stream & Audit</span>
-        </button>
+      {/* 3. Unified Outer Container (Overhauled Layout from Image #2) */}
+      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+        {/* Top Tab Bar Header */}
+        <div className="border-b border-neutral-200 bg-white">
+          <div role="tablist" className="flex overflow-x-auto px-2">
+            <ListTabButton
+              active={activeSubTab === "stream"}
+              onClick={() => {
+                setActiveSubTab("stream");
+                setPage(1);
+              }}
+              icon={<Clock className="size-3.5 shrink-0" aria-hidden />}
+              label="Live Check-In Stream & Audit"
+              count={ledgerData?.total}
+            />
+            <ListTabButton
+              active={activeSubTab === "areas"}
+              onClick={() => setActiveSubTab("areas")}
+              icon={<Layers className="size-3.5 shrink-0" aria-hidden />}
+              label="Area Safety Progress"
+              count={summary?.registered.length}
+            />
+            <ListTabButton
+              active={activeSubTab === "centers"}
+              onClick={() => setActiveSubTab("centers")}
+              icon={<Building2 className="size-3.5 shrink-0" aria-hidden />}
+              label="Evacuation Centers"
+              count={evacCentersQuery.data?.length}
+            />
+            <ListTabButton
+              active={activeSubTab === "unregistered"}
+              onClick={() => setActiveSubTab("unregistered")}
+              icon={<UserX className="size-3.5 shrink-0" aria-hidden />}
+              label="Unregistered Persons"
+              count={unregSafe + unregRescue}
+            />
+          </div>
+        </div>
 
-        <button
-          onClick={() => setActiveSubTab("areas")}
-          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-            activeSubTab === "areas"
-              ? "bg-[#064e3b] text-white shadow-sm"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          }`}
-        >
-          <Layers className="size-3.5 shrink-0" />
-          <span>Area Safety Progress</span>
-        </button>
+        {/* Tab Panel Body */}
+        <div className="p-4 sm:p-5">
+          {/* SUB-VIEW 1: LIVE CHECK-IN TIMELINE & AUDIT STREAM */}
+          {activeSubTab === "stream" && (
+            <section className="overflow-hidden rounded-[14px] border border-primary-200/80 bg-white shadow-sm-card">
+              {/* Attached Toolbar */}
+              <div className="border-b border-primary-100/80 bg-gradient-to-r from-emerald-50/50 via-white to-teal-50/30 p-3 sm:px-4">
+                <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
+                  {/* Search Input (Left) */}
+                  <div className="flex items-center">
+                    <label className="relative block min-w-[240px] sm:w-80 md:w-96">
+                      <span className="sr-only">Search safety audit records</span>
+                      <Search
+                        aria-hidden
+                        className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-neutral-400"
+                      />
+                      <input
+                        value={search}
+                        onChange={(e) => {
+                          setSearch(e.target.value);
+                          setPage(1);
+                        }}
+                        placeholder="Search name, HH ref no, phone, center..."
+                        className="h-9.5 w-full rounded-full border border-neutral-200/90 bg-white/95 pr-9 pl-9.5 text-xs shadow-2xs transition outline-none placeholder:text-neutral-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 sm:text-sm"
+                      />
+                      {search ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearch("");
+                            setPage(1);
+                          }}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 cursor-pointer"
+                          aria-label="Clear search"
+                        >
+                          <X aria-hidden className="size-3.5" />
+                        </button>
+                      ) : null}
+                    </label>
+                  </div>
 
-        <button
-          onClick={() => setActiveSubTab("centers")}
-          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-            activeSubTab === "centers"
-              ? "bg-[#064e3b] text-white shadow-sm"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          }`}
-        >
-          <Building2 className="size-3.5 shrink-0" />
-          <span>Evacuation Centers</span>
-        </button>
+                  {/* Filters & Actions (Right) */}
+                  <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2">
+                    {isStreamFiltered && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={resetStreamFilters}
+                        className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+                      >
+                        <X aria-hidden className="size-3.5 shrink-0 text-neutral-500" />
+                        <span>Reset</span>
+                      </Button>
+                    )}
 
-        <button
-          onClick={() => setActiveSubTab("unregistered")}
-          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-            activeSubTab === "unregistered"
-              ? "bg-[#064e3b] text-white shadow-sm"
-              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          }`}
-        >
-          <Users className="size-3.5 shrink-0" />
-          <span>Unregistered Walk-Ins</span>
-        </button>
-      </div>
+                    {/* Status Filter */}
+                    <Select
+                      value={statusFilter}
+                      onValueChange={(val) => {
+                        setStatusFilter(val);
+                        setPage(1);
+                      }}
+                    >
+                      <SelectTrigger className="inline-flex h-9 w-fit min-w-[130px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
+                        <CheckCircle2 aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
+                        <SelectValue placeholder="All Statuses" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[3000] min-w-44 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="safe">Declared Safe</SelectItem>
+                        <SelectItem value="needs_rescue">Needs Rescue</SelectItem>
+                        <SelectItem value="unaccounted">Unaccounted</SelectItem>
+                      </SelectContent>
+                    </Select>
 
-      {/* 4. Sub-View Content */}
+                    {/* Subject Type Filter */}
+                    <Select
+                      value={subjectTypeFilter}
+                      onValueChange={(val) => {
+                        setSubjectTypeFilter(val);
+                        setPage(1);
+                      }}
+                    >
+                      <SelectTrigger className="inline-flex h-9 w-fit min-w-[135px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
+                        <Users aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
+                        <SelectValue placeholder="All Citizens" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[3000] min-w-48 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                        <SelectItem value="all">All Resident Types</SelectItem>
+                        <SelectItem value="registered_member">Registered Citizens</SelectItem>
+                        <SelectItem value="unregistered_person">Unregistered Walk-Ins</SelectItem>
+                      </SelectContent>
+                    </Select>
 
-      {/* SUB-VIEW 1: LIVE CHECK-IN TIMELINE & AUDIT STREAM */}
-      {activeSubTab === "stream" && (
-        <div className="flex flex-col gap-4">
-          {/* Multi-Faceted Filter & Search Bar */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col gap-3">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
-              {/* Search input */}
-              <div className="relative col-span-1 sm:col-span-2">
-                <Search className="absolute left-3 top-2.5 size-4 text-slate-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setPage(1);
-                  }}
-                  placeholder="Search resident name, HH ref no, phone, or center…"
-                  className="h-9 w-full rounded-xl border border-slate-300 bg-slate-50 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
+                    {/* Area Filter */}
+                    <Select
+                      value={areaFilter}
+                      onValueChange={(val) => {
+                        setAreaFilter(val);
+                        setPage(1);
+                      }}
+                    >
+                      <SelectTrigger className="inline-flex h-9 w-fit min-w-[135px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
+                        <MapPin aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
+                        <SelectValue placeholder="All Areas" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[3000] min-w-48 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                        <SelectItem value="all">All Areas / Sitios</SelectItem>
+                        {areasQuery.data?.areas.map((a) => (
+                          <SelectItem key={a.area_id} value={a.area_id}>
+                            {a.area_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Method Filter */}
+                    <Select
+                      value={methodFilter}
+                      onValueChange={(val) => {
+                        setMethodFilter(val);
+                        setPage(1);
+                      }}
+                    >
+                      <SelectTrigger className="inline-flex h-9 w-fit min-w-[135px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
+                        <SlidersHorizontal aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
+                        <SelectValue placeholder="All Methods" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[3000] min-w-48 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                        <SelectItem value="all">All Check-in Methods</SelectItem>
+                        <SelectItem value="self">Self-Reported (Portal)</SelectItem>
+                        <SelectItem value="assisted">Admin / BHW Assisted</SelectItem>
+                        <SelectItem value="household_bulk">Household Bulk</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {/* Record Walk-In Action Button */}
+                    <Button
+                      size="sm"
+                      onClick={() => setRecordWalkInOpen(true)}
+                      className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white shadow-xs transition-all hover:bg-emerald-700 ml-1"
+                    >
+                      <UserPlus className="size-3.5" />
+                      <span>Record Walk-In Person</span>
+                    </Button>
+                  </div>
+                </div>
               </div>
 
-              {/* Status Filter */}
-              <Select
-                value={statusFilter}
-                onValueChange={(val) => {
-                  setStatusFilter(val);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="h-9 rounded-xl border-slate-300 bg-slate-50 text-xs font-semibold">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent className="z-[3000] rounded-xl bg-white border-slate-200 shadow-lg">
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="safe">Declared Safe</SelectItem>
-                  <SelectItem value="needs_rescue">Needs Rescue</SelectItem>
-                  <SelectItem value="unaccounted">Unaccounted</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Subject Type Filter */}
-              <Select
-                value={subjectTypeFilter}
-                onValueChange={(val) => {
-                  setSubjectTypeFilter(val);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="h-9 rounded-xl border-slate-300 bg-slate-50 text-xs font-semibold">
-                  <SelectValue placeholder="All Citizens" />
-                </SelectTrigger>
-                <SelectContent className="z-[3000] rounded-xl bg-white border-slate-200 shadow-lg">
-                  <SelectItem value="all">All Resident Types</SelectItem>
-                  <SelectItem value="registered_member">Registered Citizens</SelectItem>
-                  <SelectItem value="unregistered_person">Unregistered Walk-Ins</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Area Filter */}
-              <Select
-                value={areaFilter}
-                onValueChange={(val) => {
-                  setAreaFilter(val);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="h-9 rounded-xl border-slate-300 bg-slate-50 text-xs font-semibold">
-                  <SelectValue placeholder="All Areas" />
-                </SelectTrigger>
-                <SelectContent className="z-[3000] rounded-xl bg-white border-slate-200 shadow-lg">
-                  <SelectItem value="all">All Areas / Sitios</SelectItem>
-                  {areasQuery.data?.areas.map((a) => (
-                    <SelectItem key={a.area_id} value={a.area_id}>
-                      {a.area_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Method Filter */}
-              <Select
-                value={methodFilter}
-                onValueChange={(val) => {
-                  setMethodFilter(val);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="h-9 rounded-xl border-slate-300 bg-slate-50 text-xs font-semibold">
-                  <SelectValue placeholder="All Methods" />
-                </SelectTrigger>
-                <SelectContent className="z-[3000] rounded-xl bg-white border-slate-200 shadow-lg">
-                  <SelectItem value="all">All Check-in Methods</SelectItem>
-                  <SelectItem value="self">Self-Reported (Portal)</SelectItem>
-                  <SelectItem value="assisted">Admin / BHW Assisted</SelectItem>
-                  <SelectItem value="household_bulk">Household Bulk</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Sub-options: Active only toggle & count */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={currentOnly}
-                  onChange={(e) => {
-                    setCurrentOnly(e.target.checked);
-                    setPage(1);
-                  }}
-                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                />
-                <span className="font-semibold text-slate-700">Show only latest / active status per person</span>
-              </label>
-              <span className="font-bold text-slate-600">
-                {ledgerData?.total ?? 0} Recorded Check-in Events
-              </span>
-            </div>
-          </div>
-
-          {/* Ledger Activity Stream Table */}
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-left text-xs">
-                <thead className="bg-[#064e3b] text-white uppercase tracking-wider font-bold">
-                  <tr>
-                    <th className="px-4 py-3.5">Timestamp (PHT)</th>
-                    <th className="px-4 py-3.5">Resident / Walk-In</th>
-                    <th className="px-4 py-3.5">Household & Area</th>
-                    <th className="px-4 py-3.5 text-center">Safety Status</th>
-                    <th className="px-4 py-3.5 text-center">Method</th>
-                    <th className="px-4 py-3.5">Shelter Location</th>
-                    <th className="px-4 py-3.5">Recorded By</th>
-                    <th className="px-4 py-3.5 text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {ledgerQuery.isLoading ? (
-                    <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-400">
-                        <div className="flex flex-col items-center justify-center gap-2">
-                          <div className="size-6 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
-                          <span className="text-xs font-semibold">Loading safety audit stream…</span>
-                        </div>
-                      </td>
+              {/* Table View */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-primary-900 shadow-[0_1px_0_0_var(--color-primary-800)] text-primary-50">
+                    <tr className="hover:bg-primary-900 border-primary-800">
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Timestamp (PHT)</th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Resident / Walk-In</th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Household & Area</th>
+                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] uppercase text-white">Safety Status</th>
+                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] uppercase text-white">Method</th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Shelter Location</th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Recorded By</th>
+                      <th className="h-11 px-4 text-right text-[11px] font-bold tracking-[0.08em] uppercase text-white">Action</th>
                     </tr>
-                  ) : items.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-400">
-                        <div className="flex flex-col items-center justify-center gap-2">
-                          <HelpCircle className="size-8 text-slate-300" />
-                          <p className="text-sm font-bold text-slate-700">No safety declarations found</p>
-                          <p className="text-xs text-slate-400">Try clearing filters or search keywords.</p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    items.map((item) => {
-                      const subjectId = item.member_id || item.unregistered_person_id;
-                      return (
-                        <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                          {/* Timestamp */}
-                          <td className="px-4 py-3">
-                            <div className="flex flex-col">
-                              <span className="font-bold text-slate-900 tabular-nums">
-                                {formatPhtTime(item.timestamp)}
-                              </span>
-                              <span className="text-[10px] text-slate-400 tabular-nums">
-                                {formatPhtDate(item.timestamp)}
-                              </span>
+                  </thead>
+                  <tbody className="divide-y divide-primary-100/80">
+                    {ledgerQuery.isLoading ? (
+                      <tr>
+                        <td colSpan={8} className="py-14 text-center text-slate-400">
+                          <div className="flex flex-col items-center justify-center gap-2">
+                            <div className="size-6 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
+                            <span className="text-xs font-semibold text-neutral-600">Loading safety audit stream…</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : items.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="py-14 text-center">
+                          <div className="flex flex-col items-center gap-2.5">
+                            <div className="grid size-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-700 shadow-2xs">
+                              <HelpCircle className="size-6 text-emerald-700" />
                             </div>
-                          </td>
-
-                          {/* Resident Name & Demographics */}
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2.5">
-                              <div className="size-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold shrink-0 border border-slate-200">
-                                {item.person_name.charAt(0).toUpperCase()}
+                            <p className="text-sm font-bold text-neutral-900">No safety declarations found</p>
+                            <p className="text-xs text-neutral-500 max-w-sm">
+                              {isStreamFiltered
+                                ? "No resident check-ins match your active filter criteria."
+                                : "No safety declarations have been recorded for this event yet."}
+                            </p>
+                            {isStreamFiltered && (
+                              <Button
+                                size="sm"
+                                onClick={resetStreamFilters}
+                                className="mt-2 inline-flex h-8.5 cursor-pointer items-center gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white shadow-xs hover:bg-emerald-700"
+                              >
+                                Reset Filters
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      items.map((item) => {
+                        const subjectId = item.member_id || item.unregistered_person_id;
+                        return (
+                          <tr key={item.id} className="hover:bg-emerald-50/30 transition-colors">
+                            {/* Timestamp */}
+                            <td className="px-4 py-3">
+                              <div className="flex flex-col">
+                                <span className="font-bold text-slate-900 tabular-nums">
+                                  {formatPhtTime(item.timestamp)}
+                                </span>
+                                <span className="text-[10px] text-slate-400 tabular-nums">
+                                  {formatPhtDate(item.timestamp)}
+                                </span>
                               </div>
-                              <div className="flex flex-col min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-bold text-slate-900 truncate max-w-[180px]">
-                                    {item.person_name}
-                                  </span>
-                                  {item.is_head && (
-                                    <span className="inline-flex items-center rounded-md bg-emerald-50 px-1 py-0.2 text-[9px] font-bold uppercase text-emerald-800 border border-emerald-200">
-                                      Head
-                                    </span>
-                                  )}
+                            </td>
+
+                            {/* Resident Name & Demographics */}
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className="size-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold shrink-0 border border-slate-200">
+                                  {item.person_name.charAt(0).toUpperCase()}
                                 </div>
-                                <div className="flex items-center gap-1 mt-0.5">
-                                  <span className="text-[10px] text-slate-400">
-                                    {item.subject_type === "registered_member" ? "Citizen" : "Walk-in"}
-                                  </span>
-                                  {item.vulnerability_flags.slice(0, 2).map((flag) => (
-                                    <span
-                                      key={flag}
-                                      className="inline-flex items-center rounded bg-rose-50 px-1 py-0.2 text-[9px] font-bold text-rose-700 border border-rose-200"
-                                    >
-                                      {flag.replace("is_", "").replace("has_", "").slice(0, 7)}
+                                <div className="flex flex-col min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-bold text-slate-900 truncate max-w-[180px]">
+                                      {item.person_name}
                                     </span>
-                                  ))}
+                                    {item.is_head && (
+                                      <span className="inline-flex items-center rounded-md bg-emerald-50 px-1 py-0.2 text-[9px] font-bold uppercase text-emerald-800 border border-emerald-200">
+                                        Head
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-1 mt-0.5">
+                                    <span className="text-[10px] text-slate-400">
+                                      {item.subject_type === "registered_member" ? "Citizen" : "Walk-in"}
+                                    </span>
+                                    {item.vulnerability_flags.slice(0, 2).map((flag) => (
+                                      <span
+                                        key={flag}
+                                        className="inline-flex items-center rounded bg-rose-50 px-1 py-0.2 text-[9px] font-bold text-rose-700 border border-rose-200"
+                                      >
+                                        {flag.replace("is_", "").replace("has_", "").slice(0, 7)}
+                                      </span>
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </td>
+                            </td>
 
-                          {/* Household & Area */}
-                          <td className="px-4 py-3">
-                            <div className="flex flex-col">
-                              {item.household_reference_no ? (
-                                <span className="font-semibold text-slate-800">{item.household_reference_no}</span>
+                            {/* Household & Area */}
+                            <td className="px-4 py-3">
+                              <div className="flex flex-col">
+                                {item.household_reference_no ? (
+                                  <span className="font-mono text-[11px] font-black tracking-tight text-slate-800 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded w-fit">
+                                    {item.household_reference_no}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 font-normal">No household</span>
+                                )}
+                                <span className="text-[10px] text-slate-500 font-medium mt-0.5">{item.area_name ?? "—"}</span>
+                              </div>
+                            </td>
+
+                            {/* Triage Status */}
+                            <td className="px-4 py-3 text-center">
+                              {item.status === "safe" ? (
+                                <span className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-800">
+                                  <CheckCircle2 className="size-3" />
+                                  Safe
+                                </span>
+                              ) : item.status === "needs_rescue" ? (
+                                <span className="inline-flex items-center gap-1 rounded-md border border-rose-300 bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase text-rose-800">
+                                  <ShieldAlert className="size-3" />
+                                  Rescue
+                                </span>
                               ) : (
-                                <span className="text-slate-400 font-normal">No household</span>
+                                <span className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-800">
+                                  <HelpCircle className="size-3" />
+                                  Pending
+                                </span>
                               )}
-                              <span className="text-[10px] text-slate-500 font-medium">{item.area_name ?? "—"}</span>
+                            </td>
+
+                            {/* Method */}
+                            <td className="px-4 py-3 text-center">
+                              <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-700 capitalize">
+                                {item.set_method ? item.set_method.replace("_", " ") : "Assisted"}
+                              </span>
+                            </td>
+
+                            {/* Shelter Location */}
+                            <td className="px-4 py-3">
+                              {item.evac_center_name ? (
+                                <div className="flex items-center gap-1.5 text-slate-800">
+                                  <Building2 className="size-3.5 text-emerald-600 shrink-0" />
+                                  <span className="font-semibold truncate max-w-[170px]">{item.evac_center_name}</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5 text-slate-400">
+                                  <Home className="size-3.5 text-slate-300 shrink-0" />
+                                  <span className="text-[11px]">Home / In Place</span>
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Recorded By */}
+                            <td className="px-4 py-3">
+                              <span className="text-slate-700 font-medium">{item.set_by_name ?? "Portal Resident"}</span>
+                            </td>
+
+                            {/* Actions */}
+                            <td className="px-4 py-3 text-right">
+                              {subjectId && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() =>
+                                    setSelectedSubject({
+                                      id: subjectId,
+                                      type: item.subject_type,
+                                      name: item.person_name,
+                                    })
+                                  }
+                                  className="h-7 px-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 gap-1 rounded-lg cursor-pointer"
+                                >
+                                  <Eye className="size-3.5" />
+                                  <span>Journey</span>
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Bottom Pagination Bar */}
+              <div className="flex items-center justify-between border-t border-primary-100/80 bg-slate-50/80 px-4 py-3 text-xs">
+                <span className="text-slate-500 font-medium">
+                  Showing <strong className="text-slate-800">{items.length > 0 ? (page - 1) * pageSize + 1 : 0}</strong>–
+                  <strong className="text-slate-800">{Math.min(page * pageSize, ledgerData?.total ?? 0)}</strong> of{" "}
+                  <strong className="text-slate-800">{ledgerData?.total ?? 0}</strong> recorded check-in events
+                </span>
+                {ledgerData && ledgerData.pages > 1 && (
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={page <= 1}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      className="h-8 px-2.5 rounded-lg border-slate-300 text-xs font-bold cursor-pointer"
+                    >
+                      <ChevronLeft className="size-3.5 mr-1" />
+                      Previous
+                    </Button>
+                    <span className="px-2 text-xs font-semibold text-slate-600">
+                      Page {page} of {ledgerData.pages}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={page >= ledgerData.pages}
+                      onClick={() => setPage((p) => p + 1)}
+                      className="h-8 px-2.5 rounded-lg border-slate-300 text-xs font-bold cursor-pointer"
+                    >
+                      Next
+                      <ChevronRight className="size-3.5 ml-1" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* SUB-VIEW 2: AREA SAFETY PROGRESS & BREAKDOWN */}
+          {activeSubTab === "areas" && summary && (
+            <section className="overflow-hidden rounded-[14px] border border-primary-200/80 bg-white shadow-sm-card">
+              <div className="border-b border-primary-100/80 bg-gradient-to-r from-emerald-50/50 via-white to-teal-50/30 p-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Area Safety Ledger & Coverage Distribution</h3>
+                  <p className="text-xs text-slate-500">
+                    Real-time safety status distribution and rescue requirements across all barangay administrative areas.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs font-semibold text-slate-500">Total Registered Safe:</span>
+                  <Badge tone={Number(safePct) >= 80 ? "success" : Number(safePct) >= 50 ? "warning" : "danger"}>
+                    {safePct}% Safe
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-primary-900 shadow-[0_1px_0_0_var(--color-primary-800)] text-primary-50">
+                    <tr className="hover:bg-primary-900 border-primary-800">
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Area / Sitio</th>
+                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] uppercase text-white">Registered Population</th>
+                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] uppercase text-white">Confirmed Safe</th>
+                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] uppercase text-white">Household Safe</th>
+                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] uppercase text-white">Needs Rescue</th>
+                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] uppercase text-white">Unaccounted</th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Distribution Meter</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-primary-100/80">
+                    {summary.registered.map((area) => {
+                      const areaReg = area.registered_members || 1;
+                      const safeCount = area.safe_confirmed + area.safe_bulk;
+                      const safeRatio = Math.min(100, Math.round((safeCount / areaReg) * 100));
+                      const rescueRatio = Math.min(100, Math.round((area.needs_rescue / areaReg) * 100));
+                      const unaccountedRatio = Math.max(0, 100 - safeRatio - rescueRatio);
+
+                      return (
+                        <tr key={area.area_id ?? area.area_name} className="hover:bg-emerald-50/30 transition-colors">
+                          <td className="px-4 py-3.5 font-bold text-slate-900">{area.area_name}</td>
+                          <td className="px-4 py-3.5 text-center font-semibold text-slate-800 tabular-nums">
+                            {area.registered_members}
+                          </td>
+                          <td className="px-4 py-3.5 text-center font-bold text-emerald-600 tabular-nums">
+                            {area.safe_confirmed}
+                          </td>
+                          <td className="px-4 py-3.5 text-center font-semibold text-teal-600 tabular-nums">
+                            {area.safe_bulk}
+                          </td>
+                          <td className="px-4 py-3.5 text-center font-bold text-rose-600 tabular-nums">
+                            {area.needs_rescue > 0 ? (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-xs text-rose-700 border border-rose-200 font-bold">
+                                <AlertTriangle className="size-3 text-rose-600" />
+                                {area.needs_rescue}
+                              </span>
+                            ) : (
+                              "0"
+                            )}
+                          </td>
+                          <td className="px-4 py-3.5 text-center text-slate-500 tabular-nums">{area.unaccounted}</td>
+                          <td className="px-4 py-3.5">
+                            <div className="flex flex-col gap-1 w-48">
+                              <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 flex">
+                                <div
+                                  style={{ width: `${safeRatio}%` }}
+                                  className="bg-emerald-500 transition-all duration-500"
+                                  title={`Safe: ${safeRatio}%`}
+                                />
+                                <div
+                                  style={{ width: `${rescueRatio}%` }}
+                                  className="bg-rose-500 transition-all duration-500"
+                                  title={`Rescue: ${rescueRatio}%`}
+                                />
+                                <div
+                                  style={{ width: `${unaccountedRatio}%` }}
+                                  className="bg-amber-400/80 transition-all duration-500"
+                                  title={`Unaccounted: ${unaccountedRatio}%`}
+                                />
+                              </div>
+                              <div className="flex justify-between text-[10px] font-semibold text-slate-400">
+                                <span className="text-emerald-700">{safeRatio}% safe</span>
+                                {area.needs_rescue > 0 && (
+                                  <span className="text-rose-600 font-bold">{area.needs_rescue} rescue</span>
+                                )}
+                              </div>
                             </div>
                           </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
 
-                          {/* Triage Status */}
-                          <td className="px-4 py-3 text-center">
-                            {item.status === "safe" ? (
-                              <span className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-800">
-                                <CheckCircle2 className="size-3" />
-                                Safe
-                              </span>
-                            ) : item.status === "needs_rescue" ? (
-                              <span className="inline-flex items-center gap-1 rounded-md border border-rose-300 bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase text-rose-800">
-                                <ShieldAlert className="size-3" />
-                                Rescue
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-800">
-                                <HelpCircle className="size-3" />
-                                Pending
-                              </span>
-                            )}
-                          </td>
+          {/* SUB-VIEW 3: EVACUATION CENTER REAL-TIME CAPACITY */}
+          {activeSubTab === "centers" && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {evacCentersQuery.data?.map((c) => {
+                const cap = c.capacity ?? 0;
+                const capPct = cap > 0 ? Math.round((c.occupancy / cap) * 100) : 0;
+                return (
+                  <Card key={c.id} radius="lg" className="border-slate-200 bg-white hover:shadow-md transition-all">
+                    <CardContent className="flex flex-col gap-3 p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="size-10 rounded-xl bg-emerald-100/80 border border-emerald-200 text-emerald-800 flex items-center justify-center font-bold">
+                            <Building2 className="size-5" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-900 leading-snug">{c.facility.name}</h4>
+                            <span className="text-[11px] text-slate-400">{c.facility.address ?? "Barangay San Jose"}</span>
+                          </div>
+                        </div>
+                        {c.is_open ? (
+                          <Badge tone="success">Open</Badge>
+                        ) : (
+                          <Badge tone="neutral">Closed</Badge>
+                        )}
+                      </div>
 
-                          {/* Method */}
-                          <td className="px-4 py-3 text-center">
-                            <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-700 capitalize">
-                              {item.set_method ? item.set_method.replace("_", " ") : "Assisted"}
-                            </span>
-                          </td>
+                      {/* Occupancy Meter */}
+                      <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500 font-medium">Occupancy</span>
+                          <span className="font-bold text-slate-900 tabular-nums">
+                            {c.occupancy} / {c.capacity ?? "∞"} ({capPct}%)
+                          </span>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            style={{ width: `${Math.min(100, capPct)}%` }}
+                            className={`h-full transition-all duration-500 ${
+                              capPct >= 90 ? "bg-rose-500" : capPct >= 70 ? "bg-amber-500" : "bg-emerald-500"
+                            }`}
+                          />
+                        </div>
+                      </div>
 
-                          {/* Shelter Location */}
-                          <td className="px-4 py-3">
-                            {item.evac_center_name ? (
-                              <div className="flex items-center gap-1.5 text-slate-800">
-                                <Building2 className="size-3.5 text-emerald-600 shrink-0" />
-                                <span className="font-semibold truncate max-w-[170px]">{item.evac_center_name}</span>
+                      {/* Contact Info */}
+                      {c.contact_number && (
+                        <div className="text-[11px] text-slate-500 flex items-center gap-1.5 pt-1">
+                          <Phone className="size-3 text-slate-400" />
+                          <span>{c.contact_number}</span>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          {/* SUB-VIEW 4: UNREGISTERED PERSONS SEPARATE LEDGER (FR-SAF-013) - Image #2 Layout */}
+          {activeSubTab === "unregistered" && (
+            <section className="overflow-hidden rounded-[14px] border border-primary-200/80 bg-white shadow-sm-card">
+              {/* Attached Toolbar */}
+              <div className="border-b border-primary-100/80 bg-gradient-to-r from-emerald-50/50 via-white to-teal-50/30 p-3 sm:px-4">
+                <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
+                  {/* Search Input (Left) */}
+                  <div className="flex items-center">
+                    <label className="relative block min-w-[220px] sm:w-72 md:w-80">
+                      <span className="sr-only">Search walk-in records</span>
+                      <Search
+                        aria-hidden
+                        className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-neutral-400"
+                      />
+                      <input
+                        value={unregSearch}
+                        onChange={(e) => {
+                          setUnregSearch(e.target.value);
+                          setUnregPage(1);
+                        }}
+                        placeholder="Search name, phone, notes..."
+                        className="h-9.5 w-full rounded-full border border-neutral-200/90 bg-white/95 pr-9 pl-9.5 text-xs shadow-2xs transition outline-none placeholder:text-neutral-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 sm:text-sm"
+                      />
+                      {unregSearch ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUnregSearch("");
+                            setUnregPage(1);
+                          }}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 cursor-pointer"
+                          aria-label="Clear search"
+                        >
+                          <X aria-hidden className="size-3.5" />
+                        </button>
+                      ) : null}
+                    </label>
+                  </div>
+
+                  {/* Filters & Actions (Right) */}
+                  <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2">
+                    {isUnregFiltered && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={resetUnregFilters}
+                        className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+                      >
+                        <X aria-hidden className="size-3.5 shrink-0 text-neutral-500" />
+                        <span>Reset</span>
+                      </Button>
+                    )}
+
+                    {/* Evacuation Center Selector */}
+                    <Select
+                      value={unregCenterFilter}
+                      onValueChange={(v) => {
+                        setUnregCenterFilter(v);
+                        setUnregPage(1);
+                      }}
+                    >
+                      <SelectTrigger className="inline-flex h-9 w-fit min-w-[145px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
+                        <Building2 aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
+                        <SelectValue placeholder="All Centers" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[3000] min-w-52 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                        <SelectItem value="all">All Evacuation Centers</SelectItem>
+                        <SelectItem value="none">No Center Assigned</SelectItem>
+                        {evacCentersQuery.data?.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.facility.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Demographics Filter */}
+                    <Select
+                      value={unregSupportFilter}
+                      onValueChange={(v) => {
+                        setUnregSupportFilter(v);
+                        setUnregPage(1);
+                      }}
+                    >
+                      <SelectTrigger className="inline-flex h-9 w-fit min-w-[140px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
+                        <SlidersHorizontal aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
+                        <SelectValue placeholder="Demographics" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[3000] min-w-52 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                        <SelectItem value="all">All Demographics</SelectItem>
+                        <SelectItem value="with_special_needs">With Special Needs</SelectItem>
+                        <SelectItem value="without_special_needs">No Special Needs</SelectItem>
+                        <SelectItem value="senior">Senior Citizen (60+)</SelectItem>
+                        <SelectItem value="pwd">PWD</SelectItem>
+                        <SelectItem value="minor">Minor (0–17 y/o)</SelectItem>
+                        <SelectItem value="pregnant">Pregnant</SelectItem>
+                        <SelectItem value="bedridden">Bedridden</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Button
+                      size="sm"
+                      onClick={() => setRecordWalkInOpen(true)}
+                      className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white shadow-xs transition-all hover:bg-emerald-700 ml-1"
+                    >
+                      <UserPlus className="size-3.5" />
+                      <span>Record Walk-In Person</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Table View */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-primary-900 shadow-[0_1px_0_0_var(--color-primary-800)] text-primary-50">
+                    <tr className="hover:bg-primary-900 border-primary-800">
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Name</th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Safety Status</th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Evacuation Center</th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Contact</th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Special Needs</th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Location Address</th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Recorded Time</th>
+                      <th className="h-11 px-4 text-right text-[11px] font-bold tracking-[0.08em] uppercase text-white">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-primary-100/80">
+                    {unregQuery.isLoading ? (
+                      <tr>
+                        <td colSpan={8} className="py-14 text-center">
+                          <div className="flex flex-col items-center justify-center gap-2">
+                            <div className="size-6 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
+                            <span className="text-xs font-semibold text-neutral-600">Loading walk-in records…</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : unregPageItems.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="py-14 text-center">
+                          <div className="flex flex-col items-center gap-2.5">
+                            <div className="grid size-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-700 shadow-2xs">
+                              <UserX className="size-6 text-emerald-700" />
+                            </div>
+                            <p className="text-sm font-bold text-neutral-900">No walk-in records found</p>
+                            <p className="text-xs text-neutral-500 max-w-sm">
+                              {isUnregFiltered
+                                ? "No unregistered persons match your active filter criteria."
+                                : "No unregistered persons have checked in for this emergency event yet."}
+                            </p>
+                            <Button
+                              size="sm"
+                              onClick={() => setRecordWalkInOpen(true)}
+                              className="mt-2 inline-flex h-8.5 cursor-pointer items-center gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white shadow-xs hover:bg-emerald-700"
+                            >
+                              <UserPlus className="size-3.5" />
+                              Record First Walk-In Person
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      unregPageItems.map((person: UnregisteredPersonOut) => {
+                        const flags: string[] = [];
+                        if (person.is_child) flags.push("Minor");
+                        if (person.is_senior) flags.push("Senior Citizen");
+                        if (person.is_pwd) flags.push("PWD");
+                        if (person.is_pregnant) flags.push("Pregnant");
+                        if (person.is_lactating) flags.push("Lactating");
+                        if (person.has_chronic_condition) flags.push("Chronic Condition");
+                        if (person.is_bedridden) flags.push("Bedridden");
+
+                        return (
+                          <tr key={person.id} className="hover:bg-emerald-50/30 transition-colors">
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className="size-8 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold shrink-0 border border-purple-200">
+                                  {person.full_name.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="font-bold text-slate-900">{person.full_name}</span>
+                                  <span className="text-[10px] text-purple-600 font-semibold">Walk-In</span>
+                                </div>
                               </div>
-                            ) : (
-                              <div className="flex items-center gap-1.5 text-slate-400">
-                                <Home className="size-3.5 text-slate-300 shrink-0" />
-                                <span className="text-[11px]">Home / In Place</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              {person.status === "safe" ? (
+                                <span className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-800">
+                                  <CheckCircle2 className="size-3" />
+                                  Safe
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-md border border-rose-300 bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase text-rose-800">
+                                  <ShieldAlert className="size-3" />
+                                  Rescue
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              {person.evac_center_name ? (
+                                <div className="flex items-center gap-1.5 text-slate-800">
+                                  <Building2 className="size-3.5 text-emerald-600 shrink-0" />
+                                  <span className="font-semibold">{person.evac_center_name}</span>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              {person.contact_number ? (
+                                <span className="font-semibold text-slate-700 flex items-center gap-1">
+                                  <Phone className="size-3 text-slate-400" />
+                                  {person.contact_number}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-wrap gap-1">
+                                {flags.length > 0 ? (
+                                  flags.map((f) => (
+                                    <span
+                                      key={f}
+                                      className="inline-flex items-center rounded bg-rose-50 px-1.5 py-0.5 text-[9px] font-bold text-rose-700 border border-rose-200"
+                                    >
+                                      {f}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-slate-400">—</span>
+                                )}
                               </div>
-                            )}
-                          </td>
-
-                          {/* Recorded By */}
-                          <td className="px-4 py-3">
-                            <span className="text-slate-700 font-medium">{item.set_by_name ?? "Portal Resident"}</span>
-                          </td>
-
-                          {/* Actions */}
-                          <td className="px-4 py-3 text-center">
-                            {subjectId && (
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-slate-700">{person.location_note ?? "—"}</span>
+                            </td>
+                            <td className="px-4 py-3 text-slate-500 tabular-nums">
+                              {formatPhtDateTime(person.created_at)}
+                            </td>
+                            <td className="px-4 py-3 text-right">
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() =>
                                   setSelectedSubject({
-                                    id: subjectId,
-                                    type: item.subject_type,
-                                    name: item.person_name,
+                                    id: person.id,
+                                    type: "unregistered_person",
+                                    name: person.full_name,
                                   })
                                 }
-                                className="h-7 px-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 gap-1 rounded-lg"
+                                className="h-7 px-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 gap-1 rounded-lg cursor-pointer"
                               >
                                 <Eye className="size-3.5" />
                                 <span>Journey</span>
                               </Button>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination Bar */}
-            {ledgerData && ledgerData.pages > 1 && (
-              <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50/70 px-4 py-3 text-xs">
-                <span className="text-slate-500">
-                  Showing page <strong className="text-slate-800">{ledgerData.page}</strong> of{" "}
-                  <strong className="text-slate-800">{ledgerData.pages}</strong> ({ledgerData.total} total)
-                </span>
-                <div className="flex items-center gap-1">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    className="h-8 px-2.5 rounded-lg border-slate-300 text-xs font-bold"
-                  >
-                    <ChevronLeft className="size-3.5 mr-1" />
-                    Previous
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={page >= ledgerData.pages}
-                    onClick={() => setPage((p) => p + 1)}
-                    className="h-8 px-2.5 rounded-lg border-slate-300 text-xs font-bold"
-                  >
-                    Next
-                    <ChevronRight className="size-3.5 ml-1" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* SUB-VIEW 2: AREA SAFETY PROGRESS & BREAKDOWN */}
-      {activeSubTab === "areas" && summary && (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="text-base font-bold text-slate-900">Area Safety Ledger & Coverage</h3>
-              <p className="text-xs text-slate-500">
-                Detailed real-time safety status distribution across all barangay administrative areas.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-500">Registered Coverage:</span>
-              <Badge tone={Number(safePct) >= 80 ? "success" : Number(safePct) >= 50 ? "warning" : "danger"}>
-                {safePct}% Safe
-              </Badge>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[750px] text-left text-xs">
-              <thead className="bg-[#064e3b] text-white uppercase tracking-wider font-bold">
-                <tr>
-                  <th className="px-5 py-3.5">Area</th>
-                  <th className="px-4 py-3.5 text-center">Registered Population</th>
-                  <th className="px-4 py-3.5 text-center">Confirmed Safe</th>
-                  <th className="px-4 py-3.5 text-center">Household Safe</th>
-                  <th className="px-4 py-3.5 text-center">Needs Rescue</th>
-                  <th className="px-4 py-3.5 text-center">Unaccounted</th>
-                  <th className="px-5 py-3.5">Safety Distribution</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
-                {summary.registered.map((area) => {
-                  const areaReg = area.registered_members || 1;
-                  const safeCount = area.safe_confirmed + area.safe_bulk;
-                  const safeRatio = Math.min(100, Math.round((safeCount / areaReg) * 100));
-                  const rescueRatio = Math.min(100, Math.round((area.needs_rescue / areaReg) * 100));
-                  const unaccountedRatio = Math.max(0, 100 - safeRatio - rescueRatio);
-
-                  return (
-                    <tr key={area.area_id ?? area.area_name} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-5 py-3.5 font-bold text-slate-900">{area.area_name}</td>
-                      <td className="px-4 py-3.5 text-center font-semibold text-slate-800 tabular-nums">
-                        {area.registered_members}
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-bold text-emerald-600 tabular-nums">
-                        {area.safe_confirmed}
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-semibold text-teal-600 tabular-nums">
-                        {area.safe_bulk}
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-bold text-rose-600 tabular-nums">
-                        {area.needs_rescue > 0 ? (
-                          <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-xs text-rose-700 border border-rose-200">
-                            <AlertTriangle className="size-3 text-rose-600" />
-                            {area.needs_rescue}
-                          </span>
-                        ) : (
-                          "0"
-                        )}
-                      </td>
-                      <td className="px-4 py-3.5 text-center text-slate-500 tabular-nums">{area.unaccounted}</td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex flex-col gap-1 w-44">
-                          <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 flex">
-                            <div
-                              style={{ width: `${safeRatio}%` }}
-                              className="bg-emerald-500 transition-all duration-500"
-                              title={`Safe: ${safeRatio}%`}
-                            />
-                            <div
-                              style={{ width: `${rescueRatio}%` }}
-                              className="bg-rose-500 transition-all duration-500"
-                              title={`Rescue: ${rescueRatio}%`}
-                            />
-                            <div
-                              style={{ width: `${unaccountedRatio}%` }}
-                              className="bg-amber-400/80 transition-all duration-500"
-                              title={`Unaccounted: ${unaccountedRatio}%`}
-                            />
-                          </div>
-                          <div className="flex justify-between text-[10px] font-semibold text-slate-400">
-                            <span className="text-emerald-700">{safeRatio}% safe</span>
-                            {area.needs_rescue > 0 && (
-                              <span className="text-rose-600 font-bold">{area.needs_rescue} rescue</span>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* SUB-VIEW 3: EVACUATION CENTER REAL-TIME CAPACITY */}
-      {activeSubTab === "centers" && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {evacCentersQuery.data?.map((c) => {
-            const cap = c.capacity ?? 0;
-            const capPct = cap > 0 ? Math.round((c.occupancy / cap) * 100) : 0;
-            return (
-              <Card key={c.id} radius="lg" className="border-slate-200 bg-white hover:shadow-md transition-all">
-                <CardContent className="flex flex-col gap-3 p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="size-10 rounded-xl bg-emerald-100/80 border border-emerald-200 text-emerald-800 flex items-center justify-center font-bold">
-                        <Building2 className="size-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900 leading-snug">{c.facility.name}</h4>
-                        <span className="text-[11px] text-slate-400">{c.facility.address ?? "Barangay San Jose"}</span>
-                      </div>
-                    </div>
-                    {c.is_open ? (
-                      <Badge tone="success">Open</Badge>
-                    ) : (
-                      <Badge tone="neutral">Closed</Badge>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
-                  </div>
+                  </tbody>
+                </table>
+              </div>
 
-                  {/* Occupancy Meter */}
-                  <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-500 font-medium">Occupancy</span>
-                      <span className="font-bold text-slate-900 tabular-nums">
-                        {c.occupancy} / {c.capacity ?? "∞"} ({capPct}%)
-                      </span>
-                    </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                      <div
-                        style={{ width: `${Math.min(100, capPct)}%` }}
-                        className={`h-full transition-all duration-500 ${
-                          capPct >= 90 ? "bg-rose-500" : capPct >= 70 ? "bg-amber-500" : "bg-emerald-500"
-                        }`}
-                      />
-                    </div>
+              {/* Bottom Pagination Bar */}
+              <div className="flex items-center justify-between border-t border-primary-100/80 bg-slate-50/80 px-4 py-3 text-xs">
+                <span className="text-slate-500 font-medium">
+                  Showing <strong className="text-slate-800">{unregFiltered.length > 0 ? unregStartIndex + 1 : 0}</strong>–
+                  <strong className="text-slate-800">{Math.min(unregStartIndex + pageSize, unregFiltered.length)}</strong> of{" "}
+                  <strong className="text-slate-800">{unregFiltered.length}</strong> walk-in records
+                </span>
+                {unregTotalPages > 1 && (
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={unregPage <= 1}
+                      onClick={() => setUnregPage((p) => Math.max(1, p - 1))}
+                      className="h-8 px-2.5 rounded-lg border-slate-300 text-xs font-bold cursor-pointer"
+                    >
+                      <ChevronLeft className="size-3.5 mr-1" />
+                      Previous
+                    </Button>
+                    <span className="px-2 text-xs font-semibold text-slate-600">
+                      Page {unregPage} of {unregTotalPages}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={unregPage >= unregTotalPages}
+                      onClick={() => setUnregPage((p) => p + 1)}
+                      className="h-8 px-2.5 rounded-lg border-slate-300 text-xs font-bold cursor-pointer"
+                    >
+                      Next
+                      <ChevronRight className="size-3.5 ml-1" />
+                    </Button>
                   </div>
-
-                  {/* Contact Info */}
-                  {c.contact_number && (
-                    <div className="text-[11px] text-slate-500 flex items-center gap-1.5 pt-1">
-                      <Phone className="size-3 text-slate-400" />
-                      <span>{c.contact_number}</span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
+                )}
+              </div>
+            </section>
+          )}
         </div>
-      )}
-
-      {/* SUB-VIEW 4: UNREGISTERED PERSONS SEPARATE LEDGER (FR-SAF-013) */}
-      {activeSubTab === "unregistered" && (
-        <Card radius="lg" className="border-amber-200/80 bg-amber-50/40">
-          <CardContent className="flex flex-col gap-4 p-5">
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
-                <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-800 border border-amber-200">
-                  <Users className="size-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-amber-900">
-                      Unregistered Persons Ledger (FR-SAF-013)
-                    </h3>
-                    <Badge tone="warning">Counted Separately</Badge>
-                  </div>
-                  <p className="mt-0.5 text-xs text-slate-600">
-                    Unregistered individuals and field walk-ins are tracked separately to preserve official registry coverage statistics.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 rounded-xl bg-white px-4 py-2.5 border border-amber-200/70 shadow-sm shrink-0">
-                <div className="text-center">
-                  <span className="block text-xs font-semibold text-slate-500">Walk-In Safe</span>
-                  <span className="text-base font-bold text-emerald-600">{unregSafe}</span>
-                </div>
-                <div className="h-7 w-px bg-slate-200" />
-                <div className="text-center">
-                  <span className="block text-xs font-semibold text-slate-500">Needs Rescue</span>
-                  <span className="text-base font-bold text-rose-600">{unregRescue}</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      </div>
 
       {/* Resident Safety Journey Slide-Over Drawer */}
       <SafetyJourneyDrawer
         subject={selectedSubject}
         onClose={() => setSelectedSubject(null)}
       />
+
+      {/* Record Walk-In Person Dialog Modal */}
+      <Dialog open={recordWalkInOpen} onOpenChange={setRecordWalkInOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 z-[3000]">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-black text-slate-900">
+              Record Evacuation Walk-In
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Record an unregistered citizen arriving at an evacuation center or triage station. This data will be available on the admin registry and accounted for in the live disaster safety ledger.
+            </DialogDescription>
+          </DialogHeader>
+          {recordWalkInOpen && (
+            <UnregisteredPersonForm
+              eventId={event?.id ?? ""}
+              onDone={async () => {
+                setRecordWalkInOpen(false);
+                await Promise.all([
+                  queryClient.invalidateQueries({ queryKey: ["admin", "safety", "ledger"] }),
+                  queryClient.invalidateQueries({ queryKey: ["admin", "unregistered-persons"] }),
+                  queryClient.invalidateQueries({ queryKey: ["admin", "emergency-workspace"] }),
+                  queryClient.invalidateQueries({ queryKey: ["admin", "evac-centers"] }),
+                ]);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

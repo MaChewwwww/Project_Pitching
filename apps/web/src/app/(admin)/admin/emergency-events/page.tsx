@@ -648,8 +648,6 @@ export default function AdminEmergencyEventsPage() {
             {tab === "accounted-for" ? (
               <SafetyLedgerTab
                 event={selected}
-                events={events}
-                onSelectEvent={(eventId) => setSelection(eventId, "accounted-for")}
                 canSeePii={canSeePii}
               />
             ) : null}
