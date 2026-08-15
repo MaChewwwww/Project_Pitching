@@ -2502,6 +2502,18 @@ function UnregisteredPersonsPanel({
 
             {/* Filters & Action Button (Right Aligned) */}
             <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2">
+              {isFiltered && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={resetFilters}
+                  className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+                >
+                  <X aria-hidden className="size-3.5 shrink-0 text-neutral-500" />
+                  <span>Reset</span>
+                </Button>
+              )}
+
               {/* Evacuation Center Selector */}
               <Select
                 value={centerFilter}
@@ -2549,18 +2561,6 @@ function UnregisteredPersonsPanel({
                   <SelectItem value="bedridden">Bedridden</SelectItem>
                 </SelectContent>
               </Select>
-
-              {isFiltered && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={resetFilters}
-                  className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
-                >
-                  <X aria-hidden className="size-3.5 shrink-0 text-neutral-500" />
-                  <span>Reset</span>
-                </Button>
-              )}
 
               {!readOnly && (
                 <Button

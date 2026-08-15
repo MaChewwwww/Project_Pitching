@@ -1,16 +1,11 @@
 "use client";
 
 import * as React from "react";
-import dynamic from "next/dynamic";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { Button } from "@/components/common/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { DialogFooter } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -19,51 +14,48 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api, toDisplayError } from "@/lib/api/client";
-import type { UnregisteredPersonIn, UnregisteredPersonOut } from "@/lib/api/safety-types";
+import type { UnregisteredPersonIn, UnregisteredPersonOut, EmergencyEventOut } from "@/lib/api/safety-types";
 import type { PublicEvacCenter } from "@/lib/api/public-types";
-
-const LocationPicker = dynamic(
-  () => import("@/components/features/registry/location-picker"),
-  {
-    ssr: false,
-    loading: () => <div className="h-72 w-full rounded-lg bg-neutral-100" />,
-  },
-);
-
-/**
- * FR-SAF-012 — "a name and location is enough" (BR-5.10). Deliberately no
- * fields beyond what the requirement asks for: no age, no household guess,
- * nothing that would turn a doorway conversation into a form.
- */
-const schema = z.object({
-  full_name: z.string().min(1, "Enter a name"),
-  contact_number: z.string().optional(),
-  location: z.object({ lat: z.number(), lng: z.number() }).nullable(),
-  location_note: z.string().optional(),
-  initial_status: z.enum(["safe", "needs_rescue"]),
-  evac_center_id: z.string().optional(),
-  is_infant: z.boolean().optional(),
-  is_child: z.boolean(),
-  is_senior: z.boolean(),
-  is_pwd: z.boolean(),
-  is_pregnant: z.boolean(),
-  is_lactating: z.boolean(),
-  has_chronic_condition: z.boolean(),
-  chronic_condition_note: z.string().optional(),
-  is_bedridden: z.boolean(),
-});
-
-type FormValues = z.infer<typeof schema>;
 
 export function UnregisteredPersonForm({
   onDone,
   eventId,
 }: {
   onDone: () => void;
-  eventId: string;
+  eventId?: string;
 }) {
   const queryClient = useQueryClient();
   const [serverError, setServerError] = React.useState<string | null>(null);
+
+  const [selectedEventId, setSelectedEventId] = React.useState(eventId || "");
+  const [selectedCenterId, setSelectedCenterId] = React.useState("none");
+  const [fullName, setFullName] = React.useState("");
+  const [contactNumber, setContactNumber] = React.useState("");
+  const [locationNote, setLocationNote] = React.useState("");
+
+  // Demographics
+  const [isInfant, setIsInfant] = React.useState(false);
+  const [isChild, setIsChild] = React.useState(false);
+  const [isSenior, setIsSenior] = React.useState(false);
+  const [isPwd, setIsPwd] = React.useState(false);
+  const [isPregnant, setIsPregnant] = React.useState(false);
+  const [isLactating, setIsLactating] = React.useState(false);
+  const [hasChronicCondition, setHasChronicCondition] = React.useState(false);
+  const [chronicNote, setChronicNote] = React.useState("");
+  const [isBedridden, setIsBedridden] = React.useState(false);
+
+  // Events query
+  const eventsQuery = useQuery({
+    queryKey: ["admin", "emergency-events"],
+    queryFn: () =>
+      api
+        .get<{ items: EmergencyEventOut[] }>("/admin/emergency-events", {
+          params: { size: 100 },
+        })
+        .then((response) => response.data.items),
+  });
+
+  // Centers query
   const centersQuery = useQuery({
     queryKey: ["admin", "evacuation-centers"],
     queryFn: () =>
@@ -72,209 +64,272 @@ export function UnregisteredPersonForm({
         .then((response) => response.data),
   });
 
-  const {
-    control,
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      full_name: "",
-      contact_number: "",
-      location: null,
-      location_note: "",
-      initial_status: "safe",
-      evac_center_id: "",
-      is_infant: false,
-      is_child: false,
-      is_senior: false,
-      is_pwd: false,
-      is_pregnant: false,
-      is_lactating: false,
-      has_chronic_condition: false,
-      chronic_condition_note: "",
-      is_bedridden: false,
-    },
-  });
+  const resolvedEventId =
+    selectedEventId ||
+    eventId ||
+    eventsQuery.data?.find((e) => e.is_active)?.id ||
+    eventsQuery.data?.[0]?.id ||
+    "";
 
   const mutation = useMutation({
     mutationFn: (payload: UnregisteredPersonIn) =>
       api.post<UnregisteredPersonOut>("/admin/unregistered-persons", payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "unregistered-persons"] });
-      toast.success("Recorded");
+      queryClient.invalidateQueries({ queryKey: ["admin", "emergency-workspace"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "accounted-for"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
+      toast.success(`Walk-in person "${fullName.trim()}" recorded and checked in.`);
       onDone();
     },
     onError: (err: unknown) => setServerError(toDisplayError(err).detail),
   });
 
-  function onSubmit(values: FormValues) {
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     setServerError(null);
+
+    if (!fullName.trim()) {
+      toast.error("Please enter full name.");
+      return;
+    }
+
     mutation.mutate({
-      full_name: values.full_name,
-      contact_number: values.contact_number || null,
-      latitude: values.location?.lat ?? null,
-      longitude: values.location?.lng ?? null,
-      location_note: values.location_note || null,
-      initial_status: values.initial_status,
-      event_id: eventId,
-      evac_center_id: values.evac_center_id || null,
-      is_child: Boolean(values.is_child || values.is_infant),
-      is_senior: values.is_senior,
-      is_pwd: values.is_pwd,
-      is_pregnant: values.is_pregnant,
-      is_lactating: values.is_lactating,
-      has_chronic_condition: values.has_chronic_condition,
-      chronic_condition_note: values.chronic_condition_note || null,
-      is_bedridden: values.is_bedridden,
+      full_name: fullName.trim(),
+      contact_number: contactNumber.trim() || null,
+      location_note: locationNote.trim() || null,
+      initial_status: "safe",
+      event_id: resolvedEventId || null,
+      evac_center_id: selectedCenterId === "none" || !selectedCenterId ? null : selectedCenterId,
+      is_child: Boolean(isChild || isInfant),
+      is_senior: isSenior,
+      is_pwd: isPwd,
+      is_pregnant: isPregnant,
+      is_lactating: isLactating,
+      has_chronic_condition: hasChronicCondition,
+      chronic_condition_note: chronicNote.trim() || null,
+      is_bedridden: isBedridden,
     });
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="full_name">Full name</Label>
-        <Input id="full_name" {...register("full_name")} />
-        {errors.full_name ? (
-          <p className="text-danger text-xs">{errors.full_name.message}</p>
-        ) : null}
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="contact_number">Contact number (optional)</Label>
-        <Input id="contact_number" type="tel" {...register("contact_number")} />
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label>Location (optional)</Label>
-        <Controller
-          control={control}
-          name="location"
-          render={({ field }) => (
-            <LocationPicker
-              value={field.value}
-              onChange={field.onChange}
-              caption="Drag the pin, or tap the map, to mark where they were found."
-            />
-          )}
-        />
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="location_note">Location Address (optional)</Label>
-        <Input
-          id="location_note"
-          placeholder="e.g. Block 3 Area 2 Riverside, Sitio San Jose"
-          {...register("location_note")}
-        />
-        {errors.location_note ? (
-          <p className="text-danger text-xs">{errors.location_note.message}</p>
-        ) : null}
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label>Evacuation center (optional)</Label>
-        <Controller
-          control={control}
-          name="evac_center_id"
-          render={({ field }) => (
-            <Select
-              value={field.value || "none"}
-              onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {/* Event and Center Selectors in 2 columns */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {/* Emergency Event */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-bold text-slate-700">
+            Emergency Event <span className="text-rose-500">*</span>
+          </label>
+          <Select
+            value={resolvedEventId}
+            onValueChange={setSelectedEventId}
+          >
+            <SelectTrigger className="h-9 w-full rounded-xl border-slate-300 bg-white text-xs font-medium">
+              <SelectValue placeholder="Select Emergency Event" />
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              sideOffset={4}
+              className="z-50 max-h-60 w-[var(--radix-select-trigger-width)] rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="No center assigned" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                sideOffset={4}
-                className="z-50 w-[var(--radix-select-trigger-width)] max-h-60 rounded-xl border border-neutral-200 bg-white p-1 shadow-lg"
-              >
-                <SelectItem value="none">No center assigned</SelectItem>
-                {centersQuery.data
-                  ?.filter((center) => center.is_open)
-                  .map((center) => (
-                    <SelectItem key={center.id} value={center.id}>
-                      {center.facility.name} ({center.occupancy}/{center.capacity ?? "∞"})
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
+              {eventsQuery.data?.map((evt) => (
+                <SelectItem key={evt.id} value={evt.id}>
+                  {evt.name} {evt.is_active ? "· Active" : "· Concluded"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Evacuation Center */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-bold text-slate-700">
+            Evacuation Center <span className="text-slate-400 font-normal">(Optional)</span>
+          </label>
+          <Select value={selectedCenterId} onValueChange={setSelectedCenterId}>
+            <SelectTrigger className="h-9 w-full rounded-xl border-slate-300 bg-white text-xs font-medium">
+              <SelectValue placeholder="No center assigned" />
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              sideOffset={4}
+              className="z-50 max-h-60 w-[var(--radix-select-trigger-width)] rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+            >
+              <SelectItem value="none">None / Field Operation</SelectItem>
+              {centersQuery.data
+                ?.filter((c) => c.is_open)
+                .map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.facility.name} ({c.occupancy}/{c.capacity ?? "∞"})
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <fieldset className="rounded-xl border border-neutral-200 bg-slate-50/40 p-3.5">
-        <legend className="px-1.5 text-xs font-bold uppercase tracking-wider text-neutral-800">
-          Special Needs & Demographics
-        </legend>
-        <div className="grid grid-cols-2 gap-2 text-xs font-medium text-neutral-700 mt-1">
-          {[
-            ["is_infant", "Infant / Toddler (0–4 y/o)"],
-            ["is_child", "Minor (5–17 y/o)"],
-            ["is_senior", "Senior (60+ y/o)"],
-            ["is_pwd", "PWD"],
-            ["is_pregnant", "Pregnant"],
-            ["is_lactating", "Lactating"],
-            ["has_chronic_condition", "Chronic condition"],
-            ["is_bedridden", "Mobility-limited"],
-          ].map(([name, label]) => (
-            <label key={name} className="flex min-h-8 items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                {...register(name as keyof FormValues)}
-                className="accent-primary-700 size-4 rounded"
-              />
-              {label}
-            </label>
-          ))}
-        </div>
-        <div className="mt-3">
-          <Label htmlFor="chronic_condition_note" className="text-xs">
-            Condition note (optional)
-          </Label>
-          <Input
-            id="chronic_condition_note"
-            placeholder="e.g. Maintenance hypertensive meds, asthma inhaler..."
-            {...register("chronic_condition_note")}
-            className="mt-1"
+      {/* Full Name & Contact */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-bold text-slate-700">
+            Full Name <span className="text-rose-500">*</span>
+          </label>
+          <input
+            type="text"
+            required
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="Juan Dela Cruz"
+            className="h-9 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
         </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-bold text-slate-700">
+            Contact Number <span className="text-slate-400 font-normal">(Optional)</span>
+          </label>
+          <input
+            type="tel"
+            value={contactNumber}
+            onChange={(e) => setContactNumber(e.target.value)}
+            placeholder="0912 345 6789"
+            className="h-9 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          />
+        </div>
+      </div>
+
+      {/* Special Needs Checklist */}
+      <fieldset className="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5">
+        <legend className="px-1.5 text-xs font-bold uppercase tracking-wider text-slate-800">
+          Special Needs & Demographics
+        </legend>
+        <div className="grid grid-cols-2 gap-2 text-xs mt-1">
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={isInfant}
+              onChange={(e) => setIsInfant(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+            />
+            Infant / Toddler (0–4 y/o)
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={isChild}
+              onChange={(e) => setIsChild(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+            />
+            Minor (5–17 y/o)
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={isSenior}
+              onChange={(e) => setIsSenior(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+            />
+            Senior Citizen (60+ y/o)
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={isPwd}
+              onChange={(e) => setIsPwd(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+            />
+            PWD
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={isPregnant}
+              onChange={(e) => setIsPregnant(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+            />
+            Pregnant
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={isLactating}
+              onChange={(e) => setIsLactating(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+            />
+            Lactating Mother
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={hasChronicCondition}
+              onChange={(e) => setHasChronicCondition(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+            />
+            Chronic Condition
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={isBedridden}
+              onChange={(e) => setIsBedridden(e.target.checked)}
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+            />
+            Bedridden / Mobility-limited
+          </label>
+        </div>
+
+        {hasChronicCondition && (
+          <div className="mt-2.5">
+            <label className="text-[11px] font-bold text-slate-700 block mb-1">
+              Condition Note / Medication:
+            </label>
+            <input
+              type="text"
+              value={chronicNote}
+              onChange={(e) => setChronicNote(e.target.value)}
+              placeholder="e.g. Maintenance hypertensive meds, asthma inhaler..."
+              className="h-8 w-full rounded-lg border border-slate-300 bg-white px-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            />
+          </div>
+        )}
       </fieldset>
 
+      {/* Location Address */}
       <div className="flex flex-col gap-1.5">
-        <Label>Safety Status</Label>
-        <Controller
-          control={control}
-          name="initial_status"
-          render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                sideOffset={4}
-                className="z-50 w-[var(--radix-select-trigger-width)] rounded-xl border border-neutral-200 bg-white p-1 shadow-lg"
-              >
-                <SelectItem value="safe">Safe (Checked In)</SelectItem>
-                <SelectItem value="needs_rescue">Needs Rescue</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
+        <label className="text-xs font-bold text-slate-700">
+          Location Address <span className="text-slate-400 font-normal">(Optional)</span>
+        </label>
+        <input
+          type="text"
+          value={locationNote}
+          onChange={(e) => setLocationNote(e.target.value)}
+          placeholder="e.g. Block 3 Area 2 Riverside, Sitio San Jose"
+          className="h-9 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
         />
       </div>
 
       {serverError ? <p className="text-danger text-xs font-medium">{serverError}</p> : null}
 
-      <Button
-        type="submit"
-        disabled={isSubmitting}
-        className="mt-2 w-full h-10 rounded-xl bg-emerald-700 font-bold text-white shadow-sm hover:bg-emerald-800 cursor-pointer"
-      >
-        {isSubmitting ? "Saving…" : "Record Walk-In"}
-      </Button>
+      <DialogFooter className="mt-1 flex gap-2 sm:justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onDone}
+          className="h-9 rounded-xl px-4 text-xs font-bold cursor-pointer"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          size="sm"
+          disabled={mutation.isPending}
+          className="h-9 rounded-xl bg-emerald-600 px-5 text-xs font-bold text-white hover:bg-emerald-700 cursor-pointer shadow-xs"
+        >
+          {mutation.isPending ? "Recording..." : "Record Walk-In Person"}
+        </Button>
+      </DialogFooter>
     </form>
   );
 }

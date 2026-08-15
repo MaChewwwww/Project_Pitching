@@ -22,7 +22,6 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
-import { StatusBadge } from "@/components/common/status-badge";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { WalkInSummaryCards } from "@/components/features/safety/walk-in-summary-cards";
 import { UnregisteredPersonForm } from "@/components/features/safety/unregistered-person-form";
@@ -225,6 +224,14 @@ export default function AdminUnregisteredPersonsPage() {
     enabled: Boolean(resolvedEventId),
   });
 
+  const eventsMap = React.useMemo(() => {
+    const map = new Map<string, EmergencyEventOut>();
+    for (const evt of eventsQuery.data ?? []) {
+      map.set(evt.id, evt);
+    }
+    return map;
+  }, [eventsQuery.data]);
+
   const rawPeople = React.useMemo(
     () => peopleQuery.data?.items ?? [],
     [peopleQuery.data?.items],
@@ -328,7 +335,7 @@ export default function AdminUnregisteredPersonsPage() {
                   <span>Record Walk-In Person</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl p-6">
+              <DialogContent className="max-w-lg rounded-2xl p-6">
                 <DialogHeader>
                   <DialogTitle className="text-lg font-black text-slate-900">
                     Record an Unregistered Person
@@ -394,6 +401,18 @@ export default function AdminUnregisteredPersonsPage() {
 
             {/* Filters & Action Button (Right Aligned) */}
             <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2">
+              {isFiltered && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={resetFilters}
+                  className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+                >
+                  <X aria-hidden className="size-3.5 shrink-0 text-neutral-500" />
+                  <span>Reset</span>
+                </Button>
+              )}
+
               {/* Emergency Event Selector */}
               <Select
                 value={eventId}
@@ -484,18 +503,6 @@ export default function AdminUnregisteredPersonsPage() {
                   <SelectItem value="all">All Records</SelectItem>
                 </SelectContent>
               </Select>
-
-              {isFiltered && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={resetFilters}
-                  className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
-                >
-                  <X aria-hidden className="size-3.5 shrink-0 text-neutral-500" />
-                  <span>Reset</span>
-                </Button>
-              )}
             </div>
           </div>
         </div>
@@ -506,7 +513,7 @@ export default function AdminUnregisteredPersonsPage() {
             <thead className="bg-primary-900 shadow-[0_1px_0_0_var(--color-primary-800)] text-primary-50">
               <tr className="hover:bg-primary-900 border-primary-800">
                 <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Walk-In Citizen</th>
-                <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Safety Status</th>
+                <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Emergency Event</th>
                 <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Evacuation Center</th>
                 <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Location Address</th>
                 <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Priority Needs</th>
@@ -575,9 +582,28 @@ export default function AdminUnregisteredPersonsPage() {
                         </div>
                       </td>
 
-                      {/* Safety Status */}
+                      {/* Emergency Event */}
                       <td className="py-3 px-4">
-                        <StatusBadge kind="safety" status={person.status} setMethod="assisted" />
+                        {(() => {
+                          const evt = eventsMap.get(person.event_id);
+                          if (!evt) return <span className="text-neutral-400 italic">—</span>;
+                          return (
+                            <div>
+                              <span className="block font-semibold text-neutral-900 max-w-[160px] truncate" title={evt.name}>
+                                {evt.name}
+                              </span>
+                              {evt.is_active ? (
+                                <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                                  Active
+                                </span>
+                              ) : (
+                                <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] font-bold text-neutral-500">
+                                  Concluded
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
 
                       {/* Evacuation Center */}
