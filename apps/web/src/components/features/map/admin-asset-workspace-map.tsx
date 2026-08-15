@@ -16,7 +16,14 @@ import {
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Building2,
+  ChevronDown,
+  Database,
   ExternalLink,
+  MapPin,
+  Megaphone,
+  Radio,
+  Shield,
   Volume2,
   VolumeX,
 } from "lucide-react";
@@ -25,13 +32,24 @@ import { useHazardGeoJson } from "@/lib/hazard-geojson";
 import "@/lib/leaflet-setup";
 import {
   BARANGAY_VIEW,
+  BOUNDARY_LINE_STYLE,
   DARK_TILE_ATTRIBUTION,
   DARK_TILE_URL,
   distinctAreaStyle,
+  HAZARD_LEVELS,
   hazardStyle,
+  SAN_JOSE_OUTER_BOUNDARY_GEOJSON,
 } from "@/lib/map";
 import { api } from "@/lib/api/client";
 import type { AreaBoundaryFeature } from "@/lib/api/public-types";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/common/badge";
 import { cn } from "@/lib/utils";
 import "leaflet/dist/leaflet.css";
 
@@ -45,11 +63,12 @@ export interface AssetWorkspaceMapItem {
   area_name?: string | null;
   subDetail?: string;
   isSounding?: boolean;
-  acousticRadius?: number; // in meters (e.g. 500)
+  acousticRadius?: number;
   occupancy?: number | null;
   capacity?: number | null;
   detailUrl?: string;
   facilityType?: string;
+  code?: string;
   onTrigger?: (id: string) => void;
   onSilence?: (id: string) => void;
 }
@@ -64,10 +83,14 @@ export interface AdminAssetWorkspaceMapProps {
   className?: string;
 }
 
+/* -------------------------------------------------------------------------- */
+/* Custom Leaflet Styling & Panes                                              */
+/* -------------------------------------------------------------------------- */
+
 const MAP_CSS = `
 .admin-asset-workspace-map .leaflet-top.leaflet-right {
-  top: 12px;
-  right: 12px;
+  top: 14px;
+  right: 14px;
 }
 .admin-asset-workspace-map .leaflet-control-zoom {
   border: 1px solid rgba(74, 222, 128, 0.4) !important;
@@ -90,11 +113,11 @@ const MAP_CSS = `
   border-bottom: none !important;
 }
 .admin-asset-workspace-map .leaflet-popup-content-wrapper {
-  background: #052e16 !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(74, 222, 128, 0.3) !important;
-  border-radius: 14px !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7) !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 18px !important;
+  box-shadow: 0 20px 30px -8px rgba(0, 0, 0, 0.6), 0 8px 16px -4px rgba(0, 0, 0, 0.4) !important;
   padding: 0 !important;
   overflow: hidden;
 }
@@ -103,23 +126,41 @@ const MAP_CSS = `
   line-height: 1.4 !important;
 }
 .admin-asset-workspace-map .leaflet-popup-tip {
-  background: #052e16 !important;
-  border: 1px solid rgba(74, 222, 128, 0.3) !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
 }
 .admin-asset-workspace-map .leaflet-popup-close-button {
-  color: #86efac !important;
-  padding: 6px 8px !important;
+  color: #64748b !important;
+  padding: 8px 10px !important;
 }
 .admin-asset-workspace-map .leaflet-popup-close-button:hover {
-  color: #ffffff !important;
+  color: #0f172a !important;
+}
+.sagip-legend-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #34d399 rgba(5, 46, 22, 0.6);
+}
+.sagip-legend-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+.sagip-legend-scroll::-webkit-scrollbar-track {
+  background: rgba(5, 46, 22, 0.6);
+  border-radius: 9999px;
+}
+.sagip-legend-scroll::-webkit-scrollbar-thumb {
+  background: #34d399;
+  border-radius: 9999px;
+}
+.sagip-legend-scroll::-webkit-scrollbar-thumb:hover {
+  background: #6ee7b7;
 }
 
 @keyframes sirenRipplePulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.8), 0 0 0 0 rgba(225, 29, 72, 0.5);
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.85), 0 0 0 0 rgba(225, 29, 72, 0.5);
   }
   50% {
-    box-shadow: 0 0 0 14px rgba(225, 29, 72, 0), 0 0 0 24px rgba(225, 29, 72, 0);
+    box-shadow: 0 0 0 16px rgba(225, 29, 72, 0), 0 0 0 28px rgba(225, 29, 72, 0);
   }
   100% {
     box-shadow: 0 0 0 0 rgba(225, 29, 72, 0), 0 0 0 0 rgba(225, 29, 72, 0);
@@ -129,6 +170,25 @@ const MAP_CSS = `
   animation: sirenRipplePulse 1.4s infinite cubic-bezier(0.25, 1, 0.5, 1) !important;
 }
 `;
+
+function MapPanes() {
+  const map = useMap();
+  React.useEffect(() => {
+    if (!map.getPane("areaPane")) {
+      const areaPane = map.createPane("areaPane");
+      areaPane.style.zIndex = "450";
+    }
+    if (!map.getPane("topBoundaryPane")) {
+      const boundaryPane = map.createPane("topBoundaryPane");
+      boundaryPane.style.zIndex = "650";
+    }
+    if (!map.getPane("assetMarkerPane")) {
+      const markerPane = map.createPane("assetMarkerPane");
+      markerPane.style.zIndex = "670";
+    }
+  }, [map]);
+  return null;
+}
 
 function MapSelectionFlyTo({
   selectedId,
@@ -159,13 +219,22 @@ function MapSelectionFlyTo({
   return null;
 }
 
+function createBoundaryLabelIcon() {
+  return L.divIcon({
+    className: "san-jose-boundary-badge-container",
+    html: `<div class="bg-white text-slate-900 border border-slate-300 shadow-md px-3.5 py-1 rounded-full font-bold text-[11px] whitespace-nowrap flex items-center justify-center cursor-pointer hover:border-emerald-500 hover:text-emerald-700 transition-all hover:scale-105">Barangay San Jose Boundary</div>`,
+    iconSize: [210, 28],
+    iconAnchor: [105, 52],
+  });
+}
+
 function createAssetMarkerIcon(item: AssetWorkspaceMapItem, selected: boolean) {
   const toneBg = {
     emerald: "#059669",
     amber: "#d97706",
     rose: "#e11d48",
     sky: "#0284c7",
-    slate: "#64748b",
+    slate: "#475569",
   }[item.tone];
 
   const size = selected ? 38 : 30;
@@ -180,20 +249,15 @@ function createAssetMarkerIcon(item: AssetWorkspaceMapItem, selected: boolean) {
       </svg>
     `;
   } else if (item.category === "evacuation_center") {
-    if (item.capacity && item.occupancy !== undefined && item.occupancy !== null) {
-      const pct = Math.round((item.occupancy / item.capacity) * 100);
-      iconInnerHtml = `<span style="font-size:${selected ? 10 : 8.5}px;font-weight:900;font-family:monospace;">${pct}%</span>`;
-    } else {
-      iconInnerHtml = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="${selected ? 18 : 14}" height="${selected ? 18 : 14}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
-          <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
-          <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
-        </svg>
-      `;
-    }
+    iconInnerHtml = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="${selected ? 18 : 14}" height="${selected ? 18 : 14}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
+        <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+        <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+      </svg>
+    `;
   } else {
-    // General facility
+    // Facility
     const type = item.facilityType || "";
     if (type.includes("health") || type.includes("clinic") || type.includes("hospital")) {
       iconInnerHtml = `
@@ -203,7 +267,7 @@ function createAssetMarkerIcon(item: AssetWorkspaceMapItem, selected: boolean) {
           <circle cx="20" cy="10" r="2"/>
         </svg>
       `;
-    } else if (type.includes("school")) {
+    } else if (type.includes("school") || type.includes("court")) {
       iconInnerHtml = `
         <svg xmlns="http://www.w3.org/2000/svg" width="${selected ? 18 : 14}" height="${selected ? 18 : 14}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M14 22v-4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4"/>
@@ -227,7 +291,7 @@ function createAssetMarkerIcon(item: AssetWorkspaceMapItem, selected: boolean) {
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
     html: `
-      <div class="${rippleClass}" style="display:grid;place-items:center;width:${size}px;height:${size}px;border-radius:9999px;background:${toneBg};border:${selected ? 3 : 2}px solid #ffffff;box-shadow:0 4px 14px rgba(0,0,0,0.6);color:#ffffff;cursor:pointer;transition:transform 0.15s ease;">
+      <div class="${rippleClass}" style="display:grid;place-items:center;width:${size}px;height:${size}px;border-radius:9999px;background:${toneBg};border:${selected ? 3 : 2.5}px solid #ffffff;box-shadow:0 4px 14px rgba(0,0,0,0.6);color:#ffffff;cursor:pointer;transition:transform 0.15s ease;">
         ${iconInnerHtml}
       </div>
     `,
@@ -239,10 +303,12 @@ export function AdminAssetWorkspaceMap({
   selectedId,
   onSelect,
   showHazard = false,
-  showAreas = false,
+  showAreas = true,
   showAcousticBuffer = true,
   className,
 }: AdminAssetWorkspaceMapProps) {
+  const [legendExpanded, setLegendExpanded] = React.useState(true);
+  const [showBoundaryModal, setShowBoundaryModal] = React.useState(false);
   const hazard = useHazardGeoJson(showHazard);
 
   const areaBoundariesQuery = useQuery({
@@ -270,6 +336,7 @@ export function AdminAssetWorkspaceMap({
         zoomControl={false}
       >
         <ZoomControl position="topright" />
+        <MapPanes />
         <MapSelectionFlyTo selectedId={selectedId} items={items} />
         <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} />
 
@@ -290,6 +357,7 @@ export function AdminAssetWorkspaceMap({
           <GeoJSON
             key="area-boundaries"
             data={areaBoundariesQuery.data as GeoJSON.GeoJsonObject}
+            pane="areaPane"
             style={(feature) => ({
               ...distinctAreaStyle(
                 (feature?.properties as { name?: string })?.name ?? "",
@@ -299,6 +367,47 @@ export function AdminAssetWorkspaceMap({
             })}
           />
         ) : null}
+
+        {/* Barangay San Jose Outer Boundary Line (Mint Green Dashed) */}
+        <GeoJSON
+          data={SAN_JOSE_OUTER_BOUNDARY_GEOJSON as GeoJSON.GeoJsonObject}
+          pane="topBoundaryPane"
+          interactive={true}
+          style={() => ({
+            ...BOUNDARY_LINE_STYLE,
+            className: "cursor-pointer hover:stroke-emerald-400",
+          })}
+          onEachFeature={(_feature, layer) => {
+            layer.on({
+              mouseover: (e) => {
+                const l = e.target as L.Path;
+                l.setStyle({
+                  color: "#34d399",
+                  weight: 5.5,
+                  dashArray: "12, 6",
+                  opacity: 1,
+                });
+              },
+              mouseout: (e) => {
+                const l = e.target as L.Path;
+                l.setStyle(BOUNDARY_LINE_STYLE);
+              },
+              click: () => {
+                setShowBoundaryModal(true);
+              },
+            });
+          }}
+        />
+
+        {/* Barangay San Jose Boundary Marker Badge */}
+        <Marker
+          position={[14.7615, 121.133]}
+          icon={createBoundaryLabelIcon()}
+          pane="topBoundaryPane"
+          eventHandlers={{
+            click: () => setShowBoundaryModal(true),
+          }}
+        />
 
         {/* Acoustic Coverage Circles for Sirens */}
         {showAcousticBuffer &&
@@ -313,7 +422,7 @@ export function AdminAssetWorkspaceMap({
                   center={[lat, lng]}
                   radius={siren.acousticRadius || 500}
                   pathOptions={{
-                    color: isSounding ? "#f43f5e" : "#059669",
+                    color: isSounding ? "#f43f5e" : "#10b981",
                     fillColor: isSounding ? "#f43f5e" : "#10b981",
                     fillOpacity: isSounding ? 0.22 : 0.08,
                     weight: isSounding ? 2.5 : 1.2,
@@ -329,11 +438,20 @@ export function AdminAssetWorkspaceMap({
           const isSelected = selectedId === item.id;
           const markerIcon = createAssetMarkerIcon(item, isSelected);
 
+          const itemCode = item.code || (
+            item.category === "evacuation_center"
+              ? `EC-${item.id.slice(0, 5).toUpperCase()}`
+              : item.category === "siren"
+                ? `SRN-${item.id.slice(0, 4).toUpperCase()}`
+                : `FAC-${item.id.slice(0, 4).toUpperCase()}`
+          );
+
           return (
             <Marker
               key={item.id}
               position={[lat, lng]}
               icon={markerIcon}
+              pane="assetMarkerPane"
               eventHandlers={{
                 click: () => onSelect(item.id),
               }}
@@ -349,47 +467,50 @@ export function AdminAssetWorkspaceMap({
               </Tooltip>
 
               <Popup>
-                <div className="flex w-64 flex-col gap-2.5 p-3.5 text-xs text-white">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h4 className="font-bold text-sm text-emerald-300 leading-tight">
-                        {item.name}
-                      </h4>
-                      <p className="mt-0.5 text-[11px] text-emerald-100/80">
-                        {item.area_name || "Barangay San Jose"}
-                      </p>
-                    </div>
+                {/* Crisp White Card Container Matching Screenshot Style */}
+                <div className="flex w-72 flex-col gap-2.5 p-4 text-xs text-slate-900">
+                  {/* Top Row: Code Badge & Status Pill */}
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                    <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-[10.5px] font-bold text-slate-700">
+                      {itemCode}
+                    </span>
                     <span
                       className={cn(
-                        "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide",
-                        item.tone === "emerald" && "bg-emerald-900 text-emerald-200 border border-emerald-700",
-                        item.tone === "rose" && "bg-rose-900 text-rose-200 border border-rose-700",
-                        item.tone === "amber" && "bg-amber-900 text-amber-200 border border-amber-700",
-                        item.tone === "sky" && "bg-sky-900 text-sky-200 border border-sky-700",
-                        item.tone === "slate" && "bg-slate-800 text-slate-300 border border-slate-600",
+                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide",
+                        item.tone === "emerald" && "bg-emerald-100 text-emerald-800",
+                        item.tone === "rose" && "bg-rose-100 text-rose-800",
+                        item.tone === "amber" && "bg-amber-100 text-amber-800",
+                        item.tone === "sky" && "bg-sky-100 text-sky-800",
+                        item.tone === "slate" && "bg-slate-100 text-slate-700",
                       )}
                     >
                       {item.statusLabel}
                     </span>
                   </div>
 
-                  {item.subDetail ? (
-                    <div className="rounded-lg bg-emerald-950/80 border border-emerald-900/90 p-2 text-[11px] text-emerald-100/90 leading-relaxed">
-                      {item.subDetail}
-                    </div>
-                  ) : null}
+                  {/* Title & Location */}
+                  <div>
+                    <h4 className="text-base font-black text-slate-900 leading-snug">
+                      {item.name}
+                    </h4>
+                    <p className="mt-0.5 text-xs text-slate-500 flex items-center gap-1 font-medium">
+                      <MapPin className="size-3 text-slate-400 shrink-0" />
+                      {item.area_name || "Barangay San Jose, Rodriguez"}
+                    </p>
+                  </div>
 
+                  {/* Subdetail / Specs Card */}
                   {item.category === "evacuation_center" && item.capacity ? (
-                    <div className="flex flex-col gap-1 border-t border-emerald-900/60 pt-2 text-[11px]">
-                      <div className="flex justify-between font-medium">
-                        <span className="text-emerald-200/80">Occupancy</span>
-                        <span className="font-bold tabular-nums text-white">
-                          {item.occupancy ?? 0} / {item.capacity}
+                    <div className="rounded-xl border border-amber-200/80 bg-amber-50/50 p-3 text-xs flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between text-[10.5px] font-bold uppercase tracking-wider text-amber-900">
+                        <span>Shelter Capacity</span>
+                        <span className="font-mono text-slate-900">
+                          {item.occupancy ?? 0} / {item.capacity} Persons
                         </span>
                       </div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-900">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-amber-200/60">
                         <div
-                          className="h-full bg-emerald-400"
+                          className="h-full bg-emerald-600 rounded-full"
                           style={{
                             width: `${Math.min(
                               100,
@@ -399,9 +520,27 @@ export function AdminAssetWorkspaceMap({
                         />
                       </div>
                     </div>
+                  ) : item.category === "siren" ? (
+                    <div className="rounded-xl border border-sky-200/80 bg-sky-50/60 p-3 text-xs flex flex-col gap-1">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-sky-900 flex items-center gap-1">
+                        <Radio className="size-3 text-sky-700" />
+                        Acoustic Coverage
+                      </p>
+                      <p className="text-[11.5px] font-semibold text-sky-950">
+                        500m Omnidirectional Alarm Reach
+                      </p>
+                      <p className="text-[10.5px] text-sky-800">
+                        {item.isSounding ? "Active alarm sounding broadcast" : "Armed and on standby for flood alerts"}
+                      </p>
+                    </div>
+                  ) : item.subDetail ? (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-[11.5px] text-slate-600 leading-relaxed">
+                      {item.subDetail}
+                    </div>
                   ) : null}
 
-                  <div className="mt-1 flex items-center justify-between gap-2 border-t border-emerald-900/60 pt-2.5">
+                  {/* Actions Row */}
+                  <div className="mt-1 flex items-center justify-between gap-2 border-t border-slate-100 pt-2.5">
                     {item.category === "siren" && (
                       <div className="flex items-center gap-1.5">
                         {item.isSounding ? (
@@ -411,9 +550,9 @@ export function AdminAssetWorkspaceMap({
                               e.stopPropagation();
                               item.onSilence?.(item.id);
                             }}
-                            className="inline-flex items-center gap-1 rounded-md bg-rose-700 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-rose-600 transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-700 transition-colors cursor-pointer shadow-xs"
                           >
-                            <VolumeX className="size-3" />
+                            <VolumeX className="size-3.5" />
                             Silence
                           </button>
                         ) : (
@@ -423,9 +562,9 @@ export function AdminAssetWorkspaceMap({
                               e.stopPropagation();
                               item.onTrigger?.(item.id);
                             }}
-                            className="inline-flex items-center gap-1 rounded-md bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-600 transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors cursor-pointer shadow-xs"
                           >
-                            <Volume2 className="size-3" />
+                            <Volume2 className="size-3.5" />
                             Test Sound
                           </button>
                         )}
@@ -435,7 +574,7 @@ export function AdminAssetWorkspaceMap({
                     {item.detailUrl ? (
                       <Link
                         href={item.detailUrl as unknown as Parameters<typeof Link>[0]["href"]}
-                        className="ml-auto inline-flex items-center gap-1 rounded-md bg-emerald-800/80 px-2.5 py-1 text-[11px] font-bold text-emerald-200 hover:bg-emerald-700 hover:text-white transition-colors"
+                        className="ml-auto inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-800 transition-colors shadow-xs"
                       >
                         Inspect Details
                         <ExternalLink className="size-3" />
@@ -448,6 +587,230 @@ export function AdminAssetWorkspaceMap({
           );
         })}
       </MapContainer>
+
+      {/* -------------------------------------------------------------------- */}
+      {/* Top-Left Collapsible Legend Card (Matching Screenshot Design)       */}
+      {/* -------------------------------------------------------------------- */}
+      <div
+        aria-label="Map legend"
+        className={cn(
+          "absolute top-3.5 left-3.5 z-[1000] rounded-2xl border border-emerald-900/80 bg-[#052e16]/95 text-white shadow-2xl backdrop-blur-md transition-all duration-200",
+          legendExpanded
+            ? "w-64 max-w-[calc(100%-6rem)] max-h-[calc(100%-2rem)] overflow-y-auto sagip-legend-scroll p-3.5"
+            : "w-auto p-2"
+        )}
+      >
+        <button
+          type="button"
+          onClick={() => setLegendExpanded((v) => !v)}
+          className={cn(
+            "flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer",
+            legendExpanded ? "w-full justify-between mb-2 pb-1.5 border-b border-emerald-900/60" : "w-auto"
+          )}
+          aria-expanded={legendExpanded}
+          title={legendExpanded ? "Collapse Legend" : "Expand Legend"}
+        >
+          <span className="inline-flex items-center gap-1.5">
+            <Shield className="size-3.5 text-emerald-400" aria-hidden />
+            LEGEND
+          </span>
+          <ChevronDown
+            className={cn(
+              "size-3.5 text-emerald-400/80 transition-transform duration-200",
+              legendExpanded ? "rotate-180" : "rotate-0"
+            )}
+            aria-hidden
+          />
+        </button>
+
+        {legendExpanded && (
+          <div className="flex flex-col gap-2.5 text-[11px]">
+            {/* Flood Hazard (NOAH) */}
+            {showHazard && (
+              <div>
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                  Flood Hazard (NOAH)
+                </p>
+                <ul className="flex flex-col gap-1.5">
+                  {HAZARD_LEVELS.map((level) => (
+                    <li key={level.level} className="flex items-center gap-2">
+                      <span
+                        aria-hidden
+                        className="h-2.5 w-4 shrink-0 rounded-[2px] border border-white/30 shadow-2xs"
+                        style={{ backgroundColor: level.color, opacity: 0.85 }}
+                      />
+                      <span className="text-emerald-100/90">
+                        <span className="font-semibold">{level.label} Hazard</span> ({level.depth})
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Map Boundaries */}
+            <div className={showHazard ? "border-t border-emerald-900/60 pt-2" : ""}>
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                Map Boundaries
+              </p>
+              <ul className="flex flex-col gap-1.5">
+                <li className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowBoundaryModal(true)}
+                    className="inline-flex items-center gap-1.5 text-left text-emerald-300 hover:text-emerald-100 transition-colors group cursor-pointer"
+                    title="View boundary notes"
+                  >
+                    <span className="h-0.5 w-4 shrink-0 bg-emerald-400 border-b border-dashed border-emerald-300 group-hover:bg-emerald-200" />
+                    <span className="underline decoration-emerald-500/50 underline-offset-2 font-medium">
+                      San Jose Boundary
+                    </span>
+                  </button>
+                </li>
+                {showAreas && (
+                  <li className="flex items-center gap-2">
+                    <span
+                      aria-hidden
+                      className="h-2.5 w-4 shrink-0 rounded-[2px] border border-white/60 bg-white/10 shadow-2xs"
+                    />
+                    <span className="text-emerald-100/90">Area Divisions (1–6)</span>
+                  </li>
+                )}
+              </ul>
+            </div>
+
+            {/* Evacuation Centers */}
+            <div className="border-t border-emerald-900/60 pt-2">
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                Evacuation Centers
+              </p>
+              <ul className="flex flex-col gap-1.5">
+                <li className="flex items-center gap-2">
+                  <div className="grid size-4 place-items-center rounded-full bg-emerald-600 text-white font-bold">
+                    <Building2 className="size-2.5" />
+                  </div>
+                  <span className="text-emerald-100/90">Available Capacity</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="grid size-4 place-items-center rounded-full bg-rose-600 text-white font-bold">
+                    <Building2 className="size-2.5" />
+                  </div>
+                  <span className="text-emerald-100/90">Overloading Capacity</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Siren Units */}
+            <div className="border-t border-emerald-900/60 pt-2">
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                Siren Units
+              </p>
+              <ul className="flex flex-col gap-1.5">
+                <li className="flex items-center gap-2">
+                  <div className="grid size-4 place-items-center rounded-full bg-slate-700 text-emerald-400 border border-emerald-500/50 font-bold">
+                    <Megaphone className="size-2.5" />
+                  </div>
+                  <span className="text-emerald-100/90">Idle Siren</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="grid size-4 place-items-center rounded-full bg-rose-600 text-white border border-rose-300 font-bold animate-pulse">
+                    <Megaphone className="size-2.5" />
+                  </div>
+                  <span className="text-emerald-100/90">Sounding Siren</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* -------------------------------------------------------------------- */}
+      {/* Bottom-Right Data Sources Attribution Card (Matching Screenshot)    */}
+      {/* -------------------------------------------------------------------- */}
+      <div
+        aria-label="Data sources attribution"
+        className="pointer-events-none absolute bottom-3.5 right-3.5 z-[1000] hidden sm:flex flex-col gap-0.5 rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-3 text-[10.5px] text-emerald-200/90 shadow-2xl backdrop-blur-md"
+      >
+        <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-emerald-400 text-[10px]">
+          <Database className="size-3 text-emerald-400" aria-hidden />
+          DATA SOURCES
+        </div>
+        <div>
+          <span className="font-semibold text-white/90">Locality:</span> Barangay San Jose, Rodriguez (Montalban), Rizal
+        </div>
+        <div>
+          <span className="font-semibold text-white/90">Data:</span> UP NOAH / LiPAD (ODC-ODbL)
+        </div>
+        <div className="text-[9.5px] text-emerald-400/60 pt-0.5 border-t border-emerald-900/60 mt-0.5">
+          Map: Leaflet · © OpenStreetMap · CARTO
+        </div>
+      </div>
+
+      {/* -------------------------------------------------------------------- */}
+      {/* Barangay San Jose Boundary Overview Modal                            */}
+      {/* -------------------------------------------------------------------- */}
+      <Dialog open={showBoundaryModal} onOpenChange={setShowBoundaryModal}>
+        <DialogContent className="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl">
+          <DialogHeader className="border-b border-slate-100 bg-emerald-950 p-5 text-white">
+            <div className="flex items-center gap-2">
+              <Badge tone="onDark" outline className="border-emerald-500/50 bg-emerald-900/50 text-emerald-200">
+                Municipality of Rodriguez (Montalban), Rizal
+              </Badge>
+            </div>
+            <DialogTitle className="mt-2 flex items-center gap-2 text-xl font-bold text-white">
+              <Shield className="size-5 text-emerald-400 shrink-0" />
+              Barangay San Jose Boundary & GIS Assets
+            </DialogTitle>
+            <DialogDescription className="text-xs text-emerald-200/80">
+              Administrative boundary and spatial operational overview for disaster readiness and response.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-4 p-5 text-sm">
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                  Jurisdiction
+                </p>
+                <p className="mt-1 font-bold text-slate-900">San Jose</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                  Sitio Areas
+                </p>
+                <p className="mt-1 font-bold text-slate-900">6 Areas</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                  Mapped Assets
+                </p>
+                <p className="mt-1 font-bold text-emerald-700">{items.length} Units</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3.5 text-xs text-emerald-950">
+              <p className="font-semibold text-emerald-900">
+                Official Disaster Risk & Operations Boundary
+              </p>
+              <p className="mt-1 leading-relaxed text-emerald-800">
+                All coordinates and facilities are tracked within the official PSGC
+                boundary for Barangay San Jose. Flood depth layers reflect verified 5-year return
+                period simulations produced by UP NOAH.
+              </p>
+            </div>
+
+            <div className="border-t border-slate-100 pt-3 text-right">
+              <button
+                type="button"
+                onClick={() => setShowBoundaryModal(false)}
+                className="rounded-lg bg-emerald-800 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition"
+              >
+                Close Overview
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
