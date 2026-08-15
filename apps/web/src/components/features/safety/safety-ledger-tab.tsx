@@ -23,7 +23,6 @@ import {
   UserCheck,
   UserPlus,
   Users,
-  UserX,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -51,9 +50,8 @@ import { cn } from "@/lib/utils";
 import type {
   EmergencyEventOut,
   SafetyLedgerPageOut,
-  UnregisteredPersonOut,
 } from "@/lib/api/safety-types";
-import type { Page, PublicEvacCenter } from "@/lib/api/public-types";
+import type { PublicEvacCenter } from "@/lib/api/public-types";
 import { SafetyJourneyDrawer } from "./safety-journey-drawer";
 import { UnregisteredPersonForm } from "./unregistered-person-form";
 
@@ -105,7 +103,7 @@ export function SafetyLedgerTab({
 }: SafetyLedgerTabProps) {
   const queryClient = useQueryClient();
   const [activeSubTab, setActiveSubTab] = React.useState<
-    "stream" | "areas" | "centers" | "unregistered"
+    "stream" | "areas" | "centers"
   >("stream");
 
   // Filters for Live Check-In Stream
@@ -117,12 +115,6 @@ export function SafetyLedgerTab({
   const [currentOnly, setCurrentOnly] = React.useState<boolean>(false);
   const [page, setPage] = React.useState(1);
   const pageSize = 15;
-
-  // Filters for Unregistered Persons Tab
-  const [unregSearch, setUnregSearch] = React.useState("");
-  const [unregCenterFilter, setUnregCenterFilter] = React.useState("all");
-  const [unregSupportFilter, setUnregSupportFilter] = React.useState("all");
-  const [unregPage, setUnregPage] = React.useState(1);
 
   // Walk-in modal
   const [recordWalkInOpen, setRecordWalkInOpen] = React.useState(false);
@@ -183,21 +175,6 @@ export function SafetyLedgerTab({
         .then((r) => r.data),
   });
 
-  // Dedicated Unregistered Persons Query for Sub-tab 4
-  const unregQuery = useQuery({
-    queryKey: ["admin", "unregistered-persons", event?.id],
-    queryFn: () =>
-      api
-        .get<Page<UnregisteredPersonOut>>("/admin/unregistered-persons", {
-          params: {
-            event_id: event?.id,
-            include_converted: true,
-            size: 100,
-          },
-        })
-        .then((res) => res.data),
-  });
-
   const ledgerData = ledgerQuery.data;
   const summary = ledgerData?.summary;
   const items = ledgerData?.items ?? [];
@@ -232,62 +209,6 @@ export function SafetyLedgerTab({
     setPage(1);
   };
 
-  // Filtered Unregistered Persons for Tab 4
-  const unregFiltered = React.useMemo(() => {
-    const list: UnregisteredPersonOut[] = unregQuery.data?.items ?? [];
-    const q = unregSearch.trim().toLowerCase();
-    return list.filter((p: UnregisteredPersonOut) => {
-      const matchesSearch =
-        !q ||
-        p.full_name.toLowerCase().includes(q) ||
-        (p.contact_number && p.contact_number.toLowerCase().includes(q)) ||
-        (p.evac_center_name && p.evac_center_name.toLowerCase().includes(q)) ||
-        (p.location_note && p.location_note.toLowerCase().includes(q));
-
-      const matchesCenter =
-        unregCenterFilter === "all" ||
-        (unregCenterFilter === "none"
-          ? !p.evac_center_id
-          : p.evac_center_id === unregCenterFilter);
-
-      const hasSpecialNeeds =
-        p.is_child ||
-        p.is_senior ||
-        p.is_pwd ||
-        p.is_pregnant ||
-        p.is_lactating ||
-        p.has_chronic_condition ||
-        p.is_bedridden;
-
-      const matchesSupport =
-        unregSupportFilter === "all" ||
-        (unregSupportFilter === "with_special_needs" && hasSpecialNeeds) ||
-        (unregSupportFilter === "without_special_needs" && !hasSpecialNeeds) ||
-        (unregSupportFilter === "pwd" && p.is_pwd) ||
-        (unregSupportFilter === "senior" && p.is_senior) ||
-        (unregSupportFilter === "minor" && p.is_child) ||
-        (unregSupportFilter === "pregnant" && p.is_pregnant) ||
-        (unregSupportFilter === "bedridden" && p.is_bedridden);
-
-      return matchesSearch && matchesCenter && matchesSupport;
-    });
-  }, [unregQuery.data?.items, unregSearch, unregCenterFilter, unregSupportFilter]);
-
-  const unregTotalPages = Math.max(1, Math.ceil(unregFiltered.length / pageSize));
-  const unregCurrentPage = Math.min(unregPage, unregTotalPages);
-  const unregStartIndex = (unregCurrentPage - 1) * pageSize;
-  const unregPageItems = unregFiltered.slice(unregStartIndex, unregStartIndex + pageSize);
-  const isUnregFiltered = Boolean(
-    unregSearch || unregCenterFilter !== "all" || unregSupportFilter !== "all",
-  );
-
-  const resetUnregFilters = () => {
-    setUnregSearch("");
-    setUnregCenterFilter("all");
-    setUnregSupportFilter("all");
-    setUnregPage(1);
-  };
-
   // Export CSV generator
   const handleExportCSV = () => {
     if (items.length === 0) {
@@ -320,7 +241,7 @@ export function SafetyLedgerTab({
       `"${item.contact_number ?? "—"}"`,
       `"${item.status.toUpperCase()}"`,
       `"${item.set_method ?? "—"}"`,
-      `"${item.evac_center_name ?? "Home / Shelter in Place"}"`,
+      `"${item.evac_center_name ?? "Home | Safe Place"}"`,
       `"${item.set_by_name ?? "System / Self"}"`,
       `"${item.vulnerability_flags.join("; ")}"`,
       `"${item.is_current ? "Yes" : "Superseded"}"`,
@@ -349,8 +270,8 @@ export function SafetyLedgerTab({
 
   return (
     <div className="flex flex-col gap-5">
-      {/* 1. 5 Executive KPI Telemetry Cards + Stacked Export/Print Actions */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+      {/* 1. 5 Executive KPI Telemetry Cards */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {/* KPI 1: Total Registered Safe */}
         <Card radius="lg" className="border-emerald-200/80 bg-emerald-50/30">
           <CardContent className="flex flex-col gap-2 p-4">
@@ -429,7 +350,7 @@ export function SafetyLedgerTab({
         </Card>
 
         {/* KPI 5: Unregistered Walk-Ins (FR-SAF-013) */}
-        <Card radius="lg" className="border-purple-200/80 bg-purple-50/30">
+        <Card radius="lg" className="border-purple-200/80 bg-purple-50/30 col-span-2 sm:col-span-1 lg:col-span-1">
           <CardContent className="flex flex-col gap-2 p-4">
             <div className="flex items-center justify-between">
               <span className="grid size-9 place-items-center rounded-xl bg-purple-100 text-purple-800 border border-purple-200">
@@ -447,33 +368,13 @@ export function SafetyLedgerTab({
             </div>
           </CardContent>
         </Card>
-
-        {/* KPI 6: Quick Actions Column: Export CSV & Print Report Vertically Stacked */}
-        <div className="flex flex-col gap-2 col-span-2 sm:col-span-1 justify-between h-full">
-          <button
-            type="button"
-            onClick={handleExportCSV}
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 shadow-2xs transition-all hover:bg-emerald-50/50 hover:border-emerald-300 hover:text-emerald-900 cursor-pointer min-h-[50px]"
-          >
-            <Download className="size-4 text-emerald-600 shrink-0" />
-            <span>Export CSV</span>
-          </button>
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 shadow-2xs transition-all hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 cursor-pointer min-h-[50px]"
-          >
-            <Printer className="size-4 text-slate-600 shrink-0" />
-            <span>Print Report</span>
-          </button>
-        </div>
       </div>
 
-      {/* 3. Unified Outer Container (Overhauled Layout from Image #2) */}
+      {/* 2. Unified Outer Container (Overhauled Layout from Image #2) */}
       <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
         {/* Top Tab Bar Header */}
-        <div className="border-b border-neutral-200 bg-white">
-          <div role="tablist" className="flex overflow-x-auto px-2">
+        <div className="border-b border-neutral-200 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between px-2 gap-2 sm:gap-0">
+          <div role="tablist" className="flex overflow-x-auto">
             <ListTabButton
               active={activeSubTab === "stream"}
               onClick={() => {
@@ -498,13 +399,30 @@ export function SafetyLedgerTab({
               label="Evacuation Centers"
               count={evacCentersQuery.data?.length}
             />
-            <ListTabButton
-              active={activeSubTab === "unregistered"}
-              onClick={() => setActiveSubTab("unregistered")}
-              icon={<UserX className="size-3.5 shrink-0" aria-hidden />}
-              label="Unregistered Persons"
-              count={unregSafe + unregRescue}
-            />
+          </div>
+
+          {/* Quick Actions: Export CSV & Print Report Buttons Replacing Unregistered Tab */}
+          <div className="flex items-center gap-2 pr-2 py-2 sm:py-0 shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleExportCSV}
+              className="inline-flex h-8.5 items-center gap-1.5 rounded-full border-slate-300 bg-white px-3.5 text-xs font-bold text-slate-800 shadow-2xs hover:bg-emerald-50/50 hover:border-emerald-300 hover:text-emerald-900 cursor-pointer"
+            >
+              <Download className="size-3.5 text-emerald-600 shrink-0" />
+              <span>Export CSV</span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              className="inline-flex h-8.5 items-center gap-1.5 rounded-full border-slate-300 bg-white px-3.5 text-xs font-bold text-slate-800 shadow-2xs hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 cursor-pointer"
+            >
+              <Printer className="size-3.5 text-slate-600 shrink-0" />
+              <span>Print Report</span>
+            </Button>
           </div>
         </div>
 
@@ -726,49 +644,52 @@ export function SafetyLedgerTab({
 
                             {/* Resident Name & Demographics */}
                             <td className="px-4 py-3">
-                              <div className="flex items-center gap-2.5">
-                                <div className="size-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold shrink-0 border border-slate-200">
-                                  {item.person_name.charAt(0).toUpperCase()}
+                              <div className="flex flex-col min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-bold text-slate-900 truncate max-w-[200px]">
+                                    {item.person_name}
+                                  </span>
+                                  {item.is_head && (
+                                    <span className="inline-flex items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase text-emerald-800 border border-emerald-200">
+                                      Head
+                                    </span>
+                                  )}
                                 </div>
-                                <div className="flex flex-col min-w-0">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="font-bold text-slate-900 truncate max-w-[180px]">
-                                      {item.person_name}
+                                <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                  {item.subject_type === "registered_member" ? (
+                                    <span className="inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-700 border border-slate-200">
+                                      Citizen
                                     </span>
-                                    {item.is_head && (
-                                      <span className="inline-flex items-center rounded-md bg-emerald-50 px-1 py-0.2 text-[9px] font-bold uppercase text-emerald-800 border border-emerald-200">
-                                        Head
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-1 mt-0.5">
-                                    <span className="text-[10px] text-slate-400">
-                                      {item.subject_type === "registered_member" ? "Citizen" : "Walk-in"}
+                                  ) : (
+                                    <span className="inline-flex items-center rounded bg-purple-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-purple-700 border border-purple-200">
+                                      Walk-In
                                     </span>
-                                    {item.vulnerability_flags.slice(0, 2).map((flag) => (
-                                      <span
-                                        key={flag}
-                                        className="inline-flex items-center rounded bg-rose-50 px-1 py-0.2 text-[9px] font-bold text-rose-700 border border-rose-200"
-                                      >
-                                        {flag.replace("is_", "").replace("has_", "").slice(0, 7)}
-                                      </span>
-                                    ))}
-                                  </div>
+                                  )}
+                                  {item.vulnerability_flags.slice(0, 3).map((flag) => (
+                                    <span
+                                      key={flag}
+                                      className="inline-flex items-center rounded bg-rose-50 px-1.5 py-0.5 text-[9px] font-bold text-rose-700 border border-rose-200"
+                                    >
+                                      {flag.replace("is_", "").replace("has_", "").slice(0, 10)}
+                                    </span>
+                                  ))}
                                 </div>
                               </div>
                             </td>
 
                             {/* Household & Area */}
                             <td className="px-4 py-3">
-                              <div className="flex flex-col">
+                              <div className="flex flex-col items-center w-fit">
                                 {item.household_reference_no ? (
-                                  <span className="font-mono text-[11px] font-black tracking-tight text-slate-800 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded w-fit">
+                                  <span className="font-mono text-[11px] font-black tracking-tight text-slate-800 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-center">
                                     {item.household_reference_no}
                                   </span>
                                 ) : (
                                   <span className="text-slate-400 font-normal">No household</span>
                                 )}
-                                <span className="text-[10px] text-slate-500 font-medium mt-0.5">{item.area_name ?? "—"}</span>
+                                <span className="text-[10.5px] text-slate-500 font-medium mt-0.5 text-center w-full">
+                                  {item.area_name ?? "—"}
+                                </span>
                               </div>
                             </td>
 
@@ -802,14 +723,14 @@ export function SafetyLedgerTab({
                             {/* Shelter Location */}
                             <td className="px-4 py-3">
                               {item.evac_center_name ? (
-                                <div className="flex items-center gap-1.5 text-slate-800">
+                                <div className="flex items-center gap-1.5 text-slate-900 font-semibold">
                                   <Building2 className="size-3.5 text-emerald-600 shrink-0" />
-                                  <span className="font-semibold truncate max-w-[170px]">{item.evac_center_name}</span>
+                                  <span className="truncate max-w-[170px]">{item.evac_center_name}</span>
                                 </div>
                               ) : (
-                                <div className="flex items-center gap-1.5 text-slate-400">
-                                  <Home className="size-3.5 text-slate-300 shrink-0" />
-                                  <span className="text-[11px]">Home / In Place</span>
+                                <div className="flex items-center gap-1.5 text-blue-700 font-semibold">
+                                  <Home className="size-3.5 text-blue-600 shrink-0" />
+                                  <span className="text-xs">Home | Safe Place</span>
                                 </div>
                               )}
                             </td>
@@ -849,32 +770,32 @@ export function SafetyLedgerTab({
 
               {/* Bottom Pagination Bar */}
               <div className="flex items-center justify-between border-t border-primary-100/80 bg-slate-50/80 px-4 py-3 text-xs">
-                <span className="text-slate-500 font-medium">
+                <span className="text-slate-500 font-medium tabular-nums">
                   Showing <strong className="text-slate-800">{items.length > 0 ? (page - 1) * pageSize + 1 : 0}</strong>–
                   <strong className="text-slate-800">{Math.min(page * pageSize, ledgerData?.total ?? 0)}</strong> of{" "}
                   <strong className="text-slate-800">{ledgerData?.total ?? 0}</strong> recorded check-in events
                 </span>
-                {ledgerData && ledgerData.pages > 1 && (
-                  <div className="flex items-center gap-1">
+                {items.length > 0 && (
+                  <div className="flex items-center gap-1.5">
                     <Button
                       size="sm"
                       variant="outline"
                       disabled={page <= 1}
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      className="h-8 px-2.5 rounded-lg border-slate-300 text-xs font-bold cursor-pointer"
+                      className="h-8 px-2.5 rounded-lg border-slate-300 text-xs font-bold cursor-pointer disabled:opacity-50"
                     >
                       <ChevronLeft className="size-3.5 mr-1" />
                       Previous
                     </Button>
-                    <span className="px-2 text-xs font-semibold text-slate-600">
-                      Page {page} of {ledgerData.pages}
+                    <span className="px-2 text-xs font-semibold text-slate-600 tabular-nums">
+                      Page {page} of {ledgerData?.pages || 1}
                     </span>
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={page >= ledgerData.pages}
+                      disabled={!ledgerData || page >= ledgerData.pages}
                       onClick={() => setPage((p) => p + 1)}
-                      className="h-8 px-2.5 rounded-lg border-slate-300 text-xs font-bold cursor-pointer"
+                      className="h-8 px-2.5 rounded-lg border-slate-300 text-xs font-bold cursor-pointer disabled:opacity-50"
                     >
                       Next
                       <ChevronRight className="size-3.5 ml-1" />
@@ -1039,309 +960,6 @@ export function SafetyLedgerTab({
                 );
               })}
             </div>
-          )}
-
-          {/* SUB-VIEW 4: UNREGISTERED PERSONS SEPARATE LEDGER (FR-SAF-013) - Image #2 Layout */}
-          {activeSubTab === "unregistered" && (
-            <section className="overflow-hidden rounded-[14px] border border-primary-200/80 bg-white shadow-sm-card">
-              {/* Attached Toolbar */}
-              <div className="border-b border-primary-100/80 bg-gradient-to-r from-emerald-50/50 via-white to-teal-50/30 p-3 sm:px-4">
-                <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
-                  {/* Search Input (Left) */}
-                  <div className="flex items-center">
-                    <label className="relative block min-w-[220px] sm:w-72 md:w-80">
-                      <span className="sr-only">Search walk-in records</span>
-                      <Search
-                        aria-hidden
-                        className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-neutral-400"
-                      />
-                      <input
-                        value={unregSearch}
-                        onChange={(e) => {
-                          setUnregSearch(e.target.value);
-                          setUnregPage(1);
-                        }}
-                        placeholder="Search name, phone, notes..."
-                        className="h-9.5 w-full rounded-full border border-neutral-200/90 bg-white/95 pr-9 pl-9.5 text-xs shadow-2xs transition outline-none placeholder:text-neutral-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 sm:text-sm"
-                      />
-                      {unregSearch ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setUnregSearch("");
-                            setUnregPage(1);
-                          }}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 cursor-pointer"
-                          aria-label="Clear search"
-                        >
-                          <X aria-hidden className="size-3.5" />
-                        </button>
-                      ) : null}
-                    </label>
-                  </div>
-
-                  {/* Filters & Actions (Right) */}
-                  <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2">
-                    {isUnregFiltered && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={resetUnregFilters}
-                        className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
-                      >
-                        <X aria-hidden className="size-3.5 shrink-0 text-neutral-500" />
-                        <span>Reset</span>
-                      </Button>
-                    )}
-
-                    {/* Evacuation Center Selector */}
-                    <Select
-                      value={unregCenterFilter}
-                      onValueChange={(v) => {
-                        setUnregCenterFilter(v);
-                        setUnregPage(1);
-                      }}
-                    >
-                      <SelectTrigger className="inline-flex h-9 w-fit min-w-[145px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
-                        <Building2 aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
-                        <SelectValue placeholder="All Centers" />
-                      </SelectTrigger>
-                      <SelectContent className="z-[3000] min-w-52 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
-                        <SelectItem value="all">All Evacuation Centers</SelectItem>
-                        <SelectItem value="none">No Center Assigned</SelectItem>
-                        {evacCentersQuery.data?.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.facility.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    {/* Demographics Filter */}
-                    <Select
-                      value={unregSupportFilter}
-                      onValueChange={(v) => {
-                        setUnregSupportFilter(v);
-                        setUnregPage(1);
-                      }}
-                    >
-                      <SelectTrigger className="inline-flex h-9 w-fit min-w-[140px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
-                        <SlidersHorizontal aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
-                        <SelectValue placeholder="Demographics" />
-                      </SelectTrigger>
-                      <SelectContent className="z-[3000] min-w-52 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
-                        <SelectItem value="all">All Demographics</SelectItem>
-                        <SelectItem value="with_special_needs">With Special Needs</SelectItem>
-                        <SelectItem value="without_special_needs">No Special Needs</SelectItem>
-                        <SelectItem value="senior">Senior Citizen (60+)</SelectItem>
-                        <SelectItem value="pwd">PWD</SelectItem>
-                        <SelectItem value="minor">Minor (0–17 y/o)</SelectItem>
-                        <SelectItem value="pregnant">Pregnant</SelectItem>
-                        <SelectItem value="bedridden">Bedridden</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Button
-                      size="sm"
-                      onClick={() => setRecordWalkInOpen(true)}
-                      className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white shadow-xs transition-all hover:bg-emerald-700 ml-1"
-                    >
-                      <UserPlus className="size-3.5" />
-                      <span>Record Walk-In Person</span>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Table View */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-primary-900 shadow-[0_1px_0_0_var(--color-primary-800)] text-primary-50">
-                    <tr className="hover:bg-primary-900 border-primary-800">
-                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Name</th>
-                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Safety Status</th>
-                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Evacuation Center</th>
-                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Contact</th>
-                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Special Needs</th>
-                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Location Address</th>
-                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Recorded Time</th>
-                      <th className="h-11 px-4 text-right text-[11px] font-bold tracking-[0.08em] uppercase text-white">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-primary-100/80">
-                    {unregQuery.isLoading ? (
-                      <tr>
-                        <td colSpan={8} className="py-14 text-center">
-                          <div className="flex flex-col items-center justify-center gap-2">
-                            <div className="size-6 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
-                            <span className="text-xs font-semibold text-neutral-600">Loading walk-in records…</span>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : unregPageItems.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} className="py-14 text-center">
-                          <div className="flex flex-col items-center gap-2.5">
-                            <div className="grid size-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-700 shadow-2xs">
-                              <UserX className="size-6 text-emerald-700" />
-                            </div>
-                            <p className="text-sm font-bold text-neutral-900">No walk-in records found</p>
-                            <p className="text-xs text-neutral-500 max-w-sm">
-                              {isUnregFiltered
-                                ? "No unregistered persons match your active filter criteria."
-                                : "No unregistered persons have checked in for this emergency event yet."}
-                            </p>
-                            <Button
-                              size="sm"
-                              onClick={() => setRecordWalkInOpen(true)}
-                              className="mt-2 inline-flex h-8.5 cursor-pointer items-center gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white shadow-xs hover:bg-emerald-700"
-                            >
-                              <UserPlus className="size-3.5" />
-                              Record First Walk-In Person
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      unregPageItems.map((person: UnregisteredPersonOut) => {
-                        const flags: string[] = [];
-                        if (person.is_child) flags.push("Minor");
-                        if (person.is_senior) flags.push("Senior Citizen");
-                        if (person.is_pwd) flags.push("PWD");
-                        if (person.is_pregnant) flags.push("Pregnant");
-                        if (person.is_lactating) flags.push("Lactating");
-                        if (person.has_chronic_condition) flags.push("Chronic Condition");
-                        if (person.is_bedridden) flags.push("Bedridden");
-
-                        return (
-                          <tr key={person.id} className="hover:bg-emerald-50/30 transition-colors">
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2.5">
-                                <div className="size-8 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold shrink-0 border border-purple-200">
-                                  {person.full_name.charAt(0).toUpperCase()}
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="font-bold text-slate-900">{person.full_name}</span>
-                                  <span className="text-[10px] text-purple-600 font-semibold">Walk-In</span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3">
-                              {person.status === "safe" ? (
-                                <span className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-800">
-                                  <CheckCircle2 className="size-3" />
-                                  Safe
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 rounded-md border border-rose-300 bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase text-rose-800">
-                                  <ShieldAlert className="size-3" />
-                                  Rescue
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
-                              {person.evac_center_name ? (
-                                <div className="flex items-center gap-1.5 text-slate-800">
-                                  <Building2 className="size-3.5 text-emerald-600 shrink-0" />
-                                  <span className="font-semibold">{person.evac_center_name}</span>
-                                </div>
-                              ) : (
-                                <span className="text-slate-400">—</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
-                              {person.contact_number ? (
-                                <span className="font-semibold text-slate-700 flex items-center gap-1">
-                                  <Phone className="size-3 text-slate-400" />
-                                  {person.contact_number}
-                                </span>
-                              ) : (
-                                <span className="text-slate-400">—</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex flex-wrap gap-1">
-                                {flags.length > 0 ? (
-                                  flags.map((f) => (
-                                    <span
-                                      key={f}
-                                      className="inline-flex items-center rounded bg-rose-50 px-1.5 py-0.5 text-[9px] font-bold text-rose-700 border border-rose-200"
-                                    >
-                                      {f}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span className="text-slate-400">—</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className="text-slate-700">{person.location_note ?? "—"}</span>
-                            </td>
-                            <td className="px-4 py-3 text-slate-500 tabular-nums">
-                              {formatPhtDateTime(person.created_at)}
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() =>
-                                  setSelectedSubject({
-                                    id: person.id,
-                                    type: "unregistered_person",
-                                    name: person.full_name,
-                                  })
-                                }
-                                className="h-7 px-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 gap-1 rounded-lg cursor-pointer"
-                              >
-                                <Eye className="size-3.5" />
-                                <span>Journey</span>
-                              </Button>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Bottom Pagination Bar */}
-              <div className="flex items-center justify-between border-t border-primary-100/80 bg-slate-50/80 px-4 py-3 text-xs">
-                <span className="text-slate-500 font-medium">
-                  Showing <strong className="text-slate-800">{unregFiltered.length > 0 ? unregStartIndex + 1 : 0}</strong>–
-                  <strong className="text-slate-800">{Math.min(unregStartIndex + pageSize, unregFiltered.length)}</strong> of{" "}
-                  <strong className="text-slate-800">{unregFiltered.length}</strong> walk-in records
-                </span>
-                {unregTotalPages > 1 && (
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={unregPage <= 1}
-                      onClick={() => setUnregPage((p) => Math.max(1, p - 1))}
-                      className="h-8 px-2.5 rounded-lg border-slate-300 text-xs font-bold cursor-pointer"
-                    >
-                      <ChevronLeft className="size-3.5 mr-1" />
-                      Previous
-                    </Button>
-                    <span className="px-2 text-xs font-semibold text-slate-600">
-                      Page {unregPage} of {unregTotalPages}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={unregPage >= unregTotalPages}
-                      onClick={() => setUnregPage((p) => p + 1)}
-                      className="h-8 px-2.5 rounded-lg border-slate-300 text-xs font-bold cursor-pointer"
-                    >
-                      Next
-                      <ChevronRight className="size-3.5 ml-1" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </section>
           )}
         </div>
       </div>
