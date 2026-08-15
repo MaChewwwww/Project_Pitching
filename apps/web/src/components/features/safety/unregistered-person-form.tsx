@@ -9,7 +9,9 @@ import { DialogFooter } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -27,7 +29,33 @@ export function UnregisteredPersonForm({
   const queryClient = useQueryClient();
   const [serverError, setServerError] = React.useState<string | null>(null);
 
-  const [selectedEventId, setSelectedEventId] = React.useState(eventId || "");
+  // Events query
+  const eventsQuery = useQuery({
+    queryKey: ["admin", "emergency-events"],
+    queryFn: () =>
+      api
+        .get<{ items: EmergencyEventOut[] }>("/admin/emergency-events", {
+          params: { size: 100 },
+        })
+        .then((response) => response.data.items),
+  });
+
+  const activeEvents = React.useMemo(
+    () => eventsQuery.data?.filter((e) => e.is_active) ?? [],
+    [eventsQuery.data],
+  );
+  const concludedEvents = React.useMemo(
+    () => eventsQuery.data?.filter((e) => !e.is_active) ?? [],
+    [eventsQuery.data],
+  );
+
+  const [selectedEventId, setSelectedEventId] = React.useState<string | null>(null);
+
+  const effectiveEventId =
+    selectedEventId !== null
+      ? selectedEventId
+      : (eventId && eventId !== "all" ? eventId : (activeEvents[0]?.id || concludedEvents[0]?.id || ""));
+
   const [selectedCenterId, setSelectedCenterId] = React.useState("none");
   const [fullName, setFullName] = React.useState("");
   const [contactNumber, setContactNumber] = React.useState("");
@@ -44,17 +72,6 @@ export function UnregisteredPersonForm({
   const [chronicNote, setChronicNote] = React.useState("");
   const [isBedridden, setIsBedridden] = React.useState(false);
 
-  // Events query
-  const eventsQuery = useQuery({
-    queryKey: ["admin", "emergency-events"],
-    queryFn: () =>
-      api
-        .get<{ items: EmergencyEventOut[] }>("/admin/emergency-events", {
-          params: { size: 100 },
-        })
-        .then((response) => response.data.items),
-  });
-
   // Centers query
   const centersQuery = useQuery({
     queryKey: ["admin", "evacuation-centers"],
@@ -63,13 +80,6 @@ export function UnregisteredPersonForm({
         .get<PublicEvacCenter[]>("/admin/evacuation-centers")
         .then((response) => response.data),
   });
-
-  const resolvedEventId =
-    selectedEventId ||
-    eventId ||
-    eventsQuery.data?.find((e) => e.is_active)?.id ||
-    eventsQuery.data?.[0]?.id ||
-    "";
 
   const mutation = useMutation({
     mutationFn: (payload: UnregisteredPersonIn) =>
@@ -99,7 +109,7 @@ export function UnregisteredPersonForm({
       contact_number: contactNumber.trim() || null,
       location_note: locationNote.trim() || null,
       initial_status: "safe",
-      event_id: resolvedEventId || null,
+      event_id: effectiveEventId && effectiveEventId !== "none" ? effectiveEventId : null,
       evac_center_id: selectedCenterId === "none" || !selectedCenterId ? null : selectedCenterId,
       is_child: Boolean(isChild || isInfant),
       is_senior: isSenior,
@@ -122,8 +132,8 @@ export function UnregisteredPersonForm({
             Emergency Event <span className="text-rose-500">*</span>
           </label>
           <Select
-            value={resolvedEventId}
-            onValueChange={setSelectedEventId}
+            value={effectiveEventId || "none"}
+            onValueChange={(val) => setSelectedEventId(val === "none" ? "" : val)}
           >
             <SelectTrigger className="h-9 w-full rounded-xl border-slate-300 bg-white text-xs font-medium">
               <SelectValue placeholder="Select Emergency Event" />
@@ -131,13 +141,43 @@ export function UnregisteredPersonForm({
             <SelectContent
               position="popper"
               sideOffset={4}
-              className="z-50 max-h-60 w-[var(--radix-select-trigger-width)] rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+              className="z-[3000] max-h-64 w-[var(--radix-select-trigger-width)] rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
             >
-              {eventsQuery.data?.map((evt) => (
-                <SelectItem key={evt.id} value={evt.id}>
-                  {evt.name} {evt.is_active ? "· Active" : "· Concluded"}
-                </SelectItem>
-              ))}
+              <SelectItem value="none">
+                <span className="text-slate-500">None / General Walk-In (No Event)</span>
+              </SelectItem>
+
+              {activeEvents.length > 0 && (
+                <SelectGroup>
+                  <SelectLabel className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50/70 rounded-md my-1">
+                    Active Emergency Events
+                  </SelectLabel>
+                  {activeEvents.map((evt) => (
+                    <SelectItem key={evt.id} value={evt.id}>
+                      <span className="font-semibold text-slate-900">{evt.name}</span>
+                      <span className="ml-1.5 inline-flex items-center rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9.5px] font-bold text-emerald-700">
+                        Active
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              )}
+
+              {concludedEvents.length > 0 && (
+                <SelectGroup>
+                  <SelectLabel className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-100/80 rounded-md my-1">
+                    Previous / Concluded Emergencies
+                  </SelectLabel>
+                  {concludedEvents.map((evt) => (
+                    <SelectItem key={evt.id} value={evt.id}>
+                      <span className="font-medium text-slate-700">{evt.name}</span>
+                      <span className="ml-1 text-[10px] text-slate-400">
+                        {evt.type ? `(${evt.type})` : ""} · Concluded
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -154,16 +194,14 @@ export function UnregisteredPersonForm({
             <SelectContent
               position="popper"
               sideOffset={4}
-              className="z-50 max-h-60 w-[var(--radix-select-trigger-width)] rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+              className="z-[3000] max-h-60 w-[var(--radix-select-trigger-width)] rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
             >
               <SelectItem value="none">None / Field Operation</SelectItem>
-              {centersQuery.data
-                ?.filter((c) => c.is_open)
-                .map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.facility.name} ({c.occupancy}/{c.capacity ?? "∞"})
-                  </SelectItem>
-                ))}
+              {centersQuery.data?.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.facility.name} ({c.occupancy}/{c.capacity ?? "∞"}) {!c.is_open ? "· Closed" : ""}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

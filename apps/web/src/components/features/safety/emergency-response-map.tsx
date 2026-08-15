@@ -55,7 +55,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -2033,21 +2035,30 @@ function CreateWalkInForm({
   const [chronicNote, setChronicNote] = React.useState("");
   const [isBedridden, setIsBedridden] = React.useState(false);
 
-  // Active events query
+  // Emergency events query (active and previous)
   const eventsQuery = useQuery({
-    queryKey: ["public", "active-emergency-events"],
+    queryKey: ["admin", "emergency-events"],
     queryFn: () =>
       api
-        .get<PublicEmergencyEvent[]>("/public/emergency-events/active")
-        .then((r) => r.data),
+        .get<{ items: EmergencyEventOut[] }>("/admin/emergency-events", {
+          params: { size: 100 },
+        })
+        .then((r) => r.data.items),
   });
 
   const activeEvents = React.useMemo(() => {
     if (eventsQuery.data && eventsQuery.data.length > 0) {
-      return eventsQuery.data;
+      return eventsQuery.data.filter((e) => e.is_active);
     }
     return data.event ? [data.event] : [];
   }, [eventsQuery.data, data.event]);
+
+  const concludedEvents = React.useMemo(() => {
+    if (eventsQuery.data && eventsQuery.data.length > 0) {
+      return eventsQuery.data.filter((e) => !e.is_active);
+    }
+    return [];
+  }, [eventsQuery.data]);
 
   const mutation = useMutation({
     mutationFn: async (payload: UnregisteredPersonIn) => {
@@ -2076,7 +2087,7 @@ function CreateWalkInForm({
     }
 
     mutation.mutate({
-      event_id: selectedEventId || eventId || null,
+      event_id: selectedEventId && selectedEventId !== "none" ? selectedEventId : null,
       evac_center_id: selectedCenterId === "none" || !selectedCenterId ? null : selectedCenterId,
       full_name: fullName.trim(),
       contact_number: contactNumber.trim() || null,
@@ -2099,22 +2110,55 @@ function CreateWalkInForm({
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
           <span>Emergency Event <span className="text-rose-500">*</span></span>
-          <span className="text-[11px] font-normal text-slate-400">Active Disaster Response</span>
+          <span className="text-[11px] font-normal text-slate-400">Active or Concluded Response</span>
         </label>
-        <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+        <Select
+          value={selectedEventId || "none"}
+          onValueChange={(val) => setSelectedEventId(val === "none" ? "" : val)}
+        >
           <SelectTrigger className="h-9 w-full text-xs rounded-xl bg-white border-slate-300 font-medium">
             <SelectValue placeholder="Select Emergency Event" />
           </SelectTrigger>
           <SelectContent
             position="popper"
             sideOffset={4}
-            className="z-50 w-[var(--radix-select-trigger-width)] max-h-60 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+            className="z-[3000] w-[var(--radix-select-trigger-width)] max-h-64 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
           >
-            {activeEvents.map((evt) => (
-              <SelectItem key={evt.id} value={evt.id}>
-                {evt.name} {evt.type ? `(${evt.type})` : ""}
-              </SelectItem>
-            ))}
+            <SelectItem value="none">
+              <span className="text-slate-500">None / General Walk-In (No Event)</span>
+            </SelectItem>
+
+            {activeEvents.length > 0 && (
+              <SelectGroup>
+                <SelectLabel className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50/70 rounded-md my-1">
+                  Active Emergency Events
+                </SelectLabel>
+                {activeEvents.map((evt) => (
+                  <SelectItem key={evt.id} value={evt.id}>
+                    <span className="font-semibold text-slate-900">{evt.name}</span>
+                    <span className="ml-1.5 inline-flex items-center rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9.5px] font-bold text-emerald-700">
+                      Active
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            )}
+
+            {concludedEvents.length > 0 && (
+              <SelectGroup>
+                <SelectLabel className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-100/80 rounded-md my-1">
+                  Previous / Concluded Emergencies
+                </SelectLabel>
+                {concludedEvents.map((evt) => (
+                  <SelectItem key={evt.id} value={evt.id}>
+                    <span className="font-medium text-slate-700">{evt.name}</span>
+                    <span className="ml-1 text-[10px] text-slate-400">
+                      {evt.type ? `(${evt.type})` : ""} · Concluded
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            )}
           </SelectContent>
         </Select>
       </div>
@@ -2132,7 +2176,7 @@ function CreateWalkInForm({
           <SelectContent
             position="popper"
             sideOffset={4}
-            className="z-50 w-[var(--radix-select-trigger-width)] max-h-60 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+            className="z-[3000] w-[var(--radix-select-trigger-width)] max-h-60 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
           >
             <SelectItem value="none">None / Field Operation</SelectItem>
             {data.evacuation_centers.map((c) => (
@@ -2526,7 +2570,7 @@ function UnregisteredPersonsPanel({
                   <Building2 aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
                   <SelectValue placeholder="All Centers" />
                 </SelectTrigger>
-                <SelectContent className="z-50 min-w-52 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                <SelectContent className="z-[3000] min-w-52 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
                   <SelectItem value="all">All Evacuation Centers</SelectItem>
                   <SelectItem value="none">No Center Assigned</SelectItem>
                   {data.evacuation_centers.map((c) => (
@@ -2549,7 +2593,7 @@ function UnregisteredPersonsPanel({
                   <SlidersHorizontal aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
                   <SelectValue placeholder="Demographics" />
                 </SelectTrigger>
-                <SelectContent className="z-50 min-w-52 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                <SelectContent className="z-[3000] min-w-52 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
                   <SelectItem value="all">All Demographics</SelectItem>
                   <SelectItem value="with_special_needs">With Special Needs</SelectItem>
                   <SelectItem value="without_special_needs">No Special Needs</SelectItem>

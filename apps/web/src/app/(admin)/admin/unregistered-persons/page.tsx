@@ -324,30 +324,28 @@ export default function AdminUnregisteredPersonsPage() {
         title="Unregistered Persons"
         description="Event-scoped walk-ins and field-assisted evacuees. Track triage status, special needs, and convert records into official household members."
         action={
-          resolvedEventId ? (
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  size="sm"
-                  className="h-10 cursor-pointer gap-2 rounded-full border border-emerald-600/30 bg-emerald-700 px-4 font-bold text-white shadow-md shadow-emerald-900/15 transition-all hover:bg-emerald-800 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
-                >
-                  <Plus aria-hidden className="size-4 stroke-[2.5]" />
-                  <span>Record Walk-In Person</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg rounded-2xl p-6">
-                <DialogHeader>
-                  <DialogTitle className="text-lg font-black text-slate-900">
-                    Record an Unregistered Person
-                  </DialogTitle>
-                </DialogHeader>
-                <UnregisteredPersonForm
-                  eventId={resolvedEventId}
-                  onDone={() => setDialogOpen(false)}
-                />
-              </DialogContent>
-            </Dialog>
-          ) : undefined
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                size="sm"
+                className="h-10 cursor-pointer gap-2 rounded-full border border-emerald-600/30 bg-emerald-700 px-4 font-bold text-white shadow-md shadow-emerald-900/15 transition-all hover:bg-emerald-800 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
+              >
+                <Plus aria-hidden className="size-4 stroke-[2.5]" />
+                <span>Record Walk-In Person</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg rounded-2xl p-6">
+              <DialogHeader>
+                <DialogTitle className="text-lg font-black text-slate-900">
+                  Record an Unregistered Person
+                </DialogTitle>
+              </DialogHeader>
+              <UnregisteredPersonForm
+                eventId={resolvedEventId}
+                onDone={() => setDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
         }
       />
 
@@ -424,7 +422,7 @@ export default function AdminUnregisteredPersonsPage() {
                 <SelectTrigger className="inline-flex h-9 w-fit min-w-[155px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
                   <SelectValue placeholder="Select Event" />
                 </SelectTrigger>
-                <SelectContent className="z-50 min-w-56 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                <SelectContent className="z-[3000] min-w-56 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
                   <SelectItem value="all">
                     {activeEvent ? `${activeEvent.name} (Active)` : "Current Active Event"}
                   </SelectItem>
@@ -448,7 +446,7 @@ export default function AdminUnregisteredPersonsPage() {
                   <Building2 aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
                   <SelectValue placeholder="All Centers" />
                 </SelectTrigger>
-                <SelectContent className="z-50 min-w-52 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                <SelectContent className="z-[3000] min-w-52 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
                   <SelectItem value="all">All Evacuation Centers</SelectItem>
                   <SelectItem value="none">Field / No Center</SelectItem>
                   {centers.map(([id, name]) => (
@@ -471,7 +469,7 @@ export default function AdminUnregisteredPersonsPage() {
                   <SlidersHorizontal aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
                   <SelectValue placeholder="Demographics" />
                 </SelectTrigger>
-                <SelectContent className="z-50 min-w-52 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                <SelectContent className="z-[3000] min-w-52 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
                   <SelectItem value="all">All Demographics</SelectItem>
                   <SelectItem value="with_special_needs">With Special Needs</SelectItem>
                   <SelectItem value="without_special_needs">No Special Needs</SelectItem>
@@ -497,7 +495,7 @@ export default function AdminUnregisteredPersonsPage() {
                   <UserCheck aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
                   <SelectValue placeholder="Registry State" />
                 </SelectTrigger>
-                <SelectContent className="z-50 min-w-44 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                <SelectContent className="z-[3000] min-w-44 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
                   <SelectItem value="unresolved">Unconverted Only</SelectItem>
                   <SelectItem value="converted">Official Citizens</SelectItem>
                   <SelectItem value="all">All Records</SelectItem>
