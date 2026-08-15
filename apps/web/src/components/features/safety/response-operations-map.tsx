@@ -56,6 +56,7 @@ export interface ResponseMapItem {
 
 export interface ResponseOperationsMapProps {
   items: ResponseMapItem[];
+  unmappedCount?: number;
   selectedId: string | null;
   onSelect: (id: string) => void;
   showHazard: boolean;
@@ -69,6 +70,30 @@ export interface ResponseOperationsMapProps {
 /* -------------------------------------------------------------------------- */
 
 const LEGEND_CSS = `
+.admin-emergency-map .leaflet-top.leaflet-right {
+  top: 12px;
+  right: 12px;
+}
+.admin-emergency-map .leaflet-control-zoom {
+  border: 1px solid rgba(74, 222, 128, 0.4) !important;
+  border-radius: 10px !important;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+}
+.admin-emergency-map .leaflet-control-zoom a {
+  background: #052e16 !important;
+  color: #4ade80 !important;
+  border-bottom: 1px solid rgba(74, 222, 128, 0.25) !important;
+  font-size: 16px !important;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.admin-emergency-map .leaflet-control-zoom a:hover {
+  background: #064e3b !important;
+  color: #86efac !important;
+}
+.admin-emergency-map .leaflet-control-zoom a:last-child {
+  border-bottom: none !important;
+}
 .sagip-legend-scroll {
   scrollbar-width: thin;
   scrollbar-color: #34d399 rgba(5, 46, 22, 0.6);
@@ -94,7 +119,8 @@ function MapSelection({ item }: { item: ResponseMapItem | null }) {
   React.useEffect(() => {
     if (!item) return;
     const [longitude, latitude] = item.location.coordinates;
-    map.flyTo([latitude, longitude], Math.max(map.getZoom(), 15), { duration: 0.55 });
+    const targetZoom = map.getMaxZoom() || BARANGAY_VIEW.maxZoom || 18;
+    map.flyTo([latitude, longitude], targetZoom, { duration: 0.8, easeLinearity: 0.25 });
   }, [item, map]);
   return null;
 }
@@ -155,6 +181,7 @@ function markerIcon(item: ResponseMapItem, selected: boolean) {
 
 export function ResponseOperationsMap({
   items,
+  unmappedCount = 0,
   selectedId,
   onSelect,
   showHazard,
@@ -188,7 +215,7 @@ export function ResponseOperationsMap({
         zoom={13.8}
         minZoom={BARANGAY_VIEW.minZoom}
         maxZoom={BARANGAY_VIEW.maxZoom}
-        className="h-full w-full"
+        className="h-full w-full admin-emergency-map"
         attributionControl={false}
         zoomControl={false}
       >
@@ -319,153 +346,185 @@ export function ResponseOperationsMap({
           );
         })}
       </MapContainer>
-
       {/* -------------------------------------------------------------------- */}
-      {/* Top-Left Collapsible Legend Card (Exact Themed Design)               */}
+      {/* Top-Left Overlays: Status Badges Container & Collapsible Legend      */}
       {/* -------------------------------------------------------------------- */}
-      <div
-        aria-label="Map legend"
-        className={cn(
-          "absolute top-3.5 left-3.5 z-[1000] rounded-xl border border-emerald-900/80 bg-[#052e16]/95 text-white shadow-2xl backdrop-blur-md transition-all duration-200",
-          legendExpanded
-            ? "w-64 max-w-[calc(100%-6rem)] max-h-[calc(100%-2rem)] overflow-y-auto sagip-legend-scroll p-3"
-            : "w-auto p-2"
-        )}
-      >
-        <button
-          type="button"
-          onClick={() => setLegendExpanded((v) => !v)}
-          className={cn(
-            "flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400 hover:text-emerald-300 transition-colors",
-            legendExpanded ? "w-full justify-between mb-2 pb-1.5 border-b border-emerald-900/60" : "w-auto"
-          )}
-          aria-expanded={legendExpanded}
-          title={legendExpanded ? "Collapse Legend" : "Expand Legend"}
+      <div className="absolute top-3.5 left-3.5 z-[1000] flex flex-col gap-2 pointer-events-auto">
+        {/* Pinned & Not Pinned Badges Container (Vertically Stacked in Same Container) */}
+        <div
+          aria-label="Map spatial pin coverage"
+          className="flex flex-col gap-1.5 rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-2 shadow-2xl backdrop-blur-md"
         >
-          <span className="inline-flex items-center gap-1.5">
-            <Shield className="size-3.5 text-emerald-400" aria-hidden />
-            LEGEND
-          </span>
-          <ChevronDown
-            className={cn(
-              "size-3.5 text-emerald-400/80 transition-transform duration-200",
-              legendExpanded ? "rotate-180" : "rotate-0"
-            )}
-            aria-hidden
-          />
-        </button>
+          {/* Pinned on Map Badge (Orange) */}
+          <div className="flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-950/60 px-3 py-1 text-xs font-bold text-orange-300 shadow-2xs">
+            <span className="size-2 rounded-full bg-orange-500 shrink-0 shadow-[0_0_6px_rgba(249,115,22,0.8)]" />
+            <span>{items.length} Pinned on Map</span>
+          </div>
 
-        {legendExpanded && (
-          <div className="flex flex-col gap-2 text-[11px]">
-            {/* Flood Hazard (NOAH) */}
-            {showHazard && (
-              <div>
+          {/* Not Pinned on Map Badge (Red) */}
+          <div className="flex items-center gap-2 rounded-full border border-red-500/40 bg-red-950/60 px-3 py-1 text-xs font-bold text-red-300 shadow-2xs">
+            <span className="size-2 rounded-full bg-red-500 shrink-0 shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
+            <span>{unmappedCount} Not Pinned on Map</span>
+          </div>
+        </div>
+
+        {/* Collapsible Legend Card */}
+        <div
+          aria-label="Map legend"
+          className={cn(
+            "rounded-xl border border-emerald-900/80 bg-[#052e16]/95 text-white shadow-2xl backdrop-blur-md transition-all duration-200",
+            legendExpanded
+              ? "w-64 max-w-[calc(100%-6rem)] max-h-[calc(100%-2rem)] overflow-y-auto sagip-legend-scroll p-3"
+              : "w-auto p-2"
+          )}
+        >
+          <button
+            type="button"
+            onClick={() => setLegendExpanded((v) => !v)}
+            className={cn(
+              "flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400 hover:text-emerald-300 transition-colors",
+              legendExpanded ? "w-full justify-between mb-2 pb-1.5 border-b border-emerald-900/60" : "w-auto"
+            )}
+            aria-expanded={legendExpanded}
+            title={legendExpanded ? "Collapse Legend" : "Expand Legend"}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Shield className="size-3.5 text-emerald-400" aria-hidden />
+              LEGEND
+            </span>
+            <ChevronDown
+              className={cn(
+                "size-3.5 text-emerald-400/80 transition-transform duration-200",
+                legendExpanded ? "rotate-180" : "rotate-0"
+              )}
+              aria-hidden
+            />
+          </button>
+
+          {legendExpanded && (
+            <div className="flex flex-col gap-2 text-[11px]">
+              {/* Flood Hazard (NOAH) */}
+              {showHazard && (
+                <div>
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                    Flood Hazard (NOAH)
+                  </p>
+                  <ul className="flex flex-col gap-1.5">
+                    {HAZARD_LEVELS.map((level) => (
+                      <li key={level.level} className="flex items-center gap-2">
+                        <span
+                          aria-hidden
+                          className="h-2.5 w-4 shrink-0 rounded-[2px] border border-white/30 shadow-2xs"
+                          style={{ backgroundColor: level.color, opacity: 0.85 }}
+                        />
+                        <span className="text-emerald-100/90">
+                          <span className="font-semibold">{level.label} Hazard</span> ({level.depth})
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Map Boundaries */}
+              <div className={showHazard ? "border-t border-emerald-900/60 pt-1.5" : ""}>
                 <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
-                  Flood Hazard (NOAH)
+                  Map Boundaries
                 </p>
-                <ul className="flex flex-col gap-1.5">
-                  {HAZARD_LEVELS.map((level) => (
-                    <li key={level.level} className="flex items-center gap-2">
+                <ul className="flex flex-col gap-1">
+                  <li className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowBoundaryModal(true)}
+                      className="inline-flex items-center gap-1.5 text-left text-emerald-300 hover:text-emerald-100 transition-colors group cursor-pointer"
+                      title="View boundary notes"
+                    >
+                      <span className="h-0.5 w-4 shrink-0 bg-emerald-400 border-b border-dashed border-emerald-300 group-hover:bg-emerald-200" />
+                      <span className="underline decoration-emerald-500/50 underline-offset-2 font-medium">
+                        San Jose Boundary
+                      </span>
+                    </button>
+                  </li>
+                  {showAreas && (
+                    <li className="flex items-center gap-2">
                       <span
                         aria-hidden
-                        className="h-2.5 w-4 shrink-0 rounded-[2px] border border-white/30 shadow-2xs"
-                        style={{ backgroundColor: level.color, opacity: 0.85 }}
+                        className="h-2.5 w-4 shrink-0 rounded-[2px] border border-emerald-400/80 bg-emerald-500/10 shadow-2xs"
                       />
-                      <span className="text-emerald-100/90">
-                        <span className="font-semibold">{level.label} Hazard</span> ({level.depth})
-                      </span>
+                      <span className="text-emerald-100/90">Barangay Areas (1–6)</span>
                     </li>
-                  ))}
+                  )}
                 </ul>
               </div>
-            )}
 
-            {/* Map Boundaries */}
-            <div className={showHazard ? "border-t border-emerald-900/60 pt-1.5" : ""}>
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
-                Map Boundaries
-              </p>
-              <ul className="flex flex-col gap-1">
-                <li className="flex items-center gap-2">
-                  <span className="inline-block w-3.5 border-b-2 border-dashed border-emerald-400" />
-                  <span className="text-emerald-100/90">San Jose Boundary</span>
-                </li>
-                {showAreas && (
-                  <li className="flex items-center gap-2">
-                    <span className="inline-block w-3.5 border-b border-dashed border-slate-300" />
-                    <span className="text-emerald-100/90">Area Divisions (1–6)</span>
-                  </li>
-                )}
-              </ul>
-            </div>
-
-            {/* Operational Status Pins */}
-            <div className="border-t border-emerald-900/60 pt-1.5">
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
-                {mode === "rescue" ? "Rescue Status Pins" : "Incident Status Pins"}
-              </p>
-              <ul className="flex flex-col gap-1">
-                <li className="flex items-center gap-2">
-                  <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60 bg-[#e11d48]" />
-                  <span className="text-emerald-100/90">Pending</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60 bg-[#d97706]" />
-                  <span className="text-emerald-100/90">Verified</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60 bg-[#0284c7]" />
-                  <span className="text-emerald-100/90">
-                    {mode === "rescue" ? "Dispatched" : "In Progress"}
-                  </span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60 bg-[#059669]" />
-                  <span className="text-emerald-100/90">Resolved</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60 bg-[#64748b]" />
-                  <span className="text-emerald-100/90">Dismissed</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Urgency Priority Levels (for rescue mode) */}
-            {mode === "rescue" ? (
+              {/* Incident/Rescue Status Pin Indicators */}
               <div className="border-t border-emerald-900/60 pt-1.5">
                 <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
-                  Urgency Priority (Pin #)
+                  Record Status Pins
                 </p>
-                <ul className="flex flex-col gap-1 text-[10.5px]">
+                <ul className="flex flex-col gap-1">
                   <li className="flex items-center gap-2">
-                    <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-rose-600 font-bold text-[9px] text-white">
-                      1
-                    </span>
+                    <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60 bg-[#e11d48]" />
+                    <span className="text-emerald-100/90">Pending Review</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60 bg-[#d97706]" />
+                    <span className="text-emerald-100/90">Verified</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60 bg-[#0284c7]" />
                     <span className="text-emerald-100/90">
-                      <span className="font-semibold text-rose-300">Priority 1</span> (Critical / Bedridden)
+                      {mode === "rescue" ? "Dispatched" : "In Progress"}
                     </span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-amber-600 font-bold text-[9px] text-white">
-                      2
-                    </span>
-                    <span className="text-emerald-100/90">
-                      <span className="font-semibold text-amber-300">Priority 2</span> (High / Vulnerable)
-                    </span>
+                    <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60 bg-[#059669]" />
+                    <span className="text-emerald-100/90">Resolved</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-sky-600 font-bold text-[9px] text-white">
-                      3
-                    </span>
-                    <span className="text-emerald-100/90">
-                      <span className="font-semibold text-sky-300">Priority 3</span> (Standard Queue)
-                    </span>
+                    <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60 bg-[#64748b]" />
+                    <span className="text-emerald-100/90">Dismissed</span>
                   </li>
                 </ul>
               </div>
-            ) : null}
-          </div>
-        )}
+
+              {/* Urgency Priority Levels (for rescue mode) */}
+              {mode === "rescue" ? (
+                <div className="border-t border-emerald-900/60 pt-1.5">
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                    Urgency Priority (Pin #)
+                  </p>
+                  <ul className="flex flex-col gap-1 text-[10.5px]">
+                    <li className="flex items-center gap-2">
+                      <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-rose-600 font-bold text-[9px] text-white">
+                        1
+                      </span>
+                      <span className="text-emerald-100/90">
+                        <span className="font-semibold text-rose-300">Priority 1</span> (Critical / Bedridden)
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-amber-600 font-bold text-[9px] text-white">
+                        2
+                      </span>
+                      <span className="text-emerald-100/90">
+                        <span className="font-semibold text-amber-300">Priority 2</span> (High / Vulnerable)
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-sky-600 font-bold text-[9px] text-white">
+                        3
+                      </span>
+                      <span className="text-emerald-100/90">
+                        <span className="font-semibold text-sky-300">Priority 3</span> (Standard Queue)
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* -------------------------------------------------------------------- */}
@@ -520,7 +579,7 @@ export function ResponseOperationsMap({
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                 <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
-                  Sitio Areas
+                  Barangay Areas
                 </p>
                 <p className="mt-1 font-bold text-slate-900">6 Areas</p>
               </div>

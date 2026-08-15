@@ -7,18 +7,21 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   AlertCircle,
+  AlertTriangle,
+  Check,
   CheckCircle2,
+  ChevronLeft,
   ChevronRight,
-  CircleDotDashed,
   Clock,
-  Eye,
-  FileText,
+  Copy,
   Filter,
   Layers,
   MapPin,
   MapPinOff,
   Maximize2,
+  Navigation,
   Phone,
+  Plus,
   Radio,
   RotateCcw,
   Search,
@@ -28,19 +31,16 @@ import {
   X,
   XCircle,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -49,7 +49,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { api } from "@/lib/api/client";
+import { api, toDisplayError } from "@/lib/api/client";
 import type { Page } from "@/lib/api/public-types";
 import type {
   EmergencyEventOut,
@@ -64,6 +64,8 @@ import type {
 } from "@/lib/api/safety-types";
 import { cn } from "@/lib/utils";
 import type { ResponseMapItem } from "./response-operations-map";
+import { RescueCreationDialog } from "./rescue-creation-dialog";
+import { IncidentCreationDialog } from "./incident-creation-dialog";
 
 const ResponseOperationsMap = dynamic(
   () =>
@@ -76,33 +78,131 @@ const ResponseOperationsMap = dynamic(
   },
 );
 
+const MiniMapPreview = dynamic(
+  () => import("./mini-map-preview").then((module) => module.MiniMapPreview),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-48 w-full animate-pulse rounded-xl bg-slate-900" />
+    ),
+  },
+);
+
 function LayerCheckbox({
   checked,
   onChange,
   label,
 }: {
   checked: boolean;
-  onChange: React.Dispatch<React.SetStateAction<boolean>>;
+  onChange: (v: boolean) => void;
   label: string;
 }) {
   return (
-    <button
-      type="button"
-      onClick={() => onChange((v) => !v)}
-      className="flex w-full items-center justify-between rounded-lg border border-emerald-900/60 bg-[#031e11]/80 px-3 py-2 text-xs font-semibold text-emerald-100 transition-colors hover:border-emerald-700/80 hover:bg-[#031e11]"
-    >
+    <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-emerald-100/90 hover:text-white transition-colors">
+      <input
+        type="checkbox"
+        className="size-3.5 rounded border-emerald-700 bg-emerald-950 text-emerald-600 accent-emerald-500 cursor-pointer"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
       <span>{label}</span>
-      <span
-        className={cn(
-          "rounded-full px-2 py-0.5 text-[10px] font-bold transition-all",
-          checked
-            ? "bg-emerald-400 text-emerald-950"
-            : "bg-slate-800 text-slate-300",
-        )}
-      >
-        {checked ? "On" : "Off"}
-      </span>
-    </button>
+    </label>
+  );
+}
+
+function OperationalMetricCard({
+  icon: Icon,
+  label,
+  value,
+  unit,
+  sub,
+  badge,
+  tone = "neutral",
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number | string;
+  unit?: string;
+  sub: string;
+  badge?: React.ReactNode;
+  tone?: "neutral" | "emerald" | "rose" | "amber" | "sky";
+}) {
+  const toneMap = {
+    neutral: {
+      card: "bg-white border-slate-200/90 text-slate-900 shadow-2xs hover:border-slate-300",
+      iconBox: "bg-slate-100 text-slate-700",
+      sub: "text-slate-500",
+      value: "text-slate-950",
+    },
+    emerald: {
+      card: "bg-emerald-50/50 border-emerald-200/80 text-emerald-950 shadow-2xs hover:border-emerald-300",
+      iconBox: "bg-emerald-100 text-emerald-700",
+      sub: "text-emerald-700 font-medium",
+      value: "text-emerald-950",
+    },
+    rose: {
+      card: "bg-rose-50/60 border-rose-200 text-rose-950 shadow-2xs hover:border-rose-300",
+      iconBox: "bg-rose-100 text-rose-700",
+      sub: "text-rose-700 font-medium",
+      value: "text-rose-950",
+    },
+    amber: {
+      card: "bg-amber-50/50 border-amber-200/80 text-amber-950 shadow-2xs hover:border-amber-300",
+      iconBox: "bg-amber-100 text-amber-800",
+      sub: "text-amber-800 font-medium",
+      value: "text-amber-950",
+    },
+    sky: {
+      card: "bg-sky-50/50 border-sky-200 text-sky-950 shadow-2xs hover:border-sky-300",
+      iconBox: "bg-sky-100 text-sky-700",
+      sub: "text-sky-700 font-medium",
+      value: "text-sky-950",
+    },
+  }[tone];
+
+  return (
+    <div
+      className={cn(
+        "flex flex-col justify-between rounded-2xl border p-3.5 sm:p-4 transition-all hover:shadow-xs",
+        toneMap.card,
+      )}
+    >
+      <div className="flex items-center justify-between gap-1.5">
+        <div className="flex items-center gap-2 min-w-0">
+          <div
+            className={cn(
+              "grid size-7 place-items-center rounded-lg shadow-2xs shrink-0",
+              toneMap.iconBox,
+            )}
+            aria-hidden
+          >
+            <Icon className="size-3.5" />
+          </div>
+          <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 truncate">
+            {label}
+          </span>
+        </div>
+        <div className="shrink-0">{badge}</div>
+      </div>
+
+      <div className="mt-2.5 flex items-baseline justify-between gap-2">
+        <div className="flex items-baseline gap-1.5 shrink-0">
+          <span className={cn("text-2xl sm:text-3xl font-black tracking-tight tabular-nums", toneMap.value)}>
+            {value}
+          </span>
+          {unit ? (
+            <span className="text-[10.5px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide">
+              {unit}
+            </span>
+          ) : null}
+        </div>
+        <div className="flex flex-col justify-center text-right min-w-0 flex-1 pl-1">
+          <span className={cn("text-[11px] leading-tight line-clamp-1 text-right", toneMap.sub)}>
+            {sub}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -134,37 +234,49 @@ const SAN_JOSE_AREAS = [
   "Area 6",
 ];
 
-function formatTime(value: string) {
-  return new Intl.DateTimeFormat("en-PH", {
+function label(val: string): string {
+  return val
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatTime(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleString("en-US", {
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-  }).format(new Date(value));
+    hour12: true,
+  });
 }
 
-function label(value: string | null | undefined) {
-  return value
-    ? value.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase())
-    : "Unlinked";
-}
-
-function statusTone(status: string) {
-  if (status === "resolved") return "emerald";
-  if (status === "dismissed") return "slate";
-  if (status === "in_progress" || status === "dispatched") return "sky";
-  if (status === "verified") return "amber";
-  return "rose";
+function statusTone(
+  status: string,
+): "rose" | "amber" | "sky" | "emerald" | "slate" {
+  switch (status) {
+    case "pending":
+      return "rose";
+    case "verified":
+      return "amber";
+    case "dispatched":
+    case "in_progress":
+      return "sky";
+    case "resolved":
+      return "emerald";
+    default:
+      return "slate";
+  }
 }
 
 function badgeClass(status: string) {
   return (
     {
-      pending: "border-rose-300 bg-rose-50 text-rose-700",
-      verified: "border-amber-300 bg-amber-50 text-amber-800",
-      dispatched: "border-sky-300 bg-sky-50 text-sky-800",
-      in_progress: "border-sky-300 bg-sky-50 text-sky-800",
-      resolved: "border-emerald-300 bg-emerald-50 text-emerald-800",
+      pending: "border-rose-200 bg-rose-50 text-rose-700",
+      verified: "border-amber-200 bg-amber-50 text-amber-800",
+      dispatched: "border-sky-200 bg-sky-50 text-sky-800",
+      in_progress: "border-sky-200 bg-sky-50 text-sky-800",
+      resolved: "border-emerald-200 bg-emerald-50 text-emerald-800",
       dismissed: "border-slate-200 bg-slate-100 text-slate-600",
     }[status] ?? "border-neutral-200 bg-neutral-50 text-neutral-700"
   );
@@ -178,28 +290,51 @@ function titleOf(mode: Mode, item: ResponseItem) {
 
 export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
   const client = useQueryClient();
-  const [search, setSearch] = React.useState("");
-  const [status, setStatus] = React.useState("active");
-  const [eventId, setEventId] = React.useState("all");
-  const [selectedArea, setSelectedArea] = React.useState("all");
-  const [priorityFilter, setPriorityFilter] = React.useState("all");
+
+  /* --- Map Independent Filter Controls --- */
+  const [mapStatus, setMapStatus] = React.useState("active");
+  const [mapEventId, setMapEventId] = React.useState("all");
+  const [mapArea, setMapArea] = React.useState("all");
+  const [mapPriority, setMapPriority] = React.useState("all");
   const [showHazard, setShowHazard] = React.useState(false);
   const [showAreas, setShowAreas] = React.useState(false);
-  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [selectedMapId, setSelectedMapId] = React.useState<string | null>(null);
+
+  /* --- Table Independent Filter & Pagination Controls --- */
+  const [tableSearch, setTableSearch] = React.useState("");
+  const [tableStatus, setTableStatus] = React.useState("all");
+  const [tableEventId, setTableEventId] = React.useState("all");
+  const [tableArea, setTableArea] = React.useState("all");
+  const [tablePriority, setTablePriority] = React.useState("all");
+  const [tablePage, setTablePage] = React.useState(1);
+  const pageSize = 10;
+
+  /* --- Modals & Detail State --- */
+  const [selectedTableId, setSelectedTableId] = React.useState<string | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [lightboxPhoto, setLightboxPhoto] = React.useState<string | null>(null);
+  const [countdown, setCountdown] = React.useState(60);
+  const [copiedPhone, setCopiedPhone] = React.useState(false);
 
   const endpoint =
     mode === "rescue" ? "/admin/rescue-requests" : "/admin/incident-reports";
   const queryKey = ["admin", mode, "operations"];
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey,
     queryFn: () =>
       api
         .get<Page<ResponseItem>>(endpoint, { params: { size: 1000 } })
         .then((response) => response.data),
-    refetchInterval: 15_000,
+    refetchInterval: 60_000,
   });
+
+  React.useEffect(() => {
+    const timer = window.setInterval(() => {
+      setCountdown((prev) => (prev <= 1 ? 60 : prev - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const { data: events } = useQuery({
     queryKey: ["admin", "emergency-events", "for-response-workspace"],
@@ -211,18 +346,19 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
         .then((response) => response.data),
   });
 
+  /* Selected detail inspection query */
+  const inspectedId = selectedTableId || selectedMapId;
   const { data: detail } = useQuery({
-    queryKey: ["admin", mode, "detail", selectedId],
-    enabled: !!selectedId,
+    queryKey: ["admin", mode, "detail", inspectedId],
+    enabled: !!inspectedId,
     queryFn: () =>
       api
-        .get<ResponseDetail>(`${endpoint}/${selectedId}`)
+        .get<ResponseDetail>(`${endpoint}/${inspectedId}`)
         .then((response) => response.data),
   });
 
   const allItems = React.useMemo(() => data?.items ?? [], [data?.items]);
 
-  // Top metric stats computed over all items in dataset
   const activeStatuses = React.useMemo(
     () =>
       mode === "rescue"
@@ -231,6 +367,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
     [mode],
   );
 
+  /* Top metric cards summary */
   const stats = React.useMemo(() => {
     const active = allItems.filter((i) => activeStatuses.includes(i.status));
     const pending = allItems.filter((i) => i.status === "pending");
@@ -263,30 +400,86 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
     };
   }, [activeStatuses, allItems, mode]);
 
-  // Filtered rows for the operational table & map view
-  const rows = React.useMemo(() => {
-    const term = search.trim().toLowerCase();
+  /* -------------------------------------------------------------------------- */
+  /* Filtered Items for the Map View                                            */
+  /* -------------------------------------------------------------------------- */
+  const mapFilteredRows = React.useMemo(() => {
     return allItems.filter((item) => {
       const matchesStatus =
-        status === "all" ||
-        (status === "active"
+        mapStatus === "all" ||
+        (mapStatus === "active"
           ? activeStatuses.includes(item.status)
-          : item.status === status);
+          : item.status === mapStatus);
 
       const matchesEvent =
-        eventId === "all" ||
-        (eventId === "unlinked" ? !item.event_id : item.event_id === eventId);
+        mapEventId === "all" ||
+        (mapEventId === "unlinked" ? !item.event_id : item.event_id === mapEventId);
 
       const itemArea =
         ("location_area_name" in item && item.location_area_name) ||
         ("area_name" in item ? item.area_name : null);
       const matchesArea =
-        selectedArea === "all" || itemArea === selectedArea;
+        mapArea === "all" || itemArea === mapArea;
 
       const matchesPriority =
         mode !== "rescue" ||
-        priorityFilter === "all" ||
-        String((item as RescueRequestOut).priority) === priorityFilter;
+        mapPriority === "all" ||
+        String((item as RescueRequestOut).priority) === mapPriority;
+
+      return matchesStatus && matchesEvent && matchesArea && matchesPriority;
+    });
+  }, [activeStatuses, allItems, mapArea, mapEventId, mapPriority, mapStatus, mode]);
+
+  const mapMapped = mapFilteredRows.filter((item) => item.location) as Array<
+    ResponseItem & { location: NonNullable<ResponseItem["location"]> }
+  >;
+
+  const mapItems: ResponseMapItem[] = mapMapped.map((item, index) => {
+    const itemArea =
+      ("location_area_name" in item && item.location_area_name) ||
+      ("area_name" in item ? item.area_name : null);
+    const priority = mode === "rescue" ? (item as RescueRequestOut).priority : null;
+    return {
+      id: item.id,
+      title: titleOf(mode, item),
+      status: label(item.status),
+      location: item.location,
+      label:
+        mode === "rescue"
+          ? String(priority ?? "!")
+          : String(index + 1),
+      tone: statusTone(item.status),
+      areaName: itemArea,
+      priority,
+    };
+  });
+
+  /* -------------------------------------------------------------------------- */
+  /* Filtered & Paginated Items for the Worklist Table                          */
+  /* -------------------------------------------------------------------------- */
+  const tableFilteredRows = React.useMemo(() => {
+    const term = tableSearch.trim().toLowerCase();
+    return allItems.filter((item) => {
+      const matchesStatus =
+        tableStatus === "all" ||
+        (tableStatus === "active"
+          ? activeStatuses.includes(item.status)
+          : item.status === tableStatus);
+
+      const matchesEvent =
+        tableEventId === "all" ||
+        (tableEventId === "unlinked" ? !item.event_id : item.event_id === tableEventId);
+
+      const itemArea =
+        ("location_area_name" in item && item.location_area_name) ||
+        ("area_name" in item ? item.area_name : null);
+      const matchesArea =
+        tableArea === "all" || itemArea === tableArea;
+
+      const matchesPriority =
+        mode !== "rescue" ||
+        tablePriority === "all" ||
+        String((item as RescueRequestOut).priority) === tablePriority;
 
       const contact =
         "contact_number" in item ? item.contact_number : null;
@@ -310,32 +503,16 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
         (!term || haystack.includes(term))
       );
     });
-  }, [activeStatuses, allItems, eventId, mode, priorityFilter, search, selectedArea, status]);
+  }, [activeStatuses, allItems, mode, tableArea, tableEventId, tablePriority, tableSearch, tableStatus]);
 
-  const mapped = rows.filter((item) => item.location) as Array<
-    ResponseItem & { location: NonNullable<ResponseItem["location"]> }
-  >;
+  const totalTablePages = Math.ceil(tableFilteredRows.length / pageSize) || 1;
+  const safeTablePage = Math.min(tablePage, totalTablePages);
+  const paginatedRows = React.useMemo(() => {
+    const start = (safeTablePage - 1) * pageSize;
+    return tableFilteredRows.slice(start, start + pageSize);
+  }, [pageSize, safeTablePage, tableFilteredRows]);
 
-  const mapItems: ResponseMapItem[] = mapped.map((item, index) => {
-    const itemArea =
-      ("location_area_name" in item && item.location_area_name) ||
-      ("area_name" in item ? item.area_name : null);
-    const priority = mode === "rescue" ? (item as RescueRequestOut).priority : null;
-    return {
-      id: item.id,
-      title: titleOf(mode, item),
-      status: label(item.status),
-      location: item.location,
-      label:
-        mode === "rescue"
-          ? String(priority ?? "!")
-          : String(index + 1),
-      tone: statusTone(item.status),
-      areaName: itemArea,
-      priority,
-    };
-  });
-
+  /* Status update mutation */
   const patch = useMutation({
     mutationFn: ({
       id,
@@ -346,53 +523,68 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
     }) => api.patch(`${endpoint}/${id}`, body),
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey });
-      await client.invalidateQueries({ queryKey: ["admin", mode, "detail", selectedId] });
+      await client.invalidateQueries({ queryKey: ["admin", mode, "detail", inspectedId] });
+      toast.success("Lifecycle status updated successfully.");
+    },
+    onError: (err) => {
+      toast.error(toDisplayError(err).detail || "Failed to update record status");
     },
   });
 
-  const current = detail ?? rows.find((item) => item.id === selectedId) ?? null;
-  const statuses = mode === "rescue" ? rescueStatuses : incidentStatuses;
+  const updateStatus = (nextStatus: RescueRequestStatus | IncidentStatus) => {
+    if (!inspectedId) return;
+    const isClosing = nextStatus === "resolved" || nextStatus === "dismissed";
+    let note: string | null = null;
+    if (isClosing) {
+      const promptText =
+        nextStatus === "resolved"
+          ? "Enter resolution note (e.g. 'Safely evacuated to Evacuation Center'):"
+          : "Enter dismissal rationale (e.g. 'Duplicate report verified with caller'):";
+      const entered = window.prompt(promptText);
+      if (!entered || !entered.trim()) {
+        toast.error("A resolution note is required when resolving or dismissing.");
+        return;
+      }
+      note = entered.trim();
+    }
 
-  const updateStatus = (next: string) => {
-    if (!current) return;
-    if (next === "resolved") {
-      const resolutionNote = window.prompt("Describe the completed response / resolution:");
-      if (!resolutionNote?.trim()) return;
+    if (mode === "rescue") {
       patch.mutate({
-        id: current.id,
-        body: { status: "resolved", resolution_note: resolutionNote },
+        id: inspectedId,
+        body: {
+          status: nextStatus as RescueRequestStatus,
+          ...(note ? { resolution_note: note } : {}),
+        },
       });
-      return;
-    }
-    if (next === "dismissed") {
-      const dismissalReason = window.prompt("Reason for dismissal / false alarm:");
-      if (!dismissalReason?.trim()) return;
+    } else {
       patch.mutate({
-        id: current.id,
-        body: { status: "dismissed", dismissal_reason: dismissalReason },
+        id: inspectedId,
+        body: {
+          status: nextStatus as IncidentStatus,
+          ...(note ? { resolution_note: note } : {}),
+        },
       });
-      return;
     }
-    patch.mutate({ id: current.id, body: { status: next as never } });
   };
 
-  const handleResetFilters = () => {
-    setSearch("");
-    setStatus("active");
-    setEventId("all");
-    setSelectedArea("all");
-    setPriorityFilter("all");
-  };
+  const current = detail;
+  const isMapFiltered =
+    mapStatus !== "active" ||
+    mapEventId !== "all" ||
+    mapArea !== "all" ||
+    mapPriority !== "all";
 
-  const hasActiveFilters = Boolean(
-    search ||
-      status !== "active" ||
-      eventId !== "all" ||
-      selectedArea !== "all" ||
-      priorityFilter !== "all",
-  );
+  const isTableFiltered =
+    Boolean(tableSearch.trim()) ||
+    tableStatus !== "all" ||
+    tableEventId !== "all" ||
+    tableArea !== "all" ||
+    tablePriority !== "all";
 
-  const heading = mode === "rescue" ? "Rescue Operations Queue" : "Incident Reports Console";
+  const heading =
+    mode === "rescue"
+      ? "Rescue Operations Queue"
+      : "Community Incident Reports";
   const description =
     mode === "rescue"
       ? "Live rescue queue for triage, emergency dispatch, and responder mobilization across Barangay San Jose."
@@ -408,10 +600,29 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
         description={description}
         action={
           <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
-              <span className="size-2 animate-ping rounded-full bg-emerald-500" />
-              Live Polling (15s)
-            </span>
+            <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/90 py-1 pr-1.5 pl-3 text-xs font-semibold text-emerald-900 shadow-xs">
+              <span className="relative flex size-2 shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+              </span>
+              <span>
+                Live Polling{" "}
+                <span className="font-bold text-emerald-950 tabular-nums">
+                  ({isFetching ? "Updating..." : `${countdown}s`})
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  refetch();
+                  setCountdown(60);
+                }}
+                title="Refresh now"
+                className="flex size-5 items-center justify-center rounded-full text-emerald-700 hover:bg-emerald-200/80 hover:text-emerald-950 transition-colors cursor-pointer"
+              >
+                <RotateCcw className={cn("size-3", isFetching && "animate-spin")} />
+              </button>
+            </div>
           </div>
         }
       />
@@ -420,110 +631,111 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
       {/* Top Metric Cards Strip                                               */}
       {/* -------------------------------------------------------------------- */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        {/* Active Backlog */}
-        <div className="flex flex-col justify-between rounded-2xl border border-rose-200 bg-rose-50/50 p-4 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold tracking-wider text-rose-700 uppercase">
-              Active Queue
-            </span>
-            <Radio className="size-4 text-rose-600 animate-pulse" />
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-3xl font-black text-rose-950 tabular-nums">
-              {stats.active}
-            </span>
-            {mode === "rescue" && (stats.p1Count > 0 || stats.p2Count > 0) ? (
-              <div className="flex gap-1 text-[10px] font-bold">
-                {stats.p1Count > 0 ? (
-                  <span className="rounded bg-rose-600 px-1.5 py-0.5 text-white">
-                    {stats.p1Count} P1
-                  </span>
-                ) : null}
-                {stats.p2Count > 0 ? (
-                  <span className="rounded bg-amber-500 px-1.5 py-0.5 text-white">
-                    {stats.p2Count} P2
-                  </span>
-                ) : null}
-              </div>
+        <OperationalMetricCard
+          icon={Radio}
+          label={mode === "rescue" ? "Active Queue" : "Active Backlog"}
+          value={stats.active}
+          unit={mode === "rescue" ? "Requests" : "Reports"}
+          sub={
+            mode === "rescue"
+              ? stats.p1Count > 0
+                ? `${stats.p1Count} Critical Priority 1`
+                : stats.active > 0
+                  ? "Open Workload"
+                  : "All Cleared"
+              : stats.active > 0
+                ? "In Response Pipeline"
+                : "All Cleared"
+          }
+          badge={
+            mode === "rescue" ? (
+              stats.p1Count > 0 ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-2xs animate-pulse">
+                  P1 Critical
+                </span>
+              ) : stats.p2Count > 0 ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-2xs">
+                  P2 High
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-[9.5px] font-bold text-rose-800 border border-rose-200">
+                  Open
+                </span>
+              )
             ) : (
-              <span className="text-xs font-medium text-rose-700">Open Workload</span>
-            )}
-          </div>
-        </div>
+              <span className="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-[9.5px] font-bold text-rose-800 border border-rose-200">
+                Active
+              </span>
+            )
+          }
+          tone={stats.active > 0 ? "rose" : "neutral"}
+        />
 
-        {/* Pending Triage */}
-        <div className="flex flex-col justify-between rounded-2xl border border-amber-200 bg-amber-50/50 p-4 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold tracking-wider text-amber-800 uppercase">
-              Pending Review
+        <OperationalMetricCard
+          icon={Clock}
+          label="Pending Review"
+          value={stats.pending}
+          unit="Queued"
+          sub={stats.pending > 0 ? "Needs Triage & Validation" : "All Cases Verified"}
+          badge={
+            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-amber-900 border border-amber-300">
+              Needs Triage
             </span>
-            <Clock className="size-4 text-amber-600" />
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-3xl font-black text-amber-950 tabular-nums">
-              {stats.pending}
-            </span>
-            <span className="text-xs font-medium text-amber-700">Needs Triage</span>
-          </div>
-        </div>
+          }
+          tone={stats.pending > 0 ? "amber" : "neutral"}
+        />
 
-        {/* In Progress / Dispatched */}
-        <div className="flex flex-col justify-between rounded-2xl border border-sky-200 bg-sky-50/50 p-4 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold tracking-wider text-sky-800 uppercase">
-              {mode === "rescue" ? "Dispatched" : "In Progress"}
+        <OperationalMetricCard
+          icon={mode === "rescue" ? Truck : ShieldAlert}
+          label={mode === "rescue" ? "Dispatched" : "In Progress"}
+          value={stats.inProgress}
+          unit="Active"
+          sub={stats.inProgress > 0 ? "Responders Deployed" : "No Active Deployments"}
+          badge={
+            <span className="inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-sky-900 border border-sky-300">
+              Mobilized
             </span>
-            {mode === "rescue" ? (
-              <Truck className="size-4 text-sky-600" />
+          }
+          tone={stats.inProgress > 0 ? "sky" : "neutral"}
+        />
+
+        <OperationalMetricCard
+          icon={CheckCircle2}
+          label="Resolved"
+          value={stats.resolved}
+          unit="Completed"
+          sub={stats.total > 0 ? `${Math.round((stats.resolved / stats.total) * 100)}% resolution rate` : "No resolved records"}
+          badge={
+            <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-300">
+              {stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0}% Closed
+            </span>
+          }
+          tone={stats.resolved > 0 ? "emerald" : "neutral"}
+        />
+
+        <OperationalMetricCard
+          icon={MapPin}
+          label="Spatial Coverage"
+          value={stats.mapped}
+          unit={`/ ${stats.total}`}
+          sub={stats.unmapped > 0 ? `${stats.unmapped} unmapped in queue` : "100% coordinates mapped"}
+          badge={
+            stats.unmapped > 0 ? (
+              <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-amber-900 border border-amber-300">
+                {stats.unmapped} Unmapped
+              </span>
             ) : (
-              <ShieldAlert className="size-4 text-sky-600" />
-            )}
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-3xl font-black text-sky-950 tabular-nums">
-              {stats.inProgress}
-            </span>
-            <span className="text-xs font-medium text-sky-700">Field Active</span>
-          </div>
-        </div>
-
-        {/* Resolved */}
-        <div className="flex flex-col justify-between rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold tracking-wider text-emerald-800 uppercase">
-              Resolved
-            </span>
-            <CheckCircle2 className="size-4 text-emerald-600" />
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-3xl font-black text-emerald-950 tabular-nums">
-              {stats.resolved}
-            </span>
-            <span className="text-xs font-medium text-emerald-700">Completed</span>
-          </div>
-        </div>
-
-        {/* Pinned Coordinates */}
-        <div className="col-span-2 flex flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-xs sm:col-span-1">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold tracking-wider text-slate-600 uppercase">
-              Spatial Coverage
-            </span>
-            <MapPin className="size-4 text-slate-500" />
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-3xl font-black text-slate-900 tabular-nums">
-              {stats.mapped}
-            </span>
-            <span className="text-xs font-medium text-slate-500">
-              {stats.unmapped} unmapped
-            </span>
-          </div>
-        </div>
+              <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-emerald-800 border border-emerald-300">
+                100% Pinned
+              </span>
+            )
+          }
+          tone={stats.unmapped > 0 ? "amber" : "neutral"}
+        />
       </div>
 
       {/* -------------------------------------------------------------------- */}
-      {/* Two-Column Layout: Map Canvas (Col 1) + Stable Sidebar (Col 2)       */}
+      {/* Two-Column Layout: Map Canvas (Col 1) + Map Sidebar (Col 2)          */}
       {/* -------------------------------------------------------------------- */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
         {/* Column 1: Map Card */}
@@ -531,31 +743,24 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
           <div className="relative h-[480px] sm:h-[580px] lg:h-[640px] w-full overflow-hidden">
             <ResponseOperationsMap
               items={mapItems}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
+              selectedId={selectedMapId}
+              onSelect={(id) => setSelectedMapId(id)}
               showHazard={showHazard}
               showAreas={showAreas}
-              onSelectArea={(area) => setSelectedArea(area)}
+              onSelectArea={(area) => setMapArea(area)}
+              unmappedCount={mapFilteredRows.length - mapMapped.length}
               mode={mode}
             />
-
-            {/* Quick map status banner */}
-            <div className="pointer-events-none absolute top-3.5 right-14 z-[1000] hidden md:flex items-center gap-2 rounded-xl border border-emerald-900/80 bg-[#052e16]/90 px-3 py-1.5 text-white shadow-xl backdrop-blur-md">
-              <span className="size-2 rounded-full bg-emerald-400 animate-ping" />
-              <span className="text-[11px] font-bold text-emerald-200">
-                {mapItems.length} Pinned on Map
-              </span>
-            </div>
           </div>
         </div>
 
-        {/* Column 2: Fixed-width Sidebar */}
-        <div className="flex flex-col gap-3.5 w-full lg:w-[320px] lg:min-w-[320px] lg:max-w-[320px] lg:shrink-0">
-          {/* Layers panel */}
+        {/* Column 2: Independent Map Sidebar */}
+        <div className="flex w-full flex-col gap-3 lg:w-72 lg:shrink-0">
+          {/* Map Layers card */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
             <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
               <Layers className="size-3.5 text-emerald-400" aria-hidden />
-              Layers
+              Map Layers
             </p>
             <div className="flex flex-col gap-2">
               <LayerCheckbox
@@ -566,72 +771,52 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
               <LayerCheckbox
                 checked={showAreas}
                 onChange={setShowAreas}
-                label="Area List (Sitios)"
+                label="Area List"
               />
             </div>
           </div>
 
-          {/* Filters panel (with fixed h-6 header to prevent height jumps) */}
+          {/* Map Filters card */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
             <div className="mb-3 flex items-center justify-between h-6">
               <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
                 <Filter className="size-3.5 text-emerald-400" aria-hidden />
-                Filters
+                Map Filters
               </p>
               <button
                 type="button"
-                onClick={handleResetFilters}
+                onClick={() => {
+                  setMapStatus("active");
+                  setMapEventId("all");
+                  setMapArea("all");
+                  setMapPriority("all");
+                }}
                 className={cn(
                   "inline-flex items-center gap-1 rounded bg-emerald-900/80 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-700/60 hover:bg-emerald-800 hover:text-white transition-all shadow-2xs cursor-pointer shrink-0",
-                  hasActiveFilters
-                    ? "opacity-100 visible"
-                    : "opacity-0 invisible pointer-events-none",
+                  isMapFiltered ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none",
                 )}
-                title="Reset all filters to default"
+                aria-hidden={!isMapFiltered}
+                tabIndex={isMapFiltered ? 0 : -1}
               >
-                <RotateCcw className="size-2.5" aria-hidden />
+                <RotateCcw className="size-2.5" />
                 Reset
               </button>
             </div>
 
             <div className="flex flex-col gap-3">
-              {/* Search */}
-              <div className="relative">
-                <Search
-                  className="pointer-events-none absolute top-2.5 left-3 size-4 text-neutral-500"
-                  aria-hidden
-                />
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder={mode === "rescue" ? "Search requester, phone..." : "Search reports, notes..."}
-                  className="h-9 w-full rounded-lg border border-neutral-300 bg-white pr-7 pl-9 text-xs font-semibold text-neutral-900 placeholder:text-neutral-500 shadow-xs focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
-                  aria-label="Search records"
-                />
-                {search ? (
-                  <button
-                    type="button"
-                    onClick={() => setSearch("")}
-                    className="absolute top-1/2 right-2.5 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    <X className="size-3.5" />
-                  </button>
-                ) : null}
-              </div>
-
-              {/* Status */}
+              {/* Status Filter */}
               <div className="flex flex-col gap-1">
                 <label className="text-[10.5px] font-bold text-emerald-200/90">
                   Status
                 </label>
-                <Select value={status} onValueChange={setStatus}>
+                <Select value={mapStatus} onValueChange={setMapStatus}>
                   <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active Queue (Open items)</SelectItem>
+                    <SelectItem value="active">Active (Open Workload)</SelectItem>
                     <SelectItem value="all">All Statuses</SelectItem>
-                    {statuses.map((s) => (
+                    {(mode === "rescue" ? rescueStatuses : incidentStatuses).map((s) => (
                       <SelectItem key={s} value={s}>
                         {label(s)}
                       </SelectItem>
@@ -640,12 +825,12 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 </Select>
               </div>
 
-              {/* Area / Sitio Filter */}
+              {/* Area Filter */}
               <div className="flex flex-col gap-1">
                 <label className="text-[10.5px] font-bold text-emerald-200/90">
                   Area
                 </label>
-                <Select value={selectedArea} onValueChange={setSelectedArea}>
+                <Select value={mapArea} onValueChange={setMapArea}>
                   <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
                     <SelectValue />
                   </SelectTrigger>
@@ -665,7 +850,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 <label className="text-[10.5px] font-bold text-emerald-200/90">
                   Emergency Event
                 </label>
-                <Select value={eventId} onValueChange={setEventId}>
+                <Select value={mapEventId} onValueChange={setMapEventId}>
                   <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
                     <SelectValue />
                   </SelectTrigger>
@@ -687,7 +872,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   <label className="text-[10.5px] font-bold text-emerald-200/90">
                     Urgency Priority
                   </label>
-                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                  <Select value={mapPriority} onValueChange={setMapPriority}>
                     <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
                       <SelectValue />
                     </SelectTrigger>
@@ -703,154 +888,294 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
             </div>
           </div>
 
-          {/* Unmapped summary helper card */}
-          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-3.5 text-xs text-emerald-200 shadow-xl backdrop-blur-md">
-            <p className="font-bold text-emerald-300">
-              {countsSubtitle(stats.unmapped)}
-            </p>
-            <p className="mt-0.5 text-[10.5px] text-emerald-300/70">
-              All records are actionable in the table below regardless of coordinates.
-            </p>
-          </div>
+          {/* Spatial Coverage Helper Card */}
+          {(() => {
+            const pct = stats.total > 0 ? Math.round((stats.mapped / stats.total) * 100) : 100;
+            const isAllMapped = stats.unmapped === 0;
+            const isCritical = stats.unmapped > 2;
+
+            const icon = isAllMapped ? (
+              <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
+            ) : isCritical ? (
+              <AlertTriangle className="size-4 text-rose-400 shrink-0" />
+            ) : (
+              <AlertCircle className="size-4 text-amber-400 shrink-0" />
+            );
+
+            const titleColor = isAllMapped
+              ? "text-emerald-300"
+              : isCritical
+                ? "text-rose-300"
+                : "text-amber-300";
+
+            const badgeBg = isAllMapped
+              ? "bg-emerald-950/80 text-emerald-300 border-emerald-700/60"
+              : isCritical
+                ? "bg-rose-950/80 text-rose-300 border-rose-700/60"
+                : "bg-amber-950/80 text-amber-300 border-amber-700/60";
+
+            const barColor = isAllMapped
+              ? "bg-emerald-400"
+              : isCritical
+                ? "bg-rose-400"
+                : "bg-amber-400";
+
+            const badgeText = isAllMapped
+              ? "100% Pinned"
+              : `${stats.unmapped} Unpinned`;
+
+            return (
+              <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-3.5 text-white shadow-xl backdrop-blur-md">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {icon}
+                    <p className={cn("font-bold text-xs truncate", titleColor)}>
+                      {isAllMapped
+                        ? "All records mapped"
+                        : `${stats.unmapped} ${stats.unmapped === 1 ? "record missing" : "records missing"} pin`}
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      "inline-flex items-center rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider border shrink-0",
+                      badgeBg,
+                    )}
+                  >
+                    {badgeText}
+                  </span>
+                </div>
+
+                <p className="mt-1.5 text-[11px] text-emerald-100/75 leading-relaxed">
+                  {isAllMapped
+                    ? "Full spatial coverage on terrain. All items plotted."
+                    : "Actionable in the table below. Add coordinates during dispatch triage."}
+                </p>
+
+                {/* Spatial Coverage Progress Bar */}
+                <div className="mt-2.5 flex flex-col gap-1 border-t border-emerald-900/60 pt-2">
+                  <div className="flex items-center justify-between text-[10px] font-semibold text-emerald-300/80">
+                    <span>Spatial Resolution</span>
+                    <span className="tabular-nums font-bold text-emerald-100">
+                      {pct}% ({stats.mapped}/{stats.total})
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-950 border border-emerald-900/80">
+                    <div
+                      className={cn("h-full rounded-full transition-all duration-500", barColor)}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
       {/* -------------------------------------------------------------------- */}
-      {/* Filtered Operational Worklist Table                                  */}
+      {/* Decoupled Operational Worklist Table                                 */}
       {/* -------------------------------------------------------------------- */}
       <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 px-5 py-4 bg-neutral-50/50">
+        {/* Table Top Header & Intake Action */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200/80 px-5 py-4 bg-neutral-50/50">
           <div>
-            <h2 className="font-heading text-lg font-bold text-neutral-900">
-              Filtered Records Worklist
+            <h2 className="text-base font-bold text-neutral-900">
+              Operations Worklist
             </h2>
-            <p className="text-xs text-neutral-500">
-              {rows.length} record{rows.length === 1 ? "" : "s"} matching active filters · newest first
+            <p className="mt-0.5 text-xs text-neutral-500">
+              {tableFilteredRows.length} {tableFilteredRows.length === 1 ? "record" : "records"} matching table filters · Newest first
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-900">
-              {rows.length} displayed
-            </span>
+            <Button
+              onClick={() => setIsCreateOpen(true)}
+              variant="primary"
+              className="bg-emerald-600 text-white hover:bg-emerald-700 font-bold shadow-xs"
+            >
+              <Plus className="mr-1.5 size-4" />
+              {mode === "rescue" ? "Record Rescue Request" : "Report Incident"}
+            </Button>
           </div>
         </div>
 
+        {/* Independent Table Search & Categorical Filters Toolbar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 px-5 py-3 bg-white">
+          {/* Search Input */}
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-neutral-400" />
+            <input
+              type="text"
+              placeholder={mode === "rescue" ? "Search caller name, contact, area, landmarks…" : "Search hazard, reporter, area, landmarks…"}
+              value={tableSearch}
+              onChange={(e) => setTableSearch(e.target.value)}
+              className="h-9 w-full rounded-lg border border-neutral-300 pl-8.5 pr-8 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-emerald-600 focus:outline-hidden"
+            />
+            {tableSearch ? (
+              <button
+                type="button"
+                onClick={() => setTableSearch("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+              >
+                <X className="size-3.5" />
+              </button>
+            ) : null}
+          </div>
+
+          {/* Filter Dropdowns Strip */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Status Filter */}
+            <Select value={tableStatus} onValueChange={setTableStatus}>
+              <SelectTrigger className="h-8.5 min-w-32 rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-800 shadow-2xs">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="active">Active Queue</SelectItem>
+                {(mode === "rescue" ? rescueStatuses : incidentStatuses).map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {label(s)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Area Filter */}
+            <Select value={tableArea} onValueChange={setTableArea}>
+              <SelectTrigger className="h-8.5 min-w-28 rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-800 shadow-2xs">
+                <SelectValue placeholder="All Areas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Areas</SelectItem>
+                {SAN_JOSE_AREAS.map((area) => (
+                  <SelectItem key={area} value={area}>
+                    {area}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Priority Filter (Rescue Only) */}
+            {mode === "rescue" ? (
+              <Select value={tablePriority} onValueChange={setTablePriority}>
+                <SelectTrigger className="h-8.5 min-w-28 rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-800 shadow-2xs">
+                  <SelectValue placeholder="All Priorities" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priorities</SelectItem>
+                  <SelectItem value="1">Priority 1 (Critical)</SelectItem>
+                  <SelectItem value="2">Priority 2 (High)</SelectItem>
+                  <SelectItem value="3">Priority 3 (Moderate)</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : null}
+
+            {/* Reset Button */}
+            {isTableFiltered ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setTableSearch("");
+                  setTableStatus("all");
+                  setTableArea("all");
+                  setTablePriority("all");
+                  setTableEventId("all");
+                }}
+                className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-600 hover:bg-neutral-200 transition cursor-pointer"
+              >
+                <RotateCcw className="size-3" />
+                Reset
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Table Content */}
         {isLoading ? (
-          <div className="p-12 text-center text-sm text-neutral-500">
-            <CircleDotDashed className="mx-auto size-6 animate-spin text-emerald-600 mb-2" />
+          <div className="p-12 text-center text-xs text-neutral-500 animate-pulse">
             Loading operational worklist…
           </div>
         ) : isError ? (
-          <div className="p-8 text-center">
-            <AlertCircle className="mx-auto size-6 text-rose-500 mb-2" />
-            <p className="text-sm font-semibold text-rose-700">The worklist could not be loaded.</p>
-            <Button className="mt-3" size="sm" onClick={() => refetch()}>
-              Try again
-            </Button>
+          <div className="p-12 text-center text-xs text-rose-600">
+            Failed to load queue. Check server connection.
           </div>
-        ) : rows.length === 0 ? (
-          <div className="p-12 text-center">
-            <AlertCircle className="mx-auto size-8 text-neutral-300 mb-2" />
-            <p className="text-sm font-bold text-neutral-700">
-              No operational records match these filters.
-            </p>
-            <p className="mt-1 text-xs text-neutral-500">
-              Try adjusting the status, area, or search query in the controls above.
-            </p>
+        ) : tableFilteredRows.length === 0 ? (
+          <div className="p-12 text-center text-xs text-neutral-500">
+            {isTableFiltered
+              ? "No records match the active search or filters."
+              : "No records recorded yet."}
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[840px] text-left text-sm">
-              <thead className="bg-emerald-950 text-[10.5px] font-bold tracking-wider text-emerald-100 uppercase">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-[#052e16] bg-[#052e16] text-[11px] font-bold uppercase tracking-wider text-emerald-300">
                 <tr>
-                  <th className="px-5 py-3.5">
-                    {mode === "rescue" ? "Requester & Details" : "Report & Description"}
-                  </th>
-                  <th className="px-4 py-3.5">
-                    {mode === "rescue" ? "Priority" : "Category"}
-                  </th>
-                  <th className="px-4 py-3.5">Location & Area</th>
-                  <th className="px-4 py-3.5">Status</th>
-                  <th className="px-4 py-3.5">Submitted / Event</th>
-                  <th className="px-5 py-3.5 text-right">Actions</th>
+                  <th className="px-5 py-3">Requester & Details</th>
+                  <th className="px-4 py-3">{mode === "rescue" ? "Urgency" : "Hazard Type"}</th>
+                  <th className="px-4 py-3">Area & Landmarks</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Submitted Date</th>
+                  <th className="px-5 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
-                {rows.map((item) => {
-                  const isSelected = item.id === selectedId;
+                {paginatedRows.map((item) => {
+                  const isInspected = item.id === inspectedId;
                   const itemArea =
                     ("location_area_name" in item && item.location_area_name) ||
                     ("area_name" in item ? item.area_name : null);
-                  const contactNumber =
-                    "contact_number" in item ? item.contact_number : null;
-                  const photoUrl =
-                    "photo_url" in item ? item.photo_url : null;
                   const priority =
-                    mode === "rescue" ? (item as RescueRequestOut).priority : null;
+                    mode === "rescue"
+                      ? (item as RescueRequestOut).priority
+                      : null;
 
                   return (
                     <tr
                       key={item.id}
                       className={cn(
                         "transition-colors hover:bg-emerald-50/40",
-                        isSelected && "bg-emerald-50/80 font-medium",
+                        isInspected && "bg-emerald-50/70",
                       )}
                     >
-                      {/* Name / Title */}
+                      {/* Requester & details */}
                       <td className="px-5 py-3.5">
                         <div className="flex items-start gap-3">
-                          {photoUrl ? (
-                            <button
-                              type="button"
-                              onClick={() => setLightboxPhoto(photoUrl)}
-                              className="group relative size-10 shrink-0 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100 hover:ring-2 hover:ring-emerald-500"
-                              title="View photo attachment"
-                            >
+                          <div className="relative mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 font-bold overflow-hidden">
+                            {"photo_url" in item && item.photo_url ? (
                               <Image
-                                src={photoUrl}
-                                alt="Incident attachment"
+                                src={item.photo_url}
+                                alt="Incident thumbnail"
                                 fill
                                 className="object-cover"
                               />
-                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Eye className="size-3.5 text-white" />
-                              </div>
-                            </button>
-                          ) : (
-                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 font-bold text-xs">
-                              {mode === "rescue" ? (
-                                <User className="size-4" />
-                              ) : (
-                                <FileText className="size-4" />
-                              )}
-                            </div>
-                          )}
-                          <div className="min-w-0">
+                            ) : mode === "rescue" ? (
+                              <User className="size-4 text-emerald-700" />
+                            ) : (
+                              <ShieldAlert className="size-4 text-emerald-700" />
+                            )}
+                          </div>
+                          <div className="min-w-0 max-w-sm">
                             <p className="font-bold text-neutral-900 truncate">
                               {titleOf(mode, item)}
                             </p>
-                            <p className="mt-0.5 line-clamp-1 text-xs text-neutral-500 max-w-sm">
-                              {item.description || "No description provided."}
+                            <p className="mt-0.5 text-xs text-neutral-500 line-clamp-1">
+                              {item.description}
                             </p>
-                            {contactNumber ? (
-                              <a
-                                href={`tel:${contactNumber}`}
-                                className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:underline"
-                              >
-                                <Phone className="size-3" />
-                                {contactNumber}
-                              </a>
+                            {"contact_number" in item && item.contact_number ? (
+                              <p className="mt-0.5 text-[11px] font-mono text-emerald-700 flex items-center gap-1">
+                                <Phone className="size-2.5" />
+                                {item.contact_number}
+                              </p>
                             ) : null}
                           </div>
                         </div>
                       </td>
 
-                      {/* Priority / Category */}
+                      {/* Priority / Hazard Type */}
                       <td className="px-4 py-3.5 text-xs">
                         {mode === "rescue" ? (
                           priority === 1 ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-0.5 font-bold text-rose-800">
-                              <span className="size-1.5 rounded-full bg-rose-600" />
+                              <span className="size-1.5 rounded-full bg-rose-600 animate-pulse" />
                               P1 Critical
                             </span>
                           ) : priority === 2 ? (
@@ -877,12 +1202,12 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                           {itemArea || "Area Unknown"}
                         </p>
                         <p className="mt-0.5 text-neutral-500 truncate max-w-xs">
-                          {item.location_note || "No specific note"}
+                          {item.location_note || "No specific landmark"}
                         </p>
                         <div className="mt-1 flex items-center gap-1">
                           {item.location ? (
                             <span className="inline-flex items-center gap-0.5 text-[10.5px] font-bold text-emerald-700">
-                              <MapPin className="size-3" /> Pinned on map
+                              <MapPin className="size-3" /> Pinned
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-0.5 text-[10.5px] font-semibold text-slate-400">
@@ -915,7 +1240,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                       <td className="px-4 py-3.5 text-xs text-neutral-600">
                         <p className="font-medium">{formatTime(item.created_at)}</p>
                         <p className="mt-0.5 text-neutral-400 truncate max-w-xs">
-                          {item.event_name ? `Event: ${item.event_name}` : "General Dispatch"}
+                          {item.event_name ? `Event: ${item.event_name}` : "General Intake"}
                         </p>
                       </td>
 
@@ -923,9 +1248,9 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                       <td className="px-5 py-3.5 text-right">
                         <Button
                           size="sm"
-                          variant={isSelected ? "primary" : "outline"}
-                          onClick={() => setSelectedId(item.id)}
-                          className="h-8 text-xs font-bold"
+                          variant="outline"
+                          onClick={() => setSelectedTableId(item.id)}
+                          className="h-8 text-xs font-bold shadow-2xs border-neutral-300 hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-950"
                         >
                           Triage & Review
                           <ChevronRight className="ml-1 size-3.5" />
@@ -938,15 +1263,60 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
             </table>
           </div>
         )}
+
+        {/* Table Pagination Footer */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 px-5 py-3 text-xs text-neutral-600 bg-neutral-50/50">
+          <div>
+            Showing{" "}
+            <span className="font-bold text-neutral-900">
+              {tableFilteredRows.length === 0 ? 0 : (tablePage - 1) * pageSize + 1}
+            </span>{" "}
+            to{" "}
+            <span className="font-bold text-neutral-900">
+              {Math.min(tablePage * pageSize, tableFilteredRows.length)}
+            </span>{" "}
+            of{" "}
+            <span className="font-bold text-neutral-900">
+              {tableFilteredRows.length}
+            </span>{" "}
+            records
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setTablePage((p) => Math.max(p - 1, 1))}
+              disabled={tablePage <= 1}
+              className="h-8 px-2.5 text-xs font-bold"
+            >
+              <ChevronLeft className="mr-1 size-3.5" />
+              Previous
+            </Button>
+            <span className="text-xs font-bold text-neutral-700 px-1">
+              Page {tablePage} of {totalTablePages}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setTablePage((p) => Math.min(p + 1, totalTablePages))}
+              disabled={tablePage >= totalTablePages}
+              className="h-8 px-2.5 text-xs font-bold"
+            >
+              Next
+              <ChevronRight className="ml-1 size-3.5" />
+            </Button>
+          </div>
+        </div>
       </section>
 
       {/* -------------------------------------------------------------------- */}
-      {/* Triage & Detail Sheet Drawer                                         */}
+      {/* Record Inspection & Triage Modal Dialog (Decoupled from Map)         */}
       {/* -------------------------------------------------------------------- */}
-      <Sheet open={Boolean(selectedId)} onOpenChange={(open) => !open && setSelectedId(null)}>
-        <SheetContent className="w-full sm:max-w-xl flex flex-col p-0 gap-0 overflow-hidden bg-white text-slate-900">
-          <SheetHeader className="border-b border-neutral-100 bg-emerald-950 p-5 sm:p-6 text-white shrink-0">
-            <div className="flex items-center justify-between">
+      <Dialog open={Boolean(selectedTableId)} onOpenChange={(open) => !open && setSelectedTableId(null)}>
+        <DialogContent className="w-full sm:max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-white text-slate-900 rounded-2xl shadow-2xl">
+          <DialogHeader className="relative border-b border-neutral-100 bg-emerald-950 p-5 sm:p-6 text-white shrink-0">
+            <div className="flex items-center justify-between pr-8">
               <span className="text-[10.5px] font-bold tracking-widest text-emerald-300 uppercase">
                 {mode === "rescue" ? "Rescue Request Record" : "Incident Report Record"}
               </span>
@@ -961,20 +1331,41 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 </span>
               ) : null}
             </div>
-            <SheetTitle className="mt-2 text-xl font-black text-white">
+            <DialogTitle className="mt-2 text-xl font-black text-white pr-6">
               {current ? titleOf(mode, current) : "Loading details…"}
-            </SheetTitle>
-            <SheetDescription className="text-xs text-emerald-200/80">
-              {current?.event_name ? `Associated with ${current.event_name}` : "Unlinked incident record"}
-            </SheetDescription>
-          </SheetHeader>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-emerald-200/80">
+              {current?.event_name ? `Associated with ${current.event_name}` : "General intake incident record"}
+            </DialogDescription>
+          </DialogHeader>
 
           {current ? (
-            <div className="flex-1 overflow-y-auto p-5 sm:p-6 flex flex-col gap-5 text-sm">
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-sm">
+              {/* Static Non-Interactable Mini Map Preview */}
+              {current.location ? (
+                <div>
+                  <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1.5">
+                    Location Terrain Preview
+                  </p>
+                  <MiniMapPreview
+                    latitude={current.location.coordinates[1]}
+                    longitude={current.location.coordinates[0]}
+                    label={mode === "rescue" && "priority" in current ? String(current.priority ?? "●") : "●"}
+                    tone={statusTone(current.status)}
+                    className="h-44 sm:h-52 w-full"
+                  />
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50/80 p-4 text-center text-xs text-neutral-500 flex items-center justify-center gap-2">
+                  <MapPinOff className="size-4 text-neutral-400" />
+                  No GPS coordinates tagged for this record. Use landmarks for field response.
+                </div>
+              )}
+
               {/* Photo attachment if present */}
               {"photo_url" in current && current.photo_url ? (
                 <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
-                  <div className="relative h-56 w-full cursor-pointer" onClick={() => setLightboxPhoto(current.photo_url)}>
+                  <div className="relative h-48 w-full cursor-pointer" onClick={() => setLightboxPhoto(current.photo_url)}>
                     <Image
                       src={current.photo_url}
                       alt="Incident attachment"
@@ -994,105 +1385,123 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-2">
                   Requester & Contact
                 </p>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-900">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-bold text-neutral-900 text-sm truncate">
                       {"requester_name" in current
                         ? current.requester_name
                         : current.reported_by_name || "Anonymous Resident"}
-                    </span>
+                    </p>
                     {"contact_number" in current && current.contact_number ? (
-                      <a
-                        href={`tel:${current.contact_number}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition"
-                      >
-                        <Phone className="size-3.5" />
-                        Call {current.contact_number}
-                      </a>
+                      <div className="mt-1 flex items-center gap-1.5 text-xs text-neutral-700 font-medium">
+                        <Phone className="size-3 text-neutral-400 shrink-0" />
+                        <span className="font-mono">{current.contact_number}</span>
+                      </div>
                     ) : (
-                      <span className="text-xs text-neutral-400">No phone provided</span>
+                      <span className="text-xs text-neutral-400">No contact number provided</span>
                     )}
                   </div>
+
+                  {"contact_number" in current && current.contact_number ? (
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Copy Number Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if ("contact_number" in current && current.contact_number) {
+                            navigator.clipboard.writeText(current.contact_number);
+                            setCopiedPhone(true);
+                            setTimeout(() => setCopiedPhone(false), 2000);
+                          }
+                        }}
+                        title={copiedPhone ? "Copied to clipboard!" : "Copy phone number"}
+                        className={cn(
+                          "flex size-8 items-center justify-center rounded-lg border transition-all cursor-pointer shadow-2xs",
+                          copiedPhone
+                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                            : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100 hover:text-neutral-950",
+                        )}
+                      >
+                        {copiedPhone ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                      </button>
+
+                      {/* Direct Call Button */}
+                      <a
+                        href={`tel:${current.contact_number}`}
+                        title={`Call ${current.contact_number}`}
+                        className="flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-2xs hover:bg-emerald-700 transition cursor-pointer"
+                      >
+                        <Phone className="size-3.5" />
+                      </a>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
-              {/* Location details */}
+              {/* Location & Directions */}
               <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
                 <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-2">
-                  Location & Spatial Data
+                  Location Details
                 </p>
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <span className="text-neutral-500">Sitio / Area:</span>
-                    <p className="font-bold text-neutral-900">
-                      {("location_area_name" in current && current.location_area_name) ||
-                        current.area_name ||
-                        "Area Unknown"}
-                    </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="size-3.5 text-emerald-700 shrink-0" />
+                      <span className="font-bold text-neutral-900 text-xs">
+                        {("location_area_name" in current && current.location_area_name) ||
+                          current.area_name ||
+                          "Area Unknown"}
+                      </span>
+                    </div>
+                    {current.location_note ? (
+                      <p className="mt-1 text-xs text-neutral-600 leading-snug">
+                        {current.location_note}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-neutral-400">No specific landmark provided</p>
+                    )}
                   </div>
-                  <div>
-                    <span className="text-neutral-500">Coordinates:</span>
-                    <p className="font-bold text-neutral-900">
-                      {current.location
-                        ? `${current.location.coordinates[1].toFixed(5)}, ${current.location.coordinates[0].toFixed(5)}`
-                        : "No coordinates recorded"}
-                    </p>
-                  </div>
+
+                  {current.location ? (
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${current.location.coordinates[1]},${current.location.coordinates[0]}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Open Google Maps Directions"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-slate-800 transition shrink-0"
+                    >
+                      <Navigation className="size-3.5 text-emerald-400" />
+                      Directions
+                    </a>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-2 py-1 text-[11px] font-medium text-neutral-500 shrink-0">
+                      <MapPinOff className="size-3 text-neutral-400" />
+                      Unmapped
+                    </span>
+                  )}
                 </div>
-                {current.location_note ? (
-                  <div className="mt-2.5 border-t border-neutral-200/60 pt-2 text-xs">
-                    <span className="text-neutral-500">Landmarks / Note:</span>
-                    <p className="mt-0.5 font-medium text-neutral-800">{current.location_note}</p>
-                  </div>
-                ) : null}
               </div>
 
               {/* Description */}
-              <div className="rounded-xl border border-neutral-200 bg-white p-4">
-                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1.5">
+              <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
+                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1">
                   Report Description
                 </p>
-                <p className="text-xs leading-relaxed text-neutral-800 whitespace-pre-wrap">
+                <p className="text-neutral-700 leading-relaxed text-xs">
                   {current.description || "No specific details provided."}
                 </p>
               </div>
 
-              {/* Resolution / Dismissal Notes if present */}
-              {current.resolution_note ? (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-4 text-xs">
-                  <p className="font-bold text-emerald-900 flex items-center gap-1.5">
-                    <CheckCircle2 className="size-4 text-emerald-700" />
-                    Resolution Note
-                  </p>
-                  <p className="mt-1 text-emerald-800 leading-relaxed">{current.resolution_note}</p>
-                  {current.resolved_at ? (
-                    <p className="mt-1 text-[10px] text-emerald-600 font-semibold">
-                      Resolved: {formatTime(current.resolved_at)}
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {"dismissal_reason" in current && current.dismissal_reason ? (
-                <div className="rounded-xl border border-slate-200 bg-slate-100 p-4 text-xs">
-                  <p className="font-bold text-slate-800 flex items-center gap-1.5">
-                    <XCircle className="size-4 text-slate-600" />
-                    Dismissal Reason
-                  </p>
-                  <p className="mt-1 text-slate-700 leading-relaxed">{current.dismissal_reason}</p>
-                </div>
-              ) : null}
-
               {/* Lifecycle Triage Actions */}
-              <div className="mt-auto border-t border-neutral-100 pt-4 flex flex-col gap-2">
-                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1">
+              <div className="mt-auto border-t border-neutral-100 pt-4 flex flex-col gap-2.5">
+                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
                   Operational Lifecycle Actions
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {current.status === "pending" ? (
                     <Button
                       variant="secondary"
-                      className="bg-amber-100 text-amber-900 hover:bg-amber-200 border-amber-300 font-bold"
+                      className="bg-amber-100 text-amber-900 hover:bg-amber-200 border-amber-300 font-bold w-full"
                       onClick={() => updateStatus("verified")}
                     >
                       <CheckCircle2 className="mr-1.5 size-4 text-amber-700" />
@@ -1103,7 +1512,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   {current.status === "verified" ? (
                     <Button
                       variant="primary"
-                      className="bg-sky-600 text-white hover:bg-sky-700 font-bold"
+                      className="bg-sky-600 text-white hover:bg-sky-700 font-bold w-full"
                       onClick={() => updateStatus(mode === "rescue" ? "dispatched" : "in_progress")}
                     >
                       <Truck className="mr-1.5 size-4" />
@@ -1114,25 +1523,28 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   {current.status !== "resolved" && current.status !== "dismissed" ? (
                     <Button
                       variant="primary"
-                      className="bg-emerald-600 text-white hover:bg-emerald-700 font-bold"
+                      className="bg-emerald-600 text-white hover:bg-emerald-700 font-bold w-full"
                       onClick={() => updateStatus("resolved")}
                     >
                       <CheckCircle2 className="mr-1.5 size-4" />
                       Mark Resolved
                     </Button>
                   ) : null}
+                </div>
 
-                  {current.status !== "dismissed" && current.status !== "resolved" ? (
+                {/* Dismiss button centered */}
+                {current.status !== "dismissed" && current.status !== "resolved" ? (
+                  <div className="flex justify-center pt-1">
                     <Button
                       variant="outline"
-                      className="text-rose-700 border-rose-200 hover:bg-rose-50 font-bold"
+                      className="text-rose-700 border-rose-200 hover:bg-rose-50 font-bold px-8 shadow-xs"
                       onClick={() => updateStatus("dismissed")}
                     >
                       <XCircle className="mr-1.5 size-4 text-rose-600" />
                       Dismiss
                     </Button>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : (
@@ -1140,8 +1552,8 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
               Select a record to inspect its operational timeline.
             </div>
           )}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
       {/* -------------------------------------------------------------------- */}
       {/* Lightbox Modal for Photo Attachments                                 */}
@@ -1171,12 +1583,15 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* -------------------------------------------------------------------- */}
+      {/* Manual Record Creation Modals                                        */}
+      {/* -------------------------------------------------------------------- */}
+      {mode === "rescue" ? (
+        <RescueCreationDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+      ) : (
+        <IncidentCreationDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+      )}
     </div>
   );
-}
-
-function countsSubtitle(unmappedCount: number) {
-  if (unmappedCount === 0) return "All records have spatial coordinates.";
-  if (unmappedCount === 1) return "1 record is missing map coordinates.";
-  return `${unmappedCount} records are missing map coordinates.`;
 }
