@@ -10,10 +10,9 @@ import {
   AlertTriangle,
   Check,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Clock,
   Copy,
+  Eye,
   Filter,
   Layers,
   MapPin,
@@ -24,7 +23,6 @@ import {
   Plus,
   Radio,
   RotateCcw,
-  Search,
   ShieldAlert,
   Truck,
   User,
@@ -36,9 +34,22 @@ import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
 import {
+  ResourceTable,
+  type ResourceColumn,
+  type ResourceFilterChoice,
+} from "@/components/features/admin/resource-table";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -288,6 +299,71 @@ function titleOf(mode: Mode, item: ResponseItem) {
     : label((item as IncidentReportOut).type);
 }
 
+function responseFilterChoices(
+  rows: ResponseItem[],
+  mode: Mode,
+): ResourceFilterChoice<ResponseItem>[] {
+  const choices: ResourceFilterChoice<ResponseItem>[] = [];
+
+  choices.push({
+    value: "status:pending",
+    label: "Pending Review",
+    matches: (r) => r.status === "pending",
+  });
+  choices.push({
+    value: "status:verified",
+    label: "Verified",
+    matches: (r) => r.status === "verified",
+  });
+  choices.push({
+    value: mode === "rescue" ? "status:dispatched" : "status:in_progress",
+    label: mode === "rescue" ? "Dispatched" : "In Progress",
+    matches: (r) =>
+      mode === "rescue" ? r.status === "dispatched" : r.status === "in_progress",
+  });
+  choices.push({
+    value: "status:resolved",
+    label: "Resolved",
+    matches: (r) => r.status === "resolved",
+  });
+
+  if (mode === "rescue") {
+    choices.push({
+      value: "priority:1",
+      label: "Priority 1 (Critical)",
+      matches: (r) => (r as RescueRequestOut).priority === 1,
+    });
+    choices.push({
+      value: "priority:2",
+      label: "Priority 2 (High)",
+      matches: (r) => (r as RescueRequestOut).priority === 2,
+    });
+  }
+
+  for (const area of SAN_JOSE_AREAS) {
+    const hasAny = rows.some((r) => {
+      const a =
+        ("location_area_name" in r && r.location_area_name) ||
+        ("area_name" in r ? r.area_name : null);
+      return a === area;
+    });
+    if (hasAny) {
+      choices.push({
+        value: `area:${area}`,
+        label: area,
+        matches: (r) => {
+          const a =
+            ("location_area_name" in r && r.location_area_name) ||
+            ("area_name" in r ? r.area_name : null);
+          return a === area;
+        },
+      });
+    }
+  }
+
+  return choices;
+}
+
 export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
   const client = useQueryClient();
 
@@ -299,15 +375,6 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
   const [showHazard, setShowHazard] = React.useState(false);
   const [showAreas, setShowAreas] = React.useState(false);
   const [selectedMapId, setSelectedMapId] = React.useState<string | null>(null);
-
-  /* --- Table Independent Filter & Pagination Controls --- */
-  const [tableSearch, setTableSearch] = React.useState("");
-  const [tableStatus, setTableStatus] = React.useState("all");
-  const [tableEventId, setTableEventId] = React.useState("all");
-  const [tableArea, setTableArea] = React.useState("all");
-  const [tablePriority, setTablePriority] = React.useState("all");
-  const [tablePage, setTablePage] = React.useState(1);
-  const pageSize = 10;
 
   /* --- Modals & Detail State --- */
   const [selectedTableId, setSelectedTableId] = React.useState<string | null>(null);
@@ -455,62 +522,151 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
   });
 
   /* -------------------------------------------------------------------------- */
-  /* Filtered & Paginated Items for the Worklist Table                          */
+  /* ResourceTable Columns Definition                                           */
   /* -------------------------------------------------------------------------- */
-  const tableFilteredRows = React.useMemo(() => {
-    const term = tableSearch.trim().toLowerCase();
-    return allItems.filter((item) => {
-      const matchesStatus =
-        tableStatus === "all" ||
-        (tableStatus === "active"
-          ? activeStatuses.includes(item.status)
-          : item.status === tableStatus);
+  const columns = React.useMemo<ResourceColumn<ResponseItem>[]>(() => {
+    return [
+      {
+        key: mode === "rescue" ? "requester_name" : "type",
+        header: mode === "rescue" ? "Requester & Details" : "Hazard & Details",
+        render: (row) => {
+          const contact = "contact_number" in row ? row.contact_number : null;
 
-      const matchesEvent =
-        tableEventId === "all" ||
-        (tableEventId === "unlinked" ? !item.event_id : item.event_id === tableEventId);
-
-      const itemArea =
-        ("location_area_name" in item && item.location_area_name) ||
-        ("area_name" in item ? item.area_name : null);
-      const matchesArea =
-        tableArea === "all" || itemArea === tableArea;
-
-      const matchesPriority =
-        mode !== "rescue" ||
-        tablePriority === "all" ||
-        String((item as RescueRequestOut).priority) === tablePriority;
-
-      const contact =
-        "contact_number" in item ? item.contact_number : null;
-      const haystack = [
-        titleOf(mode, item),
-        item.description,
-        item.location_note,
-        item.event_name,
-        itemArea,
-        contact,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return (
-        matchesStatus &&
-        matchesEvent &&
-        matchesArea &&
-        matchesPriority &&
-        (!term || haystack.includes(term))
-      );
-    });
-  }, [activeStatuses, allItems, mode, tableArea, tableEventId, tablePriority, tableSearch, tableStatus]);
-
-  const totalTablePages = Math.ceil(tableFilteredRows.length / pageSize) || 1;
-  const safeTablePage = Math.min(tablePage, totalTablePages);
-  const paginatedRows = React.useMemo(() => {
-    const start = (safeTablePage - 1) * pageSize;
-    return tableFilteredRows.slice(start, start + pageSize);
-  }, [pageSize, safeTablePage, tableFilteredRows]);
+          return (
+            <div className="flex items-start gap-3 min-w-56 max-w-sm">
+              <div className="relative mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 font-bold overflow-hidden">
+                {"photo_url" in row && row.photo_url ? (
+                  <Image
+                    src={row.photo_url}
+                    alt="Incident thumbnail"
+                    fill
+                    className="object-cover"
+                  />
+                ) : mode === "rescue" ? (
+                  <User className="size-4 text-emerald-700" />
+                ) : (
+                  <ShieldAlert className="size-4 text-emerald-700" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="font-bold text-neutral-900 truncate">
+                  {titleOf(mode, row)}
+                </p>
+                <p className="mt-0.5 text-xs text-neutral-500 line-clamp-1">
+                  {row.description}
+                </p>
+                {contact ? (
+                  <p className="mt-0.5 text-[11px] font-mono text-emerald-700 flex items-center gap-1">
+                    <Phone className="size-2.5" />
+                    {contact}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        key: "kind",
+        header: mode === "rescue" ? "Urgency" : "Hazard Type",
+        render: (row) => {
+          if (mode === "rescue") {
+            const p = (row as RescueRequestOut).priority;
+            if (p === 1) {
+              return (
+                <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-bold text-rose-800">
+                  <span className="size-1.5 rounded-full bg-rose-600 animate-pulse" />
+                  P1 Critical
+                </span>
+              );
+            }
+            if (p === 2) {
+              return (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800">
+                  <span className="size-1.5 rounded-full bg-amber-600" />
+                  P2 High
+                </span>
+              );
+            }
+            return (
+              <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-bold text-sky-800">
+                <span className="size-1.5 rounded-full bg-sky-600" />
+                P3 Moderate
+              </span>
+            );
+          }
+          return (
+            <span className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-xs font-semibold text-neutral-800">
+              {label((row as IncidentReportOut).type)}
+            </span>
+          );
+        },
+      },
+      {
+        key: "area_name",
+        header: "Area & Landmarks",
+        render: (row) => {
+          const itemArea =
+            ("location_area_name" in row && row.location_area_name) ||
+            ("area_name" in row ? row.area_name : null);
+          return (
+            <div className="min-w-44 max-w-xs text-xs">
+              <p className="font-semibold text-neutral-800">
+                {itemArea || "Area Unknown"}
+              </p>
+              <p className="mt-0.5 text-neutral-500 truncate">
+                {row.location_note || "No specific landmark"}
+              </p>
+              <div className="mt-1 flex items-center gap-1">
+                {row.location ? (
+                  <span className="inline-flex items-center gap-0.5 text-[10.5px] font-bold text-emerald-700">
+                    <MapPin className="size-3" /> Pinned
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-0.5 text-[10.5px] font-semibold text-slate-400">
+                    <MapPinOff className="size-3" /> Unmapped
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        key: "status",
+        header: "Status",
+        render: (row) => (
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold shadow-2xs",
+              badgeClass(row.status),
+            )}
+          >
+            {row.status === "resolved" ? (
+              <CheckCircle2 className="size-3" />
+            ) : row.status === "pending" ? (
+              <Clock className="size-3" />
+            ) : (
+              <Activity className="size-3" />
+            )}
+            {label(row.status)}
+          </span>
+        ),
+      },
+      {
+        key: "created_at",
+        header: "Submitted Date",
+        render: (row) => (
+          <div className="min-w-32 text-xs text-neutral-600">
+            <p className="font-medium">{formatTime(row.created_at)}</p>
+            <p className="mt-0.5 text-[11px] text-neutral-400 truncate max-w-xs">
+              {row.event_name ? `Event: ${row.event_name}` : "General Intake"}
+            </p>
+          </div>
+        ),
+      },
+    ];
+  }, [mode]);
 
   /* Status update mutation */
   const patch = useMutation({
@@ -531,21 +687,50 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
     },
   });
 
+  const [pendingResolutionStatus, setPendingResolutionStatus] = React.useState<
+    "resolved" | "dismissed" | null
+  >(null);
+  const [resolutionNoteInput, setResolutionNoteInput] = React.useState("");
+
+  const handleConfirmResolution = () => {
+    if (!pendingResolutionStatus || !inspectedId) return;
+    if (!resolutionNoteInput.trim()) {
+      toast.error(
+        pendingResolutionStatus === "resolved"
+          ? "Please enter a resolution note before resolving."
+          : "Please enter a dismissal reason before dismissing.",
+      );
+      return;
+    }
+
+    if (mode === "rescue") {
+      patch.mutate({
+        id: inspectedId,
+        body: {
+          status: pendingResolutionStatus as RescueRequestStatus,
+          resolution_note: resolutionNoteInput.trim(),
+        },
+      });
+    } else {
+      patch.mutate({
+        id: inspectedId,
+        body: {
+          status: pendingResolutionStatus as IncidentStatus,
+          resolution_note: resolutionNoteInput.trim(),
+        },
+      });
+    }
+
+    setPendingResolutionStatus(null);
+    setResolutionNoteInput("");
+  };
+
   const updateStatus = (nextStatus: RescueRequestStatus | IncidentStatus) => {
     if (!inspectedId) return;
-    const isClosing = nextStatus === "resolved" || nextStatus === "dismissed";
-    let note: string | null = null;
-    if (isClosing) {
-      const promptText =
-        nextStatus === "resolved"
-          ? "Enter resolution note (e.g. 'Safely evacuated to Evacuation Center'):"
-          : "Enter dismissal rationale (e.g. 'Duplicate report verified with caller'):";
-      const entered = window.prompt(promptText);
-      if (!entered || !entered.trim()) {
-        toast.error("A resolution note is required when resolving or dismissing.");
-        return;
-      }
-      note = entered.trim();
+    if (nextStatus === "resolved" || nextStatus === "dismissed") {
+      setPendingResolutionStatus(nextStatus);
+      setResolutionNoteInput("");
+      return;
     }
 
     if (mode === "rescue") {
@@ -553,7 +738,6 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
         id: inspectedId,
         body: {
           status: nextStatus as RescueRequestStatus,
-          ...(note ? { resolution_note: note } : {}),
         },
       });
     } else {
@@ -561,7 +745,6 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
         id: inspectedId,
         body: {
           status: nextStatus as IncidentStatus,
-          ...(note ? { resolution_note: note } : {}),
         },
       });
     }
@@ -573,13 +756,6 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
     mapEventId !== "all" ||
     mapArea !== "all" ||
     mapPriority !== "all";
-
-  const isTableFiltered =
-    Boolean(tableSearch.trim()) ||
-    tableStatus !== "all" ||
-    tableEventId !== "all" ||
-    tableArea !== "all" ||
-    tablePriority !== "all";
 
   const heading =
     mode === "rescue"
@@ -973,349 +1149,61 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
       </div>
 
       {/* -------------------------------------------------------------------- */}
-      {/* Decoupled Operational Worklist Table                                 */}
+      {/* Standard Admin ResourceTable (Identical Design to /admin/households)  */}
       {/* -------------------------------------------------------------------- */}
-      <section className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-        {/* Table Top Header & Intake Action */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200/80 px-5 py-4 bg-neutral-50/50">
-          <div>
-            <h2 className="text-base font-bold text-neutral-900">
-              Operations Worklist
-            </h2>
-            <p className="mt-0.5 text-xs text-neutral-500">
-              {tableFilteredRows.length} {tableFilteredRows.length === 1 ? "record" : "records"} matching table filters · Newest first
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => setIsCreateOpen(true)}
-              variant="primary"
-              className="bg-emerald-600 text-white hover:bg-emerald-700 font-bold shadow-xs"
-            >
-              <Plus className="mr-1.5 size-4" />
-              {mode === "rescue" ? "Record Rescue Request" : "Report Incident"}
-            </Button>
-          </div>
-        </div>
-
-        {/* Independent Table Search & Categorical Filters Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 px-5 py-3 bg-white">
-          {/* Search Input */}
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-neutral-400" />
-            <input
-              type="text"
-              placeholder={mode === "rescue" ? "Search caller name, contact, area, landmarks…" : "Search hazard, reporter, area, landmarks…"}
-              value={tableSearch}
-              onChange={(e) => setTableSearch(e.target.value)}
-              className="h-9 w-full rounded-lg border border-neutral-300 pl-8.5 pr-8 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-emerald-600 focus:outline-hidden"
-            />
-            {tableSearch ? (
-              <button
-                type="button"
-                onClick={() => setTableSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
-              >
-                <X className="size-3.5" />
-              </button>
-            ) : null}
-          </div>
-
-          {/* Filter Dropdowns Strip */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Status Filter */}
-            <Select value={tableStatus} onValueChange={setTableStatus}>
-              <SelectTrigger className="h-8.5 min-w-32 rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-800 shadow-2xs">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="active">Active Queue</SelectItem>
-                {(mode === "rescue" ? rescueStatuses : incidentStatuses).map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {label(s)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Area Filter */}
-            <Select value={tableArea} onValueChange={setTableArea}>
-              <SelectTrigger className="h-8.5 min-w-28 rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-800 shadow-2xs">
-                <SelectValue placeholder="All Areas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Areas</SelectItem>
-                {SAN_JOSE_AREAS.map((area) => (
-                  <SelectItem key={area} value={area}>
-                    {area}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Priority Filter (Rescue Only) */}
-            {mode === "rescue" ? (
-              <Select value={tablePriority} onValueChange={setTablePriority}>
-                <SelectTrigger className="h-8.5 min-w-28 rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-800 shadow-2xs">
-                  <SelectValue placeholder="All Priorities" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Priorities</SelectItem>
-                  <SelectItem value="1">Priority 1 (Critical)</SelectItem>
-                  <SelectItem value="2">Priority 2 (High)</SelectItem>
-                  <SelectItem value="3">Priority 3 (Moderate)</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : null}
-
-            {/* Reset Button */}
-            {isTableFiltered ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setTableSearch("");
-                  setTableStatus("all");
-                  setTableArea("all");
-                  setTablePriority("all");
-                  setTableEventId("all");
-                }}
-                className="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-600 hover:bg-neutral-200 transition cursor-pointer"
-              >
-                <RotateCcw className="size-3" />
-                Reset
-              </button>
-            ) : null}
-          </div>
-        </div>
-
-        {/* Table Content */}
-        {isLoading ? (
-          <div className="p-12 text-center text-xs text-neutral-500 animate-pulse">
-            Loading operational worklist…
-          </div>
-        ) : isError ? (
-          <div className="p-12 text-center text-xs text-rose-600">
-            Failed to load queue. Check server connection.
-          </div>
-        ) : tableFilteredRows.length === 0 ? (
-          <div className="p-12 text-center text-xs text-neutral-500">
-            {isTableFiltered
-              ? "No records match the active search or filters."
-              : "No records recorded yet."}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-[#052e16] bg-[#052e16] text-[11px] font-bold uppercase tracking-wider text-emerald-300">
-                <tr>
-                  <th className="px-5 py-3">Requester & Details</th>
-                  <th className="px-4 py-3">{mode === "rescue" ? "Urgency" : "Hazard Type"}</th>
-                  <th className="px-4 py-3">Area & Landmarks</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Submitted Date</th>
-                  <th className="px-5 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100">
-                {paginatedRows.map((item) => {
-                  const isInspected = item.id === inspectedId;
-                  const itemArea =
-                    ("location_area_name" in item && item.location_area_name) ||
-                    ("area_name" in item ? item.area_name : null);
-                  const priority =
-                    mode === "rescue"
-                      ? (item as RescueRequestOut).priority
-                      : null;
-
-                  return (
-                    <tr
-                      key={item.id}
-                      className={cn(
-                        "transition-colors hover:bg-emerald-50/40",
-                        isInspected && "bg-emerald-50/70",
-                      )}
-                    >
-                      {/* Requester & details */}
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-start gap-3">
-                          <div className="relative mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 font-bold overflow-hidden">
-                            {"photo_url" in item && item.photo_url ? (
-                              <Image
-                                src={item.photo_url}
-                                alt="Incident thumbnail"
-                                fill
-                                className="object-cover"
-                              />
-                            ) : mode === "rescue" ? (
-                              <User className="size-4 text-emerald-700" />
-                            ) : (
-                              <ShieldAlert className="size-4 text-emerald-700" />
-                            )}
-                          </div>
-                          <div className="min-w-0 max-w-sm">
-                            <p className="font-bold text-neutral-900 truncate">
-                              {titleOf(mode, item)}
-                            </p>
-                            <p className="mt-0.5 text-xs text-neutral-500 line-clamp-1">
-                              {item.description}
-                            </p>
-                            {"contact_number" in item && item.contact_number ? (
-                              <p className="mt-0.5 text-[11px] font-mono text-emerald-700 flex items-center gap-1">
-                                <Phone className="size-2.5" />
-                                {item.contact_number}
-                              </p>
-                            ) : null}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Priority / Hazard Type */}
-                      <td className="px-4 py-3.5 text-xs">
-                        {mode === "rescue" ? (
-                          priority === 1 ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-0.5 font-bold text-rose-800">
-                              <span className="size-1.5 rounded-full bg-rose-600 animate-pulse" />
-                              P1 Critical
-                            </span>
-                          ) : priority === 2 ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 font-bold text-amber-800">
-                              <span className="size-1.5 rounded-full bg-amber-600" />
-                              P2 High
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2.5 py-0.5 font-bold text-sky-800">
-                              <span className="size-1.5 rounded-full bg-sky-600" />
-                              P3 Moderate
-                            </span>
-                          )
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-neutral-50 px-2 py-0.5 font-semibold text-neutral-800">
-                            {label((item as IncidentReportOut).type)}
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Location & Area */}
-                      <td className="px-4 py-3.5 text-xs">
-                        <p className="font-semibold text-neutral-800">
-                          {itemArea || "Area Unknown"}
-                        </p>
-                        <p className="mt-0.5 text-neutral-500 truncate max-w-xs">
-                          {item.location_note || "No specific landmark"}
-                        </p>
-                        <div className="mt-1 flex items-center gap-1">
-                          {item.location ? (
-                            <span className="inline-flex items-center gap-0.5 text-[10.5px] font-bold text-emerald-700">
-                              <MapPin className="size-3" /> Pinned
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-0.5 text-[10.5px] font-semibold text-slate-400">
-                              <MapPinOff className="size-3" /> Unmapped
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Status */}
-                      <td className="px-4 py-3.5">
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold shadow-2xs",
-                            badgeClass(item.status),
-                          )}
-                        >
-                          {item.status === "resolved" ? (
-                            <CheckCircle2 className="size-3" />
-                          ) : item.status === "pending" ? (
-                            <Clock className="size-3" />
-                          ) : (
-                            <Activity className="size-3" />
-                          )}
-                          {label(item.status)}
-                        </span>
-                      </td>
-
-                      {/* Submitted & Event */}
-                      <td className="px-4 py-3.5 text-xs text-neutral-600">
-                        <p className="font-medium">{formatTime(item.created_at)}</p>
-                        <p className="mt-0.5 text-neutral-400 truncate max-w-xs">
-                          {item.event_name ? `Event: ${item.event_name}` : "General Intake"}
-                        </p>
-                      </td>
-
-                      {/* Action */}
-                      <td className="px-5 py-3.5 text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedTableId(item.id)}
-                          className="h-8 text-xs font-bold shadow-2xs border-neutral-300 hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-950"
-                        >
-                          Triage & Review
-                          <ChevronRight className="ml-1 size-3.5" />
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+      <ResourceTable
+        columns={columns}
+        data={allItems}
+        isLoading={isLoading}
+        isError={isError}
+        onRetry={refetch}
+        getRowKey={(row) => row.id}
+        searchPlaceholder={
+          mode === "rescue"
+            ? "Search requester, contact, area, landmarks…"
+            : "Search hazard, reporter, area, landmarks…"
+        }
+        filterChoices={(data) => responseFilterChoices(data, mode)}
+        filterAllLabel="All Records"
+        toolbarAction={
+          <Button
+            onClick={() => setIsCreateOpen(true)}
+            variant="primary"
+            className="h-9 gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700 shadow-2xs cursor-pointer"
+          >
+            <Plus className="size-4" />
+            {mode === "rescue" ? "Record Rescue Request" : "Report Incident"}
+          </Button>
+        }
+        rowActions={(row) => (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setSelectedTableId(row.id)}
+            className="h-8 gap-1 rounded-lg border-neutral-300 px-2.5 text-xs font-bold hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-950 shadow-2xs"
+          >
+            <Eye className="size-3.5" />
+            Triage & Review
+          </Button>
         )}
-
-        {/* Table Pagination Footer */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 px-5 py-3 text-xs text-neutral-600 bg-neutral-50/50">
-          <div>
-            Showing{" "}
-            <span className="font-bold text-neutral-900">
-              {tableFilteredRows.length === 0 ? 0 : (tablePage - 1) * pageSize + 1}
-            </span>{" "}
-            to{" "}
-            <span className="font-bold text-neutral-900">
-              {Math.min(tablePage * pageSize, tableFilteredRows.length)}
-            </span>{" "}
-            of{" "}
-            <span className="font-bold text-neutral-900">
-              {tableFilteredRows.length}
-            </span>{" "}
-            records
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setTablePage((p) => Math.max(p - 1, 1))}
-              disabled={tablePage <= 1}
-              className="h-8 px-2.5 text-xs font-bold"
-            >
-              <ChevronLeft className="mr-1 size-3.5" />
-              Previous
-            </Button>
-            <span className="text-xs font-bold text-neutral-700 px-1">
-              Page {tablePage} of {totalTablePages}
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setTablePage((p) => Math.min(p + 1, totalTablePages))}
-              disabled={tablePage >= totalTablePages}
-              className="h-8 px-2.5 text-xs font-bold"
-            >
-              Next
-              <ChevronRight className="ml-1 size-3.5" />
-            </Button>
-          </div>
-        </div>
-      </section>
+      />
 
       {/* -------------------------------------------------------------------- */}
       {/* Record Inspection & Triage Modal Dialog (Decoupled from Map)         */}
       {/* -------------------------------------------------------------------- */}
       <Dialog open={Boolean(selectedTableId)} onOpenChange={(open) => !open && setSelectedTableId(null)}>
-        <DialogContent className="w-full sm:max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-white text-slate-900 rounded-2xl shadow-2xl">
+        <DialogContent showCloseButton={false} className="w-full sm:max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-white text-slate-900 rounded-2xl shadow-2xl">
           <DialogHeader className="relative border-b border-neutral-100 bg-emerald-950 p-5 sm:p-6 text-white shrink-0">
+            {/* High-contrast close button */}
+            <button
+              type="button"
+              onClick={() => setSelectedTableId(null)}
+              className="absolute top-4 right-4 flex size-7 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer border border-white/20 shadow-md"
+              title="Close dialog"
+            >
+              <X className="size-4 text-white" />
+            </button>
+
             <div className="flex items-center justify-between pr-8">
               <span className="text-[10.5px] font-bold tracking-widest text-emerald-300 uppercase">
                 {mode === "rescue" ? "Rescue Request Record" : "Incident Report Record"}
@@ -1331,10 +1219,10 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 </span>
               ) : null}
             </div>
-            <DialogTitle className="mt-2 text-xl font-black text-white pr-6">
+            <DialogTitle className="mt-2 text-xl font-black text-white pr-8">
               {current ? titleOf(mode, current) : "Loading details…"}
             </DialogTitle>
-            <DialogDescription className="text-xs text-emerald-200/80">
+            <DialogDescription className="text-xs text-emerald-200/80 pr-8">
               {current?.event_name ? `Associated with ${current.event_name}` : "General intake incident record"}
             </DialogDescription>
           </DialogHeader>
@@ -1468,9 +1356,9 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                       target="_blank"
                       rel="noopener noreferrer"
                       title="Open Google Maps Directions"
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-slate-800 transition shrink-0"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-emerald-700 transition shrink-0 cursor-pointer"
                     >
-                      <Navigation className="size-3.5 text-emerald-400" />
+                      <Navigation className="size-3.5 text-white" />
                       Directions
                     </a>
                   ) : (
@@ -1492,59 +1380,60 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 </p>
               </div>
 
-              {/* Lifecycle Triage Actions */}
+              {/* Lifecycle Triage Actions (Desktop 3 in a row: Dismiss - Verify/Dispatch - Mark Resolved) */}
               <div className="mt-auto border-t border-neutral-100 pt-4 flex flex-col gap-2.5">
                 <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
                   Operational Lifecycle Actions
                 </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {current.status === "pending" ? (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {/* Button 1: Dismiss */}
+                  {current.status !== "dismissed" && current.status !== "resolved" ? (
                     <Button
-                      variant="secondary"
-                      className="bg-amber-100 text-amber-900 hover:bg-amber-200 border-amber-300 font-bold w-full"
-                      onClick={() => updateStatus("verified")}
+                      variant="outline"
+                      className="w-full text-rose-700 border-rose-300 bg-rose-50/60 hover:bg-rose-100 font-bold px-3 text-xs shadow-2xs order-1 cursor-pointer"
+                      onClick={() => updateStatus("dismissed")}
                     >
-                      <CheckCircle2 className="mr-1.5 size-4 text-amber-700" />
-                      Verify Request
+                      <XCircle className="mr-1.5 size-3.5 text-rose-600 shrink-0" />
+                      Dismiss
                     </Button>
                   ) : null}
 
-                  {current.status === "verified" ? (
+                  {/* Button 2: Progression (Verify Request or Dispatch Team) */}
+                  {current.status === "pending" ? (
+                    <Button
+                      variant="secondary"
+                      className="w-full bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold px-3 text-xs shadow-2xs order-2 cursor-pointer"
+                      onClick={() => updateStatus("verified")}
+                    >
+                      <CheckCircle2 className="mr-1.5 size-3.5 text-amber-700 shrink-0" />
+                      Verify Request
+                    </Button>
+                  ) : current.status === "verified" ? (
                     <Button
                       variant="primary"
-                      className="bg-sky-600 text-white hover:bg-sky-700 font-bold w-full"
+                      className="w-full bg-sky-600 text-white hover:bg-sky-700 font-bold px-3 text-xs shadow-2xs order-2 cursor-pointer"
                       onClick={() => updateStatus(mode === "rescue" ? "dispatched" : "in_progress")}
                     >
-                      <Truck className="mr-1.5 size-4" />
+                      <Truck className="mr-1.5 size-3.5 shrink-0" />
                       {mode === "rescue" ? "Dispatch Team" : "Mark In Progress"}
                     </Button>
                   ) : null}
 
+                  {/* Button 3: Mark Resolved */}
                   {current.status !== "resolved" && current.status !== "dismissed" ? (
                     <Button
                       variant="primary"
-                      className="bg-emerald-600 text-white hover:bg-emerald-700 font-bold w-full"
+                      className={cn(
+                        "w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-3 text-xs shadow-2xs order-3 cursor-pointer",
+                        current.status !== "pending" && current.status !== "verified" && "sm:col-span-2"
+                      )}
                       onClick={() => updateStatus("resolved")}
                     >
-                      <CheckCircle2 className="mr-1.5 size-4" />
+                      <CheckCircle2 className="mr-1.5 size-3.5 shrink-0" />
                       Mark Resolved
                     </Button>
                   ) : null}
                 </div>
-
-                {/* Dismiss button centered */}
-                {current.status !== "dismissed" && current.status !== "resolved" ? (
-                  <div className="flex justify-center pt-1">
-                    <Button
-                      variant="outline"
-                      className="text-rose-700 border-rose-200 hover:bg-rose-50 font-bold px-8 shadow-xs"
-                      onClick={() => updateStatus("dismissed")}
-                    >
-                      <XCircle className="mr-1.5 size-4 text-rose-600" />
-                      Dismiss
-                    </Button>
-                  </div>
-                ) : null}
               </div>
             </div>
           ) : (
@@ -1556,10 +1445,363 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
       </Dialog>
 
       {/* -------------------------------------------------------------------- */}
+      {/* Map Pin Inspection Drawer (Sheet for Map Selection)                  */}
+      {/* -------------------------------------------------------------------- */}
+      <Sheet open={Boolean(selectedMapId)} onOpenChange={(open) => !open && setSelectedMapId(null)}>
+        <SheetContent
+          side="right"
+          showCloseButton={false}
+          className="w-full sm:max-w-md p-0 flex flex-col gap-0 bg-white text-slate-900 border-l border-neutral-200 shadow-2xl"
+        >
+          <SheetHeader className="relative border-b border-neutral-100 bg-emerald-950 p-5 sm:p-6 text-white shrink-0">
+            {/* High-contrast close button */}
+            <button
+              type="button"
+              onClick={() => setSelectedMapId(null)}
+              className="absolute top-4 right-4 flex size-7 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer border border-white/20 shadow-md"
+              title="Close drawer"
+            >
+              <X className="size-4 text-white" />
+            </button>
+
+            <div className="flex items-center justify-between pr-8">
+              <span className="text-[10.5px] font-bold tracking-widest text-emerald-300 uppercase">
+                {mode === "rescue" ? "Rescue Request Record" : "Incident Report Record"}
+              </span>
+              {current ? (
+                <span
+                  className={cn(
+                    "rounded-full border px-2.5 py-0.5 text-[11px] font-bold",
+                    badgeClass(current.status),
+                  )}
+                >
+                  {label(current.status)}
+                </span>
+              ) : null}
+            </div>
+            <SheetTitle className="mt-2 text-xl font-black text-white pr-8">
+              {current ? titleOf(mode, current) : "Loading details…"}
+            </SheetTitle>
+            <SheetDescription className="text-xs text-emerald-200/80 pr-8">
+              {current?.event_name ? `Associated with ${current.event_name}` : "Live terrain-pinned incident record"}
+            </SheetDescription>
+          </SheetHeader>
+
+          {current ? (
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-sm">
+              {/* Photo attachment if present */}
+              {"photo_url" in current && current.photo_url ? (
+                <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
+                  <div className="relative h-48 w-full cursor-pointer" onClick={() => setLightboxPhoto(current.photo_url)}>
+                    <Image
+                      src={current.photo_url}
+                      alt="Incident attachment"
+                      fill
+                      className="object-cover"
+                    />
+                    <div className="absolute top-2 right-2 rounded-md bg-black/60 px-2 py-1 text-[10px] font-bold text-white flex items-center gap-1 backdrop-blur-xs">
+                      <Maximize2 className="size-3" />
+                      Expand Photo
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Citizen / Contact Information */}
+              <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
+                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-2">
+                  Requester & Contact
+                </p>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-bold text-neutral-900 text-sm truncate">
+                      {"requester_name" in current
+                        ? current.requester_name
+                        : current.reported_by_name || "Anonymous Resident"}
+                    </p>
+                    {"contact_number" in current && current.contact_number ? (
+                      <div className="mt-1 flex items-center gap-1.5 text-xs text-neutral-700 font-medium">
+                        <Phone className="size-3 text-neutral-400 shrink-0" />
+                        <span className="font-mono">{current.contact_number}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-neutral-400">No contact number provided</span>
+                    )}
+                  </div>
+
+                  {"contact_number" in current && current.contact_number ? (
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if ("contact_number" in current && current.contact_number) {
+                            navigator.clipboard.writeText(current.contact_number);
+                            setCopiedPhone(true);
+                            setTimeout(() => setCopiedPhone(false), 2000);
+                          }
+                        }}
+                        title={copiedPhone ? "Copied to clipboard!" : "Copy phone number"}
+                        className={cn(
+                          "flex size-8 items-center justify-center rounded-lg border transition-all cursor-pointer shadow-2xs",
+                          copiedPhone
+                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                            : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100 hover:text-neutral-950",
+                        )}
+                      >
+                        {copiedPhone ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                      </button>
+
+                      <a
+                        href={`tel:${current.contact_number}`}
+                        title={`Call ${current.contact_number}`}
+                        className="flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-2xs hover:bg-emerald-700 transition cursor-pointer"
+                      >
+                        <Phone className="size-3.5" />
+                      </a>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Location & Directions */}
+              <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
+                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-2">
+                  Location Details
+                </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="size-3.5 text-emerald-700 shrink-0" />
+                      <span className="font-bold text-neutral-900 text-xs">
+                        {("location_area_name" in current && current.location_area_name) ||
+                          current.area_name ||
+                          "Area Unknown"}
+                      </span>
+                    </div>
+                    {current.location_note ? (
+                      <p className="mt-1 text-xs text-neutral-600 leading-snug">
+                        {current.location_note}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-neutral-400">No specific landmark provided</p>
+                    )}
+                  </div>
+
+                  {current.location ? (
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${current.location.coordinates[1]},${current.location.coordinates[0]}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Open Google Maps Directions"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-emerald-700 transition shrink-0 cursor-pointer"
+                    >
+                      <Navigation className="size-3.5 text-white" />
+                      Directions
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
+                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1">
+                  Report Description
+                </p>
+                <p className="text-neutral-700 leading-relaxed text-xs">
+                  {current.description || "No specific details provided."}
+                </p>
+              </div>
+
+              {/* Lifecycle Triage Actions (Desktop 3 in a row: Dismiss - Verify/Dispatch - Mark Resolved) */}
+              <div className="mt-auto border-t border-neutral-100 pt-4 flex flex-col gap-2.5">
+                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
+                  Operational Lifecycle Actions
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {/* Button 1: Dismiss */}
+                  {current.status !== "dismissed" && current.status !== "resolved" ? (
+                    <Button
+                      variant="outline"
+                      className="w-full text-rose-700 border-rose-300 bg-rose-50/60 hover:bg-rose-100 font-bold px-3 text-xs shadow-2xs order-1 cursor-pointer"
+                      onClick={() => updateStatus("dismissed")}
+                    >
+                      <XCircle className="mr-1.5 size-3.5 text-rose-600 shrink-0" />
+                      Dismiss
+                    </Button>
+                  ) : null}
+
+                  {/* Button 2: Progression (Verify Request or Dispatch Team) */}
+                  {current.status === "pending" ? (
+                    <Button
+                      variant="secondary"
+                      className="w-full bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold px-3 text-xs shadow-2xs order-2 cursor-pointer"
+                      onClick={() => updateStatus("verified")}
+                    >
+                      <CheckCircle2 className="mr-1.5 size-3.5 text-amber-700 shrink-0" />
+                      Verify Request
+                    </Button>
+                  ) : current.status === "verified" ? (
+                    <Button
+                      variant="primary"
+                      className="w-full bg-sky-600 text-white hover:bg-sky-700 font-bold px-3 text-xs shadow-2xs order-2 cursor-pointer"
+                      onClick={() => updateStatus(mode === "rescue" ? "dispatched" : "in_progress")}
+                    >
+                      <Truck className="mr-1.5 size-3.5 shrink-0" />
+                      {mode === "rescue" ? "Dispatch Team" : "Mark In Progress"}
+                    </Button>
+                  ) : null}
+
+                  {/* Button 3: Mark Resolved */}
+                  {current.status !== "resolved" && current.status !== "dismissed" ? (
+                    <Button
+                      variant="primary"
+                      className={cn(
+                        "w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-3 text-xs shadow-2xs order-3 cursor-pointer",
+                        current.status !== "pending" && current.status !== "verified" && "sm:col-span-2"
+                      )}
+                      onClick={() => updateStatus("resolved")}
+                    >
+                      <CheckCircle2 className="mr-1.5 size-3.5 shrink-0" />
+                      Mark Resolved
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="p-8 text-center text-sm text-neutral-400">
+              Select a pin to inspect its operational timeline.
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* -------------------------------------------------------------------- */}
+      {/* Custom Resolution / Dismissal Note Modal                             */}
+      {/* -------------------------------------------------------------------- */}
+      <Dialog
+        open={Boolean(pendingResolutionStatus)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingResolutionStatus(null);
+            setResolutionNoteInput("");
+          }
+        }}
+      >
+        <DialogContent
+          showCloseButton={false}
+          className="max-w-md p-0 overflow-hidden bg-white text-slate-900 rounded-2xl shadow-2xl"
+        >
+          <DialogHeader
+            className={cn(
+              "relative border-b p-5 text-white shrink-0",
+              pendingResolutionStatus === "resolved"
+                ? "bg-emerald-950 border-emerald-900"
+                : "bg-rose-950 border-rose-900",
+            )}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setPendingResolutionStatus(null);
+                setResolutionNoteInput("");
+              }}
+              className="absolute top-4 right-4 flex size-7 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer border border-white/20 shadow-md"
+              title="Close modal"
+            >
+              <X className="size-4 text-white" />
+            </button>
+
+            <div className="flex items-center gap-2 text-[10.5px] font-bold tracking-widest uppercase pr-8">
+              {pendingResolutionStatus === "resolved" ? (
+                <>
+                  <CheckCircle2 className="size-4 text-emerald-400" />
+                  <span className="text-emerald-300">Resolve Case Record</span>
+                </>
+              ) : (
+                <>
+                  <XCircle className="size-4 text-rose-400" />
+                  <span className="text-rose-300">Dismiss Case Record</span>
+                </>
+              )}
+            </div>
+            <DialogTitle className="mt-1 text-lg font-black text-white pr-8">
+              {pendingResolutionStatus === "resolved"
+                ? "Record Operational Resolution"
+                : "Record Dismissal Rationale"}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-white/80 pr-8">
+              {pendingResolutionStatus === "resolved"
+                ? "Document the actions taken, evacuation destination, or emergency resolution details."
+                : "Provide a reason for dismissing this record (e.g. duplicate, invalid call, test intake)."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleConfirmResolution();
+            }}
+            className="p-5 flex flex-col gap-4 text-xs"
+          >
+            <div className="flex flex-col gap-1.5">
+              <label className="font-bold text-neutral-800">
+                {pendingResolutionStatus === "resolved" ? "Resolution Summary *" : "Dismissal Reason *"}
+              </label>
+              <textarea
+                required
+                rows={3}
+                autoFocus
+                value={resolutionNoteInput}
+                onChange={(e) => setResolutionNoteInput(e.target.value)}
+                placeholder={
+                  pendingResolutionStatus === "resolved"
+                    ? "e.g. Safely evacuated 4 individuals to Kasiglahan Evacuation Center."
+                    : "e.g. Verified with requester — duplicate request already dispatched."
+                }
+                className="w-full rounded-xl border border-neutral-300 p-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-emerald-600 focus:outline-hidden leading-relaxed shadow-2xs"
+              />
+            </div>
+
+            <DialogFooter className="flex items-center justify-end gap-2 border-t border-neutral-100 pt-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setPendingResolutionStatus(null);
+                  setResolutionNoteInput("");
+                }}
+                disabled={patch.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                className={cn(
+                  "font-bold text-white shadow-xs",
+                  pendingResolutionStatus === "resolved"
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : "bg-rose-600 hover:bg-rose-700",
+                )}
+                disabled={patch.isPending}
+              >
+                {patch.isPending
+                  ? "Saving…"
+                  : pendingResolutionStatus === "resolved"
+                  ? "Confirm Resolution"
+                  : "Confirm Dismissal"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* -------------------------------------------------------------------- */}
       {/* Lightbox Modal for Photo Attachments                                 */}
       {/* -------------------------------------------------------------------- */}
       <Dialog open={Boolean(lightboxPhoto)} onOpenChange={(open) => !open && setLightboxPhoto(null)}>
-        <DialogContent className="w-full max-w-4xl p-1 bg-slate-950 border-slate-800 text-white overflow-hidden rounded-2xl">
+        <DialogContent showCloseButton={false} className="w-full max-w-4xl p-1 bg-slate-950 border-slate-800 text-white overflow-hidden rounded-2xl">
           <div className="relative h-[70vh] w-full">
             {lightboxPhoto ? (
               <Image

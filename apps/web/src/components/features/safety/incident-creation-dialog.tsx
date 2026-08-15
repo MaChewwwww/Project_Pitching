@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import * as React from "react";
 import Image from "next/image";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,6 +26,17 @@ import {
 import { api, toDisplayError } from "@/lib/api/client";
 import type { Page } from "@/lib/api/public-types";
 import type { EmergencyEventOut } from "@/lib/api/safety-types";
+import type { LatLng, PointResolution } from "@/components/features/registry/location-picker";
+
+const LocationPicker = dynamic(
+  () => import("@/components/features/registry/location-picker"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-44 w-full animate-pulse rounded-xl bg-neutral-100" />
+    ),
+  },
+);
 
 const SAN_JOSE_AREAS = [
   "Area 1",
@@ -67,6 +79,10 @@ export function IncidentCreationDialog({ open, onOpenChange }: IncidentCreationD
   const [locationNote, setLocationNote] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [eventId, setEventId] = React.useState<string>("none");
+  const [location, setLocation] = React.useState<LatLng | null>({
+    lat: 14.7415,
+    lng: 121.1315,
+  });
   const [photo, setPhoto] = React.useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = React.useState<string | null>(null);
 
@@ -86,8 +102,26 @@ export function IncidentCreationDialog({ open, onOpenChange }: IncidentCreationD
     setLocationNote("");
     setDescription("");
     setEventId("none");
+    setLocation({
+      lat: 14.7415,
+      lng: 121.1315,
+    });
     setPhoto(null);
     setPhotoPreview(null);
+  };
+
+  const handleAreaChange = (area: string) => {
+    setSelectedArea(area);
+    if (AREA_APPROX_COORDS[area]) {
+      const [lat, lng] = AREA_APPROX_COORDS[area];
+      setLocation({ lat, lng });
+    }
+  };
+
+  const handleLocationResolve = (resolution: PointResolution) => {
+    if (resolution.area_name && SAN_JOSE_AREAS.includes(resolution.area_name)) {
+      setSelectedArea(resolution.area_name);
+    }
   };
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,12 +137,8 @@ export function IncidentCreationDialog({ open, onOpenChange }: IncidentCreationD
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      let lat: number | null = null;
-      let lng: number | null = null;
-
-      if (selectedArea && AREA_APPROX_COORDS[selectedArea]) {
-        [lat, lng] = AREA_APPROX_COORDS[selectedArea];
-      }
+      const lat = location?.lat ?? null;
+      const lng = location?.lng ?? null;
 
       const note = locationNote.trim()
         ? selectedArea ? `[${selectedArea}] ${locationNote.trim()}` : locationNote.trim()
@@ -157,21 +187,34 @@ export function IncidentCreationDialog({ open, onOpenChange }: IncidentCreationD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl p-0 overflow-hidden bg-white text-slate-900">
-        <DialogHeader className="border-b border-neutral-100 bg-emerald-950 p-5 sm:p-6 text-white shrink-0">
-          <div className="flex items-center gap-2 text-[10.5px] font-bold tracking-widest text-emerald-300 uppercase">
+      <DialogContent showCloseButton={false} className="max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-white text-slate-900 rounded-2xl shadow-2xl">
+        <DialogHeader className="relative border-b border-neutral-100 bg-emerald-950 p-5 sm:p-6 text-white shrink-0">
+          {/* High-contrast close button */}
+          <button
+            type="button"
+            onClick={() => {
+              resetForm();
+              onOpenChange(false);
+            }}
+            className="absolute top-4 right-4 flex size-7 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer border border-white/20 shadow-md"
+            title="Close dialog"
+          >
+            <X className="size-4 text-white" />
+          </button>
+
+          <div className="flex items-center gap-2 text-[10.5px] font-bold tracking-widest text-emerald-300 uppercase pr-8">
             <ShieldAlert className="size-4 text-emerald-400" />
             Field Incident Logging
           </div>
-          <DialogTitle className="mt-1 text-xl font-black text-white">
+          <DialogTitle className="mt-1 text-xl font-black text-white pr-8">
             Report Hazard / Incident
           </DialogTitle>
-          <DialogDescription className="text-xs text-emerald-200/80">
+          <DialogDescription className="text-xs text-emerald-200/80 pr-8">
             Document a verified community hazard, road blockage, or infrastructure disruption.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 flex flex-col gap-4 text-xs">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-xs">
           {/* Incident Type & Area */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
@@ -198,7 +241,7 @@ export function IncidentCreationDialog({ open, onOpenChange }: IncidentCreationD
                 <MapPin className="size-3.5 text-neutral-500" />
                 Barangay Area <span className="text-rose-500">*</span>
               </label>
-              <Select value={selectedArea} onValueChange={setSelectedArea}>
+              <Select value={selectedArea} onValueChange={handleAreaChange}>
                 <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900">
                   <SelectValue />
                 </SelectTrigger>
@@ -262,6 +305,21 @@ export function IncidentCreationDialog({ open, onOpenChange }: IncidentCreationD
             />
           </div>
 
+          {/* Interactive Map Pinning */}
+          <div className="flex flex-col gap-1.5 border-t border-neutral-200/80 pt-3">
+            <label className="font-bold text-neutral-800 flex items-center gap-1.5">
+              <MapPin className="size-3.5 text-emerald-700" />
+              Map Pinning
+            </label>
+            <LocationPicker
+              value={location}
+              onChange={setLocation}
+              onResolve={handleLocationResolve}
+              caption="Drag the pin, or tap the map, to mark the exact hazard location."
+              className="h-44 w-full"
+            />
+          </div>
+
           {/* Photo Attachment */}
           <div className="flex flex-col gap-1.5 border-t border-neutral-100 pt-3">
             <label className="font-bold text-neutral-800 flex items-center gap-1.5">
@@ -312,7 +370,7 @@ export function IncidentCreationDialog({ open, onOpenChange }: IncidentCreationD
             )}
           </div>
 
-          <DialogFooter className="mt-2 flex items-center justify-end gap-2 border-t border-neutral-100 pt-3">
+          <DialogFooter className="mt-2 flex items-center justify-end gap-2 border-t border-neutral-100 pt-3 shrink-0">
             <Button
               type="button"
               variant="outline"

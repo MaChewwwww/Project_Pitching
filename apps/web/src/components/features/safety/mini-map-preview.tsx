@@ -3,7 +3,6 @@
 import * as React from "react";
 import L from "leaflet";
 import { MapContainer, Marker, TileLayer } from "react-leaflet";
-import { Navigation } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 
 import { DARK_TILE_ATTRIBUTION, DARK_TILE_URL } from "@/lib/map";
@@ -47,7 +46,6 @@ export function MiniMapPreview({
   className = "h-48 w-full",
 }: MiniMapPreviewProps) {
   const icon = React.useMemo(() => createMiniMarkerIcon(label, tone), [label, tone]);
-  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
 
   return (
     <div className={`relative overflow-hidden rounded-xl border border-slate-800 bg-slate-950 ${className}`}>
@@ -67,19 +65,6 @@ export function MiniMapPreview({
         <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} />
         <Marker position={[latitude, longitude]} icon={icon} />
       </MapContainer>
-
-      {/* Floating Directions Action */}
-      <div className="absolute top-2.5 right-2.5 z-[1000]">
-        <a
-          href={directionsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900/90 px-2.5 py-1 text-[11px] font-bold text-white shadow-md backdrop-blur-xs border border-slate-700 hover:bg-slate-800 transition-colors"
-        >
-          <Navigation className="size-3 text-emerald-400" />
-          Directions
-        </a>
-      </div>
 
       {/* Coordinate Stamp */}
       <div className="absolute bottom-2 left-2.5 z-[1000] rounded-md bg-slate-950/80 px-2 py-0.5 text-[10px] font-medium text-slate-400 backdrop-blur-xs border border-slate-800/80 tabular-nums">

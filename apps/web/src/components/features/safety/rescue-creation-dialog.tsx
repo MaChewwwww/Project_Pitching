@@ -1,8 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import * as React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { LifeBuoy, MapPin, Phone, User, Users } from "lucide-react";
+import { LifeBuoy, MapPin, Phone, User, Users, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/common/button";
@@ -22,6 +23,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api, toDisplayError } from "@/lib/api/client";
+import type { LatLng, PointResolution } from "@/components/features/registry/location-picker";
+
+const LocationPicker = dynamic(
+  () => import("@/components/features/registry/location-picker"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-44 w-full animate-pulse rounded-xl bg-neutral-100" />
+    ),
+  },
+);
 
 const SAN_JOSE_AREAS = [
   "Area 1",
@@ -55,9 +67,10 @@ export function RescueCreationDialog({ open, onOpenChange }: RescueCreationDialo
   const [locationNote, setLocationNote] = React.useState("");
   const [peopleCount, setPeopleCount] = React.useState<number>(1);
   const [description, setDescription] = React.useState("");
-  const [useExactCoords, setUseExactCoords] = React.useState(false);
-  const [latitude, setLatitude] = React.useState<string>("");
-  const [longitude, setLongitude] = React.useState<string>("");
+  const [location, setLocation] = React.useState<LatLng | null>({
+    lat: 14.7415,
+    lng: 121.1315,
+  });
 
   const resetForm = () => {
     setRequesterName("");
@@ -66,22 +79,30 @@ export function RescueCreationDialog({ open, onOpenChange }: RescueCreationDialo
     setLocationNote("");
     setPeopleCount(1);
     setDescription("");
-    setUseExactCoords(false);
-    setLatitude("");
-    setLongitude("");
+    setLocation({
+      lat: 14.7415,
+      lng: 121.1315,
+    });
+  };
+
+  const handleAreaChange = (area: string) => {
+    setSelectedArea(area);
+    if (AREA_APPROX_COORDS[area]) {
+      const [lat, lng] = AREA_APPROX_COORDS[area];
+      setLocation({ lat, lng });
+    }
+  };
+
+  const handleLocationResolve = (resolution: PointResolution) => {
+    if (resolution.area_name && SAN_JOSE_AREAS.includes(resolution.area_name)) {
+      setSelectedArea(resolution.area_name);
+    }
   };
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      let lat: number | null = null;
-      let lng: number | null = null;
-
-      if (useExactCoords && latitude && longitude) {
-        lat = parseFloat(latitude);
-        lng = parseFloat(longitude);
-      } else if (selectedArea && AREA_APPROX_COORDS[selectedArea]) {
-        [lat, lng] = AREA_APPROX_COORDS[selectedArea];
-      }
+      const lat = location?.lat ?? null;
+      const lng = location?.lng ?? null;
 
       const note = locationNote.trim()
         ? selectedArea ? `[${selectedArea}] ${locationNote.trim()}` : locationNote.trim()
@@ -125,21 +146,34 @@ export function RescueCreationDialog({ open, onOpenChange }: RescueCreationDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl p-0 overflow-hidden bg-white text-slate-900">
-        <DialogHeader className="border-b border-neutral-100 bg-emerald-950 p-5 sm:p-6 text-white shrink-0">
-          <div className="flex items-center gap-2 text-[10.5px] font-bold tracking-widest text-emerald-300 uppercase">
+      <DialogContent showCloseButton={false} className="max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-white text-slate-900 rounded-2xl shadow-2xl">
+        <DialogHeader className="relative border-b border-neutral-100 bg-emerald-950 p-5 sm:p-6 text-white shrink-0">
+          {/* High-contrast close button */}
+          <button
+            type="button"
+            onClick={() => {
+              resetForm();
+              onOpenChange(false);
+            }}
+            className="absolute top-4 right-4 flex size-7 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer border border-white/20 shadow-md"
+            title="Close dialog"
+          >
+            <X className="size-4 text-white" />
+          </button>
+
+          <div className="flex items-center gap-2 text-[10.5px] font-bold tracking-widest text-emerald-300 uppercase pr-8">
             <LifeBuoy className="size-4 text-emerald-400" />
             Intake Operations
           </div>
-          <DialogTitle className="mt-1 text-xl font-black text-white">
+          <DialogTitle className="mt-1 text-xl font-black text-white pr-8">
             Record Rescue Request
           </DialogTitle>
-          <DialogDescription className="text-xs text-emerald-200/80">
+          <DialogDescription className="text-xs text-emerald-200/80 pr-8">
             Log an incoming telephone call or walk-in report from a resident needing immediate evacuation.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 flex flex-col gap-4 text-xs">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-xs">
           {/* Requester Name & Contact Number */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
@@ -179,7 +213,7 @@ export function RescueCreationDialog({ open, onOpenChange }: RescueCreationDialo
                 <MapPin className="size-3.5 text-neutral-500" />
                 Barangay Area <span className="text-rose-500">*</span>
               </label>
-              <Select value={selectedArea} onValueChange={setSelectedArea}>
+              <Select value={selectedArea} onValueChange={handleAreaChange}>
                 <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900">
                   <SelectValue />
                 </SelectTrigger>
@@ -238,47 +272,22 @@ export function RescueCreationDialog({ open, onOpenChange }: RescueCreationDialo
             />
           </div>
 
-          {/* Optional Exact Coordinates Toggle */}
-          <div className="border-t border-neutral-200/80 pt-3">
-            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-neutral-700">
-              <input
-                type="checkbox"
-                checked={useExactCoords}
-                onChange={(e) => setUseExactCoords(e.target.checked)}
-                className="size-3.5 rounded border-neutral-300 text-emerald-600 accent-emerald-600"
-              />
-              <span>Specify exact latitude & longitude coordinates</span>
+          {/* Interactive Map Pinning */}
+          <div className="flex flex-col gap-1.5 border-t border-neutral-200/80 pt-3">
+            <label className="font-bold text-neutral-800 flex items-center gap-1.5">
+              <MapPin className="size-3.5 text-emerald-700" />
+              Map Pinning
             </label>
-
-            {useExactCoords ? (
-              <div className="mt-2 grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold text-neutral-500">Latitude</label>
-                  <input
-                    type="number"
-                    step="0.000001"
-                    placeholder="14.7415"
-                    value={latitude}
-                    onChange={(e) => setLatitude(e.target.value)}
-                    className="mt-0.5 h-8 w-full rounded-md border border-neutral-300 px-2 text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-neutral-500">Longitude</label>
-                  <input
-                    type="number"
-                    step="0.000001"
-                    placeholder="121.1315"
-                    value={longitude}
-                    onChange={(e) => setLongitude(e.target.value)}
-                    className="mt-0.5 h-8 w-full rounded-md border border-neutral-300 px-2 text-xs font-mono"
-                  />
-                </div>
-              </div>
-            ) : null}
+            <LocationPicker
+              value={location}
+              onChange={setLocation}
+              onResolve={handleLocationResolve}
+              caption="Drag the pin, or tap the map, to mark the exact rescue location."
+              className="h-44 w-full"
+            />
           </div>
 
-          <DialogFooter className="mt-2 flex items-center justify-end gap-2 border-t border-neutral-100 pt-3">
+          <DialogFooter className="mt-2 flex items-center justify-end gap-2 border-t border-neutral-100 pt-3 shrink-0">
             <Button
               type="button"
               variant="outline"
