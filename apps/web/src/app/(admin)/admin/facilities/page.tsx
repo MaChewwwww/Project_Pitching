@@ -94,10 +94,10 @@ function LayerCheckbox({
   label: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-emerald-100/90 hover:text-white transition-colors">
+    <label className="flex cursor-pointer items-center gap-2.5 text-xs font-medium text-slate-300 hover:text-white transition-colors">
       <input
         type="checkbox"
-        className="size-3.5 rounded border-emerald-700 bg-emerald-950 text-emerald-600 accent-emerald-500 cursor-pointer"
+        className="size-3.5 rounded border-slate-600 bg-slate-800 text-emerald-500 accent-emerald-500 cursor-pointer"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />
@@ -480,12 +480,12 @@ export default function AdminFacilitiesPage() {
         {/* Column 2: Filter Sidebar */}
         <div className="flex w-full flex-col gap-3 lg:w-72 lg:shrink-0">
           {/* Map Layers */}
-          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
-            <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
+          <div className="w-full rounded-2xl border border-slate-800 bg-slate-900/95 p-4 text-white shadow-xl backdrop-blur-md">
+            <p className="mb-3 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-100">
               <Layers className="size-3.5 text-emerald-400" aria-hidden />
               GIS Overlays
             </p>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2.5">
               <LayerCheckbox
                 checked={showHazard}
                 onChange={setShowHazard}
@@ -500,9 +500,9 @@ export default function AdminFacilitiesPage() {
           </div>
 
           {/* Filters Card */}
-          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
+          <div className="w-full rounded-2xl border border-slate-800 bg-slate-900/95 p-4 text-white shadow-xl backdrop-blur-md">
             <div className="mb-3 flex items-center justify-between h-6">
-              <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
+              <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-100">
                 <Filter className="size-3.5 text-emerald-400" aria-hidden />
                 Facility Filters
               </p>
@@ -516,7 +516,7 @@ export default function AdminFacilitiesPage() {
                     setAreaFilter("all");
                     setStatusFilter("active");
                   }}
-                  className="inline-flex items-center gap-1 rounded bg-emerald-900/80 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-700/60 hover:bg-emerald-800 hover:text-white transition-all shadow-2xs cursor-pointer"
+                  className="inline-flex items-center gap-1 rounded bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-300 border border-slate-700 hover:bg-slate-700 hover:text-white transition-all shadow-2xs cursor-pointer"
                 >
                   <RotateCcw className="size-2.5" />
                   Reset
@@ -526,11 +526,11 @@ export default function AdminFacilitiesPage() {
 
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-emerald-200/90">
+                <label className="text-[11px] font-semibold text-slate-300">
                   Facility Type
                 </label>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
+                  <SelectTrigger className="h-9 w-full rounded-lg border-slate-700 bg-slate-800 text-xs font-semibold text-white shadow-xs focus:ring-emerald-500">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -545,11 +545,11 @@ export default function AdminFacilitiesPage() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-emerald-200/90">
+                <label className="text-[11px] font-semibold text-slate-300">
                   Assigned Area
                 </label>
                 <Select value={areaFilter} onValueChange={setAreaFilter}>
-                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
+                  <SelectTrigger className="h-9 w-full rounded-lg border-slate-700 bg-slate-800 text-xs font-semibold text-white shadow-xs focus:ring-emerald-500">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -564,11 +564,11 @@ export default function AdminFacilitiesPage() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-emerald-200/90">
+                <label className="text-[11px] font-semibold text-slate-300">
                   Status
                 </label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
+                  <SelectTrigger className="h-9 w-full rounded-lg border-slate-700 bg-slate-800 text-xs font-semibold text-white shadow-xs focus:ring-emerald-500">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -582,16 +582,17 @@ export default function AdminFacilitiesPage() {
           </div>
 
           {/* Spatial Inventory Diagnostics Card */}
-          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-3.5 text-white shadow-xl backdrop-blur-md">
+          <div className="w-full rounded-2xl border border-slate-800 bg-slate-900/95 p-4 text-white shadow-xl backdrop-blur-md">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-bold text-xs text-emerald-300">
+              <span className="font-bold text-xs text-slate-100">
                 Spatial Resolution
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-800 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-200 border border-slate-700">
+                <span className="size-1.5 rounded-full bg-emerald-400" />
                 100% Pinned
               </span>
             </div>
-            <p className="mt-1.5 text-[11px] text-emerald-100/75 leading-relaxed">
+            <p className="mt-2 text-xs text-slate-300 leading-relaxed">
               All {stats.total} facilities are mapped with high-accuracy GPS
               coordinates for dispatch and public map display.
             </p>

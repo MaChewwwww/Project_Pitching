@@ -12,13 +12,10 @@ import {
   ArrowLeft,
   CheckCircle2,
   MapPin,
-  Megaphone,
-  Sparkles,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -181,52 +178,67 @@ export default function EditSirenPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 pb-12">
-      <div>
+    <div className="flex flex-col gap-6 pb-16">
+      {/* Topbar navigation */}
+      <div className="flex items-center justify-between border-b border-slate-200/80 pb-4">
         <Link
           href={`/admin/sirens/${sirenId}`}
           className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 hover:text-emerald-950 transition-colors"
         >
           <ArrowLeft className="size-3.5" />
-          Back to Siren Station Details
+          Back to Siren Details
         </Link>
       </div>
 
-      <AdminPageHeader
-        title={`Edit ${siren.name}`}
-        description="Modify siren station label and adjust tower location via interactive map placement."
-      />
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-black text-slate-900">
+          Edit Early Warning Siren Unit
+        </h1>
+        <p className="text-xs text-slate-500">
+          Update the station name or re-pin the acoustic propagation coordinates on the map.
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="grid grid-cols-1 gap-6 lg:grid-cols-12"
+      >
+        {/* Left Form Column */}
         <div className="flex flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-7">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-3 flex items-center gap-2">
-            <Megaphone className="size-4 text-emerald-700" />
-            Station Configuration
+          <h3 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-3">
+            Siren Station Profile
           </h3>
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="name" className="text-xs font-bold text-slate-800">
-              Siren Unit Name *
+              Siren Station Name / Identifier *
             </Label>
-            <Input id="name" {...register("name")} className="h-10 rounded-xl" />
+            <Input
+              id="name"
+              placeholder="e.g. Area 1 Riverbank Early Warning Station"
+              {...register("name")}
+              className="h-10 text-xs"
+            />
             {errors.name && (
-              <p className="text-xs font-semibold text-rose-600">
+              <p className="text-[11px] font-semibold text-rose-600">
                 {errors.name.message}
               </p>
             )}
           </div>
 
-          <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/80 p-4 flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 font-bold text-xs text-emerald-950">
-                <Sparkles className="size-3.5 text-emerald-600" />
-                Auto-Detected Area Division:
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-2">
+            <span className="text-[10.5px] uppercase font-bold tracking-wider text-slate-500">
+              Assigned Area Division (Auto-Geocoded)
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-slate-900">
+                {autoAreaName || "Auto-detecting Area…"}
               </span>
-              <span className="font-bold text-xs text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded border border-emerald-300">
-                {autoAreaName || "Auto-detecting from map…"}
+              <span className="text-[11px] text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">
+                Auto-assigned
               </span>
             </div>
-            <p className="text-[11px] text-emerald-900/80 leading-relaxed">
+            <p className="text-[11px] text-slate-500">
               Area division is automatically assigned based on the pin location within official Barangay San Jose GIS boundaries.
             </p>
           </div>
@@ -236,14 +248,18 @@ export default function EditSirenPage() {
               type="button"
               variant="outline"
               onClick={() => {
-                if (window.confirm(`Are you sure you want to deactivate ${siren.name}?`)) {
+                if (
+                  window.confirm(
+                    `Delete siren station "${siren.name}"?\n\nThis will remove the unit from active GIS maps while preserving all historical audit logs in the backend.`,
+                  )
+                ) {
                   deleteMutation.mutate();
                 }
               }}
               className="h-10 gap-1.5 border-rose-200 bg-rose-50 text-xs font-bold text-rose-700 hover:bg-rose-100 cursor-pointer"
             >
               <Trash2 className="size-3.5" />
-              Deactivate
+              Delete Siren
             </Button>
 
             <div className="flex items-center gap-3">

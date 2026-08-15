@@ -445,7 +445,7 @@ async def update_area(
 async def list_sirens(
     session: AsyncSession, *, active_only: bool = False
 ) -> list[tuple[Siren, tuple[float, float], str | None]]:
-    rows = await session.execute(
+    stmt = (
         select(
             Siren,
             func.ST_X(Siren.location).label("lon"),
@@ -453,26 +453,18 @@ async def list_sirens(
             Area.name,
         )
         .outerjoin(Area, Siren.area_id == Area.id)
+        .where(Siren.deleted_at.is_(None))
         .order_by(Siren.name)
     )
     if active_only:
-        rows = await session.execute(
-            select(
-                Siren,
-                func.ST_X(Siren.location).label("lon"),
-                func.ST_Y(Siren.location).label("lat"),
-                Area.name,
-            )
-            .outerjoin(Area, Siren.area_id == Area.id)
-            .where(Siren.is_active.is_(True))
-            .order_by(Siren.name)
-        )
+        stmt = stmt.where(Siren.is_active.is_(True))
+    rows = await session.execute(stmt)
     return [(siren, (lon, lat), area_name) for siren, lon, lat, area_name in rows.all()]
 
 
 async def get_siren_or_404(session: AsyncSession, siren_id: uuid.UUID) -> Siren:
     siren = await session.get(Siren, siren_id)
-    if siren is None:
+    if siren is None or siren.deleted_at is not None:
         raise NotFoundError("Siren not found.")
     return siren
 
@@ -625,7 +617,7 @@ async def trigger_all_sirens_drill(
             Area.name.label("area_name"),
         )
         .outerjoin(Area, Area.id == Siren.area_id)
-        .where(Siren.is_active == True)  # noqa: E712
+        .where(Siren.is_active == True, Siren.deleted_at.is_(None))  # noqa: E712
     )
     rows = result.all()
     now = datetime.now(UTC)
@@ -666,7 +658,7 @@ async def silence_all_sirens_drill(
             Area.name.label("area_name"),
         )
         .outerjoin(Area, Area.id == Siren.area_id)
-        .where(Siren.is_active == True)  # noqa: E712
+        .where(Siren.is_active == True, Siren.deleted_at.is_(None))  # noqa: E712
     )
     rows = result.all()
     updated: list[tuple[Siren, tuple[float, float], str | None]] = []
@@ -735,35 +727,19 @@ async def list_siren_audits(
     return audits
 
 
-async def delete_siren(session: AsyncSession, siren_id: uuid.UUID, *, actor_id: uuid.UUID) -> None:
-    siren = await session.get(Siren, siren_id)
-    if siren is None:
-        raise NotFoundError("Siren not found.")
-    await write_audit(
-        session,
-        actor_user_id=actor_id,
-        action="siren.delete",
-        entity_type="siren",
-        entity_id=siren.id,
-    )
-    siren.is_active = False
-    siren.status = "idle"
-    await session.commit()
-
-
-async def reactivate_siren(
+async def deactivate_siren(
     session: AsyncSession, siren_id: uuid.UUID, *, actor_id: uuid.UUID
 ) -> tuple[Siren, tuple[float, float]]:
-    siren = await session.get(Siren, siren_id)
-    if siren is None:
-        raise NotFoundError("Siren not found.")
-    siren.is_active = True
+    siren = await get_siren_or_404(session, siren_id)
+    siren.is_active = False
+    siren.status = "idle"
     await write_audit(
         session,
         actor_user_id=actor_id,
-        action="siren.reactivate",
+        action="siren.deactivate",
         entity_type="siren",
         entity_id=siren.id,
+        changes={"is_active": False, "status": "idle", "name": siren.name},
     )
     await session.commit()
     row = await session.execute(
@@ -771,6 +747,44 @@ async def reactivate_siren(
     )
     lon, lat = row.one()
     return siren, (lon, lat)
+
+
+async def reactivate_siren(
+    session: AsyncSession, siren_id: uuid.UUID, *, actor_id: uuid.UUID
+) -> tuple[Siren, tuple[float, float]]:
+    siren = await get_siren_or_404(session, siren_id)
+    siren.is_active = True
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="siren.reactivate",
+        entity_type="siren",
+        entity_id=siren.id,
+        changes={"is_active": True, "name": siren.name},
+    )
+    await session.commit()
+    row = await session.execute(
+        select(func.ST_X(Siren.location), func.ST_Y(Siren.location)).where(Siren.id == siren.id)
+    )
+    lon, lat = row.one()
+    return siren, (lon, lat)
+
+
+async def delete_siren(session: AsyncSession, siren_id: uuid.UUID, *, actor_id: uuid.UUID) -> None:
+    siren = await get_siren_or_404(session, siren_id)
+    now = datetime.now(UTC)
+    siren.deleted_at = now
+    siren.is_active = False
+    siren.status = "idle"
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="siren.delete",
+        entity_type="siren",
+        entity_id=siren.id,
+        changes={"deleted_at": now.isoformat(), "name": siren.name},
+    )
+    await session.commit()
 
 
 def siren_to_public(siren: Siren, coords: tuple[float, float]) -> PublicSiren:

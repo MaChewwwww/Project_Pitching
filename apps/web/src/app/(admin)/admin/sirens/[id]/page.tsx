@@ -13,6 +13,8 @@ import {
   MapPin,
   Megaphone,
   Pencil,
+  Power,
+  PowerOff,
   Radio,
   Trash2,
   Users,
@@ -130,16 +132,30 @@ export default function SirenDetailPage() {
     },
   });
 
+  const deactivateMutation = useMutation({
+    mutationFn: () => api.post(`/admin/sirens/${sirenId}/deactivate`),
+    onSuccess: () => {
+      sirenAudio.stop();
+      toast.success("Siren unit disabled");
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens", sirenId] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens", sirenId, "audits"] });
+    },
+    onError: (err) => {
+      toast.error(toDisplayError(err).detail || "Could not disable siren");
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: () => api.delete(`/admin/sirens/${sirenId}`),
     onSuccess: () => {
       sirenAudio.stop();
-      toast.success("Siren unit deactivated");
+      toast.success("Siren station deleted");
       queryClient.invalidateQueries({ queryKey: ["admin", "sirens"] });
       router.push("/admin/sirens");
     },
     onError: (err) => {
-      toast.error(toDisplayError(err).detail || "Could not deactivate siren");
+      toast.error(toDisplayError(err).detail || "Could not delete siren");
     },
   });
 
@@ -149,6 +165,10 @@ export default function SirenDetailPage() {
       toast.success("Siren unit reactivated");
       queryClient.invalidateQueries({ queryKey: ["admin", "sirens", sirenId] });
       queryClient.invalidateQueries({ queryKey: ["admin", "sirens"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens", sirenId, "audits"] });
+    },
+    onError: (err) => {
+      toast.error(toDisplayError(err).detail || "Could not reactivate siren");
     },
   });
 
@@ -644,17 +664,49 @@ export default function SirenDetailPage() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  if (window.confirm(`Deactivate siren station ${siren.name}?`)) {
-                    deleteMutation.mutate();
+                  if (
+                    window.confirm(
+                      `Disable siren station "${siren.name}"?\n\nThe unit will be placed into an inactive standby state.`,
+                    )
+                  ) {
+                    deactivateMutation.mutate();
                   }
                 }}
-                disabled={deleteMutation.isPending}
-                className="w-full justify-start gap-2 text-xs font-semibold text-rose-700 border-rose-200 bg-rose-50 hover:bg-rose-100"
+                disabled={deactivateMutation.isPending}
+                className="w-full justify-start gap-2 text-xs font-semibold text-slate-700 border-slate-200 bg-slate-50 hover:bg-slate-100 hover:text-amber-800 cursor-pointer"
               >
-                <Trash2 className="size-3.5" />
-                Deactivate Siren Station
+                <PowerOff className="size-3.5 text-slate-500" />
+                Disable Siren Station
               </Button>
-            ) : null}
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => reactivateMutation.mutate()}
+                disabled={reactivateMutation.isPending}
+                className="w-full justify-start gap-2 text-xs font-bold text-emerald-800 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 cursor-pointer"
+              >
+                <Power className="size-3.5 text-emerald-600" />
+                Reactivate Siren Station
+              </Button>
+            )}
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (
+                  window.confirm(
+                    `Delete siren station "${siren.name}"?\n\nThis will remove the unit from active GIS maps and operational monitoring while preserving all historical audit logs and simulation records.`,
+                  )
+                ) {
+                  deleteMutation.mutate();
+                }
+              }}
+              disabled={deleteMutation.isPending}
+              className="w-full justify-start gap-2 text-xs font-semibold text-rose-700 border-rose-200 bg-rose-50 hover:bg-rose-100 cursor-pointer"
+            >
+              <Trash2 className="size-3.5" />
+              Delete Siren Station
+            </Button>
           </div>
         </div>
       </div>

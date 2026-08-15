@@ -3,7 +3,14 @@
 import * as React from "react";
 import type L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  TileLayer,
+  ZoomControl,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
 import { LocateFixed } from "lucide-react";
 
 import { Button } from "@/components/common/button";
@@ -23,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 // Default-icon fixup, shared with the hazard map. Import for the side effect.
 import "@/lib/leaflet-setup";
 
@@ -162,8 +170,10 @@ export default function LocationPicker({
           zoom={value ? 16 : BARANGAY_VIEW.zoom}
           className="h-full w-full"
           scrollWheelZoom={false}
+          zoomControl={false}
         >
           <TileLayer attribution={OSM_TILE_ATTRIBUTION} url={OSM_TILE_URL} />
+          <ZoomControl position="topright" />
           {!readOnly ? <ClickToPlace onChange={place} /> : null}
           {!readOnly ? <FlyToFix fix={geo.fix} /> : null}
           {value ? (
@@ -186,30 +196,34 @@ export default function LocationPicker({
             />
           ) : null}
         </MapContainer>
+
+        {/* Floating Top-Left "Use My Current Location" Button */}
+        {!readOnly && geo.isSupported ? (
+          <div className="absolute top-2.5 left-2.5 z-[1000] pointer-events-auto">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                geo.locate();
+              }}
+              disabled={geo.status === "locating"}
+              title="Locate my GPS position"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300/90 bg-white/95 px-2.5 py-1.5 text-xs font-bold text-slate-800 shadow-md backdrop-blur-md transition-all hover:bg-white hover:text-emerald-700 hover:border-emerald-400 active:scale-95 disabled:opacity-60 cursor-pointer"
+            >
+              <LocateFixed
+                className={cn(
+                  "size-3.5 text-emerald-600",
+                  geo.status === "locating" && "animate-spin text-emerald-700",
+                )}
+              />
+              {geo.status === "locating" ? "Locating GPS…" : "Use My Current Location"}
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {!readOnly ? (
         <div className="mt-2 flex flex-col-reverse gap-1.5 sm:flex-row-reverse sm:items-center sm:justify-between">
-          {geo.isSecureContext && geo.isSupported ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="sm:ml-auto"
-              disabled={geo.status === "locating"}
-              onClick={geo.locate}
-            >
-              <LocateFixed aria-hidden className="size-3.5" />
-              {geo.status === "locating" ? "Locating…" : "Use My Current Location"}
-            </Button>
-          ) : (
-            <p className="text-caption text-neutral-500">
-              {geo.isSecureContext
-                ? "This browser can't get your location — drag the pin instead."
-                : "Location access needs a secure (https) connection — drag the pin instead."}
-            </p>
-          )}
-
           <p className="text-caption text-neutral-500">{caption}</p>
         </div>
       ) : (

@@ -251,10 +251,12 @@ Visual siren simulation & alert unit point locations.
 | `status`            | TEXT                  | NOT NULL DEFAULT 'idle' CHECK | `idle` · `sounding` · `testing`               |
 | `last_triggered_at` | TIMESTAMPTZ           |                               | Timestamp of last siren activation simulation |
 | `is_active`         | BOOLEAN               | NOT NULL DEFAULT true         |                                               |
+| `deleted_at`        | TIMESTAMPTZ           |                               | Soft-delete timestamp (NFR-DAT-004)           |
 
 ```sql
 CREATE INDEX idx_siren_location ON siren USING GIST(location);
 CREATE INDEX idx_siren_area ON siren(area_id);
+CREATE INDEX idx_siren_deleted_at ON siren(deleted_at) WHERE deleted_at IS NULL;
 ```
 
 ### `hotline` (FR-SYS-014)

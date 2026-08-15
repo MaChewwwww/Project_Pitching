@@ -17,7 +17,7 @@ from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Index, Integer, Str
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from src.db.base import Base, SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMixin
 
 FLOOD_EXPOSURE_LEVELS = ("low", "medium", "high")
 
@@ -129,7 +129,7 @@ class Hotline(UUIDPrimaryKeyMixin, Base):
 SIREN_STATUSES = ("idle", "sounding", "testing")
 
 
-class Siren(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class Siren(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
     """Manual-trigger siren unit (FR-MAP-014).
 
     The map shows siren pins to help residents understand which units would

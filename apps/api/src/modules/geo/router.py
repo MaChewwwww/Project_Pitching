@@ -381,16 +381,18 @@ async def admin_silence_siren(
     )
 
 
-@admin_router.delete(
-    "/sirens/{siren_id}",
+@admin_router.post(
+    "/sirens/{siren_id}/deactivate",
     dependencies=[Depends(require_role("admin"))],
-    summary="Remove a siren",
+    summary="Deactivate/disable a siren unit",
 )
-async def admin_delete_siren(
+async def admin_deactivate_siren(
     siren_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
-) -> dict[str, bool]:
-    await service.delete_siren(session, siren_id, actor_id=user.id)
-    return {"ok": True, "deactivated": True}
+) -> SirenOut:
+    siren, coords = await service.deactivate_siren(session, siren_id, actor_id=user.id)
+    return service.siren_to_out(
+        siren, coords, await service.siren_area_name(session, siren.area_id)
+    )
 
 
 @admin_router.post(
@@ -405,3 +407,15 @@ async def admin_reactivate_siren(
     return service.siren_to_out(
         siren, coords, await service.siren_area_name(session, siren.area_id)
     )
+
+
+@admin_router.delete(
+    "/sirens/{siren_id}",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Soft-delete a siren unit",
+)
+async def admin_delete_siren(
+    siren_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> dict[str, bool]:
+    await service.delete_siren(session, siren_id, actor_id=user.id)
+    return {"ok": True, "deleted": True}

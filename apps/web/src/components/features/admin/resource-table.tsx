@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/common/button";
-import { EmptyState } from "@/components/common/empty-state";
 import { ErrorState } from "@/components/common/error-state";
 import { ListSkeleton } from "@/components/common/skeletons";
 import {
@@ -240,6 +239,7 @@ export function ResourceTable<T extends object>({
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const currentPage = Math.min(page, pages);
   const pagedRows = rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const totalColSpan = columns.length + (rowActions ? 1 : 0);
 
   if (isLoading) return <ListSkeleton rows={5} />;
   if (isError) {
@@ -249,13 +249,6 @@ export function ResourceTable<T extends object>({
         onRetry={onRetry}
         description="Check your connection and try again."
       />
-    );
-  }
-  if (!data || data.length === 0) {
-    return (
-      <section className="border-primary-200/80 shadow-sm-card rounded-[14px] border bg-white">
-        <EmptyState icon={Inbox} title={emptyTitle} description={emptyDescription} />
-      </section>
     );
   }
 
@@ -387,7 +380,7 @@ export function ResourceTable<T extends object>({
                           : "bg-neutral-100 text-neutral-600",
                       )}
                     >
-                      {filterValueCounts.__all__ ?? data.length}
+                      {filterValueCounts.__all__ ?? (data?.length ?? 0)}
                     </span>
                   </SelectItem>
                   {(customFilterChoices.length
@@ -434,63 +427,91 @@ export function ResourceTable<T extends object>({
       </div>
 
       <div className="space-y-3 bg-neutral-50/60 p-3 md:hidden">
-        {pagedRows.map((row) => {
-          const firstCol = columns[0];
-          const remainingCols = columns.slice(1);
-          return (
-            <article
-              key={getRowKey(row)}
-              onClick={() => onRowSelect?.(row)}
-              className={cn(
-                "relative space-y-3 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-4 shadow-2xs transition-all",
-                onRowSelect && "cursor-pointer",
-                selectedRowKey === getRowKey(row) && "ring-2 ring-emerald-500",
+        {pagedRows.length > 0 ? (
+          pagedRows.map((row) => {
+            const firstCol = columns[0];
+            const remainingCols = columns.slice(1);
+            return (
+              <article
+                key={getRowKey(row)}
+                onClick={() => onRowSelect?.(row)}
+                className={cn(
+                  "relative space-y-3 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-4 shadow-2xs transition-all",
+                  onRowSelect && "cursor-pointer",
+                  selectedRowKey === getRowKey(row) && "ring-2 ring-emerald-500",
+                )}
+              >
+                {/* Subtle top accent bar */}
+                <div className="absolute top-0 right-0 left-0 h-0.5 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-400" />
+
+                {/* Card Header: Primary Identifier Column */}
+                {firstCol ? (
+                  <div className="min-w-0 pr-2">
+                    <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                      {firstCol.header}
+                    </span>
+                    <h3 className="mt-0.5 text-sm leading-snug font-bold break-words text-neutral-900">
+                      {firstCol.render
+                        ? firstCol.render(row)
+                        : plainValue((row as Record<string, unknown>)[firstCol.key])}
+                    </h3>
+                  </div>
+                ) : null}
+
+                {/* Remaining attributes in 2-column key-value grid */}
+                {remainingCols.length > 0 ? (
+                  <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-neutral-100 pt-2.5">
+                    {remainingCols.map((column) => (
+                      <div key={column.key} className="min-w-0">
+                        <dt className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                          {column.header}
+                        </dt>
+                        <dd className="mt-0.5 text-xs font-semibold break-words text-neutral-700">
+                          {column.render
+                            ? column.render(row)
+                            : plainValue((row as Record<string, unknown>)[column.key])}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : null}
+
+                {/* Card Action Footer */}
+                {rowActions ? (
+                  <div className="flex w-full flex-wrap items-center justify-center gap-2 border-t border-neutral-100 pt-2.5">
+                    {rowActions(row)}
+                  </div>
+                ) : null}
+              </article>
+            );
+          })
+        ) : (
+          <div className="rounded-xl border border-dashed border-neutral-200 bg-white p-8 text-center">
+            <div className="flex flex-col items-center justify-center gap-2 text-center text-slate-500">
+              <div className="grid size-10 place-items-center rounded-full bg-slate-100 text-slate-400">
+                {isFiltered ? <SearchX className="size-5" /> : <Inbox className="size-5" />}
+              </div>
+              <p className="text-sm font-bold text-slate-800">
+                {isFiltered ? "No matching records" : emptyTitle}
+              </p>
+              <p className="text-xs text-slate-500">
+                {isFiltered
+                  ? "No row matches the current search and filter criteria."
+                  : emptyDescription || "No records have been added to this list yet."}
+              </p>
+              {isFiltered && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={reset}
+                  className="mt-2 text-xs font-semibold"
+                >
+                  Clear search and filters
+                </Button>
               )}
-            >
-              {/* Subtle top accent bar */}
-              <div className="absolute top-0 right-0 left-0 h-0.5 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-400" />
-
-              {/* Card Header: Primary Identifier Column */}
-              {firstCol ? (
-                <div className="min-w-0 pr-2">
-                  <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
-                    {firstCol.header}
-                  </span>
-                  <h3 className="mt-0.5 text-sm leading-snug font-bold break-words text-neutral-900">
-                    {firstCol.render
-                      ? firstCol.render(row)
-                      : plainValue((row as Record<string, unknown>)[firstCol.key])}
-                  </h3>
-                </div>
-              ) : null}
-
-              {/* Remaining attributes in 2-column key-value grid */}
-              {remainingCols.length > 0 ? (
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-neutral-100 pt-2.5">
-                  {remainingCols.map((column) => (
-                    <div key={column.key} className="min-w-0">
-                      <dt className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
-                        {column.header}
-                      </dt>
-                      <dd className="mt-0.5 text-xs font-semibold break-words text-neutral-700">
-                        {column.render
-                          ? column.render(row)
-                          : plainValue((row as Record<string, unknown>)[column.key])}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              ) : null}
-
-              {/* Card Action Footer */}
-              {rowActions ? (
-                <div className="flex w-full flex-wrap items-center justify-center gap-2 border-t border-neutral-100 pt-2.5">
-                  {rowActions(row)}
-                </div>
-              ) : null}
-            </article>
-          );
-        })}
+            </div>
+          </div>
+        )}
       </div>
 
       <Table className="hidden md:table">
@@ -555,82 +576,100 @@ export function ResourceTable<T extends object>({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {pagedRows.map((row, index) => (
-            <TableRow
-              key={getRowKey(row)}
-              onClick={() => onRowSelect?.(row)}
-              className={cn(
-                "border-primary-100/80 hover:bg-primary-50/80 transition-colors",
-                index % 2 === 1 && "bg-emerald-50/35",
-                onRowSelect && "cursor-pointer",
-                selectedRowKey === getRowKey(row) && "bg-emerald-100/70",
-              )}
-            >
-              {columns.map((column) => (
-                <TableCell
-                  key={column.key}
-                  className={cn("px-4 py-3 text-neutral-700", column.className)}
-                >
-                  {column.render
-                    ? column.render(row)
-                    : plainValue((row as Record<string, unknown>)[column.key])}
-                </TableCell>
-              ))}
-              {rowActions ? (
-                <TableCell className="px-4 py-3 text-right">
-                  <div className="flex justify-end gap-2">{rowActions(row)}</div>
-                </TableCell>
-              ) : null}
+          {pagedRows.length > 0 ? (
+            pagedRows.map((row, index) => (
+              <TableRow
+                key={getRowKey(row)}
+                onClick={() => onRowSelect?.(row)}
+                className={cn(
+                  "border-primary-100/80 hover:bg-primary-50/80 transition-colors",
+                  index % 2 === 1 && "bg-emerald-50/35",
+                  onRowSelect && "cursor-pointer",
+                  selectedRowKey === getRowKey(row) && "bg-emerald-100/70",
+                )}
+              >
+                {columns.map((column) => (
+                  <TableCell
+                    key={column.key}
+                    className={cn("px-4 py-3 text-neutral-700", column.className)}
+                  >
+                    {column.render
+                      ? column.render(row)
+                      : plainValue((row as Record<string, unknown>)[column.key])}
+                  </TableCell>
+                ))}
+                {rowActions ? (
+                  <TableCell className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-2">{rowActions(row)}</div>
+                  </TableCell>
+                ) : null}
+              </TableRow>
+            ))
+          ) : (
+            <TableRow className="hover:bg-transparent">
+              <TableCell
+                colSpan={totalColSpan}
+                className="h-44 text-center py-12"
+              >
+                <div className="flex flex-col items-center justify-center gap-2 text-center text-slate-500">
+                  <div className="grid size-10 place-items-center rounded-full bg-slate-100 text-slate-400">
+                    {isFiltered ? <SearchX className="size-5" /> : <Inbox className="size-5" />}
+                  </div>
+                  <p className="text-sm font-bold text-slate-800">
+                    {isFiltered ? "No matching records" : emptyTitle}
+                  </p>
+                  <p className="max-w-sm text-xs text-slate-500">
+                    {isFiltered
+                      ? "No row matches the current search and filter criteria."
+                      : emptyDescription || "No records have been added to this list yet."}
+                  </p>
+                  {isFiltered && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={reset}
+                      className="mt-2 text-xs font-semibold"
+                    >
+                      Clear search and filters
+                    </Button>
+                  )}
+                </div>
+              </TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
 
-      {rows.length === 0 ? (
-        <EmptyState
-          size="sm"
-          icon={SearchX}
-          title="No matching records"
-          description="No row matches the current search and filter."
-          action={
-            <Button size="sm" variant="outline" onClick={reset}>
-              Clear search and filters
-            </Button>
-          }
-        />
-      ) : null}
-
-      {rows.length > 0 ? (
-        <footer className="border-primary-100 bg-primary-50/60 text-primary-900/75 flex flex-wrap items-center justify-between gap-3 border-t px-3 py-2.5 text-sm sm:px-4">
-          <span className="tabular-nums">
-            Showing {(currentPage - 1) * PAGE_SIZE + 1}–
-            {Math.min(currentPage * PAGE_SIZE, rows.length)} of {rows.length}
+      <footer className="border-primary-100 bg-primary-50/60 text-primary-900/75 flex flex-wrap items-center justify-between gap-3 border-t px-3 py-2.5 text-sm sm:px-4">
+        <span className="tabular-nums text-xs sm:text-sm">
+          {rows.length === 0
+            ? "Showing 0–0 of 0"
+            : `Showing ${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, rows.length)} of ${rows.length}`}
+        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={currentPage <= 1 || rows.length === 0}
+            onClick={() => setPage((value) => value - 1)}
+          >
+            <ChevronLeft aria-hidden className="size-4" />
+            Previous
+          </Button>
+          <span className="tabular-nums text-xs sm:text-sm">
+            Page {rows.length === 0 ? 1 : currentPage} of {pages}
           </span>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={currentPage <= 1}
-              onClick={() => setPage((value) => value - 1)}
-            >
-              <ChevronLeft aria-hidden className="size-4" />
-              Previous
-            </Button>
-            <span className="tabular-nums">
-              Page {currentPage} of {pages}
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={currentPage >= pages}
-              onClick={() => setPage((value) => value + 1)}
-            >
-              Next
-              <ChevronRight aria-hidden className="size-4" />
-            </Button>
-          </div>
-        </footer>
-      ) : null}
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={currentPage >= pages || rows.length === 0}
+            onClick={() => setPage((value) => value + 1)}
+          >
+            Next
+            <ChevronRight aria-hidden className="size-4" />
+          </Button>
+        </div>
+      </footer>
     </section>
   );
 }

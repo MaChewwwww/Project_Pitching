@@ -132,7 +132,7 @@ export function DeploySirenDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-3 flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-4 flex flex-col gap-4">
           {/* Station Name Input */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="siren_name" className="text-xs font-bold text-slate-800">
@@ -142,7 +142,7 @@ export function DeploySirenDialog({
               id="siren_name"
               placeholder="e.g. Area 1 Riverbank Early Warning Station"
               {...register("name")}
-              className="h-9 text-xs"
+              className="h-10 rounded-xl border-slate-200 bg-white text-xs font-semibold text-slate-900 shadow-2xs placeholder:text-slate-400 focus-visible:border-emerald-600 focus-visible:ring-1 focus-visible:ring-emerald-600"
             />
             {errors.name && (
               <p className="text-[11px] font-semibold text-rose-600">
@@ -151,57 +151,75 @@ export function DeploySirenDialog({
             )}
           </div>
 
-          {/* Interactive Map Pinning (Strictly click to place) */}
-          <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
+          {/* Interactive Map Pinning & Integrated Telemetry */}
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-2xs">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                 <MapPin className="size-3.5 text-emerald-700" />
                 Place Siren Tower Location *
               </span>
-              <span className="text-[11px] font-semibold text-slate-500">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10.5px] font-semibold text-emerald-800">
+                <span className="relative flex size-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex size-1.5 rounded-full bg-emerald-600" />
+                </span>
                 Click map to pin
               </span>
             </div>
 
-            <div className="h-68 w-full overflow-hidden rounded-lg border border-slate-300 shadow-inner">
+            <div className="h-64 w-full overflow-hidden rounded-xl border border-slate-300 shadow-inner bg-slate-900">
               <LocationPicker
                 value={pinValue}
                 onChange={handlePinChange}
                 onResolve={handleResolve}
-                caption="Click anywhere on the map to set the siren station position"
+                caption="Click anywhere on the map to place the siren tower position"
                 className="h-full"
                 restrictToBarangay
               />
             </div>
 
-            {/* Read-only Auto-detected Area & Geocoding Telemetry */}
-            <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div className="flex items-center justify-between rounded-lg border border-emerald-200/80 bg-emerald-50/80 px-3 py-2 text-xs">
-                <span className="flex items-center gap-1.5 font-bold text-emerald-950">
-                  <Sparkles className="size-3.5 text-emerald-600" />
-                  Auto-Detected Area:
+            {/* Unified 3-Metric Telemetry Strip */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xs">
+              {/* Metric 1: Auto-Detected Area */}
+              <div className="flex flex-col justify-center px-3 py-1.5">
+                <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                  <Sparkles className="size-3 text-emerald-600" />
+                  Assigned Area
                 </span>
-                <span className="font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
-                  {autoAreaName || "Auto-detecting Area…"}
-                </span>
+                <p className="mt-0.5 text-xs font-bold text-emerald-950 truncate">
+                  {autoAreaName || "Auto-detecting…"}
+                </p>
               </div>
 
-              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs">
-                <span className="flex items-center gap-1.5 font-bold text-slate-700">
-                  <CheckCircle2 className="size-3.5 text-emerald-600" />
-                  Geocoded GPS:
+              {/* Metric 2: Geocoded GPS */}
+              <div className="flex flex-col justify-center px-3 py-1.5">
+                <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                  <CheckCircle2 className="size-3 text-emerald-600" />
+                  Geocoded GPS
                 </span>
-                <span className="font-mono text-[11px] font-bold text-slate-900">
-                  {lat?.toFixed(5)}°, {lng?.toFixed(5)}°
+                <p className="mt-0.5 font-mono text-[11px] font-bold text-slate-800 truncate">
+                  {lat ? `${lat.toFixed(5)}°, ${lng?.toFixed(5)}°` : "—"}
+                </p>
+              </div>
+
+              {/* Metric 3: Acoustic Buffer */}
+              <div className="flex flex-col justify-center px-3 py-1.5">
+                <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                  <Radio className="size-3 text-sky-600" />
+                  Acoustic Reach
                 </span>
+                <p className="mt-0.5 text-xs font-bold text-slate-800 truncate">
+                  500m Buffer
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-lg border border-sky-200/80 bg-sky-50/60 p-3 text-xs flex items-start gap-2">
-            <Radio className="size-4 text-sky-700 shrink-0 mt-0.5" />
-            <p className="text-[11px] text-sky-900 leading-relaxed">
-              <strong>500m Omnidirectional Propagation:</strong> The station will broadcast auditory flood alarms across a 500-meter radius buffer within its assigned Area boundary.
+          {/* Contextual notice */}
+          <div className="flex items-start gap-2 px-1 text-slate-500">
+            <Radio className="size-3.5 text-emerald-700 shrink-0 mt-0.5" />
+            <p className="text-[11px] leading-relaxed">
+              <strong>500m Omnidirectional Propagation:</strong> The station will synthesize auditory alerts and radial ripples across its assigned Area boundary on GIS maps.
             </p>
           </div>
 
@@ -210,7 +228,7 @@ export function DeploySirenDialog({
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="h-9 px-4 text-xs font-bold cursor-pointer"
+              className="h-10 px-4 text-xs font-bold rounded-xl cursor-pointer"
             >
               Cancel
             </Button>
@@ -218,7 +236,7 @@ export function DeploySirenDialog({
               type="submit"
               variant="primary"
               disabled={isSubmitting}
-              className="h-9 gap-1 bg-emerald-600 px-5 text-xs font-bold text-white hover:bg-emerald-700 shadow-xs cursor-pointer"
+              className="h-10 gap-1 bg-emerald-600 px-5 text-xs font-bold text-white hover:bg-emerald-700 rounded-xl shadow-xs cursor-pointer"
             >
               {isSubmitting ? "Deploying…" : "Deploy Siren Unit"}
             </Button>
