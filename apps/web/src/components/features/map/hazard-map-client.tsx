@@ -184,7 +184,7 @@ function ensureRippleStyle() {
 export interface PublicSiren {
   id: string;
   name: string;
-  status: "idle" | "sounding";
+  status: "idle" | "sounding" | "testing";
   location: { coordinates: [number, number] };
   area_id: string | null;
 }
@@ -495,4 +495,3 @@ export function HazardMapClient({
     </div>
   );
 }
-

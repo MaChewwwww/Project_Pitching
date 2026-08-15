@@ -162,6 +162,16 @@ unregistered row is retained with both conversion FKs and excluded from live wal
 
 ## The registry module will get big
 
+## Operational asset lifecycle
+
+Facilities, evacuation centers, and sirens are registry records, not disposable
+map markers. Their admin `DELETE` operations deactivate the record; public
+queries return active assets only. Reactivation is explicit and audited. An
+evacuation center with open check-ins cannot be deactivated. Admin center writes
+carry the linked facility identity and pin in one transaction so a map pin and
+capacity record cannot drift apart. Spatial writes resolve the area from the
+submitted point and reject pins outside Barangay San Jose.
+
 36 requirements land in `registry` — it is the module most likely to become a monolith inside
 the monolith (`architecture.md` AR-1). Split it internally from the start: `household`,
 `members`, `nutrition`, `vulnerability`, `feedback`. Keep the classification logic in

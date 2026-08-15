@@ -100,7 +100,7 @@ export interface PublicSiren {
   id: string;
   name: string;
   location: { type: "Point"; coordinates: [number, number] };
-  status: "idle" | "sounding";
+  status: "idle" | "sounding" | "testing";
   area_id?: string | null;
 }
 

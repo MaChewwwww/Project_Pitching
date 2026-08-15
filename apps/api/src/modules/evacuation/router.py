@@ -16,6 +16,8 @@ from src.core.pagination import Page
 from src.db.session import DbSessionDep
 from src.modules.evacuation import service
 from src.modules.evacuation.schemas import (
+    AdminEvacCenterIn,
+    AdminEvacCenterOut,
     EmergencyEventDeclare,
     EmergencyEventDetailOut,
     EmergencyEventEnd,
@@ -136,11 +138,20 @@ async def public_evac_centers(
 
 @admin_router.get(
     "/evacuation-centers",
-    dependencies=[Depends(require_role("admin", "bhw"))],
+    dependencies=[Depends(require_role("admin"))],
     summary="List all evacuation centres",
 )
-async def admin_list_evac_centers(session: DbSessionDep) -> list[PublicEvacCenter]:
-    return await service.list_evac_centers_admin(session)
+async def admin_list_evac_centers(session: DbSessionDep) -> list[AdminEvacCenterOut]:
+    return await service.list_admin_evac_centers(session)
+
+
+@admin_router.get(
+    "/evacuation-centers/{center_id}",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Get an evacuation center",
+)
+async def admin_get_evac_center(center_id: uuid.UUID, session: DbSessionDep) -> AdminEvacCenterOut:
+    return await service.get_admin_evac_center(session, center_id)
 
 
 @admin_router.post(
@@ -149,10 +160,12 @@ async def admin_list_evac_centers(session: DbSessionDep) -> list[PublicEvacCente
     summary="Register an evacuation centre",
 )
 async def admin_create_evac_center(
-    body: EvacCenterIn, session: DbSessionDep, user: CurrentUser
-) -> dict[str, str]:
+    body: AdminEvacCenterIn | EvacCenterIn, session: DbSessionDep, user: CurrentUser
+) -> AdminEvacCenterOut:
+    if isinstance(body, AdminEvacCenterIn):
+        return await service.create_admin_evac_center(session, body, actor_id=user.id)
     center = await service.create_evac_center(session, body, actor_id=user.id)
-    return {"id": str(center.id)}
+    return await service.get_admin_evac_center(session, center.id)
 
 
 @admin_router.patch(
@@ -161,10 +174,38 @@ async def admin_create_evac_center(
     summary="Update an evacuation centre",
 )
 async def admin_update_evac_center(
-    center_id: uuid.UUID, body: EvacCenterIn, session: DbSessionDep, user: CurrentUser
-) -> dict[str, bool]:
+    center_id: uuid.UUID,
+    body: AdminEvacCenterIn | EvacCenterIn,
+    session: DbSessionDep,
+    user: CurrentUser,
+) -> AdminEvacCenterOut:
+    if isinstance(body, AdminEvacCenterIn):
+        return await service.update_admin_evac_center(session, center_id, body, actor_id=user.id)
     await service.update_evac_center(session, center_id, body, actor_id=user.id)
-    return {"ok": True}
+    return await service.get_admin_evac_center(session, center_id)
+
+
+@admin_router.delete(
+    "/evacuation-centers/{center_id}",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Deactivate an evacuation center",
+)
+async def admin_deactivate_evac_center(
+    center_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> dict[str, bool]:
+    await service.deactivate_evac_center(session, center_id, actor_id=user.id)
+    return {"ok": True, "deactivated": True}
+
+
+@admin_router.post(
+    "/evacuation-centers/{center_id}/reactivate",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Reactivate an evacuation center",
+)
+async def admin_reactivate_evac_center(
+    center_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> AdminEvacCenterOut:
+    return await service.reactivate_evac_center(session, center_id, actor_id=user.id)
 
 
 @admin_router.post(

@@ -15,10 +15,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.audit import write_audit
 from src.core.deps import AuthenticatedUser
-from src.core.errors import ConflictError, NotFoundError, PermissionDeniedError
+from src.core.errors import ConflictError, NotFoundError, PermissionDeniedError, ValidationError
 from src.core.pagination import Page, page_meta, paginate
 from src.modules.evacuation.models import EmergencyEvent, EvacCenter, EvacCheckin
 from src.modules.evacuation.schemas import (
+    AdminEvacCenterIn,
+    AdminEvacCenterOut,
     EmergencyEventDeclare,
     EmergencyEventDetailOut,
     EmergencyEventOut,
@@ -55,7 +57,7 @@ async def _rows(session: AsyncSession, *, open_only: bool):
         .order_by(Facility.name)
     )
     if open_only:
-        stmt = stmt.where(EvacCenter.is_open.is_(True))
+        stmt = stmt.where(EvacCenter.is_open.is_(True), Facility.is_active.is_(True))
     return (await session.execute(stmt)).all()
 
 
@@ -108,6 +110,39 @@ async def list_evac_centers_admin(session: AsyncSession) -> list[PublicEvacCente
     return [
         _to_public(ec, f, name, geojson, occ_map.get(ec.id, 0)) for ec, f, name, geojson in rows
     ]
+
+
+def _to_admin(
+    ec: EvacCenter, f: Facility, area_name: str | None, geojson: str | None, occupancy: int
+) -> AdminEvacCenterOut:
+    from src.modules.geo.schemas import AdminFacilityOut
+
+    public = _to_public(ec, f, area_name, geojson, occupancy)
+    facility = AdminFacilityOut(**public.facility.model_dump(), is_active=f.is_active)
+    return AdminEvacCenterOut(
+        **public.model_dump(exclude={"facility"}),
+        contact_person=ec.contact_person,
+        is_active=f.is_active,
+        facility=facility,
+    )
+
+
+async def list_admin_evac_centers(session: AsyncSession) -> list[AdminEvacCenterOut]:
+    occ_map = await _occupancy_counts(session)
+    rows = await _rows(session, open_only=False)
+    return [
+        _to_admin(ec, facility, area_name, geojson, occ_map.get(ec.id, 0))
+        for ec, facility, area_name, geojson in rows
+    ]
+
+
+async def get_admin_evac_center(session: AsyncSession, center_id: uuid.UUID) -> AdminEvacCenterOut:
+    rows = await _rows(session, open_only=False)
+    for ec, facility, area_name, geojson in rows:
+        if ec.id == center_id:
+            occupancy = (await _occupancy_counts(session)).get(ec.id, 0)
+            return _to_admin(ec, facility, area_name, geojson, occupancy)
+    raise NotFoundError("Evacuation center not found.")
 
 
 async def count_total(session: AsyncSession) -> int:
@@ -302,9 +337,7 @@ async def end_event(
     return event, reset_count
 
 
-async def get_event_detail(
-    session: AsyncSession, event_id: uuid.UUID
-) -> EmergencyEventDetailOut:
+async def get_event_detail(session: AsyncSession, event_id: uuid.UUID) -> EmergencyEventDetailOut:
     event = await get_event_or_404(session, event_id)
     base_out = await event_out(session, event)
 
@@ -390,9 +423,7 @@ async def get_event_detail(
 
     total_unregistered = (
         await session.scalar(
-            select(func.count(UnregisteredPerson.id)).where(
-                UnregisteredPerson.event_id == event_id
-            )
+            select(func.count(UnregisteredPerson.id)).where(UnregisteredPerson.event_id == event_id)
         )
     ) or 0
 
@@ -547,6 +578,151 @@ async def create_evac_center(
     )
     await session.commit()
     return center
+
+
+async def create_admin_evac_center(
+    session: AsyncSession, data: AdminEvacCenterIn, *, actor_id: uuid.UUID
+) -> AdminEvacCenterOut:
+    from src.modules.geo import service as geo_service
+
+    area = await geo_service.area_for_point(
+        session, data.facility.latitude, data.facility.longitude
+    )
+    if area is None:
+        raise ValidationError("Choose a location inside Barangay San Jose.")
+    facility = Facility(
+        name=data.facility.name.strip(),
+        type="evacuation_center",
+        address=data.facility.address,
+        contact_number=data.facility.contact_number,
+        area_id=area.id,
+        is_active=True,
+        location=func.ST_SetSRID(
+            func.ST_MakePoint(data.facility.longitude, data.facility.latitude), 4326
+        ),
+    )
+    session.add(facility)
+    await session.flush()
+    center = EvacCenter(
+        facility_id=facility.id,
+        capacity=data.capacity,
+        contact_person=data.contact_person,
+        contact_number=data.contact_number,
+        is_open=data.is_open,
+        notes=data.notes,
+    )
+    session.add(center)
+    await session.flush()
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="facility.create",
+        entity_type="facility",
+        entity_id=facility.id,
+    )
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="evac_center.create",
+        entity_type="evac_center",
+        entity_id=center.id,
+    )
+    await session.commit()
+    return await get_admin_evac_center(session, center.id)
+
+
+async def update_admin_evac_center(
+    session: AsyncSession, center_id: uuid.UUID, data: AdminEvacCenterIn, *, actor_id: uuid.UUID
+) -> AdminEvacCenterOut:
+    from src.modules.geo import service as geo_service
+
+    center = await session.get(EvacCenter, center_id)
+    if center is None:
+        raise NotFoundError("Evacuation center not found.")
+    facility = await session.get(Facility, center.facility_id)
+    if facility is None:
+        raise NotFoundError("Linked facility not found.")
+    area = await geo_service.area_for_point(
+        session, data.facility.latitude, data.facility.longitude
+    )
+    if area is None:
+        raise ValidationError("Choose a location inside Barangay San Jose.")
+    facility.name = data.facility.name.strip()
+    facility.address = data.facility.address
+    facility.contact_number = data.facility.contact_number
+    facility.area_id = area.id
+    facility.location = func.ST_SetSRID(
+        func.ST_MakePoint(data.facility.longitude, data.facility.latitude), 4326
+    )
+    center.capacity = data.capacity
+    center.contact_person = data.contact_person
+    center.contact_number = data.contact_number
+    center.is_open = data.is_open
+    center.notes = data.notes
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="facility.update",
+        entity_type="facility",
+        entity_id=facility.id,
+    )
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="evac_center.update",
+        entity_type="evac_center",
+        entity_id=center.id,
+    )
+    await session.commit()
+    return await get_admin_evac_center(session, center.id)
+
+
+async def deactivate_evac_center(
+    session: AsyncSession, center_id: uuid.UUID, *, actor_id: uuid.UUID
+) -> None:
+    center = await session.get(EvacCenter, center_id)
+    if center is None:
+        raise NotFoundError("Evacuation center not found.")
+    active_checkins = await session.scalar(
+        select(func.count(EvacCheckin.id)).where(
+            EvacCheckin.evac_center_id == center_id, EvacCheckin.checked_out_at.is_(None)
+        )
+    )
+    if active_checkins:
+        raise ConflictError("Check out active evacuees before deactivating this center.")
+    facility = await session.get(Facility, center.facility_id)
+    if facility is not None:
+        facility.is_active = False
+    center.is_open = False
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="evac_center.deactivate",
+        entity_type="evac_center",
+        entity_id=center.id,
+    )
+    await session.commit()
+
+
+async def reactivate_evac_center(
+    session: AsyncSession, center_id: uuid.UUID, *, actor_id: uuid.UUID
+) -> AdminEvacCenterOut:
+    center = await session.get(EvacCenter, center_id)
+    if center is None:
+        raise NotFoundError("Evacuation center not found.")
+    facility = await session.get(Facility, center.facility_id)
+    if facility is None:
+        raise NotFoundError("Linked facility not found.")
+    facility.is_active = True
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="evac_center.reactivate",
+        entity_type="evac_center",
+        entity_id=center.id,
+    )
+    await session.commit()
+    return await get_admin_evac_center(session, center.id)
 
 
 async def update_evac_center(

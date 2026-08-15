@@ -10,6 +10,8 @@ the rows do not.
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from geoalchemy2 import Geometry
 from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Index, Integer, String, Text, text
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
@@ -124,7 +126,7 @@ class Hotline(UUIDPrimaryKeyMixin, Base):
     __table_args__ = (CheckConstraint(f"type IN {HOTLINE_TYPES}", name="hotline_type_valid"),)
 
 
-SIREN_STATUSES = ("idle", "sounding")
+SIREN_STATUSES = ("idle", "sounding", "testing")
 
 
 class Siren(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -148,17 +150,16 @@ class Siren(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         Geometry(geometry_type="POINT", srid=4326, spatial_index=False),
         nullable=False,
     )
-    status: Mapped[str] = mapped_column(
-        String(10), nullable=False, server_default=text("'idle'")
-    )
+    status: Mapped[str] = mapped_column(String(10), nullable=False, server_default=text("'idle'"))
     area_id: Mapped[object | None] = mapped_column(
         PGUUID(as_uuid=True),
         ForeignKey("area.id", ondelete="SET NULL"),
         nullable=True,
     )
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+    last_triggered_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
     __table_args__ = (
         CheckConstraint(f"status IN {SIREN_STATUSES}", name="ck_siren_status_valid"),
         Index("idx_siren_location", "location", postgresql_using="gist"),
     )
-

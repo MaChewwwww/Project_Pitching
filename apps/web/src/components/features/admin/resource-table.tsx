@@ -76,6 +76,8 @@ export interface ResourceTableProps<T> {
   filterChoices?: (data: T[]) => ResourceFilterChoice<T>[];
   filterAllLabel?: string;
   getRowKey: (row: T) => string;
+  selectedRowKey?: string | null;
+  onRowSelect?: (row: T) => void;
   searchPlaceholder?: string;
 }
 
@@ -138,6 +140,8 @@ export function ResourceTable<T extends object>({
   filterChoices,
   filterAllLabel,
   getRowKey,
+  selectedRowKey,
+  onRowSelect,
   searchPlaceholder = "Search this list",
 }: ResourceTableProps<T>) {
   const [query, setQuery] = React.useState("");
@@ -164,9 +168,7 @@ export function ResourceTable<T extends object>({
     () =>
       filterColumn && data
         ? [
-            ...new Set(
-              data.flatMap((row) => columnFilterValues(filterColumn, row)),
-            ),
+            ...new Set(data.flatMap((row) => columnFilterValues(filterColumn, row))),
           ].sort()
         : [],
     [data, filterColumn],
@@ -207,7 +209,9 @@ export function ResourceTable<T extends object>({
         );
       const matchesFilter = customFilterChoices.length
         ? !filterChoice || filterChoice.matches(row)
-        : !filter || !filterColumn || columnFilterValues(filterColumn, row).includes(filter);
+        : !filter ||
+          !filterColumn ||
+          columnFilterValues(filterColumn, row).includes(filter);
       return matchesQuery && matchesFilter;
     });
     if (!sortKey) return next;
@@ -221,7 +225,17 @@ export function ResourceTable<T extends object>({
       );
       return sortDirection === "asc" ? compared : -compared;
     });
-  }, [columns, customFilterChoices, data, filter, filterChoice, filterColumn, query, sortDirection, sortKey]);
+  }, [
+    columns,
+    customFilterChoices,
+    data,
+    filter,
+    filterChoice,
+    filterColumn,
+    query,
+    sortDirection,
+    sortKey,
+  ]);
 
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const currentPage = Math.min(page, pages);
@@ -328,8 +342,20 @@ export function ResourceTable<T extends object>({
                     aria-hidden
                     className="size-3.5 shrink-0 text-emerald-600"
                   />
-                  <SelectValue placeholder={filterAllLabel ?? (filterColumn ? formatAllFilterLabel(filterColumn.header) : "All Filters")}>
-                    {!filter ? (filterAllLabel ?? (filterColumn ? formatAllFilterLabel(filterColumn.header) : "All Filters")) : (filterChoice?.label ?? filter)}
+                  <SelectValue
+                    placeholder={
+                      filterAllLabel ??
+                      (filterColumn
+                        ? formatAllFilterLabel(filterColumn.header)
+                        : "All Filters")
+                    }
+                  >
+                    {!filter
+                      ? (filterAllLabel ??
+                        (filterColumn
+                          ? formatAllFilterLabel(filterColumn.header)
+                          : "All Filters"))
+                      : (filterChoice?.label ?? filter)}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent
@@ -348,7 +374,10 @@ export function ResourceTable<T extends object>({
                     )}
                   >
                     <span className="truncate">
-                      {filterAllLabel ?? (filterColumn ? formatAllFilterLabel(filterColumn.header) : "All Filters")}
+                      {filterAllLabel ??
+                        (filterColumn
+                          ? formatAllFilterLabel(filterColumn.header)
+                          : "All Filters")}
                     </span>
                     <span
                       className={cn(
@@ -362,8 +391,12 @@ export function ResourceTable<T extends object>({
                     </span>
                   </SelectItem>
                   {(customFilterChoices.length
-                    ? customFilterChoices.map((choice) => ({ value: choice.value, label: choice.label }))
-                    : filterValues.map((value) => ({ value, label: value }))).map(({ value, label }) => {
+                    ? customFilterChoices.map((choice) => ({
+                        value: choice.value,
+                        label: choice.label,
+                      }))
+                    : filterValues.map((value) => ({ value, label: value }))
+                  ).map(({ value, label }) => {
                     const isSelected = filter === value;
                     const count = filterValueCounts[value] ?? 0;
                     return (
@@ -407,7 +440,12 @@ export function ResourceTable<T extends object>({
           return (
             <article
               key={getRowKey(row)}
-              className="relative space-y-3 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-4 shadow-2xs transition-all"
+              onClick={() => onRowSelect?.(row)}
+              className={cn(
+                "relative space-y-3 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-4 shadow-2xs transition-all",
+                onRowSelect && "cursor-pointer",
+                selectedRowKey === getRowKey(row) && "ring-2 ring-emerald-500",
+              )}
             >
               {/* Subtle top accent bar */}
               <div className="absolute top-0 right-0 left-0 h-0.5 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-400" />
@@ -520,9 +558,12 @@ export function ResourceTable<T extends object>({
           {pagedRows.map((row, index) => (
             <TableRow
               key={getRowKey(row)}
+              onClick={() => onRowSelect?.(row)}
               className={cn(
                 "border-primary-100/80 hover:bg-primary-50/80 transition-colors",
                 index % 2 === 1 && "bg-emerald-50/35",
+                onRowSelect && "cursor-pointer",
+                selectedRowKey === getRowKey(row) && "bg-emerald-100/70",
               )}
             >
               {columns.map((column) => (

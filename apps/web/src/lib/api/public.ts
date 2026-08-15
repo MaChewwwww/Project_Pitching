@@ -440,7 +440,7 @@ export async function getSirens(): Promise<
   Array<{
     id: string;
     name: string;
-    status: "idle" | "sounding";
+    status: "idle" | "sounding" | "testing";
     location: { type: string; coordinates: [number, number] };
     area_id: string | null;
   }>
@@ -452,7 +452,7 @@ export async function getSirens(): Promise<
         z.object({
           id: z.string(),
           name: z.string(),
-          status: z.enum(["idle", "sounding"]),
+          status: z.enum(["idle", "sounding", "testing"]),
           location: z.object({
             type: z.string(),
             coordinates: z.tuple([z.number(), z.number()]),

@@ -39,7 +39,10 @@ import type { LatLng } from "@/components/features/registry/location-picker";
 
 const LocationPicker = dynamic(
   () => import("@/components/features/registry/location-picker"),
-  { ssr: false, loading: () => <div className="h-52 animate-pulse rounded-lg bg-neutral-100" /> },
+  {
+    ssr: false,
+    loading: () => <div className="h-52 animate-pulse rounded-lg bg-neutral-100" />,
+  },
 );
 
 /* --- form schema ---------------------------------------------------------- */
@@ -112,8 +115,7 @@ export function FacilityFormDialog({
   // Keep the map pin in sync with the form lat/lng.
   const lat = watch("latitude");
   const lng = watch("longitude");
-  const pinValue: LatLng | null =
-    lat && lng ? { lat, lng } : null;
+  const pinValue: LatLng | null = lat && lng ? { lat, lng } : null;
 
   function handlePinChange(latlng: LatLng) {
     setValue("latitude", latlng.lat, { shouldValidate: true });
@@ -145,10 +147,12 @@ export function FacilityFormDialog({
           {/* Name */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="fac-name">Name *</Label>
-            <Input id="fac-name" {...register("name")} placeholder="e.g. San Jose Covered Court" />
-            {errors.name && (
-              <p className="text-xs text-red-600">{errors.name.message}</p>
-            )}
+            <Input
+              id="fac-name"
+              {...register("name")}
+              placeholder="e.g. San Jose Covered Court"
+            />
+            {errors.name && <p className="text-xs text-red-600">{errors.name.message}</p>}
           </div>
 
           {/* Type */}
@@ -177,20 +181,28 @@ export function FacilityFormDialog({
           {/* Address */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="fac-address">Address</Label>
-            <Input id="fac-address" {...register("address")} placeholder="Street / landmark" />
+            <Input
+              id="fac-address"
+              {...register("address")}
+              placeholder="Street / landmark"
+            />
           </div>
 
           {/* Contact */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="fac-contact">Contact number</Label>
-            <Input id="fac-contact" {...register("contact_number")} placeholder="e.g. 0917-000-0000" />
+            <Input
+              id="fac-contact"
+              {...register("contact_number")}
+              placeholder="e.g. 0917-000-0000"
+            />
           </div>
 
           {/* Area */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="fac-area">
               Area{" "}
-              <span className="text-neutral-400 font-normal text-xs">
+              <span className="text-xs font-normal text-neutral-400">
                 (auto-detected from pin if blank)
               </span>
             </Label>
@@ -222,7 +234,8 @@ export function FacilityFormDialog({
           <div className="flex flex-col gap-1.5">
             <Label>Location *</Label>
             <p className="text-xs text-neutral-500">
-              Click or drag the pin to place the facility. Coordinates update automatically.
+              Click or drag the pin to place the facility. Coordinates update
+              automatically.
             </p>
             <div className="h-52 overflow-hidden rounded-lg border border-neutral-200">
               <LocationPicker
@@ -230,11 +243,14 @@ export function FacilityFormDialog({
                 onChange={handlePinChange}
                 caption="Click to place the facility."
                 className="h-full"
+                restrictToBarangay
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="flex flex-col gap-1">
-                <Label htmlFor="fac-lat" className="text-xs">Latitude</Label>
+                <Label htmlFor="fac-lat" className="text-xs">
+                  Latitude
+                </Label>
                 <Input
                   id="fac-lat"
                   type="number"
@@ -246,7 +262,9 @@ export function FacilityFormDialog({
                 )}
               </div>
               <div className="flex flex-col gap-1">
-                <Label htmlFor="fac-lon" className="text-xs">Longitude</Label>
+                <Label htmlFor="fac-lon" className="text-xs">
+                  Longitude
+                </Label>
                 <Input
                   id="fac-lon"
                   type="number"
@@ -271,7 +289,9 @@ export function FacilityFormDialog({
                   onCheckedChange={field.onChange}
                   id="fac-active"
                 />
-                <Label htmlFor="fac-active" className="cursor-pointer">Active</Label>
+                <Label htmlFor="fac-active" className="cursor-pointer">
+                  Active
+                </Label>
               </label>
             )}
           />

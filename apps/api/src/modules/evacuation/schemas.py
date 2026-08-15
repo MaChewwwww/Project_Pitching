@@ -10,9 +10,9 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from src.modules.geo.schemas import PublicFacility
+from src.modules.geo.schemas import AdminFacilityOut, PublicFacility
 
 # Mirrors EMERGENCY_EVENT_TYPES in models.py — kept in sync by hand, same
 # convention as ActivityType/ActivityStatus in the activities module.
@@ -98,6 +98,31 @@ class EvacCenterIn(BaseModel):
     contact_number: str | None = None
     is_open: bool = True
     notes: str | None = None
+
+
+class EvacFacilityIn(BaseModel):
+    name: str = Field(min_length=1)
+    address: str | None = None
+    contact_number: str | None = None
+    longitude: float = Field(ge=-180, le=180)
+    latitude: float = Field(ge=-90, le=90)
+
+
+class AdminEvacCenterIn(BaseModel):
+    """One workspace owns both the facility identity and centre operations."""
+
+    facility: EvacFacilityIn
+    capacity: int | None = Field(default=None, gt=0)
+    contact_person: str | None = None
+    contact_number: str | None = None
+    is_open: bool = True
+    notes: str | None = None
+
+
+class AdminEvacCenterOut(PublicEvacCenter):
+    contact_person: str | None
+    is_active: bool
+    facility: AdminFacilityOut
 
 
 class EvacCheckinCreate(BaseModel):

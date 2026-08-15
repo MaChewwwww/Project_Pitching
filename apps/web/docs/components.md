@@ -353,6 +353,14 @@ are counted explicitly and stay in the table. Selecting either a map pin or work
 right-side detail sheet with the audit timeline, event linking, and only the next valid response
 actions. The rescue view starts with the flood layer visible; the incident view starts without it.
 
+### Operational asset maps
+
+`AdminAssetMap` is the client-only Leaflet island used by facility, evacuation-center, and siren
+registries. The selected row and selected marker share one ID; never duplicate that state in the
+map. Each registry keeps its own filters and layer defaults, so the finalized public map views do
+not inherit console-only controls. The siren map may animate a sounding marker, but local Web Audio
+starts only after the administrator presses Trigger and never resumes from server state on reload.
+
 ### Portal splash loading
 
 `AdminGate` and `PortalGate` reuse `PageSplashLoader` with a 1.5-second minimum presentation.

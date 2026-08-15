@@ -3,6 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { toast } from "sonner";
+import * as React from "react";
+import { Crosshair } from "lucide-react";
 
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
@@ -16,6 +18,8 @@ import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 
 import { EvacCheckinManagerDialog } from "@/components/features/admin/evac-checkin-manager-dialog";
+import { AdminAssetMap } from "@/components/features/map/admin-asset-map-dynamic";
+import type { AreaBoundaryFeature } from "@/lib/api/public-types";
 
 /** Evacuation centre operations (FR-EVC-001..003). Admin only. */
 
@@ -25,7 +29,14 @@ interface EvacCenter {
   occupancy?: number;
   is_open: boolean;
   notes: string | null;
-  facility: { id: string; name: string };
+  facility: {
+    id: string;
+    name: string;
+    location: { coordinates: [number, number] };
+    area_name?: string | null;
+    is_active?: boolean;
+  };
+  is_active?: boolean;
 }
 interface Facility {
   id: string;
@@ -49,11 +60,16 @@ export default function AdminEvacCentersPage() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "evacuation-centers"],
+    queryFn: () => api.get<EvacCenter[]>("/admin/evacuation-centers").then((r) => r.data),
+  });
+  const { data: boundaries = [] } = useQuery({
+    queryKey: ["public", "area-boundaries", "admin-evacuation"],
     queryFn: () =>
       api
-        .get<{ items: EvacCenter[] }>("/admin/evacuation-centers")
-        .then((r) => r.data.items),
+        .get<{ features: AreaBoundaryFeature[] }>("/public/area-boundaries")
+        .then((r) => r.data.features),
   });
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const { data: facilities } = useQuery({
     queryKey: ["admin", "facilities"],
     queryFn: () => api.get<Facility[]>("/admin/facilities").then((r) => r.data),
@@ -113,7 +129,7 @@ export default function AdminEvacCentersPage() {
       key: "occupancy",
       header: "Occupancy",
       render: (row) => (
-        <span className="font-bold tabular-nums text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
+        <span className="rounded border border-emerald-200/60 bg-emerald-50 px-2 py-0.5 font-bold text-emerald-800 tabular-nums">
           {row.occupancy ?? 0} / {row.capacity ?? "—"}
         </span>
       ),
@@ -143,6 +159,80 @@ export default function AdminEvacCentersPage() {
         }
       />
 
+      <section
+        className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]"
+        aria-label="Evacuation center map workspace"
+      >
+        <div className="h-[360px] overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-lg sm:h-[460px]">
+          <AdminAssetMap
+            items={(data ?? []).map((center) => {
+              const inactive =
+                center.is_active === false || center.facility.is_active === false;
+              const ratio = center.capacity
+                ? (center.occupancy ?? 0) / center.capacity
+                : 0;
+              return {
+                id: center.id,
+                name: center.facility.name,
+                location: center.facility.location,
+                area_name: center.facility.area_name,
+                statusLabel: inactive
+                  ? "Inactive"
+                  : !center.is_open
+                    ? "Closed"
+                    : center.capacity && ratio >= 1
+                      ? "At capacity"
+                      : ratio >= 0.8
+                        ? "Near capacity"
+                        : "Open",
+                tone:
+                  inactive || !center.is_open
+                    ? ("slate" as const)
+                    : center.capacity && ratio >= 1
+                      ? ("rose" as const)
+                      : ratio >= 0.8
+                        ? ("amber" as const)
+                        : ("emerald" as const),
+                detail: `${center.occupancy ?? 0} / ${center.capacity ?? "—"} occupants`,
+              };
+            })}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            areaBoundaries={boundaries}
+            showHazard
+          />
+        </div>
+        <aside className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <p className="text-overline font-bold tracking-wider text-neutral-500">
+            Evacuation readiness
+          </p>
+          <p className="mt-2 text-3xl font-black text-neutral-900 tabular-nums">
+            {data?.filter((item) => item.is_open && item.is_active !== false).length ?? 0}
+          </p>
+          <p className="text-sm text-neutral-500">centers currently open</p>
+          <dl className="mt-6 space-y-3 border-t border-neutral-100 pt-4 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-neutral-500">At capacity</dt>
+              <dd className="font-bold text-rose-700">
+                {data?.filter(
+                  (item) => item.capacity && (item.occupancy ?? 0) >= item.capacity,
+                ).length ?? 0}
+              </dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-neutral-500">Total capacity</dt>
+              <dd className="font-bold text-neutral-800">
+                {data?.reduce((total, item) => total + (item.capacity ?? 0), 0) ?? 0}
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-6 text-xs leading-relaxed text-neutral-500">
+            Flood depth is a planning overlay; availability remains an operational
+            decision.
+          </p>
+        </aside>
+      </section>
+
       <ResourceTable
         columns={columns}
         data={data}
@@ -152,8 +242,18 @@ export default function AdminEvacCentersPage() {
         emptyTitle="No evacuation centers yet"
         emptyDescription='Add a facility of type "evacuation_center" first, then register it here.'
         getRowKey={(row) => row.id}
+        selectedRowKey={selectedId}
+        onRowSelect={(row) => setSelectedId(row.id)}
         rowActions={(row) => (
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedId(row.id)}
+              aria-label={`Locate ${row.facility.name}`}
+            >
+              <Crosshair aria-hidden className="size-3.5" />
+            </Button>
             <EvacCheckinManagerDialog
               centerId={row.id}
               centerName={row.facility.name}

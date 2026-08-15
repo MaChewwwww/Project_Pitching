@@ -7,6 +7,8 @@ run `make types` and commit the diff in the same PR (architecture.md 12.4).
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -86,7 +88,15 @@ class HotlineOut(PublicHotline):
 
 class FacilityIn(BaseModel):
     name: str
-    type: str
+    type: Literal[
+        "evacuation_center",
+        "hospital",
+        "clinic",
+        "barangay_hall",
+        "police",
+        "fire",
+        "rescue_station",
+    ]
     address: str | None = None
     contact_number: str | None = None
     longitude: float = Field(..., ge=-180, le=180)
@@ -95,15 +105,21 @@ class FacilityIn(BaseModel):
     is_active: bool = True
 
 
-class FacilityOut(BaseModel):
+class AdminFacilityOut(PublicFacility):
+    """Admin registry view: public map data plus lifecycle metadata."""
+
+    is_active: bool
+    evac_center_id: uuid.UUID | None = None
+
+
+class FacilityOut(AdminFacilityOut):
     id: uuid.UUID
     name: str
     type: str
     address: str | None
     contact_number: str | None
     location: GeoJsonPoint
-    area_id: uuid.UUID | None
-    is_active: bool
+    pass
 
 
 class AreaPatch(BaseModel):
@@ -167,8 +183,15 @@ class SirenIn(BaseModel):
     longitude: float = Field(..., ge=-180, le=180)
     latitude: float = Field(..., ge=-90, le=90)
     area_id: uuid.UUID | None = None
-    status: str = "idle"
+
+
+class SirenPatch(SirenIn):
+    """A siren's sounding state is controlled by the explicit simulation endpoints."""
+
+    pass
 
 
 class SirenOut(PublicSiren):
-    pass
+    area_name: str | None
+    is_active: bool
+    last_triggered_at: datetime | None

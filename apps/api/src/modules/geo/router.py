@@ -85,8 +85,8 @@ async def public_area_boundaries(session: DbSessionDep) -> AreaBoundaryCollectio
 
 @public_router.get("/sirens", summary="Siren units with status (FR-MAP-014)")
 async def public_sirens(session: DbSessionDep) -> list[PublicSiren]:
-    rows = await service.list_sirens(session)
-    return [service.siren_to_public(siren, coords) for siren, coords in rows]
+    rows = await service.list_sirens(session, active_only=True)
+    return [service.siren_to_public(siren, coords) for siren, coords, _ in rows]
 
 
 # --- admin ----------------------------------------------------------------------
@@ -162,11 +162,21 @@ async def admin_delete_hotline(
 
 @admin_router.get(
     "/facilities",
-    dependencies=[Depends(require_role("admin", "bhw", "sk"))],
+    dependencies=[Depends(require_role("admin"))],
     summary="List facilities (admin)",
 )
-async def admin_list_facilities(session: DbSessionDep) -> list[PublicFacility]:
-    return await service.list_facilities(session, active_only=False)
+async def admin_list_facilities(session: DbSessionDep):
+    return await service.list_admin_facilities(session)
+
+
+@admin_router.get(
+    "/facilities/{facility_id}",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Get a facility",
+)
+async def admin_get_facility(facility_id: uuid.UUID, session: DbSessionDep) -> FacilityOut:
+    facility = await service.get_facility_or_404(session, facility_id)
+    return await service.facility_out(session, facility)
 
 
 @admin_router.post(
@@ -200,12 +210,24 @@ async def admin_delete_facility(
     facility_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
 ) -> dict[str, bool]:
     await service.delete_facility(session, facility_id, actor_id=user.id)
-    return {"ok": True}
+    return {"ok": True, "deactivated": True}
+
+
+@admin_router.post(
+    "/facilities/{facility_id}/reactivate",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Reactivate a facility",
+)
+async def admin_reactivate_facility(
+    facility_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> FacilityOut:
+    facility = await service.reactivate_facility(session, facility_id, actor_id=user.id)
+    return await service.facility_out(session, facility)
 
 
 @admin_router.get(
     "/areas",
-    dependencies=[Depends(require_role("admin", "bhw", "sk"))],
+    dependencies=[Depends(require_role("admin"))],
     summary="List areas (admin)",
 )
 async def admin_list_areas(session: DbSessionDep) -> list[AreaOut]:
@@ -227,22 +249,30 @@ async def admin_update_area(
 
 @admin_router.get(
     "/sirens",
-    dependencies=[Depends(require_role("admin", "bhw", "sk"))],
+    dependencies=[Depends(require_role("admin"))],
     summary="List sirens (admin)",
 )
 async def admin_list_sirens(session: DbSessionDep) -> list[SirenOut]:
     rows = await service.list_sirens(session)
-    return [service.siren_to_out(siren, coords) for siren, coords in rows]
+    return [service.siren_to_out(siren, coords, area_name) for siren, coords, area_name in rows]
 
 
-@admin_router.post(
-    "/sirens", dependencies=[Depends(require_role("admin"))], summary="Add a siren"
+@admin_router.get(
+    "/sirens/{siren_id}", dependencies=[Depends(require_role("admin"))], summary="Get a siren"
 )
-async def admin_create_siren(
-    body: SirenIn, session: DbSessionDep, user: CurrentUser
-) -> SirenOut:
+async def admin_get_siren(siren_id: uuid.UUID, session: DbSessionDep) -> SirenOut:
+    siren = await service.get_siren_or_404(session, siren_id)
+    coords = await service.siren_coordinates(session, siren.id)
+    area_name = await service.siren_area_name(session, siren.area_id)
+    return service.siren_to_out(siren, coords, area_name)
+
+
+@admin_router.post("/sirens", dependencies=[Depends(require_role("admin"))], summary="Add a siren")
+async def admin_create_siren(body: SirenIn, session: DbSessionDep, user: CurrentUser) -> SirenOut:
     siren, coords = await service.create_siren(session, body, actor_id=user.id)
-    return service.siren_to_out(siren, coords)
+    return service.siren_to_out(
+        siren, coords, await service.siren_area_name(session, siren.area_id)
+    )
 
 
 @admin_router.patch(
@@ -254,7 +284,9 @@ async def admin_update_siren(
     siren_id: uuid.UUID, body: SirenIn, session: DbSessionDep, user: CurrentUser
 ) -> SirenOut:
     siren, coords = await service.update_siren(session, siren_id, body, actor_id=user.id)
-    return service.siren_to_out(siren, coords)
+    return service.siren_to_out(
+        siren, coords, await service.siren_area_name(session, siren.area_id)
+    )
 
 
 @admin_router.post(
@@ -266,7 +298,23 @@ async def admin_trigger_siren(
     siren_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
 ) -> SirenOut:
     siren, coords = await service.trigger_siren(session, siren_id, actor_id=user.id)
-    return service.siren_to_out(siren, coords)
+    return service.siren_to_out(
+        siren, coords, await service.siren_area_name(session, siren.area_id)
+    )
+
+
+@admin_router.post(
+    "/sirens/{siren_id}/silence",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Silence a siren simulation",
+)
+async def admin_silence_siren(
+    siren_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> SirenOut:
+    siren, coords = await service.silence_siren(session, siren_id, actor_id=user.id)
+    return service.siren_to_out(
+        siren, coords, await service.siren_area_name(session, siren.area_id)
+    )
 
 
 @admin_router.delete(
@@ -278,4 +326,18 @@ async def admin_delete_siren(
     siren_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
 ) -> dict[str, bool]:
     await service.delete_siren(session, siren_id, actor_id=user.id)
-    return {"ok": True}
+    return {"ok": True, "deactivated": True}
+
+
+@admin_router.post(
+    "/sirens/{siren_id}/reactivate",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Reactivate a siren",
+)
+async def admin_reactivate_siren(
+    siren_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> SirenOut:
+    siren, coords = await service.reactivate_siren(session, siren_id, actor_id=user.id)
+    return service.siren_to_out(
+        siren, coords, await service.siren_area_name(session, siren.area_id)
+    )

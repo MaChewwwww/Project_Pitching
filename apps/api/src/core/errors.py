@@ -62,6 +62,12 @@ class ConflictError(AppError):
     title = "Conflicts with existing data"
 
 
+class ValidationError(AppError):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    error_type = "validation-failed"
+    title = "Validation failed"
+
+
 def _problem(
     *,
     status_code: int,
