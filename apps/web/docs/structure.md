@@ -9,8 +9,8 @@ its own layout and its own guard.
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | `(public)` | Landing (`/`), announcements, weather & river level, evacuation centres, hazard map, preparedness guides, activities, donation drives, help & FAQs, about | None                                      |
 | `(auth)`   | Login, register, password reset                                                                                                                           | None — but redirects if already signed in |
-| `(portal)` | Resident's own household, safety check-in, go-bag                                                                                                         | Signed in                                 |
-| `(admin)`  | Barangay console                                                                                                                                          | Signed in **and** role-checked            |
+| `(portal)` | Resident's own household, safety check-in, incident reporting, onboarding                                                                                | Signed in                                 |
+| `(admin)`  | Barangay admin command center & operations console                                                                                                        | Signed in **and** role-checked            |
 
 > The guards here are **convenience, not security**. Every one of them is re-checked
 > server-side by the API (FR-SYS-006). A guard that only exists in the browser is a guard an
@@ -19,6 +19,48 @@ its own layout and its own guard.
 The root layout uses CSS font stacks rather than `next/font/google`. This keeps production image
 builds independent of external font hosts; the branded families are preferred when installed and
 system fallbacks preserve the hierarchy otherwise.
+
+## Core Routes & Architectural Reference (Finalized Design & Workflows)
+
+The following inventory serves as the architectural and design pattern reference for finalized, tweaked, and verified pages across SAGIP-SJ:
+
+### 1. Public Information & Citizen Engagement (`(public)`)
+- `/` — **Landing Page**: Hero, live weather widget, alert ticker, map preview, quick hotlines.
+- `/weather` — **Weather Watch**: Telemetry metrics, rainfall & river gauges, sensor thresholds.
+- `/announcements` and `/announcements/[slug]` — **Advisories CMS**: Category filters, priority badges, full article view.
+- `/rescue` — **Public SOS**: Quick unauthenticated emergency rescue dispatch request with GPS coordinates.
+
+### 2. Interactive GIS & Spatial Visualizations (`(public)`)
+- `/hazard-map` — **Flood Hazard Map**: 5-yr, 25-yr, 100-yr return layers, flood depth legend, sitio boundaries.
+- `/barangay-facilities` — **Barangay Facilities**: Finalized public facilities map view and directory.
+
+### 3. Authentication & Onboarding (`(auth)`)
+- `/login` — **Unified Sign-In**: Role-based redirect for Resident, Health Worker, Barangay Admin.
+- `/register` — **Resident Registration**: Multi-step household setup and head of family onboarding.
+
+### 4. Resident Self-Service Portal (`(portal)`)
+- `/portal` — **Resident Dashboard**: Household summary, emergency alert banner, quick action cards.
+- `/portal/onboarding` — **Onboarding Wizard**: First-time setup for family members and health flags.
+- `/portal/household/edit` — **Household Roster**: Family member CRUD, medical/vulnerability tagging.
+- `/portal/safety` — **Emergency Safety Check-In**: One-tap "I am Safe" / "Need Assistance" status toggle.
+- `/portal/report` — **Citizen Incident Reporting**: Geolocation, photo attachment, triage category.
+
+### 5. Barangay Admin: Command Center & Emergency Operations (`(admin)`)
+- `/admin` — **Main Operations Dashboard**: Calamity banner, live incident ticker, summary KPIs.
+- `/admin/emergency-events` & `/[id]` & `/[id]/edit` — **Disaster Operations Console**: Sitio roll-call, event logs, backfill dialog.
+- `/admin/safety` — **Live Safety Tally**: Real-time per-sitio status, unaccounted family counter.
+- `/admin/rescue-requests` — **Emergency Dispatch Queue**: Urgency triage (P1/P2/P3), responder assignment.
+- `/admin/incident-reports` — **Incident Management**: Citizen report verification and map triage.
+- `/admin/weather-readings` — **Sensor Telemetry**: Real-time logs and gauge analytics.
+- `/admin/flood-events` — **Flood History**: Editorial record and water level logs.
+
+### 6. Barangay Admin: Registry & Vulnerability Management (`(admin)`)
+- `/admin/households` & `/[id]` & `/new` & `/[id]/edit` — **Household Masterlist**: Vulnerability scoring tiers.
+- `/admin/citizens` & `/[id]` & `/new` & `/[id]/edit` & `/[id]/promote` — **Citizen Roster**: Health tags, age demographics.
+- `/admin/unregistered-persons` & `/[id]` & `/[id]/edit` — **Transient Log**: Walk-in evacuee intake and management.
+
+### 7. Barangay Admin: Content & Broadcast CMS (`(admin)`)
+- `/admin/announcements` & `/create-announcement` & `/[id]` — **Broadcast Alerts & Announcements Management**.
 
 ## Announcement routes and the shared editor
 

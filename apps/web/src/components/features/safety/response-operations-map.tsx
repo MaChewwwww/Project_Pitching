@@ -2,7 +2,22 @@
 
 import * as React from "react";
 import L from "leaflet";
-import { GeoJSON, MapContainer, Marker, TileLayer, Tooltip, useMap } from "react-leaflet";
+import {
+  GeoJSON,
+  MapContainer,
+  Marker,
+  TileLayer,
+  Tooltip,
+  useMap,
+  ZoomControl,
+} from "react-leaflet";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Database,
+  Layers,
+  Shield,
+  X,
+} from "lucide-react";
 
 import { useHazardGeoJson } from "@/lib/hazard-geojson";
 import "@/lib/leaflet-setup";
@@ -11,10 +26,21 @@ import {
   BOUNDARY_LINE_STYLE,
   DARK_TILE_ATTRIBUTION,
   DARK_TILE_URL,
+  distinctAreaStyle,
+  HAZARD_LEVELS,
   hazardStyle,
   SAN_JOSE_OUTER_BOUNDARY_GEOJSON,
 } from "@/lib/map";
-import type { GeoJsonPoint } from "@/lib/api/public-types";
+import { api } from "@/lib/api/client";
+import type { AreaBoundaryFeature, GeoJsonPoint } from "@/lib/api/public-types";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/common/badge";
 import "leaflet/dist/leaflet.css";
 
 export interface ResponseMapItem {
@@ -24,7 +50,23 @@ export interface ResponseMapItem {
   location: GeoJsonPoint;
   label: string;
   tone: "rose" | "amber" | "sky" | "emerald" | "slate";
+  areaName?: string | null;
+  priority?: number | null;
 }
+
+export interface ResponseOperationsMapProps {
+  items: ResponseMapItem[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  showHazard: boolean;
+  showAreas: boolean;
+  onSelectArea?: (areaName: string) => void;
+  mode: "rescue" | "incident";
+}
+
+/* -------------------------------------------------------------------------- */
+/* Helper components & Leaflet custom styling                                  */
+/* -------------------------------------------------------------------------- */
 
 function MapSelection({ item }: { item: ResponseMapItem | null }) {
   const map = useMap();
@@ -36,6 +78,34 @@ function MapSelection({ item }: { item: ResponseMapItem | null }) {
   return null;
 }
 
+function EmergencyMapPanes() {
+  const map = useMap();
+  React.useEffect(() => {
+    if (!map.getPane("areaPane")) {
+      const areaPane = map.createPane("areaPane");
+      areaPane.style.zIndex = "450";
+    }
+    if (!map.getPane("topBoundaryPane")) {
+      const boundaryPane = map.createPane("topBoundaryPane");
+      boundaryPane.style.zIndex = "650";
+    }
+    if (!map.getPane("responseMarkerPane")) {
+      const markerPane = map.createPane("responseMarkerPane");
+      markerPane.style.zIndex = "670";
+    }
+  }, [map]);
+  return null;
+}
+
+function createBoundaryLabelIcon() {
+  return L.divIcon({
+    className: "san-jose-boundary-badge-container",
+    html: `<div class="bg-white text-slate-900 border border-slate-300 shadow-md px-3 py-1 rounded-md font-bold text-[11px] whitespace-nowrap flex items-center justify-center cursor-pointer hover:border-emerald-500 hover:text-emerald-700 transition-colors">Barangay San Jose Boundary</div>`,
+    iconSize: [200, 26],
+    iconAnchor: [100, 48],
+  });
+}
+
 function markerIcon(item: ResponseMapItem, selected: boolean) {
   const colors = {
     rose: "#e11d48",
@@ -44,41 +114,70 @@ function markerIcon(item: ResponseMapItem, selected: boolean) {
     emerald: "#059669",
     slate: "#64748b",
   };
+  const bg = colors[item.tone] || "#e11d48";
+  const size = selected ? 34 : 28;
   return L.divIcon({
     className: "",
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    html: `<span style="display:grid;place-items:center;width:${selected ? 32 : 26}px;height:${selected ? 32 : 26}px;border-radius:999px;background:${colors[item.tone]};border:3px solid white;box-shadow:0 3px 10px rgba(15,23,42,.45);color:white;font:700 11px system-ui">${item.label}</span>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    html: `
+      <div style="display:grid;place-items:center;width:${size}px;height:${size}px;border-radius:9999px;background:${bg};border:2.5px solid #ffffff;box-shadow:0 3px 12px rgba(15,23,42,0.6);color:#ffffff;font-family:system-ui,-apple-system,sans-serif;font-weight:800;font-size:${selected ? 12 : 10.5}px;cursor:pointer;transition:transform .15s ease;">
+        ${item.label}
+      </div>
+    `,
   });
 }
+
+/* -------------------------------------------------------------------------- */
+/* Main ResponseOperationsMap Component                                        */
+/* -------------------------------------------------------------------------- */
 
 export function ResponseOperationsMap({
   items,
   selectedId,
   onSelect,
   showHazard,
-}: {
-  items: ResponseMapItem[];
-  selectedId: string | null;
-  onSelect: (id: string) => void;
-  showHazard: boolean;
-}) {
+  showAreas,
+  onSelectArea,
+  mode,
+}: ResponseOperationsMapProps) {
+  const [showLegend, setShowLegend] = React.useState(true);
+  const [showBoundaryModal, setShowBoundaryModal] = React.useState(false);
   const hazard = useHazardGeoJson(showHazard);
+
+  const areaBoundariesQuery = useQuery({
+    queryKey: ["public", "area-boundaries", "operations-map"],
+    queryFn: () =>
+      api
+        .get<{ type: "FeatureCollection"; features: AreaBoundaryFeature[] }>(
+          "/public/area-boundaries",
+        )
+        .then((response) => response.data),
+    enabled: showAreas,
+  });
+
   const selected = items.find((item) => item.id === selectedId) ?? null;
+
   return (
-    <div className="h-[380px] overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-lg lg:h-[520px]">
+    <div className="relative h-[420px] w-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-xl sm:h-[500px] lg:h-[580px]">
       <MapContainer
         center={BARANGAY_VIEW.center}
-        zoom={14}
+        zoom={13.8}
         minZoom={BARANGAY_VIEW.minZoom}
         maxZoom={BARANGAY_VIEW.maxZoom}
         className="h-full w-full"
         attributionControl={false}
+        zoomControl={false}
       >
+        <ZoomControl position="topright" />
+        <EmergencyMapPanes />
         <MapSelection item={selected} />
         <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} />
+
+        {/* 5-Year Flood Hazard Overlay */}
         {showHazard && hazard.status === "ready" ? (
           <GeoJSON
+            key="flood-hazard"
             data={hazard.data as GeoJSON.GeoJsonObject}
             interactive={false}
             style={(feature) =>
@@ -86,32 +185,295 @@ export function ResponseOperationsMap({
             }
           />
         ) : null}
+
+        {/* Area Boundaries (Sitios/Areas 1-6) */}
+        {showAreas && areaBoundariesQuery.data ? (
+          <GeoJSON
+            key="area-boundaries"
+            data={areaBoundariesQuery.data as GeoJSON.GeoJsonObject}
+            pane="areaPane"
+            style={(feature) => ({
+              ...distinctAreaStyle(
+                (feature?.properties as { name?: string })?.name ?? "",
+              ),
+              className: "san-jose-interactive-area",
+            })}
+            onEachFeature={(feature, layer) => {
+              const areaName =
+                (feature.properties as { name?: string })?.name ?? "Area";
+              layer.on({
+                mouseover: (e) => {
+                  const l = e.target as L.Path;
+                  l.setStyle({
+                    color: "#34d399",
+                    weight: 3.5,
+                    dashArray: "",
+                    fillOpacity: 0.32,
+                  });
+                  l.bringToFront();
+                },
+                mouseout: (e) => {
+                  const l = e.target as L.Path;
+                  l.setStyle(distinctAreaStyle(areaName));
+                },
+                click: () => {
+                  onSelectArea?.(areaName);
+                },
+              });
+            }}
+          />
+        ) : null}
+
+        {/* Barangay San Jose Outer Boundary Line */}
         <GeoJSON
           data={SAN_JOSE_OUTER_BOUNDARY_GEOJSON as GeoJSON.GeoJsonObject}
-          interactive={false}
-          style={() => BOUNDARY_LINE_STYLE}
+          pane="topBoundaryPane"
+          interactive={true}
+          style={() => ({
+            ...BOUNDARY_LINE_STYLE,
+            className: "cursor-pointer hover:stroke-emerald-400",
+          })}
+          onEachFeature={(_feature, layer) => {
+            layer.on({
+              mouseover: (e) => {
+                const l = e.target as L.Path;
+                l.setStyle({
+                  color: "#22c55e",
+                  weight: 6,
+                  dashArray: "12, 6",
+                  opacity: 1,
+                });
+              },
+              mouseout: (e) => {
+                const l = e.target as L.Path;
+                l.setStyle(BOUNDARY_LINE_STYLE);
+              },
+              click: () => {
+                setShowBoundaryModal(true);
+              },
+            });
+          }}
         />
+
+        {/* Barangay San Jose Boundary Marker Badge */}
+        <Marker
+          position={[14.7615, 121.133]}
+          icon={createBoundaryLabelIcon()}
+          pane="topBoundaryPane"
+          eventHandlers={{
+            click: () => setShowBoundaryModal(true),
+          }}
+        />
+
+        {/* Operational Incident & Rescue Pins */}
         {items.map((item) => {
           const [longitude, latitude] = item.location.coordinates;
-          const selectedMarker = item.id === selectedId;
+          const isSelected = item.id === selectedId;
           return (
             <Marker
               key={item.id}
               position={[latitude, longitude]}
-              icon={markerIcon(item, selectedMarker)}
+              icon={markerIcon(item, isSelected)}
+              pane="responseMarkerPane"
               eventHandlers={{ click: () => onSelect(item.id) }}
-              zIndexOffset={selectedMarker ? 1000 : 0}
+              zIndexOffset={isSelected ? 1000 : 0}
             >
               <Tooltip direction="top" offset={[0, -16]} opacity={1}>
-                <span className="font-semibold">{item.title}</span>
-                <span className="ml-1 text-slate-500">
-                  · {item.status.replaceAll("_", " ")}
-                </span>
+                <div className="flex flex-col gap-0.5 py-0.5">
+                  <span className="font-bold text-slate-900">{item.title}</span>
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+                    <span className="font-semibold">{item.status}</span>
+                    {item.areaName ? <span>· {item.areaName}</span> : null}
+                    {item.priority ? (
+                      <span className="rounded bg-rose-100 px-1 font-bold text-rose-800">
+                        P{item.priority}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
               </Tooltip>
             </Marker>
           );
         })}
       </MapContainer>
+
+      {/* -------------------------------------------------------------------- */}
+      {/* Floating Map Legend                                                 */}
+      {/* -------------------------------------------------------------------- */}
+      <div className="absolute bottom-3 left-3 z-[1000] max-w-[280px] sm:max-w-[320px]">
+        {showLegend ? (
+          <div className="rounded-xl border border-white/15 bg-slate-950/90 p-3 text-white shadow-2xl backdrop-blur-md transition-all">
+            <div className="flex items-center justify-between border-b border-white/10 pb-1.5 text-xs font-bold text-slate-200">
+              <span className="flex items-center gap-1.5">
+                <Layers className="size-3.5 text-emerald-400" />
+                Map Legend
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowLegend(false)}
+                className="rounded p-0.5 text-slate-400 hover:bg-white/10 hover:text-white"
+                title="Hide Legend"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+
+            <div className="mt-2 flex flex-col gap-2.5 text-[11px]">
+              {/* Status Tones */}
+              <div>
+                <p className="mb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                  {mode === "rescue" ? "Triage & Status" : "Incident Status"}
+                </p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="size-2.5 shrink-0 rounded-full bg-rose-500 ring-1 ring-white/50" />
+                    <span className="truncate text-slate-300">
+                      {mode === "rescue" ? "Pending / P1" : "Pending"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="size-2.5 shrink-0 rounded-full bg-amber-500 ring-1 ring-white/50" />
+                    <span className="truncate text-slate-300">Verified</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="size-2.5 shrink-0 rounded-full bg-sky-500 ring-1 ring-white/50" />
+                    <span className="truncate text-slate-300">
+                      {mode === "rescue" ? "Dispatched" : "In Progress"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="size-2.5 shrink-0 rounded-full bg-emerald-500 ring-1 ring-white/50" />
+                    <span className="truncate text-slate-300">Resolved</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Hazard Depth Levels (if enabled) */}
+              {showHazard ? (
+                <div className="border-t border-white/10 pt-2">
+                  <p className="mb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                    5-Yr Flood Depth (NOAH)
+                  </p>
+                  <div className="flex items-center justify-between gap-1 text-[10px]">
+                    {HAZARD_LEVELS.map((h) => (
+                      <div key={h.level} className="flex items-center gap-1">
+                        <span
+                          className="size-2.5 shrink-0 rounded-sm"
+                          style={{ backgroundColor: h.color }}
+                        />
+                        <span className="text-slate-300">{h.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Area Shading (if enabled) */}
+              {showAreas ? (
+                <div className="border-t border-white/10 pt-1.5 text-[10px] text-slate-400">
+                  <span>Areas 1–6 (Sitio Boundaries Active)</span>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowLegend(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-white/20 bg-slate-950/90 px-2.5 py-1.5 text-xs font-bold text-white shadow-xl backdrop-blur-md hover:bg-slate-900"
+          >
+            <Layers className="size-3.5 text-emerald-400" />
+            Show Legend
+          </button>
+        )}
+      </div>
+
+      {/* -------------------------------------------------------------------- */}
+      {/* Data Source & Licensing Attribution Dock                             */}
+      {/* -------------------------------------------------------------------- */}
+      <div className="pointer-events-none absolute right-3 bottom-3 z-[1000] hidden sm:block">
+        <div className="pointer-events-auto flex flex-col gap-0.5 rounded-xl border border-white/15 bg-slate-950/90 px-3 py-2 text-[10px] text-slate-300 shadow-2xl backdrop-blur-md">
+          <div className="flex items-center gap-1.5 font-bold tracking-wider text-emerald-400 uppercase">
+            <Database className="size-3 text-emerald-400" aria-hidden />
+            Data Sources & License
+          </div>
+          <div>
+            <span className="font-semibold text-white/90">Locality:</span> Barangay San Jose, Rodriguez, Rizal
+          </div>
+          <div>
+            <span className="font-semibold text-white/90">Flood Data:</span> UP NOAH / LiPAD (ODC-ODbL)
+          </div>
+          <div className="border-t border-white/10 pt-0.5 text-[9px] text-slate-400">
+            Map: Leaflet · © OpenStreetMap contributors · CARTO
+          </div>
+        </div>
+      </div>
+
+      {/* -------------------------------------------------------------------- */}
+      {/* Barangay San Jose Jurisdiction Overview Modal                        */}
+      {/* -------------------------------------------------------------------- */}
+      <Dialog open={showBoundaryModal} onOpenChange={setShowBoundaryModal}>
+        <DialogContent className="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl">
+          <DialogHeader className="border-b border-slate-100 bg-emerald-950 p-5 text-white">
+            <div className="flex items-center gap-2">
+              <Badge tone="onDark" outline className="border-emerald-500/50 bg-emerald-900/50 text-emerald-200">
+                Municipality of Rodriguez (Montalban), Rizal
+              </Badge>
+            </div>
+            <DialogTitle className="mt-2 flex items-center gap-2 text-xl font-bold text-white">
+              <Shield className="size-5 text-emerald-400 shrink-0" />
+              Barangay San Jose Jurisdiction
+            </DialogTitle>
+            <DialogDescription className="text-xs text-emerald-200/80">
+              Administrative boundary and spatial operational overview for disaster readiness and response.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-4 p-5 text-sm">
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                  Jurisdiction
+                </p>
+                <p className="mt-1 font-bold text-slate-900">San Jose</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                  Sitio Areas
+                </p>
+                <p className="mt-1 font-bold text-slate-900">6 Areas</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                  Active Items
+                </p>
+                <p className="mt-1 font-bold text-emerald-700">{items.length} Pins</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3.5 text-xs text-emerald-950">
+              <p className="font-semibold text-emerald-900">
+                Official Disaster Risk & Operations Boundary
+              </p>
+              <p className="mt-1 leading-relaxed text-emerald-800">
+                All coordinates and rescue requests are tracked within the official PSGC
+                boundary for Barangay San Jose. Flood depth layers reflect verified 5-year return
+                period simulations produced by UP NOAH.
+              </p>
+            </div>
+
+            <div className="border-t border-slate-100 pt-3 text-right">
+              <button
+                type="button"
+                onClick={() => setShowBoundaryModal(false)}
+                className="rounded-lg bg-emerald-800 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition"
+              >
+                Close Overview
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

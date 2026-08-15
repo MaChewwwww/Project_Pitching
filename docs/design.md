@@ -623,6 +623,9 @@ verified workflows; define future household editing, alerts, activities, volunte
 notification screens with stakeholders before drawing them. The cut assistance tracker must not
 return through the redesign.
 
+> For the comprehensive inventory of finished and implemented pages across Public, Resident Portal,
+> and Barangay Admin surfaces, see [`apps/web/docs/structure.md#core-routes--architectural-reference`](../apps/web/docs/structure.md#core-routes--architectural-reference).
+
 ---
 
 ## 9. Responsive & Device Strategy
