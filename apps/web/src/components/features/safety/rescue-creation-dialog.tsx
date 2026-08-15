@@ -146,7 +146,7 @@ export function RescueCreationDialog({ open, onOpenChange }: RescueCreationDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-white text-slate-900 rounded-2xl shadow-2xl">
+      <DialogContent showCloseButton={false} className="max-w-xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-white text-slate-900 rounded-2xl shadow-2xl">
         <DialogHeader className="relative border-b border-neutral-100 bg-emerald-950 p-5 sm:p-6 text-white shrink-0">
           {/* High-contrast close button */}
           <button

@@ -596,18 +596,22 @@ export function ResponseOperationsMap({
       {/* -------------------------------------------------------------------- */}
       <div
         aria-label="Map spatial pin coverage"
-        className="absolute bottom-3.5 left-3.5 z-[1000] flex flex-col gap-1.5 rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-2 shadow-2xl backdrop-blur-md pointer-events-auto"
+        className="absolute bottom-3.5 left-3.5 z-[1000] flex flex-col gap-1.5 rounded-xl border border-emerald-900/80 bg-[#052e16]/95 px-3 py-2 text-xs font-semibold shadow-2xl backdrop-blur-md pointer-events-auto"
       >
-        {/* Pinned on Map Badge (Orange) */}
-        <div className="flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-950/60 px-3 py-1 text-xs font-bold text-orange-300 shadow-2xs">
+        {/* Pinned on Map */}
+        <div className="flex items-center gap-2 text-emerald-100">
           <span className="size-2 rounded-full bg-orange-500 shrink-0 shadow-[0_0_6px_rgba(249,115,22,0.8)]" />
-          <span>{items.length} Pinned on Map</span>
+          <span>
+            <strong className="font-bold text-white tabular-nums">{items.length}</strong> Pinned on Map
+          </span>
         </div>
 
-        {/* Not Pinned on Map Badge (Red) */}
-        <div className="flex items-center gap-2 rounded-full border border-rose-500/40 bg-rose-950/60 px-3 py-1 text-xs font-bold text-rose-300 shadow-2xs">
+        {/* Not Pinned on Map */}
+        <div className="flex items-center gap-2 text-emerald-100">
           <span className="size-2 rounded-full bg-rose-500 shrink-0 shadow-[0_0_6px_rgba(244,63,94,0.8)]" />
-          <span>{unmappedCount} Not Pinned on Map</span>
+          <span>
+            <strong className="font-bold text-white tabular-nums">{unmappedCount}</strong> Not Pinned on Map
+          </span>
         </div>
       </div>
 

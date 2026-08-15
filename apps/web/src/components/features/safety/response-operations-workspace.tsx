@@ -8,6 +8,7 @@ import {
   Activity,
   AlertCircle,
   AlertTriangle,
+  Camera,
   Check,
   CheckCircle2,
   Clock,
@@ -322,6 +323,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
   const [lightboxPhoto, setLightboxPhoto] = React.useState<string | null>(null);
   const [countdown, setCountdown] = React.useState(60);
   const [copiedPhone, setCopiedPhone] = React.useState(false);
+  const [isManualRefreshing, setIsManualRefreshing] = React.useState(false);
 
   const endpoint =
     mode === "rescue" ? "/admin/rescue-requests" : "/admin/incident-reports";
@@ -335,6 +337,18 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
         .then((response) => response.data),
     refetchInterval: 60_000,
   });
+
+  const handleManualRefresh = async () => {
+    setIsManualRefreshing(true);
+    setCountdown(60);
+    try {
+      await refetch();
+    } finally {
+      setTimeout(() => {
+        setIsManualRefreshing(false);
+      }, 700);
+    }
+  };
 
   React.useEffect(() => {
     const timer = window.setInterval(() => {
@@ -500,6 +514,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                     src={row.photo_url}
                     alt="Incident thumbnail"
                     fill
+                    unoptimized
                     className="object-cover"
                   />
                 ) : mode === "rescue" ? (
@@ -749,14 +764,17 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
               </span>
               <button
                 type="button"
-                onClick={() => {
-                  refetch();
-                  setCountdown(60);
-                }}
+                onClick={handleManualRefresh}
                 title="Refresh now"
-                className="flex size-5 items-center justify-center rounded-full text-emerald-700 hover:bg-emerald-200/80 hover:text-emerald-950 transition-colors cursor-pointer"
+                disabled={isManualRefreshing || isFetching}
+                className="flex size-5 items-center justify-center rounded-full text-emerald-700 hover:bg-emerald-200/80 hover:text-emerald-950 transition-colors cursor-pointer disabled:opacity-80"
               >
-                <RotateCcw className={cn("size-3", isFetching && "animate-spin")} />
+                <RotateCcw
+                  className={cn(
+                    "size-3",
+                    (isFetching || isManualRefreshing) && "animate-spin",
+                  )}
+                />
               </button>
             </div>
           </div>
@@ -1257,120 +1275,126 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
 
               {/* Photo attachment if present */}
               {"photo_url" in current && current.photo_url ? (
-                <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
-                  <div className="relative h-48 w-full cursor-pointer" onClick={() => setLightboxPhoto(current.photo_url)}>
+                <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-900 shadow-inner">
+                  <div
+                    className="relative h-56 sm:h-64 w-full cursor-pointer group"
+                    onClick={() => setLightboxPhoto(current.photo_url)}
+                  >
                     <Image
                       src={current.photo_url}
                       alt="Incident attachment"
                       fill
-                      className="object-cover"
+                      unoptimized
+                      className="object-cover group-hover:scale-[1.01] transition-transform duration-200"
                     />
-                    <div className="absolute top-2 right-2 rounded-md bg-black/60 px-2 py-1 text-[10px] font-bold text-white flex items-center gap-1 backdrop-blur-xs">
-                      <Maximize2 className="size-3" />
+                    <div className="absolute top-2.5 right-2.5 rounded-lg bg-emerald-950/85 border border-emerald-500/40 px-2.5 py-1 text-[11px] font-bold text-emerald-200 flex items-center gap-1.5 backdrop-blur-md shadow-lg group-hover:bg-emerald-900 transition-colors">
+                      <Maximize2 className="size-3.5 text-emerald-400" />
                       Expand Photo
                     </div>
                   </div>
                 </div>
               ) : null}
 
-              {/* Citizen / Contact Information */}
-              <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
-                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-2">
-                  Requester & Contact
-                </p>
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-bold text-neutral-900 text-sm truncate">
+              {/* Requester & Contact + Location Details (2-Column Grid to conserve space) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Citizen / Contact Information */}
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-3.5 flex flex-col justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1.5">
+                      Requester & Contact
+                    </p>
+                    <p className="font-bold text-neutral-900 text-xs truncate">
                       {"requester_name" in current
                         ? current.requester_name
                         : current.reported_by_name || "Anonymous Resident"}
                     </p>
-                    {"contact_number" in current && current.contact_number ? (
-                      <div className="mt-1 flex items-center gap-1.5 text-xs text-neutral-700 font-medium">
-                        <Phone className="size-3 text-neutral-400 shrink-0" />
-                        <span className="font-mono">{current.contact_number}</span>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-neutral-400">No contact number provided</span>
-                    )}
                   </div>
 
-                  {"contact_number" in current && current.contact_number ? (
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {/* Copy Number Button */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if ("contact_number" in current && current.contact_number) {
-                            navigator.clipboard.writeText(current.contact_number);
-                            setCopiedPhone(true);
-                            setTimeout(() => setCopiedPhone(false), 2000);
-                          }
-                        }}
-                        title={copiedPhone ? "Copied to clipboard!" : "Copy phone number"}
-                        className={cn(
-                          "flex size-8 items-center justify-center rounded-lg border transition-all cursor-pointer shadow-2xs",
-                          copiedPhone
-                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                            : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100 hover:text-neutral-950",
-                        )}
-                      >
-                        {copiedPhone ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                      </button>
-
-                      {/* Direct Call Button */}
-                      <a
-                        href={`tel:${current.contact_number}`}
-                        title={`Call ${current.contact_number}`}
-                        className="flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-2xs hover:bg-emerald-700 transition cursor-pointer"
-                      >
-                        <Phone className="size-3.5" />
-                      </a>
-                    </div>
-                  ) : null}
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    {"contact_number" in current && current.contact_number ? (
+                      <>
+                        <div className="flex items-center gap-1 text-xs text-neutral-700 font-medium truncate">
+                          <Phone className="size-3 text-neutral-400 shrink-0" />
+                          <span className="font-mono">{current.contact_number}</span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if ("contact_number" in current && current.contact_number) {
+                                navigator.clipboard.writeText(current.contact_number);
+                                setCopiedPhone(true);
+                                setTimeout(() => setCopiedPhone(false), 2000);
+                              }
+                            }}
+                            title={copiedPhone ? "Copied!" : "Copy"}
+                            className={cn(
+                              "flex size-7 items-center justify-center rounded-lg border transition-all cursor-pointer shadow-2xs",
+                              copiedPhone
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100",
+                            )}
+                          >
+                            {copiedPhone ? <Check className="size-3" /> : <Copy className="size-3" />}
+                          </button>
+                          <a
+                            href={`tel:${current.contact_number}`}
+                            title="Call"
+                            className="flex size-7 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-2xs hover:bg-emerald-700 transition cursor-pointer"
+                          >
+                            <Phone className="size-3" />
+                          </a>
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-xs text-neutral-400 italic">No phone provided</span>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Location & Directions */}
-              <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
-                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-2">
-                  Location Details
-                </p>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                {/* Location & Directions */}
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-3.5 flex flex-col justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1.5">
+                      Location Details
+                    </p>
                     <div className="flex items-center gap-1.5">
                       <MapPin className="size-3.5 text-emerald-700 shrink-0" />
-                      <span className="font-bold text-neutral-900 text-xs">
+                      <span className="font-bold text-neutral-900 text-xs truncate">
                         {("location_area_name" in current && current.location_area_name) ||
                           current.area_name ||
                           "Area Unknown"}
                       </span>
                     </div>
                     {current.location_note ? (
-                      <p className="mt-1 text-xs text-neutral-600 leading-snug">
+                      <p className="mt-1 text-xs text-neutral-600 line-clamp-2 leading-tight">
                         {current.location_note}
                       </p>
                     ) : (
-                      <p className="mt-1 text-xs text-neutral-400">No specific landmark provided</p>
+                      <p className="mt-1 text-xs text-neutral-400 italic">No landmark provided</p>
                     )}
                   </div>
 
                   {current.location ? (
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${current.location.coordinates[1]},${current.location.coordinates[0]}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Open Google Maps Directions"
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-emerald-700 transition shrink-0 cursor-pointer"
-                    >
-                      <Navigation className="size-3.5 text-white" />
-                      Directions
-                    </a>
+                    <div className="mt-2 flex justify-end">
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${current.location.coordinates[1]},${current.location.coordinates[0]}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Open Google Maps Directions"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-700 transition shrink-0 cursor-pointer"
+                      >
+                        <Navigation className="size-3 text-white" />
+                        Directions
+                      </a>
+                    </div>
                   ) : (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-2 py-1 text-[11px] font-medium text-neutral-500 shrink-0">
-                      <MapPinOff className="size-3 text-neutral-400" />
-                      Unmapped
-                    </span>
+                    <div className="mt-2 flex justify-end">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-2 py-0.5 text-[10.5px] font-medium text-neutral-500 shrink-0">
+                        <MapPinOff className="size-3 text-neutral-400" />
+                        Unmapped
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1386,29 +1410,26 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
               </div>
             </div>
 
-            {/* Fixed Lifecycle Triage Actions (Desktop 3 in a row: Dismiss - Verify/Dispatch - Mark Resolved) */}
-            <div className="shrink-0 border-t border-neutral-100 bg-neutral-50/90 p-4 sm:px-6 sm:py-3.5 flex flex-col gap-2 shadow-xs">
+            {/* Fixed Lifecycle Triage Actions (2-Row Layout: Progression/Resolve on Row 1, Centered Dismiss on Row 2) */}
+            <div className="shrink-0 border-t border-neutral-100 bg-neutral-50/90 p-4 sm:px-6 sm:py-3.5 flex flex-col gap-2.5 shadow-xs">
               <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
                 Operational Lifecycle Actions
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {/* Button 1: Dismiss */}
-                {current.status !== "dismissed" && current.status !== "resolved" ? (
-                  <Button
-                    variant="outline"
-                    className="w-full text-rose-700 border-rose-300 bg-rose-50/60 hover:bg-rose-100 font-bold px-3 text-xs shadow-2xs order-1 cursor-pointer"
-                    onClick={() => updateStatus("dismissed")}
-                  >
-                    <XCircle className="mr-1.5 size-3.5 text-rose-600 shrink-0" />
-                    Dismiss
-                  </Button>
-                ) : null}
 
-                {/* Button 2: Progression (Verify Request or Dispatch Team) */}
+              {/* Row 1: Progression & Resolution Actions */}
+              <div
+                className={cn(
+                  "grid gap-2",
+                  current.status === "pending" || current.status === "verified"
+                    ? "grid-cols-1 sm:grid-cols-2"
+                    : "grid-cols-1",
+                )}
+              >
+                {/* Progression Button (Verify Request or Dispatch Team / Mark In Progress) */}
                 {current.status === "pending" ? (
                   <Button
                     variant="secondary"
-                    className="w-full bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold px-3 text-xs shadow-2xs order-2 cursor-pointer"
+                    className="w-full bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold px-3 text-xs shadow-2xs cursor-pointer"
                     onClick={() => updateStatus("verified")}
                   >
                     <CheckCircle2 className="mr-1.5 size-3.5 text-amber-700 shrink-0" />
@@ -1417,7 +1438,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 ) : current.status === "verified" ? (
                   <Button
                     variant="primary"
-                    className="w-full bg-sky-600 text-white hover:bg-sky-700 font-bold px-3 text-xs shadow-2xs order-2 cursor-pointer"
+                    className="w-full bg-sky-600 text-white hover:bg-sky-700 font-bold px-3 text-xs shadow-2xs cursor-pointer"
                     onClick={() => updateStatus(mode === "rescue" ? "dispatched" : "in_progress")}
                   >
                     <Truck className="mr-1.5 size-3.5 shrink-0" />
@@ -1425,14 +1446,11 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   </Button>
                 ) : null}
 
-                {/* Button 3: Mark Resolved */}
+                {/* Mark Resolved Button */}
                 {current.status !== "resolved" && current.status !== "dismissed" ? (
                   <Button
                     variant="primary"
-                    className={cn(
-                      "w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-3 text-xs shadow-2xs order-3 cursor-pointer",
-                      current.status !== "pending" && current.status !== "verified" && "sm:col-span-2"
-                    )}
+                    className="w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-3 text-xs shadow-2xs cursor-pointer"
                     onClick={() => updateStatus("resolved")}
                   >
                     <CheckCircle2 className="mr-1.5 size-3.5 shrink-0" />
@@ -1440,6 +1458,20 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   </Button>
                 ) : null}
               </div>
+
+              {/* Row 2: Dismiss Button (Centered) */}
+              {current.status !== "dismissed" && current.status !== "resolved" ? (
+                <div className="flex justify-center pt-0.5">
+                  <Button
+                    variant="outline"
+                    className="w-full sm:w-auto min-w-[140px] text-rose-700 border-rose-300 bg-rose-50/60 hover:bg-rose-100 font-bold px-4 text-xs shadow-2xs cursor-pointer"
+                    onClick={() => updateStatus("dismissed")}
+                  >
+                    <XCircle className="mr-1.5 size-3.5 text-rose-600 shrink-0" />
+                    Dismiss
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </>
           ) : (
@@ -1498,114 +1530,127 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
             <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-sm custom-scrollbar">
               {/* Photo attachment if present */}
               {"photo_url" in current && current.photo_url ? (
-                <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
-                  <div className="relative h-48 w-full cursor-pointer" onClick={() => setLightboxPhoto(current.photo_url)}>
+                <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-900 shadow-inner">
+                  <div
+                    className="relative h-56 sm:h-64 w-full cursor-pointer group"
+                    onClick={() => setLightboxPhoto(current.photo_url)}
+                  >
                     <Image
                       src={current.photo_url}
                       alt="Incident attachment"
                       fill
-                      className="object-cover"
+                      unoptimized
+                      className="object-cover group-hover:scale-[1.01] transition-transform duration-200"
                     />
-                    <div className="absolute top-2 right-2 rounded-md bg-black/60 px-2 py-1 text-[10px] font-bold text-white flex items-center gap-1 backdrop-blur-xs">
-                      <Maximize2 className="size-3" />
+                    <div className="absolute top-2.5 right-2.5 rounded-lg bg-emerald-950/85 border border-emerald-500/40 px-2.5 py-1 text-[11px] font-bold text-emerald-200 flex items-center gap-1.5 backdrop-blur-md shadow-lg group-hover:bg-emerald-900 transition-colors">
+                      <Maximize2 className="size-3.5 text-emerald-400" />
                       Expand Photo
                     </div>
                   </div>
                 </div>
               ) : null}
 
-              {/* Citizen / Contact Information */}
-              <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
-                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-2">
-                  Requester & Contact
-                </p>
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-bold text-neutral-900 text-sm truncate">
+              {/* Requester & Contact + Location Details (2-Column Grid to conserve space) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Citizen / Contact Information */}
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-3.5 flex flex-col justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1.5">
+                      Requester & Contact
+                    </p>
+                    <p className="font-bold text-neutral-900 text-xs truncate">
                       {"requester_name" in current
                         ? current.requester_name
                         : current.reported_by_name || "Anonymous Resident"}
                     </p>
-                    {"contact_number" in current && current.contact_number ? (
-                      <div className="mt-1 flex items-center gap-1.5 text-xs text-neutral-700 font-medium">
-                        <Phone className="size-3 text-neutral-400 shrink-0" />
-                        <span className="font-mono">{current.contact_number}</span>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-neutral-400">No contact number provided</span>
-                    )}
                   </div>
 
-                  {"contact_number" in current && current.contact_number ? (
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if ("contact_number" in current && current.contact_number) {
-                            navigator.clipboard.writeText(current.contact_number);
-                            setCopiedPhone(true);
-                            setTimeout(() => setCopiedPhone(false), 2000);
-                          }
-                        }}
-                        title={copiedPhone ? "Copied to clipboard!" : "Copy phone number"}
-                        className={cn(
-                          "flex size-8 items-center justify-center rounded-lg border transition-all cursor-pointer shadow-2xs",
-                          copiedPhone
-                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                            : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100 hover:text-neutral-950",
-                        )}
-                      >
-                        {copiedPhone ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                      </button>
-
-                      <a
-                        href={`tel:${current.contact_number}`}
-                        title={`Call ${current.contact_number}`}
-                        className="flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-2xs hover:bg-emerald-700 transition cursor-pointer"
-                      >
-                        <Phone className="size-3.5" />
-                      </a>
-                    </div>
-                  ) : null}
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    {"contact_number" in current && current.contact_number ? (
+                      <>
+                        <div className="flex items-center gap-1 text-xs text-neutral-700 font-medium truncate">
+                          <Phone className="size-3 text-neutral-400 shrink-0" />
+                          <span className="font-mono">{current.contact_number}</span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if ("contact_number" in current && current.contact_number) {
+                                navigator.clipboard.writeText(current.contact_number);
+                                setCopiedPhone(true);
+                                setTimeout(() => setCopiedPhone(false), 2000);
+                              }
+                            }}
+                            title={copiedPhone ? "Copied!" : "Copy"}
+                            className={cn(
+                              "flex size-7 items-center justify-center rounded-lg border transition-all cursor-pointer shadow-2xs",
+                              copiedPhone
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100",
+                            )}
+                          >
+                            {copiedPhone ? <Check className="size-3" /> : <Copy className="size-3" />}
+                          </button>
+                          <a
+                            href={`tel:${current.contact_number}`}
+                            title="Call"
+                            className="flex size-7 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-2xs hover:bg-emerald-700 transition cursor-pointer"
+                          >
+                            <Phone className="size-3" />
+                          </a>
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-xs text-neutral-400 italic">No phone provided</span>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Location & Directions */}
-              <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
-                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-2">
-                  Location Details
-                </p>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                {/* Location & Directions */}
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-3.5 flex flex-col justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1.5">
+                      Location Details
+                    </p>
                     <div className="flex items-center gap-1.5">
                       <MapPin className="size-3.5 text-emerald-700 shrink-0" />
-                      <span className="font-bold text-neutral-900 text-xs">
+                      <span className="font-bold text-neutral-900 text-xs truncate">
                         {("location_area_name" in current && current.location_area_name) ||
                           current.area_name ||
                           "Area Unknown"}
                       </span>
                     </div>
                     {current.location_note ? (
-                      <p className="mt-1 text-xs text-neutral-600 leading-snug">
+                      <p className="mt-1 text-xs text-neutral-600 line-clamp-2 leading-tight">
                         {current.location_note}
                       </p>
                     ) : (
-                      <p className="mt-1 text-xs text-neutral-400">No specific landmark provided</p>
+                      <p className="mt-1 text-xs text-neutral-400 italic">No landmark provided</p>
                     )}
                   </div>
 
                   {current.location ? (
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${current.location.coordinates[1]},${current.location.coordinates[0]}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Open Google Maps Directions"
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-emerald-700 transition shrink-0 cursor-pointer"
-                    >
-                      <Navigation className="size-3.5 text-white" />
-                      Directions
-                    </a>
-                  ) : null}
+                    <div className="mt-2 flex justify-end">
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${current.location.coordinates[1]},${current.location.coordinates[0]}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Open Google Maps Directions"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-700 transition shrink-0 cursor-pointer"
+                      >
+                        <Navigation className="size-3 text-white" />
+                        Directions
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="mt-2 flex justify-end">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-2 py-0.5 text-[10.5px] font-medium text-neutral-500 shrink-0">
+                        <MapPinOff className="size-3 text-neutral-400" />
+                        Unmapped
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1620,29 +1665,26 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
               </div>
             </div>
 
-            {/* Fixed Lifecycle Triage Actions (Desktop 3 in a row: Dismiss - Verify/Dispatch - Mark Resolved) */}
-            <div className="shrink-0 border-t border-neutral-100 bg-neutral-50/90 p-4 sm:p-5 flex flex-col gap-2 shadow-xs">
+            {/* Fixed Lifecycle Triage Actions (2-Row Layout: Progression/Resolve on Row 1, Centered Dismiss on Row 2) */}
+            <div className="shrink-0 border-t border-neutral-100 bg-neutral-50/90 p-4 sm:p-5 flex flex-col gap-2.5 shadow-xs">
               <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
                 Operational Lifecycle Actions
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {/* Button 1: Dismiss */}
-                {current.status !== "dismissed" && current.status !== "resolved" ? (
-                  <Button
-                    variant="outline"
-                    className="w-full text-rose-700 border-rose-300 bg-rose-50/60 hover:bg-rose-100 font-bold px-3 text-xs shadow-2xs order-1 cursor-pointer"
-                    onClick={() => updateStatus("dismissed")}
-                  >
-                    <XCircle className="mr-1.5 size-3.5 text-rose-600 shrink-0" />
-                    Dismiss
-                  </Button>
-                ) : null}
 
-                {/* Button 2: Progression (Verify Request or Dispatch Team) */}
+              {/* Row 1: Progression & Resolution Actions */}
+              <div
+                className={cn(
+                  "grid gap-2",
+                  current.status === "pending" || current.status === "verified"
+                    ? "grid-cols-1 sm:grid-cols-2"
+                    : "grid-cols-1",
+                )}
+              >
+                {/* Progression Button (Verify Request or Dispatch Team / Mark In Progress) */}
                 {current.status === "pending" ? (
                   <Button
                     variant="secondary"
-                    className="w-full bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold px-3 text-xs shadow-2xs order-2 cursor-pointer"
+                    className="w-full bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold px-3 text-xs shadow-2xs cursor-pointer"
                     onClick={() => updateStatus("verified")}
                   >
                     <CheckCircle2 className="mr-1.5 size-3.5 text-amber-700 shrink-0" />
@@ -1651,7 +1693,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 ) : current.status === "verified" ? (
                   <Button
                     variant="primary"
-                    className="w-full bg-sky-600 text-white hover:bg-sky-700 font-bold px-3 text-xs shadow-2xs order-2 cursor-pointer"
+                    className="w-full bg-sky-600 text-white hover:bg-sky-700 font-bold px-3 text-xs shadow-2xs cursor-pointer"
                     onClick={() => updateStatus(mode === "rescue" ? "dispatched" : "in_progress")}
                   >
                     <Truck className="mr-1.5 size-3.5 shrink-0" />
@@ -1659,14 +1701,11 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   </Button>
                 ) : null}
 
-                {/* Button 3: Mark Resolved */}
+                {/* Mark Resolved Button */}
                 {current.status !== "resolved" && current.status !== "dismissed" ? (
                   <Button
                     variant="primary"
-                    className={cn(
-                      "w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-3 text-xs shadow-2xs order-3 cursor-pointer",
-                      current.status !== "pending" && current.status !== "verified" && "sm:col-span-2"
-                    )}
+                    className="w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-3 text-xs shadow-2xs cursor-pointer"
                     onClick={() => updateStatus("resolved")}
                   >
                     <CheckCircle2 className="mr-1.5 size-3.5 shrink-0" />
@@ -1674,6 +1713,20 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   </Button>
                 ) : null}
               </div>
+
+              {/* Row 2: Dismiss Button (Centered) */}
+              {current.status !== "dismissed" && current.status !== "resolved" ? (
+                <div className="flex justify-center pt-0.5">
+                  <Button
+                    variant="outline"
+                    className="w-full sm:w-auto min-w-[140px] text-rose-700 border-rose-300 bg-rose-50/60 hover:bg-rose-100 font-bold px-4 text-xs shadow-2xs cursor-pointer"
+                    onClick={() => updateStatus("dismissed")}
+                  >
+                    <XCircle className="mr-1.5 size-3.5 text-rose-600 shrink-0" />
+                    Dismiss
+                  </Button>
+                </div>
+              ) : null}
             </div>
             </>
           ) : (
@@ -1806,29 +1859,53 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
       </Dialog>
 
       {/* -------------------------------------------------------------------- */}
+      {/* -------------------------------------------------------------------- */}
       {/* Lightbox Modal for Photo Attachments                                 */}
       {/* -------------------------------------------------------------------- */}
       <Dialog open={Boolean(lightboxPhoto)} onOpenChange={(open) => !open && setLightboxPhoto(null)}>
-        <DialogContent showCloseButton={false} className="w-full max-w-4xl p-1 bg-slate-950 border-slate-800 text-white overflow-hidden rounded-2xl">
-          <div className="relative h-[70vh] w-full">
+        <DialogContent
+          showCloseButton={false}
+          className="w-full max-w-4xl p-0 gap-0 bg-[#031d10] border border-emerald-500/40 text-white overflow-hidden rounded-2xl shadow-2xl"
+        >
+          {/* Top Header */}
+          <div className="flex items-center justify-between px-5 py-3.5 bg-emerald-950/95 border-b border-emerald-800/60">
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-300">
+              <Camera className="size-4 text-emerald-400" />
+              <span>Incident Field Photo Capture</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLightboxPhoto(null)}
+              className="flex size-7 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer border border-white/20 shadow-md"
+              title="Close viewer"
+            >
+              <X className="size-4 text-white" />
+            </button>
+          </div>
+
+          {/* Full Photo Container */}
+          <div className="relative h-[65vh] w-full bg-black/70 flex items-center justify-center p-2">
             {lightboxPhoto ? (
               <Image
                 src={lightboxPhoto}
                 alt="Full resolution incident photo"
                 fill
+                unoptimized
                 className="object-contain"
               />
             ) : null}
           </div>
-          <div className="flex items-center justify-between p-3 bg-slate-900 border-t border-slate-800 text-xs">
-            <span className="text-slate-300 font-medium">Incident Field Capture</span>
+
+          {/* Bottom Bar */}
+          <div className="flex items-center justify-between px-5 py-3 bg-[#052e16] border-t border-emerald-900/60 text-xs">
+            <span className="text-emerald-300/90 font-medium">Verified Community Evidence</span>
             <Button
               size="sm"
               variant="outline"
               onClick={() => setLightboxPhoto(null)}
-              className="text-white border-slate-700 hover:bg-slate-800"
+              className="bg-emerald-600 text-white hover:bg-emerald-700 border-emerald-500 font-bold px-4 py-1.5 rounded-lg cursor-pointer transition shadow-xs"
             >
-              Close
+              Close Viewer
             </Button>
           </div>
         </DialogContent>
