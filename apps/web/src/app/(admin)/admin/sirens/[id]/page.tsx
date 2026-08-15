@@ -68,30 +68,62 @@ export default function SirenDetailPage() {
     queryFn: () => api.get<Area[]>("/admin/areas").then((r) => r.data),
   });
 
+  const { data: audits = [] } = useQuery({
+    queryKey: ["admin", "sirens", sirenId, "audits"],
+    queryFn: () =>
+      api
+        .get<
+          Array<{
+            id: string;
+            action: string;
+            classification: string;
+            created_at: string;
+            changes?: Record<string, unknown>;
+          }>
+        >(`/admin/sirens/${sirenId}/audits`)
+        .then((r) => r.data),
+  });
+
   const triggerMutation = useMutation({
     mutationFn: () => api.post(`/admin/sirens/${sirenId}/trigger`),
     onSuccess: (res: { data: SirenDetail }) => {
       sirenAudio.start();
       toast.success(
         res.data.status === "sounding"
-          ? "Siren alarm sounding (Web Audio synth active)"
+          ? "Operational siren alarm sounding (Web Audio synth active)"
           : "Siren returned to idle",
       );
       queryClient.invalidateQueries({ queryKey: ["admin", "sirens", sirenId] });
       queryClient.invalidateQueries({ queryKey: ["admin", "sirens"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens", sirenId, "audits"] });
     },
     onError: (err) => {
       toast.error(toDisplayError(err).detail || "Failed to trigger siren");
     },
   });
 
+  const drillMutation = useMutation({
+    mutationFn: () => api.post(`/admin/sirens/${sirenId}/trigger?is_drill=true`),
+    onSuccess: () => {
+      sirenAudio.start();
+      toast.warning("🚨 Siren Drill Simulation Activated (Audit Classified: Drill)");
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens", sirenId] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens", sirenId, "audits"] });
+    },
+    onError: (err) => {
+      toast.error(toDisplayError(err).detail || "Failed to start drill simulation");
+    },
+  });
+
   const silenceMutation = useMutation({
-    mutationFn: () => api.post(`/admin/sirens/${sirenId}/silence`),
+    mutationFn: () => api.post(`/admin/sirens/${sirenId}/silence?is_drill=true`),
     onSuccess: () => {
       sirenAudio.stop();
       toast.success("Siren alarm silenced");
       queryClient.invalidateQueries({ queryKey: ["admin", "sirens", sirenId] });
       queryClient.invalidateQueries({ queryKey: ["admin", "sirens"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens", sirenId, "audits"] });
     },
     onError: (err) => {
       toast.error(toDisplayError(err).detail || "Failed to silence siren");
@@ -155,7 +187,7 @@ export default function SirenDetailPage() {
   const areaName =
     siren.area_name ||
     areas.find((a) => a.id === siren.area_id)?.name ||
-    "Unassigned Sitio";
+    "Unassigned Area";
 
   const isSounding = siren.is_active && siren.status === "sounding";
   const isTesting = siren.is_active && siren.status === "testing";
@@ -325,7 +357,7 @@ export default function SirenDetailPage() {
         />
         <AssetMetricCard
           icon={MapPin}
-          label="Sitio Zone"
+          label="Assigned Area"
           value={areaName}
           sub="Target coverage sector"
           tone="emerald"
@@ -378,24 +410,42 @@ export default function SirenDetailPage() {
             </p>
 
             <div className="mt-2 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
-              <Button
-                variant={isSounding ? "danger" : "primary"}
-                size="sm"
-                onClick={() => {
-                  if (isSounding) {
-                    silenceMutation.mutate();
-                  } else {
-                    triggerMutation.mutate();
-                  }
-                }}
-                className={cn(
-                  "gap-1.5 text-xs font-bold",
-                  isSounding ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-600 hover:bg-emerald-700",
-                )}
-              >
-                {isSounding ? <VolumeX className="size-3.5" /> : <Volume2 className="size-3.5" />}
-                {isSounding ? "Stop Siren Alarm" : "Sound Emergency Siren"}
-              </Button>
+              {isSounding ? (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => silenceMutation.mutate()}
+                  disabled={silenceMutation.isPending}
+                  className="gap-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 animate-pulse"
+                >
+                  <VolumeX className="size-3.5" />
+                  {silenceMutation.isPending ? "Silencing…" : "Stop Siren Alarm"}
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => drillMutation.mutate()}
+                    disabled={drillMutation.isPending || !siren.is_active}
+                    className="gap-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    <Radio className="size-3.5" />
+                    {drillMutation.isPending ? "Activating Drill…" : "Run Drill Simulation"}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => triggerMutation.mutate()}
+                    disabled={triggerMutation.isPending || !siren.is_active}
+                    className="gap-1.5 text-xs font-bold text-rose-700 border-rose-200 hover:bg-rose-50"
+                  >
+                    <Volume2 className="size-3.5" />
+                    {triggerMutation.isPending ? "Triggering…" : "Sound Emergency Alarm"}
+                  </Button>
+                </>
+              )}
 
               <Button
                 variant="outline"
@@ -405,7 +455,7 @@ export default function SirenDetailPage() {
                   setTimeout(() => sirenAudio.stop(), 3000);
                   toast.info("Playing 3-second diagnostic tone sweep");
                 }}
-                className="gap-1 text-xs font-semibold text-slate-700 border-slate-300"
+                className="gap-1 text-xs font-semibold text-slate-700 border-slate-300 ml-auto"
               >
                 <Activity className="size-3.5 text-amber-600" />
                 Play 3s Test Chime
@@ -415,52 +465,125 @@ export default function SirenDetailPage() {
 
           {/* Trigger Audit Timeline */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col gap-4">
-            <h3 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-              <History className="size-4 text-emerald-700" />
-              Siren Activation & Drill Log
-            </h3>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <History className="size-4 text-emerald-700" />
+                Siren Activation & Drill Audit Log
+              </h3>
+              <span className="text-xs text-slate-500 font-semibold">
+                {audits.length} Recorded Events
+              </span>
+            </div>
 
             <div className="flex flex-col gap-3">
-              {siren.last_triggered_at ? (
-                <div className="flex items-start gap-3 rounded-xl border border-slate-200 p-3.5 text-xs bg-slate-50/50">
-                  <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-rose-100 text-rose-700 font-bold">
-                    <Volume2 className="size-4" />
+              {audits.length > 0 ? (
+                audits.map((log) => {
+                  const isDrill = log.classification === "Drill" || log.action.includes("drill");
+                  const isSilence = log.action.includes("silence");
+                  const isCreate = log.action.includes("create");
+
+                  return (
+                    <div
+                      key={log.id}
+                      className={cn(
+                        "flex items-start gap-3 rounded-xl border p-3.5 text-xs",
+                        isDrill
+                          ? "border-sky-200 bg-sky-50/50"
+                          : isSilence
+                            ? "border-slate-200 bg-slate-50/60"
+                            : isCreate
+                              ? "border-emerald-200 bg-emerald-50/40"
+                              : "border-rose-200 bg-rose-50/50",
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "grid size-8 shrink-0 place-items-center rounded-lg font-bold",
+                          isDrill
+                            ? "bg-sky-100 text-sky-700"
+                            : isSilence
+                              ? "bg-slate-200 text-slate-700"
+                              : isCreate
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-rose-100 text-rose-700",
+                        )}
+                      >
+                        {isDrill ? (
+                          <Radio className="size-4" />
+                        ) : isSilence ? (
+                          <VolumeX className="size-4" />
+                        ) : isCreate ? (
+                          <CheckCircle2 className="size-4" />
+                        ) : (
+                          <Volume2 className="size-4" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-slate-900">
+                              {isDrill
+                                ? isSilence
+                                  ? "Drill Concluded & Silenced"
+                                  : "Drill Simulation Triggered"
+                                : isSilence
+                                  ? "Operational Alarm Silenced"
+                                  : isCreate
+                                    ? "Station Deployed & Geocoded"
+                                    : "Operational Emergency Alarm Triggered"}
+                            </p>
+                            <span
+                              className={cn(
+                                "rounded-full px-2 py-0.2 text-[9.5px] font-black uppercase tracking-wider",
+                                isDrill
+                                  ? "bg-sky-200/80 text-sky-800"
+                                  : isSilence
+                                    ? "bg-slate-200 text-slate-700"
+                                    : isCreate
+                                      ? "bg-emerald-200 text-emerald-800"
+                                      : "bg-rose-200 text-rose-800",
+                              )}
+                            >
+                              {log.classification || (isDrill ? "Drill" : "Operational")}
+                            </span>
+                          </div>
+                          <span className="font-mono text-[11px] text-slate-500 shrink-0">
+                            {new Date(log.created_at).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-slate-600 text-[11.5px] leading-relaxed">
+                          {isDrill
+                            ? "Conduct of municipal readiness simulation drill with 500m omnidirectional acoustic reach."
+                            : isSilence
+                              ? "Acoustic alarm silenced by DRRM Command Center officer."
+                              : isCreate
+                                ? `Siren station mounted and registered with 500m acoustic reach in ${areaName}.`
+                                : "Official DRRM operational flood emergency alarm broadcasted."}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="flex items-start gap-3 rounded-xl border border-slate-100 p-3.5 text-xs bg-slate-50/50">
+                  <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-emerald-100 text-emerald-700 font-bold">
+                    <CheckCircle2 className="size-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
                       <p className="font-bold text-slate-900">
-                        Operational Alarm Triggered
+                        Station Initialized & Geocoded
                       </p>
-                      <span className="font-mono text-[11px] text-slate-500">
-                        {new Date(siren.last_triggered_at).toLocaleString()}
+                      <span className="font-mono text-[11px] text-slate-400">
+                        System
                       </span>
                     </div>
-                    <p className="mt-0.5 text-slate-600 text-[11.5px]">
-                      Triggered by authorized DRRM Command Center officer. Audio simulation
-                      broadcasted to local monitoring nodes.
+                    <p className="mt-0.5 text-slate-500 text-[11.5px]">
+                      Siren unit pinned to {areaName} coordinates with 500m omnidirectional buffer.
                     </p>
                   </div>
                 </div>
-              ) : null}
-
-              <div className="flex items-start gap-3 rounded-xl border border-slate-100 p-3.5 text-xs">
-                <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-emerald-100 text-emerald-700 font-bold">
-                  <CheckCircle2 className="size-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-bold text-slate-900">
-                      Station Initialized & Geocoded
-                    </p>
-                    <span className="font-mono text-[11px] text-slate-400">
-                      System
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-slate-500 text-[11.5px]">
-                    Siren unit pinned to {areaName} coordinates with 500m omnidirectional buffer.
-                  </p>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -477,6 +600,8 @@ export default function SirenDetailPage() {
                 showHazard
                 showAreas
                 showAcousticBuffer
+                showEvacLegend={false}
+                showSirenLegend={true}
               />
             </div>
             <div className="p-3.5 text-xs text-white">

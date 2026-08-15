@@ -279,7 +279,7 @@ export function ResponseOperationsMap({
           />
         ) : null}
 
-        {/* Area Boundaries (Sitios/Areas 1-6) */}
+        {/* Area Boundaries (Areas 1-6) */}
         {showAreas && areaBoundariesQuery.data ? (
           <GeoJSON
             key="area-boundaries"

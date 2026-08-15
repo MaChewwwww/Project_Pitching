@@ -195,3 +195,22 @@ class SirenOut(PublicSiren):
     area_name: str | None
     is_active: bool
     last_triggered_at: datetime | None
+
+
+class SirenAuditOut(BaseModel):
+    id: uuid.UUID
+    action: str
+    entity_id: uuid.UUID | None
+    actor_user_id: uuid.UUID | None
+    classification: str
+    created_at: datetime
+    changes: dict[str, object] | None = None
+
+
+class SirenDrillResult(BaseModel):
+    ok: bool
+    action: str
+    classification: str
+    affected_count: int
+    sirens: list[SirenOut]
+

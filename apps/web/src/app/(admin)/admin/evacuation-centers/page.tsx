@@ -539,6 +539,8 @@ export default function AdminEvacuationCentersPage() {
               onSelect={setSelectedId}
               showHazard={showHazard}
               showAreas={showAreas}
+              showEvacLegend={true}
+              showSirenLegend={false}
             />
           </div>
         </div>
@@ -560,7 +562,7 @@ export default function AdminEvacuationCentersPage() {
               <LayerCheckbox
                 checked={showAreas}
                 onChange={setShowAreas}
-                label="Sitio Area Boundaries"
+                label="Barangay Area Boundaries"
               />
             </div>
           </div>
@@ -610,7 +612,7 @@ export default function AdminEvacuationCentersPage() {
 
               <div className="flex flex-col gap-1">
                 <label className="text-[10.5px] font-bold text-emerald-200/90">
-                  Sitio Area
+                  Assigned Area
                 </label>
                 <Select value={areaFilter} onValueChange={setAreaFilter}>
                   <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">

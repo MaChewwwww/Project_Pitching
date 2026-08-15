@@ -470,6 +470,9 @@ export default function AdminFacilitiesPage() {
               onSelect={setSelectedId}
               showHazard={showHazard}
               showAreas={showAreas}
+              showFacilityLegend={true}
+              showEvacLegend={false}
+              showSirenLegend={false}
             />
           </div>
         </div>
@@ -491,7 +494,7 @@ export default function AdminFacilitiesPage() {
               <LayerCheckbox
                 checked={showAreas}
                 onChange={setShowAreas}
-                label="Sitio Area Boundaries"
+                label="Barangay Area Boundaries"
               />
             </div>
           </div>
@@ -543,7 +546,7 @@ export default function AdminFacilitiesPage() {
 
               <div className="flex flex-col gap-1">
                 <label className="text-[10.5px] font-bold text-emerald-200/90">
-                  Sitio Area
+                  Assigned Area
                 </label>
                 <Select value={areaFilter} onValueChange={setAreaFilter}>
                   <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">

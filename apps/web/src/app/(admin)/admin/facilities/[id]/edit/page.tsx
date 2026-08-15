@@ -254,7 +254,7 @@ export default function EditFacilityPage() {
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="area_id" className="text-xs font-bold text-slate-800">
-                Sitio Area
+                Assigned Area Division
               </Label>
               <Controller
                 name="area_id"

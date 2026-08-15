@@ -27,6 +27,8 @@ from src.modules.geo.schemas import (
     PublicFacility,
     PublicHotline,
     PublicSiren,
+    SirenAuditOut,
+    SirenDrillResult,
     SirenIn,
     SirenOut,
 )
@@ -290,14 +292,74 @@ async def admin_update_siren(
 
 
 @admin_router.post(
+    "/sirens/drill/trigger",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Trigger all sirens for emergency drill simulation",
+)
+async def admin_trigger_all_sirens_drill(
+    session: DbSessionDep, user: CurrentUser
+) -> SirenDrillResult:
+    results = await service.trigger_all_sirens_drill(session, actor_id=user.id)
+    sirens_out = [service.siren_to_out(s, coords, area_name) for s, coords, area_name in results]
+    return SirenDrillResult(
+        ok=True,
+        action="siren.drill",
+        classification="Drill",
+        affected_count=len(sirens_out),
+        sirens=sirens_out,
+    )
+
+
+@admin_router.post(
+    "/sirens/drill/silence",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Silence all sirens from emergency drill simulation",
+)
+async def admin_silence_all_sirens_drill(
+    session: DbSessionDep, user: CurrentUser
+) -> SirenDrillResult:
+    results = await service.silence_all_sirens_drill(session, actor_id=user.id)
+    sirens_out = [service.siren_to_out(s, coords, area_name) for s, coords, area_name in results]
+    return SirenDrillResult(
+        ok=True,
+        action="siren.drill_silence",
+        classification="Drill",
+        affected_count=len(sirens_out),
+        sirens=sirens_out,
+    )
+
+
+@admin_router.get(
+    "/sirens/audits",
+    dependencies=[Depends(require_role("admin"))],
+    summary="List siren drill and trigger audit logs",
+)
+async def admin_list_siren_audits(session: DbSessionDep) -> list[SirenAuditOut]:
+    return await service.list_siren_audits(session)
+
+
+@admin_router.get(
+    "/sirens/{siren_id}/audits",
+    dependencies=[Depends(require_role("admin"))],
+    summary="List audits for a specific siren unit",
+)
+async def admin_get_siren_audits(
+    siren_id: uuid.UUID, session: DbSessionDep
+) -> list[SirenAuditOut]:
+    return await service.list_siren_audits(session, siren_id=siren_id)
+
+
+@admin_router.post(
     "/sirens/{siren_id}/trigger",
     dependencies=[Depends(require_role("admin"))],
     summary="Trigger/toggle siren status (simulation)",
 )
 async def admin_trigger_siren(
-    siren_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+    siren_id: uuid.UUID, session: DbSessionDep, user: CurrentUser, is_drill: bool = False
 ) -> SirenOut:
-    siren, coords = await service.trigger_siren(session, siren_id, actor_id=user.id)
+    siren, coords = await service.trigger_siren(
+        session, siren_id, actor_id=user.id, is_drill=is_drill
+    )
     return service.siren_to_out(
         siren, coords, await service.siren_area_name(session, siren.area_id)
     )
@@ -309,9 +371,11 @@ async def admin_trigger_siren(
     summary="Silence a siren simulation",
 )
 async def admin_silence_siren(
-    siren_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+    siren_id: uuid.UUID, session: DbSessionDep, user: CurrentUser, is_drill: bool = False
 ) -> SirenOut:
-    siren, coords = await service.silence_siren(session, siren_id, actor_id=user.id)
+    siren, coords = await service.silence_siren(
+        session, siren_id, actor_id=user.id, is_drill=is_drill
+    )
     return service.siren_to_out(
         siren, coords, await service.siren_area_name(session, siren.area_id)
     )

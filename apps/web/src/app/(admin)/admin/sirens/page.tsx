@@ -12,7 +12,6 @@ import {
   MapPin,
   Megaphone,
   Pencil,
-  Plus,
   Radio,
   RotateCcw,
   SlidersHorizontal,
@@ -43,6 +42,7 @@ import {
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import { useSirenAudio } from "@/hooks/use-siren-audio";
+import { DeploySirenDialog } from "@/components/features/admin/deploy-siren-dialog";
 import { cn } from "@/lib/utils";
 
 interface Siren {
@@ -164,6 +164,34 @@ export default function AdminSirensPage() {
     },
   });
 
+  const triggerAllDrillMutation = useMutation({
+    mutationFn: () => api.post<{ ok: boolean; affected_count: number }>("/admin/sirens/drill/trigger"),
+    onSuccess: (res) => {
+      sirenAudio.start();
+      toast.warning(
+        `🚨 Drill Simulation Active: ${res.data.affected_count} siren stations sounding (Audit Classified: Drill)`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens"] });
+    },
+    onError: (err) => {
+      toast.error(toDisplayError(err).detail || "Failed to trigger drill simulation");
+    },
+  });
+
+  const silenceAllDrillMutation = useMutation({
+    mutationFn: () => api.post<{ ok: boolean; affected_count: number }>("/admin/sirens/drill/silence"),
+    onSuccess: (res) => {
+      sirenAudio.stop();
+      toast.success(
+        `⏹ Drill Simulation Concluded: ${res.data.affected_count} siren stations silenced (Audit Classified: Drill)`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["admin", "sirens"] });
+    },
+    onError: (err) => {
+      toast.error(toDisplayError(err).detail || "Failed to silence drill simulation");
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/sirens/${id}`),
     onSuccess: () => {
@@ -260,10 +288,10 @@ export default function AdminSirensPage() {
     },
     {
       icon: MapPin,
-      label: "Sitio Distribution",
+      label: "Area Coverage",
       value: "100%",
       unit: "Coverage",
-      sub: "Geocoded across San Jose",
+      sub: "Geocoded across San Jose Areas",
       tone: "emerald",
     },
   ];
@@ -368,7 +396,7 @@ export default function AdminSirensPage() {
     },
     {
       key: "area",
-      header: "Sitio Area",
+      header: "Assigned Area",
       render: (row) => (
         <span className="text-xs font-semibold text-neutral-800">
           {areaName(row)}
@@ -438,7 +466,7 @@ export default function AdminSirensPage() {
       {/* Page Header */}
       <AdminPageHeader
         title="Siren Alert Network"
-        description="Public early warning acoustic simulation system. Control siren test drills, sound alerts during flash floods, and monitor Sitio coverage."
+        description="Public early warning acoustic simulation system. Control siren test drills, sound alerts during flash floods, and monitor Area coverage."
         action={
           <div className="flex items-center gap-2.5">
             {/* Auto refresh badge */}
@@ -469,15 +497,7 @@ export default function AdminSirensPage() {
               </button>
             </div>
 
-            <Link href="/admin/sirens/new">
-              <Button
-                variant="primary"
-                className="h-9 gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700 shadow-2xs cursor-pointer shrink-0"
-              >
-                <Plus className="size-3.5" />
-                Deploy Siren Unit
-              </Button>
-            </Link>
+            <DeploySirenDialog />
           </div>
         }
       />
@@ -497,6 +517,8 @@ export default function AdminSirensPage() {
               showHazard={showHazard}
               showAreas={showAreas}
               showAcousticBuffer={showAcousticBuffer}
+              showEvacLegend={false}
+              showSirenLegend={true}
             />
           </div>
         </div>
@@ -518,7 +540,7 @@ export default function AdminSirensPage() {
               <LayerCheckbox
                 checked={showAreas}
                 onChange={setShowAreas}
-                label="Sitio Area Boundaries"
+                label="Barangay Area Boundaries"
               />
               <LayerCheckbox
                 checked={showHazard}
@@ -530,39 +552,73 @@ export default function AdminSirensPage() {
 
           {/* Quick Simulation Drill Panel */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md flex flex-col gap-2.5">
-            <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
-              <Radio className="size-3.5 text-emerald-400" />
-              Drill Simulation Control
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
+                <Radio
+                  className={cn(
+                    "size-3.5",
+                    stats.soundingCount > 0 ? "text-rose-400 animate-pulse" : "text-emerald-400",
+                  )}
+                />
+                Drill Simulation Control
+              </p>
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider",
+                  stats.soundingCount > 0
+                    ? "bg-rose-900/90 text-rose-200 border border-rose-600 animate-pulse"
+                    : "bg-emerald-900/80 text-emerald-300 border border-emerald-700/60",
+                )}
+              >
+                {stats.soundingCount > 0 ? "Drill Sounding" : "Drill Standby"}
+              </span>
+            </div>
+
             <p className="text-[11px] text-emerald-100/75 leading-relaxed">
-              Test synthesizer generates dual-tone frequency sweeps via Web
-              Audio API without affecting physical hardware.
+              Conducts a full barangay-wide auditory drill across all {stats.activeCount} active stations. Recorded audit entries are classified as <strong>Drill</strong>.
             </p>
 
             <div className="mt-1 flex flex-col gap-2">
+              {stats.soundingCount > 0 ? (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  disabled={silenceAllDrillMutation.isPending}
+                  onClick={() => silenceAllDrillMutation.mutate()}
+                  className="h-9 justify-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-xs font-bold text-white shadow-md cursor-pointer animate-pulse"
+                >
+                  <VolumeX className="size-3.5" />
+                  {silenceAllDrillMutation.isPending
+                    ? "Silencing Drill…"
+                    : "Stop Drill & Silence All Sirens"}
+                </Button>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  disabled={triggerAllDrillMutation.isPending || stats.activeCount === 0}
+                  onClick={() => triggerAllDrillMutation.mutate()}
+                  className="h-9 justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white shadow-md cursor-pointer"
+                >
+                  <Radio className="size-3.5" />
+                  {triggerAllDrillMutation.isPending
+                    ? "Activating Drill…"
+                    : `Start Barangay Drill (${stats.activeCount} Sirens)`}
+                </Button>
+              )}
+
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => {
                   sirenAudio.start();
-                  toast.success("Simulating audio tone on local machine");
+                  setTimeout(() => sirenAudio.stop(), 3000);
+                  toast.info("Playing 3-second local test chime");
                 }}
-                className="h-8 justify-center gap-1.5 border-emerald-600 bg-emerald-900/60 text-xs font-bold text-emerald-200 hover:bg-emerald-800 cursor-pointer"
+                className="h-7.5 justify-center gap-1.5 border-slate-700 bg-slate-900/80 text-[11px] font-semibold text-slate-300 hover:bg-slate-800 cursor-pointer"
               >
-                <Volume2 className="size-3" />
-                Play Test Audio Tone
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  sirenAudio.stop();
-                  toast.info("Test audio stopped");
-                }}
-                className="h-8 justify-center gap-1.5 border-slate-700 bg-slate-900/80 text-xs font-semibold text-slate-300 hover:bg-slate-800 cursor-pointer"
-              >
-                <VolumeX className="size-3" />
-                Stop Audio Tone
+                <Activity className="size-3 text-amber-400" />
+                Play 3s Diagnostic Chime
               </Button>
             </div>
           </div>
@@ -610,7 +666,7 @@ export default function AdminSirensPage() {
 
               <div className="flex flex-col gap-1">
                 <label className="text-[10.5px] font-bold text-emerald-200/90">
-                  Sitio Area
+                  Assigned Area
                 </label>
                 <Select value={areaFilter} onValueChange={setAreaFilter}>
                   <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
@@ -674,17 +730,7 @@ export default function AdminSirensPage() {
             </Select>
           </div>
         }
-        toolbarAction={
-          <Link href="/admin/sirens/new">
-            <Button
-              variant="primary"
-              className="h-9 gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700 shadow-2xs cursor-pointer shrink-0"
-            >
-              <Plus className="size-3.5" />
-              Deploy Siren Unit
-            </Button>
-          </Link>
-        }
+        toolbarAction={<DeploySirenDialog />}
         rowActions={(row) => (
           <div className="flex items-center gap-1.5">
             <Button

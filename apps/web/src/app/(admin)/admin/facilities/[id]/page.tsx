@@ -125,7 +125,7 @@ export default function FacilityDetailPage() {
   const areaName =
     facility.area_name ||
     areas.find((a) => a.id === facility.area_id)?.name ||
-    "Unassigned Sitio";
+    "Unassigned Area";
 
   const isEvac = facility.type === "evacuation_center";
   const isHealth =
@@ -268,7 +268,7 @@ export default function FacilityDetailPage() {
         />
         <AssetMetricCard
           icon={MapPin}
-          label="Sitio Zone"
+          label="Assigned Area"
           value={areaName}
           sub="Barangay San Jose boundary"
           tone="emerald"
@@ -335,7 +335,7 @@ export default function FacilityDetailPage() {
 
               <div>
                 <dt className="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider">
-                  Sitio Area
+                  Assigned Area
                 </dt>
                 <dd className="font-semibold text-slate-800 mt-0.5">
                   {areaName}
@@ -433,7 +433,7 @@ export default function FacilityDetailPage() {
                 </button>
               </div>
               <p className="mt-1.5 text-[11px] text-emerald-100/70">
-                Layered with official Sitio boundary lines and Project NOAH flood maps.
+                Layered with official Area boundary lines and Project NOAH flood maps.
               </p>
             </div>
           </div>

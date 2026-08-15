@@ -596,10 +596,10 @@ export default function EvacuationCenterDetailPage() {
 
               <div>
                 <dt className="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider">
-                  Sitio / Area
+                  Assigned Area
                 </dt>
                 <dd className="font-semibold text-slate-800 mt-0.5">
-                  {center.facility.area_name || "Unassigned Sitio"}
+                  {center.facility.area_name || "Unassigned Area"}
                 </dd>
               </div>
 

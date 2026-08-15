@@ -23,7 +23,9 @@ import {
   MapPin,
   Megaphone,
   Radio,
+  School,
   Shield,
+  Stethoscope,
   Volume2,
   VolumeX,
 } from "lucide-react";
@@ -80,6 +82,11 @@ export interface AdminAssetWorkspaceMapProps {
   showHazard?: boolean;
   showAreas?: boolean;
   showAcousticBuffer?: boolean;
+  showEvacLegend?: boolean;
+  showSirenLegend?: boolean;
+  showFacilityLegend?: boolean;
+  center?: [number, number];
+  zoom?: number;
   className?: string;
 }
 
@@ -305,11 +312,24 @@ export function AdminAssetWorkspaceMap({
   showHazard = false,
   showAreas = true,
   showAcousticBuffer = true,
+  showEvacLegend,
+  showSirenLegend,
+  showFacilityLegend,
+  center = [14.7455, 121.1320],
+  zoom = 13.8,
   className,
 }: AdminAssetWorkspaceMapProps) {
   const [legendExpanded, setLegendExpanded] = React.useState(true);
   const [showBoundaryModal, setShowBoundaryModal] = React.useState(false);
   const hazard = useHazardGeoJson(showHazard);
+
+  const hasEvac = items.some((i) => i.category === "evacuation_center");
+  const hasSiren = items.some((i) => i.category === "siren");
+  const hasFacility = items.some((i) => i.category === "facility");
+
+  const renderEvacLegend = showEvacLegend ?? (items.length > 0 ? hasEvac : true);
+  const renderSirenLegend = showSirenLegend ?? (items.length > 0 ? hasSiren : true);
+  const renderFacilityLegend = showFacilityLegend ?? (items.length > 0 ? hasFacility : false);
 
   const areaBoundariesQuery = useQuery({
     queryKey: ["public", "area-boundaries", "asset-workspace-map"],
@@ -327,8 +347,8 @@ export function AdminAssetWorkspaceMap({
       <style>{MAP_CSS}</style>
 
       <MapContainer
-        center={BARANGAY_VIEW.center}
-        zoom={13.8}
+        center={center}
+        zoom={zoom}
         minZoom={BARANGAY_VIEW.minZoom}
         maxZoom={BARANGAY_VIEW.maxZoom}
         className="h-full w-full admin-asset-workspace-map"
@@ -352,7 +372,7 @@ export function AdminAssetWorkspaceMap({
           />
         ) : null}
 
-        {/* Area Boundaries (Sitios 1-6) */}
+        {/* Area Boundaries (Areas 1-6) */}
         {showAreas && areaBoundariesQuery.data ? (
           <GeoJSON
             key="area-boundaries"
@@ -680,46 +700,79 @@ export function AdminAssetWorkspaceMap({
             </div>
 
             {/* Evacuation Centers */}
-            <div className="border-t border-emerald-900/60 pt-2">
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
-                Evacuation Centers
-              </p>
-              <ul className="flex flex-col gap-1.5">
-                <li className="flex items-center gap-2">
-                  <div className="grid size-4 place-items-center rounded-full bg-emerald-600 text-white font-bold">
-                    <Building2 className="size-2.5" />
-                  </div>
-                  <span className="text-emerald-100/90">Available Capacity</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="grid size-4 place-items-center rounded-full bg-rose-600 text-white font-bold">
-                    <Building2 className="size-2.5" />
-                  </div>
-                  <span className="text-emerald-100/90">Overloading Capacity</span>
-                </li>
-              </ul>
-            </div>
+            {renderEvacLegend && (
+              <div className="border-t border-emerald-900/60 pt-2">
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                  Evacuation Centers
+                </p>
+                <ul className="flex flex-col gap-1.5">
+                  <li className="flex items-center gap-2">
+                    <div className="grid size-4 place-items-center rounded-full bg-emerald-600 text-white font-bold">
+                      <Building2 className="size-2.5" />
+                    </div>
+                    <span className="text-emerald-100/90">Available Capacity</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="grid size-4 place-items-center rounded-full bg-rose-600 text-white font-bold">
+                      <Building2 className="size-2.5" />
+                    </div>
+                    <span className="text-emerald-100/90">Overloading Capacity</span>
+                  </li>
+                </ul>
+              </div>
+            )}
 
             {/* Siren Units */}
-            <div className="border-t border-emerald-900/60 pt-2">
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
-                Siren Units
-              </p>
-              <ul className="flex flex-col gap-1.5">
-                <li className="flex items-center gap-2">
-                  <div className="grid size-4 place-items-center rounded-full bg-slate-700 text-emerald-400 border border-emerald-500/50 font-bold">
-                    <Megaphone className="size-2.5" />
-                  </div>
-                  <span className="text-emerald-100/90">Idle Siren</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="grid size-4 place-items-center rounded-full bg-rose-600 text-white border border-rose-300 font-bold animate-pulse">
-                    <Megaphone className="size-2.5" />
-                  </div>
-                  <span className="text-emerald-100/90">Sounding Siren</span>
-                </li>
-              </ul>
-            </div>
+            {renderSirenLegend && (
+              <div className="border-t border-emerald-900/60 pt-2">
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                  Siren Units
+                </p>
+                <ul className="flex flex-col gap-1.5">
+                  <li className="flex items-center gap-2">
+                    <div className="grid size-4 place-items-center rounded-full bg-slate-700 text-emerald-400 border border-emerald-500/50 font-bold">
+                      <Megaphone className="size-2.5" />
+                    </div>
+                    <span className="text-emerald-100/90">Idle Siren</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="grid size-4 place-items-center rounded-full bg-rose-600 text-white border border-rose-300 font-bold animate-pulse">
+                      <Megaphone className="size-2.5" />
+                    </div>
+                    <span className="text-emerald-100/90">Sounding Siren</span>
+                  </li>
+                </ul>
+              </div>
+            )}
+
+            {/* Facilities & Infrastructure */}
+            {renderFacilityLegend && (
+              <div className="border-t border-emerald-900/60 pt-2">
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                  Facilities & Infrastructure
+                </p>
+                <ul className="flex flex-col gap-1.5">
+                  <li className="flex items-center gap-2">
+                    <div className="grid size-4 place-items-center rounded-full bg-rose-600 text-white font-bold">
+                      <Stethoscope className="size-2.5" />
+                    </div>
+                    <span className="text-emerald-100/90">Health Centers & Clinics</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="grid size-4 place-items-center rounded-full bg-emerald-600 text-white font-bold">
+                      <Building2 className="size-2.5" />
+                    </div>
+                    <span className="text-emerald-100/90">Administrative Halls</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="grid size-4 place-items-center rounded-full bg-sky-600 text-white font-bold">
+                      <School className="size-2.5" />
+                    </div>
+                    <span className="text-emerald-100/90">Schools & Gymnasiums</span>
+                  </li>
+                </ul>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -776,7 +829,7 @@ export function AdminAssetWorkspaceMap({
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                 <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
-                  Sitio Areas
+                  Barangay Areas
                 </p>
                 <p className="mt-1 font-bold text-slate-900">6 Areas</p>
               </div>

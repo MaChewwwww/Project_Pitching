@@ -32,9 +32,12 @@ from src.modules.geo.schemas import (
     PublicArea,
     PublicFacility,
     PublicSiren,
+    SirenAuditOut,
+    SirenDrillResult,
     SirenIn,
     SirenOut,
 )
+from src.modules.users.models import AuditLog
 
 
 def point_to_geojson(location) -> GeoJsonPoint | None:
@@ -538,7 +541,11 @@ async def update_siren(
 
 
 async def trigger_siren(
-    session: AsyncSession, siren_id: uuid.UUID, *, actor_id: uuid.UUID
+    session: AsyncSession,
+    siren_id: uuid.UUID,
+    *,
+    actor_id: uuid.UUID,
+    is_drill: bool = False,
 ) -> tuple[Siren, tuple[float, float]]:
     siren = await session.get(Siren, siren_id)
     if siren is None:
@@ -547,13 +554,19 @@ async def trigger_siren(
         raise ConflictError("Reactivate this siren before triggering it.")
     siren.status = "sounding"
     siren.last_triggered_at = datetime.now(UTC)
+    action = "siren.drill" if is_drill else "siren.trigger"
+    classification = "Drill" if is_drill else "Operational"
     await write_audit(
         session,
         actor_user_id=actor_id,
-        action="siren.trigger",
+        action=action,
         entity_type="siren",
         entity_id=siren.id,
-        changes={"status": siren.status},
+        changes={
+            "status": siren.status,
+            "classification": classification,
+            "name": siren.name,
+        },
     )
     await session.commit()
 
@@ -568,18 +581,29 @@ async def trigger_siren(
 
 
 async def silence_siren(
-    session: AsyncSession, siren_id: uuid.UUID, *, actor_id: uuid.UUID
+    session: AsyncSession,
+    siren_id: uuid.UUID,
+    *,
+    actor_id: uuid.UUID,
+    is_drill: bool = False,
 ) -> tuple[Siren, tuple[float, float]]:
     siren = await session.get(Siren, siren_id)
     if siren is None:
         raise NotFoundError("Siren not found.")
     siren.status = "idle"
+    action = "siren.drill_silence" if is_drill else "siren.silence"
+    classification = "Drill" if is_drill else "Operational"
     await write_audit(
         session,
         actor_user_id=actor_id,
-        action="siren.silence",
+        action=action,
         entity_type="siren",
         entity_id=siren.id,
+        changes={
+            "status": siren.status,
+            "classification": classification,
+            "name": siren.name,
+        },
     )
     await session.commit()
     row = await session.execute(
@@ -587,6 +611,128 @@ async def silence_siren(
     )
     lon, lat = row.one()
     return siren, (lon, lat)
+
+
+async def trigger_all_sirens_drill(
+    session: AsyncSession, *, actor_id: uuid.UUID
+) -> list[tuple[Siren, tuple[float, float], str | None]]:
+    """Trigger all active sirens for an administrative emergency drill simulation."""
+    result = await session.execute(
+        select(
+            Siren,
+            func.ST_X(Siren.location).label("lon"),
+            func.ST_Y(Siren.location).label("lat"),
+            Area.name.label("area_name"),
+        )
+        .outerjoin(Area, Area.id == Siren.area_id)
+        .where(Siren.is_active == True)  # noqa: E712
+    )
+    rows = result.all()
+    now = datetime.now(UTC)
+    updated: list[tuple[Siren, tuple[float, float], str | None]] = []
+
+    for siren, lon, lat, area_name in rows:
+        siren.status = "sounding"
+        siren.last_triggered_at = now
+        await write_audit(
+            session,
+            actor_user_id=actor_id,
+            action="siren.drill",
+            entity_type="siren",
+            entity_id=siren.id,
+            changes={
+                "status": "sounding",
+                "classification": "Drill",
+                "mode": "simulation",
+                "name": siren.name,
+                "area_name": area_name,
+            },
+        )
+        updated.append((siren, (lon, lat), area_name))
+
+    await session.commit()
+    return updated
+
+
+async def silence_all_sirens_drill(
+    session: AsyncSession, *, actor_id: uuid.UUID
+) -> list[tuple[Siren, tuple[float, float], str | None]]:
+    """Silence all active sirens concluding the drill simulation."""
+    result = await session.execute(
+        select(
+            Siren,
+            func.ST_X(Siren.location).label("lon"),
+            func.ST_Y(Siren.location).label("lat"),
+            Area.name.label("area_name"),
+        )
+        .outerjoin(Area, Area.id == Siren.area_id)
+        .where(Siren.is_active == True)  # noqa: E712
+    )
+    rows = result.all()
+    updated: list[tuple[Siren, tuple[float, float], str | None]] = []
+
+    for siren, lon, lat, area_name in rows:
+        siren.status = "idle"
+        await write_audit(
+            session,
+            actor_user_id=actor_id,
+            action="siren.drill_silence",
+            entity_type="siren",
+            entity_id=siren.id,
+            changes={
+                "status": "idle",
+                "classification": "Drill",
+                "mode": "simulation",
+                "name": siren.name,
+                "area_name": area_name,
+            },
+        )
+        updated.append((siren, (lon, lat), area_name))
+
+    await session.commit()
+    return updated
+
+
+async def list_siren_audits(
+    session: AsyncSession, siren_id: uuid.UUID | None = None
+) -> list[SirenAuditOut]:
+    """Query audit logs associated with siren units and drill exercises."""
+    stmt = (
+        select(AuditLog)
+        .where(AuditLog.entity_type == "siren")
+        .order_by(AuditLog.created_at.desc())
+        .limit(100)
+    )
+    if siren_id is not None:
+        stmt = stmt.where(AuditLog.entity_id == siren_id)
+
+    result = await session.execute(stmt)
+    records = result.scalars().all()
+
+    audits: list[SirenAuditOut] = []
+    for log in records:
+        changes_dict = log.changes if isinstance(log.changes, dict) else {}
+        classification = changes_dict.get("classification") if changes_dict else None
+        if not classification:
+            if "drill" in log.action:
+                classification = "Drill"
+            elif "trigger" in log.action:
+                classification = "Operational"
+            else:
+                classification = "Administrative"
+
+        audits.append(
+            SirenAuditOut(
+                id=log.id,
+                action=log.action,
+                entity_id=log.entity_id,
+                actor_user_id=log.actor_user_id,
+                classification=str(classification),
+                created_at=log.created_at,
+                changes=changes_dict,
+            )
+        )
+    return audits
 
 
 async def delete_siren(session: AsyncSession, siren_id: uuid.UUID, *, actor_id: uuid.UUID) -> None:
