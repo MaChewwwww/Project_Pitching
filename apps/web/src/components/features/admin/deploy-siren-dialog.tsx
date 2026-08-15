@@ -75,17 +75,23 @@ export function DeploySirenDialog({
   const lng = watch("longitude");
   const pinValue: LatLng | null = lat && lng ? { lat, lng } : null;
 
-  function handlePinChange(latlng: LatLng) {
-    setValue("latitude", latlng.lat, { shouldValidate: true });
-    setValue("longitude", latlng.lng, { shouldValidate: true });
-  }
+  const handlePinChange = React.useCallback(
+    (latlng: LatLng) => {
+      setValue("latitude", latlng.lat, { shouldValidate: true });
+      setValue("longitude", latlng.lng, { shouldValidate: true });
+    },
+    [setValue],
+  );
 
-  function handleResolve(resolution: PointResolution) {
-    setAutoAreaName(resolution.area_name);
-    if (resolution.area_id) {
-      setValue("area_id", resolution.area_id, { shouldValidate: true });
-    }
-  }
+  const handleResolve = React.useCallback(
+    (resolution: PointResolution) => {
+      setAutoAreaName(resolution.area_name);
+      if (resolution.area_id) {
+        setValue("area_id", resolution.area_id, { shouldValidate: true });
+      }
+    },
+    [setValue],
+  );
 
   const createMutation = useMutation({
     mutationFn: (values: FormValues) => api.post("/admin/sirens", values),

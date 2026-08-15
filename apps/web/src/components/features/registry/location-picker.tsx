@@ -97,11 +97,17 @@ function ClickToPlace({ onChange }: { onChange: (value: LatLng) => void }) {
  */
 function FlyToFix({ fix }: { fix: { lat: number; lng: number } | null }) {
   const map = useMap();
+  const lastFlownFixRef = React.useRef<string | null>(null);
+
   React.useEffect(() => {
-    if (fix) map.flyTo(fix, 16);
-    // `map` is stable for the container's lifetime; only a new fix matters.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fix]);
+    if (fix) {
+      const key = `${fix.lat},${fix.lng}`;
+      if (lastFlownFixRef.current !== key) {
+        lastFlownFixRef.current = key;
+        map.flyTo(fix, 16, { duration: 1.2 });
+      }
+    }
+  }, [fix, map]);
   return null;
 }
 
@@ -118,13 +124,21 @@ export default function LocationPicker({
   const center = value ?? { lat: BARANGAY_VIEW.center[0], lng: BARANGAY_VIEW.center[1] };
   const markerRef = React.useRef<L.Marker>(null);
   const placeRequestRef = React.useRef(0);
+  const lastPlacedFixRef = React.useRef<string | null>(null);
   const geo = useGeolocation();
   const [boundaryDialogOpen, setBoundaryDialogOpen] = React.useState(false);
 
+  const onChangeRef = React.useRef(onChange);
+  onChangeRef.current = onChange;
+  const onResolveRef = React.useRef(onResolve);
+  onResolveRef.current = onResolve;
+  const onBoundaryViolationRef = React.useRef(onBoundaryViolation);
+  onBoundaryViolationRef.current = onBoundaryViolation;
+
   const place = React.useCallback(
     (next: LatLng) => {
-      onChange(next);
-      if (readOnly || (!onResolve && !restrictToBarangay && !onBoundaryViolation)) return;
+      onChangeRef.current(next);
+      if (readOnly || (!onResolveRef.current && !restrictToBarangay && !onBoundaryViolationRef.current)) return;
       const requestId = ++placeRequestRef.current;
       void api
         .get<PointResolution>("/public/areas/resolve-point", {
@@ -135,14 +149,14 @@ export default function LocationPicker({
           const resolution = response.data;
           if (!resolution.within_barangay) {
             if (restrictToBarangay) setBoundaryDialogOpen(true);
-            onBoundaryViolation?.();
-            onResolve?.({ ...resolution, waterway_proximity: null });
+            onBoundaryViolationRef.current?.();
+            onResolveRef.current?.({ ...resolution, waterway_proximity: null });
             return;
           }
 
           const hazardData = await loadHazardGeoJson();
           if (requestId !== placeRequestRef.current) return;
-          onResolve?.({
+          onResolveRef.current?.({
             ...resolution,
             waterway_proximity: waterwayProximityForPoint(
               hazardData,
@@ -153,13 +167,17 @@ export default function LocationPicker({
         })
         .catch(() => undefined);
     },
-    [onBoundaryViolation, onChange, onResolve, readOnly, restrictToBarangay],
+    [readOnly, restrictToBarangay],
   );
 
   React.useEffect(() => {
-    if (!readOnly && geo.fix) place({ lat: geo.fix.lat, lng: geo.fix.lng });
-    // `onChange` is a stable RHF `field.onChange` at every call site — same
-    // rationale as `use-registration-draft.ts`'s `form` dependency omission.
+    if (!readOnly && geo.fix) {
+      const fixKey = `${geo.fix.lat},${geo.fix.lng}`;
+      if (lastPlacedFixRef.current !== fixKey) {
+        lastPlacedFixRef.current = fixKey;
+        place({ lat: geo.fix.lat, lng: geo.fix.lng });
+      }
+    }
   }, [geo.fix, place, readOnly]);
 
   return (
