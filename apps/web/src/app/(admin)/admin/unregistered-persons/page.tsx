@@ -457,7 +457,7 @@ export default function AdminUnregisteredPersonsPage() {
                 <SelectTrigger className="inline-flex h-9 w-fit min-w-[155px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
                   <SelectValue placeholder="Select Event" />
                 </SelectTrigger>
-                <SelectContent className="z-[3000] min-w-64 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
+                <SelectContent className="z-[3000] min-w-[320px] overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
                   <SelectItem value="all">
                     <span className="font-semibold text-neutral-800">
                       {activeEvent ? `${activeEvent.name} (Active)` : "Current Active Event"}
@@ -467,7 +467,7 @@ export default function AdminUnregisteredPersonsPage() {
                     const badge = getEventTypeBadge(event.type);
                     return (
                       <SelectItem key={event.id} value={event.id} className="cursor-pointer py-1.5">
-                        <span className="font-medium text-slate-800 truncate max-w-[180px]">{event.name}</span>
+                        <span className="font-medium text-slate-800 truncate min-w-0 flex-1 pr-2">{event.name}</span>
                         <div className="flex items-center gap-1.5 shrink-0 ml-auto">
                           <span
                             className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider ${badge.className}`}

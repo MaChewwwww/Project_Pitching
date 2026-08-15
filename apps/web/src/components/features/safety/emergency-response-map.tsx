@@ -2173,7 +2173,7 @@ function CreateWalkInForm({
                   const badge = getEventTypeBadge(evt.type);
                   return (
                     <SelectItem key={evt.id} value={evt.id} className="cursor-pointer py-2">
-                      <span className="font-semibold text-slate-900 truncate max-w-[180px]">{evt.name}</span>
+                      <span className="font-semibold text-slate-900 truncate min-w-0 flex-1 pr-2">{evt.name}</span>
                       <div className="flex items-center gap-1.5 shrink-0 ml-auto">
                         <span
                           className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider ${badge.className}`}
@@ -2199,7 +2199,7 @@ function CreateWalkInForm({
                   const badge = getEventTypeBadge(evt.type);
                   return (
                     <SelectItem key={evt.id} value={evt.id} className="cursor-pointer py-2">
-                      <span className="font-medium text-slate-700 truncate max-w-[180px]">{evt.name}</span>
+                      <span className="font-medium text-slate-700 truncate min-w-0 flex-1 pr-2">{evt.name}</span>
                       <div className="flex items-center gap-1.5 shrink-0 ml-auto">
                         <span
                           className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider ${badge.className}`}
@@ -2232,14 +2232,14 @@ function CreateWalkInForm({
           <SelectContent
             position="popper"
             sideOffset={4}
-            className="z-[3000] max-h-64 min-w-72 w-[var(--radix-select-trigger-width)] rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+            className="z-[3000] max-h-64 min-w-[340px] w-[var(--radix-select-trigger-width)] rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
           >
             <SelectItem value="none" className="cursor-pointer py-2">
               <span className="text-slate-500">None / Field Operation</span>
             </SelectItem>
             {data.evacuation_centers.map((c) => (
               <SelectItem key={c.id} value={c.id} className="cursor-pointer py-2">
-                <span className="font-medium text-slate-900 truncate max-w-[190px]">
+                <span className="font-medium text-slate-900 truncate min-w-0 flex-1 pr-2">
                   {c.facility.name}
                 </span>
                 <div className="flex items-center gap-1.5 shrink-0 ml-auto">
