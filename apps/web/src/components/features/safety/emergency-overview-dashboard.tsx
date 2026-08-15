@@ -413,6 +413,35 @@ export function EmergencyOverviewDashboard({
     },
   ].filter((d) => d.value > 0);
 
+  const renderProximityCustomLabel = (props: {
+    cx?: number;
+    cy?: number;
+    midAngle?: number;
+    outerRadius?: number;
+    index?: number;
+  }) => {
+    const { cx = 0, cy = 0, midAngle = 0, outerRadius = 68, index = 0 } = props;
+    const RADIAN = Math.PI / 180;
+    const radius = outerRadius + 14;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    const item = proximityChartData[index];
+    if (!item) return null;
+
+    return (
+      <text
+        x={x}
+        y={y}
+        fill="#0f172a"
+        textAnchor={x > cx ? "start" : "end"}
+        dominantBaseline="central"
+        className="text-[11px] font-black fill-slate-900"
+      >
+        {item.pct}%
+      </text>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-6">
       {/* -------------------------------------------------------------------- */}
@@ -793,16 +822,16 @@ export function EmergencyOverviewDashboard({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-              {/* Donut Chart */}
-              <div className="h-56 sm:col-span-6 w-full">
+              {/* Donut Chart with Centered Metric */}
+              <div className="relative h-56 sm:col-span-6 w-full flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={demographicChartData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={45}
-                      outerRadius={75}
+                      innerRadius={48}
+                      outerRadius={72}
                       paddingAngle={3}
                       dataKey="value"
                     >
@@ -826,6 +855,16 @@ export function EmergencyOverviewDashboard({
                     />
                   </PieChart>
                 </ResponsiveContainer>
+
+                {/* Donut Center Total & Label */}
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-xl sm:text-2xl font-black tracking-tight text-amber-950 tabular-nums leading-none">
+                    {formatNumber(vulnerabilityMetrics.totalHighRisk)}
+                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-amber-700/80 mt-1">
+                    High Care
+                  </span>
+                </div>
               </div>
 
               {/* Legend & Stats Pills */}
@@ -864,18 +903,20 @@ export function EmergencyOverviewDashboard({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-              {/* Donut Chart */}
-              <div className="h-56 sm:col-span-6 w-full">
+              {/* Donut Chart with Center Total and Outside Callouts */}
+              <div className="relative h-56 sm:col-span-6 w-full flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
+                  <PieChart margin={{ top: 8, right: 18, bottom: 8, left: 18 }}>
                     <Pie
                       data={proximityChartData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={45}
-                      outerRadius={75}
+                      innerRadius={48}
+                      outerRadius={68}
                       paddingAngle={3}
                       dataKey="value"
+                      label={renderProximityCustomLabel}
+                      labelLine={{ stroke: "#64748b", strokeWidth: 1.5 }}
                     >
                       {proximityChartData.map((entry, index) => (
                         <Cell key={`cell-prox-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
@@ -898,6 +939,16 @@ export function EmergencyOverviewDashboard({
                     />
                   </PieChart>
                 </ResponsiveContainer>
+
+                {/* Donut Center Total & Label (Matches Image #2) */}
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-950 tabular-nums leading-none">
+                    {totalProx}
+                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
+                    Households
+                  </span>
+                </div>
               </div>
 
               {/* Legend & Stats Cards with Progress Bars */}
