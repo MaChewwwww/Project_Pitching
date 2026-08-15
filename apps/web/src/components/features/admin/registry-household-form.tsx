@@ -183,7 +183,7 @@ export function RegistryHouseholdForm({
           </label>
         </div>
         <div className="sm:col-span-2">
-          <Label htmlFor="street_address">House no. / street / purok</Label>
+          <Label htmlFor="street_address">House no. / Street</Label>
           <Input
             id="street_address"
             value={values.street_address ?? ""}

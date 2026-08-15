@@ -252,7 +252,12 @@ async def declare_event(
 
 
 async def end_event(
-    session: AsyncSession, event_id: uuid.UUID, *, actor: AuthenticatedUser, ip: str | None
+    session: AsyncSession,
+    event_id: uuid.UUID,
+    *,
+    actor: AuthenticatedUser,
+    ip: str | None,
+    ended_at: datetime | None = None,
 ) -> tuple[EmergencyEvent, int]:
     event = await session.get(EmergencyEvent, event_id)
     if event is None:
@@ -260,7 +265,7 @@ async def end_event(
     if not event.is_active:
         raise ConflictError("This emergency event has already ended.")
     event.is_active = False
-    event.ended_at = datetime.now(UTC)
+    event.ended_at = ended_at or datetime.now(UTC)
 
     if event.type == "flood":
         from src.modules.weather import service as weather_service

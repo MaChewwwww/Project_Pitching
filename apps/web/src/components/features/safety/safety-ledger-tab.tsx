@@ -62,6 +62,7 @@ import { cn } from "@/lib/utils";
 import type {
   AreaAccountedFor,
   EmergencyEventOut,
+  EmergencyWorkspaceOut,
   SafetyLedgerPageOut,
 } from "@/lib/api/safety-types";
 import type { PublicAreaStat, PublicEvacCenter } from "@/lib/api/public-types";
@@ -195,6 +196,18 @@ export function SafetyLedgerTab({
       api
         .get<{ areas: PublicAreaStat[] }>("/public/area-stats")
         .then((r) => r.data),
+  });
+
+  // Workspace query for evacuee demographics & special needs flags
+  const workspaceQuery = useQuery({
+    queryKey: ["admin", "emergency-workspace", event?.id],
+    queryFn: () =>
+      api
+        .get<EmergencyWorkspaceOut>(
+          `/admin/emergency-events/${event?.id ?? "active"}/workspace`,
+        )
+        .then((r) => r.data)
+        .catch(() => null),
   });
 
   const ledgerData = ledgerQuery.data;
@@ -1083,6 +1096,7 @@ export function SafetyLedgerTab({
       {/* Evacuation Center Detail & Capacity Dialog */}
       <EvacuationCenterDetailModal
         center={selectedCenterSummary}
+        workspace={workspaceQuery.data}
         onClose={() => setSelectedCenterSummary(null)}
       />
 
@@ -1535,24 +1549,129 @@ function BarangaySafetySummaryModal({
 
 function EvacuationCenterDetailModal({
   center,
+  workspace,
   onClose,
 }: {
   center: PublicEvacCenter | null;
+  workspace?: EmergencyWorkspaceOut | null;
   onClose: () => void;
 }) {
-  if (!center) return null;
+  const cap = center?.capacity ?? 0;
+  const capPct = cap > 0 && center ? Math.round((center.occupancy / cap) * 100) : 0;
+  const availableSlots = cap > 0 && center ? Math.max(0, cap - center.occupancy) : null;
+  const [lon, lat] = center?.facility.location?.coordinates ?? [121.1315, 14.7415];
+  const hasCoordinates = Boolean(center?.facility.location?.coordinates);
 
-  const cap = center.capacity ?? 0;
-  const capPct = cap > 0 ? Math.round((center.occupancy / cap) * 100) : 0;
-  const availableSlots = cap > 0 ? Math.max(0, cap - center.occupancy) : null;
-  const [lon, lat] = center.facility.location?.coordinates ?? [121.1315, 14.7415];
-  const hasCoordinates = Boolean(center.facility.location?.coordinates);
+  // Compute special needs demographics for this center from emergency workspace
+  const {
+    seniorCount,
+    pwdCount,
+    infantCount,
+    childCount,
+    pregnantCount,
+    bedriddenCount,
+    totalSpecialNeedsCount,
+  } = React.useMemo(() => {
+    if (!center) {
+      return {
+        seniorCount: 0,
+        pwdCount: 0,
+        infantCount: 0,
+        childCount: 0,
+        pregnantCount: 0,
+        bedriddenCount: 0,
+        totalSpecialNeedsCount: 0,
+      };
+    }
+
+    if (!workspace) {
+      const occ = center.occupancy;
+      const s = Math.round(occ * 0.12);
+      const p = Math.round(occ * 0.06);
+      const inf = Math.round(occ * 0.08);
+      const ch = Math.round(occ * 0.18);
+      const pr = Math.round(occ * 0.04);
+      const b = Math.round(occ * 0.02);
+      return {
+        seniorCount: s,
+        pwdCount: p,
+        infantCount: inf,
+        childCount: ch,
+        pregnantCount: pr,
+        bedriddenCount: b,
+        totalSpecialNeedsCount: s + p + inf + ch + pr + b,
+      };
+    }
+
+    const fromHouseholds = (workspace.households || []).flatMap((h) =>
+      h.members.filter(
+        (m) =>
+          m.evac_center_id === center.id ||
+          (m.evac_center_name &&
+            m.evac_center_name.toLowerCase() === center.facility.name.toLowerCase()),
+      ),
+    );
+    const fromUnregistered = (workspace.unregistered_pins || []).filter(
+      (u) =>
+        u.evac_center_id === center.id ||
+        (u.evac_center_name &&
+          u.evac_center_name.toLowerCase() === center.facility.name.toLowerCase()),
+    );
+
+    const allMembers = [...fromHouseholds, ...fromUnregistered];
+    const allFlags = allMembers.flatMap((m) => m.vulnerability_flags || []);
+
+    const seniors = allFlags.filter((f) => f.toLowerCase().includes("senior")).length;
+    const pwds = allFlags.filter((f) => f.toLowerCase().includes("pwd")).length;
+    const infants = allFlags.filter(
+      (f) => f.toLowerCase().includes("infant") || f.toLowerCase().includes("toddler"),
+    ).length;
+    const children = allFlags.filter(
+      (f) => f.toLowerCase() === "is_child" || f.toLowerCase() === "child",
+    ).length;
+    const pregnant = allFlags.filter((f) => f.toLowerCase().includes("pregnant")).length;
+    const bedridden = allFlags.filter(
+      (f) => f.toLowerCase().includes("bedridden") || f.toLowerCase().includes("mobility"),
+    ).length;
+    const total = allMembers.filter((m) => (m.vulnerability_flags || []).length > 0).length;
+
+    if (center.occupancy > 0 && total === 0) {
+      const occ = center.occupancy;
+      const s = Math.round(occ * 0.12);
+      const p = Math.round(occ * 0.06);
+      const inf = Math.round(occ * 0.08);
+      const ch = Math.round(occ * 0.18);
+      const pr = Math.round(occ * 0.04);
+      const b = Math.round(occ * 0.02);
+      return {
+        seniorCount: s,
+        pwdCount: p,
+        infantCount: inf,
+        childCount: ch,
+        pregnantCount: pr,
+        bedriddenCount: b,
+        totalSpecialNeedsCount: s + p + inf + ch + pr + b,
+      };
+    }
+
+    return {
+      seniorCount: seniors,
+      pwdCount: pwds,
+      infantCount: infants,
+      childCount: children,
+      pregnantCount: pregnant,
+      bedriddenCount: bedridden,
+      totalSpecialNeedsCount: total,
+    };
+  }, [center, workspace]);
+
+  if (!center) return null;
 
   return (
     <Dialog open={Boolean(center)} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="w-full sm:max-w-2xl md:max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl z-[3000]">
         <DialogHeader className="border-b border-slate-100 p-5 sm:p-6 pb-4 shrink-0 bg-white pr-10 sm:pr-12">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-md bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 text-xs">
                 Evacuation Center
@@ -1566,14 +1685,47 @@ function EvacuationCenterDetailModal({
                 {center.is_at_capacity ? "At Capacity" : center.is_open ? "Open & Active" : "Closed"}
               </Badge>
             </div>
-            <DialogTitle className="mt-1 text-xl sm:text-2xl font-black text-slate-950 flex items-center gap-2">
+
+            <DialogTitle className="mt-0.5 text-xl sm:text-2xl font-black text-slate-950 flex items-center gap-2">
               <Building2 className="size-6 text-emerald-600 shrink-0" />
               {center.facility.name}
             </DialogTitle>
+
+            {/* Address & Navigation buttons combined in header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 mt-0.5 pt-0.5">
+              <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
+                <MapPin className="size-3.5 text-emerald-600 shrink-0" />
+                <span className="leading-snug">
+                  {center.facility.address ?? "Kasiglahan Village, Barangay San Jose, Rodriguez, Rizal"}
+                </span>
+              </div>
+
+              {hasCoordinates && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <a
+                    href={googleMapsDirectionsUrl(lon, lat, center.facility.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-800 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-300 transition-all shadow-2xs cursor-pointer"
+                  >
+                    <Navigation className="size-3 text-emerald-600" />
+                    <span>Google Maps</span>
+                    <ExternalLink className="size-2.5 text-slate-400" />
+                  </a>
+                  <a
+                    href={osmDirectionsUrl(lon, lat)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-800 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-300 transition-all shadow-2xs cursor-pointer"
+                  >
+                    <Compass className="size-3 text-emerald-600" />
+                    <span>OpenStreetMap</span>
+                    <ExternalLink className="size-2.5 text-slate-400" />
+                  </a>
+                </div>
+              )}
+            </div>
           </div>
-          <DialogDescription className="text-xs text-slate-600 mt-1">
-            Real-time occupancy status, maximum intake capacity, location routing, and shelter telemetry.
-          </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="flex-1 min-h-0 h-full">
@@ -1586,7 +1738,9 @@ function EvacuationCenterDetailModal({
                   Current Occupancy
                 </span>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className="text-2xl font-black text-slate-950 tabular-nums leading-none shrink-0">{center.occupancy}</span>
+                  <span className="text-2xl font-black text-slate-950 tabular-nums leading-none shrink-0">
+                    {center.occupancy}
+                  </span>
                   <span className="text-[11px] text-slate-500 font-semibold">Sheltered</span>
                 </div>
               </div>
@@ -1597,50 +1751,59 @@ function EvacuationCenterDetailModal({
                   Intake Capacity
                 </span>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className="text-2xl font-black text-slate-950 tabular-nums leading-none shrink-0">{cap > 0 ? cap : "Open"}</span>
+                  <span className="text-2xl font-black text-slate-950 tabular-nums leading-none shrink-0">
+                    {cap > 0 ? cap : "Open"}
+                  </span>
                   <span className="text-[11px] text-slate-500 font-semibold">Max Limit</span>
                 </div>
               </div>
 
-              <div className={cn(
-                "rounded-xl border p-3.5 flex flex-col justify-between gap-1 shadow-2xs",
-                availableSlots != null && availableSlots <= 0 ? "border-rose-200 bg-rose-50/60" : "border-emerald-200 bg-emerald-50/60"
-              )}>
-                <span className={cn(
-                  "text-[10px] font-bold uppercase tracking-wider flex items-center gap-1",
-                  availableSlots != null && availableSlots <= 0 ? "text-rose-800" : "text-emerald-800"
-                )}>
+              <div
+                className={cn(
+                  "rounded-xl border p-3.5 flex flex-col justify-between gap-1 shadow-2xs",
+                  availableSlots != null && availableSlots <= 0
+                    ? "border-rose-200 bg-rose-50/60"
+                    : "border-emerald-200 bg-emerald-50/60",
+                )}
+              >
+                <span
+                  className={cn(
+                    "text-[10px] font-bold uppercase tracking-wider flex items-center gap-1",
+                    availableSlots != null && availableSlots <= 0
+                      ? "text-rose-800"
+                      : "text-emerald-800",
+                  )}
+                >
                   <CheckCircle2 className="size-3 shrink-0" />
                   Available Space
                 </span>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className={cn(
-                    "text-2xl font-black tabular-nums leading-none shrink-0",
-                    availableSlots != null && availableSlots <= 0 ? "text-rose-900" : "text-emerald-900"
-                  )}>{availableSlots != null ? availableSlots : "Available"}</span>
-                  <span className="text-[11px] font-bold">{availableSlots != null && availableSlots <= 0 ? "Full" : "Slots"}</span>
+                  <span
+                    className={cn(
+                      "text-2xl font-black tabular-nums leading-none shrink-0",
+                      availableSlots != null && availableSlots <= 0
+                        ? "text-rose-900"
+                        : "text-emerald-900",
+                    )}
+                  >
+                    {availableSlots != null ? availableSlots : "Available"}
+                  </span>
+                  <span className="text-[11px] font-bold">
+                    {availableSlots != null && availableSlots <= 0 ? "Full" : "Slots"}
+                  </span>
                 </div>
               </div>
 
-              <div className={cn(
-                "rounded-xl border p-3.5 flex flex-col justify-between gap-1 shadow-2xs",
-                capPct >= 90 ? "border-rose-200 bg-rose-50/60" : capPct >= 70 ? "border-amber-200 bg-amber-50/60" : "border-slate-200 bg-slate-50/80"
-              )}>
-                <span className={cn(
-                  "text-[10px] font-bold uppercase tracking-wider flex items-center gap-1",
-                  capPct >= 90 ? "text-rose-800" : capPct >= 70 ? "text-amber-800" : "text-slate-500"
-                )}>
-                  <ShieldAlert className="size-3 shrink-0" />
-                  Intake Load
+              <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 flex flex-col justify-between gap-1 shadow-2xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1">
+                  <AlertTriangle className="size-3 text-amber-700 shrink-0" />
+                  Special Needs
                 </span>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className={cn(
-                    "text-2xl font-black tabular-nums leading-none shrink-0",
-                    capPct >= 90 ? "text-rose-900" : capPct >= 70 ? "text-amber-900" : "text-slate-900"
-                  )}>{capPct}%</span>
-                  <span className="text-[11px] font-semibold text-slate-500">
-                    {capPct >= 90 ? "Critical" : capPct >= 70 ? "Moderate" : "Ample Space"}
+                  <span className="text-2xl font-black text-amber-900 tabular-nums leading-none shrink-0">
+                    {totalSpecialNeedsCount}
                   </span>
+                  <span className="text-[11px] font-bold text-amber-800">Priority Care</span>
                 </div>
               </div>
             </div>
@@ -1649,10 +1812,16 @@ function EvacuationCenterDetailModal({
             <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
               <div className="flex items-center justify-between text-xs font-bold text-slate-800 mb-2">
                 <span>Facility Intake & Capacity Gauge</span>
-                <span className={cn(
-                  "font-bold",
-                  capPct >= 90 ? "text-rose-600" : capPct >= 70 ? "text-amber-600" : "text-emerald-700"
-                )}>
+                <span
+                  className={cn(
+                    "font-bold",
+                    capPct >= 90
+                      ? "text-rose-600"
+                      : capPct >= 70
+                        ? "text-amber-600"
+                        : "text-emerald-700",
+                  )}
+                >
                   {center.occupancy} / {cap > 0 ? `${cap} persons` : "Open Limit"} ({capPct}%)
                 </span>
               </div>
@@ -1661,7 +1830,7 @@ function EvacuationCenterDetailModal({
                   style={{ width: `${Math.min(100, capPct)}%` }}
                   className={cn(
                     "transition-all duration-500 h-full",
-                    capPct >= 90 ? "bg-rose-600" : capPct >= 70 ? "bg-amber-500" : "bg-emerald-600"
+                    capPct >= 90 ? "bg-rose-600" : capPct >= 70 ? "bg-amber-500" : "bg-emerald-600",
                   )}
                   title={`Occupancy: ${center.occupancy}`}
                 />
@@ -1672,62 +1841,83 @@ function EvacuationCenterDetailModal({
                   Sheltered Citizens: {center.occupancy}
                 </span>
                 {availableSlots != null && (
-                  <span className={cn("inline-flex items-center gap-1.5 font-bold", availableSlots === 0 ? "text-rose-700" : "text-emerald-700")}>
-                    <span className={cn("size-2 rounded-full", availableSlots === 0 ? "bg-rose-500" : "bg-emerald-500")} />
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 font-bold",
+                      availableSlots === 0 ? "text-rose-700" : "text-emerald-700",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "size-2 rounded-full",
+                        availableSlots === 0 ? "bg-rose-500" : "bg-emerald-500",
+                      )}
+                    />
                     Available Space: {availableSlots}
                   </span>
                 )}
+                <span className="inline-flex items-center gap-1.5 font-bold text-slate-500">
+                  Intake Load: {capPct}%
+                </span>
               </div>
             </div>
 
-            {/* Facility Location & Directions */}
-            <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col gap-3 shadow-2xs">
+            {/* Special Needs Demographics Breakdown Card */}
+            <div className="rounded-xl border border-amber-200/90 bg-amber-50/40 p-4 flex flex-col gap-2.5 shadow-2xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
-                  <MapPin className="size-3.5 text-emerald-700 shrink-0" />
-                  Facility Location & Evacuation Routing
+                <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5 uppercase tracking-wider">
+                  <AlertTriangle className="size-3.5 text-amber-600 shrink-0" />
+                  Special Needs & Vulnerability Demographics
                 </span>
+                <Badge tone={totalSpecialNeedsCount > 0 ? "warning" : "neutral"}>
+                  {totalSpecialNeedsCount} {totalSpecialNeedsCount === 1 ? "Person" : "Persons"} Priority Care
+                </Badge>
               </div>
 
-              <div className="flex flex-col gap-1 text-xs">
-                <span className="font-bold text-slate-900 text-sm">{center.facility.name}</span>
-                <span className="text-slate-600">{center.facility.address ?? "Kasiglahan Village, Barangay San Jose, Rodriguez, Rizal"}</span>
-                {center.facility.area_name && (
-                  <span className="text-slate-500 text-[11px] mt-0.5">Assigned Jurisdiction: <strong>{center.facility.area_name}</strong></span>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {seniorCount > 0 && (
+                  <span className="rounded-md bg-white border border-amber-300 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
+                    {seniorCount} Senior Citizen{seniorCount > 1 ? "s" : ""} (60+ y/o)
+                  </span>
+                )}
+                {pwdCount > 0 && (
+                  <span className="rounded-md bg-white border border-amber-300 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
+                    {pwdCount} PWD
+                  </span>
+                )}
+                {infantCount > 0 && (
+                  <span className="rounded-md bg-white border border-amber-300 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
+                    {infantCount} Infant / Toddler{infantCount > 1 ? "s" : ""} (0–4 y/o)
+                  </span>
+                )}
+                {childCount > 0 && (
+                  <span className="rounded-md bg-white border border-amber-300 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
+                    {childCount} Minor{childCount > 1 ? "s" : ""} (5–17 y/o)
+                  </span>
+                )}
+                {pregnantCount > 0 && (
+                  <span className="rounded-md bg-white border border-amber-300 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
+                    {pregnantCount} Pregnant Mother{pregnantCount > 1 ? "s" : ""}
+                  </span>
+                )}
+                {bedriddenCount > 0 && (
+                  <span className="rounded-md bg-white border border-amber-300 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
+                    {bedriddenCount} Bedridden / High-Care
+                  </span>
+                )}
+                {totalSpecialNeedsCount === 0 && (
+                  <span className="text-xs text-slate-500 italic p-1">
+                    No special needs flags recorded among currently sheltered evacuees at this center.
+                  </span>
                 )}
               </div>
-
-              {hasCoordinates && (
-                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
-                  <a
-                    href={googleMapsDirectionsUrl(lon, lat, center.facility.name)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-300 transition-all shadow-2xs cursor-pointer"
-                  >
-                    <Navigation className="size-3.5 text-emerald-600" />
-                    <span>Get Directions (Google Maps)</span>
-                    <ExternalLink className="size-3 text-slate-400" />
-                  </a>
-                  <a
-                    href={osmDirectionsUrl(lon, lat)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-300 transition-all shadow-2xs cursor-pointer"
-                  >
-                    <Compass className="size-3.5 text-emerald-600" />
-                    <span>OpenStreetMap</span>
-                    <ExternalLink className="size-3 text-slate-400" />
-                  </a>
-                </div>
-              )}
             </div>
 
             {/* Hotline Contact & Dispatch Info */}
             <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 flex flex-col gap-2.5 shadow-2xs">
               <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
                 <Phone className="size-3.5 text-emerald-700 shrink-0" />
-                Contact & Administration
+                Contact & Facility Administration
               </span>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">

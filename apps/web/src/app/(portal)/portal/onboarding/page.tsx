@@ -244,14 +244,14 @@ export default function OnboardingPage() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="street_address">
-                  House no. / Street / Purok{" "}
+                  House no. / Street{" "}
                   <span className="font-normal text-neutral-400">(optional)</span>
                 </Label>
                 <Input
                   id="street_address"
                   type="text"
                   {...register("street_address")}
-                  placeholder="e.g. 12 Sampaguita St., Purok 3"
+                  placeholder="e.g. 12 Sampaguita St."
                 />
               </div>
             </div>

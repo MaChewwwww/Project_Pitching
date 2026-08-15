@@ -34,6 +34,10 @@ class EmergencyEventDeclare(BaseModel):
     started_at: datetime | None = None
 
 
+class EmergencyEventEnd(BaseModel):
+    ended_at: datetime | None = None
+
+
 class EmergencyEventOut(BaseModel):
     id: uuid.UUID
     name: str

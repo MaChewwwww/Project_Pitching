@@ -17,6 +17,7 @@ from src.db.session import DbSessionDep
 from src.modules.evacuation import service
 from src.modules.evacuation.schemas import (
     EmergencyEventDeclare,
+    EmergencyEventEnd,
     EmergencyEventOut,
     EvacCenterIn,
     EvacCheckinCreate,
@@ -68,10 +69,17 @@ async def admin_declare_event(
     summary="End an active emergency event (FR-SAF-019)",
 )
 async def admin_end_event(
-    event_id: uuid.UUID, request: Request, session: DbSessionDep, user: CurrentUser
+    event_id: uuid.UUID,
+    request: Request,
+    session: DbSessionDep,
+    user: CurrentUser,
+    body: EmergencyEventEnd | None = None,
 ) -> EmergencyEventOut:
     ip = request.client.host if request.client else None
-    event, reset_count = await service.end_event(session, event_id, actor=user, ip=ip)
+    ended_at = body.ended_at if body else None
+    event, reset_count = await service.end_event(
+        session, event_id, actor=user, ip=ip, ended_at=ended_at
+    )
     return await service.event_out(session, event, occupancy_reset_count=reset_count)
 
 

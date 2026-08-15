@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   AlertTriangle,
-  CheckCircle2,
+  Calendar,
   ChevronDown,
   CircleCheck,
   Clock,
@@ -19,35 +19,30 @@ import {
   Search,
   ShieldAlert,
   Siren,
-  Users,
   Waves,
-  Zap,
+  Wind,
 } from "lucide-react";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
-import type { AdminField } from "@/components/features/admin/admin-form";
-import { ResourceFormDialog } from "@/components/features/admin/resource-form-dialog";
 import {
   ResourceTable,
   type ResourceColumn,
 } from "@/components/features/admin/resource-table";
 import { SafetyLedgerTab } from "@/components/features/safety/safety-ledger-tab";
+import { EmergencyOverviewDashboard } from "@/components/features/safety/emergency-overview-dashboard";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { api, toDisplayError } from "@/lib/api/client";
 import type {
@@ -55,6 +50,7 @@ import type {
   EmergencyWorkspaceOut,
 } from "@/lib/api/safety-types";
 import { useRequireRole } from "@/lib/auth/use-require-role";
+import { cn } from "@/lib/utils";
 
 const EmergencyResponseMap = dynamic(
   () =>
@@ -64,7 +60,15 @@ const EmergencyResponseMap = dynamic(
   { ssr: false, loading: () => <WorkspaceLoading label="Loading response map…" /> },
 );
 
-const eventTypes = ["flood", "earthquake", "typhoon", "fire", "other"] as const;
+function toLocalDatetimeString(date: Date = new Date()): string {
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  const YYYY = date.getFullYear();
+  const MM = pad(date.getMonth() + 1);
+  const DD = pad(date.getDate());
+  const hh = pad(date.getHours());
+  const mm = pad(date.getMinutes());
+  return `${YYYY}-${MM}-${DD}T${hh}:${mm}`;
+}
 
 function getEventTypeBadgeClass(type: string, isLightPopover = false): string {
   if (isLightPopover) {
@@ -98,33 +102,8 @@ function getEventTypeBadgeClass(type: string, isLightPopover = false): string {
   }
 }
 
-
-
 const tabs = ["overview", "events", "map", "accounted-for"] as const;
 type Tab = (typeof tabs)[number];
-
-const declareSchema = z.object({
-  name: z.string().min(1, "Required"),
-  type: z.enum(eventTypes),
-});
-
-const declareFields: AdminField[] = [
-  {
-    name: "name",
-    label: "Event name",
-    type: "text",
-    placeholder: "Continuous Heavy Rainfall — Riverside Areas",
-  },
-  {
-    name: "type",
-    label: "Type",
-    type: "select",
-    options: eventTypes.map((type) => ({
-      value: type,
-      label: type[0].toUpperCase() + type.slice(1),
-    })),
-  },
-];
 
 export default function AdminEmergencyEventsPage() {
   const { user } = useRequireRole("admin", "bhw", "sk");
@@ -198,19 +177,8 @@ export default function AdminEmergencyEventsPage() {
           ...h,
           all_safe: false,
           rescue_requested: false,
-          members: h.members.map((m) => ({
-            ...m,
-            status: "unaccounted" as const,
-            evac_center_id: null,
-            evac_center_name: null,
-          })),
         })),
-        evacuation_centers: workspaceQuery.data.evacuation_centers.map((c) => ({
-          ...c,
-          occupancy: 0,
-          is_at_capacity: false,
-        })),
-        walkin_records: [],
+        unregistered_pins: [],
       };
     }
     return workspaceQuery.data;
@@ -227,18 +195,31 @@ export default function AdminEmergencyEventsPage() {
   };
 
   const declareMutation = useMutation({
-    mutationFn: (values: z.infer<typeof declareSchema>) =>
-      api.post<EmergencyEventOut>("/admin/emergency-events", values),
+    mutationFn: (values: {
+      name: string;
+      type: "flood" | "earthquake" | "typhoon" | "fire" | "other";
+      started_at?: string;
+    }) =>
+      api.post<EmergencyEventOut>("/admin/emergency-events", {
+        name: values.name,
+        type: values.type,
+        started_at: values.started_at
+          ? new Date(values.started_at).toISOString()
+          : undefined,
+      }),
     onSuccess: async ({ data }) => {
-      toast.success("Emergency event declared");
+      toast.success("Emergency event declared successfully");
       await invalidateOperations();
       router.replace(`/admin/emergency-events?event=${data.id}&tab=overview`);
     },
     onError: (error) => toast.error(toDisplayError(error).detail),
   });
+
   const endMutation = useMutation({
-    mutationFn: (id: string) =>
-      api.post<EmergencyEventOut>(`/admin/emergency-events/${id}/end`),
+    mutationFn: ({ id, ended_at }: { id: string; ended_at?: string }) =>
+      api.post<EmergencyEventOut>(`/admin/emergency-events/${id}/end`, {
+        ended_at: ended_at ? new Date(ended_at).toISOString() : undefined,
+      }),
     onSuccess: async ({ data }) => {
       toast.success(
         data.occupancy_reset_count > 0
@@ -249,12 +230,21 @@ export default function AdminEmergencyEventsPage() {
     },
     onError: (error) => toast.error(toDisplayError(error).detail),
   });
+
   const endAllMutation = useMutation({
-    mutationFn: async (eventsToEnd: EmergencyEventOut[]) => {
+    mutationFn: async ({
+      eventsToEnd,
+      ended_at,
+    }: {
+      eventsToEnd: EmergencyEventOut[];
+      ended_at?: string;
+    }) => {
       const results = await Promise.all(
         eventsToEnd.map((e) =>
           api
-            .post<EmergencyEventOut>(`/admin/emergency-events/${e.id}/end`)
+            .post<EmergencyEventOut>(`/admin/emergency-events/${e.id}/end`, {
+              ended_at: ended_at ? new Date(ended_at).toISOString() : undefined,
+            })
             .then((r) => r.data),
         ),
       );
@@ -349,23 +339,11 @@ export default function AdminEmergencyEventsPage() {
         description="Command center for real-time incident tracking, area safety ledgers, spatial response mapping, and evacuation operations."
         action={
           canManageEvents ? (
-            <ResourceFormDialog
-              title="Declare Emergency Event"
-              fields={declareFields}
-              schema={declareSchema}
-              defaultValues={{ name: "", type: "flood" as const }}
+            <DeclareEventDialog
               onSubmit={async (values) => {
                 await declareMutation.mutateAsync(values);
               }}
-              trigger={
-                <Button
-                  size="sm"
-                  className="h-10 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-md shadow-emerald-900/15 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] transition-all px-4 gap-2 border border-emerald-600/30 max-sm:w-full max-sm:justify-center cursor-pointer"
-                >
-                  <Plus aria-hidden className="size-4 stroke-[2.5]" />
-                  <span>Declare Event</span>
-                </Button>
-              }
+              isPending={declareMutation.isPending}
             />
           ) : null
         }
@@ -501,8 +479,12 @@ export default function AdminEmergencyEventsPage() {
                     isAllActiveOverview={isAllActiveOverview}
                     pending={endMutation.isPending || endAllMutation.isPending}
                     canManage={canManageEvents}
-                    onConfirmSingle={() => endMutation.mutate(selected.id)}
-                    onConfirmAll={() => endAllMutation.mutate(activeEvents)}
+                    onConfirmSingle={(endedAt) =>
+                      endMutation.mutate({ id: selected.id, ended_at: endedAt })
+                    }
+                    onConfirmAll={(endedAt) =>
+                      endAllMutation.mutate({ eventsToEnd: activeEvents, ended_at: endedAt })
+                    }
                   />
                 </div>
               </div>
@@ -587,15 +569,20 @@ export default function AdminEmergencyEventsPage() {
           {/* 4. Tab Content Panel Container */}
           <div className="bg-slate-50/50 p-5 sm:p-7">
             {/* Overview Metrics Tab */}
-            {tab === "overview" && selected ? (
-              <Overview
+            {tab === "overview" ? (
+              <EmergencyOverviewDashboard
                 event={selected}
+                events={events}
                 activeCount={activeCount}
+                isAllActiveOverview={isAllActiveOverview}
                 workspace={effectiveWorkspaceData}
                 canSeePii={canSeePii}
                 loading={workspaceQuery.isLoading}
                 error={workspaceQuery.isError}
-                retry={() => workspaceQuery.refetch()}
+                onRetry={() => workspaceQuery.refetch()}
+                onNavigateTab={(targetTab) => {
+                  setSelection(selectedId, targetTab);
+                }}
               />
             ) : null}
 
@@ -655,210 +642,6 @@ export default function AdminEmergencyEventsPage() {
         </div>
       )}
     </div>
-  );
-}
-
-function Overview({
-  event,
-  activeCount,
-  workspace,
-  canSeePii,
-  loading,
-  error,
-  retry,
-}: {
-  event: EmergencyEventOut;
-  activeCount: number;
-  workspace?: EmergencyWorkspaceOut;
-  canSeePii: boolean;
-  loading: boolean;
-  error: boolean;
-  retry: () => void;
-}) {
-  const householdsCount = workspace?.households.length ?? 0;
-  const safeCount = workspace?.households.filter((h) => h.all_safe).length ?? 0;
-  const rescueCount = workspace?.households.filter((h) => h.needs_rescue_count > 0).length ?? 0;
-  const safePct = householdsCount > 0 ? ((safeCount / householdsCount) * 100).toFixed(1) : "0";
-
-  return (
-    <div className="flex flex-col gap-6">
-      {/* 4 Executive KPI Stat Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <OverviewStat
-          icon={Siren}
-          label="Concurrent Active Events"
-          value={activeCount}
-          subtext={activeCount === 1 ? "1 active event" : `${activeCount} active events`}
-          tone="rose"
-        />
-        <OverviewStat
-          icon={Users}
-          label="Households in Scope"
-          value={canSeePii ? householdsCount : "Aggregate"}
-          subtext="Barangay San Jose"
-          tone="emerald"
-        />
-        <OverviewStat
-          icon={CheckCircle2}
-          label="Households Fully Safe"
-          value={canSeePii ? safeCount : "See Ledger"}
-          subtext={canSeePii ? `${safePct}% rate` : "Accounted For"}
-          tone="teal"
-        />
-        <OverviewStat
-          icon={ShieldAlert}
-          label="Priority Rescue Needed"
-          value={canSeePii ? rescueCount : "Restricted"}
-          subtext={rescueCount > 0 ? "Requires action" : "Zero distress"}
-          tone={rescueCount > 0 ? "rose" : "amber"}
-        />
-      </div>
-
-      {canSeePii && loading ? (
-        <WorkspaceLoading label="Loading event operational details…" />
-      ) : canSeePii && error ? (
-        <WorkspaceError label="Event operational metrics could not be loaded." onRetry={retry} />
-      ) : null}
-
-      {/* Operational Phase & Lifecycle Info Card */}
-      <Card radius="lg" className="border-neutral-200 shadow-sm overflow-hidden">
-        <CardContent className="p-5 flex flex-col gap-4">
-          <div className="flex flex-col gap-1 border-b border-neutral-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                <Zap className="size-4 text-emerald-600" />
-                Live Response Lifecycle Phase
-              </h3>
-              <p className="text-xs text-neutral-500">
-                {event.is_active
-                  ? "Operational writes and safety check-ins are active for this event."
-                  : `Event concluded on ${event.ended_at ? new Date(event.ended_at).toLocaleString() : "—"}. Record retained.`}
-              </p>
-            </div>
-            <Badge tone={event.is_active ? "danger" : "neutral"}>
-              {event.is_active ? "Phase 2: Live Operational Response" : "Phase 4: Concluded Archive"}
-            </Badge>
-          </div>
-
-          {/* Visual Response Timeline */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 pt-1">
-            <TimelineStep
-              step="1"
-              title="Event Declared"
-              desc={new Date(event.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              completed={true}
-              current={false}
-            />
-            <TimelineStep
-              step="2"
-              title="Live Operations"
-              desc="Safety ledger & check-ins"
-              completed={true}
-              current={event.is_active}
-            />
-            <TimelineStep
-              step="3"
-              title="Evacuation Active"
-              desc="Center check-ins"
-              completed={!event.is_active}
-              current={false}
-            />
-            <TimelineStep
-              step="4"
-              title="Resolution & Reset"
-              desc={event.ended_at ? "Finalized" : "Pending conclusion"}
-              completed={!event.is_active}
-              current={false}
-            />
-          </div>
-
-          {event.type === "flood" ? (
-            <div className="mt-1 flex items-center gap-2 rounded-xl bg-sky-50 p-3 text-xs text-sky-900 border border-sky-200">
-              <Waves className="size-4 shrink-0 text-sky-600" />
-              <span>
-                <strong>Flood History Synchronization:</strong> Ending this flood event will record its peak river gauge reading into canonical flood records.
-              </span>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function TimelineStep({
-  step,
-  title,
-  desc,
-  completed,
-  current,
-}: {
-  step: string;
-  title: string;
-  desc: string;
-  completed: boolean;
-  current: boolean;
-}) {
-  return (
-    <div
-      className={`flex items-center gap-3 rounded-xl p-3 border transition-all ${current
-        ? "bg-emerald-50/80 border-emerald-300 text-emerald-900 shadow-sm ring-1 ring-emerald-400/50"
-        : completed
-          ? "bg-neutral-50 border-neutral-200 text-neutral-700"
-          : "bg-neutral-50/40 border-neutral-100 text-neutral-400"
-        }`}
-    >
-      <span
-        className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-black ${current
-          ? "bg-emerald-600 text-white"
-          : completed
-            ? "bg-neutral-200 text-neutral-800"
-            : "bg-neutral-100 text-neutral-400"
-          }`}
-      >
-        {step}
-      </span>
-      <div className="min-w-0">
-        <h4 className="text-xs font-bold truncate">{title}</h4>
-        <p className="text-[10px] text-neutral-500 truncate">{desc}</p>
-      </div>
-    </div>
-  );
-}
-
-function OverviewStat({
-  icon: Icon,
-  label,
-  value,
-  subtext,
-  tone,
-}: {
-  icon: typeof Siren;
-  label: string;
-  value: string | number;
-  subtext: string;
-  tone: "rose" | "emerald" | "teal" | "amber";
-}) {
-  const toneStyles = {
-    rose: "bg-rose-50 text-rose-700 border-rose-100",
-    emerald: "bg-emerald-50 text-emerald-700 border-emerald-100",
-    teal: "bg-teal-50 text-teal-700 border-teal-100",
-    amber: "bg-amber-50 text-amber-700 border-amber-100",
-  }[tone];
-
-  return (
-    <Card radius="lg" className="border-neutral-200 shadow-sm hover:shadow-md transition-all">
-      <CardContent className="flex items-center gap-3.5 p-4">
-        <span className={`grid size-11 shrink-0 place-items-center rounded-2xl border ${toneStyles}`}>
-          <Icon className="size-5" />
-        </span>
-        <div>
-          <span className="block text-2xl font-black tracking-tight text-neutral-900">{value}</span>
-          <h4 className="text-xs font-bold text-neutral-700">{label}</h4>
-          <span className="text-[11px] text-neutral-400 font-medium">{subtext}</span>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 
@@ -1087,6 +870,229 @@ function EventSearchSelect({
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/* Declare Emergency Event Dialog with Backfill Datetime                      */
+/* -------------------------------------------------------------------------- */
+
+function DeclareEventDialog({
+  onSubmit,
+  isPending,
+}: {
+  onSubmit: (values: {
+    name: string;
+    type: "flood" | "earthquake" | "typhoon" | "fire" | "other";
+    started_at: string;
+  }) => Promise<void>;
+  isPending: boolean;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [name, setName] = React.useState("");
+  const [type, setType] = React.useState<
+    "flood" | "earthquake" | "typhoon" | "fire" | "other"
+  >("flood");
+  const [startedAt, setStartedAt] = React.useState(() => toLocalDatetimeString());
+  const [errors, setErrors] = React.useState<{ name?: string }>({});
+
+  const handleOpen = (isOpen: boolean) => {
+    if (isOpen) {
+      setStartedAt(toLocalDatetimeString());
+      setName("");
+      setType("flood");
+      setErrors({});
+    }
+    setOpen(isOpen);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      setErrors({ name: "Event name is required" });
+      return;
+    }
+    await onSubmit({ name: name.trim(), type, started_at: startedAt });
+    setOpen(false);
+  };
+
+  const types = [
+    {
+      value: "flood" as const,
+      label: "Flood",
+      icon: Waves,
+      color: "text-sky-600 bg-sky-50 border-sky-300",
+    },
+    {
+      value: "typhoon" as const,
+      label: "Typhoon",
+      icon: Wind,
+      color: "text-teal-600 bg-teal-50 border-teal-300",
+    },
+    {
+      value: "earthquake" as const,
+      label: "Earthquake",
+      icon: AlertTriangle,
+      color: "text-amber-600 bg-amber-50 border-amber-300",
+    },
+    {
+      value: "fire" as const,
+      label: "Fire",
+      icon: Flame,
+      color: "text-rose-600 bg-rose-50 border-rose-300",
+    },
+    {
+      value: "other" as const,
+      label: "Other Hazard",
+      icon: Siren,
+      color: "text-emerald-600 bg-emerald-50 border-emerald-300",
+    },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpen}>
+      <DialogTrigger asChild>
+        <Button
+          size="sm"
+          className="h-10 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-md shadow-emerald-900/15 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] transition-all px-4 gap-2 border border-emerald-600/30 max-sm:w-full max-sm:justify-center cursor-pointer"
+        >
+          <Plus aria-hidden className="size-4 stroke-[2.5]" />
+          <span>Declare Event</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl p-6">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="grid size-11 place-items-center rounded-2xl bg-emerald-100 text-emerald-800 shrink-0 shadow-xs border border-emerald-200">
+                <Siren className="size-6 text-emerald-700" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-black text-slate-950">
+                  Declare Emergency Event
+                </DialogTitle>
+                <DialogDescription className="text-xs text-slate-500 font-medium mt-0.5">
+                  Activate live response operations, spatial tracking, and area safety ledgers.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-4">
+            {/* Event Name */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-800 flex items-center justify-between">
+                <span>
+                  Event Name <span className="text-rose-500">*</span>
+                </span>
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (errors.name) setErrors({});
+                }}
+                placeholder="e.g. Typhoon Carina — Severe Flooding & Evacuation"
+                className={cn(
+                  "w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 shadow-2xs focus:outline-none focus:ring-2",
+                  errors.name
+                    ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/20 bg-rose-50/30"
+                    : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/20 bg-white",
+                )}
+              />
+              {errors.name && (
+                <span className="text-[11px] font-bold text-rose-600">{errors.name}</span>
+              )}
+            </div>
+
+            {/* Incident Type Grid Selector */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-slate-800">
+                Incident / Hazard Classification
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {types.map((t) => {
+                  const Icon = t.icon;
+                  const isSelected = type === t.value;
+                  return (
+                    <button
+                      type="button"
+                      key={t.value}
+                      onClick={() => setType(t.value)}
+                      className={cn(
+                        "flex items-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition-all text-left cursor-pointer",
+                        isSelected
+                          ? cn(t.color, "ring-2 ring-emerald-600/30 border-current shadow-xs")
+                          : "border-slate-200 bg-slate-50/60 text-slate-700 hover:bg-slate-100 hover:border-slate-300",
+                      )}
+                    >
+                      <Icon className="size-4 shrink-0" />
+                      <span className="truncate">{t.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Declared Start Date & Time with Backfill support */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 flex flex-col gap-2 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <Calendar className="size-3.5 text-emerald-600 shrink-0" />
+                  Incident Start Date & Time
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setStartedAt(toLocalDatetimeString())}
+                  className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <RefreshCw className="size-3" />
+                  Set to Now
+                </button>
+              </div>
+
+              <input
+                type="datetime-local"
+                value={startedAt}
+                onChange={(e) => setStartedAt(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+              />
+
+              <p className="text-[11px] text-slate-500 leading-snug flex items-start gap-1.5">
+                <Clock className="size-3 text-slate-400 shrink-0 mt-0.5" />
+                <span>
+                  Defaults to current time. You can backdate this timestamp if documenting an incident retrospectively after a blackout or delayed report.
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="border-t border-slate-100 pt-4 flex flex-col-reverse sm:flex-row gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              className="rounded-xl border-slate-200 text-xs font-bold hover:bg-slate-100"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md gap-1.5"
+            >
+              <Siren className="size-3.5" />
+              <span>{isPending ? "Declaring…" : "Declare & Activate Event"}</span>
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Redesigned End Emergency Event Dialog with Concluded Datetime Picker       */
+/* -------------------------------------------------------------------------- */
+
 function EndEventDialog({
   event,
   activeEvents,
@@ -1101,12 +1107,30 @@ function EndEventDialog({
   isAllActiveOverview: boolean;
   pending: boolean;
   canManage?: boolean;
-  onConfirmSingle: () => void;
-  onConfirmAll: () => void;
+  onConfirmSingle: (endedAt: string) => void;
+  onConfirmAll: (endedAt: string) => void;
 }) {
+  const [open, setOpen] = React.useState(false);
+  const [endedAt, setEndedAt] = React.useState(() => toLocalDatetimeString());
   const isEndingAll = isAllActiveOverview && activeEvents.length > 0;
   const isSingleActive = !isAllActiveOverview && event.is_active;
   const isEnabled = (isEndingAll || isSingleActive) && canManage && !pending;
+
+  const handleOpen = (isOpen: boolean) => {
+    if (isOpen) {
+      setEndedAt(toLocalDatetimeString());
+    }
+    setOpen(isOpen);
+  };
+
+  const handleConfirm = () => {
+    if (isEndingAll) {
+      onConfirmAll(endedAt);
+    } else {
+      onConfirmSingle(endedAt);
+    }
+    setOpen(false);
+  };
 
   if (!isEndingAll && !event.is_active) {
     return (
@@ -1121,8 +1145,8 @@ function EndEventDialog({
   }
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
+    <Dialog open={open} onOpenChange={handleOpen}>
+      <DialogTrigger asChild>
         <Button
           size="sm"
           variant="danger"
@@ -1132,59 +1156,121 @@ function EndEventDialog({
           <AlertTriangle className="size-3.5" />
           <span>{isEndingAll ? "End All Events" : "End Event"}</span>
         </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent className="max-w-md bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl p-6">
-        <AlertDialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="grid size-10 place-items-center rounded-xl bg-rose-100 text-rose-600 shrink-0 shadow-xs">
-              <AlertTriangle className="size-5 stroke-[2.5]" />
+      </DialogTrigger>
+      <DialogContent className="max-w-lg bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl p-6">
+        <div className="flex flex-col gap-5">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="grid size-11 place-items-center rounded-2xl bg-rose-100 text-rose-700 shrink-0 shadow-xs border border-rose-200">
+                <AlertTriangle className="size-6 text-rose-600 stroke-[2.5]" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-black text-slate-950">
+                  {isEndingAll
+                    ? `End All Active Emergency Events (${activeEvents.length})`
+                    : "End Active Emergency Event"}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-slate-500 font-medium mt-0.5">
+                  {isEndingAll ? "Mass Emergency Incident Closure" : "Emergency Incident Closure"}
+                </DialogDescription>
+              </div>
             </div>
-            <div>
-              <AlertDialogTitle className="text-base font-black text-slate-950">
+          </DialogHeader>
+
+          {/* Event Name Tag */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 flex items-center justify-between gap-2 shadow-2xs">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-900 truncate">
+              <Siren className="size-4 text-rose-600 shrink-0" />
+              <span className="truncate">
                 {isEndingAll
-                  ? `End All Active Emergency Events (${activeEvents.length})?`
-                  : `End Emergency Event: ${event.name}?`}
-              </AlertDialogTitle>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                {isEndingAll ? "Mass Emergency Incident Closure" : "Emergency Incident Closure"}
-              </p>
+                  ? `All Active Events: ${activeEvents.map((e) => e.name).join(", ")}`
+                  : event.name}
+              </span>
             </div>
+            <Badge tone="danger">Active Incident</Badge>
           </div>
-          <AlertDialogDescription className="text-xs sm:text-sm text-slate-600 mt-3 leading-relaxed">
-            {isEndingAll ? (
-              <>
-                This will immediately conclude all <strong>{activeEvents.length} live emergency event(s)</strong> (
-                {activeEvents.map((e) => e.name).join(", ")}).
-                <br />
-                <br />
-                All open evacuation center check-ins will be automatically checked out and center occupancies reset to zero. Historical safety ledgers, audit logs, and walk-ins are safely preserved.
-              </>
-            ) : (
-              <>
-                {activeEvents.length > 1
-                  ? `${activeEvents.length - 1} other active emergency event(s) remain live in Barangay San Jose. Active physical evacuation occupancy will be preserved.`
-                  : "This is the final active emergency event. All open evacuation check-ins will be automatically checked out and center occupancy reset to zero."}
-                <br />
-                <br />
-                Historical safety records, walk-ins, and safety check-ins are safely preserved.
-              </>
-            )}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter className="mt-4 gap-2 sm:gap-0">
-          <AlertDialogCancel className="rounded-xl border-slate-200 text-xs font-bold hover:bg-slate-100">
-            Cancel
-          </AlertDialogCancel>
-          <AlertDialogAction
-            variant="destructive"
-            onClick={isEndingAll ? onConfirmAll : onConfirmSingle}
-            className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md"
-          >
-            {isEndingAll ? "Confirm & End All Events" : "Confirm & End Event"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+
+          {/* Concluded Date & Time with Backfill support */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 flex flex-col gap-2 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <Calendar className="size-3.5 text-rose-600 shrink-0" />
+                Incident Concluded Date & Time
+              </label>
+              <button
+                type="button"
+                onClick={() => setEndedAt(toLocalDatetimeString())}
+                className="text-[11px] font-bold text-rose-700 hover:text-rose-800 hover:underline cursor-pointer flex items-center gap-1"
+              >
+                <RefreshCw className="size-3" />
+                Set to Now
+              </button>
+            </div>
+
+            <input
+              type="datetime-local"
+              value={endedAt}
+              onChange={(e) => setEndedAt(e.target.value)}
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
+            />
+
+            <p className="text-[11px] text-slate-500 leading-snug flex items-start gap-1.5">
+              <Clock className="size-3 text-slate-400 shrink-0 mt-0.5" />
+              <span>
+                Defaults to current time. You can backdate this timestamp if officially concluding an event retrospectively after power/connectivity restoration.
+              </span>
+            </p>
+          </div>
+
+          {/* Operational Impact Notice Box */}
+          <div className="rounded-xl border border-amber-200/90 bg-amber-50/50 p-3.5 flex flex-col gap-1.5 text-xs text-amber-950">
+            <span className="font-bold flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-amber-900">
+              <ShieldAlert className="size-3.5 text-amber-700 shrink-0" />
+              Operational Impact
+            </span>
+            <p className="text-xs text-slate-700 leading-relaxed">
+              {isEndingAll ? (
+                <>
+                  Concludes all <strong>{activeEvents.length} live incident(s)</strong>. Open evacuation center check-ins will be automatically checked out and center occupancy reset to zero.
+                </>
+              ) : activeEvents.length > 1 ? (
+                <>
+                  {activeEvents.length - 1} other active emergency event(s) remain open in Barangay San Jose. Evacuation center occupancies will be maintained.
+                </>
+              ) : (
+                <>
+                  This is the final active emergency event. Open evacuation center check-ins will be automatically checked out and center occupancy reset to zero.
+                </>
+              )}
+            </p>
+            <p className="text-[11px] text-slate-500 font-medium">
+              Historical safety records, walk-ins, and safety ledgers remain permanently preserved in archives.
+            </p>
+          </div>
+
+          <DialogFooter className="border-t border-slate-100 pt-4 flex flex-col-reverse sm:flex-row gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              className="rounded-xl border-slate-200 text-xs font-bold hover:bg-slate-100"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              disabled={pending}
+              onClick={handleConfirm}
+              className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md gap-1.5"
+            >
+              <AlertTriangle className="size-3.5" />
+              <span>{pending ? "Ending Event…" : isEndingAll ? "Confirm & End All Events" : "Confirm & End Event"}</span>
+            </Button>
+          </DialogFooter>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1212,4 +1298,3 @@ function WorkspaceError({ label, onRetry }: { label: string; onRetry: () => void
     </Card>
   );
 }
-
