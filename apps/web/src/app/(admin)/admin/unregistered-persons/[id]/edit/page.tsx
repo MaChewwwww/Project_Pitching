@@ -117,7 +117,7 @@ function EditForm({ person }: { person: UnregisteredPersonOut }) {
             </Label>
             <Input
               id="location_note"
-              placeholder="e.g. Block 3 Area 2 Riverside, Sitio San Jose"
+              placeholder="e.g. Block 3 Area 2 Riverside, San Jose"
               value={locationNote}
               onChange={(e) => setLocationNote(e.target.value)}
               className="h-10 rounded-xl"

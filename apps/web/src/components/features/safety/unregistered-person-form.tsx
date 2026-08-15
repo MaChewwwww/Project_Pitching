@@ -411,7 +411,7 @@ export function UnregisteredPersonForm({
           type="text"
           value={locationNote}
           onChange={(e) => setLocationNote(e.target.value)}
-          placeholder="e.g. Block 3 Area 2 Riverside, Sitio San Jose"
+          placeholder="e.g. Block 3 Area 2 Riverside, San Jose"
           className="h-9 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
         />
       </div>
