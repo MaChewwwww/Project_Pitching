@@ -39,7 +39,7 @@ INCIDENT_TYPES = (
     "power_outage",
     "other",
 )
-INCIDENT_STATUSES = ("pending", "verified", "dismissed")
+INCIDENT_STATUSES = ("pending", "verified", "in_progress", "resolved", "dismissed")
 
 
 class UnregisteredPerson(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -258,6 +258,8 @@ class IncidentReport(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     dismissal_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolution_note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     __table_args__ = (
         CheckConstraint(f"type IN {INCIDENT_TYPES}", name="ck_incident_report_type_valid"),
@@ -265,6 +267,10 @@ class IncidentReport(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         CheckConstraint(
             "status <> 'dismissed' OR dismissal_reason IS NOT NULL",
             name="ck_incident_report_dismissal_needs_reason",
+        ),
+        CheckConstraint(
+            "status <> 'resolved' OR (resolved_at IS NOT NULL AND resolution_note IS NOT NULL)",
+            name="ck_incident_report_resolution_needs_note",
         ),
         Index("idx_incident_status", "status", "created_at"),
         Index("idx_incident_location", "location", postgresql_using="gist"),

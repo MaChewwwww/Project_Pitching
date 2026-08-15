@@ -145,6 +145,12 @@ workspace applies BHW area scope before loading rosters. SK users reach only the
 Accounted For route. Center assignment from a safety write delegates to evacuation with commit
 deferred so whole-household acknowledgement and check-in changes remain one transaction.
 
+Rescue requests and incident reports have a separate, admin-only operational worklist. Their
+list serializers enrich a pin with its containing area and linked event metadata; their detail
+routes project `audit_log` into a history timeline. Incident lifecycle writes are constrained in
+the service and again by database checks, so a resolved report cannot exist without a completion
+note. This workflow records the acting administrator rather than introducing an assignment role.
+
 Admin/BHW safety writes may carry the field-recorded status time for blackout recovery. It is
 stored on the append-only safety row (`set_at`); the normal database `created_at` timestamp is
 never rewritten. When the same write assigns an evacuation center, its physical check-in uses

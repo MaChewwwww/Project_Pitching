@@ -165,6 +165,10 @@ export type RescueRequestStatus =
 export interface RescueRequestOut {
   id: string;
   created_at: string;
+  updated_at: string;
+  event_id: string | null;
+  event_name: string | null;
+  event_type: string | null;
   requester_name: string;
   contact_number: string | null;
   location: GeoJsonPoint | null;
@@ -178,6 +182,7 @@ export interface RescueRequestOut {
   is_registered: boolean;
   household_reference_no: string | null;
   area_name: string | null;
+  location_area_name: string | null;
   /** Always null — a snapshot of a vulnerability level BRD OI-18 has not
    * defined yet. See the FR-SAF-010 deviation note in frs_nfrs.md. */
   vulnerability_level: null;
@@ -193,7 +198,8 @@ export interface RescueRequestPatch {
   /** Required by the server in the same request that sets `status` to
    * `resolved` or `dismissed` — a 422 otherwise. */
   resolution_note?: string | null;
-  priority?: number;
+  priority?: number | null;
+  event_id?: string | null;
 }
 
 /* --- unregistered persons (FR-SAF-012/013) ---------------------------------- */
@@ -309,15 +315,21 @@ export type IncidentType =
   | "power_outage"
   | "other";
 
-export type IncidentStatus = "pending" | "verified" | "dismissed";
+export type IncidentStatus =
+  "pending" | "verified" | "in_progress" | "resolved" | "dismissed";
 
 export interface IncidentReportOut {
   id: string;
   created_at: string;
+  updated_at: string;
+  event_id: string | null;
+  event_name: string | null;
+  event_type: string | null;
   type: IncidentType;
   description: string;
   location: GeoJsonPoint | null;
   location_note: string | null;
+  location_area_name: string | null;
   /** Already prefixed "/uploads/" — use directly as an <img src>. */
   photo_url: string | null;
   status: IncidentStatus;
@@ -325,13 +337,35 @@ export interface IncidentReportOut {
   verified_by_name: string | null;
   verified_at: string | null;
   dismissal_reason: string | null;
+  resolved_at: string | null;
+  resolution_note: string | null;
+  household_id: string | null;
+  household_reference_no: string | null;
+  area_name: string | null;
 }
 
-/** Required by the server in the same request that dismisses a report — a
- * 422 otherwise. */
-export interface IncidentReportReview {
-  status: "verified" | "dismissed";
+export interface IncidentReportPatch {
+  status?: IncidentStatus;
   dismissal_reason?: string | null;
+  resolution_note?: string | null;
+  event_id?: string | null;
+}
+
+export interface ResponseTimelineEntry {
+  id: string | number;
+  timestamp: string;
+  action: string;
+  title: string;
+  detail: string | null;
+  actor_name: string | null;
+}
+
+export interface RescueRequestDetailOut extends RescueRequestOut {
+  history: ResponseTimelineEntry[];
+}
+
+export interface IncidentReportDetailOut extends IncidentReportOut {
+  history: ResponseTimelineEntry[];
 }
 
 /* --- safety ledger & timeline (FR-SAF-001…013) ----------------------------- */

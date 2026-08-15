@@ -447,8 +447,9 @@ GET   /admin/unregistered-persons    implemented — list unregistered (FR-SAF-0
 POST  /admin/unregistered-persons    implemented — record unregistered person
 PATCH /admin/unregistered-persons/{id} implemented — update status
 GET   /admin/unregistered-persons/{id} implemented — conversion prefill record
-GET   /admin/incident-reports        implemented — list incident reports (FR-SAF-016)
-PATCH /admin/incident-reports/{id}   implemented — verify or dismiss report
+GET   /admin/incident-reports        implemented — list incident reports (FR-SAF-016/021)
+GET   /admin/incident-reports/{id}   implemented — report detail and audit timeline
+PATCH /admin/incident-reports/{id}   implemented — event link and incident action lifecycle
 POST  /admin/alerts
 DELETE /admin/alerts/{id}
 GET   /admin/alert-prompts           threshold prompt history, optionally unresolved-only (surfaced in the Weather Watch workspace)

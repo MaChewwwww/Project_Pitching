@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { ImageOff } from "lucide-react";
 
 import { Button } from "@/components/common/button";
-import { StatusBadge } from "@/components/common/status-badge";
 import {
   ResourceTable,
   type ResourceColumn,
@@ -22,7 +21,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { api, toDisplayError } from "@/lib/api/client";
-import type { IncidentReportOut, IncidentReportReview } from "@/lib/api/safety-types";
+import type { IncidentReportOut, IncidentReportPatch } from "@/lib/api/safety-types";
 
 /** FR-SAF-016 — verify or dismiss, with a reason if dismissing. */
 function ReviewDialog({
@@ -37,7 +36,7 @@ function ReviewDialog({
   const [error, setError] = React.useState<string | null>(null);
 
   const mutation = useMutation({
-    mutationFn: (body: IncidentReportReview) =>
+    mutationFn: (body: IncidentReportPatch) =>
       api.patch<IncidentReportOut>(`/admin/incident-reports/${report.id}`, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "incident-reports"] });
@@ -154,11 +153,11 @@ export function IncidentReviewTable({
     {
       key: "status",
       header: "Status",
-      // `IncidentStatus` ("pending"|"verified"|"dismissed") is a subset of
-      // `RescueRequestStatusValue` — the "rescue" badge kind's labels read
-      // correctly here too, so this reuses it rather than adding a fourth
-      // near-identical badge case.
-      render: (row) => <StatusBadge kind="rescue" status={row.status} />,
+      render: (row) => (
+        <span className="rounded-full border border-neutral-200 bg-neutral-50 px-2 py-1 text-xs font-semibold text-neutral-700">
+          {row.status.replaceAll("_", " ")}
+        </span>
+      ),
     },
     {
       key: "reported_by_name",

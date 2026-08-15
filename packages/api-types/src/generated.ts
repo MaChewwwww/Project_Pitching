@@ -1115,6 +1115,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/emergency-events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get comprehensive emergency event detail and statistics */
+        get: operations["admin_get_event_api_v1_admin_emergency_events__event_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete an emergency event */
+        delete: operations["admin_delete_event_api_v1_admin_emergency_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update an emergency event */
+        patch: operations["admin_update_event_api_v1_admin_emergency_events__event_id__patch"];
+        trace?: never;
+    };
     "/api/v1/admin/emergency-events/{event_id}/end": {
         parameters: {
             query?: never;
@@ -1847,7 +1866,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** One rescue request with its operational history */
+        get: operations["admin_get_rescue_request_api_v1_admin_rescue_requests__request_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1900,7 +1920,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Incident reports awaiting review (FR-SAF-016) */
+        /** Incident reports for verification and action (FR-SAF-016/021) */
         get: operations["admin_list_incident_reports_api_v1_admin_incident_reports_get"];
         put?: never;
         post?: never;
@@ -1917,14 +1937,49 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** One incident report with its operational history */
+        get: operations["admin_get_incident_report_api_v1_admin_incident_reports__report_id__get"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        /** Verify or dismiss an incident report, with reason (FR-SAF-016) */
+        /** Advance an incident report through the action lifecycle (FR-SAF-016/021) */
         patch: operations["admin_review_incident_report_api_v1_admin_incident_reports__report_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/safety/ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Disaster safety audit log and check-in timeline stream */
+        get: operations["admin_safety_ledger_api_v1_admin_safety_ledger_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/safety/history/{subject_type}/{subject_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get complete disaster journey & timeline for a resident or walk-in */
+        get: operations["admin_person_safety_journey_api_v1_admin_safety_history__subject_type___subject_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
@@ -2649,6 +2704,45 @@ export interface components {
             /** Started At */
             started_at?: string | null;
         };
+        /** EmergencyEventDetailOut */
+        EmergencyEventDetailOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "flood" | "earthquake" | "typhoon" | "fire" | "other";
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Ended At */
+            ended_at: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Declared By User Id */
+            declared_by_user_id: string | null;
+            /** Declared By Name */
+            declared_by_name: string | null;
+            /**
+             * Occupancy Reset Count
+             * @default 0
+             */
+            occupancy_reset_count: number;
+            stats: components["schemas"]["EmergencyEventStats"];
+        };
+        /** EmergencyEventEnd */
+        EmergencyEventEnd: {
+            /** Ended At */
+            ended_at?: string | null;
+        };
         /** EmergencyEventOut */
         EmergencyEventOut: {
             /**
@@ -2681,6 +2775,79 @@ export interface components {
              * @default 0
              */
             occupancy_reset_count: number;
+        };
+        /** EmergencyEventPatch */
+        EmergencyEventPatch: {
+            /** Name */
+            name?: string | null;
+            /** Type */
+            type?: ("flood" | "earthquake" | "typhoon" | "fire" | "other") | null;
+            /** Started At */
+            started_at?: string | null;
+            /** Ended At */
+            ended_at?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
+        /** EmergencyEventStats */
+        EmergencyEventStats: {
+            /**
+             * Total Checkins Count
+             * @default 0
+             */
+            total_checkins_count: number;
+            /**
+             * Total Safe Count
+             * @default 0
+             */
+            total_safe_count: number;
+            /**
+             * Total Rescue Needed Count
+             * @default 0
+             */
+            total_rescue_needed_count: number;
+            /**
+             * Total Unaccounted Count
+             * @default 0
+             */
+            total_unaccounted_count: number;
+            /**
+             * Total Evacuees Count
+             * @default 0
+             */
+            total_evacuees_count: number;
+            /**
+             * Active Centers Used
+             * @default 0
+             */
+            active_centers_used: number;
+            /**
+             * Total Rescue Requests Count
+             * @default 0
+             */
+            total_rescue_requests_count: number;
+            /**
+             * Open Rescue Requests Count
+             * @default 0
+             */
+            open_rescue_requests_count: number;
+            /**
+             * Total Incident Reports Count
+             * @default 0
+             */
+            total_incident_reports_count: number;
+            /**
+             * Verified Incident Reports Count
+             * @default 0
+             */
+            verified_incident_reports_count: number;
+            /**
+             * Total Unregistered Count
+             * @default 0
+             */
+            total_unregistered_count: number;
+            /** Linked Flood Event Id */
+            linked_flood_event_id?: string | null;
         };
         /** EmergencyWorkspaceOut */
         EmergencyWorkspaceOut: {
@@ -3358,6 +3525,69 @@ export interface components {
             /** Image Ids */
             image_ids: string[];
         };
+        /** IncidentReportDetailOut */
+        IncidentReportDetailOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Event Id */
+            event_id: string | null;
+            /** Event Name */
+            event_name: string | null;
+            /** Event Type */
+            event_type: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "flooding" | "fire" | "fallen_tree" | "road_blockage" | "landslide" | "power_outage" | "other";
+            /** Description */
+            description: string;
+            location: components["schemas"]["GeoJsonPoint"] | null;
+            /** Location Note */
+            location_note: string | null;
+            /** Location Area Name */
+            location_area_name: string | null;
+            /** Photo Url */
+            photo_url: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "verified" | "in_progress" | "resolved" | "dismissed";
+            /** Reported By Name */
+            reported_by_name: string | null;
+            /** Verified By Name */
+            verified_by_name: string | null;
+            /** Verified At */
+            verified_at: string | null;
+            /** Dismissal Reason */
+            dismissal_reason: string | null;
+            /** Resolved At */
+            resolved_at: string | null;
+            /** Resolution Note */
+            resolution_note: string | null;
+            /** Household Id */
+            household_id: string | null;
+            /** Household Reference No */
+            household_reference_no: string | null;
+            /** Area Name */
+            area_name: string | null;
+            /** History */
+            history?: components["schemas"]["ResponseTimelineEntry"][];
+        };
         /** IncidentReportOut */
         IncidentReportOut: {
             /**
@@ -3371,6 +3601,17 @@ export interface components {
              */
             created_at: string;
             /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Event Id */
+            event_id: string | null;
+            /** Event Name */
+            event_name: string | null;
+            /** Event Type */
+            event_type: string | null;
+            /**
              * Type
              * @enum {string}
              */
@@ -3380,13 +3621,15 @@ export interface components {
             location: components["schemas"]["GeoJsonPoint"] | null;
             /** Location Note */
             location_note: string | null;
+            /** Location Area Name */
+            location_area_name: string | null;
             /** Photo Url */
             photo_url: string | null;
             /**
              * Status
              * @enum {string}
              */
-            status: "pending" | "verified" | "dismissed";
+            status: "pending" | "verified" | "in_progress" | "resolved" | "dismissed";
             /** Reported By Name */
             reported_by_name: string | null;
             /** Verified By Name */
@@ -3395,21 +3638,30 @@ export interface components {
             verified_at: string | null;
             /** Dismissal Reason */
             dismissal_reason: string | null;
+            /** Resolved At */
+            resolved_at: string | null;
+            /** Resolution Note */
+            resolution_note: string | null;
+            /** Household Id */
+            household_id: string | null;
+            /** Household Reference No */
+            household_reference_no: string | null;
+            /** Area Name */
+            area_name: string | null;
         };
         /**
-         * IncidentReportReview
-         * @description `PATCH /admin/incident-reports/{id}`. Dismissing without a reason is
-         *     rejected here (422) *and* by the database CHECK — belt and braces, the
-         *     same shape as `RescueRequestPatch`'s resolution-note requirement.
+         * IncidentReportPatch
+         * @description Admin-only operational lifecycle for FR-SAF-016/021.
          */
-        IncidentReportReview: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "verified" | "dismissed";
+        IncidentReportPatch: {
+            /** Status */
+            status?: ("pending" | "verified" | "in_progress" | "resolved" | "dismissed") | null;
             /** Dismissal Reason */
             dismissal_reason?: string | null;
+            /** Resolution Note */
+            resolution_note?: string | null;
+            /** Event Id */
+            event_id?: string | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -3820,6 +4072,73 @@ export interface components {
             size: number;
             /** Pages */
             pages: number;
+        };
+        /** PersonSafetyJourneyOut */
+        PersonSafetyJourneyOut: {
+            /**
+             * Subject Id
+             * Format: uuid
+             */
+            subject_id: string;
+            /**
+             * Subject Type
+             * @enum {string}
+             */
+            subject_type: "registered_member" | "unregistered_person";
+            /** Full Name */
+            full_name: string;
+            /**
+             * Is Head
+             * @default false
+             */
+            is_head: boolean;
+            /** Household Reference No */
+            household_reference_no?: string | null;
+            /** Area Name */
+            area_name?: string | null;
+            /** Contact Number */
+            contact_number?: string | null;
+            /** Address */
+            address?: string | null;
+            /** Vulnerability Flags */
+            vulnerability_flags?: string[];
+            /**
+             * Current Status
+             * @enum {string}
+             */
+            current_status: "safe" | "needs_rescue" | "unaccounted";
+            /** Current Evac Center Name */
+            current_evac_center_name?: string | null;
+            /** Timeline */
+            timeline: components["schemas"]["PersonTimelineEntry"][];
+        };
+        /** PersonTimelineEntry */
+        PersonTimelineEntry: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "safety_status" | "evac_checkin" | "evac_checkout" | "rescue_request";
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Status */
+            status?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Center Name */
+            center_name?: string | null;
         };
         /**
          * PointResolution
@@ -4613,12 +4932,8 @@ export interface components {
              */
             received_at: string;
         };
-        /**
-         * RescueRequestOut
-         * @description The admin/BHW queue view (FR-SAF-010). `source_ip` never appears here
-         *     — abuse-investigation data, reachable only via the audit log and psql.
-         */
-        RescueRequestOut: {
+        /** RescueRequestDetailOut */
+        RescueRequestDetailOut: {
             /**
              * Id
              * Format: uuid
@@ -4629,6 +4944,17 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Event Id */
+            event_id: string | null;
+            /** Event Name */
+            event_name: string | null;
+            /** Event Type */
+            event_type: string | null;
             /** Requester Name */
             requester_name: string;
             /** Contact Number */
@@ -4657,6 +4983,78 @@ export interface components {
             household_reference_no: string | null;
             /** Area Name */
             area_name: string | null;
+            /** Location Area Name */
+            location_area_name: string | null;
+            /** Vulnerability Level */
+            vulnerability_level?: null;
+            /** Assigned To User Id */
+            assigned_to_user_id: string | null;
+            /** Assigned To Name */
+            assigned_to_name: string | null;
+            /** Resolved At */
+            resolved_at: string | null;
+            /** Resolution Note */
+            resolution_note: string | null;
+            /** History */
+            history?: components["schemas"]["ResponseTimelineEntry"][];
+        };
+        /**
+         * RescueRequestOut
+         * @description The admin/BHW queue view (FR-SAF-010). `source_ip` never appears here
+         *     — abuse-investigation data, reachable only via the audit log and psql.
+         */
+        RescueRequestOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Event Id */
+            event_id: string | null;
+            /** Event Name */
+            event_name: string | null;
+            /** Event Type */
+            event_type: string | null;
+            /** Requester Name */
+            requester_name: string;
+            /** Contact Number */
+            contact_number: string | null;
+            location: components["schemas"]["GeoJsonPoint"] | null;
+            /** Location Note */
+            location_note: string | null;
+            /** Description */
+            description: string;
+            /** People Count */
+            people_count: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "verified" | "dispatched" | "resolved" | "dismissed";
+            /** Priority */
+            priority: number | null;
+            /** Priority Factors */
+            priority_factors: string[];
+            /** Priority Is Manual */
+            priority_is_manual: boolean;
+            /** Is Registered */
+            is_registered: boolean;
+            /** Household Reference No */
+            household_reference_no: string | null;
+            /** Area Name */
+            area_name: string | null;
+            /** Location Area Name */
+            location_area_name: string | null;
             /** Vulnerability Level */
             vulnerability_level?: null;
             /** Assigned To User Id */
@@ -4685,6 +5083,8 @@ export interface components {
             resolution_note?: string | null;
             /** Priority */
             priority?: number | null;
+            /** Event Id */
+            event_id?: string | null;
         };
         /**
          * RescueRequestPublicIn
@@ -4710,6 +5110,24 @@ export interface components {
             description: string;
             /** People Count */
             people_count?: number | null;
+        };
+        /** ResponseTimelineEntry */
+        ResponseTimelineEntry: {
+            /** Id */
+            id: number | string;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Action */
+            action: string;
+            /** Title */
+            title: string;
+            /** Detail */
+            detail?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * RiverHistoryPoint
@@ -4737,6 +5155,81 @@ export interface components {
             level_2_m: number | null;
             /** Level 3 M */
             level_3_m: number | null;
+        };
+        /** SafetyCheckinLogItem */
+        SafetyCheckinLogItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /**
+             * Subject Type
+             * @enum {string}
+             */
+            subject_type: "registered_member" | "unregistered_person";
+            /** Person Name */
+            person_name: string;
+            /**
+             * Is Head
+             * @default false
+             */
+            is_head: boolean;
+            /** Member Id */
+            member_id?: string | null;
+            /** Unregistered Person Id */
+            unregistered_person_id?: string | null;
+            /** Household Id */
+            household_id?: string | null;
+            /** Household Reference No */
+            household_reference_no?: string | null;
+            /** Area Id */
+            area_id?: string | null;
+            /** Area Name */
+            area_name?: string | null;
+            /** Contact Number */
+            contact_number?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "safe" | "needs_rescue" | "unaccounted";
+            /** Set Method */
+            set_method?: ("self" | "assisted" | "household_bulk") | null;
+            /** Set By Name */
+            set_by_name?: string | null;
+            /** Evac Center Id */
+            evac_center_id?: string | null;
+            /** Evac Center Name */
+            evac_center_name?: string | null;
+            /**
+             * Is Current
+             * @default true
+             */
+            is_current: boolean;
+            /** Vulnerability Flags */
+            vulnerability_flags?: string[];
+            /** Notes */
+            notes?: string | null;
+        };
+        /** SafetyLedgerPageOut */
+        SafetyLedgerPageOut: {
+            /** Items */
+            items: components["schemas"]["SafetyCheckinLogItem"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
+            summary?: components["schemas"]["AccountedForOut"] | null;
         };
         /**
          * SafetyStatusAdminIn
@@ -4768,6 +5261,10 @@ export interface components {
             acknowledged_member_ids?: string[];
             /** Unregistered Person Id */
             unregistered_person_id?: string | null;
+            /** Set At */
+            set_at?: string | null;
+            /** Notes */
+            notes?: string | null;
         };
         /**
          * SafetyStatusSelfIn
@@ -4871,6 +5368,8 @@ export interface components {
              * @enum {string}
              */
             initial_status: "safe" | "needs_rescue";
+            /** Set At */
+            set_at?: string | null;
             /**
              * Is Child
              * @default false
@@ -4926,6 +5425,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Status Set At */
+            status_set_at: string | null;
             /** Full Name */
             full_name: string;
             /** Contact Number */
@@ -5140,6 +5641,8 @@ export interface components {
              * @enum {string}
              */
             status: "safe" | "needs_rescue" | "unaccounted";
+            /** Status Set At */
+            status_set_at: string | null;
             /** Vulnerability Flags */
             vulnerability_flags: string[];
             /** Evac Center Id */
@@ -7698,7 +8201,7 @@ export interface operations {
             };
         };
     };
-    admin_end_event_api_v1_admin_emergency_events__event_id__end_post: {
+    admin_get_event_api_v1_admin_emergency_events__event_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -7708,6 +8211,109 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmergencyEventDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_delete_event_api_v1_admin_emergency_events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_event_api_v1_admin_emergency_events__event_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmergencyEventPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmergencyEventDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_end_event_api_v1_admin_emergency_events__event_id__end_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["EmergencyEventEnd"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -9353,6 +9959,37 @@ export interface operations {
             };
         };
     };
+    admin_get_rescue_request_api_v1_admin_rescue_requests__request_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RescueRequestDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     admin_update_rescue_request_api_v1_admin_rescue_requests__request_id__patch: {
         parameters: {
             query?: never;
@@ -9524,7 +10161,7 @@ export interface operations {
     admin_list_incident_reports_api_v1_admin_incident_reports_get: {
         parameters: {
             query?: {
-                status?: ("pending" | "verified" | "dismissed") | null;
+                status?: ("pending" | "verified" | "in_progress" | "resolved" | "dismissed") | null;
                 page?: number;
                 size?: number;
             };
@@ -9554,6 +10191,37 @@ export interface operations {
             };
         };
     };
+    admin_get_incident_report_api_v1_admin_incident_reports__report_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentReportDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     admin_review_incident_report_api_v1_admin_incident_reports__report_id__patch: {
         parameters: {
             query?: never;
@@ -9565,7 +10233,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["IncidentReportReview"];
+                "application/json": components["schemas"]["IncidentReportPatch"];
             };
         };
         responses: {
@@ -9576,6 +10244,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IncidentReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_safety_ledger_api_v1_admin_safety_ledger_get: {
+        parameters: {
+            query?: {
+                event_id?: string | null;
+                status?: string | null;
+                area_id?: string | null;
+                subject_type?: string | null;
+                set_method?: string | null;
+                search?: string | null;
+                current_only?: boolean;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SafetyLedgerPageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_person_safety_journey_api_v1_admin_safety_history__subject_type___subject_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subject_type: string;
+                subject_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonSafetyJourneyOut"];
                 };
             };
             /** @description Validation Error */

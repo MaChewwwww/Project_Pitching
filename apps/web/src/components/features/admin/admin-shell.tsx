@@ -118,6 +118,7 @@ function useIsActive() {
 
 function ConsoleNav({ onNavigate }: { onNavigate?: () => void }) {
   const isActive = useIsActive();
+  const { user } = useAuth();
 
   // Keep the full navigation visible after every reload. Officers can still
   // collapse a group temporarily when they need more room on a short screen.
@@ -129,7 +130,11 @@ function ConsoleNav({ onNavigate }: { onNavigate?: () => void }) {
     <nav className="flex-1 space-y-2 px-3 py-4">
       <div className="space-y-1.5">
         {ADMIN_CATEGORIES.map((category) => {
-          const hasActiveChild = category.items.some((item) => isActive(item.href));
+          const items = category.items.filter(
+            (item) => !item.roles || (!!user && item.roles.includes(user.role)),
+          );
+          if (items.length === 0) return null;
+          const hasActiveChild = items.some((item) => isActive(item.href));
           const isOpen = hasActiveChild || Boolean(openCategories[category.id]);
           const CategoryIcon = category.icon;
 
@@ -173,7 +178,7 @@ function ConsoleNav({ onNavigate }: { onNavigate?: () => void }) {
 
               {isOpen ? (
                 <ul className="mt-1 ml-4 space-y-0.5 border-l border-white/10 pl-2">
-                  {category.items.map((item) => {
+                  {items.map((item) => {
                     const active = isActive(item.href);
                     const ItemIcon = item.icon;
 

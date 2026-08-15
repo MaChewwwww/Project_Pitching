@@ -1,4 +1,5 @@
 import type { Route } from "next";
+import type { Role } from "@/lib/auth/auth-context";
 import {
   Activity,
   AlertTriangle,
@@ -31,6 +32,7 @@ export interface AdminNavLink {
   href: Route;
   label: string;
   icon: typeof Home;
+  roles?: Role[];
 }
 
 export interface AdminNavCategory {
@@ -73,11 +75,17 @@ export const ADMIN_CATEGORIES: AdminNavCategory[] = [
         label: "Emergency Events",
         icon: Siren,
       },
-      { href: "/admin/rescue-requests" as Route, label: "Rescue Queue", icon: LifeBuoy },
+      {
+        href: "/admin/rescue-requests" as Route,
+        label: "Rescue Queue",
+        icon: LifeBuoy,
+        roles: ["admin", "superadmin"],
+      },
       {
         href: "/admin/incident-reports" as Route,
         label: "Incident Reports",
         icon: Camera,
+        roles: ["admin", "superadmin"],
       },
     ],
   },

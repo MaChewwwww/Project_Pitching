@@ -45,7 +45,7 @@ from src.modules.geo.models import Area, Facility, Hotline
 from src.modules.preparedness.models import Faq, Guide
 from src.modules.registry.models import Household, Member
 from src.modules.registry.reference import format_household_number
-from src.modules.safety.models import RescueRequest, UnregisteredPerson
+from src.modules.safety.models import IncidentReport, RescueRequest, UnregisteredPerson
 from src.modules.users.models import User, UserArea
 from src.modules.weather.models import FloodEvent, FloodEventArea, Forecast, Reading
 
@@ -1421,6 +1421,12 @@ async def seed_households(session, areas: dict[str, Area]) -> None:
         )
         return
 
+    # `seed()` commits each reference-data phase. Refresh the instances carried
+    # from `seed_areas` before using their geometry in SQL expressions; otherwise
+    # an expired async ORM attribute attempts implicit I/O outside a greenlet.
+    for area in areas.values():
+        await session.refresh(area, attribute_names=["geom"])
+
     rng = random.Random(2026)  # deterministic — reruns produce the same synthetic set
     area_list = list(areas.values())
     total = 0
@@ -1590,6 +1596,112 @@ async def seed_safety(session, users: dict[str, User]) -> None:
     )
 
 
+async def seed_incident_reports(session, users: dict[str, User]) -> None:
+    """Provide a deliberately varied operational queue for the admin demo."""
+    if await _table_has_rows(session, IncidentReport):
+        return
+
+    event = (
+        await session.execute(
+            select(EmergencyEvent)
+            .order_by(EmergencyEvent.is_active.desc(), EmergencyEvent.started_at.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    households = (
+        (
+            await session.execute(
+                select(Household).where(Household.head_user_id.is_not(None)).limit(3)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    reporter_ids = [household.head_user_id for household in households]
+    admin = users["Barangay Disaster Risk Reduction and Management Committee"]
+    now = _now()
+
+    media_source = (
+        Path(__file__).parent / "seed_media" / "incident-reports" / "flooded-lane-obstruction.png"
+    )
+    media_target = Path(settings.upload_dir) / "incident-reports" / "flooded-lane-obstruction.png"
+    if media_source.exists() and not media_target.exists():
+        media_target.parent.mkdir(parents=True, exist_ok=True)
+        copyfile(media_source, media_target)
+
+    reports = [
+        IncidentReport(
+            event_id=event.id if event else None,
+            reported_by_user_id=reporter_ids[0] if reporter_ids else None,
+            type="flooding",
+            description=(
+                "Floodwater has entered the ground-floor homes near the lane. A fallen branch is "
+                "blocking the only passable exit."
+            ),
+            location=func.ST_SetSRID(func.ST_MakePoint(121.1335, 14.7374), 4326),
+            location_note="Near the covered court access road, Kasiglahan Village",
+            photo_path=(
+                "incident-reports/flooded-lane-obstruction.png" if media_source.exists() else None
+            ),
+        ),
+        IncidentReport(
+            event_id=None,
+            reported_by_user_id=reporter_ids[1] if len(reporter_ids) > 1 else None,
+            type="power_outage",
+            description=(
+                "Power has been out since early morning. The caller could not safely share a "
+                "map pin."
+            ),
+            location_note="Block 8, Phase 1A, ask for the blue sari-sari store",
+        ),
+        IncidentReport(
+            event_id=event.id if event else None,
+            reported_by_user_id=reporter_ids[2] if len(reporter_ids) > 2 else None,
+            type="fallen_tree",
+            description="A tree limb is resting on the roadside power line and needs assessment.",
+            location=func.ST_SetSRID(func.ST_MakePoint(121.1402, 14.7448), 4326),
+            status="verified",
+            verified_by_user_id=admin.id,
+            verified_at=now - timedelta(hours=2),
+        ),
+        IncidentReport(
+            event_id=event.id if event else None,
+            type="road_blockage",
+            description=(
+                "Construction debris and floodwater have closed one lane; residents are using a "
+                "narrow shoulder."
+            ),
+            location=func.ST_SetSRID(func.ST_MakePoint(121.1294, 14.7404), 4326),
+            status="in_progress",
+            verified_by_user_id=admin.id,
+            verified_at=now - timedelta(hours=5),
+        ),
+        IncidentReport(
+            event_id=event.id if event else None,
+            type="flooding",
+            description="Drainage overflow near the school gate was reported after heavy rain.",
+            location=func.ST_SetSRID(func.ST_MakePoint(121.1348, 14.7303), 4326),
+            status="resolved",
+            verified_by_user_id=admin.id,
+            verified_at=now - timedelta(days=1, hours=2),
+            resolved_at=now - timedelta(days=1),
+            resolution_note=(
+                "Barangay maintenance cleared the drain and the area was checked after rainfall."
+            ),
+        ),
+        IncidentReport(
+            event_id=None,
+            type="other",
+            description="Caller reported smoke near a vacant lot but could not confirm a source.",
+            location_note="Vacant lot behind the old tricycle terminal",
+            status="dismissed",
+            dismissal_reason="Follow-up found no active hazard at the described location.",
+        ),
+    ]
+    session.add_all(reports)
+    log.info("seeded incident-report demo data", extra={"incident_reports": len(reports)})
+
+
 async def seed() -> None:
     async with SessionLocal() as session:
         areas = await seed_areas(session)
@@ -1633,6 +1745,9 @@ async def seed() -> None:
         await session.commit()
 
         await seed_safety(session, users)
+        await session.commit()
+
+        await seed_incident_reports(session, users)
         await session.commit()
 
     await engine.dispose()

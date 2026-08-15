@@ -345,6 +345,14 @@ conversion, support-need, and center filters operate over retained emergency rec
 an existing household is an inline dialog; creation routes through the full assisted household
 workspace with known name/contact/support flags prefilled.
 
+### Response operations worklists
+
+`/admin/rescue-requests` and `/admin/incident-reports` share a client-only operational map and
+worklist. Search, status, and event controls filter both surfaces together; records without a pin
+are counted explicitly and stay in the table. Selecting either a map pin or worklist row opens a
+right-side detail sheet with the audit timeline, event linking, and only the next valid response
+actions. The rescue view starts with the flood layer visible; the incident view starts without it.
+
 ### Portal splash loading
 
 `AdminGate` and `PortalGate` reuse `PageSplashLoader` with a 1.5-second minimum presentation.

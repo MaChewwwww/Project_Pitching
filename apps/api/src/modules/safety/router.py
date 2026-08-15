@@ -26,14 +26,16 @@ from src.modules.safety.schemas import (
     AccountedForOut,
     EmergencyWorkspaceOut,
     HouseholdSafetyOut,
+    IncidentReportDetailOut,
     IncidentReportIn,
     IncidentReportOut,
-    IncidentReportReview,
+    IncidentReportPatch,
     IncidentStatus,
     IncidentType,
     MySafetyOut,
     PersonSafetyJourneyOut,
     RescueRequestAck,
+    RescueRequestDetailOut,
     RescueRequestOut,
     RescueRequestPatch,
     RescueRequestPublicIn,
@@ -151,7 +153,7 @@ async def admin_accounted_for(
 
 @admin_router.get(
     "/rescue-requests/open-count",
-    dependencies=[Depends(require_role("admin", "bhw"))],
+    dependencies=[Depends(require_role("admin"))],
     summary="Count of pending/verified/dispatched requests, for the dashboard tile",
 )
 async def admin_open_rescue_count(session: DbSessionDep) -> dict[str, int]:
@@ -160,7 +162,7 @@ async def admin_open_rescue_count(session: DbSessionDep) -> dict[str, int]:
 
 @admin_router.get(
     "/rescue-requests",
-    dependencies=[Depends(require_role("admin", "bhw"))],
+    dependencies=[Depends(require_role("admin"))],
     summary="The rescue queue, triaged by urgency (FR-SAF-010)",
 )
 async def admin_list_rescue_requests(
@@ -173,9 +175,20 @@ async def admin_list_rescue_requests(
     return await service.list_rescue_requests(session, status=status, page=page, size=size)
 
 
+@admin_router.get(
+    "/rescue-requests/{request_id}",
+    dependencies=[Depends(require_role("admin"))],
+    summary="One rescue request with its operational history",
+)
+async def admin_get_rescue_request(
+    request_id: uuid.UUID, session: DbSessionDep
+) -> RescueRequestDetailOut:
+    return await service.rescue_request_detail(session, request_id)
+
+
 @admin_router.patch(
     "/rescue-requests/{request_id}",
-    dependencies=[Depends(require_role("admin", "bhw"))],
+    dependencies=[Depends(require_role("admin"))],
     summary="Triage a rescue request — status, assignment, priority override",
 )
 async def admin_update_rescue_request(
@@ -290,8 +303,8 @@ async def me_create_incident_report(
 
 @admin_router.get(
     "/incident-reports",
-    dependencies=[Depends(require_role("admin", "bhw"))],
-    summary="Incident reports awaiting review (FR-SAF-016)",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Incident reports for verification and action (FR-SAF-016/021)",
 )
 async def admin_list_incident_reports(
     session: DbSessionDep,
@@ -302,14 +315,25 @@ async def admin_list_incident_reports(
     return await service.list_incident_reports(session, status=status, page=page, size=size)
 
 
+@admin_router.get(
+    "/incident-reports/{report_id}",
+    dependencies=[Depends(require_role("admin"))],
+    summary="One incident report with its operational history",
+)
+async def admin_get_incident_report(
+    report_id: uuid.UUID, session: DbSessionDep
+) -> IncidentReportDetailOut:
+    return await service.incident_report_detail(session, report_id)
+
+
 @admin_router.patch(
     "/incident-reports/{report_id}",
-    dependencies=[Depends(require_role("admin", "bhw"))],
-    summary="Verify or dismiss an incident report, with reason (FR-SAF-016)",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Advance an incident report through the action lifecycle (FR-SAF-016/021)",
 )
 async def admin_review_incident_report(
     report_id: uuid.UUID,
-    body: IncidentReportReview,
+    body: IncidentReportPatch,
     request: Request,
     session: DbSessionDep,
     user: CurrentUser,
@@ -369,4 +393,3 @@ async def admin_person_safety_journey(
         subject_id=subject_id,
         user=user,
     )
-

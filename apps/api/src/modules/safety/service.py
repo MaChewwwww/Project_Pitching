@@ -7,10 +7,9 @@ module leans on that for `Household`/`Member` (registry), `Area` (geo), and
 (AGENTS.md Section 5, reworded alongside this module to match what
 `registry/service.py` and `evacuation/service.py` already did).
 
-`EmergencyEvent` itself is never queried here — every function takes the
-already-resolved event object from `evacuation.service` (`get_active_event`/
-`require_active_event`), which owns the model and its lifecycle
-(FR-SAF-018/019).
+`EmergencyEvent` lifecycle remains owned by `evacuation.service`. This module
+uses the model only for read projection and explicit link validation, never to
+create, end, or otherwise mutate an event (FR-SAF-018/019).
 """
 
 from __future__ import annotations
@@ -48,17 +47,20 @@ from src.modules.safety.schemas import (
     AreaAccountedFor,
     EmergencyWorkspaceOut,
     HouseholdSafetyOut,
+    IncidentReportDetailOut,
     IncidentReportIn,
     IncidentReportOut,
-    IncidentReportReview,
+    IncidentReportPatch,
     MemberSafetyOut,
     MySafetyOut,
     PersonSafetyJourneyOut,
     PersonTimelineEntry,
     RescueRequestAck,
+    RescueRequestDetailOut,
     RescueRequestOut,
     RescueRequestPatch,
     RescueRequestPublicIn,
+    ResponseTimelineEntry,
     SafetyCheckinLogItem,
     SafetyLedgerPageOut,
     SafetyStatusAdminIn,
@@ -70,12 +72,21 @@ from src.modules.safety.schemas import (
     WorkspaceMemberOut,
     WorkspaceUnregisteredOut,
 )
+from src.modules.users.models import AuditLog  # join-only audit history projection
 
 # pending -> verified -> dispatched -> resolved; any state -> dismissed.
 RESCUE_TRANSITIONS: dict[str, set[str]] = {
     "pending": {"verified", "dismissed"},
     "verified": {"dispatched", "dismissed"},
     "dispatched": {"resolved", "dismissed"},
+    "resolved": set(),
+    "dismissed": set(),
+}
+
+INCIDENT_TRANSITIONS: dict[str, set[str]] = {
+    "pending": {"verified", "dismissed"},
+    "verified": {"in_progress", "dismissed"},
+    "in_progress": {"resolved", "dismissed"},
     "resolved": set(),
     "dismissed": set(),
 }
@@ -192,6 +203,58 @@ async def _user_names(session: AsyncSession, user_ids: set[uuid.UUID]) -> dict[u
         await session.execute(select(User.id, User.full_name).where(User.id.in_(user_ids)))
     ).all()
     return dict(rows)
+
+
+async def _location_area_name(session: AsyncSession, location: object | None) -> str | None:
+    """Return the reference area containing a pin, without inventing an address."""
+    if location is None:
+        return None
+    return await session.scalar(
+        select(Area.name).where(func.ST_Contains(Area.geom, location)).limit(1)
+    )
+
+
+async def _response_history(
+    session: AsyncSession, *, entity_type: str, entity_id: uuid.UUID
+) -> list[ResponseTimelineEntry]:
+    """Turn the append-only audit stream into a drawer-safe operational timeline."""
+    rows = (
+        (
+            await session.execute(
+                select(AuditLog)
+                .where(AuditLog.entity_type == entity_type, AuditLog.entity_id == entity_id)
+                .order_by(AuditLog.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    names = await _user_names(
+        session, {row.actor_user_id for row in rows if row.actor_user_id is not None}
+    )
+    history: list[ResponseTimelineEntry] = []
+    for row in rows:
+        changes = row.changes or {}
+        status = changes.get("status")
+        title = "Request received" if row.action.endswith(".create") else "Record updated"
+        detail: str | None = None
+        if isinstance(status, str):
+            title = f"Status changed to {status.replace('_', ' ').title()}"
+        if row.action.endswith(".review"):
+            title = f"Incident marked {str(status or 'reviewed').replace('_', ' ').title()}"
+        if changes.get("event_name"):
+            detail = f"Linked to {changes['event_name']}"
+        history.append(
+            ResponseTimelineEntry(
+                id=row.id,
+                timestamp=row.created_at,
+                action=row.action,
+                title=title,
+                detail=detail,
+                actor_name=names.get(row.actor_user_id) if row.actor_user_id else None,
+            )
+        )
+    return history
 
 
 async def _supersede_current(
@@ -580,8 +643,7 @@ async def _sync_unregistered_rescue(
                 flags.add(flag)
         priority, _ = triage_priority(flags=flags, people_count=1)
         desc = (
-            f"Rescue flagged for unregistered walk-in {person.full_name} "
-            "via emergency workspace."
+            f"Rescue flagged for unregistered walk-in {person.full_name} via emergency workspace."
         )
 
         if not existing:
@@ -1555,6 +1617,7 @@ async def _ensure_triaged(session: AsyncSession, rows: list[RescueRequest]) -> N
 
 async def _rescue_request_out(session: AsyncSession, row: RescueRequest) -> RescueRequestOut:
     household = await session.get(Household, row.household_id) if row.household_id else None
+    event = await session.get(EmergencyEvent, row.event_id) if row.event_id else None
     area_name = None
     if household is not None and household.area_id is not None:
         area = await session.get(Area, household.area_id)
@@ -1575,6 +1638,10 @@ async def _rescue_request_out(session: AsyncSession, row: RescueRequest) -> Resc
     return RescueRequestOut(
         id=row.id,
         created_at=row.created_at,
+        updated_at=row.updated_at,
+        event_id=row.event_id,
+        event_name=event.name if event else None,
+        event_type=event.type if event else None,
         requester_name=row.requester_name,
         contact_number=row.contact_number,
         location=point_to_geojson(row.location),
@@ -1588,10 +1655,23 @@ async def _rescue_request_out(session: AsyncSession, row: RescueRequest) -> Resc
         is_registered=row.household_id is not None,
         household_reference_no=household.reference_no if household else None,
         area_name=area_name,
+        location_area_name=await _location_area_name(session, row.location),
         assigned_to_user_id=row.assigned_to_user_id,
         assigned_to_name=assigned_name,
         resolved_at=row.resolved_at,
         resolution_note=row.resolution_note,
+    )
+
+
+async def rescue_request_detail(
+    session: AsyncSession, request_id: uuid.UUID
+) -> RescueRequestDetailOut:
+    row = await get_rescue_request_or_404(session, request_id)
+    return RescueRequestDetailOut(
+        **(await _rescue_request_out(session, row)).model_dump(),
+        history=await _response_history(
+            session, entity_type="rescue_request", entity_id=request_id
+        ),
     )
 
 
@@ -1647,6 +1727,7 @@ async def update_rescue_request(
 ) -> RescueRequestOut:
     row = await get_rescue_request_or_404(session, request_id)
 
+    changes: dict[str, object] = {}
     if body.status is not None and body.status != row.status:
         allowed = RESCUE_TRANSITIONS.get(row.status, set())
         if body.status not in allowed:
@@ -1654,16 +1735,34 @@ async def update_rescue_request(
                 f"Cannot move a rescue request from '{row.status}' to '{body.status}'."
             )
         row.status = body.status
+        changes["status"] = row.status
         if body.status in ("resolved", "dismissed"):
             row.resolved_at = datetime.now(UTC)
 
-    if body.assigned_to_user_id is not None:
+    if "assigned_to_user_id" in body.model_fields_set:
         row.assigned_to_user_id = body.assigned_to_user_id
+        changes["assigned_to_user_id"] = (
+            str(body.assigned_to_user_id) if body.assigned_to_user_id else None
+        )
     if body.resolution_note is not None:
         row.resolution_note = body.resolution_note
-    if body.priority is not None:
-        row.priority = body.priority
-        row.priority_is_manual = True
+    if "priority" in body.model_fields_set:
+        if body.priority is None:
+            flags = await _household_flags(session, row.household_id) if row.household_id else set()
+            row.priority, _ = triage_priority(flags=flags, people_count=row.people_count)
+            row.priority_is_manual = False
+        else:
+            row.priority = body.priority
+            row.priority_is_manual = True
+        changes["priority"] = row.priority
+    if "event_id" in body.model_fields_set:
+        if body.event_id is not None:
+            event = await evacuation_service.get_event_or_404(session, body.event_id)
+            row.event_id = event.id
+            changes["event_name"] = event.name
+        else:
+            row.event_id = None
+        changes["event_id"] = str(row.event_id) if row.event_id else None
 
     await session.flush()
     await write_audit(
@@ -1672,10 +1771,11 @@ async def update_rescue_request(
         action="rescue_request.update",
         entity_type="rescue_request",
         entity_id=row.id,
-        changes={"status": row.status, "priority": row.priority},
+        changes=changes or {"status": row.status, "priority": row.priority},
         ip=ip,
     )
     await session.commit()
+    await session.refresh(row)
     return await _rescue_request_out(session, row)
 
 
@@ -1694,19 +1794,50 @@ async def _incident_report_out(session: AsyncSession, row: IncidentReport) -> In
         uid for uid in (row.reported_by_user_id, row.verified_by_user_id) if uid is not None
     }
     names = await _user_names(session, user_ids)
+    event = await session.get(EmergencyEvent, row.event_id) if row.event_id else None
+    household = (
+        await session.scalar(
+            select(Household).where(Household.head_user_id == row.reported_by_user_id)
+        )
+        if row.reported_by_user_id
+        else None
+    )
+    area = await session.get(Area, household.area_id) if household else None
     return IncidentReportOut(
         id=row.id,
         created_at=row.created_at,
+        updated_at=row.updated_at,
+        event_id=row.event_id,
+        event_name=event.name if event else None,
+        event_type=event.type if event else None,
         type=row.type,
         description=row.description,
         location=point_to_geojson(row.location),
         location_note=row.location_note,
+        location_area_name=await _location_area_name(session, row.location),
         photo_url=f"/uploads/{row.photo_path}" if row.photo_path else None,
         status=row.status,
         reported_by_name=(names.get(row.reported_by_user_id) if row.reported_by_user_id else None),
         verified_by_name=(names.get(row.verified_by_user_id) if row.verified_by_user_id else None),
         verified_at=row.verified_at,
         dismissal_reason=row.dismissal_reason,
+        resolved_at=row.resolved_at,
+        resolution_note=row.resolution_note,
+        household_id=household.id if household else None,
+        household_reference_no=household.reference_no if household else None,
+        area_name=area.name if area else None,
+    )
+
+
+async def incident_report_detail(
+    session: AsyncSession, report_id: uuid.UUID
+) -> IncidentReportDetailOut:
+    row = await get_incident_report_or_404(session, report_id)
+    return IncidentReportDetailOut(
+        **(await _incident_report_out(session, row)).model_dump(),
+        history=await _response_history(
+            session, entity_type="incident_report", entity_id=report_id
+        ),
     )
 
 
@@ -1764,6 +1895,7 @@ async def create_incident_report(
         ip=ip,
     )
     await session.commit()
+    await session.refresh(row)
     return await _incident_report_out(session, row)
 
 
@@ -1790,20 +1922,38 @@ async def review_incident_report(
     session: AsyncSession,
     report_id: uuid.UUID,
     *,
-    body: IncidentReportReview,
+    body: IncidentReportPatch,
     actor: AuthenticatedUser,
     ip: str | None,
 ) -> IncidentReportOut:
-    """FR-SAF-016. `body`'s own validator already rejects a missing
-    `dismissal_reason` (422); the database CHECK is the second line of
-    defence, not the first."""
+    """FR-SAF-016/021. Final-state notes are validated twice: API and DB."""
     row = await get_incident_report_or_404(session, report_id)
-    row.status = body.status
-    if body.status == "dismissed":
-        row.dismissal_reason = body.dismissal_reason
-    else:
-        row.verified_by_user_id = actor.id
-        row.verified_at = datetime.now(UTC)
+    changes: dict[str, object] = {}
+    if body.status is not None and body.status != row.status:
+        allowed = INCIDENT_TRANSITIONS.get(row.status, set())
+        if body.status not in allowed:
+            raise ConflictError(
+                f"Cannot move an incident report from '{row.status}' to '{body.status}'."
+            )
+        row.status = body.status
+        changes["status"] = row.status
+        if body.status == "verified":
+            row.verified_by_user_id = actor.id
+            row.verified_at = datetime.now(UTC)
+            row.dismissal_reason = None
+        elif body.status == "dismissed":
+            row.dismissal_reason = body.dismissal_reason
+        elif body.status == "resolved":
+            row.resolved_at = datetime.now(UTC)
+            row.resolution_note = body.resolution_note
+    if "event_id" in body.model_fields_set:
+        if body.event_id is not None:
+            event = await evacuation_service.get_event_or_404(session, body.event_id)
+            row.event_id = event.id
+            changes["event_name"] = event.name
+        else:
+            row.event_id = None
+        changes["event_id"] = str(row.event_id) if row.event_id else None
 
     await session.flush()
     await write_audit(
@@ -1812,10 +1962,11 @@ async def review_incident_report(
         action="incident_report.review",
         entity_type="incident_report",
         entity_id=row.id,
-        changes={"status": row.status},
+        changes=changes or {"status": row.status},
         ip=ip,
     )
     await session.commit()
+    await session.refresh(row)
     return await _incident_report_out(session, row)
 
 
@@ -1963,9 +2114,7 @@ async def get_safety_ledger(
             )
         elif u_row:
             c_info = center_assignments.get(u_row.id)
-            flags: list[str] = [
-                f for f in VULNERABILITY_FLAGS if getattr(u_row, f, False)
-            ]
+            flags: list[str] = [f for f in VULNERABILITY_FLAGS if getattr(u_row, f, False)]
             items.append(
                 SafetyCheckinLogItem(
                     id=s_row.id,
@@ -2034,12 +2183,16 @@ async def get_person_safety_journey(
         )
 
         status_rows = (
-            await session.execute(
-                select(SafetyStatus)
-                .where(SafetyStatus.member_id == subject_id)
-                .order_by(SafetyStatus.set_at.desc())
+            (
+                await session.execute(
+                    select(SafetyStatus)
+                    .where(SafetyStatus.member_id == subject_id)
+                    .order_by(SafetyStatus.set_at.desc())
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
 
         user_ids = {s.set_by_user_id for s in status_rows if s.set_by_user_id}
         names_map = await _user_names(session, user_ids)
@@ -2114,12 +2267,16 @@ async def get_person_safety_journey(
 
         if household:
             rescue_rows = (
-                await session.execute(
-                    select(RescueRequest)
-                    .where(RescueRequest.household_id == household.id)
-                    .order_by(RescueRequest.created_at.desc())
+                (
+                    await session.execute(
+                        select(RescueRequest)
+                        .where(RescueRequest.household_id == household.id)
+                        .order_by(RescueRequest.created_at.desc())
+                    )
                 )
-            ).scalars().all()
+                .scalars()
+                .all()
+            )
             for r in rescue_rows:
                 timeline.append(
                     PersonTimelineEntry(
@@ -2157,12 +2314,16 @@ async def get_person_safety_journey(
             raise NotFoundError("Unregistered person not found.")
 
         status_rows = (
-            await session.execute(
-                select(SafetyStatus)
-                .where(SafetyStatus.unregistered_person_id == subject_id)
-                .order_by(SafetyStatus.set_at.desc())
+            (
+                await session.execute(
+                    select(SafetyStatus)
+                    .where(SafetyStatus.unregistered_person_id == subject_id)
+                    .order_by(SafetyStatus.set_at.desc())
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
 
         user_ids = {s.set_by_user_id for s in status_rows if s.set_by_user_id}
         names_map = await _user_names(session, user_ids)

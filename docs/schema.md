@@ -708,9 +708,11 @@ CREATE INDEX idx_rescue_location ON rescue_request USING GIST(location);
 
 > **Known follow-up for the FR-SAF-010 phase:** the migrated index above orders by plain `priority`, not `priority DESC`. The triage design ("higher number = more urgent") needs `priority DESC` to actually benefit from this index — confirm and fix (a new migration, not an edit to `0008`) when that phase lands.
 
-### `incident_report` (FR-SAF-015, 016)
+### `incident_report` (FR-SAF-015, 016, 021)
 
-`id`, `event_id`, `reported_by_user_id` (nullable), `type` (CHECK: `flooding` · `fire` · `fallen_tree` · `road_blockage` · `landslide` · `power_outage` · `other`), `description`, `location`, `location_note`, `photo_path`, `status` (CHECK: `pending` · `verified` · `dismissed`), `verified_by_user_id`, `verified_at`.
+`id`, `event_id`, `reported_by_user_id` (nullable), `type` (CHECK: `flooding` · `fire` · `fallen_tree` · `road_blockage` · `landslide` · `power_outage` · `other`), `description`, `location`, `location_note`, `photo_path`, `status` (CHECK: `pending` · `verified` · `in_progress` · `resolved` · `dismissed`), `verified_by_user_id`, `verified_at`, `dismissal_reason`, `resolved_at`, `resolution_note`, `created_at`, `updated_at`.
+
+`dismissal_reason` is required when `status='dismissed'`; `resolved_at` and `resolution_note` are required when `status='resolved'`. The application permits only `pending → verified → in_progress → resolved`, with dismissal from any non-final state.
 
 ---
 

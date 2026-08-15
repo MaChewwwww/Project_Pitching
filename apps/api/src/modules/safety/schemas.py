@@ -18,6 +18,7 @@ from src.modules.geo.schemas import GeoJsonPoint
 SafetyStatusValue = Literal["safe", "needs_rescue", "unaccounted"]
 SetMethod = Literal["self", "assisted", "household_bulk"]
 RescueRequestStatus = Literal["pending", "verified", "dispatched", "resolved", "dismissed"]
+IncidentStatus = Literal["pending", "verified", "in_progress", "resolved", "dismissed"]
 
 
 class SafetyStatusSelfIn(BaseModel):
@@ -215,6 +216,10 @@ class RescueRequestOut(BaseModel):
 
     id: uuid.UUID
     created_at: datetime
+    updated_at: datetime
+    event_id: uuid.UUID | None
+    event_name: str | None
+    event_type: str | None
     requester_name: str
     contact_number: str | None
     location: GeoJsonPoint | None
@@ -228,6 +233,7 @@ class RescueRequestOut(BaseModel):
     is_registered: bool
     household_reference_no: str | None
     area_name: str | None
+    location_area_name: str | None
     # Always null — see the FR-SAF-010 deviation note in frs_nfrs.md Section 9.
     # A snapshot of a level that BRD OI-18 has not defined yet.
     vulnerability_level: None = None
@@ -252,7 +258,8 @@ class RescueRequestPatch(BaseModel):
     # overwriting it, so the UI can say "set by <officer>" instead of
     # presenting a stale set of computed factors next to a number they no
     # longer explain.
-    priority: int | None = None
+    priority: int | None = Field(default=None, ge=1, le=5)
+    event_id: uuid.UUID | None = None
 
     @model_validator(mode="after")
     def _resolution_requires_a_note(self) -> RescueRequestPatch:
@@ -353,7 +360,6 @@ class UnregisteredPersonOut(BaseModel):
 IncidentType = Literal[
     "flooding", "fire", "fallen_tree", "road_blockage", "landslide", "power_outage", "other"
 ]
-IncidentStatus = Literal["pending", "verified", "dismissed"]
 
 
 class IncidentReportIn(BaseModel):
@@ -372,10 +378,15 @@ class IncidentReportIn(BaseModel):
 class IncidentReportOut(BaseModel):
     id: uuid.UUID
     created_at: datetime
+    updated_at: datetime
+    event_id: uuid.UUID | None
+    event_name: str | None
+    event_type: str | None
     type: IncidentType
     description: str
     location: GeoJsonPoint | None
     location_note: str | None
+    location_area_name: str | None
     # "/uploads/" + the stored relative path — the DTO exposes the URL,
     # never the filesystem path (core/uploads.py).
     photo_url: str | None
@@ -384,21 +395,45 @@ class IncidentReportOut(BaseModel):
     verified_by_name: str | None
     verified_at: datetime | None
     dismissal_reason: str | None
+    resolved_at: datetime | None
+    resolution_note: str | None
+    household_id: uuid.UUID | None
+    household_reference_no: str | None
+    area_name: str | None
 
 
-class IncidentReportReview(BaseModel):
-    """`PATCH /admin/incident-reports/{id}`. Dismissing without a reason is
-    rejected here (422) *and* by the database CHECK — belt and braces, the
-    same shape as `RescueRequestPatch`'s resolution-note requirement."""
+class IncidentReportPatch(BaseModel):
+    """Admin-only operational lifecycle for FR-SAF-016/021."""
 
-    status: Literal["verified", "dismissed"]
+    status: IncidentStatus | None = None
     dismissal_reason: str | None = None
+    resolution_note: str | None = None
+    event_id: uuid.UUID | None = None
 
     @model_validator(mode="after")
-    def _dismissal_requires_a_reason(self) -> IncidentReportReview:
+    def _final_status_requires_a_note(self) -> IncidentReportPatch:
         if self.status == "dismissed" and not self.dismissal_reason:
             raise ValueError("A reason is required to dismiss an incident report.")
+        if self.status == "resolved" and not self.resolution_note:
+            raise ValueError("A resolution note is required to resolve an incident report.")
         return self
+
+
+class ResponseTimelineEntry(BaseModel):
+    id: int | uuid.UUID
+    timestamp: datetime
+    action: str
+    title: str
+    detail: str | None = None
+    actor_name: str | None = None
+
+
+class RescueRequestDetailOut(RescueRequestOut):
+    history: list[ResponseTimelineEntry] = Field(default_factory=list)
+
+
+class IncidentReportDetailOut(IncidentReportOut):
+    history: list[ResponseTimelineEntry] = Field(default_factory=list)
 
 
 class SafetyCheckinLogItem(BaseModel):
