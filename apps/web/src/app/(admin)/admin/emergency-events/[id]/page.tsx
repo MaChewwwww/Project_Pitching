@@ -7,11 +7,9 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import type { Route } from "next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Activity,
   AlertTriangle,
   ArrowLeft,
   Building2,
-  CalendarClock,
   CheckCircle2,
   Clock,
   Eye,
@@ -245,71 +243,6 @@ export default function EmergencyEventDetailPage() {
 
   return (
     <div className="flex flex-col gap-6 pb-12">
-      {/* Breadcrumb Navigation & Top Action Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="size-9 p-0 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-100 shrink-0"
-            title="Back to Emergency Events List"
-          >
-            <Link href="/admin/emergency-events?tab=events">
-              <ArrowLeft className="size-4" />
-            </Link>
-          </Button>
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-              <Link href="/admin/emergency-events?tab=events" className="hover:text-emerald-700 hover:underline">
-                Emergency Events
-              </Link>
-              <span>/</span>
-              <span className="text-slate-900 font-bold capitalize">{event.type} Disaster Record</span>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight leading-tight mt-0.5">
-              {event.name}
-            </h1>
-          </div>
-        </div>
-
-        {/* Header Action Bar */}
-        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          <Button
-            onClick={() => setBackfillOpen(true)}
-            size="sm"
-            className="h-9 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs shadow-sm gap-1.5 cursor-pointer"
-          >
-            <CalendarClock className="size-3.5" />
-            <span>Backfill Offline Records</span>
-          </Button>
-
-          {canManage ? (
-            <Button
-              onClick={() => setEditOpen(true)}
-              variant="outline"
-              size="sm"
-              className="h-9 rounded-xl border-slate-200 text-slate-800 hover:bg-slate-100 font-bold text-xs gap-1.5 cursor-pointer"
-            >
-              <Pencil className="size-3.5" />
-              <span>Edit Event</span>
-            </Button>
-          ) : null}
-
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="h-9 rounded-xl border-slate-200 text-slate-800 hover:bg-slate-100 font-bold text-xs gap-1.5"
-          >
-            <Link href={`/admin/emergency-events?event=${event.id}&tab=overview`}>
-              <Activity className="size-3.5 text-emerald-600" />
-              <span>Open Response Hub</span>
-            </Link>
-          </Button>
-        </div>
-      </div>
-
       {/* Hero Incident Context Banner */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#032e23] via-[#054333] to-[#085a44] p-6 sm:p-7 text-white shadow-md border border-emerald-800/40">
         <div aria-hidden className="pointer-events-none absolute -right-20 -top-20 size-80 rounded-full bg-emerald-400/10 blur-3xl" />
@@ -348,9 +281,9 @@ export default function EmergencyEventDetailPage() {
                 </div>
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                 {event.name}
-              </h2>
+              </h1>
 
               <p className="text-xs text-emerald-200/90 flex flex-wrap items-center gap-2">
                 <span>Declared: {new Date(event.started_at).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" })}</span>
@@ -379,6 +312,17 @@ export default function EmergencyEventDetailPage() {
                 {event.id}
               </span>
             </div>
+
+            {canManage ? (
+              <Button
+                onClick={() => setEditOpen(true)}
+                size="sm"
+                className="h-10 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/20 font-bold text-xs gap-1.5 shadow-sm backdrop-blur-md cursor-pointer transition-all active:scale-95 shrink-0"
+              >
+                <Pencil className="size-3.5 text-emerald-200" />
+                <span>Edit Event</span>
+              </Button>
+            ) : null}
           </div>
         </div>
       </div>
@@ -831,18 +775,42 @@ export default function EmergencyEventDetailPage() {
                   ) : (
                     (rescuesQuery.data ?? []).map((req) => (
                       <tr key={req.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-4 whitespace-nowrap">
                           <span
                             className={cn(
-                              "inline-block size-6 rounded-full text-center leading-6 font-black text-xs text-white",
-                              (req.priority ?? 0) >= 30
-                                ? "bg-rose-600"
-                                : (req.priority ?? 0) >= 15
-                                  ? "bg-amber-500"
-                                  : "bg-teal-600",
+                              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-black tracking-wide border shadow-2xs",
+                              (req.priority ?? 3) >= 5
+                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                : (req.priority ?? 3) === 4
+                                  ? "bg-amber-50 text-amber-800 border-amber-200"
+                                  : (req.priority ?? 3) === 3
+                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                    : "bg-slate-50 text-slate-700 border-slate-200",
                             )}
+                            title={`Triage Urgency: Priority ${req.priority ?? 3} of 5`}
                           >
-                            {req.priority ?? 0}
+                            <span
+                              className={cn(
+                                "size-2 rounded-full shrink-0",
+                                (req.priority ?? 3) >= 5
+                                  ? "bg-rose-600 animate-pulse"
+                                  : (req.priority ?? 3) === 4
+                                    ? "bg-amber-500"
+                                    : (req.priority ?? 3) === 3
+                                      ? "bg-emerald-600"
+                                      : "bg-slate-400",
+                              )}
+                            />
+                            <span>P{req.priority ?? 3}</span>
+                            <span className="text-[10px] font-bold opacity-80">
+                              {(req.priority ?? 3) >= 5
+                                ? "Critical"
+                                : (req.priority ?? 3) === 4
+                                  ? "High"
+                                  : (req.priority ?? 3) === 3
+                                    ? "Standard"
+                                    : "Low"}
+                            </span>
                           </span>
                         </td>
                         <td className="py-3 px-4 font-bold text-slate-900">

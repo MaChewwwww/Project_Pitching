@@ -199,17 +199,23 @@ export function resolveAdminBreadcrumbs(pathname: string): AdminCrumb[] {
               : index === 0
                 ? "Household Details"
                 : (LEAF_LABELS[segment] ?? "Edit Household")
-          : link.href === "/admin/citizens"
-            ? segment === "new"
-              ? "Add Household Member"
+          : link.href === "/admin/emergency-events"
+            ? index === 0
+              ? "Manage Specific Emergency Event"
               : segment === "edit"
-                ? "Edit Citizen"
-                : segment === "promote"
-                  ? "Create Household"
-                  : index === 0
-                    ? "Citizen Details"
-                    : (LEAF_LABELS[segment] ?? "Citizen Details")
-            : (LEAF_LABELS[segment] ?? "Edit");
+                ? "Edit"
+                : (LEAF_LABELS[segment] ?? "Manage Specific Emergency Event")
+            : link.href === "/admin/citizens"
+              ? segment === "new"
+                ? "Add Household Member"
+                : segment === "edit"
+                  ? "Edit Citizen"
+                  : segment === "promote"
+                    ? "Create Household"
+                    : index === 0
+                      ? "Citizen Details"
+                      : (LEAF_LABELS[segment] ?? "Citizen Details")
+              : (LEAF_LABELS[segment] ?? "Edit");
     const href =
       (link.href === "/admin/households" || link.href === "/admin/citizens") &&
       index === 0 &&

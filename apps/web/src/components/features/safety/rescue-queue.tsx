@@ -4,6 +4,7 @@ import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
 import { StatusBadge } from "@/components/common/status-badge";
+import { cn } from "@/lib/utils";
 import { toTelHref } from "@/lib/format";
 import type { RescueRequestOut } from "@/lib/api/safety-types";
 
@@ -42,10 +43,40 @@ export function RescueQueue({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span
-                  className="text-h3 font-bold text-neutral-900"
-                  title="Priority — higher is more urgent"
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-black tracking-wide border shadow-2xs",
+                    (request.priority ?? 3) >= 5
+                      ? "bg-rose-50 text-rose-700 border-rose-200"
+                      : (request.priority ?? 3) === 4
+                        ? "bg-amber-50 text-amber-800 border-amber-200"
+                        : (request.priority ?? 3) === 3
+                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                          : "bg-slate-50 text-slate-700 border-slate-200",
+                  )}
+                  title={`Priority: ${request.priority ?? 3} (1-5 scale)`}
                 >
-                  {request.priority ?? "—"}
+                  <span
+                    className={cn(
+                      "size-2 rounded-full shrink-0",
+                      (request.priority ?? 3) >= 5
+                        ? "bg-rose-600 animate-pulse"
+                        : (request.priority ?? 3) === 4
+                          ? "bg-amber-500"
+                          : (request.priority ?? 3) === 3
+                            ? "bg-emerald-600"
+                            : "bg-slate-400",
+                    )}
+                  />
+                  <span>P{request.priority ?? 3}</span>
+                  <span className="text-[10px] font-bold opacity-80">
+                    {(request.priority ?? 3) >= 5
+                      ? "Critical"
+                      : (request.priority ?? 3) === 4
+                        ? "High"
+                        : (request.priority ?? 3) === 3
+                          ? "Standard"
+                          : "Low"}
+                  </span>
                 </span>
                 <StatusBadge kind="rescue" status={request.status} />
                 {/* Neutral, never a demotion — BR-5.9 requires an anonymous
