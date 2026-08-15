@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { api, toDisplayError } from "@/lib/api/client";
+import { formatPhtDateTime } from "@/lib/format";
 import type {
   EmergencyEventOut,
   EmergencyWorkspaceOut,
@@ -110,6 +111,20 @@ function getEventTypeBadgeClass(type: string, isLightPopover = false): string {
     default:
       return "bg-teal-500/25 text-teal-100 border-teal-300/50 shadow-2xs";
   }
+}
+
+function formatDuration(startedAt: string, endedAt: string | null): string {
+  const start = new Date(startedAt).getTime();
+  const end = endedAt ? new Date(endedAt).getTime() : Date.now();
+  if (isNaN(start)) return "—";
+  const diffMs = Math.max(0, end - start);
+  const totalMinutes = Math.floor(diffMs / (1000 * 60));
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
 }
 
 const tabs = ["overview", "events", "map", "accounted-for"] as const;
@@ -291,20 +306,6 @@ export default function AdminEmergencyEventsPage() {
     const targetId = eventId || selectedId || (selected?.id ?? "");
     router.replace(`/admin/emergency-events?event=${targetId}&tab=${nextTab}`);
   };
-
-  function formatDuration(startedAt: string, endedAt: string | null): string {
-    const start = new Date(startedAt).getTime();
-    const end = endedAt ? new Date(endedAt).getTime() : Date.now();
-    if (isNaN(start)) return "—";
-    const diffMs = Math.max(0, end - start);
-    const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const days = Math.floor(totalHours / 24);
-    const remHours = totalHours % 24;
-    if (days > 0) return `${days}d ${remHours}h`;
-    const totalMins = Math.floor(diffMs / (1000 * 60));
-    if (totalHours > 0) return `${totalHours}h ${totalMins % 60}m`;
-    return `${totalMins}m`;
-  }
 
   const columns: ResourceColumn<EmergencyEventOut>[] = [
     {
@@ -522,15 +523,30 @@ export default function AdminEmergencyEventsPage() {
                         </span>
                       )}
 
-                      {/* Date / Time Moved to Top Badge Row */}
-                      <div className="flex items-center gap-1.5 text-xs text-white font-bold leading-none ml-1">
-                        <Clock className="size-3.5 text-white shrink-0" />
-                        <span>
-                          {isAllActiveOverview && activeEvents.length === 0
-                            ? "All Systems Normal · Ready for Dispatch"
-                            : `Started ${new Date(selected.started_at).toLocaleString()}`}
-                        </span>
-                      </div>
+                      {/* Declared Date & Elapsed Duration */}
+                      {isAllActiveOverview && activeEvents.length === 0 ? (
+                        <div className="flex items-center gap-1.5 text-xs text-white/90 font-medium ml-1">
+                          <Clock className="size-3.5 text-white/80 shrink-0" />
+                          <span>All Systems Normal · Ready for Dispatch</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-white/90 font-medium ml-1">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="size-3.5 text-emerald-300 shrink-0" />
+                            <span>
+                              Declared: <strong className="font-bold text-white">{formatPhtDateTime(selected.started_at)}</strong>
+                            </span>
+                          </div>
+                          <span className="text-emerald-400/50 hidden sm:inline">·</span>
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="size-3.5 text-emerald-300 shrink-0" />
+                            <span>
+                              {selected.is_active ? "Elapsed:" : "Duration:"}{" "}
+                              <strong className="font-bold text-emerald-200">{formatDuration(selected.started_at, selected.ended_at)}</strong>
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Title */}
