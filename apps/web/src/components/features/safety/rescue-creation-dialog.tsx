@@ -173,121 +173,125 @@ export function RescueCreationDialog({ open, onOpenChange }: RescueCreationDialo
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-xs">
-          {/* Requester Name & Contact Number */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* Scrollable Form Body with custom green scrollbar */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-xs custom-scrollbar">
+            {/* Requester Name & Contact Number */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-neutral-800 flex items-center gap-1.5">
+                  <User className="size-3.5 text-neutral-500" />
+                  Caller / Requester Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Juan dela Cruz"
+                  value={requesterName}
+                  onChange={(e) => setRequesterName(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-neutral-300 px-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-emerald-600 focus:outline-hidden"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-neutral-800 flex items-center gap-1.5">
+                  <Phone className="size-3.5 text-neutral-500" />
+                  Contact Number
+                </label>
+                <input
+                  type="tel"
+                  placeholder="e.g. 09171234567"
+                  value={contactNumber}
+                  onChange={(e) => setContactNumber(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-neutral-300 px-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-emerald-600 focus:outline-hidden font-mono"
+                />
+              </div>
+            </div>
+
+            {/* Area & People Count */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-neutral-800 flex items-center gap-1.5">
+                  <MapPin className="size-3.5 text-neutral-500" />
+                  Barangay Area <span className="text-rose-500">*</span>
+                </label>
+                <Select value={selectedArea} onValueChange={handleAreaChange}>
+                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SAN_JOSE_AREAS.map((area) => (
+                      <SelectItem key={area} value={area}>
+                        {area}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-neutral-800 flex items-center gap-1.5">
+                  <Users className="size-3.5 text-neutral-500" />
+                  Individuals Needing Rescue
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={99}
+                  value={peopleCount}
+                  onChange={(e) => setPeopleCount(parseInt(e.target.value) || 1)}
+                  className="h-9 w-full rounded-lg border border-neutral-300 px-3 text-xs text-neutral-900 focus:border-emerald-600 focus:outline-hidden font-mono"
+                />
+              </div>
+            </div>
+
+            {/* Landmark / Location Note */}
             <div className="flex flex-col gap-1.5">
-              <label className="font-bold text-neutral-800 flex items-center gap-1.5">
-                <User className="size-3.5 text-neutral-500" />
-                Caller / Requester Name <span className="text-rose-500">*</span>
+              <label className="font-bold text-neutral-800">
+                Landmarks & Specific Location Details
               </label>
               <input
                 type="text"
-                required
-                placeholder="e.g. Juan dela Cruz"
-                value={requesterName}
-                onChange={(e) => setRequesterName(e.target.value)}
+                placeholder="e.g. Near the old basketball court, blue two-storey gate"
+                value={locationNote}
+                onChange={(e) => setLocationNote(e.target.value)}
                 className="h-9 w-full rounded-lg border border-neutral-300 px-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-emerald-600 focus:outline-hidden"
               />
             </div>
 
+            {/* Emergency Description */}
             <div className="flex flex-col gap-1.5">
-              <label className="font-bold text-neutral-800 flex items-center gap-1.5">
-                <Phone className="size-3.5 text-neutral-500" />
-                Contact Number
+              <label className="font-bold text-neutral-800">
+                Emergency Situation & Critical Vulnerabilities <span className="text-rose-500">*</span>
               </label>
-              <input
-                type="tel"
-                placeholder="e.g. 09171234567"
-                value={contactNumber}
-                onChange={(e) => setContactNumber(e.target.value)}
-                className="h-9 w-full rounded-lg border border-neutral-300 px-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-emerald-600 focus:outline-hidden font-mono"
+              <textarea
+                required
+                rows={3}
+                placeholder="e.g. Floodwater waist-deep and rising. 1 bedridden elder, 2 children on second floor."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full rounded-lg border border-neutral-300 p-2.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-emerald-600 focus:outline-hidden leading-relaxed"
+              />
+            </div>
+
+            {/* Interactive Map Pinning */}
+            <div className="flex flex-col gap-1.5 border-t border-neutral-200/80 pt-3">
+              <label className="font-bold text-neutral-800 flex items-center gap-1.5">
+                <MapPin className="size-3.5 text-emerald-700" />
+                Map Pinning
+              </label>
+              <LocationPicker
+                value={location}
+                onChange={setLocation}
+                onResolve={handleLocationResolve}
+                caption="Drag the pin, or tap the map, to mark the exact rescue location."
+                className="h-44 w-full"
               />
             </div>
           </div>
 
-          {/* Area & People Count */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="font-bold text-neutral-800 flex items-center gap-1.5">
-                <MapPin className="size-3.5 text-neutral-500" />
-                Barangay Area <span className="text-rose-500">*</span>
-              </label>
-              <Select value={selectedArea} onValueChange={handleAreaChange}>
-                <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SAN_JOSE_AREAS.map((area) => (
-                    <SelectItem key={area} value={area}>
-                      {area}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="font-bold text-neutral-800 flex items-center gap-1.5">
-                <Users className="size-3.5 text-neutral-500" />
-                Individuals Needing Rescue
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={99}
-                value={peopleCount}
-                onChange={(e) => setPeopleCount(parseInt(e.target.value) || 1)}
-                className="h-9 w-full rounded-lg border border-neutral-300 px-3 text-xs text-neutral-900 focus:border-emerald-600 focus:outline-hidden font-mono"
-              />
-            </div>
-          </div>
-
-          {/* Landmark / Location Note */}
-          <div className="flex flex-col gap-1.5">
-            <label className="font-bold text-neutral-800">
-              Landmarks & Specific Location Details
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Near the old basketball court, blue two-storey gate"
-              value={locationNote}
-              onChange={(e) => setLocationNote(e.target.value)}
-              className="h-9 w-full rounded-lg border border-neutral-300 px-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-emerald-600 focus:outline-hidden"
-            />
-          </div>
-
-          {/* Emergency Description */}
-          <div className="flex flex-col gap-1.5">
-            <label className="font-bold text-neutral-800">
-              Emergency Situation & Critical Vulnerabilities <span className="text-rose-500">*</span>
-            </label>
-            <textarea
-              required
-              rows={3}
-              placeholder="e.g. Floodwater waist-deep and rising. 1 bedridden elder, 2 children on second floor."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-lg border border-neutral-300 p-2.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-emerald-600 focus:outline-hidden leading-relaxed"
-            />
-          </div>
-
-          {/* Interactive Map Pinning */}
-          <div className="flex flex-col gap-1.5 border-t border-neutral-200/80 pt-3">
-            <label className="font-bold text-neutral-800 flex items-center gap-1.5">
-              <MapPin className="size-3.5 text-emerald-700" />
-              Map Pinning
-            </label>
-            <LocationPicker
-              value={location}
-              onChange={setLocation}
-              onResolve={handleLocationResolve}
-              caption="Drag the pin, or tap the map, to mark the exact rescue location."
-              className="h-44 w-full"
-            />
-          </div>
-
-          <DialogFooter className="mt-2 flex items-center justify-end gap-2 border-t border-neutral-100 pt-3 shrink-0">
+          {/* Fixed Footer Always Visible */}
+          <DialogFooter className="shrink-0 border-t border-neutral-100 bg-neutral-50/80 px-5 py-3 sm:px-6 flex items-center justify-end gap-2">
             <Button
               type="button"
               variant="outline"

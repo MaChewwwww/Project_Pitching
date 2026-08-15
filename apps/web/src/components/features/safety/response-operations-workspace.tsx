@@ -24,6 +24,7 @@ import {
   Radio,
   RotateCcw,
   ShieldAlert,
+  SlidersHorizontal,
   Truck,
   User,
   X,
@@ -36,7 +37,6 @@ import { Button } from "@/components/common/button";
 import {
   ResourceTable,
   type ResourceColumn,
-  type ResourceFilterChoice,
 } from "@/components/features/admin/resource-table";
 import {
   Sheet,
@@ -299,71 +299,6 @@ function titleOf(mode: Mode, item: ResponseItem) {
     : label((item as IncidentReportOut).type);
 }
 
-function responseFilterChoices(
-  rows: ResponseItem[],
-  mode: Mode,
-): ResourceFilterChoice<ResponseItem>[] {
-  const choices: ResourceFilterChoice<ResponseItem>[] = [];
-
-  choices.push({
-    value: "status:pending",
-    label: "Pending Review",
-    matches: (r) => r.status === "pending",
-  });
-  choices.push({
-    value: "status:verified",
-    label: "Verified",
-    matches: (r) => r.status === "verified",
-  });
-  choices.push({
-    value: mode === "rescue" ? "status:dispatched" : "status:in_progress",
-    label: mode === "rescue" ? "Dispatched" : "In Progress",
-    matches: (r) =>
-      mode === "rescue" ? r.status === "dispatched" : r.status === "in_progress",
-  });
-  choices.push({
-    value: "status:resolved",
-    label: "Resolved",
-    matches: (r) => r.status === "resolved",
-  });
-
-  if (mode === "rescue") {
-    choices.push({
-      value: "priority:1",
-      label: "Priority 1 (Critical)",
-      matches: (r) => (r as RescueRequestOut).priority === 1,
-    });
-    choices.push({
-      value: "priority:2",
-      label: "Priority 2 (High)",
-      matches: (r) => (r as RescueRequestOut).priority === 2,
-    });
-  }
-
-  for (const area of SAN_JOSE_AREAS) {
-    const hasAny = rows.some((r) => {
-      const a =
-        ("location_area_name" in r && r.location_area_name) ||
-        ("area_name" in r ? r.area_name : null);
-      return a === area;
-    });
-    if (hasAny) {
-      choices.push({
-        value: `area:${area}`,
-        label: area,
-        matches: (r) => {
-          const a =
-            ("location_area_name" in r && r.location_area_name) ||
-            ("area_name" in r ? r.area_name : null);
-          return a === area;
-        },
-      });
-    }
-  }
-
-  return choices;
-}
-
 export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
   const client = useQueryClient();
 
@@ -375,6 +310,11 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
   const [showHazard, setShowHazard] = React.useState(false);
   const [showAreas, setShowAreas] = React.useState(false);
   const [selectedMapId, setSelectedMapId] = React.useState<string | null>(null);
+
+  /* --- Table Independent Filter Controls --- */
+  const [tableStatus, setTableStatus] = React.useState("all");
+  const [tablePriority, setTablePriority] = React.useState("all");
+  const [tableArea, setTableArea] = React.useState("all");
 
   /* --- Modals & Detail State --- */
   const [selectedTableId, setSelectedTableId] = React.useState<string | null>(null);
@@ -520,6 +460,26 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
       priority,
     };
   });
+
+  /* -------------------------------------------------------------------------- */
+  /* Filtered Items for the Table View                                          */
+  /* -------------------------------------------------------------------------- */
+  const tableFilteredItems = React.useMemo(() => {
+    return allItems.filter((item) => {
+      if (tableStatus !== "all" && item.status !== tableStatus) return false;
+      if (tableArea !== "all") {
+        const itemArea =
+          ("location_area_name" in item && item.location_area_name) ||
+          ("area_name" in item ? item.area_name : null);
+        if (itemArea !== tableArea) return false;
+      }
+      if (tablePriority !== "all" && mode === "rescue") {
+        const itemPriority = "priority" in item ? String(item.priority ?? "") : "";
+        if (itemPriority !== tablePriority) return false;
+      }
+      return true;
+    });
+  }, [allItems, tableStatus, tableArea, tablePriority, mode]);
 
   /* -------------------------------------------------------------------------- */
   /* ResourceTable Columns Definition                                           */
@@ -784,7 +744,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
               <span>
                 Live Polling{" "}
                 <span className="font-bold text-emerald-950 tabular-nums">
-                  ({isFetching ? "Updating..." : `${countdown}s`})
+                  ({countdown}s)
                 </span>
               </span>
               <button
@@ -1153,7 +1113,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
       {/* -------------------------------------------------------------------- */}
       <ResourceTable
         columns={columns}
-        data={allItems}
+        data={tableFilteredItems}
         isLoading={isLoading}
         isError={isError}
         onRetry={refetch}
@@ -1163,13 +1123,62 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
             ? "Search requester, contact, area, landmarks…"
             : "Search hazard, reporter, area, landmarks…"
         }
-        filterChoices={(data) => responseFilterChoices(data, mode)}
-        filterAllLabel="All Records"
+        filterSlots={
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Status Filter */}
+            <Select value={tableStatus} onValueChange={setTableStatus}>
+              <SelectTrigger className="inline-flex h-9 w-fit min-w-[125px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
+                <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent align="end" className="min-w-44">
+                <SelectItem value="all">All Statuses</SelectItem>
+                {(mode === "rescue" ? rescueStatuses : incidentStatuses).map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {label(s)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Priority Filter (for rescue mode) */}
+            {mode === "rescue" ? (
+              <Select value={tablePriority} onValueChange={setTablePriority}>
+                <SelectTrigger className="inline-flex h-9 w-fit min-w-[125px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
+                  <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                  <SelectValue placeholder="All Priorities" />
+                </SelectTrigger>
+                <SelectContent align="end" className="min-w-44">
+                  <SelectItem value="all">All Priorities</SelectItem>
+                  <SelectItem value="1">Priority 1 (Critical)</SelectItem>
+                  <SelectItem value="2">Priority 2 (High)</SelectItem>
+                  <SelectItem value="3">Priority 3 (Moderate)</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : null}
+
+            {/* Area Filter */}
+            <Select value={tableArea} onValueChange={setTableArea}>
+              <SelectTrigger className="inline-flex h-9 w-fit min-w-[120px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
+                <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                <SelectValue placeholder="All Areas" />
+              </SelectTrigger>
+              <SelectContent align="end" className="min-w-40">
+                <SelectItem value="all">All Areas</SelectItem>
+                {SAN_JOSE_AREAS.map((area) => (
+                  <SelectItem key={area} value={area}>
+                    {area}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        }
         toolbarAction={
           <Button
             onClick={() => setIsCreateOpen(true)}
             variant="primary"
-            className="h-9 gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700 shadow-2xs cursor-pointer"
+            className="h-9 gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700 shadow-2xs cursor-pointer shrink-0"
           >
             <Plus className="size-4" />
             {mode === "rescue" ? "Record Rescue Request" : "Report Incident"}
@@ -1228,21 +1237,17 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
           </DialogHeader>
 
           {current ? (
-            <div className="flex-1 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-sm">
+            <>
+              <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-sm custom-scrollbar">
               {/* Static Non-Interactable Mini Map Preview */}
               {current.location ? (
-                <div>
-                  <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1.5">
-                    Location Terrain Preview
-                  </p>
-                  <MiniMapPreview
-                    latitude={current.location.coordinates[1]}
-                    longitude={current.location.coordinates[0]}
-                    label={mode === "rescue" && "priority" in current ? String(current.priority ?? "●") : "●"}
-                    tone={statusTone(current.status)}
-                    className="h-44 sm:h-52 w-full"
-                  />
-                </div>
+                <MiniMapPreview
+                  latitude={current.location.coordinates[1]}
+                  longitude={current.location.coordinates[0]}
+                  label={mode === "rescue" && "priority" in current ? String(current.priority ?? "●") : "●"}
+                  tone={statusTone(current.status)}
+                  className="h-44 sm:h-52 w-full"
+                />
               ) : (
                 <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50/80 p-4 text-center text-xs text-neutral-500 flex items-center justify-center gap-2">
                   <MapPinOff className="size-4 text-neutral-400" />
@@ -1379,63 +1384,64 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   {current.description || "No specific details provided."}
                 </p>
               </div>
+            </div>
 
-              {/* Lifecycle Triage Actions (Desktop 3 in a row: Dismiss - Verify/Dispatch - Mark Resolved) */}
-              <div className="mt-auto border-t border-neutral-100 pt-4 flex flex-col gap-2.5">
-                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
-                  Operational Lifecycle Actions
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {/* Button 1: Dismiss */}
-                  {current.status !== "dismissed" && current.status !== "resolved" ? (
-                    <Button
-                      variant="outline"
-                      className="w-full text-rose-700 border-rose-300 bg-rose-50/60 hover:bg-rose-100 font-bold px-3 text-xs shadow-2xs order-1 cursor-pointer"
-                      onClick={() => updateStatus("dismissed")}
-                    >
-                      <XCircle className="mr-1.5 size-3.5 text-rose-600 shrink-0" />
-                      Dismiss
-                    </Button>
-                  ) : null}
+            {/* Fixed Lifecycle Triage Actions (Desktop 3 in a row: Dismiss - Verify/Dispatch - Mark Resolved) */}
+            <div className="shrink-0 border-t border-neutral-100 bg-neutral-50/90 p-4 sm:px-6 sm:py-3.5 flex flex-col gap-2 shadow-xs">
+              <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
+                Operational Lifecycle Actions
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {/* Button 1: Dismiss */}
+                {current.status !== "dismissed" && current.status !== "resolved" ? (
+                  <Button
+                    variant="outline"
+                    className="w-full text-rose-700 border-rose-300 bg-rose-50/60 hover:bg-rose-100 font-bold px-3 text-xs shadow-2xs order-1 cursor-pointer"
+                    onClick={() => updateStatus("dismissed")}
+                  >
+                    <XCircle className="mr-1.5 size-3.5 text-rose-600 shrink-0" />
+                    Dismiss
+                  </Button>
+                ) : null}
 
-                  {/* Button 2: Progression (Verify Request or Dispatch Team) */}
-                  {current.status === "pending" ? (
-                    <Button
-                      variant="secondary"
-                      className="w-full bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold px-3 text-xs shadow-2xs order-2 cursor-pointer"
-                      onClick={() => updateStatus("verified")}
-                    >
-                      <CheckCircle2 className="mr-1.5 size-3.5 text-amber-700 shrink-0" />
-                      Verify Request
-                    </Button>
-                  ) : current.status === "verified" ? (
-                    <Button
-                      variant="primary"
-                      className="w-full bg-sky-600 text-white hover:bg-sky-700 font-bold px-3 text-xs shadow-2xs order-2 cursor-pointer"
-                      onClick={() => updateStatus(mode === "rescue" ? "dispatched" : "in_progress")}
-                    >
-                      <Truck className="mr-1.5 size-3.5 shrink-0" />
-                      {mode === "rescue" ? "Dispatch Team" : "Mark In Progress"}
-                    </Button>
-                  ) : null}
+                {/* Button 2: Progression (Verify Request or Dispatch Team) */}
+                {current.status === "pending" ? (
+                  <Button
+                    variant="secondary"
+                    className="w-full bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold px-3 text-xs shadow-2xs order-2 cursor-pointer"
+                    onClick={() => updateStatus("verified")}
+                  >
+                    <CheckCircle2 className="mr-1.5 size-3.5 text-amber-700 shrink-0" />
+                    Verify Request
+                  </Button>
+                ) : current.status === "verified" ? (
+                  <Button
+                    variant="primary"
+                    className="w-full bg-sky-600 text-white hover:bg-sky-700 font-bold px-3 text-xs shadow-2xs order-2 cursor-pointer"
+                    onClick={() => updateStatus(mode === "rescue" ? "dispatched" : "in_progress")}
+                  >
+                    <Truck className="mr-1.5 size-3.5 shrink-0" />
+                    {mode === "rescue" ? "Dispatch Team" : "Mark In Progress"}
+                  </Button>
+                ) : null}
 
-                  {/* Button 3: Mark Resolved */}
-                  {current.status !== "resolved" && current.status !== "dismissed" ? (
-                    <Button
-                      variant="primary"
-                      className={cn(
-                        "w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-3 text-xs shadow-2xs order-3 cursor-pointer",
-                        current.status !== "pending" && current.status !== "verified" && "sm:col-span-2"
-                      )}
-                      onClick={() => updateStatus("resolved")}
-                    >
-                      <CheckCircle2 className="mr-1.5 size-3.5 shrink-0" />
-                      Mark Resolved
-                    </Button>
-                  ) : null}
-                </div>
+                {/* Button 3: Mark Resolved */}
+                {current.status !== "resolved" && current.status !== "dismissed" ? (
+                  <Button
+                    variant="primary"
+                    className={cn(
+                      "w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-3 text-xs shadow-2xs order-3 cursor-pointer",
+                      current.status !== "pending" && current.status !== "verified" && "sm:col-span-2"
+                    )}
+                    onClick={() => updateStatus("resolved")}
+                  >
+                    <CheckCircle2 className="mr-1.5 size-3.5 shrink-0" />
+                    Mark Resolved
+                  </Button>
+                ) : null}
               </div>
             </div>
+          </>
           ) : (
             <div className="p-8 text-center text-sm text-neutral-400">
               Select a record to inspect its operational timeline.
@@ -1451,7 +1457,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
         <SheetContent
           side="right"
           showCloseButton={false}
-          className="w-full sm:max-w-md p-0 flex flex-col gap-0 bg-white text-slate-900 border-l border-neutral-200 shadow-2xl"
+          className="w-full sm:max-w-md p-0 flex flex-col gap-0 bg-white text-slate-900 border-l border-neutral-200 shadow-2xl h-full overflow-hidden"
         >
           <SheetHeader className="relative border-b border-neutral-100 bg-emerald-950 p-5 sm:p-6 text-white shrink-0">
             {/* High-contrast close button */}
@@ -1488,7 +1494,8 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
           </SheetHeader>
 
           {current ? (
-            <div className="flex-1 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-sm">
+            <>
+            <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-sm custom-scrollbar">
               {/* Photo attachment if present */}
               {"photo_url" in current && current.photo_url ? (
                 <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
@@ -1611,63 +1618,64 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   {current.description || "No specific details provided."}
                 </p>
               </div>
+            </div>
 
-              {/* Lifecycle Triage Actions (Desktop 3 in a row: Dismiss - Verify/Dispatch - Mark Resolved) */}
-              <div className="mt-auto border-t border-neutral-100 pt-4 flex flex-col gap-2.5">
-                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
-                  Operational Lifecycle Actions
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {/* Button 1: Dismiss */}
-                  {current.status !== "dismissed" && current.status !== "resolved" ? (
-                    <Button
-                      variant="outline"
-                      className="w-full text-rose-700 border-rose-300 bg-rose-50/60 hover:bg-rose-100 font-bold px-3 text-xs shadow-2xs order-1 cursor-pointer"
-                      onClick={() => updateStatus("dismissed")}
-                    >
-                      <XCircle className="mr-1.5 size-3.5 text-rose-600 shrink-0" />
-                      Dismiss
-                    </Button>
-                  ) : null}
+            {/* Fixed Lifecycle Triage Actions (Desktop 3 in a row: Dismiss - Verify/Dispatch - Mark Resolved) */}
+            <div className="shrink-0 border-t border-neutral-100 bg-neutral-50/90 p-4 sm:p-5 flex flex-col gap-2 shadow-xs">
+              <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
+                Operational Lifecycle Actions
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {/* Button 1: Dismiss */}
+                {current.status !== "dismissed" && current.status !== "resolved" ? (
+                  <Button
+                    variant="outline"
+                    className="w-full text-rose-700 border-rose-300 bg-rose-50/60 hover:bg-rose-100 font-bold px-3 text-xs shadow-2xs order-1 cursor-pointer"
+                    onClick={() => updateStatus("dismissed")}
+                  >
+                    <XCircle className="mr-1.5 size-3.5 text-rose-600 shrink-0" />
+                    Dismiss
+                  </Button>
+                ) : null}
 
-                  {/* Button 2: Progression (Verify Request or Dispatch Team) */}
-                  {current.status === "pending" ? (
-                    <Button
-                      variant="secondary"
-                      className="w-full bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold px-3 text-xs shadow-2xs order-2 cursor-pointer"
-                      onClick={() => updateStatus("verified")}
-                    >
-                      <CheckCircle2 className="mr-1.5 size-3.5 text-amber-700 shrink-0" />
-                      Verify Request
-                    </Button>
-                  ) : current.status === "verified" ? (
-                    <Button
-                      variant="primary"
-                      className="w-full bg-sky-600 text-white hover:bg-sky-700 font-bold px-3 text-xs shadow-2xs order-2 cursor-pointer"
-                      onClick={() => updateStatus(mode === "rescue" ? "dispatched" : "in_progress")}
-                    >
-                      <Truck className="mr-1.5 size-3.5 shrink-0" />
-                      {mode === "rescue" ? "Dispatch Team" : "Mark In Progress"}
-                    </Button>
-                  ) : null}
+                {/* Button 2: Progression (Verify Request or Dispatch Team) */}
+                {current.status === "pending" ? (
+                  <Button
+                    variant="secondary"
+                    className="w-full bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold px-3 text-xs shadow-2xs order-2 cursor-pointer"
+                    onClick={() => updateStatus("verified")}
+                  >
+                    <CheckCircle2 className="mr-1.5 size-3.5 text-amber-700 shrink-0" />
+                    Verify Request
+                  </Button>
+                ) : current.status === "verified" ? (
+                  <Button
+                    variant="primary"
+                    className="w-full bg-sky-600 text-white hover:bg-sky-700 font-bold px-3 text-xs shadow-2xs order-2 cursor-pointer"
+                    onClick={() => updateStatus(mode === "rescue" ? "dispatched" : "in_progress")}
+                  >
+                    <Truck className="mr-1.5 size-3.5 shrink-0" />
+                    {mode === "rescue" ? "Dispatch Team" : "Mark In Progress"}
+                  </Button>
+                ) : null}
 
-                  {/* Button 3: Mark Resolved */}
-                  {current.status !== "resolved" && current.status !== "dismissed" ? (
-                    <Button
-                      variant="primary"
-                      className={cn(
-                        "w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-3 text-xs shadow-2xs order-3 cursor-pointer",
-                        current.status !== "pending" && current.status !== "verified" && "sm:col-span-2"
-                      )}
-                      onClick={() => updateStatus("resolved")}
-                    >
-                      <CheckCircle2 className="mr-1.5 size-3.5 shrink-0" />
-                      Mark Resolved
-                    </Button>
-                  ) : null}
-                </div>
+                {/* Button 3: Mark Resolved */}
+                {current.status !== "resolved" && current.status !== "dismissed" ? (
+                  <Button
+                    variant="primary"
+                    className={cn(
+                      "w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-3 text-xs shadow-2xs order-3 cursor-pointer",
+                      current.status !== "pending" && current.status !== "verified" && "sm:col-span-2"
+                    )}
+                    onClick={() => updateStatus("resolved")}
+                  >
+                    <CheckCircle2 className="mr-1.5 size-3.5 shrink-0" />
+                    Mark Resolved
+                  </Button>
+                ) : null}
               </div>
             </div>
+            </>
           ) : (
             <div className="p-8 text-center text-sm text-neutral-400">
               Select a pin to inspect its operational timeline.

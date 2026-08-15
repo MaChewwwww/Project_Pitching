@@ -214,163 +214,167 @@ export function IncidentCreationDialog({ open, onOpenChange }: IncidentCreationD
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-xs">
-          {/* Incident Type & Area */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="font-bold text-neutral-800 flex items-center gap-1.5">
-                <AlertTriangle className="size-3.5 text-neutral-500" />
-                Hazard Type <span className="text-rose-500">*</span>
-              </label>
-              <Select value={type} onValueChange={setType}>
-                <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {INCIDENT_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="font-bold text-neutral-800 flex items-center gap-1.5">
-                <MapPin className="size-3.5 text-neutral-500" />
-                Barangay Area <span className="text-rose-500">*</span>
-              </label>
-              <Select value={selectedArea} onValueChange={handleAreaChange}>
-                <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SAN_JOSE_AREAS.map((area) => (
-                    <SelectItem key={area} value={area}>
-                      {area}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Associated Emergency Event */}
-          <div className="flex flex-col gap-1.5">
-            <label className="font-bold text-neutral-800">
-              Associated Emergency Event (Optional)
-            </label>
-            <Select value={eventId} onValueChange={setEventId}>
-              <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No Specific Event (General Incident)</SelectItem>
-                {events?.items.map((ev) => (
-                  <SelectItem key={ev.id} value={ev.id}>
-                    {ev.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Landmark / Location Note */}
-          <div className="flex flex-col gap-1.5">
-            <label className="font-bold text-neutral-800">
-              Specific Location / Landmarks
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. In front of Barangay Health Center, Kasiglahan"
-              value={locationNote}
-              onChange={(e) => setLocationNote(e.target.value)}
-              className="h-9 w-full rounded-lg border border-neutral-300 px-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-emerald-600 focus:outline-hidden"
-            />
-          </div>
-
-          {/* Description */}
-          <div className="flex flex-col gap-1.5">
-            <label className="font-bold text-neutral-800">
-              Incident Description & Severity <span className="text-rose-500">*</span>
-            </label>
-            <textarea
-              required
-              rows={3}
-              placeholder="e.g. Large acacia branch blocking two-way road access. Live electric line sparking."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-lg border border-neutral-300 p-2.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-emerald-600 focus:outline-hidden leading-relaxed"
-            />
-          </div>
-
-          {/* Interactive Map Pinning */}
-          <div className="flex flex-col gap-1.5 border-t border-neutral-200/80 pt-3">
-            <label className="font-bold text-neutral-800 flex items-center gap-1.5">
-              <MapPin className="size-3.5 text-emerald-700" />
-              Map Pinning
-            </label>
-            <LocationPicker
-              value={location}
-              onChange={setLocation}
-              onResolve={handleLocationResolve}
-              caption="Drag the pin, or tap the map, to mark the exact hazard location."
-              className="h-44 w-full"
-            />
-          </div>
-
-          {/* Photo Attachment */}
-          <div className="flex flex-col gap-1.5 border-t border-neutral-100 pt-3">
-            <label className="font-bold text-neutral-800 flex items-center gap-1.5">
-              <Camera className="size-3.5 text-neutral-500" />
-              Field Photo Evidence (Optional)
-            </label>
-            {photoPreview ? (
-              <div className="relative inline-flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-2">
-                <Image
-                  src={photoPreview}
-                  alt="Selected preview"
-                  width={64}
-                  height={64}
-                  unoptimized
-                  className="size-16 rounded-lg object-cover border border-neutral-200"
-                />
-                <div className="flex flex-col min-w-0">
-                  <p className="font-bold text-neutral-900 truncate">{photo?.name}</p>
-                  <p className="text-[10px] text-neutral-500">
-                    {photo ? `${(photo.size / 1024).toFixed(1)} KB` : ""}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPhoto(null);
-                    setPhotoPreview(null);
-                  }}
-                  className="ml-auto flex size-6 items-center justify-center rounded-full bg-neutral-200 text-neutral-700 hover:bg-neutral-300 transition-colors"
-                >
-                  <X className="size-3.5" />
-                </button>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* Scrollable Form Body with custom green scrollbar */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-xs custom-scrollbar">
+            {/* Incident Type & Area */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-neutral-800 flex items-center gap-1.5">
+                  <AlertTriangle className="size-3.5 text-neutral-500" />
+                  Hazard Type <span className="text-rose-500">*</span>
+                </label>
+                <Select value={type} onValueChange={setType}>
+                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INCIDENT_TYPES.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-neutral-300 p-4 hover:border-emerald-500 hover:bg-emerald-50/40 transition cursor-pointer">
-                <Camera className="size-5 text-neutral-400" />
-                <span className="mt-1 text-xs font-semibold text-neutral-700">
-                  Upload photo from device
-                </span>
-                <span className="text-[10px] text-neutral-400">PNG, JPG, WEBP up to 10MB</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoSelect}
-                  className="sr-only"
-                />
+
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-neutral-800 flex items-center gap-1.5">
+                  <MapPin className="size-3.5 text-neutral-500" />
+                  Barangay Area <span className="text-rose-500">*</span>
+                </label>
+                <Select value={selectedArea} onValueChange={handleAreaChange}>
+                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SAN_JOSE_AREAS.map((area) => (
+                      <SelectItem key={area} value={area}>
+                        {area}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Associated Emergency Event */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-bold text-neutral-800">
+                Associated Emergency Event (Optional)
               </label>
-            )}
+              <Select value={eventId} onValueChange={setEventId}>
+                <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Specific Event (General Incident)</SelectItem>
+                  {events?.items.map((ev) => (
+                    <SelectItem key={ev.id} value={ev.id}>
+                      {ev.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Landmark / Location Note */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-bold text-neutral-800">
+                Specific Location / Landmarks
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. In front of Barangay Health Center, Kasiglahan"
+                value={locationNote}
+                onChange={(e) => setLocationNote(e.target.value)}
+                className="h-9 w-full rounded-lg border border-neutral-300 px-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-emerald-600 focus:outline-hidden"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-bold text-neutral-800">
+                Incident Description & Severity <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                required
+                rows={3}
+                placeholder="e.g. Large acacia branch blocking two-way road access. Live electric line sparking."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full rounded-lg border border-neutral-300 p-2.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-emerald-600 focus:outline-hidden leading-relaxed"
+              />
+            </div>
+
+            {/* Interactive Map Pinning */}
+            <div className="flex flex-col gap-1.5 border-t border-neutral-200/80 pt-3">
+              <label className="font-bold text-neutral-800 flex items-center gap-1.5">
+                <MapPin className="size-3.5 text-emerald-700" />
+                Map Pinning
+              </label>
+              <LocationPicker
+                value={location}
+                onChange={setLocation}
+                onResolve={handleLocationResolve}
+                caption="Drag the pin, or tap the map, to mark the exact hazard location."
+                className="h-44 w-full"
+              />
+            </div>
+
+            {/* Photo Attachment */}
+            <div className="flex flex-col gap-1.5 border-t border-neutral-100 pt-3">
+              <label className="font-bold text-neutral-800 flex items-center gap-1.5">
+                <Camera className="size-3.5 text-neutral-500" />
+                Field Photo Evidence (Optional)
+              </label>
+              {photoPreview ? (
+                <div className="relative inline-flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-2">
+                  <Image
+                    src={photoPreview}
+                    alt="Selected preview"
+                    width={64}
+                    height={64}
+                    unoptimized
+                    className="size-16 rounded-lg object-cover border border-neutral-200"
+                  />
+                  <div className="flex flex-col min-w-0">
+                    <p className="font-bold text-neutral-900 truncate">{photo?.name}</p>
+                    <p className="text-[10px] text-neutral-500">
+                      {photo ? `${(photo.size / 1024).toFixed(1)} KB` : ""}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPhoto(null);
+                      setPhotoPreview(null);
+                    }}
+                    className="ml-auto flex size-6 items-center justify-center rounded-full bg-neutral-200 text-neutral-700 hover:bg-neutral-300 transition-colors"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-neutral-300 p-4 hover:border-emerald-500 hover:bg-emerald-50/40 transition cursor-pointer">
+                  <Camera className="size-5 text-neutral-400" />
+                  <span className="mt-1 text-xs font-semibold text-neutral-700">
+                    Upload photo from device
+                  </span>
+                  <span className="text-[10px] text-neutral-400">PNG, JPG, WEBP up to 10MB</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoSelect}
+                    className="sr-only"
+                  />
+                </label>
+              )}
+            </div>
           </div>
 
-          <DialogFooter className="mt-2 flex items-center justify-end gap-2 border-t border-neutral-100 pt-3 shrink-0">
+          {/* Fixed Footer Always Visible */}
+          <DialogFooter className="shrink-0 border-t border-neutral-100 bg-neutral-50/80 px-5 py-3 sm:px-6 flex items-center justify-end gap-2">
             <Button
               type="button"
               variant="outline"

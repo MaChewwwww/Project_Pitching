@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ChevronDown,
   Database,
+  MapPin,
   Shield,
 } from "lucide-react";
 
@@ -93,6 +94,25 @@ const LEGEND_CSS = `
 }
 .admin-emergency-map .leaflet-control-zoom a:last-child {
   border-bottom: none !important;
+}
+.admin-emergency-map .leaflet-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  pointer-events: none;
+}
+.admin-emergency-map .leaflet-tooltip-top:before {
+  border-top-color: rgba(5, 46, 22, 0.95) !important;
+}
+.admin-emergency-map .leaflet-tooltip-bottom:before {
+  border-bottom-color: rgba(5, 46, 22, 0.95) !important;
+}
+.admin-emergency-map .leaflet-tooltip-left:before {
+  border-left-color: rgba(5, 46, 22, 0.95) !important;
+}
+.admin-emergency-map .leaflet-tooltip-right:before {
+  border-right-color: rgba(5, 46, 22, 0.95) !important;
 }
 .sagip-legend-scroll {
   scrollbar-width: thin;
@@ -346,17 +366,64 @@ export function ResponseOperationsMap({
               eventHandlers={{ click: () => onSelect(item.id) }}
               zIndexOffset={isSelected ? 1000 : 0}
             >
-              <Tooltip direction="top" offset={[0, -16]} opacity={1}>
-                <div className="flex flex-col gap-0.5 py-0.5">
-                  <span className="font-bold text-slate-900">{item.title}</span>
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
-                    <span className="font-semibold">{item.status}</span>
-                    {item.areaName ? <span>· {item.areaName}</span> : null}
+              <Tooltip direction="top" offset={[0, -18]} opacity={1}>
+                <div className="flex flex-col gap-1.5 rounded-xl border border-emerald-500/30 bg-[#052e16]/95 px-3 py-2 text-white shadow-2xl backdrop-blur-md min-w-[210px] max-w-[280px]">
+                  {/* Top Row: Category tag and Priority/Status badge */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[9.5px] font-black uppercase tracking-wider text-emerald-400">
+                      {mode === "rescue" ? "Rescue Request" : "Incident Report"}
+                    </span>
                     {item.priority ? (
-                      <span className="rounded bg-rose-100 px-1 font-bold text-rose-800">
-                        P{item.priority}
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
+                          item.priority === 1
+                            ? "bg-rose-500/25 text-rose-300 border border-rose-500/40"
+                            : item.priority === 2
+                            ? "bg-amber-500/25 text-amber-300 border border-amber-500/40"
+                            : "bg-sky-500/25 text-sky-300 border border-sky-500/40",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "size-1.5 rounded-full",
+                            item.priority === 1
+                              ? "bg-rose-400 animate-pulse"
+                              : item.priority === 2
+                              ? "bg-amber-400"
+                              : "bg-sky-400",
+                          )}
+                        />
+                        P{item.priority} {item.priority === 1 ? "Critical" : item.priority === 2 ? "High" : "Moderate"}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-200">
+                        {item.status}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Title */}
+                  <div className="font-bold text-xs leading-snug text-white line-clamp-2">
+                    {item.title}
+                  </div>
+
+                  {/* Location & Status meta info */}
+                  <div className="flex items-center justify-between border-t border-emerald-900/60 pt-1.5 text-[11px] text-emerald-200/90">
+                    <div className="flex items-center gap-1 text-[10.5px] truncate">
+                      <MapPin className="size-3 text-emerald-400 shrink-0" />
+                      <span className="font-medium truncate">{item.areaName || "Area Unknown"}</span>
+                    </div>
+                    {item.priority ? (
+                      <span className="text-[10px] font-semibold text-neutral-300">
+                        {item.status}
                       </span>
                     ) : null}
+                  </div>
+
+                  {/* Click hint footer */}
+                  <div className="flex items-center justify-end text-[9.5px] font-bold text-emerald-400 tracking-wide">
+                    <span>Click pin to inspect →</span>
                   </div>
                 </div>
               </Tooltip>
@@ -525,18 +592,21 @@ export function ResponseOperationsMap({
       </div>
 
       {/* -------------------------------------------------------------------- */}
-      {/* Bottom-Left Floating Badges (Vertically Stacked, No Extra Container) */}
+      {/* Bottom-Left Status Badges in Themed Green Container                  */}
       {/* -------------------------------------------------------------------- */}
-      <div className="absolute bottom-3.5 left-3.5 z-[1000] flex flex-col gap-1.5 pointer-events-auto">
+      <div
+        aria-label="Map spatial pin coverage"
+        className="absolute bottom-3.5 left-3.5 z-[1000] flex flex-col gap-1.5 rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-2 shadow-2xl backdrop-blur-md pointer-events-auto"
+      >
         {/* Pinned on Map Badge (Orange) */}
-        <div className="flex items-center gap-2 rounded-full border border-orange-500/50 bg-slate-950/90 px-3 py-1.5 text-xs font-bold text-orange-400 shadow-xl backdrop-blur-md">
-          <span className="size-2 rounded-full bg-orange-500 shrink-0 shadow-[0_0_6px_rgba(249,115,22,0.9)]" />
+        <div className="flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-950/60 px-3 py-1 text-xs font-bold text-orange-300 shadow-2xs">
+          <span className="size-2 rounded-full bg-orange-500 shrink-0 shadow-[0_0_6px_rgba(249,115,22,0.8)]" />
           <span>{items.length} Pinned on Map</span>
         </div>
 
         {/* Not Pinned on Map Badge (Red) */}
-        <div className="flex items-center gap-2 rounded-full border border-rose-500/50 bg-slate-950/90 px-3 py-1.5 text-xs font-bold text-rose-400 shadow-xl backdrop-blur-md">
-          <span className="size-2 rounded-full bg-rose-500 shrink-0 shadow-[0_0_6px_rgba(244,63,94,0.9)]" />
+        <div className="flex items-center gap-2 rounded-full border border-rose-500/40 bg-rose-950/60 px-3 py-1 text-xs font-bold text-rose-300 shadow-2xs">
+          <span className="size-2 rounded-full bg-rose-500 shrink-0 shadow-[0_0_6px_rgba(244,63,94,0.8)]" />
           <span>{unmappedCount} Not Pinned on Map</span>
         </div>
       </div>

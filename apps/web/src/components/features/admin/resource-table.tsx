@@ -68,8 +68,10 @@ export interface ResourceTableProps<T> {
   emptyTitle?: string;
   emptyDescription?: string;
   rowActions?: (row: T) => React.ReactNode;
-  /** Optional action aligned to the right of the search toolbar. */
+  /** Optional action aligned to the right of the search toolbar (rendered at the right-most position). */
   toolbarAction?: React.ReactNode;
+  /** Optional custom filter controls (rendered before toolbarAction). */
+  filterSlots?: React.ReactNode;
   /** Optional cross-column choices for a worklist that needs one shared filter menu. */
   filterChoices?: (data: T[]) => ResourceFilterChoice<T>[];
   filterAllLabel?: string;
@@ -132,6 +134,7 @@ export function ResourceTable<T extends object>({
   emptyDescription,
   rowActions,
   toolbarAction,
+  filterSlots,
   filterChoices,
   filterAllLabel,
   getRowKey,
@@ -297,7 +300,7 @@ export function ResourceTable<T extends object>({
             ) : null}
           </label>
 
-          <div className="flex items-center gap-2 max-sm:w-full max-sm:justify-between">
+          <div className="flex flex-wrap items-center gap-2 max-sm:w-full max-sm:justify-between">
             {isFiltered ? (
               <Button
                 size="sm"
@@ -310,9 +313,9 @@ export function ResourceTable<T extends object>({
               </Button>
             ) : null}
 
-            {toolbarAction}
-
-            {filterColumn || customFilterChoices.length ? (
+            {filterSlots ? (
+              filterSlots
+            ) : filterColumn || customFilterChoices.length ? (
               <Select
                 value={filter || "ALL_ITEMS"}
                 onValueChange={(val) => {
@@ -391,6 +394,8 @@ export function ResourceTable<T extends object>({
                 </SelectContent>
               </Select>
             ) : null}
+
+            {toolbarAction}
           </div>
         </div>
       </div>
