@@ -13,10 +13,9 @@ import {
 } from "react-leaflet";
 import { useQuery } from "@tanstack/react-query";
 import {
+  ChevronDown,
   Database,
-  Layers,
   Shield,
-  X,
 } from "lucide-react";
 
 import { useHazardGeoJson } from "@/lib/hazard-geojson";
@@ -41,6 +40,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/common/badge";
+import { cn } from "@/lib/utils";
 import "leaflet/dist/leaflet.css";
 
 export interface ResponseMapItem {
@@ -65,8 +65,29 @@ export interface ResponseOperationsMapProps {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Helper components & Leaflet custom styling                                  */
+/* Custom Leaflet Styling & Panes                                              */
 /* -------------------------------------------------------------------------- */
+
+const LEGEND_CSS = `
+.sagip-legend-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #34d399 rgba(5, 46, 22, 0.6);
+}
+.sagip-legend-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+.sagip-legend-scroll::-webkit-scrollbar-track {
+  background: rgba(5, 46, 22, 0.6);
+  border-radius: 9999px;
+}
+.sagip-legend-scroll::-webkit-scrollbar-thumb {
+  background: #34d399;
+  border-radius: 9999px;
+}
+.sagip-legend-scroll::-webkit-scrollbar-thumb:hover {
+  background: #6ee7b7;
+}
+`;
 
 function MapSelection({ item }: { item: ResponseMapItem | null }) {
   const map = useMap();
@@ -141,7 +162,7 @@ export function ResponseOperationsMap({
   onSelectArea,
   mode,
 }: ResponseOperationsMapProps) {
-  const [showLegend, setShowLegend] = React.useState(true);
+  const [legendExpanded, setLegendExpanded] = React.useState(true);
   const [showBoundaryModal, setShowBoundaryModal] = React.useState(false);
   const hazard = useHazardGeoJson(showHazard);
 
@@ -159,7 +180,9 @@ export function ResponseOperationsMap({
   const selected = items.find((item) => item.id === selectedId) ?? null;
 
   return (
-    <div className="relative h-[420px] w-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-xl sm:h-[500px] lg:h-[580px]">
+    <div className="relative h-full w-full overflow-hidden bg-slate-950">
+      <style>{LEGEND_CSS}</style>
+
       <MapContainer
         center={BARANGAY_VIEW.center}
         zoom={13.8}
@@ -298,114 +321,172 @@ export function ResponseOperationsMap({
       </MapContainer>
 
       {/* -------------------------------------------------------------------- */}
-      {/* Floating Map Legend                                                 */}
+      {/* Top-Left Collapsible Legend Card (Exact Themed Design)               */}
       {/* -------------------------------------------------------------------- */}
-      <div className="absolute bottom-3 left-3 z-[1000] max-w-[280px] sm:max-w-[320px]">
-        {showLegend ? (
-          <div className="rounded-xl border border-white/15 bg-slate-950/90 p-3 text-white shadow-2xl backdrop-blur-md transition-all">
-            <div className="flex items-center justify-between border-b border-white/10 pb-1.5 text-xs font-bold text-slate-200">
-              <span className="flex items-center gap-1.5">
-                <Layers className="size-3.5 text-emerald-400" />
-                Map Legend
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowLegend(false)}
-                className="rounded p-0.5 text-slate-400 hover:bg-white/10 hover:text-white"
-                title="Hide Legend"
-              >
-                <X className="size-3.5" />
-              </button>
-            </div>
+      <div
+        aria-label="Map legend"
+        className={cn(
+          "absolute top-3.5 left-3.5 z-[1000] rounded-xl border border-emerald-900/80 bg-[#052e16]/95 text-white shadow-2xl backdrop-blur-md transition-all duration-200",
+          legendExpanded
+            ? "w-64 max-w-[calc(100%-6rem)] max-h-[calc(100%-2rem)] overflow-y-auto sagip-legend-scroll p-3"
+            : "w-auto p-2"
+        )}
+      >
+        <button
+          type="button"
+          onClick={() => setLegendExpanded((v) => !v)}
+          className={cn(
+            "flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400 hover:text-emerald-300 transition-colors",
+            legendExpanded ? "w-full justify-between mb-2 pb-1.5 border-b border-emerald-900/60" : "w-auto"
+          )}
+          aria-expanded={legendExpanded}
+          title={legendExpanded ? "Collapse Legend" : "Expand Legend"}
+        >
+          <span className="inline-flex items-center gap-1.5">
+            <Shield className="size-3.5 text-emerald-400" aria-hidden />
+            LEGEND
+          </span>
+          <ChevronDown
+            className={cn(
+              "size-3.5 text-emerald-400/80 transition-transform duration-200",
+              legendExpanded ? "rotate-180" : "rotate-0"
+            )}
+            aria-hidden
+          />
+        </button>
 
-            <div className="mt-2 flex flex-col gap-2.5 text-[11px]">
-              {/* Status Tones */}
+        {legendExpanded && (
+          <div className="flex flex-col gap-2 text-[11px]">
+            {/* Flood Hazard (NOAH) */}
+            {showHazard && (
               <div>
-                <p className="mb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                  {mode === "rescue" ? "Triage & Status" : "Incident Status"}
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                  Flood Hazard (NOAH)
                 </p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="size-2.5 shrink-0 rounded-full bg-rose-500 ring-1 ring-white/50" />
-                    <span className="truncate text-slate-300">
-                      {mode === "rescue" ? "Pending / P1" : "Pending"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="size-2.5 shrink-0 rounded-full bg-amber-500 ring-1 ring-white/50" />
-                    <span className="truncate text-slate-300">Verified</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="size-2.5 shrink-0 rounded-full bg-sky-500 ring-1 ring-white/50" />
-                    <span className="truncate text-slate-300">
-                      {mode === "rescue" ? "Dispatched" : "In Progress"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="size-2.5 shrink-0 rounded-full bg-emerald-500 ring-1 ring-white/50" />
-                    <span className="truncate text-slate-300">Resolved</span>
-                  </div>
-                </div>
+                <ul className="flex flex-col gap-1.5">
+                  {HAZARD_LEVELS.map((level) => (
+                    <li key={level.level} className="flex items-center gap-2">
+                      <span
+                        aria-hidden
+                        className="h-2.5 w-4 shrink-0 rounded-[2px] border border-white/30 shadow-2xs"
+                        style={{ backgroundColor: level.color, opacity: 0.85 }}
+                      />
+                      <span className="text-emerald-100/90">
+                        <span className="font-semibold">{level.label} Hazard</span> ({level.depth})
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
+            )}
 
-              {/* Hazard Depth Levels (if enabled) */}
-              {showHazard ? (
-                <div className="border-t border-white/10 pt-2">
-                  <p className="mb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                    5-Yr Flood Depth (NOAH)
-                  </p>
-                  <div className="flex items-center justify-between gap-1 text-[10px]">
-                    {HAZARD_LEVELS.map((h) => (
-                      <div key={h.level} className="flex items-center gap-1">
-                        <span
-                          className="size-2.5 shrink-0 rounded-sm"
-                          style={{ backgroundColor: h.color }}
-                        />
-                        <span className="text-slate-300">{h.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {/* Area Shading (if enabled) */}
-              {showAreas ? (
-                <div className="border-t border-white/10 pt-1.5 text-[10px] text-slate-400">
-                  <span>Areas 1–6 (Sitio Boundaries Active)</span>
-                </div>
-              ) : null}
+            {/* Map Boundaries */}
+            <div className={showHazard ? "border-t border-emerald-900/60 pt-1.5" : ""}>
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                Map Boundaries
+              </p>
+              <ul className="flex flex-col gap-1">
+                <li className="flex items-center gap-2">
+                  <span className="inline-block w-3.5 border-b-2 border-dashed border-emerald-400" />
+                  <span className="text-emerald-100/90">San Jose Boundary</span>
+                </li>
+                {showAreas && (
+                  <li className="flex items-center gap-2">
+                    <span className="inline-block w-3.5 border-b border-dashed border-slate-300" />
+                    <span className="text-emerald-100/90">Area Divisions (1–6)</span>
+                  </li>
+                )}
+              </ul>
             </div>
+
+            {/* Operational Status Pins */}
+            <div className="border-t border-emerald-900/60 pt-1.5">
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                {mode === "rescue" ? "Rescue Status Pins" : "Incident Status Pins"}
+              </p>
+              <ul className="flex flex-col gap-1">
+                <li className="flex items-center gap-2">
+                  <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60 bg-[#e11d48]" />
+                  <span className="text-emerald-100/90">Pending</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60 bg-[#d97706]" />
+                  <span className="text-emerald-100/90">Verified</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60 bg-[#0284c7]" />
+                  <span className="text-emerald-100/90">
+                    {mode === "rescue" ? "Dispatched" : "In Progress"}
+                  </span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60 bg-[#059669]" />
+                  <span className="text-emerald-100/90">Resolved</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span aria-hidden className="size-2.5 shrink-0 rounded-full border border-white/60 bg-[#64748b]" />
+                  <span className="text-emerald-100/90">Dismissed</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Urgency Priority Levels (for rescue mode) */}
+            {mode === "rescue" ? (
+              <div className="border-t border-emerald-900/60 pt-1.5">
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                  Urgency Priority (Pin #)
+                </p>
+                <ul className="flex flex-col gap-1 text-[10.5px]">
+                  <li className="flex items-center gap-2">
+                    <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-rose-600 font-bold text-[9px] text-white">
+                      1
+                    </span>
+                    <span className="text-emerald-100/90">
+                      <span className="font-semibold text-rose-300">Priority 1</span> (Critical / Bedridden)
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-amber-600 font-bold text-[9px] text-white">
+                      2
+                    </span>
+                    <span className="text-emerald-100/90">
+                      <span className="font-semibold text-amber-300">Priority 2</span> (High / Vulnerable)
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-sky-600 font-bold text-[9px] text-white">
+                      3
+                    </span>
+                    <span className="text-emerald-100/90">
+                      <span className="font-semibold text-sky-300">Priority 3</span> (Standard Queue)
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            ) : null}
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowLegend(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-white/20 bg-slate-950/90 px-2.5 py-1.5 text-xs font-bold text-white shadow-xl backdrop-blur-md hover:bg-slate-900"
-          >
-            <Layers className="size-3.5 text-emerald-400" />
-            Show Legend
-          </button>
         )}
       </div>
 
       {/* -------------------------------------------------------------------- */}
-      {/* Data Source & Licensing Attribution Dock                             */}
+      {/* Bottom-Right Data Sources & Licensing Card (Exact Themed Design)    */}
       {/* -------------------------------------------------------------------- */}
-      <div className="pointer-events-none absolute right-3 bottom-3 z-[1000] hidden sm:block">
-        <div className="pointer-events-auto flex flex-col gap-0.5 rounded-xl border border-white/15 bg-slate-950/90 px-3 py-2 text-[10px] text-slate-300 shadow-2xl backdrop-blur-md">
-          <div className="flex items-center gap-1.5 font-bold tracking-wider text-emerald-400 uppercase">
-            <Database className="size-3 text-emerald-400" aria-hidden />
-            Data Sources & License
-          </div>
-          <div>
-            <span className="font-semibold text-white/90">Locality:</span> Barangay San Jose, Rodriguez, Rizal
-          </div>
-          <div>
-            <span className="font-semibold text-white/90">Flood Data:</span> UP NOAH / LiPAD (ODC-ODbL)
-          </div>
-          <div className="border-t border-white/10 pt-0.5 text-[9px] text-slate-400">
-            Map: Leaflet · © OpenStreetMap contributors · CARTO
-          </div>
+      <div
+        aria-label="Data sources attribution"
+        className="pointer-events-none absolute bottom-3.5 right-3.5 z-[1000] hidden sm:flex flex-col gap-0.5 rounded-lg border border-emerald-900/80 bg-[#052e16]/95 px-3 py-2 text-[10.5px] text-emerald-200/90 shadow-xl backdrop-blur-sm"
+      >
+        <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-emerald-400 text-[10px]">
+          <Database className="size-3 text-emerald-400" aria-hidden />
+          DATA SOURCES
+        </div>
+        <div>
+          <span className="font-semibold text-white/90">Locality:</span> Barangay San Jose, Rodriguez (Montalban), Rizal
+        </div>
+        <div>
+          <span className="font-semibold text-white/90">Data:</span> UP NOAH / LiPAD (ODC-ODbL)
+        </div>
+        <div className="text-[9.5px] text-emerald-400/60 pt-0.5 border-t border-emerald-900/60 mt-0.5">
+          Map: Leaflet · © OpenStreetMap · CARTO
         </div>
       </div>
 

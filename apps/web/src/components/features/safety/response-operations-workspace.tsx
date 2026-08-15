@@ -22,11 +22,9 @@ import {
   Radio,
   RotateCcw,
   Search,
-  Shield,
   ShieldAlert,
   Truck,
   User,
-  Waves,
   X,
   XCircle,
 } from "lucide-react";
@@ -73,10 +71,40 @@ const ResponseOperationsMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-[420px] w-full animate-pulse rounded-2xl bg-slate-900 sm:h-[500px] lg:h-[580px]" />
+      <div className="h-full w-full animate-pulse rounded-2xl bg-slate-900" />
     ),
   },
 );
+
+function LayerCheckbox({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: React.Dispatch<React.SetStateAction<boolean>>;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange((v) => !v)}
+      className="flex w-full items-center justify-between rounded-lg border border-emerald-900/60 bg-[#031e11]/80 px-3 py-2 text-xs font-semibold text-emerald-100 transition-colors hover:border-emerald-700/80 hover:bg-[#031e11]"
+    >
+      <span>{label}</span>
+      <span
+        className={cn(
+          "rounded-full px-2 py-0.5 text-[10px] font-bold transition-all",
+          checked
+            ? "bg-emerald-400 text-emerald-950"
+            : "bg-slate-800 text-slate-300",
+        )}
+      >
+        {checked ? "On" : "Off"}
+      </span>
+    </button>
+  );
+}
 
 type ResponseItem = RescueRequestOut | IncidentReportOut;
 type ResponseDetail = RescueRequestDetailOut | IncidentReportDetailOut;
@@ -155,8 +183,8 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
   const [eventId, setEventId] = React.useState("all");
   const [selectedArea, setSelectedArea] = React.useState("all");
   const [priorityFilter, setPriorityFilter] = React.useState("all");
-  const [showHazard, setShowHazard] = React.useState(true);
-  const [showAreas, setShowAreas] = React.useState(true);
+  const [showHazard, setShowHazard] = React.useState(false);
+  const [showAreas, setShowAreas] = React.useState(false);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [lightboxPhoto, setLightboxPhoto] = React.useState<string | null>(null);
 
@@ -495,12 +523,12 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
       </div>
 
       {/* -------------------------------------------------------------------- */}
-      {/* Map & Operational Controls Panel                                     */}
+      {/* Two-Column Layout: Map Canvas (Col 1) + Stable Sidebar (Col 2)       */}
       {/* -------------------------------------------------------------------- */}
-      <section className="overflow-hidden rounded-2xl border border-emerald-200/80 bg-white shadow-sm">
-        <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_340px]">
-          {/* Map canvas container */}
-          <div className="relative p-3 sm:p-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
+        {/* Column 1: Map Card */}
+        <div className="flex flex-1 flex-col min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
+          <div className="relative h-[480px] sm:h-[580px] lg:h-[640px] w-full overflow-hidden">
             <ResponseOperationsMap
               items={mapItems}
               selectedId={selectedId}
@@ -512,73 +540,92 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
             />
 
             {/* Quick map status banner */}
-            <div className="absolute top-6 left-6 rounded-xl border border-white/20 bg-slate-950/85 px-3 py-2 text-white shadow-2xl backdrop-blur-md">
-              <p className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase">
-                Interactive Operations Map
-              </p>
-              <div className="mt-1 flex items-center gap-3 text-xs font-semibold">
-                <span className="flex items-center gap-1">
-                  <span className="size-2 rounded-full bg-rose-500" />
-                  {rows.length} Visible Records
-                </span>
-                <span className="text-slate-400">·</span>
-                <span className="text-slate-300">
-                  <b>{mapItems.length}</b> Pinned
-                </span>
-              </div>
+            <div className="pointer-events-none absolute top-3.5 right-14 z-[1000] hidden md:flex items-center gap-2 rounded-xl border border-emerald-900/80 bg-[#052e16]/90 px-3 py-1.5 text-white shadow-xl backdrop-blur-md">
+              <span className="size-2 rounded-full bg-emerald-400 animate-ping" />
+              <span className="text-[11px] font-bold text-emerald-200">
+                {mapItems.length} Pinned on Map
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Column 2: Fixed-width Sidebar */}
+        <div className="flex flex-col gap-3.5 w-full lg:w-[320px] lg:min-w-[320px] lg:max-w-[320px] lg:shrink-0">
+          {/* Layers panel */}
+          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
+            <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
+              <Layers className="size-3.5 text-emerald-400" aria-hidden />
+              Layers
+            </p>
+            <div className="flex flex-col gap-2">
+              <LayerCheckbox
+                checked={showHazard}
+                onChange={setShowHazard}
+                label="Flood Hazard (5-Year)"
+              />
+              <LayerCheckbox
+                checked={showAreas}
+                onChange={setShowAreas}
+                label="Area List (Sitios)"
+              />
             </div>
           </div>
 
-          {/* Control Sidebar (Right Column) */}
-          <aside className="border-t border-emerald-900/60 bg-emerald-950 p-5 text-white xl:border-t-0 xl:border-l">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Filter className="size-4 text-emerald-400" />
-                <h2 className="text-sm font-bold tracking-wide uppercase text-white">
-                  Filters & Layers
-                </h2>
+          {/* Filters panel (with fixed h-6 header to prevent height jumps) */}
+          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
+            <div className="mb-3 flex items-center justify-between h-6">
+              <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
+                <Filter className="size-3.5 text-emerald-400" aria-hidden />
+                Filters
+              </p>
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded bg-emerald-900/80 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-700/60 hover:bg-emerald-800 hover:text-white transition-all shadow-2xs cursor-pointer shrink-0",
+                  hasActiveFilters
+                    ? "opacity-100 visible"
+                    : "opacity-0 invisible pointer-events-none",
+                )}
+                title="Reset all filters to default"
+              >
+                <RotateCcw className="size-2.5" aria-hidden />
+                Reset
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              {/* Search */}
+              <div className="relative">
+                <Search
+                  className="pointer-events-none absolute top-2.5 left-3 size-4 text-neutral-500"
+                  aria-hidden
+                />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={mode === "rescue" ? "Search requester, phone..." : "Search reports, notes..."}
+                  className="h-9 w-full rounded-lg border border-neutral-300 bg-white pr-7 pl-9 text-xs font-semibold text-neutral-900 placeholder:text-neutral-500 shadow-xs focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+                  aria-label="Search records"
+                />
+                {search ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="absolute top-1/2 right-2.5 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                ) : null}
               </div>
-              {hasActiveFilters ? (
-                <button
-                  type="button"
-                  onClick={handleResetFilters}
-                  className="flex items-center gap-1 rounded bg-emerald-900 px-2 py-1 text-[10px] font-bold text-emerald-300 border border-emerald-700 hover:bg-emerald-800 hover:text-white transition"
-                >
-                  <RotateCcw className="size-2.5" />
-                  Reset
-                </button>
-              ) : null}
-            </div>
 
-            {/* Search Input */}
-            <div className="relative mt-4">
-              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-500" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={mode === "rescue" ? "Search requester, phone..." : "Search reports, notes..."}
-                className="h-10 w-full rounded-xl bg-white pr-3 pl-9 text-xs font-medium text-slate-900 placeholder:text-slate-400 shadow-inner focus:outline-none focus:ring-2 focus:ring-emerald-400"
-              />
-              {search ? (
-                <button
-                  type="button"
-                  onClick={() => setSearch("")}
-                  className="absolute top-1/2 right-2.5 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  <X className="size-3.5" />
-                </button>
-              ) : null}
-            </div>
-
-            {/* Dropdown Filters */}
-            <div className="mt-4 space-y-3">
               {/* Status */}
-              <div>
-                <label className="mb-1 block text-[10px] font-bold tracking-wider text-emerald-300 uppercase">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10.5px] font-bold text-emerald-200/90">
                   Status
                 </label>
                 <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="h-9 w-full rounded-lg border-emerald-800 bg-white text-xs font-semibold text-slate-900">
+                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -594,16 +641,16 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
               </div>
 
               {/* Area / Sitio Filter */}
-              <div>
-                <label className="mb-1 block text-[10px] font-bold tracking-wider text-emerald-300 uppercase">
-                  Sitio / Area
+              <div className="flex flex-col gap-1">
+                <label className="text-[10.5px] font-bold text-emerald-200/90">
+                  Area
                 </label>
                 <Select value={selectedArea} onValueChange={setSelectedArea}>
-                  <SelectTrigger className="h-9 w-full rounded-lg border-emerald-800 bg-white text-xs font-semibold text-slate-900">
+                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Areas (Barangay-wide)</SelectItem>
+                    <SelectItem value="all">All Areas</SelectItem>
                     {SAN_JOSE_AREAS.map((area) => (
                       <SelectItem key={area} value={area}>
                         {area}
@@ -614,12 +661,12 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
               </div>
 
               {/* Emergency Event */}
-              <div>
-                <label className="mb-1 block text-[10px] font-bold tracking-wider text-emerald-300 uppercase">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10.5px] font-bold text-emerald-200/90">
                   Emergency Event
                 </label>
                 <Select value={eventId} onValueChange={setEventId}>
-                  <SelectTrigger className="h-9 w-full rounded-lg border-emerald-800 bg-white text-xs font-semibold text-slate-900">
+                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -636,12 +683,12 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
 
               {/* Priority filter (for rescue) */}
               {mode === "rescue" ? (
-                <div>
-                  <label className="mb-1 block text-[10px] font-bold tracking-wider text-emerald-300 uppercase">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10.5px] font-bold text-emerald-200/90">
                     Urgency Priority
                   </label>
                   <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                    <SelectTrigger className="h-9 w-full rounded-lg border-emerald-800 bg-white text-xs font-semibold text-slate-900">
+                    <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -654,70 +701,19 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 </div>
               ) : null}
             </div>
+          </div>
 
-            {/* Map Layer Toggles */}
-            <div className="mt-5 border-t border-emerald-800/80 pt-4">
-              <p className="mb-2 text-[10px] font-bold tracking-wider text-emerald-300 uppercase flex items-center gap-1.5">
-                <Layers className="size-3.5" />
-                Map Layers
-              </p>
-              <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowHazard((v) => !v)}
-                  className="flex w-full items-center justify-between rounded-lg border border-emerald-700/80 bg-emerald-900/60 px-3 py-2 text-xs font-semibold transition hover:bg-emerald-900"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <Waves className="size-3.5 text-amber-400" />
-                    Flood Hazard (5-Year)
-                  </span>
-                  <span
-                    className={cn(
-                      "rounded-full px-2 py-0.5 text-[10px] font-bold",
-                      showHazard
-                        ? "bg-emerald-400 text-emerald-950"
-                        : "bg-slate-800 text-slate-300",
-                    )}
-                  >
-                    {showHazard ? "On" : "Off"}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowAreas((v) => !v)}
-                  className="flex w-full items-center justify-between rounded-lg border border-emerald-700/80 bg-emerald-900/60 px-3 py-2 text-xs font-semibold transition hover:bg-emerald-900"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <Shield className="size-3.5 text-emerald-400" />
-                    Area List (Sitios)
-                  </span>
-                  <span
-                    className={cn(
-                      "rounded-full px-2 py-0.5 text-[10px] font-bold",
-                      showAreas
-                        ? "bg-emerald-400 text-emerald-950"
-                        : "bg-slate-800 text-slate-300",
-                    )}
-                  >
-                    {showAreas ? "On" : "Off"}
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            {/* Unmapped summary helper */}
-            <div className="mt-5 rounded-xl bg-emerald-900/50 p-3 text-xs text-emerald-200 border border-emerald-800/60">
-              <p className="font-semibold text-white">
-                {countsSubtitle(stats.unmapped)}
-              </p>
-              <p className="mt-0.5 text-[11px] text-emerald-300/80">
-                All records are actionable in the table below regardless of coordinates.
-              </p>
-            </div>
-          </aside>
+          {/* Unmapped summary helper card */}
+          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-3.5 text-xs text-emerald-200 shadow-xl backdrop-blur-md">
+            <p className="font-bold text-emerald-300">
+              {countsSubtitle(stats.unmapped)}
+            </p>
+            <p className="mt-0.5 text-[10.5px] text-emerald-300/70">
+              All records are actionable in the table below regardless of coordinates.
+            </p>
+          </div>
         </div>
-      </section>
+      </div>
 
       {/* -------------------------------------------------------------------- */}
       {/* Filtered Operational Worklist Table                                  */}
