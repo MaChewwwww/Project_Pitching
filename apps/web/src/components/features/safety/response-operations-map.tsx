@@ -180,6 +180,11 @@ function EmergencyMapPanes() {
       const markerPane = map.createPane("responseMarkerPane");
       markerPane.style.zIndex = "670";
     }
+    if (!map.getPane("responseTooltipPane")) {
+      const tooltipPane = map.createPane("responseTooltipPane");
+      tooltipPane.style.zIndex = "800";
+      tooltipPane.style.pointerEvents = "none";
+    }
   }, [map]);
   return null;
 }
@@ -366,7 +371,7 @@ export function ResponseOperationsMap({
               eventHandlers={{ click: () => onSelect(item.id) }}
               zIndexOffset={isSelected ? 1000 : 0}
             >
-              <Tooltip direction="top" offset={[0, -18]} opacity={1}>
+              <Tooltip direction="top" offset={[0, -18]} opacity={1} pane="responseTooltipPane">
                 <div className="flex flex-col gap-1.5 rounded-xl border border-emerald-500/30 bg-[#052e16]/95 px-3 py-2 text-white shadow-2xl backdrop-blur-md min-w-[210px] max-w-[280px]">
                   {/* Top Row: Category tag and Priority/Status badge */}
                   <div className="flex items-center justify-between gap-2">

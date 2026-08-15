@@ -757,7 +757,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
               </span>
               <span>
-                Live Polling{" "}
+                Auto Refresh{" "}
                 <span className="font-bold text-emerald-950 tabular-nums">
                   ({countdown}s)
                 </span>
@@ -1257,223 +1257,198 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
           {current ? (
             <>
               <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-sm custom-scrollbar">
-              {/* Static Non-Interactable Mini Map Preview */}
-              {current.location ? (
-                <MiniMapPreview
-                  latitude={current.location.coordinates[1]}
-                  longitude={current.location.coordinates[0]}
-                  label={mode === "rescue" && "priority" in current ? String(current.priority ?? "●") : "●"}
-                  tone={statusTone(current.status)}
-                  className="h-44 sm:h-52 w-full"
-                />
-              ) : (
-                <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50/80 p-4 text-center text-xs text-neutral-500 flex items-center justify-center gap-2">
-                  <MapPinOff className="size-4 text-neutral-400" />
-                  No GPS coordinates tagged for this record. Use landmarks for field response.
-                </div>
-              )}
-
-              {/* Photo attachment if present */}
-              {"photo_url" in current && current.photo_url ? (
-                <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-900 shadow-inner">
-                  <div
-                    className="relative h-56 sm:h-64 w-full cursor-pointer group"
-                    onClick={() => setLightboxPhoto(current.photo_url)}
-                  >
-                    <Image
-                      src={current.photo_url}
-                      alt="Incident attachment"
-                      fill
-                      unoptimized
-                      className="object-cover group-hover:scale-[1.01] transition-transform duration-200"
+                {/* Static Non-Interactable Mini Map Preview */}
+                {current.location ? (
+                  <div className="relative">
+                    <MiniMapPreview
+                      latitude={current.location.coordinates[1]}
+                      longitude={current.location.coordinates[0]}
+                      label={mode === "rescue" && "priority" in current ? String(current.priority ?? "●") : "●"}
+                      tone={statusTone(current.status)}
+                      className="h-44 sm:h-52 w-full"
                     />
-                    <div className="absolute top-2.5 right-2.5 rounded-lg bg-emerald-950/85 border border-emerald-500/40 px-2.5 py-1 text-[11px] font-bold text-emerald-200 flex items-center gap-1.5 backdrop-blur-md shadow-lg group-hover:bg-emerald-900 transition-colors">
-                      <Maximize2 className="size-3.5 text-emerald-400" />
-                      Expand Photo
+                    {/* Directions button overlaid on map top-right */}
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${current.location.coordinates[1]},${current.location.coordinates[0]}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Open Google Maps Directions"
+                      className="absolute top-2 right-2 z-[1000] inline-flex items-center gap-1.5 rounded-lg bg-emerald-600/90 px-2.5 py-1 text-[11px] font-bold text-white shadow-lg hover:bg-emerald-600 transition backdrop-blur-sm border border-emerald-500/40 cursor-pointer"
+                    >
+                      <Navigation className="size-3 text-white" />
+                      Directions
+                    </a>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50/80 p-4 text-center text-xs text-neutral-500 flex items-center justify-center gap-2">
+                    <MapPinOff className="size-4 text-neutral-400" />
+                    No GPS coordinates tagged for this record. Use landmarks for field response.
+                  </div>
+                )}
+
+                {/* Photo attachment if present */}
+                {"photo_url" in current && current.photo_url ? (
+                  <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-900 shadow-inner">
+                    <div
+                      className="relative h-56 sm:h-64 w-full cursor-pointer group"
+                      onClick={() => setLightboxPhoto(current.photo_url)}
+                    >
+                      <Image
+                        src={current.photo_url}
+                        alt="Incident attachment"
+                        fill
+                        unoptimized
+                        className="object-cover group-hover:scale-[1.01] transition-transform duration-200"
+                      />
+                      <div className="absolute top-2.5 right-2.5 rounded-lg bg-emerald-950/85 border border-emerald-500/40 px-2.5 py-1 text-[11px] font-bold text-emerald-200 flex items-center gap-1.5 backdrop-blur-md shadow-lg group-hover:bg-emerald-900 transition-colors">
+                        <Maximize2 className="size-3.5 text-emerald-400" />
+                        Expand Photo
+                      </div>
                     </div>
                   </div>
-                </div>
-              ) : null}
+                ) : null}
 
-              {/* Requester & Contact + Location Details (2-Column Grid to conserve space) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Citizen / Contact Information */}
-                <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-3.5 flex flex-col justify-between">
-                  <div>
-                    <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1.5">
-                      Requester & Contact
-                    </p>
-                    <p className="font-bold text-neutral-900 text-xs truncate">
+                {/* Requester & Contact + Location Details — compact horizontal strip */}
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 px-3.5 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
+                  {/* Name */}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase shrink-0">By</span>
+                    <span className="font-bold text-neutral-900 truncate">
                       {"requester_name" in current
                         ? current.requester_name
                         : current.reported_by_name || "Anonymous Resident"}
-                    </p>
+                    </span>
                   </div>
 
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    {"contact_number" in current && current.contact_number ? (
-                      <>
-                        <div className="flex items-center gap-1 text-xs text-neutral-700 font-medium truncate">
-                          <Phone className="size-3 text-neutral-400 shrink-0" />
-                          <span className="font-mono">{current.contact_number}</span>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if ("contact_number" in current && current.contact_number) {
-                                navigator.clipboard.writeText(current.contact_number);
-                                setCopiedPhone(true);
-                                setTimeout(() => setCopiedPhone(false), 2000);
-                              }
-                            }}
-                            title={copiedPhone ? "Copied!" : "Copy"}
-                            className={cn(
-                              "flex size-7 items-center justify-center rounded-lg border transition-all cursor-pointer shadow-2xs",
-                              copiedPhone
-                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100",
-                            )}
-                          >
-                            {copiedPhone ? <Check className="size-3" /> : <Copy className="size-3" />}
-                          </button>
-                          <a
-                            href={`tel:${current.contact_number}`}
-                            title="Call"
-                            className="flex size-7 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-2xs hover:bg-emerald-700 transition cursor-pointer"
-                          >
-                            <Phone className="size-3" />
-                          </a>
-                        </div>
-                      </>
-                    ) : (
-                      <span className="text-xs text-neutral-400 italic">No phone provided</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Location & Directions */}
-                <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-3.5 flex flex-col justify-between">
-                  <div>
-                    <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1.5">
-                      Location Details
-                    </p>
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="size-3.5 text-emerald-700 shrink-0" />
-                      <span className="font-bold text-neutral-900 text-xs truncate">
-                        {("location_area_name" in current && current.location_area_name) ||
-                          current.area_name ||
-                          "Area Unknown"}
-                      </span>
-                    </div>
-                    {current.location_note ? (
-                      <p className="mt-1 text-xs text-neutral-600 line-clamp-2 leading-tight">
-                        {current.location_note}
-                      </p>
-                    ) : (
-                      <p className="mt-1 text-xs text-neutral-400 italic">No landmark provided</p>
-                    )}
-                  </div>
-
-                  {current.location ? (
-                    <div className="mt-2 flex justify-end">
-                      <a
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${current.location.coordinates[1]},${current.location.coordinates[0]}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Open Google Maps Directions"
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-700 transition shrink-0 cursor-pointer"
+                  {/* Phone */}
+                  {"contact_number" in current && current.contact_number ? (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Phone className="size-3 text-neutral-400" />
+                      <span className="font-mono text-neutral-700">{current.contact_number}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if ("contact_number" in current && current.contact_number) {
+                            navigator.clipboard.writeText(current.contact_number);
+                            setCopiedPhone(true);
+                            setTimeout(() => setCopiedPhone(false), 2000);
+                          }
+                        }}
+                        title={copiedPhone ? "Copied!" : "Copy"}
+                        className={cn(
+                          "flex size-5 items-center justify-center rounded border transition-all cursor-pointer",
+                          copiedPhone
+                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                            : "bg-white text-neutral-500 border-neutral-200 hover:bg-neutral-100",
+                        )}
                       >
-                        <Navigation className="size-3 text-white" />
-                        Directions
+                        {copiedPhone ? <Check className="size-2.5" /> : <Copy className="size-2.5" />}
+                      </button>
+                      <a
+                        href={`tel:${current.contact_number}`}
+                        title="Call"
+                        className="flex size-5 items-center justify-center rounded bg-emerald-600 text-white hover:bg-emerald-700 transition cursor-pointer"
+                      >
+                        <Phone className="size-2.5" />
                       </a>
                     </div>
                   ) : (
-                    <div className="mt-2 flex justify-end">
-                      <span className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-2 py-0.5 text-[10.5px] font-medium text-neutral-500 shrink-0">
-                        <MapPinOff className="size-3 text-neutral-400" />
-                        Unmapped
-                      </span>
-                    </div>
+                    <span className="text-neutral-400 italic shrink-0">No phone</span>
                   )}
+
+                  {/* Divider */}
+                  <span className="text-neutral-300 select-none shrink-0">|</span>
+
+                  {/* Area */}
+                  <div className="flex items-center gap-1 min-w-0">
+                    <MapPin className="size-3 text-emerald-700 shrink-0" />
+                    <span className="font-bold text-neutral-900 truncate">
+                      {("location_area_name" in current && current.location_area_name) ||
+                        current.area_name ||
+                        "Area Unknown"}
+                    </span>
+                  </div>
+
+                  {/* Landmark */}
+                  {current.location_note ? (
+                    <span className="text-neutral-500 truncate max-w-[200px]">{current.location_note}</span>
+                  ) : null}
+
+                  {/* Unmapped pill (only if no GPS) */}
+                  {!current.location ? (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-500 shrink-0">
+                      <MapPinOff className="size-3 text-neutral-400" />
+                      Unmapped
+                    </span>
+                  ) : null}
+                </div>
+
+                {/* Description */}
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
+                  <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1">
+                    Report Description
+                  </p>
+                  <p className="text-neutral-700 leading-relaxed text-xs">
+                    {current.description || "No specific details provided."}
+                  </p>
                 </div>
               </div>
 
-              {/* Description */}
-              <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
-                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1">
-                  Report Description
+              {/* Fixed Lifecycle Triage Actions — Modal: all buttons in a single row */}
+              <div className="shrink-0 border-t border-neutral-100 bg-neutral-50/90 px-4 sm:px-6 py-3 flex flex-col gap-2 shadow-xs">
+                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
+                  Operational Lifecycle Actions
                 </p>
-                <p className="text-neutral-700 leading-relaxed text-xs">
-                  {current.description || "No specific details provided."}
-                </p>
-              </div>
-            </div>
 
-            {/* Fixed Lifecycle Triage Actions (2-Row Layout: Progression/Resolve on Row 1, Centered Dismiss on Row 2) */}
-            <div className="shrink-0 border-t border-neutral-100 bg-neutral-50/90 p-4 sm:px-6 sm:py-3.5 flex flex-col gap-2.5 shadow-xs">
-              <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
-                Operational Lifecycle Actions
-              </p>
+                {/* Single row: all actions side-by-side */}
+                <div className="flex items-center gap-2">
+                  {/* Progression */}
+                  {current.status === "pending" ? (
+                    <Button
+                      variant="secondary"
+                      className="flex-1 bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold px-3 text-xs shadow-2xs cursor-pointer"
+                      onClick={() => updateStatus("verified")}
+                    >
+                      <CheckCircle2 className="mr-1.5 size-3.5 text-amber-700 shrink-0" />
+                      Verify Request
+                    </Button>
+                  ) : current.status === "verified" ? (
+                    <Button
+                      variant="primary"
+                      className="flex-1 bg-sky-600 text-white hover:bg-sky-700 font-bold px-3 text-xs shadow-2xs cursor-pointer"
+                      onClick={() => updateStatus(mode === "rescue" ? "dispatched" : "in_progress")}
+                    >
+                      <Truck className="mr-1.5 size-3.5 shrink-0" />
+                      {mode === "rescue" ? "Dispatch Team" : "Mark In Progress"}
+                    </Button>
+                  ) : null}
 
-              {/* Row 1: Progression & Resolution Actions */}
-              <div
-                className={cn(
-                  "grid gap-2",
-                  current.status === "pending" || current.status === "verified"
-                    ? "grid-cols-1 sm:grid-cols-2"
-                    : "grid-cols-1",
-                )}
-              >
-                {/* Progression Button (Verify Request or Dispatch Team / Mark In Progress) */}
-                {current.status === "pending" ? (
-                  <Button
-                    variant="secondary"
-                    className="w-full bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold px-3 text-xs shadow-2xs cursor-pointer"
-                    onClick={() => updateStatus("verified")}
-                  >
-                    <CheckCircle2 className="mr-1.5 size-3.5 text-amber-700 shrink-0" />
-                    Verify Request
-                  </Button>
-                ) : current.status === "verified" ? (
-                  <Button
-                    variant="primary"
-                    className="w-full bg-sky-600 text-white hover:bg-sky-700 font-bold px-3 text-xs shadow-2xs cursor-pointer"
-                    onClick={() => updateStatus(mode === "rescue" ? "dispatched" : "in_progress")}
-                  >
-                    <Truck className="mr-1.5 size-3.5 shrink-0" />
-                    {mode === "rescue" ? "Dispatch Team" : "Mark In Progress"}
-                  </Button>
-                ) : null}
+                  {/* Mark Resolved */}
+                  {current.status !== "resolved" && current.status !== "dismissed" ? (
+                    <Button
+                      variant="primary"
+                      className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-3 text-xs shadow-2xs cursor-pointer"
+                      onClick={() => updateStatus("resolved")}
+                    >
+                      <CheckCircle2 className="mr-1.5 size-3.5 shrink-0" />
+                      Mark Resolved
+                    </Button>
+                  ) : null}
 
-                {/* Mark Resolved Button */}
-                {current.status !== "resolved" && current.status !== "dismissed" ? (
-                  <Button
-                    variant="primary"
-                    className="w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-3 text-xs shadow-2xs cursor-pointer"
-                    onClick={() => updateStatus("resolved")}
-                  >
-                    <CheckCircle2 className="mr-1.5 size-3.5 shrink-0" />
-                    Mark Resolved
-                  </Button>
-                ) : null}
-              </div>
-
-              {/* Row 2: Dismiss Button (Centered) */}
-              {current.status !== "dismissed" && current.status !== "resolved" ? (
-                <div className="flex justify-center pt-0.5">
-                  <Button
-                    variant="outline"
-                    className="w-full sm:w-auto min-w-[140px] text-rose-700 border-rose-300 bg-rose-50/60 hover:bg-rose-100 font-bold px-4 text-xs shadow-2xs cursor-pointer"
-                    onClick={() => updateStatus("dismissed")}
-                  >
-                    <XCircle className="mr-1.5 size-3.5 text-rose-600 shrink-0" />
-                    Dismiss
-                  </Button>
+                  {/* Dismiss */}
+                  {current.status !== "dismissed" && current.status !== "resolved" ? (
+                    <Button
+                      variant="outline"
+                      className="shrink-0 text-rose-700 border-rose-300 bg-rose-50/60 hover:bg-rose-100 font-bold px-4 text-xs shadow-2xs cursor-pointer"
+                      onClick={() => updateStatus("dismissed")}
+                    >
+                      <XCircle className="mr-1.5 size-3.5 text-rose-600 shrink-0" />
+                      Dismiss
+                    </Button>
+                  ) : null}
                 </div>
-              ) : null}
-            </div>
-          </>
+              </div>
+            </>
           ) : (
             <div className="p-8 text-center text-sm text-neutral-400">
               Select a record to inspect its operational timeline.
@@ -1527,207 +1502,207 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
 
           {current ? (
             <>
-            <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-sm custom-scrollbar">
-              {/* Photo attachment if present */}
-              {"photo_url" in current && current.photo_url ? (
-                <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-900 shadow-inner">
-                  <div
-                    className="relative h-56 sm:h-64 w-full cursor-pointer group"
-                    onClick={() => setLightboxPhoto(current.photo_url)}
-                  >
-                    <Image
-                      src={current.photo_url}
-                      alt="Incident attachment"
-                      fill
-                      unoptimized
-                      className="object-cover group-hover:scale-[1.01] transition-transform duration-200"
+              <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-sm custom-scrollbar">
+                {/* Mini Map Preview with Directions overlay */}
+                {current.location ? (
+                  <div className="relative">
+                    <MiniMapPreview
+                      latitude={current.location.coordinates[1]}
+                      longitude={current.location.coordinates[0]}
+                      label={mode === "rescue" && "priority" in current ? String(current.priority ?? "●") : "●"}
+                      tone={statusTone(current.status)}
+                      className="h-44 sm:h-52 w-full"
                     />
-                    <div className="absolute top-2.5 right-2.5 rounded-lg bg-emerald-950/85 border border-emerald-500/40 px-2.5 py-1 text-[11px] font-bold text-emerald-200 flex items-center gap-1.5 backdrop-blur-md shadow-lg group-hover:bg-emerald-900 transition-colors">
-                      <Maximize2 className="size-3.5 text-emerald-400" />
-                      Expand Photo
+                    {/* Directions button overlaid on map top-right */}
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${current.location.coordinates[1]},${current.location.coordinates[0]}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Open Google Maps Directions"
+                      className="absolute top-2 right-2 z-[1000] inline-flex items-center gap-1.5 rounded-lg bg-emerald-600/90 px-2.5 py-1 text-[11px] font-bold text-white shadow-lg hover:bg-emerald-600 transition backdrop-blur-sm border border-emerald-500/40 cursor-pointer"
+                    >
+                      <Navigation className="size-3 text-white" />
+                      Directions
+                    </a>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50/80 p-4 text-center text-xs text-neutral-500 flex items-center justify-center gap-2">
+                    <MapPinOff className="size-4 text-neutral-400" />
+                    No GPS coordinates tagged for this record. Use landmarks for field response.
+                  </div>
+                )}
+
+                {/* Photo attachment if present */}
+                {"photo_url" in current && current.photo_url ? (
+                  <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-900 shadow-inner">
+                    <div
+                      className="relative h-56 sm:h-64 w-full cursor-pointer group"
+                      onClick={() => setLightboxPhoto(current.photo_url)}
+                    >
+                      <Image
+                        src={current.photo_url}
+                        alt="Incident attachment"
+                        fill
+                        unoptimized
+                        className="object-cover group-hover:scale-[1.01] transition-transform duration-200"
+                      />
+                      <div className="absolute top-2.5 right-2.5 rounded-lg bg-emerald-950/85 border border-emerald-500/40 px-2.5 py-1 text-[11px] font-bold text-emerald-200 flex items-center gap-1.5 backdrop-blur-md shadow-lg group-hover:bg-emerald-900 transition-colors">
+                        <Maximize2 className="size-3.5 text-emerald-400" />
+                        Expand Photo
+                      </div>
                     </div>
                   </div>
-                </div>
-              ) : null}
+                ) : null}
 
-              {/* Requester & Contact + Location Details (2-Column Grid to conserve space) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Citizen / Contact Information */}
-                <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-3.5 flex flex-col justify-between">
-                  <div>
-                    <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1.5">
-                      Requester & Contact
-                    </p>
-                    <p className="font-bold text-neutral-900 text-xs truncate">
+                {/* Requester & Contact + Location Details — compact horizontal strip */}
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 px-3.5 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
+                  {/* Name */}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase shrink-0">By</span>
+                    <span className="font-bold text-neutral-900 truncate">
                       {"requester_name" in current
                         ? current.requester_name
                         : current.reported_by_name || "Anonymous Resident"}
-                    </p>
+                    </span>
                   </div>
 
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    {"contact_number" in current && current.contact_number ? (
-                      <>
-                        <div className="flex items-center gap-1 text-xs text-neutral-700 font-medium truncate">
-                          <Phone className="size-3 text-neutral-400 shrink-0" />
-                          <span className="font-mono">{current.contact_number}</span>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if ("contact_number" in current && current.contact_number) {
-                                navigator.clipboard.writeText(current.contact_number);
-                                setCopiedPhone(true);
-                                setTimeout(() => setCopiedPhone(false), 2000);
-                              }
-                            }}
-                            title={copiedPhone ? "Copied!" : "Copy"}
-                            className={cn(
-                              "flex size-7 items-center justify-center rounded-lg border transition-all cursor-pointer shadow-2xs",
-                              copiedPhone
-                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100",
-                            )}
-                          >
-                            {copiedPhone ? <Check className="size-3" /> : <Copy className="size-3" />}
-                          </button>
-                          <a
-                            href={`tel:${current.contact_number}`}
-                            title="Call"
-                            className="flex size-7 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-2xs hover:bg-emerald-700 transition cursor-pointer"
-                          >
-                            <Phone className="size-3" />
-                          </a>
-                        </div>
-                      </>
-                    ) : (
-                      <span className="text-xs text-neutral-400 italic">No phone provided</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Location & Directions */}
-                <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-3.5 flex flex-col justify-between">
-                  <div>
-                    <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1.5">
-                      Location Details
-                    </p>
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="size-3.5 text-emerald-700 shrink-0" />
-                      <span className="font-bold text-neutral-900 text-xs truncate">
-                        {("location_area_name" in current && current.location_area_name) ||
-                          current.area_name ||
-                          "Area Unknown"}
-                      </span>
-                    </div>
-                    {current.location_note ? (
-                      <p className="mt-1 text-xs text-neutral-600 line-clamp-2 leading-tight">
-                        {current.location_note}
-                      </p>
-                    ) : (
-                      <p className="mt-1 text-xs text-neutral-400 italic">No landmark provided</p>
-                    )}
-                  </div>
-
-                  {current.location ? (
-                    <div className="mt-2 flex justify-end">
-                      <a
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${current.location.coordinates[1]},${current.location.coordinates[0]}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Open Google Maps Directions"
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-700 transition shrink-0 cursor-pointer"
+                  {/* Phone */}
+                  {"contact_number" in current && current.contact_number ? (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Phone className="size-3 text-neutral-400" />
+                      <span className="font-mono text-neutral-700">{current.contact_number}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if ("contact_number" in current && current.contact_number) {
+                            navigator.clipboard.writeText(current.contact_number);
+                            setCopiedPhone(true);
+                            setTimeout(() => setCopiedPhone(false), 2000);
+                          }
+                        }}
+                        title={copiedPhone ? "Copied!" : "Copy"}
+                        className={cn(
+                          "flex size-5 items-center justify-center rounded border transition-all cursor-pointer",
+                          copiedPhone
+                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                            : "bg-white text-neutral-500 border-neutral-200 hover:bg-neutral-100",
+                        )}
                       >
-                        <Navigation className="size-3 text-white" />
-                        Directions
+                        {copiedPhone ? <Check className="size-2.5" /> : <Copy className="size-2.5" />}
+                      </button>
+                      <a
+                        href={`tel:${current.contact_number}`}
+                        title="Call"
+                        className="flex size-5 items-center justify-center rounded bg-emerald-600 text-white hover:bg-emerald-700 transition cursor-pointer"
+                      >
+                        <Phone className="size-2.5" />
                       </a>
                     </div>
                   ) : (
-                    <div className="mt-2 flex justify-end">
-                      <span className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-2 py-0.5 text-[10.5px] font-medium text-neutral-500 shrink-0">
-                        <MapPinOff className="size-3 text-neutral-400" />
-                        Unmapped
-                      </span>
-                    </div>
+                    <span className="text-neutral-400 italic shrink-0">No phone</span>
                   )}
+
+                  {/* Divider */}
+                  <span className="text-neutral-300 select-none shrink-0">|</span>
+
+                  {/* Area */}
+                  <div className="flex items-center gap-1 min-w-0">
+                    <MapPin className="size-3 text-emerald-700 shrink-0" />
+                    <span className="font-bold text-neutral-900 truncate">
+                      {("location_area_name" in current && current.location_area_name) ||
+                        current.area_name ||
+                        "Area Unknown"}
+                    </span>
+                  </div>
+
+                  {/* Landmark */}
+                  {current.location_note ? (
+                    <span className="text-neutral-500 truncate max-w-[180px]">{current.location_note}</span>
+                  ) : null}
+
+                  {/* Unmapped pill (only if no GPS) */}
+                  {!current.location ? (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-500 shrink-0">
+                      <MapPinOff className="size-3 text-neutral-400" />
+                      Unmapped
+                    </span>
+                  ) : null}
+                </div>
+
+                {/* Description */}
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
+                  <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1">
+                    Report Description
+                  </p>
+                  <p className="text-neutral-700 leading-relaxed text-xs">
+                    {current.description || "No specific details provided."}
+                  </p>
                 </div>
               </div>
 
-              {/* Description */}
-              <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
-                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1">
-                  Report Description
+              {/* Fixed Lifecycle Triage Actions (2-Row Layout: Progression/Resolve on Row 1, Centered Dismiss on Row 2) */}
+              <div className="shrink-0 border-t border-neutral-100 bg-neutral-50/90 p-4 sm:p-5 flex flex-col gap-2.5 shadow-xs">
+                <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
+                  Operational Lifecycle Actions
                 </p>
-                <p className="text-neutral-700 leading-relaxed text-xs">
-                  {current.description || "No specific details provided."}
-                </p>
-              </div>
-            </div>
 
-            {/* Fixed Lifecycle Triage Actions (2-Row Layout: Progression/Resolve on Row 1, Centered Dismiss on Row 2) */}
-            <div className="shrink-0 border-t border-neutral-100 bg-neutral-50/90 p-4 sm:p-5 flex flex-col gap-2.5 shadow-xs">
-              <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
-                Operational Lifecycle Actions
-              </p>
+                {/* Row 1: Progression & Resolution Actions */}
+                <div
+                  className={cn(
+                    "grid gap-2",
+                    current.status === "pending" || current.status === "verified"
+                      ? "grid-cols-1 sm:grid-cols-2"
+                      : "grid-cols-1",
+                  )}
+                >
+                  {/* Progression Button (Verify Request or Dispatch Team / Mark In Progress) */}
+                  {current.status === "pending" ? (
+                    <Button
+                      variant="secondary"
+                      className="w-full bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold px-3 text-xs shadow-2xs cursor-pointer"
+                      onClick={() => updateStatus("verified")}
+                    >
+                      <CheckCircle2 className="mr-1.5 size-3.5 text-amber-700 shrink-0" />
+                      Verify Request
+                    </Button>
+                  ) : current.status === "verified" ? (
+                    <Button
+                      variant="primary"
+                      className="w-full bg-sky-600 text-white hover:bg-sky-700 font-bold px-3 text-xs shadow-2xs cursor-pointer"
+                      onClick={() => updateStatus(mode === "rescue" ? "dispatched" : "in_progress")}
+                    >
+                      <Truck className="mr-1.5 size-3.5 shrink-0" />
+                      {mode === "rescue" ? "Dispatch Team" : "Mark In Progress"}
+                    </Button>
+                  ) : null}
 
-              {/* Row 1: Progression & Resolution Actions */}
-              <div
-                className={cn(
-                  "grid gap-2",
-                  current.status === "pending" || current.status === "verified"
-                    ? "grid-cols-1 sm:grid-cols-2"
-                    : "grid-cols-1",
-                )}
-              >
-                {/* Progression Button (Verify Request or Dispatch Team / Mark In Progress) */}
-                {current.status === "pending" ? (
-                  <Button
-                    variant="secondary"
-                    className="w-full bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold px-3 text-xs shadow-2xs cursor-pointer"
-                    onClick={() => updateStatus("verified")}
-                  >
-                    <CheckCircle2 className="mr-1.5 size-3.5 text-amber-700 shrink-0" />
-                    Verify Request
-                  </Button>
-                ) : current.status === "verified" ? (
-                  <Button
-                    variant="primary"
-                    className="w-full bg-sky-600 text-white hover:bg-sky-700 font-bold px-3 text-xs shadow-2xs cursor-pointer"
-                    onClick={() => updateStatus(mode === "rescue" ? "dispatched" : "in_progress")}
-                  >
-                    <Truck className="mr-1.5 size-3.5 shrink-0" />
-                    {mode === "rescue" ? "Dispatch Team" : "Mark In Progress"}
-                  </Button>
-                ) : null}
-
-                {/* Mark Resolved Button */}
-                {current.status !== "resolved" && current.status !== "dismissed" ? (
-                  <Button
-                    variant="primary"
-                    className="w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-3 text-xs shadow-2xs cursor-pointer"
-                    onClick={() => updateStatus("resolved")}
-                  >
-                    <CheckCircle2 className="mr-1.5 size-3.5 shrink-0" />
-                    Mark Resolved
-                  </Button>
-                ) : null}
-              </div>
-
-              {/* Row 2: Dismiss Button (Centered) */}
-              {current.status !== "dismissed" && current.status !== "resolved" ? (
-                <div className="flex justify-center pt-0.5">
-                  <Button
-                    variant="outline"
-                    className="w-full sm:w-auto min-w-[140px] text-rose-700 border-rose-300 bg-rose-50/60 hover:bg-rose-100 font-bold px-4 text-xs shadow-2xs cursor-pointer"
-                    onClick={() => updateStatus("dismissed")}
-                  >
-                    <XCircle className="mr-1.5 size-3.5 text-rose-600 shrink-0" />
-                    Dismiss
-                  </Button>
+                  {/* Mark Resolved Button */}
+                  {current.status !== "resolved" && current.status !== "dismissed" ? (
+                    <Button
+                      variant="primary"
+                      className="w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-3 text-xs shadow-2xs cursor-pointer"
+                      onClick={() => updateStatus("resolved")}
+                    >
+                      <CheckCircle2 className="mr-1.5 size-3.5 shrink-0" />
+                      Mark Resolved
+                    </Button>
+                  ) : null}
                 </div>
-              ) : null}
-            </div>
+
+                {/* Row 2: Dismiss Button (Centered) */}
+                {current.status !== "dismissed" && current.status !== "resolved" ? (
+                  <div className="flex justify-center pt-0.5">
+                    <Button
+                      variant="outline"
+                      className="w-full sm:w-auto min-w-[140px] text-rose-700 border-rose-300 bg-rose-50/60 hover:bg-rose-100 font-bold px-4 text-xs shadow-2xs cursor-pointer"
+                      onClick={() => updateStatus("dismissed")}
+                    >
+                      <XCircle className="mr-1.5 size-3.5 text-rose-600 shrink-0" />
+                      Dismiss
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
             </>
           ) : (
             <div className="p-8 text-center text-sm text-neutral-400">
@@ -1850,8 +1825,8 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 {patch.isPending
                   ? "Saving…"
                   : pendingResolutionStatus === "resolved"
-                  ? "Confirm Resolution"
-                  : "Confirm Dismissal"}
+                    ? "Confirm Resolution"
+                    : "Confirm Dismissal"}
               </Button>
             </DialogFooter>
           </form>
@@ -1896,18 +1871,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
             ) : null}
           </div>
 
-          {/* Bottom Bar */}
-          <div className="flex items-center justify-between px-5 py-3 bg-[#052e16] border-t border-emerald-900/60 text-xs">
-            <span className="text-emerald-300/90 font-medium">Verified Community Evidence</span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setLightboxPhoto(null)}
-              className="bg-emerald-600 text-white hover:bg-emerald-700 border-emerald-500 font-bold px-4 py-1.5 rounded-lg cursor-pointer transition shadow-xs"
-            >
-              Close Viewer
-            </Button>
-          </div>
+
         </DialogContent>
       </Dialog>
 
