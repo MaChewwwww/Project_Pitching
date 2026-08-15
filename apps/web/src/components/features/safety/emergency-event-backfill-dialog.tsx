@@ -7,6 +7,7 @@ import {
   Building2,
   Calendar,
   CheckCircle2,
+  Clock,
   FileSpreadsheet,
   Plus,
   RefreshCw,
@@ -249,14 +250,14 @@ function EmergencyEventBackfillContent({
 
   const filteredHouseholds = React.useMemo(() => {
     const list = householdsQuery.data ?? [];
-    if (!hhSearch.trim()) return list.slice(0, 30);
+    if (!hhSearch.trim()) return list.slice(0, 50);
     const q = hhSearch.toLowerCase();
     return list.filter(
       (h) =>
         h.reference_no.toLowerCase().includes(q) ||
         h.head_name?.toLowerCase().includes(q) ||
         h.area_name?.toLowerCase().includes(q),
-    ).slice(0, 30);
+    ).slice(0, 50);
   }, [householdsQuery.data, hhSearch]);
 
   const isSubmitting =
@@ -270,11 +271,11 @@ function EmergencyEventBackfillContent({
       <DialogHeader className="shrink-0 pb-3 border-b border-slate-100">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="grid size-11 place-items-center rounded-2xl bg-teal-100 text-teal-800 shrink-0 shadow-xs border border-teal-200">
-              <FileSpreadsheet className="size-6 text-teal-700" />
+            <div className="grid size-11 place-items-center rounded-2xl bg-emerald-100 text-emerald-800 shrink-0 shadow-xs border border-emerald-200">
+              <FileSpreadsheet className="size-5.5 text-emerald-700" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-black text-slate-950 flex items-center gap-2">
+              <DialogTitle className="text-lg font-black text-slate-950 flex flex-wrap items-center gap-2">
                 <span>Blackout Recovery & Data Backfill</span>
                 <Badge tone="info" className="text-[10px] uppercase font-bold">
                   {event.name}
@@ -287,563 +288,598 @@ function EmergencyEventBackfillContent({
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex border-b border-slate-200 mt-4 gap-1 overflow-x-auto">
+        {/* Spacious 4-Tab Navigation Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-4">
           <button
             type="button"
             onClick={() => setActiveTab("household_safety")}
             className={cn(
-              "px-3 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer",
+              "px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border text-left cursor-pointer shadow-2xs",
               activeTab === "household_safety"
-                ? "border-teal-600 text-teal-700 bg-teal-50/50"
-                : "border-transparent text-slate-500 hover:text-slate-900",
+                ? "border-emerald-600 bg-emerald-50/90 text-emerald-950 ring-2 ring-emerald-500/20"
+                : "border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100 hover:text-slate-900",
             )}
           >
-            <UserCheck className="size-3.5" />
-            <span>1. Household Safety Status</span>
+            <UserCheck className={cn("size-4 shrink-0", activeTab === "household_safety" ? "text-emerald-700" : "text-slate-400")} />
+            <span className="truncate">1. Household Safety</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("walkin_person")}
             className={cn(
-              "px-3 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer",
+              "px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border text-left cursor-pointer shadow-2xs",
               activeTab === "walkin_person"
-                ? "border-teal-600 text-teal-700 bg-teal-50/50"
-                : "border-transparent text-slate-500 hover:text-slate-900",
+                ? "border-emerald-600 bg-emerald-50/90 text-emerald-950 ring-2 ring-emerald-500/20"
+                : "border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100 hover:text-slate-900",
             )}
           >
-            <UserPlus className="size-3.5" />
-            <span>2. Unregistered Walk-In</span>
+            <UserPlus className={cn("size-4 shrink-0", activeTab === "walkin_person" ? "text-emerald-700" : "text-slate-400")} />
+            <span className="truncate">2. Walk-In Person</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("evac_center")}
             className={cn(
-              "px-3 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer",
+              "px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border text-left cursor-pointer shadow-2xs",
               activeTab === "evac_center"
-                ? "border-teal-600 text-teal-700 bg-teal-50/50"
-                : "border-transparent text-slate-500 hover:text-slate-900",
+                ? "border-emerald-600 bg-emerald-50/90 text-emerald-950 ring-2 ring-emerald-500/20"
+                : "border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100 hover:text-slate-900",
             )}
           >
-            <Building2 className="size-3.5" />
-            <span>3. Evacuation Manifest</span>
+            <Building2 className={cn("size-4 shrink-0", activeTab === "evac_center" ? "text-emerald-700" : "text-slate-400")} />
+            <span className="truncate">3. Evac Manifest</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("incident_report")}
             className={cn(
-              "px-3 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer",
+              "px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border text-left cursor-pointer shadow-2xs",
               activeTab === "incident_report"
-                ? "border-teal-600 text-teal-700 bg-teal-50/50"
-                : "border-transparent text-slate-500 hover:text-slate-900",
+                ? "border-emerald-600 bg-emerald-50/90 text-emerald-950 ring-2 ring-emerald-500/20"
+                : "border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100 hover:text-slate-900",
             )}
           >
-            <AlertTriangle className="size-3.5" />
-            <span>4. Field Hazard Report</span>
+            <AlertTriangle className={cn("size-4 shrink-0", activeTab === "incident_report" ? "text-emerald-700" : "text-slate-400")} />
+            <span className="truncate">4. Field Incident</span>
           </button>
         </div>
       </DialogHeader>
 
       {/* Tab 1: Household Safety */}
       {activeTab === "household_safety" ? (
-        <div className="flex-1 overflow-y-auto pr-1 py-4 space-y-4">
-          <div className="rounded-xl bg-teal-50/70 border border-teal-200/80 p-3 text-xs text-teal-950 flex items-start gap-2">
-            <ShieldAlert className="size-4 text-teal-700 shrink-0 mt-0.5" />
+        <div className="flex-1 overflow-y-auto pr-1 py-4 space-y-4 custom-scrollbar">
+          <div className="rounded-xl bg-emerald-50/80 border border-emerald-200/90 p-3 text-xs text-emerald-950 flex items-start gap-2.5">
+            <ShieldAlert className="size-4 text-emerald-700 shrink-0 mt-0.5" />
             <p className="leading-relaxed">
-              Record safety statuses collected from door-to-door BHW field rosters. The timestamp will be preserved as the official verification time during the blackout.
+              Record safety statuses collected from door-to-door BHW paper field rosters. The retroactive timestamp is preserved as the official verification time during the blackout.
             </p>
           </div>
 
-          {/* Household Selection */}
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-slate-900">
-              Select Household from Registry <span className="text-rose-500">*</span>
-            </label>
-
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 size-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search household reference, head name, or area..."
-                value={hhSearch}
-                onChange={(e) => setHhSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-teal-500 shadow-2xs"
-              />
-            </div>
-
-            <div className="max-h-36 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100 bg-slate-50/50">
-              {householdsQuery.isLoading ? (
-                <p className="p-3 text-xs text-slate-400">Loading households list...</p>
-              ) : filteredHouseholds.length === 0 ? (
-                <p className="p-3 text-xs text-slate-400 italic">No matching households found</p>
-              ) : (
-                filteredHouseholds.map((h) => {
-                  const isSelected = selectedHouseholdId === h.id;
-                  return (
-                    <button
-                      type="button"
-                      key={h.id}
-                      onClick={() => {
-                        setSelectedHouseholdId(h.id);
-                        setCustomMemberIds([]);
-                      }}
-                      className={cn(
-                        "w-full px-3 py-2 text-left text-xs flex items-center justify-between transition-colors cursor-pointer",
-                        isSelected
-                          ? "bg-teal-600 text-white font-bold"
-                          : "hover:bg-slate-100 text-slate-800",
-                      )}
-                    >
-                      <div>
-                        <span className="font-bold">{h.reference_no}</span> · {h.head_name}
-                        <span className={cn("ml-2 text-[11px]", isSelected ? "text-teal-100" : "text-slate-500")}>
-                          ({h.area_name})
-                        </span>
-                      </div>
-                      {isSelected && <CheckCircle2 className="size-4 text-white shrink-0" />}
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* Scope & Members Selection */}
-          {householdDetailQuery.data ? (
-            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 flex flex-col gap-3">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            {/* Left Column: Household & Member Selection (7 cols) */}
+            <div className="lg:col-span-7 flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900">Check-in Scope</span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSafetyScope("household")}
-                    className={cn(
-                      "px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer",
-                      safetyScope === "household"
-                        ? "bg-teal-600 text-white shadow-xs"
-                        : "bg-white border border-slate-200 text-slate-700",
-                    )}
-                  >
-                    Entire Household ({householdDetailQuery.data.members.length} members)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSafetyScope("member")}
-                    className={cn(
-                      "px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer",
-                      safetyScope === "member"
-                        ? "bg-teal-600 text-white shadow-xs"
-                        : "bg-white border border-slate-200 text-slate-700",
-                    )}
-                  >
-                    Specific Members
-                  </button>
-                </div>
+                <label className="text-xs font-bold text-slate-900">
+                  Select Household from Registry <span className="text-rose-500">*</span>
+                </label>
+                <span className="text-[11px] text-slate-400 font-medium">
+                  {filteredHouseholds.length} households shown
+                </span>
               </div>
 
-              {safetyScope === "member" ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                  {householdDetailQuery.data.members.map((m) => {
-                    const isChecked = customMemberIds.includes(m.id);
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 size-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search household reference no, head name, or area..."
+                  value={hhSearch}
+                  onChange={(e) => setHhSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                />
+              </div>
+
+              <div className="h-44 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100 bg-slate-50/50 custom-scrollbar">
+                {householdsQuery.isLoading ? (
+                  <p className="p-4 text-center text-xs text-slate-400">Loading households list...</p>
+                ) : filteredHouseholds.length === 0 ? (
+                  <p className="p-4 text-center text-xs text-slate-400 italic">No matching households found</p>
+                ) : (
+                  filteredHouseholds.map((h) => {
+                    const isSelected = selectedHouseholdId === h.id;
                     return (
-                      <label
-                        key={m.id}
+                      <button
+                        type="button"
+                        key={h.id}
+                        onClick={() => {
+                          setSelectedHouseholdId(h.id);
+                          setCustomMemberIds([]);
+                        }}
                         className={cn(
-                          "flex items-center gap-2.5 p-2 rounded-lg border text-xs cursor-pointer transition-colors",
-                          isChecked
-                            ? "bg-teal-50 border-teal-300 text-teal-950 font-bold"
-                            : "bg-white border-slate-200 text-slate-700",
+                          "w-full px-3.5 py-2.5 text-left text-xs flex items-center justify-between transition-colors cursor-pointer",
+                          isSelected
+                            ? "bg-emerald-700 text-white font-bold"
+                            : "hover:bg-slate-100 text-slate-800",
                         )}
                       >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setCustomMemberIds((prev) => [...prev, m.id]);
-                            } else {
-                              setCustomMemberIds((prev) => prev.filter((id) => id !== m.id));
-                            }
-                          }}
-                          className="rounded text-teal-600 focus:ring-teal-500"
-                        />
-                        <span className="truncate">{m.full_name}</span>
-                        {m.is_head && (
-                          <span className="text-[10px] text-teal-700 bg-teal-100 px-1.5 py-0.5 rounded font-bold">
-                            Head
+                        <div className="min-w-0 pr-2">
+                          <span className="font-bold">{h.reference_no}</span> · <span>{h.head_name}</span>
+                          <span className={cn("ml-2 text-[11px]", isSelected ? "text-emerald-100" : "text-slate-500")}>
+                            ({h.area_name})
                           </span>
-                        )}
-                      </label>
+                        </div>
+                        {isSelected && <CheckCircle2 className="size-4 text-white shrink-0" />}
+                      </button>
                     );
-                  })}
+                  })
+                )}
+              </div>
+
+              {/* Scope & Members Selection */}
+              {householdDetailQuery.data ? (
+                <div className="rounded-xl border border-slate-200 bg-white p-3.5 flex flex-col gap-3 shadow-2xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-900">Check-in Scope</span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setSafetyScope("household")}
+                        className={cn(
+                          "px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer",
+                          safetyScope === "household"
+                            ? "bg-emerald-600 text-white shadow-xs"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200",
+                        )}
+                      >
+                        All Members ({householdDetailQuery.data.members.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSafetyScope("member")}
+                        className={cn(
+                          "px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer",
+                          safetyScope === "member"
+                            ? "bg-emerald-600 text-white shadow-xs"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200",
+                        )}
+                      >
+                        Select Members
+                      </button>
+                    </div>
+                  </div>
+
+                  {safetyScope === "member" ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                      {householdDetailQuery.data.members.map((m) => {
+                        const isChecked = customMemberIds.includes(m.id);
+                        return (
+                          <label
+                            key={m.id}
+                            className={cn(
+                              "flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-colors",
+                              isChecked
+                                ? "bg-emerald-50 border-emerald-300 text-emerald-950 font-bold"
+                                : "bg-white border-slate-200 text-slate-700",
+                            )}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setCustomMemberIds((prev) => [...prev, m.id]);
+                                } else {
+                                  setCustomMemberIds((prev) => prev.filter((id) => id !== m.id));
+                                }
+                              }}
+                              className="rounded text-emerald-600 focus:ring-emerald-500"
+                            />
+                            <span className="truncate">{m.full_name}</span>
+                            {m.is_head && (
+                              <span className="text-[10px] text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded font-bold">
+                                Head
+                              </span>
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>
-          ) : null}
 
-          {/* Status & Shelter Choice */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-800">Safety Status</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSafetyStatus("safe")}
-                  className={cn(
-                    "flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all",
-                    safetyStatus === "safe"
-                      ? "bg-emerald-600 text-white border-emerald-700 shadow-xs"
-                      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
-                  )}
+            {/* Right Column: Status & Timestamp (5 cols) */}
+            <div className="lg:col-span-5 flex flex-col gap-3.5">
+              {/* Safety Status Toggle */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-800">Safety Status</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSafetyStatus("safe")}
+                    className={cn(
+                      "flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border text-xs font-bold cursor-pointer transition-all",
+                      safetyStatus === "safe"
+                        ? "bg-emerald-600 text-white border-emerald-700 shadow-sm"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                    )}
+                  >
+                    <CheckCircle2 className="size-4" />
+                    <span>Safe / Accounted</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSafetyStatus("needs_rescue")}
+                    className={cn(
+                      "flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border text-xs font-bold cursor-pointer transition-all",
+                      safetyStatus === "needs_rescue"
+                        ? "bg-rose-600 text-white border-rose-700 shadow-sm"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                    )}
+                  >
+                    <AlertTriangle className="size-4" />
+                    <span>Needs Rescue</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Shelter / Location */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-800">Shelter / Location</label>
+                <select
+                  value={safetyEvacCenterId}
+                  onChange={(e) => setSafetyEvacCenterId(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
                 >
-                  <CheckCircle2 className="size-4" />
-                  <span>Safe / Accounted</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSafetyStatus("needs_rescue")}
-                  className={cn(
-                    "flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all",
-                    safetyStatus === "needs_rescue"
-                      ? "bg-rose-600 text-white border-rose-700 shadow-xs"
-                      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
-                  )}
-                >
-                  <AlertTriangle className="size-4" />
-                  <span>Needs Rescue</span>
-                </button>
+                  <option value="">Home / Relatives / Safe Location</option>
+                  {(evacCentersQuery.data ?? []).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      Evac: {c.facility.name} ({c.facility.area_name})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Field Verification Date & Time */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <Calendar className="size-3.5 text-emerald-600 shrink-0" />
+                    Field Verification Date & Time
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setSafetySetAt(toLocalDatetimeString(new Date()))}
+                    className="text-[11px] font-bold text-emerald-700 hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    <RefreshCw className="size-3" />
+                    Now
+                  </button>
+                </div>
+                <input
+                  type="datetime-local"
+                  value={safetySetAt}
+                  onChange={(e) => setSafetySetAt(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                />
+                <span className="text-[10.5px] text-slate-500">Recorded as the official check-in timestamp.</span>
+              </div>
+
+              {/* Surveyor / Paper Roster Notes */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-900">Surveyor / Paper Roster Notes</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Area 3 BHW Paper Roster #12"
+                  value={safetyNotes}
+                  onChange={(e) => setSafetyNotes(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                />
               </div>
             </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-800">Shelter / Location</label>
-              <select
-                value={safetyEvacCenterId}
-                onChange={(e) => setSafetyEvacCenterId(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:border-teal-500 shadow-2xs"
-              >
-                <option value="">Home / Relatives / Safe Location</option>
-                {(evacCentersQuery.data ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    Evac: {c.facility.name} ({c.facility.area_name})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Retroactive Timestamp & Surveyor Notes */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <Calendar className="size-3.5 text-teal-600 shrink-0" />
-                  Field Verification Date & Time
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setSafetySetAt(toLocalDatetimeString(new Date()))}
-                  className="text-[11px] font-bold text-teal-700 hover:underline cursor-pointer flex items-center gap-1"
-                >
-                  <RefreshCw className="size-3" />
-                  Now
-                </button>
-              </div>
-              <input
-                type="datetime-local"
-                value={safetySetAt}
-                onChange={(e) => setSafetySetAt(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-teal-500 shadow-2xs"
-              />
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-900">Surveyor / Paper Roster Notes</label>
-              <input
-                type="text"
-                placeholder="e.g. Area 3 BHW Paper Roster #12"
-                value={safetyNotes}
-                onChange={(e) => setSafetyNotes(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:border-teal-500 shadow-2xs"
-              />
-            </div>
-
           </div>
         </div>
       ) : null}
 
       {/* Tab 2: Walk-In Person */}
       {activeTab === "walkin_person" ? (
-        <div className="flex-1 overflow-y-auto pr-1 py-4 space-y-4">
-          <div className="rounded-xl bg-teal-50/70 border border-teal-200/80 p-3 text-xs text-teal-950 flex items-start gap-2">
-            <UserPlus className="size-4 text-teal-700 shrink-0 mt-0.5" />
+        <div className="flex-1 overflow-y-auto pr-1 py-4 space-y-4 custom-scrollbar">
+          <div className="rounded-xl bg-emerald-50/80 border border-emerald-200/90 p-3 text-xs text-emerald-950 flex items-start gap-2.5">
+            <UserPlus className="size-4 text-emerald-700 shrink-0 mt-0.5" />
             <p className="leading-relaxed">
               Log unregistered individuals and transients assisted during the emergency blackout. They will appear in the safety ledger and walk-in queue for eventual registry conversion.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-800">
-                Full Name <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={walkinName}
-                onChange={(e) => setWalkinName(e.target.value)}
-                placeholder="e.g. Maria Santos (Transient)"
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-teal-500 shadow-2xs font-medium"
-              />
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Left Column: Personal Particulars */}
+            <div className="flex flex-col gap-3.5">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-800">
+                  Full Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={walkinName}
+                  onChange={(e) => setWalkinName(e.target.value)}
+                  placeholder="e.g. Maria Santos (Transient)"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs font-medium"
+                />
+              </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-800">Contact Number</label>
-              <input
-                type="text"
-                value={walkinContact}
-                onChange={(e) => setWalkinContact(e.target.value)}
-                placeholder="09XX XXX XXXX"
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-teal-500 shadow-2xs font-medium"
-              />
-            </div>
-          </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-800">Contact Number</label>
+                <input
+                  type="text"
+                  value={walkinContact}
+                  onChange={(e) => setWalkinContact(e.target.value)}
+                  placeholder="09XX XXX XXXX"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs font-medium"
+                />
+              </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-800">Safety Status</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setWalkinStatus("safe")}
-                  className={cn(
-                    "p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-1.5",
-                    walkinStatus === "safe"
-                      ? "bg-emerald-600 text-white shadow-xs"
-                      : "bg-white border-slate-200 text-slate-700",
-                  )}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-800">Where was this person found / assisted?</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Near Kasiglahan Bridge, Phase 1"
+                  value={walkinLocationNote}
+                  onChange={(e) => setWalkinLocationNote(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs font-medium"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-800">Evacuation Center Shelter</label>
+                <select
+                  value={walkinEvacCenterId}
+                  onChange={(e) => setWalkinEvacCenterId(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
                 >
-                  <CheckCircle2 className="size-4" />
-                  <span>Safe</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setWalkinStatus("needs_rescue")}
-                  className={cn(
-                    "p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-1.5",
-                    walkinStatus === "needs_rescue"
-                      ? "bg-rose-600 text-white shadow-xs"
-                      : "bg-white border-slate-200 text-slate-700",
-                  )}
-                >
-                  <AlertTriangle className="size-4" />
-                  <span>Needs Rescue</span>
-                </button>
+                  <option value="">None / Temporary Shelter</option>
+                  {(evacCentersQuery.data ?? []).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.facility.name} ({c.facility.area_name})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-800">Evacuation Center Shelter</label>
-              <select
-                value={walkinEvacCenterId}
-                onChange={(e) => setWalkinEvacCenterId(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:border-teal-500 shadow-2xs"
-              >
-                <option value="">None / Temporary Shelter</option>
-                {(evacCentersQuery.data ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.facility.name} ({c.facility.area_name})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+            {/* Right Column: Status & Vulnerabilities */}
+            <div className="flex flex-col gap-3.5">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-800">Safety Status</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setWalkinStatus("safe")}
+                    className={cn(
+                      "py-2.5 px-3 rounded-xl border text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-1.5",
+                      walkinStatus === "safe"
+                        ? "bg-emerald-600 text-white shadow-sm"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                    )}
+                  >
+                    <CheckCircle2 className="size-4" />
+                    <span>Safe</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWalkinStatus("needs_rescue")}
+                    className={cn(
+                      "py-2.5 px-3 rounded-xl border text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-1.5",
+                      walkinStatus === "needs_rescue"
+                        ? "bg-rose-600 text-white shadow-sm"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                    )}
+                  >
+                    <AlertTriangle className="size-4" />
+                    <span>Needs Rescue</span>
+                  </button>
+                </div>
+              </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 flex flex-col gap-2">
-            <label className="text-xs font-bold text-slate-900">Vulnerability Flags</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-              {[
-                { key: "is_child", label: "Child (<18)" },
-                { key: "is_senior", label: "Senior Citizen (60+)" },
-                { key: "is_pwd", label: "Person with Disability" },
-                { key: "is_pregnant", label: "Pregnant" },
-                { key: "is_lactating", label: "Lactating Mother" },
-                { key: "has_chronic_condition", label: "Chronic Condition" },
-                { key: "is_bedridden", label: "Mobility Limited" },
-              ].map(({ key, label }) => (
-                <label key={key} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={walkinFlags[key as keyof typeof walkinFlags]}
-                    onChange={(e) =>
-                      setWalkinFlags((prev) => ({ ...prev, [key]: e.target.checked }))
-                    }
-                    className="rounded text-teal-600 focus:ring-teal-500"
-                  />
-                  <span className="text-slate-700">{label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
+              {/* Vulnerability Checklist */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 flex flex-col gap-2">
+                <label className="text-xs font-bold text-slate-900">Vulnerability Flags</label>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {[
+                    { key: "is_child", label: "Child (<18)" },
+                    { key: "is_senior", label: "Senior Citizen (60+)" },
+                    { key: "is_pwd", label: "PWD" },
+                    { key: "is_pregnant", label: "Pregnant" },
+                    { key: "is_lactating", label: "Lactating" },
+                    { key: "has_chronic_condition", label: "Chronic Illness" },
+                    { key: "is_bedridden", label: "Mobility Limited" },
+                  ].map(({ key, label }) => (
+                    <label key={key} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={walkinFlags[key as keyof typeof walkinFlags]}
+                        onChange={(e) =>
+                          setWalkinFlags((prev) => ({ ...prev, [key]: e.target.checked }))
+                        }
+                        className="rounded text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span className="text-slate-700">{label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 flex flex-col gap-2">
-            <label className="text-xs font-bold text-slate-900">Where was this person found / assisted?</label>
-            <input
-              type="text"
-              placeholder="e.g. Near Kasiglahan Bridge, Phase 1"
-              value={walkinLocationNote}
-              onChange={(e) => setWalkinLocationNote(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-teal-500 shadow-2xs font-medium"
-            />
-          </div>
-
-          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <Calendar className="size-3.5 text-teal-600 shrink-0" />
-                Walk-in safety status date & time
-              </label>
-              <button
-                type="button"
-                onClick={() => setWalkinRecordedAt(toLocalDatetimeString(new Date()))}
-                className="text-[11px] font-bold text-teal-700 hover:underline cursor-pointer flex items-center gap-1"
-              >
-                <RefreshCw className="size-3" />
-                Now
-              </button>
+              {/* Timestamp */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <Calendar className="size-3.5 text-emerald-600 shrink-0" />
+                    Walk-in Date & Time
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setWalkinRecordedAt(toLocalDatetimeString(new Date()))}
+                    className="text-[11px] font-bold text-emerald-700 hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    <RefreshCw className="size-3" />
+                    Now
+                  </button>
+                </div>
+                <input
+                  type="datetime-local"
+                  value={walkinRecordedAt}
+                  onChange={(e) => setWalkinRecordedAt(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                />
+              </div>
             </div>
-            <input
-              type="datetime-local"
-              value={walkinRecordedAt}
-              onChange={(e) => setWalkinRecordedAt(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-teal-500 shadow-2xs"
-            />
-            <p className="text-[11px] text-slate-500">Use the time from the paper roster or field log, not the time it is entered here.</p>
           </div>
         </div>
       ) : null}
 
       {/* Tab 3: Evacuation Center Log */}
       {activeTab === "evac_center" ? (
-        <div className="flex-1 overflow-y-auto pr-1 py-4 space-y-4">
-          <div className="rounded-xl bg-teal-50/70 border border-teal-200/80 p-3 text-xs text-teal-950 flex items-start gap-2">
-            <Building2 className="size-4 text-teal-700 shrink-0 mt-0.5" />
+        <div className="flex-1 overflow-y-auto pr-1 py-4 space-y-4 custom-scrollbar">
+          <div className="rounded-xl bg-emerald-50/80 border border-emerald-200/90 p-3 text-xs text-emerald-950 flex items-start gap-2.5">
+            <Building2 className="size-4 text-emerald-700 shrink-0 mt-0.5" />
             <p className="leading-relaxed">
               Log paper sign-in sheets from designated evacuation center marshals retroactively.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-800">
-                Evacuation Center <span className="text-rose-500">*</span>
-              </label>
-              <select
-                value={evacCenterId}
-                onChange={(e) => setEvacCenterId(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-teal-500 shadow-2xs"
-              >
-                <option value="">Select evacuation center...</option>
-                {(evacCentersQuery.data ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.facility.name} ({c.facility.area_name}) · Cap: {c.capacity ?? "N/A"}
-                  </option>
-                ))}
-              </select>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="flex flex-col gap-3.5">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-800">
+                  Evacuation Center <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={evacCenterId}
+                  onChange={(e) => setEvacCenterId(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                >
+                  <option value="">Select evacuation center...</option>
+                  {(evacCentersQuery.data ?? []).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.facility.name} — Area {c.facility.area_id} {c.capacity ? `(Cap: ${c.capacity})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-800">
+                  Evacuee / Resident Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={evacPersonName}
+                  onChange={(e) => setEvacPersonName(e.target.value)}
+                  placeholder="e.g. Juan Dela Cruz"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs font-medium"
+                />
+              </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-800">
-                Person / Resident Name <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={evacPersonName}
-                onChange={(e) => setEvacPersonName(e.target.value)}
-                placeholder="Full name as written on paper sheet"
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:border-teal-500 shadow-2xs"
-              />
+            <div className="flex flex-col gap-3.5">
+              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <Clock className="size-3.5 text-emerald-600 shrink-0" />
+                    Physical Arrival / Check-in Date & Time
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setEvacCheckinAt(toLocalDatetimeString(new Date()))}
+                    className="text-[11px] font-bold text-emerald-700 hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    <RefreshCw className="size-3" />
+                    Now
+                  </button>
+                </div>
+                <input
+                  type="datetime-local"
+                  value={evacCheckinAt}
+                  onChange={(e) => setEvacCheckinAt(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                />
+                <span className="text-[11px] text-slate-500">Transcribe arrival time from the physical logbook.</span>
+              </div>
             </div>
-          </div>
-
-          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <Calendar className="size-3.5 text-teal-600 shrink-0" />
-                Physical Arrival / Check-in Date & Time
-              </label>
-              <button
-                type="button"
-                onClick={() => setEvacCheckinAt(toLocalDatetimeString(new Date()))}
-                className="text-[11px] font-bold text-teal-700 hover:underline cursor-pointer flex items-center gap-1"
-              >
-                <RefreshCw className="size-3" />
-                Now
-              </button>
-            </div>
-            <input
-              type="datetime-local"
-              value={evacCheckinAt}
-              onChange={(e) => setEvacCheckinAt(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-teal-500 shadow-2xs"
-            />
           </div>
         </div>
       ) : null}
 
-      {/* Tab 4: Field Incident Report */}
+      {/* Tab 4: Incident Report */}
       {activeTab === "incident_report" ? (
-        <div className="flex-1 overflow-y-auto pr-1 py-4 space-y-4">
-          <div className="rounded-xl bg-teal-50/70 border border-teal-200/80 p-3 text-xs text-teal-950 flex items-start gap-2">
-            <AlertTriangle className="size-4 text-teal-700 shrink-0 mt-0.5" />
+        <div className="flex-1 overflow-y-auto pr-1 py-4 space-y-4 custom-scrollbar">
+          <div className="rounded-xl bg-emerald-50/80 border border-emerald-200/90 p-3 text-xs text-emerald-950 flex items-start gap-2.5">
+            <AlertTriangle className="size-4 text-emerald-700 shrink-0 mt-0.5" />
             <p className="leading-relaxed">
-              Log physical hazard incidents (e.g. fallen trees, transformer explosion, impassable roads) that occurred during the communications outage.
+              File retrospective damage, flooding, road blockages, and infrastructure hazard reports noted down on field logs.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-800">Incident Type</label>
-              <select
-                value={incidentType}
-                onChange={(e) => setIncidentType(e.target.value as IncidentType)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-teal-500 shadow-2xs"
-              >
-                <option value="flooding">Flooding / Water Level</option>
-                <option value="fire">Fire Incident</option>
-                <option value="fallen_tree">Fallen Tree / Blockage</option>
-                <option value="road_blockage">Impassable Road</option>
-                <option value="landslide">Landslide / Soil Erosion</option>
-                <option value="power_outage">Transformer / Power Outage</option>
-                <option value="other">Other Emergency</option>
-              </select>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Left: Hazard Classification */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-bold text-slate-800">
+                Incident Classification <span className="text-rose-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: "flooding", label: "Flooding / High Water" },
+                  { value: "landslide", label: "Landslide / Soil erosion" },
+                  { value: "fire", label: "Fire incident" },
+                  { value: "fallen_tree", label: "Fallen Tree / Debris" },
+                  { value: "power_line", label: "Downed Power Line" },
+                  { value: "structural_damage", label: "Structural Damage" },
+                ].map((item) => (
+                  <button
+                    key={item.value}
+                    type="button"
+                    onClick={() => setIncidentType(item.value as IncidentType)}
+                    className={cn(
+                      "p-2.5 rounded-xl border text-xs font-bold text-left transition-all cursor-pointer",
+                      incidentType === item.value
+                        ? "bg-emerald-700 text-white border-emerald-800 shadow-xs"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-800">Location Note / Landmark</label>
-              <input
-                type="text"
-                placeholder="e.g. Kasiglahan Phase 1 Main Road corner Block 5"
-                value={incidentLocation}
-                onChange={(e) => setIncidentLocation(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:border-teal-500 shadow-2xs"
-              />
-            </div>
-          </div>
+            {/* Right: Description & Location */}
+            <div className="flex flex-col gap-3.5">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-800">
+                  Incident Description & Field Notes <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={incidentDesc}
+                  onChange={(e) => setIncidentDesc(e.target.value)}
+                  placeholder="Describe the hazard, damages observed, or affected road segments..."
+                  className="w-full rounded-xl border border-slate-200 p-3 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs font-medium resize-none"
+                />
+              </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-slate-800">
-              Incident Description <span className="text-rose-500">*</span>
-            </label>
-            <textarea
-              rows={3}
-              placeholder="Describe what occurred, hazards, and any immediate response taken..."
-              value={incidentDesc}
-              onChange={(e) => setIncidentDesc(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 p-3 text-xs font-medium text-slate-900 focus:outline-none focus:border-teal-500 shadow-2xs"
-            />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-800">Specific Location / Landmark</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Kasiglahan Phase 1K, Block 12 near water tank"
+                  value={incidentLocation}
+                  onChange={(e) => setIncidentLocation(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs font-medium"
+                />
+              </div>
+            </div>
           </div>
         </div>
       ) : null}
@@ -854,9 +890,9 @@ function EmergencyEventBackfillContent({
           type="button"
           variant="outline"
           onClick={onClose}
-          className="rounded-xl border-slate-200 text-xs font-bold"
+          className="rounded-xl border-slate-200 text-xs font-bold cursor-pointer"
         >
-          Close
+          Cancel
         </Button>
 
         <Button
@@ -868,7 +904,7 @@ function EmergencyEventBackfillContent({
             else if (activeTab === "evac_center") submitEvacMutation.mutate();
             else if (activeTab === "incident_report") submitIncidentMutation.mutate();
           }}
-          className="rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs shadow-md gap-1.5"
+          className="rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md gap-1.5 cursor-pointer"
         >
           <Plus className="size-3.5" />
           <span>{isSubmitting ? "Backfilling Record…" : "Submit Backfilled Record"}</span>
@@ -891,7 +927,7 @@ export function EmergencyEventBackfillDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl p-6 overflow-hidden max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-4xl lg:max-w-5xl w-full bg-white text-slate-900 border border-slate-200 rounded-3xl shadow-2xl p-6 sm:p-7 overflow-hidden max-h-[92vh] flex flex-col">
         {open ? (
           <EmergencyEventBackfillContent
             key={event.id}
