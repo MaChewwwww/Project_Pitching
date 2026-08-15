@@ -36,7 +36,7 @@ import {
   ResourceTable,
   type ResourceColumn,
 } from "@/components/features/admin/resource-table";
-import { AccountedForPanel } from "@/components/features/safety/accounted-for-panel";
+import { SafetyLedgerTab } from "@/components/features/safety/safety-ledger-tab";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,7 +51,6 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { api, toDisplayError } from "@/lib/api/client";
 import type {
-  AccountedForOut,
   EmergencyEventOut,
   EmergencyWorkspaceOut,
 } from "@/lib/api/safety-types";
@@ -216,17 +215,6 @@ export default function AdminEmergencyEventsPage() {
     }
     return workspaceQuery.data;
   }, [workspaceQuery.data, isAllActiveOverview, activeEvents.length]);
-  const accountedQuery = useQuery({
-    queryKey: ["admin", "accounted-for", selected?.id],
-    queryFn: () =>
-      api
-        .get<AccountedForOut>("/admin/accounted-for", {
-          params: { event_id: selected!.id },
-        })
-        .then((response) => response.data),
-    enabled: Boolean(selected && tab === "accounted-for"),
-    refetchInterval: selected?.is_active ? 15_000 : false,
-  });
 
   const invalidateOperations = async () => {
     await Promise.all([
@@ -658,30 +646,12 @@ export default function AdminEmergencyEventsPage() {
 
             {/* Safety Ledger Tab */}
             {tab === "accounted-for" ? (
-              <div className="flex flex-col gap-4">
-                {selected ? (
-                  <div className="flex items-center justify-between rounded-xl bg-white px-4 py-2.5 border border-neutral-200 text-xs shadow-2xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-neutral-700">Active Ledger Event:</span>
-                      <Badge tone={selected.is_active ? "danger" : "neutral"}>{selected.name}</Badge>
-                      <span className="capitalize text-neutral-500">({selected.type})</span>
-                    </div>
-                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelection(selected.id, "events")}>
-                      Change Event
-                    </Button>
-                  </div>
-                ) : null}
-                {accountedQuery.isLoading ? (
-                  <WorkspaceLoading label="Loading Accounted For safety ledger…" />
-                ) : accountedQuery.isError ? (
-                  <WorkspaceError
-                    label="The selected event safety ledger could not be loaded."
-                    onRetry={() => accountedQuery.refetch()}
-                  />
-                ) : accountedQuery.data ? (
-                  <AccountedForPanel data={accountedQuery.data} />
-                ) : null}
-              </div>
+              <SafetyLedgerTab
+                event={selected}
+                events={events}
+                onSelectEvent={(eventId) => setSelection(eventId, "accounted-for")}
+                canSeePii={canSeePii}
+              />
             ) : null}
           </div>
         </div>

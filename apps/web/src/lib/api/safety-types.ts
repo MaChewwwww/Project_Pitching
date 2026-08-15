@@ -300,3 +300,64 @@ export interface IncidentReportReview {
   status: "verified" | "dismissed";
   dismissal_reason?: string | null;
 }
+
+/* --- safety ledger & timeline (FR-SAF-001…013) ----------------------------- */
+
+export interface SafetyCheckinLogItem {
+  id: string;
+  timestamp: string;
+  subject_type: "registered_member" | "unregistered_person";
+  person_name: string;
+  is_head: boolean;
+  member_id: string | null;
+  unregistered_person_id: string | null;
+  household_id: string | null;
+  household_reference_no: string | null;
+  area_id: string | null;
+  area_name: string | null;
+  contact_number: string | null;
+  status: SafetyStatusValue;
+  set_method: SetMethod | null;
+  set_by_name: string | null;
+  evac_center_id: string | null;
+  evac_center_name: string | null;
+  is_current: boolean;
+  vulnerability_flags: string[];
+  notes: string | null;
+}
+
+export interface SafetyLedgerPageOut {
+  items: SafetyCheckinLogItem[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+  summary?: AccountedForOut | null;
+}
+
+export interface PersonTimelineEntry {
+  id: string;
+  timestamp: string;
+  type: "safety_status" | "evac_checkin" | "evac_checkout" | "rescue_request";
+  title: string;
+  description: string;
+  status: string | null;
+  actor_name: string | null;
+  center_name: string | null;
+}
+
+export interface PersonSafetyJourneyOut {
+  subject_id: string;
+  subject_type: "registered_member" | "unregistered_person";
+  full_name: string;
+  is_head: boolean;
+  household_reference_no: string | null;
+  area_name: string | null;
+  contact_number: string | null;
+  address: string | null;
+  vulnerability_flags: string[];
+  current_status: SafetyStatusValue;
+  current_evac_center_name: string | null;
+  timeline: PersonTimelineEntry[];
+}
+

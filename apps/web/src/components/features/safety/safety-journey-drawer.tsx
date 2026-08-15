@@ -1,0 +1,251 @@
+"use client";
+
+import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Building2,
+  CheckCircle2,
+  Clock,
+  HeartPulse,
+  HelpCircle,
+  LogOut,
+  MapPin,
+  Phone,
+  ShieldAlert,
+  Siren,
+  User,
+  X,
+} from "lucide-react";
+
+import { Badge } from "@/components/common/badge";
+import { Button } from "@/components/common/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { api } from "@/lib/api/client";
+import { formatPhtDateTime } from "@/lib/format";
+import type { PersonSafetyJourneyOut } from "@/lib/api/safety-types";
+
+interface SafetyJourneyDrawerProps {
+  subject: {
+    id: string;
+    type: "registered_member" | "unregistered_person";
+    name?: string;
+  } | null;
+  onClose: () => void;
+}
+
+export function SafetyJourneyDrawer({ subject, onClose }: SafetyJourneyDrawerProps) {
+  const isOpen = Boolean(subject);
+
+  const journeyQuery = useQuery({
+    queryKey: ["admin", "safety", "history", subject?.type, subject?.id],
+    queryFn: () =>
+      api
+        .get<PersonSafetyJourneyOut>(`/admin/safety/history/${subject!.type}/${subject!.id}`)
+        .then((res) => res.data),
+    enabled: isOpen && Boolean(subject?.id),
+  });
+
+  const data = journeyQuery.data;
+
+  return (
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-md p-0 flex flex-col h-full bg-slate-50 border-l border-slate-200 z-[2500]"
+        showCloseButton={false}
+      >
+        {/* Drawer Header */}
+        <div className="bg-white border-b border-slate-200 p-5 shrink-0 flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="size-11 rounded-2xl bg-emerald-100/70 border border-emerald-200 text-emerald-800 flex items-center justify-center font-black text-lg">
+              {subject?.name ? subject.name.charAt(0).toUpperCase() : <User className="size-5" />}
+            </div>
+            <div>
+              <SheetTitle className="text-base font-black text-slate-900 leading-tight">
+                {data?.full_name ?? subject?.name ?? "Resident Safety Journey"}
+              </SheetTitle>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[11px] font-bold text-slate-500">
+                  {subject?.type === "registered_member" ? "Registered Citizen" : "Unregistered Walk-In"}
+                </span>
+                {data?.is_head && (
+                  <span className="inline-flex items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9.5px] font-bold uppercase text-emerald-800 border border-emerald-200">
+                    Household Head
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        {/* Drawer Body Scroll Area */}
+        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
+          {journeyQuery.isLoading ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
+              <div className="size-8 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
+              <p className="text-xs font-semibold text-slate-500">Loading resident timeline…</p>
+            </div>
+          ) : journeyQuery.isError ? (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50/50 p-5 text-center">
+              <ShieldAlert className="size-8 text-rose-500 mx-auto mb-2" />
+              <h4 className="text-sm font-bold text-rose-900">Failed to load journey</h4>
+              <p className="text-xs text-rose-600 mt-1">Unable to retrieve historical safety records.</p>
+              <Button size="sm" variant="outline" className="mt-3 text-xs" onClick={() => journeyQuery.refetch()}>
+                Retry
+              </Button>
+            </div>
+          ) : data ? (
+            <>
+              {/* Profile Summary Card */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Current Status</span>
+                  {data.current_status === "safe" ? (
+                    <Badge tone="success">Confirmed Safe</Badge>
+                  ) : data.current_status === "needs_rescue" ? (
+                    <Badge tone="danger">Needs Rescue</Badge>
+                  ) : (
+                    <Badge tone="warning">Unaccounted</Badge>
+                  )}
+                </div>
+
+                {data.current_evac_center_name && (
+                  <div className="flex items-center gap-2 rounded-xl bg-emerald-50/80 border border-emerald-200/80 px-3 py-2 text-xs font-semibold text-emerald-900">
+                    <Building2 className="size-4 shrink-0 text-emerald-700" />
+                    <span>Sheltered at: <strong className="text-emerald-950">{data.current_evac_center_name}</strong></span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-slate-100 text-xs">
+                  {data.household_reference_no && (
+                    <div className="flex flex-col">
+                      <span className="text-[10.5px] text-slate-400 font-medium">Household Ref</span>
+                      <span className="font-bold text-slate-800">{data.household_reference_no}</span>
+                    </div>
+                  )}
+                  {data.area_name && (
+                    <div className="flex flex-col">
+                      <span className="text-[10.5px] text-slate-400 font-medium">Area / Sitio</span>
+                      <span className="font-bold text-slate-800">{data.area_name}</span>
+                    </div>
+                  )}
+                  {data.contact_number && (
+                    <div className="flex flex-col col-span-2">
+                      <span className="text-[10.5px] text-slate-400 font-medium">Contact Number</span>
+                      <span className="font-bold text-slate-800 flex items-center gap-1">
+                        <Phone className="size-3 text-slate-400" />
+                        {data.contact_number}
+                      </span>
+                    </div>
+                  )}
+                  {data.address && (
+                    <div className="flex flex-col col-span-2">
+                      <span className="text-[10.5px] text-slate-400 font-medium">Location / Note</span>
+                      <span className="text-slate-700 font-medium flex items-start gap-1">
+                        <MapPin className="size-3 text-slate-400 shrink-0 mt-0.5" />
+                        {data.address}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Vulnerability Tags */}
+                {data.vulnerability_flags.length > 0 && (
+                  <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1.5">
+                    {data.vulnerability_flags.map((flag) => (
+                      <span
+                        key={flag}
+                        className="inline-flex items-center gap-1 rounded-md bg-rose-50 border border-rose-200/80 px-2 py-0.5 text-[10px] font-bold text-rose-700 uppercase"
+                      >
+                        <HeartPulse className="size-2.5" />
+                        {flag.replace("is_", "").replace("has_", "").replace("_", " ")}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Event Timeline */}
+              <div className="flex flex-col gap-3">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <Clock className="size-3.5 text-slate-400" />
+                  Emergency Audit Timeline ({data.timeline.length})
+                </h4>
+
+                {data.timeline.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-500">
+                    No status mutations recorded yet for this person.
+                  </div>
+                ) : (
+                  <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                    {data.timeline.map((entry, index) => {
+                      const isLatest = index === 0;
+                      return (
+                        <div key={entry.id || index} className="relative group">
+                          {/* Timeline dot */}
+                          <div
+                            className={`absolute -left-6 top-1 grid size-5 place-items-center rounded-full border bg-white shadow-2xs ${
+                              entry.status === "safe"
+                                ? "border-emerald-500 text-emerald-600"
+                                : entry.status === "needs_rescue"
+                                ? "border-rose-500 text-rose-600 bg-rose-50"
+                                : entry.type === "evac_checkin"
+                                ? "border-sky-500 text-sky-600"
+                                : "border-slate-300 text-slate-400"
+                            }`}
+                          >
+                            {entry.status === "safe" ? (
+                              <CheckCircle2 className="size-3" />
+                            ) : entry.status === "needs_rescue" ? (
+                              <ShieldAlert className="size-3" />
+                            ) : entry.type === "evac_checkin" ? (
+                              <Building2 className="size-3" />
+                            ) : entry.type === "evac_checkout" ? (
+                              <LogOut className="size-3" />
+                            ) : entry.type === "rescue_request" ? (
+                              <Siren className="size-3" />
+                            ) : (
+                              <HelpCircle className="size-3" />
+                            )}
+                          </div>
+
+                          {/* Event Card */}
+                          <div className={`rounded-xl border p-3.5 bg-white shadow-2xs transition-all ${isLatest ? "border-emerald-200/90 ring-2 ring-emerald-500/10" : "border-slate-200"}`}>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs font-bold text-slate-900">{entry.title}</span>
+                              <span className="text-[10px] font-semibold text-slate-400 tabular-nums">
+                                {formatPhtDateTime(entry.timestamp)}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-[11.5px] text-slate-600 leading-snug">{entry.description}</p>
+
+                            {entry.actor_name && (
+                              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px] text-slate-400">
+                                <span>Recorded by:</span>
+                                <span className="font-semibold text-slate-700">{entry.actor_name}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : null}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}

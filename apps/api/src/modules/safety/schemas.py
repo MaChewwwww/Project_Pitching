@@ -389,3 +389,62 @@ class IncidentReportReview(BaseModel):
         if self.status == "dismissed" and not self.dismissal_reason:
             raise ValueError("A reason is required to dismiss an incident report.")
         return self
+
+
+class SafetyCheckinLogItem(BaseModel):
+    id: uuid.UUID
+    timestamp: datetime
+    subject_type: Literal["registered_member", "unregistered_person"]
+    person_name: str
+    is_head: bool = False
+    member_id: uuid.UUID | None = None
+    unregistered_person_id: uuid.UUID | None = None
+    household_id: uuid.UUID | None = None
+    household_reference_no: str | None = None
+    area_id: uuid.UUID | None = None
+    area_name: str | None = None
+    contact_number: str | None = None
+    status: SafetyStatusValue
+    set_method: SetMethod | None = None
+    set_by_name: str | None = None
+    evac_center_id: uuid.UUID | None = None
+    evac_center_name: str | None = None
+    is_current: bool = True
+    vulnerability_flags: list[str] = Field(default_factory=list)
+    notes: str | None = None
+
+
+class SafetyLedgerPageOut(BaseModel):
+    items: list[SafetyCheckinLogItem]
+    total: int
+    page: int
+    size: int
+    pages: int
+    summary: AccountedForOut | None = None
+
+
+class PersonTimelineEntry(BaseModel):
+    id: uuid.UUID
+    timestamp: datetime
+    type: Literal["safety_status", "evac_checkin", "evac_checkout", "rescue_request"]
+    title: str
+    description: str
+    status: str | None = None
+    actor_name: str | None = None
+    center_name: str | None = None
+
+
+class PersonSafetyJourneyOut(BaseModel):
+    subject_id: uuid.UUID
+    subject_type: Literal["registered_member", "unregistered_person"]
+    full_name: str
+    is_head: bool = False
+    household_reference_no: str | None = None
+    area_name: str | None = None
+    contact_number: str | None = None
+    address: str | None = None
+    vulnerability_flags: list[str] = Field(default_factory=list)
+    current_status: SafetyStatusValue
+    current_evac_center_name: str | None = None
+    timeline: list[PersonTimelineEntry]
+

@@ -32,11 +32,13 @@ from src.modules.safety.schemas import (
     IncidentStatus,
     IncidentType,
     MySafetyOut,
+    PersonSafetyJourneyOut,
     RescueRequestAck,
     RescueRequestOut,
     RescueRequestPatch,
     RescueRequestPublicIn,
     RescueRequestStatus,
+    SafetyLedgerPageOut,
     SafetyStatusAdminIn,
     SafetyStatusSelfIn,
     UnregisteredPersonIn,
@@ -315,3 +317,56 @@ async def admin_review_incident_report(
     return await service.review_incident_report(
         session, report_id, body=body, actor=user, ip=_client_ip(request)
     )
+
+
+@admin_router.get(
+    "/safety/ledger",
+    dependencies=[Depends(require_role("admin", "bhw", "sk"))],
+    summary="Disaster safety audit log and check-in timeline stream",
+)
+async def admin_safety_ledger(
+    session: DbSessionDep,
+    user: CurrentUser,
+    event_id: uuid.UUID | None = None,
+    status: str | None = None,
+    area_id: uuid.UUID | None = None,
+    subject_type: str | None = None,
+    set_method: str | None = None,
+    search: str | None = None,
+    current_only: bool = False,
+    page: int = 1,
+    size: int = 20,
+) -> SafetyLedgerPageOut:
+    return await service.get_safety_ledger(
+        session,
+        event_id=event_id,
+        status=status,
+        area_id=area_id,
+        subject_type=subject_type,
+        set_method=set_method,
+        search=search,
+        current_only=current_only,
+        page=page,
+        size=size,
+        user=user,
+    )
+
+
+@admin_router.get(
+    "/safety/history/{subject_type}/{subject_id}",
+    dependencies=[Depends(require_role("admin", "bhw", "sk"))],
+    summary="Get complete disaster journey & timeline for a resident or walk-in",
+)
+async def admin_person_safety_journey(
+    subject_type: str,
+    subject_id: uuid.UUID,
+    session: DbSessionDep,
+    user: CurrentUser,
+) -> PersonSafetyJourneyOut:
+    return await service.get_person_safety_journey(
+        session,
+        subject_type=subject_type,
+        subject_id=subject_id,
+        user=user,
+    )
+

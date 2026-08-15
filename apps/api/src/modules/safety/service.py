@@ -53,10 +53,14 @@ from src.modules.safety.schemas import (
     IncidentReportReview,
     MemberSafetyOut,
     MySafetyOut,
+    PersonSafetyJourneyOut,
+    PersonTimelineEntry,
     RescueRequestAck,
     RescueRequestOut,
     RescueRequestPatch,
     RescueRequestPublicIn,
+    SafetyCheckinLogItem,
+    SafetyLedgerPageOut,
     SafetyStatusAdminIn,
     SafetyStatusSelfIn,
     UnregisteredPersonIn,
@@ -1792,3 +1796,427 @@ async def review_incident_report(
     )
     await session.commit()
     return await _incident_report_out(session, row)
+
+
+async def get_safety_ledger(
+    session: AsyncSession,
+    *,
+    event_id: uuid.UUID | None = None,
+    status: str | None = None,
+    area_id: uuid.UUID | None = None,
+    subject_type: str | None = None,
+    set_method: str | None = None,
+    search: str | None = None,
+    current_only: bool = False,
+    page: int = 1,
+    size: int = 20,
+    user: AuthenticatedUser,
+) -> SafetyLedgerPageOut:
+    """Disaster safety audit log and check-in timeline stream."""
+    stmt = (
+        select(
+            SafetyStatus,
+            Member,
+            Household,
+            Area,
+            UnregisteredPerson,
+        )
+        .outerjoin(Member, SafetyStatus.member_id == Member.id)
+        .outerjoin(Household, Member.household_id == Household.id)
+        .outerjoin(Area, Household.area_id == Area.id)
+        .outerjoin(
+            UnregisteredPerson,
+            SafetyStatus.unregistered_person_id == UnregisteredPerson.id,
+        )
+    )
+
+    if event_id is not None:
+        stmt = stmt.where(SafetyStatus.event_id == event_id)
+    if current_only:
+        stmt = stmt.where(SafetyStatus.superseded_at.is_(None))
+    if status is not None:
+        stmt = stmt.where(SafetyStatus.status == status)
+    if set_method is not None:
+        stmt = stmt.where(SafetyStatus.set_method == set_method)
+    if subject_type == "registered_member":
+        stmt = stmt.where(SafetyStatus.member_id.is_not(None))
+    elif subject_type == "unregistered_person":
+        stmt = stmt.where(SafetyStatus.unregistered_person_id.is_not(None))
+    if area_id is not None:
+        stmt = stmt.where(Household.area_id == area_id)
+
+    if search:
+        pattern = f"%{search.strip()}%"
+        stmt = stmt.where(
+            (Member.full_name.ilike(pattern))
+            | (Household.reference_no.ilike(pattern))
+            | (Household.contact_number.ilike(pattern))
+            | (UnregisteredPerson.full_name.ilike(pattern))
+            | (UnregisteredPerson.contact_number.ilike(pattern))
+        )
+
+    stmt = apply_area_scope(stmt, user, Household.area_id)
+    stmt = stmt.order_by(SafetyStatus.set_at.desc())
+
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = (await session.execute(count_stmt)).scalar_one()
+
+    paginated_stmt = stmt.limit(size).offset((page - 1) * size)
+    rows = (await session.execute(paginated_stmt)).all()
+
+    user_ids: set[uuid.UUID] = set()
+    member_ids: set[uuid.UUID] = set()
+    unreg_ids: set[uuid.UUID] = set()
+
+    for s_row, m_row, _h_row, _a_row, u_row in rows:
+        if s_row.set_by_user_id:
+            user_ids.add(s_row.set_by_user_id)
+        if m_row:
+            member_ids.add(m_row.id)
+        if u_row:
+            unreg_ids.add(u_row.id)
+
+    names_map = await _user_names(session, user_ids)
+
+    center_assignments: dict[uuid.UUID, tuple[uuid.UUID, str]] = {}
+    if member_ids or unreg_ids:
+        checkin_conditions = []
+        if member_ids:
+            checkin_conditions.append(EvacCheckin.member_id.in_(member_ids))
+        if unreg_ids:
+            checkin_conditions.append(EvacCheckin.unregistered_person_id.in_(unreg_ids))
+
+        if checkin_conditions:
+            cond = (
+                checkin_conditions[0]
+                if len(checkin_conditions) == 1
+                else (checkin_conditions[0] | checkin_conditions[1])
+            )
+            checkin_stmt = (
+                select(
+                    EvacCheckin.member_id,
+                    EvacCheckin.unregistered_person_id,
+                    EvacCenter.id,
+                    Facility.name,
+                )
+                .join(EvacCenter, EvacCheckin.evac_center_id == EvacCenter.id)
+                .join(Facility, EvacCenter.facility_id == Facility.id)
+                .where(EvacCheckin.checked_out_at.is_(None), cond)
+            )
+            if event_id is not None:
+                checkin_stmt = checkin_stmt.where(EvacCheckin.event_id == event_id)
+            for m_id, u_id, c_id, f_name in (await session.execute(checkin_stmt)).all():
+                if m_id:
+                    center_assignments[m_id] = (c_id, f_name)
+                if u_id:
+                    center_assignments[u_id] = (c_id, f_name)
+
+    items: list[SafetyCheckinLogItem] = []
+    for s_row, m_row, h_row, a_row, u_row in rows:
+        set_by = names_map.get(s_row.set_by_user_id) if s_row.set_by_user_id else None
+        if m_row:
+            c_info = center_assignments.get(m_row.id)
+            items.append(
+                SafetyCheckinLogItem(
+                    id=s_row.id,
+                    timestamp=s_row.set_at,
+                    subject_type="registered_member",
+                    person_name=m_row.full_name,
+                    is_head=m_row.is_head,
+                    member_id=m_row.id,
+                    unregistered_person_id=None,
+                    household_id=h_row.id if h_row else None,
+                    household_reference_no=h_row.reference_no if h_row else None,
+                    area_id=a_row.id if a_row else None,
+                    area_name=a_row.name if a_row else None,
+                    contact_number=h_row.contact_number if h_row else None,
+                    status=s_row.status,
+                    set_method=s_row.set_method,
+                    set_by_name=set_by,
+                    evac_center_id=c_info[0] if c_info else None,
+                    evac_center_name=c_info[1] if c_info else None,
+                    is_current=s_row.superseded_at is None,
+                    vulnerability_flags=list(_member_flags(m_row)),
+                    notes=None,
+                )
+            )
+        elif u_row:
+            c_info = center_assignments.get(u_row.id)
+            flags: list[str] = [
+                f for f in VULNERABILITY_FLAGS if getattr(u_row, f, False)
+            ]
+            items.append(
+                SafetyCheckinLogItem(
+                    id=s_row.id,
+                    timestamp=s_row.set_at,
+                    subject_type="unregistered_person",
+                    person_name=u_row.full_name,
+                    is_head=False,
+                    member_id=None,
+                    unregistered_person_id=u_row.id,
+                    household_id=None,
+                    household_reference_no=None,
+                    area_id=None,
+                    area_name=None,
+                    contact_number=u_row.contact_number,
+                    status=s_row.status,
+                    set_method=s_row.set_method,
+                    set_by_name=set_by,
+                    evac_center_id=c_info[0] if c_info else None,
+                    evac_center_name=c_info[1] if c_info else None,
+                    is_current=s_row.superseded_at is None,
+                    vulnerability_flags=flags,
+                    notes=u_row.location_note,
+                )
+            )
+
+    summary_out: AccountedForOut | None = None
+    if event_id is not None:
+        try:
+            event = await evacuation_service.get_event_or_404(session, event_id)
+            summary_out = await accounted_for_summary(session, event=event, user=user)
+        except Exception:
+            pass
+
+    meta = page_meta(total, page, size)
+    return SafetyLedgerPageOut(
+        items=items,
+        total=total,
+        page=page,
+        size=size,
+        pages=meta["pages"],
+        summary=summary_out,
+    )
+
+
+async def get_person_safety_journey(
+    session: AsyncSession,
+    *,
+    subject_type: str,
+    subject_id: uuid.UUID,
+    user: AuthenticatedUser,
+) -> PersonSafetyJourneyOut:
+    """Complete chronological disaster history for an individual resident or walk-in."""
+    timeline: list[PersonTimelineEntry] = []
+    current_status: str = "unaccounted"
+    current_center: str | None = None
+
+    if subject_type == "registered_member":
+        member = await session.get(Member, subject_id)
+        if member is None or member.deleted_at is not None:
+            raise NotFoundError("Member not found.")
+        household = (
+            await session.get(Household, member.household_id) if member.household_id else None
+        )
+        area = (
+            await session.get(Area, household.area_id) if household and household.area_id else None
+        )
+
+        status_rows = (
+            await session.execute(
+                select(SafetyStatus)
+                .where(SafetyStatus.member_id == subject_id)
+                .order_by(SafetyStatus.set_at.desc())
+            )
+        ).scalars().all()
+
+        user_ids = {s.set_by_user_id for s in status_rows if s.set_by_user_id}
+        names_map = await _user_names(session, user_ids)
+
+        for s in status_rows:
+            if s.superseded_at is None:
+                current_status = s.status
+            actor_label = names_map.get(s.set_by_user_id, "System / Officer")
+            method_desc = {
+                "self": "Self-reported via Resident Portal",
+                "assisted": f"Assisted check-in by {actor_label}",
+                "household_bulk": "Household check-in by Head",
+            }.get(s.set_method, s.set_method)
+
+            status_label = {
+                "safe": "Declared Safe",
+                "needs_rescue": "Flagged as Needing Rescue",
+                "unaccounted": "Marked Unaccounted",
+            }.get(s.status, s.status)
+
+            timeline.append(
+                PersonTimelineEntry(
+                    id=s.id,
+                    timestamp=s.set_at,
+                    type="safety_status",
+                    title=status_label,
+                    description=method_desc,
+                    status=s.status,
+                    actor_name=actor_label,
+                    center_name=None,
+                )
+            )
+
+        checkin_rows = (
+            await session.execute(
+                select(EvacCheckin, Facility.name)
+                .join(EvacCenter, EvacCheckin.evac_center_id == EvacCenter.id)
+                .join(Facility, EvacCenter.facility_id == Facility.id)
+                .where(EvacCheckin.member_id == subject_id)
+                .order_by(EvacCheckin.checked_in_at.desc())
+            )
+        ).all()
+
+        for c_row, f_name in checkin_rows:
+            if c_row.checked_out_at is None and not current_center:
+                current_center = f_name
+            timeline.append(
+                PersonTimelineEntry(
+                    id=c_row.id,
+                    timestamp=c_row.checked_in_at,
+                    type="evac_checkin",
+                    title="Checked in to Evacuation Center",
+                    description=f"Admitted to {f_name}",
+                    status="sheltered",
+                    actor_name=None,
+                    center_name=f_name,
+                )
+            )
+            if c_row.checked_out_at is not None:
+                timeline.append(
+                    PersonTimelineEntry(
+                        id=uuid.uuid4(),
+                        timestamp=c_row.checked_out_at,
+                        type="evac_checkout",
+                        title="Checked out of Evacuation Center",
+                        description=f"Departed from {f_name}",
+                        status="checked_out",
+                        actor_name=None,
+                        center_name=f_name,
+                    )
+                )
+
+        if household:
+            rescue_rows = (
+                await session.execute(
+                    select(RescueRequest)
+                    .where(RescueRequest.household_id == household.id)
+                    .order_by(RescueRequest.created_at.desc())
+                )
+            ).scalars().all()
+            for r in rescue_rows:
+                timeline.append(
+                    PersonTimelineEntry(
+                        id=r.id,
+                        timestamp=r.created_at,
+                        type="rescue_request",
+                        title=f"Rescue Request Logged (Priority {r.priority or 'TBD'})",
+                        description=r.description,
+                        status=r.status,
+                        actor_name=r.requester_name,
+                        center_name=None,
+                    )
+                )
+
+        timeline.sort(key=lambda t: t.timestamp, reverse=True)
+
+        return PersonSafetyJourneyOut(
+            subject_id=member.id,
+            subject_type="registered_member",
+            full_name=member.full_name,
+            is_head=member.is_head,
+            household_reference_no=household.reference_no if household else None,
+            area_name=area.name if area else None,
+            contact_number=household.contact_number if household else None,
+            address=household.street_address if household else None,
+            vulnerability_flags=list(_member_flags(member)),
+            current_status=current_status,
+            current_evac_center_name=current_center,
+            timeline=timeline,
+        )
+
+    else:
+        person = await session.get(UnregisteredPerson, subject_id)
+        if person is None:
+            raise NotFoundError("Unregistered person not found.")
+
+        status_rows = (
+            await session.execute(
+                select(SafetyStatus)
+                .where(SafetyStatus.unregistered_person_id == subject_id)
+                .order_by(SafetyStatus.set_at.desc())
+            )
+        ).scalars().all()
+
+        user_ids = {s.set_by_user_id for s in status_rows if s.set_by_user_id}
+        names_map = await _user_names(session, user_ids)
+
+        for s in status_rows:
+            if s.superseded_at is None:
+                current_status = s.status
+            actor_label = names_map.get(s.set_by_user_id, "Officer")
+            timeline.append(
+                PersonTimelineEntry(
+                    id=s.id,
+                    timestamp=s.set_at,
+                    type="safety_status",
+                    title=f"Status set to {s.status.replace('_', ' ').title()}",
+                    description=f"Recorded by {actor_label} ({s.set_method})",
+                    status=s.status,
+                    actor_name=actor_label,
+                    center_name=None,
+                )
+            )
+
+        checkin_rows = (
+            await session.execute(
+                select(EvacCheckin, Facility.name)
+                .join(EvacCenter, EvacCheckin.evac_center_id == EvacCenter.id)
+                .join(Facility, EvacCenter.facility_id == Facility.id)
+                .where(EvacCheckin.unregistered_person_id == subject_id)
+                .order_by(EvacCheckin.checked_in_at.desc())
+            )
+        ).all()
+
+        for c_row, f_name in checkin_rows:
+            if c_row.checked_out_at is None and not current_center:
+                current_center = f_name
+            timeline.append(
+                PersonTimelineEntry(
+                    id=c_row.id,
+                    timestamp=c_row.checked_in_at,
+                    type="evac_checkin",
+                    title="Walk-In Triage & Shelter Check-In",
+                    description=f"Admitted to {f_name}",
+                    status="sheltered",
+                    actor_name=None,
+                    center_name=f_name,
+                )
+            )
+            if c_row.checked_out_at is not None:
+                timeline.append(
+                    PersonTimelineEntry(
+                        id=uuid.uuid4(),
+                        timestamp=c_row.checked_out_at,
+                        type="evac_checkout",
+                        title="Checked out of Evacuation Center",
+                        description=f"Departed from {f_name}",
+                        status="checked_out",
+                        actor_name=None,
+                        center_name=f_name,
+                    )
+                )
+
+        flags = [f for f in VULNERABILITY_FLAGS if getattr(person, f, False)]
+        timeline.sort(key=lambda t: t.timestamp, reverse=True)
+
+        return PersonSafetyJourneyOut(
+            subject_id=person.id,
+            subject_type="unregistered_person",
+            full_name=person.full_name,
+            is_head=False,
+            household_reference_no=None,
+            area_name=None,
+            contact_number=person.contact_number,
+            address=person.location_note,
+            vulnerability_flags=flags,
+            current_status=current_status,
+            current_evac_center_name=current_center,
+            timeline=timeline,
+        )
+
