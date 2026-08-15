@@ -194,6 +194,12 @@ the in-memory values intact so the officer can retry, and the API remains author
 
 Full offline sync and local household drafts are out of scope (`design.md` D-OI-8).
 
+### Safety field times
+
+Staff safety and walk-in forms initialise their date/time input to the current time, but officers
+may replace it with the field-log time after a blackout. Send it as `set_at`; never substitute the
+record's database `created_at` when displaying the resulting safety or shelter timeline.
+
 ## Announcement form state
 
 `AnnouncementForm` is the shared state owner for both create and edit routes. It combines

@@ -17,8 +17,10 @@ from src.db.session import DbSessionDep
 from src.modules.evacuation import service
 from src.modules.evacuation.schemas import (
     EmergencyEventDeclare,
+    EmergencyEventDetailOut,
     EmergencyEventEnd,
     EmergencyEventOut,
+    EmergencyEventPatch,
     EvacCenterIn,
     EvacCheckinCreate,
     EvacCheckinOut,
@@ -61,6 +63,46 @@ async def admin_declare_event(
     ip = request.client.host if request.client else None
     event = await service.declare_event(session, body=body, actor=user, ip=ip)
     return await service.event_out(session, event)
+
+
+@admin_router.get(
+    "/emergency-events/{event_id}",
+    dependencies=[Depends(require_role("admin", "bhw", "sk"))],
+    summary="Get comprehensive emergency event detail and statistics",
+)
+async def admin_get_event(
+    event_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> EmergencyEventDetailOut:
+    return await service.get_event_detail(session, event_id)
+
+
+@admin_router.patch(
+    "/emergency-events/{event_id}",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Update an emergency event",
+)
+async def admin_update_event(
+    event_id: uuid.UUID,
+    body: EmergencyEventPatch,
+    request: Request,
+    session: DbSessionDep,
+    user: CurrentUser,
+) -> EmergencyEventDetailOut:
+    ip = request.client.host if request.client else None
+    return await service.update_event(session, event_id, body=body, actor=user, ip=ip)
+
+
+@admin_router.delete(
+    "/emergency-events/{event_id}",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Delete an emergency event",
+)
+async def admin_delete_event(
+    event_id: uuid.UUID, request: Request, session: DbSessionDep, user: CurrentUser
+) -> dict[str, bool]:
+    ip = request.client.host if request.client else None
+    await service.delete_event(session, event_id, actor=user, ip=ip)
+    return {"ok": True}
 
 
 @admin_router.post(

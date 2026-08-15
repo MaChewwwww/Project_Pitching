@@ -58,6 +58,8 @@ class SafetyStatusAdminIn(BaseModel):
     member_ids: list[uuid.UUID] = Field(default_factory=list)
     acknowledged_member_ids: list[uuid.UUID] = Field(default_factory=list)
     unregistered_person_id: uuid.UUID | None = None
+    set_at: datetime | None = None
+    notes: str | None = None
 
     @model_validator(mode="after")
     def _scope_matches_payload(self) -> SafetyStatusAdminIn:
@@ -157,6 +159,7 @@ class WorkspaceUnregisteredOut(BaseModel):
     full_name: str
     location: GeoJsonPoint
     status: SafetyStatusValue
+    status_set_at: datetime | None
     vulnerability_flags: list[str]
     evac_center_id: uuid.UUID | None
     evac_center_name: str | None
@@ -276,6 +279,10 @@ class UnregisteredPersonIn(BaseModel):
     longitude: float | None = Field(default=None, ge=-180, le=180)
     location_note: str | None = Field(default=None, max_length=300)
     initial_status: Literal["safe", "needs_rescue"]
+    # Officer-entered field time for blackout recovery. The database row's
+    # `created_at` remains the time it reached SAGIP-SJ; this belongs to the
+    # initial, event-scoped safety status.
+    set_at: datetime | None = None
     is_child: bool = False
     is_senior: bool = False
     is_pwd: bool = False
@@ -318,6 +325,9 @@ class UnregisteredPersonOut(BaseModel):
     id: uuid.UUID
     event_id: uuid.UUID
     created_at: datetime
+    # The current safety-status timestamp. Do not use `created_at` for this:
+    # a paper log may be entered into the system hours later.
+    status_set_at: datetime | None
     full_name: str
     contact_number: str | None
     location: GeoJsonPoint | None
@@ -447,4 +457,3 @@ class PersonSafetyJourneyOut(BaseModel):
     current_status: SafetyStatusValue
     current_evac_center_name: str | None = None
     timeline: list[PersonTimelineEntry]
-

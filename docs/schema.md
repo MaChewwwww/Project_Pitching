@@ -624,7 +624,7 @@ Scopes safety statuses, rescue requests, incident reports, and donation drives s
 | `status`                 | TEXT        | NOT NULL CHECK                                    | `safe` · `needs_rescue` · `unaccounted`         |
 | `set_by_user_id`         | UUID        | FK → `user` ON DELETE SET NULL                    | **Always the actor** — see deviation note below |
 | `set_method`             | TEXT        | NOT NULL CHECK                                    | `self` · `assisted` · `household_bulk`          |
-| `set_at`                 | TIMESTAMPTZ | NOT NULL DEFAULT now()                            |                                                 |
+| `set_at`                 | TIMESTAMPTZ | NOT NULL DEFAULT now()                            | Officer backfill may supply the field-recorded time; system entry remains separately auditable |
 | `superseded_at`          | TIMESTAMPTZ |                                                   | Corrections insert a new row (FR-SAF-006)       |
 
 ```sql

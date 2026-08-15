@@ -10,6 +10,7 @@ most one current row per subject" rather than just being decorative.
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 
 import pytest
 from factories import get_area, make_event, make_household
@@ -182,6 +183,38 @@ async def test_member_statuses_are_isolated_per_event(session, demo_users):
     fire_view = await service.get_household_safety(session, event=fire, household_id=household.id)
     assert flood_view.members[0].status == "safe"
     assert fire_view.members[0].status == "needs_rescue"
+
+
+async def test_admin_status_keeps_the_field_verification_time(session, demo_users):
+    area = await get_area(session)
+    household = await make_household(session, area=area)
+    event = await make_event(session)
+    admin = _actor(demo_users["admin"])
+    member_id = (await _member_ids(session, household))[0]
+    field_time = datetime(2026, 8, 12, 9, 30, tzinfo=UTC)
+
+    await service.submit_admin_status(
+        session,
+        event=event,
+        actor=admin,
+        body=SafetyStatusAdminIn(
+            status="safe",
+            scope="member",
+            household_id=household.id,
+            member_ids=[member_id],
+            set_at=field_time,
+        ),
+        ip=None,
+    )
+
+    row = await session.scalar(
+        select(SafetyStatus).where(
+            SafetyStatus.member_id == member_id,
+            SafetyStatus.superseded_at.is_(None),
+        )
+    )
+    assert row is not None
+    assert row.set_at == field_time
 
 
 async def test_me_endpoint_ignores_client_supplied_set_method(head_client, session, demo_users):

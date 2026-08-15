@@ -4,7 +4,7 @@ rescue, in one action, without touching the registered coverage figures.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime
 
 import pytest
 from factories import get_area, make_event, make_household
@@ -52,6 +52,36 @@ async def test_create_writes_the_initial_status_in_the_same_action(session, demo
     ).scalar_one()
     assert status_row.set_method == "assisted"
     assert status_row.superseded_at is None
+
+
+async def test_create_preserves_a_backfilled_status_time_and_center_checkin(session, demo_users):
+    from src.modules.evacuation.models import EvacCenter, EvacCheckin
+
+    event = await make_event(session)
+    admin = _actor(demo_users["admin"])
+    center = await session.scalar(select(EvacCenter))
+    assert center is not None
+    field_time = datetime(2026, 8, 12, 9, 30, tzinfo=UTC)
+
+    out = await service.create_unregistered(
+        session,
+        body=UnregisteredPersonIn(
+            event_id=event.id,
+            evac_center_id=center.id,
+            full_name="Paper roster walk-in",
+            initial_status="safe",
+            set_at=field_time,
+        ),
+        actor=admin,
+        ip=None,
+    )
+
+    assert out.status_set_at == field_time
+    checkin = await session.scalar(
+        select(EvacCheckin).where(EvacCheckin.unregistered_person_id == out.id)
+    )
+    assert checkin is not None
+    assert checkin.checked_in_at == field_time
 
 
 async def test_registered_totals_do_not_move_when_an_unregistered_person_is_added(

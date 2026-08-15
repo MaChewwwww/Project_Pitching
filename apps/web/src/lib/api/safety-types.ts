@@ -13,13 +13,20 @@ import type {
   PublicEmergencyEvent,
 } from "./public-types";
 
+export type { EmergencyEventType };
+
 export interface EmergencyEventDeclare {
   name: string;
   type: EmergencyEventType;
   started_at?: string | null;
-  /** Closing a live event is a side effect big enough to require an explicit
-   * opt-in — omitting this when one is already active gets a 409, not a
-   * silent auto-close. */
+}
+
+export interface EmergencyEventPatch {
+  name?: string | null;
+  type?: EmergencyEventType | null;
+  started_at?: string | null;
+  ended_at?: string | null;
+  is_active?: boolean | null;
 }
 
 export interface EmergencyEventOut {
@@ -32,6 +39,25 @@ export interface EmergencyEventOut {
   declared_by_user_id: string | null;
   declared_by_name: string | null;
   occupancy_reset_count: number;
+}
+
+export interface EmergencyEventStats {
+  total_checkins_count: number;
+  total_safe_count: number;
+  total_rescue_needed_count: number;
+  total_unaccounted_count: number;
+  total_evacuees_count: number;
+  active_centers_used: number;
+  total_rescue_requests_count: number;
+  open_rescue_requests_count: number;
+  total_incident_reports_count: number;
+  verified_incident_reports_count: number;
+  total_unregistered_count: number;
+  linked_flood_event_id: string | null;
+}
+
+export interface EmergencyEventDetailOut extends EmergencyEventOut {
+  stats: EmergencyEventStats;
 }
 
 /* --- safety check-in (FR-SAF-001…007, 011, 013) --------------------------- */
@@ -60,6 +86,8 @@ export interface SafetyStatusAdminIn {
   member_ids?: string[];
   acknowledged_member_ids?: string[];
   unregistered_person_id?: string | null;
+  set_at?: string | null;
+  notes?: string | null;
 }
 
 export interface MemberSafetyOut {
@@ -179,6 +207,8 @@ export interface UnregisteredPersonIn {
   longitude?: number | null;
   location_note?: string | null;
   initial_status: "safe" | "needs_rescue";
+  /** Field time of the initial safety status; defaults to submission time. */
+  set_at?: string | null;
   is_child?: boolean;
   is_senior?: boolean;
   is_pwd?: boolean;
@@ -201,6 +231,8 @@ export interface UnregisteredPersonOut {
   id: string;
   event_id: string;
   created_at: string;
+  /** Current safety-status time. `created_at` is only the system-entry time. */
+  status_set_at?: string | null;
   full_name: string;
   contact_number: string | null;
   location: GeoJsonPoint | null;
@@ -257,6 +289,7 @@ export interface EmergencyWorkspaceOut {
     full_name: string;
     location: GeoJsonPoint;
     status: SafetyStatusValue;
+    status_set_at: string | null;
     vulnerability_flags: string[];
     evac_center_id: string | null;
     evac_center_name: string | null;
@@ -360,4 +393,3 @@ export interface PersonSafetyJourneyOut {
   current_evac_center_name: string | null;
   timeline: PersonTimelineEntry[];
 }
-

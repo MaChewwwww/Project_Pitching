@@ -19,6 +19,11 @@ import { api, toDisplayError } from "@/lib/api/client";
 import type { UnregisteredPersonIn, UnregisteredPersonOut, EmergencyEventOut } from "@/lib/api/safety-types";
 import type { PublicEvacCenter } from "@/lib/api/public-types";
 
+function toLocalDatetimeString(date: Date = new Date()) {
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 function getEventTypeBadge(type?: string) {
   switch (type?.toLowerCase()) {
     case "flood":
@@ -95,6 +100,7 @@ export function UnregisteredPersonForm({
   const [fullName, setFullName] = React.useState("");
   const [contactNumber, setContactNumber] = React.useState("");
   const [locationNote, setLocationNote] = React.useState("");
+  const [statusSetAt, setStatusSetAt] = React.useState(() => toLocalDatetimeString());
 
   // Demographics
   const [isInfant, setIsInfant] = React.useState(false);
@@ -144,6 +150,7 @@ export function UnregisteredPersonForm({
       contact_number: contactNumber.trim() || null,
       location_note: locationNote.trim() || null,
       initial_status: "safe",
+      set_at: statusSetAt ? new Date(statusSetAt).toISOString() : null,
       event_id: effectiveEventId && effectiveEventId !== "none" ? effectiveEventId : null,
       evac_center_id: selectedCenterId === "none" || !selectedCenterId ? null : selectedCenterId,
       is_child: Boolean(isChild || isInfant),
@@ -304,6 +311,29 @@ export function UnregisteredPersonForm({
             className="h-9 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <label className="text-xs font-bold text-slate-700" htmlFor="walk-in-status-set-at">
+            Safety status recorded at
+          </label>
+          <button
+            type="button"
+            onClick={() => setStatusSetAt(toLocalDatetimeString())}
+            className="text-[11px] font-bold text-emerald-700 hover:underline"
+          >
+            Use now
+          </button>
+        </div>
+        <input
+          id="walk-in-status-set-at"
+          type="datetime-local"
+          value={statusSetAt}
+          onChange={(e) => setStatusSetAt(e.target.value)}
+          className="h-9 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+        />
+        <p className="text-[11px] text-slate-500">Defaults to now. Change this when entering a paper or offline field record.</p>
       </div>
 
       {/* Special Needs Checklist */}

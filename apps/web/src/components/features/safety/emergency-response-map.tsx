@@ -134,6 +134,11 @@ function statusLabel(status: string) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function toLocalDatetimeString(date: Date = new Date()) {
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
 }
@@ -2059,6 +2064,7 @@ function CreateWalkInForm({
   const [fullName, setFullName] = React.useState("");
   const [contactNumber, setContactNumber] = React.useState("");
   const [locationNote, setLocationNote] = React.useState("");
+  const [statusSetAt, setStatusSetAt] = React.useState(() => toLocalDatetimeString());
 
   // Special needs states
   const [isInfant, setIsInfant] = React.useState(false);
@@ -2129,6 +2135,7 @@ function CreateWalkInForm({
       contact_number: contactNumber.trim() || null,
       location_note: locationNote.trim() || null,
       initial_status: "safe",
+      set_at: statusSetAt ? new Date(statusSetAt).toISOString() : null,
       is_child: isChild || isInfant,
       is_senior: isSenior,
       is_pwd: isPwd,
@@ -2286,6 +2293,29 @@ function CreateWalkInForm({
             className="h-9 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <label className="text-xs font-bold text-slate-700" htmlFor="map-walk-in-status-set-at">
+            Safety status recorded at
+          </label>
+          <button
+            type="button"
+            onClick={() => setStatusSetAt(toLocalDatetimeString())}
+            className="text-[11px] font-bold text-emerald-700 hover:underline"
+          >
+            Use now
+          </button>
+        </div>
+        <input
+          id="map-walk-in-status-set-at"
+          type="datetime-local"
+          value={statusSetAt}
+          onChange={(e) => setStatusSetAt(e.target.value)}
+          className="h-9 w-full rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+        />
+        <p className="text-[11px] text-slate-500">Defaults to now. Use the paper-log time when backfilling.</p>
       </div>
 
       {/* Support / Special Needs */}
@@ -2495,6 +2525,7 @@ function UnregisteredPersonsPanel({
       location: pin.location,
       location_note: null,
       status: pin.status,
+      status_set_at: pin.status_set_at,
       recorded_by_name: null,
       converted_household_id: null,
       converted_member_id: null,
@@ -2701,7 +2732,7 @@ function UnregisteredPersonsPanel({
                 <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Contact</th>
                 <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Special Needs</th>
                 <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Location Address</th>
-                <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Recorded Time</th>
+                <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Status Time</th>
                 <th className="h-11 px-4 text-right text-[11px] font-bold tracking-[0.08em] uppercase text-white">Action</th>
               </tr>
             </thead>
@@ -2849,10 +2880,10 @@ function UnregisteredPersonsPanel({
                         )}
                       </td>
 
-                      {/* Recorded Time */}
+                      {/* Field-recorded safety status time, not system-entry time. */}
                       <td className="py-3 px-4 text-[11px] text-neutral-600">
                         <div className="font-semibold text-neutral-800">
-                          {new Date(person.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          {new Date(person.status_set_at ?? person.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </div>
                         {person.recorded_by_name && (
                           <div className="text-[10px] text-neutral-400 truncate max-w-[120px]">
@@ -2947,6 +2978,7 @@ function HouseholdDialog({
   const queryClient = useQueryClient();
   const [centerId, setCenterId] = React.useState("");
   const [selectedEventId, setSelectedEventId] = React.useState("");
+  const [statusSetAt, setStatusSetAt] = React.useState(() => toLocalDatetimeString());
   const [pending, setPending] = React.useState<{
     scope: "member" | "household";
     status: "safe" | "needs_rescue";
@@ -3010,6 +3042,7 @@ function HouseholdDialog({
     event_id: effectiveEventId || data.event.id,
     household_id: household?.household_id,
     evac_center_id: centerId || null,
+    set_at: statusSetAt ? new Date(statusSetAt).toISOString() : null,
   };
 
   const submitPending = () => {
@@ -3032,6 +3065,7 @@ function HouseholdDialog({
   };
 
   const openConfirm = (p: typeof pending) => {
+    setStatusSetAt(toLocalDatetimeString());
     setPending(p);
     setConfirmOpen(true);
   };
@@ -3438,6 +3472,29 @@ function HouseholdDialog({
               </span>
             </div>
           ) : null}
+
+          <div className="flex flex-col gap-1.5 text-xs font-semibold text-neutral-700">
+            <div className="flex items-center justify-between gap-2">
+              <label htmlFor="map-status-set-at" className="font-medium text-neutral-600">
+                Status recorded at
+              </label>
+              <button
+                type="button"
+                onClick={() => setStatusSetAt(toLocalDatetimeString())}
+                className="text-[11px] font-bold text-emerald-700 hover:underline"
+              >
+                Use now
+              </button>
+            </div>
+            <input
+              id="map-status-set-at"
+              type="datetime-local"
+              value={statusSetAt}
+              onChange={(event) => setStatusSetAt(event.target.value)}
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-800 shadow-2xs focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            />
+            <span className="font-normal text-neutral-500">Defaults to now. Change it to preserve the field-verification time from an offline record.</span>
+          </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button

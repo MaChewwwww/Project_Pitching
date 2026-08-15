@@ -38,6 +38,14 @@ class EmergencyEventEnd(BaseModel):
     ended_at: datetime | None = None
 
 
+class EmergencyEventPatch(BaseModel):
+    name: str | None = None
+    type: EventType | None = None
+    started_at: datetime | None = None
+    ended_at: datetime | None = None
+    is_active: bool | None = None
+
+
 class EmergencyEventOut(BaseModel):
     id: uuid.UUID
     name: str
@@ -48,6 +56,25 @@ class EmergencyEventOut(BaseModel):
     declared_by_user_id: uuid.UUID | None
     declared_by_name: str | None
     occupancy_reset_count: int = 0
+
+
+class EmergencyEventStats(BaseModel):
+    total_checkins_count: int = 0
+    total_safe_count: int = 0
+    total_rescue_needed_count: int = 0
+    total_unaccounted_count: int = 0
+    total_evacuees_count: int = 0
+    active_centers_used: int = 0
+    total_rescue_requests_count: int = 0
+    open_rescue_requests_count: int = 0
+    total_incident_reports_count: int = 0
+    verified_incident_reports_count: int = 0
+    total_unregistered_count: int = 0
+    linked_flood_event_id: uuid.UUID | None = None
+
+
+class EmergencyEventDetailOut(EmergencyEventOut):
+    stats: EmergencyEventStats
 
 
 class PublicEvacCenter(BaseModel):

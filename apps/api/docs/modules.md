@@ -145,6 +145,11 @@ workspace applies BHW area scope before loading rosters. SK users reach only the
 Accounted For route. Center assignment from a safety write delegates to evacuation with commit
 deferred so whole-household acknowledgement and check-in changes remain one transaction.
 
+Admin/BHW safety writes may carry the field-recorded status time for blackout recovery. It is
+stored on the append-only safety row (`set_at`); the normal database `created_at` timestamp is
+never rewritten. When the same write assigns an evacuation center, its physical check-in uses
+that field time too so the two response timelines do not disagree.
+
 Walk-in conversion remains registry-owned. Registry creates the official member/household, then
 calls safety to transfer current status and evacuation identity before the single commit. The
 unregistered row is retained with both conversion FKs and excluded from live walk-in totals.

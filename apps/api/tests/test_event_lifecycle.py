@@ -181,3 +181,63 @@ async def test_declare_rejects_unauthenticated(client):
         "/api/v1/admin/emergency-events", json={"name": "Test", "type": "flood"}
     )
     assert response.status_code == 401
+
+
+async def test_get_event_detail_and_stats(admin_client, session, demo_users):
+    admin = _actor(demo_users["admin"])
+    event = await service.declare_event(
+        session,
+        body=EmergencyEventDeclare(name="Detail Test Event", type="flood"),
+        actor=admin,
+        ip=None,
+    )
+    await session.commit()
+
+    response = await admin_client.get(f"/api/v1/admin/emergency-events/{event.id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == str(event.id)
+    assert data["name"] == "Detail Test Event"
+    assert "stats" in data
+    assert data["stats"]["total_checkins_count"] == 0
+    assert data["stats"]["total_evacuees_count"] == 0
+
+
+async def test_patch_event_updates_metadata_and_status(admin_client, session, demo_users):
+    admin = _actor(demo_users["admin"])
+    event = await service.declare_event(
+        session,
+        body=EmergencyEventDeclare(name="Initial Name", type="flood"),
+        actor=admin,
+        ip=None,
+    )
+    await session.commit()
+
+    response = await admin_client.patch(
+        f"/api/v1/admin/emergency-events/{event.id}",
+        json={"name": "Updated Typhoon Name", "type": "typhoon", "is_active": False},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "Updated Typhoon Name"
+    assert data["type"] == "typhoon"
+    assert data["is_active"] is False
+
+
+async def test_delete_event_removes_record(admin_client, session, demo_users):
+    admin = _actor(demo_users["admin"])
+    event = await service.declare_event(
+        session,
+        body=EmergencyEventDeclare(name="To Delete", type="fire"),
+        actor=admin,
+        ip=None,
+    )
+    await session.commit()
+
+    response = await admin_client.delete(f"/api/v1/admin/emergency-events/{event.id}")
+    assert response.status_code == 204
+
+    # Verify event is deleted
+    get_res = await admin_client.get(f"/api/v1/admin/emergency-events/{event.id}")
+    assert get_res.status_code == 404
+

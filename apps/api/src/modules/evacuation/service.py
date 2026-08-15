@@ -20,7 +20,10 @@ from src.core.pagination import Page, page_meta, paginate
 from src.modules.evacuation.models import EmergencyEvent, EvacCenter, EvacCheckin
 from src.modules.evacuation.schemas import (
     EmergencyEventDeclare,
+    EmergencyEventDetailOut,
     EmergencyEventOut,
+    EmergencyEventPatch,
+    EmergencyEventStats,
     EvacCenterIn,
     EvacCheckinCreate,
     EvacCheckinOut,
@@ -297,6 +300,227 @@ async def end_event(
     )
     await session.commit()
     return event, reset_count
+
+
+async def get_event_detail(
+    session: AsyncSession, event_id: uuid.UUID
+) -> EmergencyEventDetailOut:
+    event = await get_event_or_404(session, event_id)
+    base_out = await event_out(session, event)
+
+    from src.modules.safety.models import (
+        IncidentReport,
+        RescueRequest,
+        SafetyStatus,
+        UnregisteredPerson,
+    )
+    from src.modules.weather.models import FloodEvent
+
+    total_checkins = (
+        await session.scalar(
+            select(func.count(SafetyStatus.id)).where(
+                SafetyStatus.event_id == event_id, SafetyStatus.superseded_at.is_(None)
+            )
+        )
+    ) or 0
+
+    safe_count = (
+        await session.scalar(
+            select(func.count(SafetyStatus.id)).where(
+                SafetyStatus.event_id == event_id,
+                SafetyStatus.superseded_at.is_(None),
+                SafetyStatus.status == "safe",
+            )
+        )
+    ) or 0
+
+    rescue_needed = (
+        await session.scalar(
+            select(func.count(SafetyStatus.id)).where(
+                SafetyStatus.event_id == event_id,
+                SafetyStatus.superseded_at.is_(None),
+                SafetyStatus.status == "needs_rescue",
+            )
+        )
+    ) or 0
+
+    total_evacuees = (
+        await session.scalar(
+            select(func.count(EvacCheckin.id)).where(EvacCheckin.event_id == event_id)
+        )
+    ) or 0
+
+    active_centers = (
+        await session.scalar(
+            select(func.count(func.distinct(EvacCheckin.evac_center_id))).where(
+                EvacCheckin.event_id == event_id
+            )
+        )
+    ) or 0
+
+    total_rescues = (
+        await session.scalar(
+            select(func.count(RescueRequest.id)).where(RescueRequest.event_id == event_id)
+        )
+    ) or 0
+
+    open_rescues = (
+        await session.scalar(
+            select(func.count(RescueRequest.id)).where(
+                RescueRequest.event_id == event_id,
+                RescueRequest.status.in_(("pending", "verified", "dispatched")),
+            )
+        )
+    ) or 0
+
+    total_incidents = (
+        await session.scalar(
+            select(func.count(IncidentReport.id)).where(IncidentReport.event_id == event_id)
+        )
+    ) or 0
+
+    verified_incidents = (
+        await session.scalar(
+            select(func.count(IncidentReport.id)).where(
+                IncidentReport.event_id == event_id,
+                IncidentReport.status == "verified",
+            )
+        )
+    ) or 0
+
+    total_unregistered = (
+        await session.scalar(
+            select(func.count(UnregisteredPerson.id)).where(
+                UnregisteredPerson.event_id == event_id
+            )
+        )
+    ) or 0
+
+    linked_flood_id = None
+    if event.type == "flood":
+        linked_flood_id = await session.scalar(
+            select(FloodEvent.id).where(FloodEvent.emergency_event_id == event_id)
+        )
+
+    stats = EmergencyEventStats(
+        total_checkins_count=total_checkins,
+        total_safe_count=safe_count,
+        total_rescue_needed_count=rescue_needed,
+        total_unaccounted_count=0,
+        total_evacuees_count=total_evacuees,
+        active_centers_used=active_centers,
+        total_rescue_requests_count=total_rescues,
+        open_rescue_requests_count=open_rescues,
+        total_incident_reports_count=total_incidents,
+        verified_incident_reports_count=verified_incidents,
+        total_unregistered_count=total_unregistered,
+        linked_flood_event_id=linked_flood_id,
+    )
+
+    return EmergencyEventDetailOut(
+        **base_out.model_dump(),
+        stats=stats,
+    )
+
+
+async def update_event(
+    session: AsyncSession,
+    event_id: uuid.UUID,
+    *,
+    body: EmergencyEventPatch,
+    actor: AuthenticatedUser,
+    ip: str | None,
+) -> EmergencyEventDetailOut:
+    event = await get_event_or_404(session, event_id)
+    changes: dict[str, object] = {}
+
+    if body.name is not None and body.name.strip():
+        changes["name"] = body.name.strip()
+        event.name = body.name.strip()
+
+    if body.type is not None:
+        changes["type"] = body.type
+        event.type = body.type
+
+    if body.started_at is not None:
+        changes["started_at"] = body.started_at.isoformat()
+        event.started_at = body.started_at
+
+    if body.ended_at is not None:
+        changes["ended_at"] = body.ended_at.isoformat()
+        event.ended_at = body.ended_at
+
+    if body.is_active is not None:
+        changes["is_active"] = body.is_active
+        event.is_active = body.is_active
+        if not event.is_active and event.ended_at is None:
+            event.ended_at = datetime.now(UTC)
+
+    if event.type == "flood":
+        from src.modules.weather.models import FloodEvent
+
+        flood_event = await session.scalar(
+            select(FloodEvent).where(FloodEvent.emergency_event_id == event.id)
+        )
+        if flood_event is not None:
+            if body.name is not None:
+                flood_event.name = event.name
+            if body.started_at is not None:
+                flood_event.started_at = event.started_at
+            if body.ended_at is not None:
+                flood_event.ended_at = event.ended_at
+            if body.is_active is not None:
+                flood_event.is_ongoing = event.is_active
+
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="emergency_event.update",
+        entity_type="emergency_event",
+        entity_id=event.id,
+        changes=changes,
+        ip=ip,
+    )
+    await session.commit()
+    return await get_event_detail(session, event_id)
+
+
+async def delete_event(
+    session: AsyncSession,
+    event_id: uuid.UUID,
+    *,
+    actor: AuthenticatedUser,
+    ip: str | None,
+) -> None:
+    event = await get_event_or_404(session, event_id)
+    event_name = event.name
+    was_active = event.is_active
+
+    await session.delete(event)
+    await session.flush()
+
+    if was_active:
+        remaining_active = await session.scalar(
+            select(func.count(EmergencyEvent.id)).where(EmergencyEvent.is_active.is_(True))
+        )
+        if remaining_active == 0:
+            now = datetime.now(UTC)
+            await session.execute(
+                update(EvacCheckin)
+                .where(EvacCheckin.checked_out_at.is_(None))
+                .values(checked_out_at=now, updated_at=now)
+            )
+
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="emergency_event.delete",
+        entity_type="emergency_event",
+        entity_id=event_id,
+        changes={"name": event_name},
+        ip=ip,
+    )
+    await session.commit()
 
 
 async def get_public_active_events(session: AsyncSession) -> list[PublicEmergencyEvent]:

@@ -12,7 +12,7 @@ import {
   ReferenceLine,
   Cell,
 } from "recharts";
-import { Activity, AlertTriangle, ArrowUpRight, BarChart3, Building2, Users } from "lucide-react";
+import { Activity, BarChart3, Building2, Users } from "lucide-react";
 
 import { Card, CardContent } from "@/components/common/card";
 import { Badge } from "@/components/common/badge";

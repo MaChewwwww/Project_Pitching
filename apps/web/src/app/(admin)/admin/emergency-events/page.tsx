@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import type { Route } from "next";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,13 +10,18 @@ import {
   Activity,
   AlertTriangle,
   Calendar,
+  CalendarClock,
   ChevronDown,
   CircleCheck,
   Clock,
+  Eye,
   Flame,
+  Layers,
   List,
   Map,
+  Pencil,
   Plus,
+  Radio,
   RefreshCw,
   Search,
   ShieldAlert,
@@ -28,12 +35,15 @@ import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
 import {
   ResourceTable,
   type ResourceColumn,
 } from "@/components/features/admin/resource-table";
 import { SafetyLedgerTab } from "@/components/features/safety/safety-ledger-tab";
 import { EmergencyOverviewDashboard } from "@/components/features/safety/emergency-overview-dashboard";
+import { EditEventDialog } from "@/components/features/safety/edit-event-dialog";
+import { EmergencyEventBackfillDialog } from "@/components/features/safety/emergency-event-backfill-dialog";
 import {
   Dialog,
   DialogContent,
@@ -265,46 +275,107 @@ export default function AdminEmergencyEventsPage() {
     onError: (error) => toast.error(toDisplayError(error).detail),
   });
 
+  const [editingEvent, setEditingEvent] = React.useState<EmergencyEventOut | null>(null);
+  const [backfillingEvent, setBackfillingEvent] = React.useState<EmergencyEventOut | null>(null);
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/admin/emergency-events/${id}`),
+    onSuccess: async () => {
+      toast.success("Emergency event deleted successfully");
+      await invalidateOperations();
+    },
+    onError: (error) => toast.error(toDisplayError(error).detail),
+  });
+
   const setSelection = (eventId: string, nextTab: Tab = tab) => {
     const targetId = eventId || selectedId || (selected?.id ?? "");
     router.replace(`/admin/emergency-events?event=${targetId}&tab=${nextTab}`);
   };
 
+  function formatDuration(startedAt: string, endedAt: string | null): string {
+    const start = new Date(startedAt).getTime();
+    const end = endedAt ? new Date(endedAt).getTime() : Date.now();
+    if (isNaN(start)) return "—";
+    const diffMs = Math.max(0, end - start);
+    const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const days = Math.floor(totalHours / 24);
+    const remHours = totalHours % 24;
+    if (days > 0) return `${days}d ${remHours}h`;
+    const totalMins = Math.floor(diffMs / (1000 * 60));
+    if (totalHours > 0) return `${totalHours}h ${totalMins % 60}m`;
+    return `${totalMins}m`;
+  }
+
   const columns: ResourceColumn<EmergencyEventOut>[] = [
     {
       key: "name",
-      header: "Event Name",
+      header: "Incident / Event",
       render: (row) => (
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-56 items-center gap-3">
           <span
-            className={`grid size-7 place-items-center rounded-lg ${row.type === "flood"
-              ? "bg-sky-100 text-sky-700"
-              : row.type === "fire"
-                ? "bg-rose-100 text-rose-700"
-                : row.type === "earthquake"
-                  ? "bg-amber-100 text-amber-700"
-                  : "bg-emerald-100 text-emerald-700"
-              }`}
+            className={`grid size-9 place-items-center rounded-xl shadow-2xs shrink-0 ${
+              row.type === "flood"
+                ? "bg-sky-100 text-sky-700 border border-sky-200"
+                : row.type === "fire"
+                  ? "bg-rose-100 text-rose-700 border border-rose-200"
+                  : row.type === "earthquake"
+                    ? "bg-amber-100 text-amber-700 border border-amber-200"
+                    : row.type === "typhoon"
+                      ? "bg-teal-100 text-teal-700 border border-teal-200"
+                      : "bg-emerald-100 text-emerald-700 border border-emerald-200"
+            }`}
           >
             {row.type === "flood" ? (
-              <Waves className="size-4" />
+              <Waves className="size-4.5" />
             ) : row.type === "fire" ? (
-              <Flame className="size-4" />
+              <Flame className="size-4.5" />
+            ) : row.type === "typhoon" ? (
+              <Wind className="size-4.5" />
+            ) : row.type === "earthquake" ? (
+              <AlertTriangle className="size-4.5" />
             ) : (
-              <Siren className="size-4" />
+              <Siren className="size-4.5" />
             )}
           </span>
-          <span className="font-bold text-neutral-900">{row.name}</span>
+          <div className="flex flex-col min-w-0">
+            <Link
+              href={`/admin/emergency-events/${row.id}` as Route}
+              className="font-bold text-neutral-900 hover:text-emerald-700 hover:underline truncate"
+            >
+              {row.name}
+            </Link>
+            <span className="text-[11px] text-neutral-500 flex items-center gap-1.5 mt-0.5">
+              <span>{new Date(row.started_at).toLocaleDateString("en-PH", { dateStyle: "medium" })}</span>
+              {row.declared_by_name && (
+                <>
+                  <span>·</span>
+                  <span>By {row.declared_by_name}</span>
+                </>
+              )}
+            </span>
+          </div>
         </div>
       ),
     },
     {
       key: "type",
-      header: "Type",
+      header: "Classification",
       render: (row) => (
-        <Badge outline tone="neutral" className="capitalize text-xs font-semibold">
+        <span
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider border ${
+            row.type === "flood"
+              ? "bg-sky-50 text-sky-700 border-sky-200"
+              : row.type === "fire"
+                ? "bg-rose-50 text-rose-700 border-rose-200"
+                : row.type === "typhoon"
+                  ? "bg-teal-50 text-teal-700 border-teal-200"
+                  : row.type === "earthquake"
+                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                    : "bg-emerald-50 text-emerald-700 border-emerald-200"
+          }`}
+        >
           {row.type}
-        </Badge>
+        </span>
       ),
     },
     {
@@ -312,22 +383,35 @@ export default function AdminEmergencyEventsPage() {
       header: "Status",
       render: (row) =>
         row.is_active ? (
-          <Badge tone="danger" className="font-bold text-xs uppercase tracking-wide">
-            Active
-          </Badge>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 px-2.5 py-0.5 text-xs font-black uppercase tracking-wide">
+            <span className="relative flex size-2 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-500 opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-rose-600" />
+            </span>
+            Live Incident
+          </span>
         ) : (
-          <Badge outline tone="neutral" className="text-xs text-neutral-500 font-medium">
-            Ended
-          </Badge>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-600 px-2.5 py-0.5 text-xs font-semibold">
+            <span className="size-1.5 rounded-full bg-neutral-400 shrink-0" />
+            Concluded
+          </span>
         ),
     },
     {
       key: "started_at",
-      header: "Declared At",
+      header: "Duration / Timeline",
       render: (row) => (
-        <span className="text-xs text-neutral-600 font-medium">
-          {new Date(row.started_at).toLocaleString()}
-        </span>
+        <div className="flex flex-col text-xs text-neutral-700">
+          <span className="font-semibold text-neutral-900">
+            {formatDuration(row.started_at, row.ended_at)}
+          </span>
+          <span className="text-[11px] text-neutral-500">
+            {new Date(row.started_at).toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit", hour12: true })}
+            {row.ended_at
+              ? ` – ${new Date(row.ended_at).toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit", hour12: true })}`
+              : " (Ongoing)"}
+          </span>
+        </div>
       ),
     },
   ];
@@ -588,28 +672,210 @@ export default function AdminEmergencyEventsPage() {
 
             {/* Emergency Events Directory Tab */}
             {tab === "events" ? (
-              <div className="flex flex-col gap-5">
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-neutral-200 pb-4">
+              <div className="flex flex-col gap-6">
+                {/* 1. High-Impact Summary KPI Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Card 1: Active Emergencies */}
+                  <div className="rounded-2xl border border-rose-200/90 bg-gradient-to-br from-white via-rose-50/30 to-rose-50/60 p-5 shadow-sm flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-rose-900 uppercase tracking-wider">
+                        Live Emergencies
+                      </span>
+                      <div className="grid size-9 place-items-center rounded-xl bg-rose-100 text-rose-700">
+                        <Radio className="size-4.5 animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <span className="text-3xl font-black text-slate-950 tracking-tight">
+                        {events.filter((e) => e.is_active).length}
+                      </span>
+                      <p className="text-[11px] text-rose-700/90 font-semibold mt-0.5">
+                        {events.filter((e) => e.is_active).length > 0
+                          ? "Active response workspaces ongoing"
+                          : "All systems normal / standby"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Concluded Archives */}
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        Concluded Archives
+                      </span>
+                      <div className="grid size-9 place-items-center rounded-xl bg-slate-100 text-slate-700">
+                        <Clock className="size-4.5" />
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <span className="text-3xl font-black text-slate-950 tracking-tight">
+                        {events.filter((e) => !e.is_active).length}
+                      </span>
+                      <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                        Past disaster response logs retained
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Total Recorded */}
+                  <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-white via-emerald-50/20 to-emerald-50/50 p-5 shadow-sm flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider">
+                        Total Incidents Logged
+                      </span>
+                      <div className="grid size-9 place-items-center rounded-xl bg-emerald-100 text-emerald-800">
+                        <Layers className="size-4.5 text-emerald-700" />
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <span className="text-3xl font-black text-slate-950 tracking-tight">
+                        {events.length}
+                      </span>
+                      <p className="text-[11px] text-emerald-700 font-medium mt-0.5">
+                        Complete barangay incident ledger
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Hazard Distribution */}
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4.5 shadow-sm flex flex-col justify-between">
+                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Hazard Classification
+                    </span>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div className="flex items-center justify-between rounded-lg bg-sky-50 px-2.5 py-1 text-xs text-sky-900 border border-sky-200/60 font-semibold">
+                        <span className="flex items-center gap-1.5"><Waves className="size-3 text-sky-600" /> Flood</span>
+                        <span className="font-bold">{events.filter((e) => e.type === "flood").length}</span>
+                      </div>
+                      <div className="flex items-center justify-between rounded-lg bg-teal-50 px-2.5 py-1 text-xs text-teal-900 border border-teal-200/60 font-semibold">
+                        <span className="flex items-center gap-1.5"><Wind className="size-3 text-teal-600" /> Typhoon</span>
+                        <span className="font-bold">{events.filter((e) => e.type === "typhoon" || (e.type as string) === "severe_weather").length}</span>
+                      </div>
+                      <div className="flex items-center justify-between rounded-lg bg-rose-50 px-2.5 py-1 text-xs text-rose-900 border border-rose-200/60 font-semibold">
+                        <span className="flex items-center gap-1.5"><Flame className="size-3 text-rose-600" /> Fire</span>
+                        <span className="font-bold">{events.filter((e) => e.type === "fire").length}</span>
+                      </div>
+                      <div className="flex items-center justify-between rounded-lg bg-amber-50 px-2.5 py-1 text-xs text-amber-900 border border-amber-200/60 font-semibold">
+                        <span className="flex items-center gap-1.5"><AlertTriangle className="size-3 text-amber-600" /> Quake / Other</span>
+                        <span className="font-bold">{events.filter((e) => e.type === "earthquake" || e.type === "other").length}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Directory Header & Quick Action Buttons */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-neutral-200 pb-4">
                   <div>
                     <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
                       <List className="size-4 text-emerald-600" />
                       Emergency Events Ledger & History
                     </h3>
                     <p className="text-xs text-neutral-500">
-                      Directory of all registered emergency events and disaster response logs.
+                      Explore comprehensive records of previous emergencies, inspect disaster ledgers, or backfill paper manifests.
                     </p>
                   </div>
-                  <Badge tone="info">{events.length} Registered Events</Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {canManageEvents ? (
+                      <DeclareEventDialog
+                        onSubmit={async (values) => {
+                          await declareMutation.mutateAsync(values);
+                        }}
+                        isPending={declareMutation.isPending}
+                      />
+                    ) : null}
+                  </div>
                 </div>
 
+                {/* 3. Overhauled ResourceTable with View, Edit, Backfill, and Delete Actions */}
                 <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
                   <ResourceTable
                     columns={columns}
                     data={events}
-                    isLoading={false}
-                    isError={false}
-                    emptyTitle="No emergency events declared"
+                    isLoading={eventsQuery.isLoading}
+                    isError={eventsQuery.isError}
+                    onRetry={() => eventsQuery.refetch()}
+                    searchPlaceholder="Search event name, hazard classification, or date..."
+                    filterAllLabel="All Incident Types"
+                    filterChoices={(rows) => {
+                      const types = Array.from(new Set(rows.map((r) => r.type)));
+                      return [
+                        {
+                          value: "status:active",
+                          label: "Active Incidents Only",
+                          matches: (r) => r.is_active,
+                        },
+                        {
+                          value: "status:ended",
+                          label: "Concluded Archives Only",
+                          matches: (r) => !r.is_active,
+                        },
+                        ...types.map((t) => ({
+                          value: `type:${t}`,
+                          label: `${t.charAt(0).toUpperCase() + t.slice(1)} Hazards`,
+                          matches: (r: EmergencyEventOut) => r.type === t,
+                        })),
+                      ];
+                    }}
+                    emptyTitle="No emergency events registered"
+                    emptyDescription="Declare a new emergency event or backfill historical records to populate this directory."
                     getRowKey={(row) => row.id}
+                    rowActions={(row) => (
+                      <div className="flex flex-wrap justify-end gap-1.5">
+                        {/* View Button -> Navigates to /admin/emergency-events/[id] */}
+                        <Button
+                          asChild
+                          size="sm"
+                          variant="success"
+                          className="h-8 cursor-pointer gap-1.5 rounded-lg border border-emerald-300/80 bg-emerald-50 px-2.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 hover:text-emerald-800"
+                          title="View complete event records and audit log"
+                          aria-label="View complete event records and audit log"
+                        >
+                          <Link href={`/admin/emergency-events/${row.id}` as Route}>
+                            <Eye aria-hidden className="size-3.5 shrink-0" />
+                            <span className="md:hidden">View</span>
+                          </Link>
+                        </Button>
+
+                        {/* Backfill Button -> Opens Backfill & Blackout Recovery Dialog */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setBackfillingEvent(row)}
+                          className="h-8 cursor-pointer gap-1.5 rounded-lg border border-teal-300/80 bg-teal-50 px-2.5 text-xs font-semibold text-teal-700 transition-colors hover:bg-teal-100 hover:text-teal-800"
+                          title="Backfill offline field logs & paper manifests"
+                          aria-label="Backfill offline field logs & paper manifests"
+                        >
+                          <CalendarClock aria-hidden className="size-3.5 shrink-0" />
+                          <span className="md:hidden">Backfill</span>
+                        </Button>
+
+                        {/* Edit Button -> Opens Edit Dialog */}
+                        {canManageEvents ? (
+                          <Button
+                            size="sm"
+                            variant="warning"
+                            onClick={() => setEditingEvent(row)}
+                            className="h-8 cursor-pointer gap-1.5 rounded-lg border border-amber-300/80 bg-amber-50 px-2.5 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-100 hover:text-amber-800"
+                            title="Edit event metadata and duration"
+                            aria-label="Edit event metadata and duration"
+                          >
+                            <Pencil aria-hidden className="size-3.5 shrink-0" />
+                            <span className="md:hidden">Edit</span>
+                          </Button>
+                        ) : null}
+
+                        {/* Delete Button -> ConfirmDeleteButton */}
+                        {canManageEvents ? (
+                          <ConfirmDeleteButton
+                            itemLabel={row.name}
+                            actionLabel="Delete"
+                            confirmLabel="Delete Event"
+                            iconOnly
+                            onConfirm={() => deleteMutation.mutate(row.id)}
+                          />
+                        ) : null}
+                      </div>
+                    )}
                   />
                 </div>
               </div>
@@ -640,6 +906,33 @@ export default function AdminEmergencyEventsPage() {
             ) : null}
           </div>
         </div>
+      )}
+
+      {/* Global Modals for Editing and Backfilling */}
+      {editingEvent && (
+        <EditEventDialog
+          event={editingEvent}
+          open={Boolean(editingEvent)}
+          onOpenChange={(open) => {
+            if (!open) setEditingEvent(null);
+          }}
+          onUpdated={() => {
+            invalidateOperations();
+          }}
+        />
+      )}
+
+      {backfillingEvent && (
+        <EmergencyEventBackfillDialog
+          event={backfillingEvent}
+          open={Boolean(backfillingEvent)}
+          onOpenChange={(open) => {
+            if (!open) setBackfillingEvent(null);
+          }}
+          onSuccess={() => {
+            invalidateOperations();
+          }}
+        />
       )}
     </div>
   );

@@ -268,7 +268,7 @@ export default function UnregisteredPersonDetailPage() {
               )}
             </div>
             <p className="text-xs text-neutral-500">
-              Recorded on {formatPhtDateTime(person.created_at)}
+              Status recorded {formatPhtDateTime(person.status_set_at ?? person.created_at)}
               {person.recorded_by_name && ` · Assisted by ${person.recorded_by_name}`}
             </p>
           </div>
@@ -356,11 +356,11 @@ export default function UnregisteredPersonDetailPage() {
 
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
-                  Recorded Timestamp
+                  {person.status === "safe" ? "Marked Safe At" : "Status Recorded At"}
                 </span>
                 <p className="mt-0.5 text-xs font-medium text-neutral-800 flex items-center gap-1.5">
                   <Calendar className="size-3.5 text-neutral-400" />
-                  {formatPhtDateTime(person.created_at)}
+                  {formatPhtDateTime(person.status_set_at ?? person.created_at)}
                 </p>
               </div>
             </CardContent>

@@ -136,6 +136,7 @@ async def _assign_member_centers(
     member_ids: list[uuid.UUID],
     evac_center_id: uuid.UUID | None,
     actor: AuthenticatedUser,
+    checked_in_at: datetime | None = None,
 ) -> None:
     if evac_center_id is None or not member_ids:
         return
@@ -150,6 +151,7 @@ async def _assign_member_centers(
                 event_id=event.id,
                 member_id=member_id,
                 person_name=full_name,
+                checked_in_at=checked_in_at,
             ),
             actor=actor,
             commit=False,
@@ -163,6 +165,7 @@ async def _assign_unregistered_center(
     person: UnregisteredPerson,
     evac_center_id: uuid.UUID | None,
     actor: AuthenticatedUser,
+    checked_in_at: datetime | None = None,
 ) -> None:
     if evac_center_id is None:
         return
@@ -173,6 +176,7 @@ async def _assign_unregistered_center(
             event_id=event.id,
             unregistered_person_id=person.id,
             person_name=person.full_name,
+            checked_in_at=checked_in_at,
         ),
         actor=actor,
         commit=False,
@@ -235,6 +239,7 @@ async def _write_one_status(
     ip: str | None,
     member_id: uuid.UUID | None = None,
     unregistered_person_id: uuid.UUID | None = None,
+    set_at: datetime | None = None,
 ) -> SafetyStatus:
     await _supersede_current(
         session,
@@ -249,6 +254,7 @@ async def _write_one_status(
         status=status,
         set_by_user_id=actor.id,
         set_method=set_method,
+        set_at=set_at or datetime.now(UTC),
     )
     session.add(row)
     await session.flush()
@@ -647,6 +653,7 @@ async def set_member_statuses(
     set_method: str,
     evac_center_id: uuid.UUID | None = None,
     ip: str | None = None,
+    set_at: datetime | None = None,
 ) -> HouseholdSafetyOut:
     live_ids = set(
         (
@@ -668,6 +675,7 @@ async def set_member_statuses(
             actor=actor,
             set_method=set_method,
             ip=ip,
+            set_at=set_at,
         )
     if status == "safe":
         await _assign_member_centers(
@@ -676,6 +684,7 @@ async def set_member_statuses(
             member_ids=member_ids,
             evac_center_id=evac_center_id,
             actor=actor,
+            checked_in_at=set_at,
         )
         await _resolve_household_rescue_if_all_safe(
             session,
@@ -708,6 +717,7 @@ async def set_household_status(
     acknowledged_member_ids: list[uuid.UUID],
     evac_center_id: uuid.UUID | None = None,
     ip: str | None = None,
+    set_at: datetime | None = None,
 ) -> HouseholdSafetyOut:
     """FR-SAF-003, enforced server-side: `acknowledged_member_ids` must equal
     the household's live roster exactly. BR-5.1b's whole argument is that an
@@ -738,6 +748,7 @@ async def set_household_status(
             actor=actor,
             set_method=set_method,
             ip=ip,
+            set_at=set_at,
         )
     if status == "safe":
         await _assign_member_centers(
@@ -746,6 +757,7 @@ async def set_household_status(
             member_ids=list(live_ids),
             evac_center_id=evac_center_id,
             actor=actor,
+            checked_in_at=set_at,
         )
         await _resolve_household_rescue_if_all_safe(
             session,
@@ -777,6 +789,7 @@ async def set_unregistered_status(
     set_method: str,
     evac_center_id: uuid.UUID | None = None,
     ip: str | None,
+    set_at: datetime | None = None,
 ) -> SafetyStatus:
     person = await get_unregistered_or_404(session, unregistered_person_id)
     if person.event_id != event.id:
@@ -791,6 +804,7 @@ async def set_unregistered_status(
         actor=actor,
         set_method=set_method,
         ip=ip,
+        set_at=set_at,
     )
     if status == "safe":
         await _assign_unregistered_center(
@@ -799,6 +813,7 @@ async def set_unregistered_status(
             person=person,
             evac_center_id=evac_center_id,
             actor=actor,
+            checked_in_at=set_at,
         )
     await _sync_unregistered_rescue(
         session,
@@ -884,6 +899,7 @@ async def submit_admin_status(
             set_method=set_method,
             evac_center_id=body.evac_center_id,
             ip=ip,
+            set_at=body.set_at,
         )
         return None
 
@@ -908,6 +924,7 @@ async def submit_admin_status(
             acknowledged_member_ids=body.acknowledged_member_ids,
             evac_center_id=body.evac_center_id,
             ip=ip,
+            set_at=body.set_at,
         )
     return await set_member_statuses(
         session,
@@ -919,6 +936,7 @@ async def submit_admin_status(
         set_method=set_method,
         evac_center_id=body.evac_center_id,
         ip=ip,
+        set_at=body.set_at,
     )
 
 
@@ -1173,6 +1191,7 @@ async def emergency_workspace(
                 full_name=person.full_name,
                 location=location,
                 status=status_row.status if status_row else "unaccounted",
+                status_set_at=status_row.set_at if status_row else None,
                 vulnerability_flags=[flag for flag in VULNERABILITY_FLAGS if getattr(person, flag)],
                 evac_center_id=assignment[0] if assignment else None,
                 evac_center_name=assignment[1] if assignment else None,
@@ -1337,6 +1356,7 @@ async def unregistered_out(
         id=person.id,
         event_id=person.event_id,
         created_at=person.created_at,
+        status_set_at=status_row.set_at if status_row else None,
         full_name=person.full_name,
         contact_number=person.contact_number,
         location=point_to_geojson(person.location),
@@ -1426,6 +1446,7 @@ async def create_unregistered(
         set_method="assisted",
         evac_center_id=body.evac_center_id,
         ip=ip,
+        set_at=body.set_at,
     )
     return await unregistered_out(session, person)
 
@@ -2219,4 +2240,3 @@ async def get_person_safety_journey(
             current_evac_center_name=current_center,
             timeline=timeline,
         )
-
