@@ -115,7 +115,7 @@ async def admin_list_hotlines(session: DbSessionDep) -> list[HotlineOut]:
 
 
 @admin_router.post(
-    "/hotlines", dependencies=[Depends(require_role("admin"))], summary="Create a hotline"
+    "/hotlines", dependencies=[Depends(require_role("admin", "sk"))], summary="Create a hotline"
 )
 async def admin_create_hotline(
     body: HotlineIn, session: DbSessionDep, user: CurrentUser
@@ -133,7 +133,7 @@ async def admin_create_hotline(
 
 @admin_router.patch(
     "/hotlines/{hotline_id}",
-    dependencies=[Depends(require_role("admin"))],
+    dependencies=[Depends(require_role("admin", "sk"))],
     summary="Update a hotline",
 )
 async def admin_update_hotline(
@@ -152,7 +152,7 @@ async def admin_update_hotline(
 
 @admin_router.delete(
     "/hotlines/{hotline_id}",
-    dependencies=[Depends(require_role("admin"))],
+    dependencies=[Depends(require_role("admin", "sk"))],
     summary="Remove a hotline",
 )
 async def admin_delete_hotline(

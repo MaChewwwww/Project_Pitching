@@ -23,7 +23,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from shutil import copyfile
 
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
 
 from src.core.config import settings
 from src.core.logging import configure_logging
@@ -169,21 +169,63 @@ async def seed_users(session, areas: dict[str, Area]) -> dict[str, User]:
 # --- hotlines (fixtures/hotlines.ts) -------------------------------------------
 
 HOTLINE_DEFS = [
-    ("Barangay San Jose Office", "(02) 8555-0100", "barangay", 1),
-    ("Barangay Emergency Response", "0917-555-0101", "rescue", 2),
-    ("Rodriguez MDRRMO", "(02) 8555-0102", "mdrrmo", 3),
-    ("Police Station", "(02) 8555-0103", "police", 4),
-    ("Bureau of Fire Protection", "(02) 8555-0104", "fire", 5),
-    ("Ambulance Dispatch", "0917-555-0105", "ambulance", 6),
-    ("Rodriguez District Hospital", "(02) 8555-0106", "hospital", 7),
+    # --- Primary, Emergency & Municipal Hotlines ---
+    ("Barangay San Jose - Emergency Hotline", "0951-188-7878", "barangay", 1),
+    ("National Emergency Hotline (911)", "911", "rescue", 2),
+    (
+        "Municipal Disaster Risk Reduction and Management Office (MDRRMO)",
+        "0915-001-6988 / 0969-614-4825",
+        "mdrrmo",
+        3,
+    ),
+    ("PNP Rodriguez Municipal Police Station", "0999 195 5988", "police", 4),
+    ("Rodriguez Fire Station (BFP)", "0951 604 7279", "fire", 5),
+    ("Montalban Infirmary", "0917 129 3515", "hospital", 6),
+    (
+        "Rizal Provincial Hospital System (RPHS) — Casimiro A. Ynares Sr. Memorial Hospital",
+        "(02) 8256-3000 / 0920 432 7079",
+        "hospital",
+        7,
+    ),
+    # --- Barangay Health Emergency Response Team (BHERT 2024) ---
+    ("BHERT Command Center", "0951-188-7878", "barangay", 10),
+    ("BHERT Area 01", "0963-1644357", "barangay", 11),
+    ("BHERT Area 02", "0963-1644358", "barangay", 12),
+    ("BHERT Area 03", "0963-1644359", "barangay", 13),
+    ("BHERT Area 04 & 05", "0938-4552877", "barangay", 14),
+    ("BHERT Area 06", "0963-1644355", "barangay", 15),
+    # --- San Jose Proper & Relocation Area Hotlines ---
+    ("Area 01 (San Jose Proper)", "0981-3310283", "barangay", 20),
+    (
+        "Area 1A (Litex Village/Abatex, Christine Ville Creek/Med Heights)",
+        "0951-2101957",
+        "barangay",
+        21,
+    ),
+    (
+        "Area 02 (VRV/Amityville/Christine Ville, Pamahay/Villa Ana/Zuniga Farm)",
+        "0930-6367957",
+        "barangay",
+        22,
+    ),
+    ("Area 03 (Relocation)", "0981-3310286", "barangay", 23),
+    ("Area 04 (Kasiglahan Phase 1-D/Phase 1-M)", "0951-2100870", "barangay", 24),
+    (
+        "Area 05 (Kasiglahan Phase 1-K/Phase 1-KT, Phase 1-Z/Phase 1-E/Phase 1-C)",
+        "0930-4577488",
+        "barangay",
+        25,
+    ),
+    ("Area 06 (Sub-Urban/Metro Manila Hills)", "0963-4605277", "barangay", 26),
 ]
 
 
 async def seed_hotlines(session) -> None:
-    if await _table_has_rows(session, Hotline):
-        return
+    # Always refresh hotlines with the canonical official directory
+    await session.execute(delete(Hotline))
     for label, number, type_, sort_order in HOTLINE_DEFS:
         session.add(Hotline(label=label, number=number, type=type_, sort_order=sort_order))
+    await session.flush()
     log.info("seeded hotlines", extra={"count": len(HOTLINE_DEFS)})
 
 

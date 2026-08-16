@@ -93,7 +93,8 @@ export function formatAge(minutes: number): string {
  * actually maintains.
  */
 export function toTelHref(number: string): string {
-  return `tel:${number.replace(/[^\d+]/g, "")}`;
+  const firstNumber = number.split(/[\/,]/)[0] ?? "";
+  return `tel:${firstNumber.replace(/[^\d+]/g, "")}`;
 }
 
 /** Grouped thousands, for stat bands and KPI values. */
