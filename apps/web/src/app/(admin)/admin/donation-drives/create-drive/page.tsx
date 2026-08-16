@@ -15,14 +15,24 @@ import { emptyArticleDocument } from "@/components/features/admin/rich-text-edit
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 
+function getTodayDateTimeLocal(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 const defaults: DonationDriveFormValues = {
   title: "",
   excerpt: "",
   body_json: emptyArticleDocument,
   organizer_name: "Barangay San Jose Relief Desk",
-  organizer_contact: "",
+  organizer_contact: "(02) 8555-0100",
   drop_off_instructions: "Barangay San Jose Multi-Purpose Hall, 8:00 AM - 5:00 PM daily.",
-  active_from: "",
+  active_from: getTodayDateTimeLocal(),
   active_until: "",
   publication_status: "published",
   event_id: null,

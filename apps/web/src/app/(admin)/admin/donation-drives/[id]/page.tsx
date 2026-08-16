@@ -94,10 +94,10 @@ export default function AdminDonationDriveEditorPage() {
     excerpt: data.excerpt,
     body_json: data.body_json,
     event_id: data.event_id,
-    organizer_name: data.organizer_name ?? "",
-    organizer_contact: data.organizer_contact ?? "",
+    organizer_name: data.organizer_name ?? "Barangay San Jose Relief Desk",
+    organizer_contact: data.organizer_contact ?? "(02) 8555-0100",
     drop_off_instructions: data.drop_off_instructions ?? "",
-    active_from: localDateTime(data.active_from),
+    active_from: localDateTime(data.active_from) || localDateTime(new Date().toISOString()),
     active_until: localDateTime(data.active_until),
     publication_status: data.archived_at
       ? "archived"

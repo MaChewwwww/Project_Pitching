@@ -57,21 +57,33 @@ import { toDisplayError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 /** Informational donation notices only (FR-DON-001, 015…017, D-16). */
-export const donationDriveFormSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  excerpt: z
-    .string()
-    .min(1, "Preview Summary is required")
-    .max(360, "Keep the preview summary under 360 characters"),
-  body_json: z.custom<ArticleDocument>(),
-  event_id: z.string().optional().nullable(),
-  organizer_name: z.string().optional().nullable(),
-  organizer_contact: z.string().optional().nullable(),
-  drop_off_instructions: z.string().optional().nullable(),
-  active_from: z.string().optional().nullable(),
-  active_until: z.string().optional().nullable(),
-  publication_status: z.enum(["draft", "published", "archived"]).default("draft"),
-});
+export const donationDriveFormSchema = z
+  .object({
+    title: z.string().min(1, "Title is required"),
+    excerpt: z
+      .string()
+      .min(1, "Preview Summary is required")
+      .max(360, "Keep the preview summary under 360 characters"),
+    body_json: z.custom<ArticleDocument>(),
+    event_id: z.string().optional().nullable(),
+    organizer_name: z.string().min(1, "Organizer is required"),
+    organizer_contact: z.string().min(1, "Contact number is required"),
+    drop_off_instructions: z.string().optional().nullable(),
+    active_from: z.string().min(1, "Active start is required"),
+    active_until: z.string().optional().nullable(),
+    publication_status: z.enum(["draft", "published", "archived"]).default("draft"),
+  })
+  .superRefine((values, ctx) => {
+    if (values.active_from && values.active_until) {
+      if (new Date(values.active_until) < new Date(values.active_from)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["active_until"],
+          message: "Active until must be after active start",
+        });
+      }
+    }
+  });
 
 export type DonationDriveFormValues = z.infer<typeof donationDriveFormSchema>;
 
@@ -540,14 +552,24 @@ export function DonationDriveForm({
                 htmlFor="organizer_name"
                 className="text-xs font-bold tracking-wider text-neutral-600 uppercase"
               >
-                Organizer / Desk
+                Organizer <span className="ml-0.5 font-bold text-red-500">*</span>
               </Label>
               <Input
                 id="organizer_name"
                 placeholder="e.g. Barangay San Jose Relief Desk"
-                className="h-10 rounded-lg border-emerald-200/80 bg-white text-sm font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                className={cn(
+                  "h-10 rounded-lg border-emerald-200/80 bg-white text-sm font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20",
+                  errors.organizer_name &&
+                    "border-red-500 focus:border-red-500 focus:ring-red-500/20",
+                )}
+                aria-invalid={!!errors.organizer_name}
                 {...register("organizer_name")}
               />
+              {errors.organizer_name ? (
+                <p className="text-xs font-semibold text-red-600">
+                  {errors.organizer_name.message}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex flex-col gap-2">
@@ -555,51 +577,59 @@ export function DonationDriveForm({
                 htmlFor="organizer_contact"
                 className="text-xs font-bold tracking-wider text-neutral-600 uppercase"
               >
-                Contact Number / Hotline
+                Contact Number <span className="ml-0.5 font-bold text-red-500">*</span>
               </Label>
               <Input
                 id="organizer_contact"
                 placeholder="e.g. (02) 8555-0100"
-                className="h-10 rounded-lg border-emerald-200/80 bg-white text-sm font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                className={cn(
+                  "h-10 rounded-lg border-emerald-200/80 bg-white text-sm font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20",
+                  errors.organizer_contact &&
+                    "border-red-500 focus:border-red-500 focus:ring-red-500/20",
+                )}
+                aria-invalid={!!errors.organizer_contact}
                 {...register("organizer_contact")}
               />
+              {errors.organizer_contact ? (
+                <p className="text-xs font-semibold text-red-600">
+                  {errors.organizer_contact.message}
+                </p>
+              ) : null}
             </div>
 
-            {eventList.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                <Label
-                  htmlFor="event_id"
-                  className="text-xs font-bold tracking-wider text-neutral-600 uppercase"
-                >
-                  Linked Emergency Event
-                </Label>
-                <Controller
-                  control={control}
-                  name="event_id"
-                  render={({ field }) => (
-                    <Select
-                      value={field.value || "none"}
-                      onValueChange={(val) => field.onChange(val === "none" ? null : val)}
+            <div className="flex flex-col gap-2">
+              <Label
+                htmlFor="event_id"
+                className="text-xs font-bold tracking-wider text-neutral-600 uppercase"
+              >
+                Linked Emergency Event
+              </Label>
+              <Controller
+                control={control}
+                name="event_id"
+                render={({ field }) => (
+                  <Select
+                    value={field.value || "none"}
+                    onValueChange={(val) => field.onChange(val === "none" ? null : val)}
+                  >
+                    <SelectTrigger
+                      id="event_id"
+                      className="h-10 rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
                     >
-                      <SelectTrigger
-                        id="event_id"
-                        className="h-10 rounded-lg border-emerald-200/80 bg-white font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
-                      >
-                        <SelectValue placeholder="Select linked event (optional)" />
-                      </SelectTrigger>
-                      <SelectContent align="start">
-                        <SelectItem value="none">None (General Drive)</SelectItem>
-                        {eventList.map((evt) => (
-                          <SelectItem key={evt.id} value={evt.id}>
-                            {evt.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-            ) : null}
+                      <SelectValue placeholder="Select linked event (optional)" />
+                    </SelectTrigger>
+                    <SelectContent align="start">
+                      <SelectItem value="none">None (General Drive)</SelectItem>
+                      {eventList.map((evt) => (
+                        <SelectItem key={evt.id} value={evt.id}>
+                          {evt.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
 
             <div className="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
@@ -607,14 +637,24 @@ export function DonationDriveForm({
                   htmlFor="active_from"
                   className="text-xs font-bold tracking-wider text-neutral-600 uppercase"
                 >
-                  Active From
+                  Active Start <span className="ml-0.5 font-bold text-red-500">*</span>
                 </Label>
                 <Input
                   id="active_from"
                   type="datetime-local"
-                  className="h-10 rounded-lg border-emerald-200/80 bg-white text-xs font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                  className={cn(
+                    "h-10 rounded-lg border-emerald-200/80 bg-white text-xs font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20",
+                    errors.active_from &&
+                      "border-red-500 focus:border-red-500 focus:ring-red-500/20",
+                  )}
+                  aria-invalid={!!errors.active_from}
                   {...register("active_from")}
                 />
+                {errors.active_from ? (
+                  <p className="text-xs font-semibold text-red-600">
+                    {errors.active_from.message}
+                  </p>
+                ) : null}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label
@@ -626,9 +666,19 @@ export function DonationDriveForm({
                 <Input
                   id="active_until"
                   type="datetime-local"
-                  className="h-10 rounded-lg border-emerald-200/80 bg-white text-xs font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+                  className={cn(
+                    "h-10 rounded-lg border-emerald-200/80 bg-white text-xs font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20",
+                    errors.active_until &&
+                      "border-red-500 focus:border-red-500 focus:ring-red-500/20",
+                  )}
+                  aria-invalid={!!errors.active_until}
                   {...register("active_until")}
                 />
+                {errors.active_until ? (
+                  <p className="text-xs font-semibold text-red-600">
+                    {errors.active_until.message}
+                  </p>
+                ) : null}
               </div>
             </div>
           </div>
