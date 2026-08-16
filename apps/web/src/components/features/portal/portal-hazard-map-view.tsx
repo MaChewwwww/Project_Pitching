@@ -20,7 +20,6 @@ import { Button } from "@/components/common/button";
 import { PortalPageHeader } from "@/components/features/portal/portal-page-header";
 import type {
   AreaBoundaryFeature,
-  PublicAreaStat,
   PublicFacility,
   PublicRiverLevel,
 } from "@/lib/api/public-types";
@@ -51,7 +50,6 @@ interface PortalHazardMapViewProps {
   household: HouseholdDetailOut;
   areaBoundaries: AreaBoundaryFeature[];
   facilities: PublicFacility[];
-  areaStats: PublicAreaStat[];
   sirens: PublicSiren[];
   river: PublicRiverLevel;
 }
@@ -60,7 +58,6 @@ export function PortalHazardMapView({
   household,
   areaBoundaries,
   facilities,
-  areaStats,
   sirens,
   river,
 }: PortalHazardMapViewProps) {
@@ -155,7 +152,6 @@ export function PortalHazardMapView({
               }}
               areaBoundaries={areaBoundaries}
               facilities={facilities}
-              areaStats={areaStats}
               sirens={sirens}
               layers={layers}
             />

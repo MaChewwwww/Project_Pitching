@@ -1,27 +1,17 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AlertTriangle,
-  Building2,
-  Calendar,
-  CheckCircle2,
-  ChevronRight,
   ClipboardList,
   Clock,
   FileWarning,
   History,
   LifeBuoy,
   MessageSquare,
-  ShieldCheck,
   Sparkles,
-  User,
 } from "lucide-react";
 
-import { Button } from "@/components/common/button";
-import { Card, CardContent } from "@/components/common/card";
 import { PortalPageHeader } from "@/components/features/portal/portal-page-header";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
@@ -50,14 +40,12 @@ export default function PortalHistoryPage() {
 
   const rescueQuery = useQuery({
     queryKey: ["me", "rescue-requests"],
-    queryFn: () =>
-      api.get<Page<Rescue>>("/me/rescue-requests").then((r) => r.data),
+    queryFn: () => api.get<Page<Rescue>>("/me/rescue-requests").then((r) => r.data),
   });
 
   const reportsQuery = useQuery({
     queryKey: ["me", "incident-reports"],
-    queryFn: () =>
-      api.get<Page<Incident>>("/me/incident-reports").then((r) => r.data),
+    queryFn: () => api.get<Page<Incident>>("/me/incident-reports").then((r) => r.data),
   });
 
   const rescueItems = rescueQuery.data?.items ?? [];
@@ -74,14 +62,10 @@ export default function PortalHistoryPage() {
       kind: "incident" as const,
       title: `Incident Report: ${item.type.replaceAll("_", " ")}`,
     })),
-  ].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  );
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const filteredItems =
-    filter === "all"
-      ? combinedItems
-      : combinedItems.filter((i) => i.kind === filter);
+    filter === "all" ? combinedItems : combinedItems.filter((i) => i.kind === filter);
 
   const statusToneMap: Record<string, { badge: string; ring: string }> = {
     pending: {
@@ -126,82 +110,126 @@ export default function PortalHistoryPage() {
         }
       />
 
-      {/* ── 1. Summary Metrics Strip ── */}
-      <section className="grid grid-cols-3 gap-3 sm:gap-4">
-        <div className="flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-4 shadow-2xs">
-          <span className="text-[10px] font-black tracking-wider text-slate-500 uppercase">
-            Total Records
-          </span>
-          <span className="text-xl sm:text-2xl font-black text-slate-900 tabular-nums mt-1">
-            {combinedItems.length}
+      {/* ── Activity overview ── */}
+      <section className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-xs">
+        <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
+              <History className="size-5" />
+            </span>
+            <div>
+              <p className="text-[10px] font-black tracking-[0.14em] text-emerald-700 uppercase">
+                Your response record
+              </p>
+              <h2 className="mt-0.5 text-lg font-black tracking-tight text-neutral-900">
+                Every request, report, and officer update in one place
+              </h2>
+              <p className="mt-1 text-xs text-neutral-500">
+                Records remain available so your household can track the response through
+                resolution.
+              </p>
+            </div>
+          </div>
+          <span className="self-start rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-bold text-neutral-700">
+            {combinedItems.length} total record{combinedItems.length === 1 ? "" : "s"}
           </span>
         </div>
-        <div className="flex flex-col justify-between rounded-2xl border border-red-200 bg-red-50/40 p-4 shadow-2xs">
-          <span className="text-[10px] font-black tracking-wider text-red-800 uppercase">
-            Rescue Calls
-          </span>
-          <span className="text-xl sm:text-2xl font-black text-red-950 tabular-nums mt-1">
-            {rescueItems.length}
-          </span>
-        </div>
-        <div className="flex flex-col justify-between rounded-2xl border border-amber-200 bg-amber-50/40 p-4 shadow-2xs">
-          <span className="text-[10px] font-black tracking-wider text-amber-800 uppercase">
-            Incident Reports
-          </span>
-          <span className="text-xl sm:text-2xl font-black text-amber-950 tabular-nums mt-1">
-            {reportItems.length}
-          </span>
+        <div className="grid divide-y divide-neutral-100 border-t border-neutral-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+          <div className="flex items-center gap-3 p-4 sm:px-6">
+            <span className="grid size-8 place-items-center rounded-lg bg-red-100 text-red-700">
+              <LifeBuoy className="size-4" />
+            </span>
+            <div>
+              <p className="text-[10px] font-black tracking-wider text-neutral-500 uppercase">
+                Rescue requests
+              </p>
+              <p className="text-xl font-black text-neutral-900 tabular-nums">
+                {rescueItems.length}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-4 sm:px-6">
+            <span className="grid size-8 place-items-center rounded-lg bg-amber-100 text-amber-800">
+              <FileWarning className="size-4" />
+            </span>
+            <div>
+              <p className="text-[10px] font-black tracking-wider text-neutral-500 uppercase">
+                Incident reports
+              </p>
+              <p className="text-xl font-black text-neutral-900 tabular-nums">
+                {reportItems.length}
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ── 2. Filter Pills ── */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200/80 pb-3">
-        <button
-          type="button"
-          onClick={() => setFilter("all")}
-          className={cn(
-            "rounded-xl px-3 py-1.5 text-xs font-bold transition-all",
-            filter === "all"
-              ? "bg-emerald-700 text-white shadow-2xs"
-              : "bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50",
-          )}
-        >
-          All Activity ({combinedItems.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilter("rescue")}
-          className={cn(
-            "rounded-xl px-3 py-1.5 text-xs font-bold transition-all",
-            filter === "rescue"
-              ? "bg-red-700 text-white shadow-2xs"
-              : "bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50",
-          )}
-        >
-          Rescue Requests ({rescueItems.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilter("incident")}
-          className={cn(
-            "rounded-xl px-3 py-1.5 text-xs font-bold transition-all",
-            filter === "incident"
-              ? "bg-amber-700 text-white shadow-2xs"
-              : "bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50",
-          )}
-        >
-          Incident Reports ({reportItems.length})
-        </button>
+      <div className="flex flex-col gap-3 border-b border-neutral-200/80 pb-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-base font-black text-neutral-900">Activity timeline</h2>
+          <p className="text-xs text-neutral-500">
+            Filter your household&apos;s operational records.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setFilter("all")}
+            className={cn(
+              "rounded-xl px-3 py-1.5 text-xs font-bold transition-all",
+              filter === "all"
+                ? "bg-emerald-700 text-white shadow-2xs"
+                : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50",
+            )}
+          >
+            All Activity ({combinedItems.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter("rescue")}
+            className={cn(
+              "rounded-xl px-3 py-1.5 text-xs font-bold transition-all",
+              filter === "rescue"
+                ? "bg-red-700 text-white shadow-2xs"
+                : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50",
+            )}
+          >
+            Rescue Requests ({rescueItems.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter("incident")}
+            className={cn(
+              "rounded-xl px-3 py-1.5 text-xs font-bold transition-all",
+              filter === "incident"
+                ? "bg-amber-700 text-white shadow-2xs"
+                : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50",
+            )}
+          >
+            Incident Reports ({reportItems.length})
+          </button>
+        </div>
       </div>
 
       {/* ── 3. Timeline Items List ── */}
       {rescueQuery.isLoading || reportsQuery.isLoading ? (
-        <div className="space-y-3 animate-pulse">
+        <div className="animate-pulse space-y-3">
           <div className="h-28 rounded-2xl bg-slate-100" />
           <div className="h-28 rounded-2xl bg-slate-100" />
         </div>
+      ) : rescueQuery.isError || reportsQuery.isError ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-amber-200 bg-amber-50/50 p-8 text-center shadow-xs sm:p-12">
+          <History className="size-8 text-amber-700" />
+          <h3 className="mt-3 text-base font-black text-neutral-900">
+            Activity history is temporarily unavailable
+          </h3>
+          <p className="mt-1 max-w-md text-xs leading-relaxed text-neutral-600">
+            Your records have not been removed. Please try again shortly.
+          </p>
+        </div>
       ) : filteredItems.length > 0 ? (
-        <div className="space-y-3.5">
+        <div className="relative space-y-3.5 before:absolute before:top-6 before:bottom-6 before:left-5 before:w-px before:bg-emerald-100 sm:before:left-6">
           {filteredItems.map((item) => {
             const isRescue = item.kind === "rescue";
             const tone =
@@ -210,7 +238,7 @@ export default function PortalHistoryPage() {
             return (
               <div
                 key={`${item.kind}-${item.id}`}
-                className="group flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-2xs transition-all hover:shadow-xs space-y-3.5"
+                className="group relative flex flex-col justify-between space-y-3.5 rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-2xs transition-all hover:-translate-y-0.5 hover:shadow-sm"
               >
                 {/* Header: Icon + Title + Status + Date */}
                 <div className="flex items-start justify-between gap-3">
@@ -219,8 +247,8 @@ export default function PortalHistoryPage() {
                       className={cn(
                         "grid size-10 shrink-0 place-items-center rounded-xl font-bold shadow-xs",
                         isRescue
-                          ? "bg-red-100 text-red-700 border border-red-200"
-                          : "bg-amber-100 text-amber-800 border border-amber-200",
+                          ? "border border-red-200 bg-red-100 text-red-700"
+                          : "border border-amber-200 bg-amber-100 text-amber-800",
                       )}
                     >
                       {isRescue ? (
@@ -233,7 +261,7 @@ export default function PortalHistoryPage() {
                       <h3 className="text-sm font-bold text-neutral-900 capitalize">
                         {item.title}
                       </h3>
-                      <span className="flex items-center gap-1 text-[11px] text-neutral-400 mt-0.5 font-medium">
+                      <span className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-neutral-400">
                         <Clock className="size-3" />
                         {new Intl.DateTimeFormat("en-PH", {
                           dateStyle: "medium",
@@ -245,7 +273,7 @@ export default function PortalHistoryPage() {
 
                   <span
                     className={cn(
-                      "rounded-full border px-2.5 py-0.5 text-[10.5px] font-black uppercase tracking-wider",
+                      "rounded-full border px-2.5 py-0.5 text-[10.5px] font-black tracking-wider uppercase",
                       tone.badge,
                     )}
                   >
@@ -254,16 +282,16 @@ export default function PortalHistoryPage() {
                 </div>
 
                 {/* Description Body */}
-                <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed font-normal bg-neutral-50/60 p-3 rounded-xl border border-neutral-100">
+                <p className="rounded-xl border border-neutral-100 bg-neutral-50/60 p-3 text-xs leading-relaxed font-normal text-neutral-700 sm:text-sm">
                   {item.description}
                 </p>
 
                 {/* Officer Resolution Note */}
                 {item.resolution_note ? (
                   <div className="flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-950">
-                    <MessageSquare className="size-4 shrink-0 text-emerald-700 mt-0.5" />
+                    <MessageSquare className="mt-0.5 size-4 shrink-0 text-emerald-700" />
                     <div>
-                      <span className="font-bold text-emerald-900 block text-[11px] uppercase tracking-wider">
+                      <span className="block text-[11px] font-bold tracking-wider text-emerald-900 uppercase">
                         Barangay Officer Note:
                       </span>
                       <p className="mt-0.5 leading-relaxed font-medium">
@@ -277,14 +305,14 @@ export default function PortalHistoryPage() {
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-neutral-200/90 bg-white p-8 sm:p-12 text-center shadow-xs space-y-3">
+        <div className="flex flex-col items-center justify-center space-y-3 rounded-2xl border border-neutral-200/90 bg-white p-8 text-center shadow-xs sm:rounded-3xl sm:p-12">
           <div className="grid size-12 place-items-center rounded-2xl bg-slate-100 text-slate-500">
             <ClipboardList className="size-6" />
           </div>
           <h3 className="text-base font-bold text-neutral-900">
             No Household History Found
           </h3>
-          <p className="max-w-md text-xs text-neutral-500 leading-relaxed">
+          <p className="max-w-md text-xs leading-relaxed text-neutral-500">
             When you submit a rescue dispatch or report a community hazard, your activity
             and responder resolution notes will appear here.
           </p>

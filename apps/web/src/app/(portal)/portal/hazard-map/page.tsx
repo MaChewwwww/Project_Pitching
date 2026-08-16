@@ -10,7 +10,6 @@ import { PortalHazardMapView } from "@/components/features/portal/portal-hazard-
 import { api } from "@/lib/api/client";
 import type {
   AreaBoundaryFeature,
-  PublicAreaStat,
   PublicFacility,
   PublicRiverLevel,
 } from "@/lib/api/public-types";
@@ -42,14 +41,6 @@ export default function PortalHazardMapPage() {
         .then((r) => (Array.isArray(r.data) ? r.data : [])),
   });
 
-  const areaStatsQuery = useQuery({
-    queryKey: ["public", "area-stats"],
-    queryFn: () =>
-      api
-        .get<{ areas: PublicAreaStat[] }>("/public/area-stats")
-        .then((r) => (Array.isArray(r.data?.areas) ? r.data.areas : [])),
-  });
-
   const sirensQuery = useQuery({
     queryKey: ["public", "sirens"],
     queryFn: () =>
@@ -67,8 +58,7 @@ export default function PortalHazardMapPage() {
   const isLoading =
     householdQuery.isLoading ||
     areaBoundariesQuery.isLoading ||
-    facilitiesQuery.isLoading ||
-    areaStatsQuery.isLoading;
+    facilitiesQuery.isLoading;
 
   const isError =
     householdQuery.isError ||
@@ -108,7 +98,6 @@ export default function PortalHazardMapPage() {
                 householdQuery.refetch(),
                 areaBoundariesQuery.refetch(),
                 facilitiesQuery.refetch(),
-                areaStatsQuery.refetch(),
               ]);
             }}
             className="rounded-full font-bold bg-red-600 hover:bg-red-700 text-white px-5"
@@ -125,7 +114,6 @@ export default function PortalHazardMapPage() {
       household={householdQuery.data}
       areaBoundaries={areaBoundariesQuery.data ?? []}
       facilities={facilitiesQuery.data ?? []}
-      areaStats={areaStatsQuery.data ?? []}
       sirens={sirensQuery.data ?? []}
       river={
         riverQuery.data ?? {

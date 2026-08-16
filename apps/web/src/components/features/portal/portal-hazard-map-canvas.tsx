@@ -36,7 +36,6 @@ import {
 } from "@/lib/map";
 import type {
   AreaBoundaryFeature,
-  PublicAreaStat,
   PublicFacility,
 } from "@/lib/api/public-types";
 import type { PublicSiren } from "@/components/features/map/hazard-map-client";
@@ -161,7 +160,6 @@ export interface PortalHazardMapCanvasProps {
   };
   areaBoundaries: AreaBoundaryFeature[];
   facilities: PublicFacility[];
-  areaStats: PublicAreaStat[];
   sirens: PublicSiren[];
   layers: {
     hazard: boolean;
@@ -179,7 +177,6 @@ export function PortalHazardMapCanvas({
   householdInfo,
   areaBoundaries,
   facilities,
-  areaStats,
   sirens,
   layers,
 }: PortalHazardMapCanvasProps) {
@@ -194,14 +191,7 @@ export function PortalHazardMapCanvas({
     };
   }, []);
 
-  const statByAreaId = React.useMemo(() => {
-    const m = new Map<string, PublicAreaStat>();
-    for (const s of areaStats) {
-      if (s.area_id) m.set(s.area_id, s);
-      if (s.area_name) m.set(s.area_name, s);
-    }
-    return m;
-  }, [areaStats]);
+
 
   return (
     <div className="relative h-full w-full min-h-[450px] font-sans text-slate-100">
@@ -269,11 +259,9 @@ export function PortalHazardMapCanvas({
             onEachFeature={(feature, layer) => {
               const f = feature as unknown as AreaBoundaryFeature;
               const name = f.properties.name;
-              const stat = statByAreaId.get(f.properties.area_id) ?? statByAreaId.get(name);
               layer.bindTooltip(
                 `<div class="p-1 font-sans text-xs">
                   <strong class="text-white block text-sm">${name}</strong>
-                  ${stat ? `<span class="text-emerald-300">${stat.registered_households} registered households</span>` : ""}
                 </div>`,
                 { className: "portal-dark-tooltip", sticky: true, opacity: 0.95 },
               );

@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -9,11 +8,11 @@ import {
   BookOpen,
   CheckCircle2,
   ChevronRight,
-  FileText,
   HeartPulse,
   Home,
+  ListChecks,
+  MapPinned,
   Phone,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 
@@ -42,8 +41,7 @@ export default function PortalPreparednessPage() {
 
   const plan = useQuery({
     queryKey: ["me", "family-plan"],
-    queryFn: () =>
-      api.get<FamilyPlan>("/me/family-emergency-plan").then((r) => r.data),
+    queryFn: () => api.get<FamilyPlan>("/me/family-emergency-plan").then((r) => r.data),
   });
 
   const goBagTotal = goBag.data?.items.length ?? 12;
@@ -53,6 +51,8 @@ export default function PortalPreparednessPage() {
   const hasPlanMeeting = Boolean(plan.data?.meeting_point?.trim());
   const hasPlanContact = Boolean(plan.data?.out_of_area_contact?.trim());
   const planComplete = hasPlanMeeting && hasPlanContact;
+  const readinessLoading = goBag.isLoading || plan.isLoading;
+  const readinessUnavailable = goBag.isError || plan.isError;
 
   return (
     <div className="w-full space-y-6 sm:space-y-8">
@@ -70,101 +70,119 @@ export default function PortalPreparednessPage() {
         }
       />
 
-      {/* ── 1. Household Readiness Overview Strip ── */}
-      <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
-        <CardContent className="p-5 sm:p-6 lg:p-7 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-100 pb-4">
-            <div className="flex items-center gap-2.5">
-              <span className="grid size-8 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
-                <HeartPulse className="size-4" />
+      {/* ── Readiness command band ── */}
+      <Card className="overflow-hidden border-emerald-950/20 bg-emerald-950 text-white shadow-sm">
+        <CardContent className="p-0">
+          <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between lg:p-7">
+            <div className="flex min-w-0 items-start gap-3.5">
+              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-emerald-700 shadow-md">
+                <HeartPulse className="size-5" />
               </span>
               <div>
-                <h2 className="text-base font-bold text-neutral-900">
-                  Household Preparation Status
+                <p className="text-[10px] font-black tracking-[0.16em] text-emerald-200 uppercase">
+                  Household readiness status
+                </p>
+                <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">
+                  {readinessLoading
+                    ? "Loading your household readiness"
+                    : readinessUnavailable
+                      ? "Review your household readiness"
+                      : goBagPercent >= 80 && planComplete
+                        ? "Your household is well prepared"
+                        : goBagPercent >= 40
+                          ? "Your household is partly prepared"
+                          : "Start your household readiness plan"}
                 </h2>
-                <p className="text-xs text-neutral-500">
-                  Progress on essential supplies and emergency family plan
+                <p className="mt-1 max-w-2xl text-xs leading-relaxed text-emerald-100/85 sm:text-sm">
+                  {readinessUnavailable
+                    ? "We could not load one or more saved details. You can still open each tool to review or update it."
+                    : "Keep your go-bag and family plan current before an emergency is declared."}
                 </p>
               </div>
             </div>
-
-            <span className="self-start sm:self-auto rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-black text-emerald-800">
+            <span className="self-start rounded-full border border-emerald-300/40 bg-emerald-400/15 px-3 py-1.5 text-xs font-black text-emerald-50">
               {goBagPercent >= 80 && planComplete
-                ? "Highly Prepared"
+                ? "Highly prepared"
                 : goBagPercent >= 40
-                  ? "Partially Prepared"
-                  : "Needs Preparation"}
+                  ? "Partially prepared"
+                  : "Needs preparation"}
             </span>
           </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Go-Bag Progress */}
-            <div className="rounded-2xl border border-sky-200 bg-sky-50/40 p-4 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-sky-900">Go-Bag Supplies</span>
-                <span className="font-black text-sky-950 tabular-nums">
-                  {goBagChecked} of {goBagTotal} packed ({goBagPercent}%)
+          <div className="grid divide-y divide-emerald-100/15 border-t border-emerald-100/15 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+            <div className="p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="flex items-center gap-2 font-bold text-emerald-100">
+                  <Backpack className="size-4" /> Go-bag supplies
+                </span>
+                <span className="font-black text-white tabular-nums">
+                  {goBagChecked} / {goBagTotal}
                 </span>
               </div>
               <MeterBar
                 value={goBagChecked}
                 max={goBagTotal}
                 label="Go-Bag pack meter"
-                className="h-2.5 rounded-full"
+                className="mt-3 h-2.5 rounded-full [&>div]:bg-emerald-300"
               />
+              <p className="mt-2 text-[11px] font-medium text-emerald-100/75">
+                {goBagPercent}% of your essential items are packed.
+              </p>
             </div>
-
-            {/* Family Plan Status */}
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4 space-y-1.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-emerald-900">Family Plan Details</span>
-                <span className="font-black text-emerald-950">
-                  {planComplete ? "Complete" : "Incomplete"}
+            <div className="p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="flex items-center gap-2 font-bold text-emerald-100">
+                  <MapPinned className="size-4" /> Family plan
+                </span>
+                <span className="font-black text-white">
+                  {planComplete ? "Complete" : "In progress"}
                 </span>
               </div>
-              <div className="flex items-center gap-3 text-xs text-emerald-800">
-                <span className="flex items-center gap-1">
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-semibold text-emerald-50">
+                <span className="flex items-center gap-1.5">
                   {hasPlanMeeting ? (
-                    <CheckCircle2 className="size-3.5 text-emerald-600" />
+                    <CheckCircle2 className="size-3.5 text-emerald-300" />
                   ) : (
-                    <span className="size-2 rounded-full bg-slate-300" />
-                  )}
-                  Meeting Point
+                    <span className="size-2 rounded-full bg-emerald-200/40" />
+                  )}{" "}
+                  Meeting point
                 </span>
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5">
                   {hasPlanContact ? (
-                    <CheckCircle2 className="size-3.5 text-emerald-600" />
+                    <CheckCircle2 className="size-3.5 text-emerald-300" />
                   ) : (
-                    <span className="size-2 rounded-full bg-slate-300" />
-                  )}
-                  Emergency Contact
+                    <span className="size-2 rounded-full bg-emerald-200/40" />
+                  )}{" "}
+                  Emergency contact
                 </span>
               </div>
+              <p className="mt-2 text-[11px] font-medium text-emerald-100/75">
+                Agree on these details with everyone in your household.
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* ── 2. Three Main Feature Cards ── */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {/* ── Readiness actions ── */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_0.82fr]">
         {/* Feature 1: Go-Bag Checklist */}
         <Link
           href="/portal/preparedness/go-bag"
-          className="group flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-neutral-200/90 bg-white p-6 shadow-2xs transition-all hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-xs"
+          className="group flex min-h-64 flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-2xs transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-sm sm:p-6"
         >
           <div>
             <div className="flex items-center justify-between">
-              <span className="grid size-12 place-items-center rounded-2xl bg-emerald-100 text-emerald-700 group-hover:scale-105 transition-transform shadow-xs">
+              <span className="grid size-12 place-items-center rounded-2xl bg-emerald-100 text-emerald-700 shadow-xs transition-transform group-hover:scale-105">
                 <Backpack className="size-6" />
               </span>
-              <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-black text-emerald-800">
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-black text-emerald-800">
                 {goBagPercent}% Packed
               </span>
             </div>
-            <h3 className="mt-4 text-base font-bold text-neutral-900 group-hover:text-emerald-800 transition-colors">
+            <h3 className="mt-4 text-base font-bold text-neutral-900 transition-colors group-hover:text-emerald-800">
               72-Hour Go-Bag Checklist
             </h3>
-            <p className="mt-1.5 text-xs text-neutral-500 leading-relaxed">
+            <p className="mt-1.5 text-xs leading-relaxed text-neutral-500">
               Track drinking water, canned food, medical supplies, flashlight, and
               important documents for quick evacuation.
             </p>
@@ -178,21 +196,21 @@ export default function PortalPreparednessPage() {
         {/* Feature 2: Family Emergency Plan */}
         <Link
           href="/portal/preparedness/family-plan"
-          className="group flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-neutral-200/90 bg-white p-6 shadow-2xs transition-all hover:border-sky-300 hover:bg-sky-50/30 hover:shadow-xs"
+          className="group flex min-h-64 flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-2xs transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50/30 hover:shadow-sm sm:p-6"
         >
           <div>
             <div className="flex items-center justify-between">
-              <span className="grid size-12 place-items-center rounded-2xl bg-sky-100 text-sky-700 group-hover:scale-105 transition-transform shadow-xs">
+              <span className="grid size-12 place-items-center rounded-2xl bg-sky-100 text-sky-700 shadow-xs transition-transform group-hover:scale-105">
                 <Home className="size-6" />
               </span>
-              <span className="rounded-full bg-sky-50 border border-sky-200 px-2.5 py-0.5 text-[10px] font-black text-sky-800">
+              <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-[10px] font-black text-sky-800">
                 Protocol
               </span>
             </div>
-            <h3 className="mt-4 text-base font-bold text-neutral-900 group-hover:text-sky-900 transition-colors">
+            <h3 className="mt-4 text-base font-bold text-neutral-900 transition-colors group-hover:text-sky-900">
               Family Emergency Plan
             </h3>
-            <p className="mt-1.5 text-xs text-neutral-500 leading-relaxed">
+            <p className="mt-1.5 text-xs leading-relaxed text-neutral-500">
               Agree on safe assembly points, an out-of-area relative contact number, and
               special medical or pet requirements.
             </p>
@@ -203,45 +221,56 @@ export default function PortalPreparednessPage() {
           </div>
         </Link>
 
-        {/* Feature 3: Official Preparedness Guides */}
-        <Link
-          href="/guides"
-          target="_blank"
-          rel="noreferrer"
-          className="group flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-neutral-200/90 bg-white p-6 shadow-2xs transition-all hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-xs"
-        >
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="grid size-12 place-items-center rounded-2xl bg-slate-100 text-slate-700 group-hover:scale-105 transition-transform shadow-xs">
-                <BookOpen className="size-6" />
-              </span>
-              <span className="rounded-full bg-slate-50 border border-slate-200 px-2.5 py-0.5 text-[10px] font-black text-slate-700">
-                Official
-              </span>
+        <aside className="rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-2xs sm:p-6">
+          <div className="flex items-center gap-2.5">
+            <span className="grid size-9 place-items-center rounded-xl bg-amber-100 text-amber-700">
+              <ListChecks className="size-4.5" />
+            </span>
+            <div>
+              <h3 className="text-sm font-black text-neutral-900">Do these next</h3>
+              <p className="text-[11px] text-neutral-500">Small steps that matter most</p>
             </div>
-            <h3 className="mt-4 text-base font-bold text-neutral-900 group-hover:text-emerald-800 transition-colors">
-              Disaster Survival Guides
-            </h3>
-            <p className="mt-1.5 text-xs text-neutral-500 leading-relaxed">
-              Read official BDRRMC guidance on what to do before, during, and after
-              floods, typhoons, and earthquakes.
-            </p>
           </div>
-          <div className="mt-5 flex items-center gap-1.5 text-xs font-bold text-emerald-700">
-            <span>Read guides</span>
-            <ChevronRight className="size-4 transition-transform group-hover:translate-x-1" />
-          </div>
-        </Link>
+          <ol className="mt-5 space-y-3">
+            <li className="flex gap-2.5 text-xs text-neutral-700">
+              <span className="grid size-5 shrink-0 place-items-center rounded-full bg-emerald-100 text-[10px] font-black text-emerald-800">
+                1
+              </span>
+              <span>Pack water, food, medicine, light, and documents.</span>
+            </li>
+            <li className="flex gap-2.5 text-xs text-neutral-700">
+              <span className="grid size-5 shrink-0 place-items-center rounded-full bg-emerald-100 text-[10px] font-black text-emerald-800">
+                2
+              </span>
+              <span>Agree where your family will meet if separated.</span>
+            </li>
+            <li className="flex gap-2.5 text-xs text-neutral-700">
+              <span className="grid size-5 shrink-0 place-items-center rounded-full bg-emerald-100 text-[10px] font-black text-emerald-800">
+                3
+              </span>
+              <span>Keep an out-of-area contact number on hand.</span>
+            </li>
+          </ol>
+          <Link
+            href="/guides"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-5 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-900 hover:underline"
+          >
+            <BookOpen className="size-3.5" /> Read official preparedness guides{" "}
+            <ArrowRight className="size-3.5" />
+          </Link>
+        </aside>
       </div>
 
       {/* ── 3. Emergency Support Banner ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50/60 p-5 shadow-2xs">
+      <div className="flex flex-col justify-between gap-3 rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50/60 p-5 shadow-2xs sm:flex-row sm:items-center">
         <div className="flex items-center gap-3">
           <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-emerald-600 text-white shadow-xs">
             <Phone className="size-5" />
           </div>
           <div>
-            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">
+            <span className="text-[10px] font-black tracking-wider text-emerald-800 uppercase">
               Community Hotline Directory
             </span>
             <p className="text-xs font-bold text-neutral-900">
@@ -253,7 +282,7 @@ export default function PortalPreparednessPage() {
         <Button
           asChild
           size="sm"
-          className="self-start sm:self-auto rounded-xl bg-emerald-700 font-bold text-white hover:bg-emerald-800 text-xs"
+          className="self-start rounded-xl bg-emerald-700 text-xs font-bold text-white hover:bg-emerald-800 sm:self-auto"
         >
           <Link href="/help">View Emergency Hotlines</Link>
         </Button>
