@@ -100,8 +100,11 @@ function FaqDetailDialog({ faq }: { faq: FaqItem }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs font-semibold">
-          <Eye className="size-3.5 text-neutral-500" />
+        <Button
+          size="sm"
+          className="h-8 rounded-lg border border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100 hover:text-sky-900 font-semibold text-xs px-2.5 gap-1.5 shadow-2xs transition-colors cursor-pointer"
+        >
+          <Eye className="size-3.5 text-sky-600 shrink-0" />
           <span>View</span>
         </Button>
       </DialogTrigger>
@@ -158,12 +161,6 @@ function FaqDetailDialog({ faq }: { faq: FaqItem }) {
             </p>
           </div>
         </div>
-
-        <DialogFooter className="p-4 px-6 border-t border-neutral-100 bg-neutral-50/50">
-          <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
-            Close
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -241,8 +238,11 @@ function FaqFormDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button size="sm" className="gap-2 font-bold shadow-sm">
-            <Plus className="size-4" />
+          <Button
+            size="sm"
+            className="h-10 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-md shadow-emerald-900/15 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] transition-all px-4 gap-2 border border-emerald-600/30 max-sm:w-full max-sm:justify-center cursor-pointer"
+          >
+            <Plus aria-hidden className="size-4 stroke-[2.5]" />
             <span>Add FAQ</span>
           </Button>
         )}
@@ -269,7 +269,9 @@ function FaqFormDialog({
             {/* Top row: Category, Order & Published Switch */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 items-end">
               <div className="space-y-1.5 sm:col-span-1">
-                <Label className="text-xs font-bold text-neutral-700">Category</Label>
+                <Label className="text-xs font-bold text-neutral-700">
+                  Category <span className="text-rose-500 font-bold">*</span>
+                </Label>
                 <Select
                   value={form.category}
                   onValueChange={(val) => setForm((prev) => ({ ...prev, category: val }))}
@@ -288,7 +290,9 @@ function FaqFormDialog({
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-neutral-700">Sort Order</Label>
+                <Label className="text-xs font-bold text-neutral-700">
+                  Sort Order <span className="text-rose-500 font-bold">*</span>
+                </Label>
                 <Input
                   type="number"
                   value={form.sort_order}
@@ -321,7 +325,9 @@ function FaqFormDialog({
                 </span>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-neutral-700">Question (EN)</Label>
+                <Label className="text-xs font-bold text-neutral-700">
+                  Question (EN) <span className="text-rose-500 font-bold">*</span>
+                </Label>
                 <Input
                   value={form.question_en}
                   onChange={(e) =>
@@ -332,7 +338,9 @@ function FaqFormDialog({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-neutral-700">Answer (EN)</Label>
+                <Label className="text-xs font-bold text-neutral-700">
+                  Answer (EN) <span className="text-rose-500 font-bold">*</span>
+                </Label>
                 <Textarea
                   value={form.answer_en}
                   onChange={(e) =>
@@ -353,7 +361,9 @@ function FaqFormDialog({
                 </span>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-emerald-950">Tanong (FIL)</Label>
+                <Label className="text-xs font-bold text-emerald-950">
+                  Tanong (FIL) <span className="text-rose-500 font-bold">*</span>
+                </Label>
                 <Input
                   value={form.question_fil}
                   onChange={(e) =>
@@ -364,7 +374,9 @@ function FaqFormDialog({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-emerald-950">Kasagutan (FIL)</Label>
+                <Label className="text-xs font-bold text-emerald-950">
+                  Kasagutan (FIL) <span className="text-rose-500 font-bold">*</span>
+                </Label>
                 <Textarea
                   value={form.answer_fil}
                   onChange={(e) =>
@@ -378,18 +390,36 @@ function FaqFormDialog({
             </div>
           </div>
 
-          <DialogFooter className="p-4 px-6 border-t border-neutral-100 bg-neutral-50/70 shrink-0 flex items-center justify-end gap-2">
+          <DialogFooter className="p-4 px-6 border-t border-neutral-100 bg-neutral-50/70 shrink-0 flex items-center justify-end gap-2.5">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setOpen(false)}
               disabled={isSubmitting}
+              className="h-10 rounded-full border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-semibold px-5 shadow-2xs transition-all cursor-pointer"
             >
               Cancel
             </Button>
-            <Button type="submit" size="sm" disabled={isSubmitting} className="font-bold">
-              {isSubmitting ? "Saving..." : faq ? "Update FAQ" : "Create FAQ"}
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isSubmitting}
+              className="h-10 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-md shadow-emerald-900/15 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] transition-all px-6 gap-2 border border-emerald-600/30 cursor-pointer"
+            >
+              {isSubmitting ? (
+                <span>Saving...</span>
+              ) : faq ? (
+                <>
+                  <CheckCircle2 className="size-4 stroke-[2.5]" />
+                  <span>Update FAQ</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="size-4 stroke-[2.5]" />
+                  <span>Create FAQ</span>
+                </>
+              )}
             </Button>
           </DialogFooter>
         </form>
@@ -683,8 +713,11 @@ export default function AdminFaqsPage() {
             <FaqFormDialog
               faq={row}
               trigger={
-                <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs font-semibold">
-                  <Pencil className="size-3.5 text-neutral-500" />
+                <Button
+                  size="sm"
+                  className="h-8 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900 font-semibold text-xs px-2.5 gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                >
+                  <Pencil className="size-3.5 text-emerald-600 shrink-0" />
                   <span>Edit</span>
                 </Button>
               }

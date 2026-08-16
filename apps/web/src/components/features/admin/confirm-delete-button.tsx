@@ -47,14 +47,14 @@ export function ConfirmDeleteButton({
           size="sm"
           className={
             className ??
-            "h-8 cursor-pointer rounded-lg border border-red-200 bg-red-50 px-2.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 hover:text-red-700"
+            "h-8 cursor-pointer rounded-lg border border-red-200 bg-red-50 px-2.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 hover:text-red-700 inline-flex items-center gap-1.5 shadow-2xs"
           }
           title={actionLabel}
           aria-label={actionLabel}
           disabled={disabled}
         >
           <Trash2 aria-hidden className="size-3.5 shrink-0" />
-          {!iconOnly ? <span className="md:hidden">{actionLabel}</span> : null}
+          {!iconOnly ? <span>{actionLabel}</span> : null}
         </Button>
       </AlertDialogTrigger>
 
