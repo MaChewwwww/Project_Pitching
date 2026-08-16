@@ -82,6 +82,32 @@ readings plus a relative current snapshot. The historical timestamps stay fixed 
 view; the current snapshot is offset from seed time so a reset database does not immediately
 display stale river data.
 
+### Flood-history demo story
+
+`src/seed.py` keeps researched history separate from the live-looking demo. The three closed
+historical `EmergencyEvent` / `FloodEvent` pairs use the following provenance and scope:
+
+| Seed record | What the source supports | Deliberately left `NULL` |
+| --- | --- | --- |
+| Typhoon Ondoy (Ketsana), 26 Sep 2009 | TAO-Pilipinas documents Kasiglahan Village Phase 1-D, Barangay San Jose as submerged. | Peak level/time, displaced-household count, approximate-area links |
+| Typhoon Ulysses (Vamco), 12–14 Nov 2020 | Sentinel Times reports 3,363 families / 15,591 people in Rodriguez evacuation centres; this is municipal, not Barangay San Jose. | Peak level/time, Barangay San Jose displacement count, approximate-area links |
+| Habagat and Tropical Storm Crising, 20–24 Jul 2025 | DSWD records the Wawa Dam critical-spilling response and evacuations in Rodriguez. | Peak level/time, Barangay San Jose displacement count, approximate-area links |
+
+The active `DEMO SIMULATION — Flood Response Exercise` is the only open event. Its 23.8 m
+peak, 58 displaced households, linked Areas 1/2/4, people, household details, pins, sirens,
+rescue requests, and incident reports are fictional training data and say so in their notes.
+Historical `NULL` values are intentional: the public chart excludes unknown measurements rather
+than displaying them as zero. The seed creates no evacuation check-ins and no incident images.
+
+The references above are retained here so a future seed edit can re-check its factual scope:
+[TAO-Pilipinas](https://www.tao-pilipinas.org/ypp_files/2011ypenews_augsep.pdf),
+[Sentinel Times](https://www.sentineltimes.net/2020/11/more-than-15k-individuals-are-still-in.html),
+and [DSWD](https://www.dswd.gov.ph/dswd-chief-assures-continuous-relief-support-for-evacuees-during-rounds-in-metro-manila-rizal/).
+
+`seed.py` only creates this operational ledger when the corresponding tables are empty. If an
+operator has entered an emergency event or any safety/operations data, it leaves those records
+untouched instead of blending this exercise with user-managed work.
+
 ## When a migration is already merged
 
 Do not edit it. Write a new one. Editing a merged migration means anyone who already ran it has

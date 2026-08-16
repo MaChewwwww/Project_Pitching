@@ -25,15 +25,18 @@ from collections.abc import AsyncGenerator
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.core.security import create_access_token
 from src.db.session import engine, get_session
 from src.main import app
+from src.modules.evacuation.models import EmergencyEvent
 from src.modules.users.models import User
+from src.seed import DEMO_SCENARIO_NAME
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -57,6 +60,28 @@ async def session(db_engine) -> AsyncGenerator[AsyncSession, None]:
         finally:
             await test_session.close()
             await trans.rollback()
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def isolate_active_demo_exercise(
+    request: pytest.FixtureRequest, session: AsyncSession
+) -> AsyncGenerator[None, None]:
+    """Keep unit tests that declare their own events independent of the demo story.
+
+    The separately marked seed-integrity test intentionally retains the active
+    exercise and verifies the production-shaped demo baseline itself.
+    """
+
+    if request.node.get_closest_marker("seeded_demo"):
+        yield
+        return
+    await session.execute(
+        update(EmergencyEvent)
+        .where(EmergencyEvent.name == DEMO_SCENARIO_NAME)
+        .values(is_active=False)
+    )
+    await session.flush()
+    yield
 
 
 @pytest_asyncio.fixture
