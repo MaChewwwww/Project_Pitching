@@ -297,11 +297,11 @@ export default function PortalDashboardPage() {
           </div>
         </div>
 
-        {/* Card 2: Household Citizens */}
+        {/* Card 2: Household Members */}
         <div className="flex flex-col justify-between rounded-2xl border border-emerald-200/80 bg-emerald-50/40 p-4 shadow-2xs hover:shadow-xs transition-all">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black tracking-wider text-emerald-800 uppercase">
-              Registered Citizens
+              Registered Members
             </span>
             <div className="grid size-7 place-items-center rounded-lg bg-emerald-100 text-emerald-700">
               <UsersRound className="size-3.5" />
@@ -378,7 +378,7 @@ export default function PortalDashboardPage() {
         </div>
       </section>
 
-      {/* ── 3. Household Citizens Safety Roster ── */}
+      {/* ── 3. Household Members Safety Roster ── */}
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3 border-b border-neutral-200/80 pb-3">
           <div className="flex items-center gap-2.5">
@@ -387,7 +387,7 @@ export default function PortalDashboardPage() {
             </span>
             <div>
               <h2 className="text-base sm:text-lg font-black text-neutral-900">
-                Household Citizens Roster
+                Household Members Roster
               </h2>
               <p className="text-xs text-neutral-500 font-normal">
                 People listed under Reference #{data.reference_no}

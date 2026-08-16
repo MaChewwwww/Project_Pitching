@@ -111,7 +111,7 @@ export default function PortalHouseholdPage() {
       {/* ── Page Header ── */}
       <PortalPageHeader
         icon={UsersRound}
-        title="Household & Citizens"
+        title="Household & Members"
         titleAccent="Registry"
         description="Official Barangay San Jose household profile, registered family members, and vulnerability records."
         action={
@@ -244,7 +244,7 @@ export default function PortalHouseholdPage() {
             </CardContent>
           </Card>
 
-          {/* 2. Household Citizens Roster Section */}
+          {/* 2. Household Members Roster Section */}
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-3 border-b border-neutral-200/80 pb-3">
               <div className="flex items-center gap-2.5">

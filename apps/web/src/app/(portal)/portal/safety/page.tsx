@@ -12,7 +12,9 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Droplets,
   Flame,
+  HeartPulse,
   LifeBuoy,
   MapPin,
   Phone,
@@ -184,6 +186,77 @@ export default function PortalSafetyPage() {
   const safeCount = members.filter((m) => m.status === "safe").length;
   const rescueCount = members.filter((m) => m.status === "needs_rescue").length;
   const unaccountedCount = members.length - safeCount - rescueCount;
+
+  // Household Special Care & Vulnerability Calculations
+  const specialCareMembers = React.useMemo(() => {
+    if (!householdQuery.data?.members) return [];
+    return householdQuery.data.members.filter(
+      (m) =>
+        m.is_pwd ||
+        m.is_senior ||
+        m.is_pregnant ||
+        m.is_lactating ||
+        m.is_bedridden ||
+        m.has_chronic_condition,
+    );
+  }, [householdQuery.data?.members]);
+
+  const specialCareSummary = React.useMemo(() => {
+    if (!householdQuery.data?.members) return "No special care flags";
+    const counts: string[] = [];
+    let pwd = 0;
+    let senior = 0;
+    let pregnant = 0;
+    let bedridden = 0;
+    let chronic = 0;
+
+    householdQuery.data.members.forEach((m) => {
+      if (m.is_pwd) pwd++;
+      if (m.is_senior) senior++;
+      if (m.is_pregnant) pregnant++;
+      if (m.is_bedridden) bedridden++;
+      if (m.has_chronic_condition) chronic++;
+    });
+
+    if (pwd > 0) counts.push(`${pwd} PWD`);
+    if (senior > 0) counts.push(`${senior} Senior`);
+    if (pregnant > 0) counts.push(`${pregnant} Pregnant`);
+    if (bedridden > 0) counts.push(`${bedridden} Bedridden`);
+    if (chronic > 0) counts.push(`${chronic} Chronic Care`);
+
+    if (counts.length === 0) return "Standard evacuation protocol";
+    return counts.slice(0, 2).join(" · ") + (counts.length > 2 ? ` +${counts.length - 2} more` : "");
+  }, [householdQuery.data?.members]);
+
+  // Household Flood Risk & Proximity Assessment
+  const waterwayProximity = householdQuery.data?.waterway_proximity;
+  const floodRiskInfo = React.useMemo(() => {
+    if (waterwayProximity === "very_near") {
+      return {
+        level: "High Flood Risk",
+        badge: "bg-red-100 text-red-800 border-red-200",
+        distance: "< 50m to Waterway",
+        tone: "border-red-200/90 bg-red-50/20",
+        iconColor: "text-red-600",
+      };
+    }
+    if (waterwayProximity === "near") {
+      return {
+        level: "Moderate Flood Risk",
+        badge: "bg-amber-100 text-amber-800 border-amber-200",
+        distance: "50–200m to Waterway",
+        tone: "border-amber-200/90 bg-amber-50/20",
+        iconColor: "text-amber-600",
+      };
+    }
+    return {
+      level: "Low / Safe Elevation",
+      badge: "bg-emerald-100 text-emerald-800 border-emerald-200",
+      distance: "> 200m Safe Distance",
+      tone: "border-emerald-200/90 bg-emerald-50/20",
+      iconColor: "text-emerald-600",
+    };
+  }, [waterwayProximity]);
 
   // Prioritize evacuation centers in the household's registered area
   const userAreaId = householdQuery.data?.area_id;
@@ -471,72 +544,119 @@ export default function PortalSafetyPage() {
                     : "All Accounted Safe"}
                 </p>
                 <span className="text-[11px] text-neutral-500 mt-0.5">
-                  {safeCount} of {members.length} confirmed safe
+                  {safeCount} of {members.length} member(s) confirmed safe
                 </span>
               </div>
 
-              {/* Metric 2: Accounted Citizens */}
+              {/* Metric 2: Combined Safety Check-In Progress & Rescue Ratio */}
               <div className="flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-2xs">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black tracking-wider uppercase text-neutral-500">
-                    Confirmed Safe
-                  </span>
-                  <span className="grid size-6 place-items-center rounded-lg bg-emerald-100 text-emerald-800 text-xs font-black">
-                    {safeCount}
-                  </span>
-                </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-neutral-900 tabular-nums">
-                  {members.length > 0 ? Math.round((safeCount / members.length) * 100) : 0}%
-                </p>
-                <div className="mt-1 h-1.5 w-full rounded-full bg-neutral-100 overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-600 transition-all duration-500 rounded-full"
-                    style={{
-                      width: `${members.length > 0 ? (safeCount / members.length) * 100 : 0}%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Metric 3: Rescue Dispatch Needs */}
-              <div className="flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black tracking-wider uppercase text-neutral-500">
-                    Rescue Needed
+                    Safety Check-In
                   </span>
                   <span
                     className={cn(
                       "grid size-6 place-items-center rounded-lg text-xs font-black",
                       rescueCount > 0
                         ? "bg-red-600 text-white animate-pulse"
-                        : "bg-neutral-100 text-neutral-600",
+                        : "bg-emerald-100 text-emerald-800",
                     )}
                   >
-                    {rescueCount}
+                    {safeCount}/{members.length}
                   </span>
                 </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-neutral-900 tabular-nums">
-                  {rescueCount} <span className="text-xs font-semibold text-neutral-500">citizen(s)</span>
-                </p>
-                <span className="text-[11px] text-neutral-500 mt-0.5">
-                  {rescueCount > 0 ? "Queued for boat/medic dispatch" : "No rescue requests queued"}
+                <div className="mt-2">
+                  <p className="text-xl sm:text-2xl font-black text-neutral-900 tabular-nums">
+                    {Math.round((safeCount / Math.max(1, members.length)) * 100)}%{" "}
+                    <span className="text-xs font-semibold text-neutral-500">Safe</span>
+                  </p>
+                  {/* Combined Progress Bar: Green for Safe, Red for Rescue */}
+                  <div className="mt-1.5 flex h-1.5 w-full rounded-full bg-neutral-100 overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-600 transition-all duration-500"
+                      style={{
+                        width: `${(safeCount / Math.max(1, members.length)) * 100}%`,
+                      }}
+                    />
+                    <div
+                      className="h-full bg-red-600 transition-all duration-500"
+                      style={{
+                        width: `${(rescueCount / Math.max(1, members.length)) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+                <span className="text-[11px] text-neutral-500 mt-0.5 truncate">
+                  {rescueCount > 0 ? (
+                    <span className="text-red-700 font-bold">{rescueCount} member(s) need rescue</span>
+                  ) : unaccountedCount > 0 ? (
+                    `${unaccountedCount} member(s) pending check-in`
+                  ) : (
+                    "Whole household accounted for"
+                  )}
                 </span>
               </div>
 
-              {/* Metric 4: Active Open Centers */}
+              {/* Metric 3: Special Care Needs & Vulnerabilities */}
               <div className="flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-2xs">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black tracking-wider uppercase text-neutral-500">
-                    Open Shelters
+                    Special Care Needs
                   </span>
-                  <Building2 className="size-4 text-sky-600" />
+                  <span
+                    className={cn(
+                      "grid size-6 place-items-center rounded-lg text-xs font-black",
+                      specialCareMembers.length > 0
+                        ? "bg-amber-100 text-amber-900"
+                        : "bg-neutral-100 text-neutral-600",
+                    )}
+                  >
+                    {specialCareMembers.length}
+                  </span>
                 </div>
                 <p className="mt-2 text-xl sm:text-2xl font-black text-neutral-900 tabular-nums">
-                  {centers.filter((c) => !c.is_at_capacity).length}{" "}
-                  <span className="text-xs font-semibold text-neutral-500">of {centers.length} open</span>
+                  {specialCareMembers.length > 0 ? (
+                    <>
+                      {specialCareMembers.length}{" "}
+                      <span className="text-xs font-semibold text-neutral-500">priority member(s)</span>
+                    </>
+                  ) : (
+                    <span className="text-base sm:text-lg text-neutral-900">Standard</span>
+                  )}
                 </p>
-                <span className="text-[11px] text-neutral-500 mt-0.5">
-                  BDRRMC Designated Shelters
+                <span className="text-[11px] text-neutral-500 mt-0.5 truncate">
+                  {specialCareSummary}
+                </span>
+              </div>
+
+              {/* Metric 4: Household Flood Risk Category */}
+              <div
+                className={cn(
+                  "flex flex-col justify-between rounded-2xl border p-4 shadow-2xs transition-all bg-white",
+                  floodRiskInfo.tone,
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black tracking-wider uppercase text-neutral-500">
+                    Household Flood Risk
+                  </span>
+                  <Waves className={cn("size-4", floodRiskInfo.iconColor)} />
+                </div>
+                <div className="mt-2">
+                  <p className="text-base sm:text-lg font-black text-neutral-900 truncate">
+                    {floodRiskInfo.level}
+                  </p>
+                  <span
+                    className={cn(
+                      "inline-flex items-center rounded-md border px-1.5 py-0.2 text-[9.5px] font-bold mt-1",
+                      floodRiskInfo.badge,
+                    )}
+                  >
+                    {floodRiskInfo.distance}
+                  </span>
+                </div>
+                <span className="text-[11px] text-neutral-500 mt-0.5 truncate">
+                  {userAreaName || "Barangay San Jose"} · UP NOAH Model
                 </span>
               </div>
             </div>
@@ -979,8 +1099,9 @@ export default function PortalSafetyPage() {
             {/* Optional Evacuation Center Selector (ONLY for Safe Status, NEVER for Rescue) */}
             {memberActionDialog?.status === "safe" ? (
               <div className="space-y-1.5 animate-in fade-in-50 duration-150">
-                <Label className="text-xs font-bold text-neutral-800">
-                  Optional Evacuation Center
+                <Label className="text-xs font-bold text-neutral-800 flex items-center gap-1.5">
+                  <Building2 className="size-3.5 text-emerald-600 shrink-0" />
+                  <span>Optional Evacuation Center</span>
                 </Label>
                 <Select
                   value={memberActionDialog?.centerId || "none"}
@@ -989,11 +1110,11 @@ export default function PortalSafetyPage() {
                   }
                 >
                   <SelectTrigger className="h-10 w-full rounded-xl border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-900 shadow-2xs focus-visible:border-emerald-600 focus-visible:ring-emerald-500/20">
-                    <SelectValue placeholder="No New Center Assignment" />
+                    <SelectValue placeholder="Will not go to the evacuation center" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-neutral-200 bg-white shadow-xl max-h-60">
                     <SelectItem value="none" showCheckmark>
-                      No New Center Assignment
+                      Will not go to the evacuation center
                     </SelectItem>
                     {sortedCenters.map((center) => (
                       <SelectItem
@@ -1126,19 +1247,20 @@ export default function PortalSafetyPage() {
 
             {/* Bulk Evacuation Center Selector */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-neutral-800">
-                Optional Evacuation Center
+              <Label className="text-xs font-bold text-neutral-800 flex items-center gap-1.5">
+                <Building2 className="size-3.5 text-emerald-600 shrink-0" />
+                <span>Optional Evacuation Center</span>
               </Label>
               <Select
                 value={bulkCenterId}
                 onValueChange={(val) => setBulkCenterId(val)}
               >
                 <SelectTrigger className="h-10 w-full rounded-xl border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-900 shadow-2xs focus-visible:border-emerald-600 focus-visible:ring-emerald-500/20">
-                  <SelectValue placeholder="No New Center Assignment" />
+                  <SelectValue placeholder="Will not go to the evacuation center" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-neutral-200 bg-white shadow-xl max-h-60">
                   <SelectItem value="none" showCheckmark>
-                    No New Center Assignment
+                    Will not go to the evacuation center
                   </SelectItem>
                   {sortedCenters.map((center) => (
                     <SelectItem

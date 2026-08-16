@@ -20,7 +20,7 @@ function resolvePortalBreadcrumbs(pathname: string): BreadcrumbItem[] {
   }
 
   if (pathname === "/portal/household") {
-    return [...base, { label: "Household & Citizens" }];
+    return [...base, { label: "Household & Members" }];
   }
   if (pathname === "/portal/household/edit") {
     return [

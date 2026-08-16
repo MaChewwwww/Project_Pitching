@@ -63,7 +63,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: "Core Readiness",
     items: [
       { href: "/portal", label: "Dashboard", icon: Home, exact: true },
-      { href: "/portal/household", label: "Household & Citizens", icon: UsersRound },
+      { href: "/portal/household", label: "Household & Members", icon: UsersRound },
       { href: "/portal/safety", label: "Safety Check-In", icon: ShieldCheck },
       { href: "/portal/hazard-map", label: "Flood Hazard Map", icon: Map },
     ],
@@ -127,14 +127,9 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
               <Siren className="size-5" />
             </span>
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black tracking-[0.14em] text-white uppercase">
-                  SAGIP-SJ
-                </span>
-                <span className="rounded bg-emerald-700/80 px-1 py-0.2 text-[9px] font-bold text-emerald-100 uppercase">
-                  Portal
-                </span>
-              </div>
+              <span className="block text-xs font-black tracking-[0.14em] text-white uppercase">
+                SAGIP-SJ
+              </span>
               <span className="block truncate text-[11px] font-medium text-emerald-200/80">
                 Barangay San Jose
               </span>
@@ -355,7 +350,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
                 <DropdownMenuItem asChild className="gap-2 rounded-xl text-xs font-semibold px-2.5 py-2">
                   <Link href="/portal/household">
                     <UsersRound className="size-4 text-emerald-700" />
-                    Household Profile & Citizens
+                    Household Profile & Members
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="gap-2 rounded-xl text-xs font-semibold px-2.5 py-2">

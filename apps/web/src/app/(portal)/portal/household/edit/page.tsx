@@ -56,7 +56,7 @@ export default function PortalHouseholdEditPage() {
     mutationFn: ({ id, body }: { id: string; body: MemberUpdate }) =>
       api.patch(`/me/household/members/${id}`, body),
     onSuccess: () => {
-      toast.success("Citizen profile updated");
+      toast.success("Member profile updated");
       client.invalidateQueries({ queryKey: ["me", "household"] });
     },
     onError: (error) => {
@@ -67,7 +67,7 @@ export default function PortalHouseholdEditPage() {
   const addMember = useMutation({
     mutationFn: (body: MemberUpdate) => api.post("/me/household/members", body),
     onSuccess: () => {
-      toast.success("Citizen added to your household");
+      toast.success("Member added to your household");
       setAdding(false);
       client.invalidateQueries({ queryKey: ["me", "household"] });
     },
@@ -143,7 +143,7 @@ export default function PortalHouseholdEditPage() {
         </CardContent>
       </Card>
 
-      {/* ── 2. Household Citizens Management Section ── */}
+      {/* ── 2. Household Members Management Section ── */}
       <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
         <CardContent className="p-5 sm:p-6 lg:p-7 space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 pb-4">
@@ -153,7 +153,7 @@ export default function PortalHouseholdEditPage() {
               </span>
               <div>
                 <h2 className="text-base font-bold text-neutral-900">
-                  Household Citizens ({household.members.length})
+                  Household Members ({household.members.length})
                 </h2>
                 <p className="text-xs text-neutral-500">
                   Update personal support flags, health conditions, and relationship roles.
