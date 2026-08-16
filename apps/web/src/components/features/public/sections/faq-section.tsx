@@ -32,8 +32,8 @@ export async function FaqSection() {
               size="md"
               className="shrink-0 max-sm:px-3"
             >
-              <Link href="/help" aria-label="View All FAQs">
-                <span className="hidden sm:inline">View All FAQs</span>
+              <Link href="/help" aria-label="View All">
+                <span className="hidden sm:inline">View All</span>
                 <ArrowRight aria-hidden className="size-4" />
               </Link>
             </Button>
