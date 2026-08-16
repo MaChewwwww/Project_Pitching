@@ -12,7 +12,6 @@ import {
   Layers,
   MapPin,
   Pencil,
-  PieChart as PieChartIcon,
   Plus,
   Power,
   PowerOff,
@@ -22,13 +21,6 @@ import {
   Users,
   Users2,
 } from "lucide-react";
-import {
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip as RechartsTooltip,
-} from "recharts";
 import { toast } from "sonner";
 
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
@@ -225,19 +217,43 @@ export default function AdminEvacuationCentersPage() {
     },
   ];
 
-  /* Donut Chart Data */
-  const chartData = React.useMemo(() => {
-    return [
-      { name: "Open & Available", value: Math.max(0, stats.openCount - stats.atCapacity - stats.nearCapacity), color: "#10b981" },
-      { name: "Near Capacity", value: stats.nearCapacity, color: "#f59e0b" },
-      { name: "Full / At Capacity", value: stats.atCapacity, color: "#ef4444" },
-      { name: "Closed / Standby", value: stats.closedCount, color: "#64748b" },
-    ].filter((item) => item.value > 0);
-  }, [stats]);
+  const [selectedCenterIds, setSelectedCenterIds] = React.useState<Set<string>>(new Set());
+
+  // Initialize selectedCenterIds when data loads
+  React.useEffect(() => {
+    if (allCenters.length > 0 && selectedCenterIds.size === 0) {
+      setSelectedCenterIds(new Set(allCenters.map((c) => c.id)));
+    }
+  }, [allCenters, selectedCenterIds.size]);
+
+  const toggleCenter = (id: string) => {
+    setSelectedCenterIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleAllCenters = () => {
+    if (selectedCenterIds.size === allCenters.length) {
+      setSelectedCenterIds(new Set());
+    } else {
+      setSelectedCenterIds(new Set(allCenters.map((c) => c.id)));
+    }
+  };
 
   /* Filtered Centers */
   const filteredCenters = React.useMemo(() => {
     return allCenters.filter((center) => {
+      // 0. Checklist Filter
+      if (selectedCenterIds.size > 0 && !selectedCenterIds.has(center.id)) {
+        return false;
+      }
+
       // 1. Status Filter
       if (statusFilter === "open" && !center.is_open) return false;
       if (statusFilter === "closed" && center.is_open) return false;
@@ -259,7 +275,7 @@ export default function AdminEvacuationCentersPage() {
 
       return true;
     });
-  }, [allCenters, statusFilter, areaFilter, occupancyTier]);
+  }, [allCenters, selectedCenterIds, statusFilter, areaFilter, occupancyTier]);
 
   /* Map Items */
   const mapItems = React.useMemo(() => {
@@ -417,21 +433,9 @@ export default function AdminEvacuationCentersPage() {
 
       {/* Main 2-Column GIS Workspace & Control Sidebar */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        {/* Column 1: Leaflet Interactive Map View */}
-        <div className="flex-1 overflow-hidden rounded-2xl border border-emerald-900/40 bg-neutral-900 shadow-xl">
-          <div className="flex items-center justify-between border-b border-emerald-950/80 bg-gradient-to-r from-[#064e3b] to-[#022c22] px-4 py-2.5 text-white">
-            <div className="flex items-center gap-2">
-              <BedDouble className="size-4 text-emerald-400" />
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
-                Evacuation Shelter Spatial Workspace
-              </span>
-            </div>
-            <span className="rounded-full bg-emerald-950/80 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-700/60 shadow-2xs">
-              {mapItems.length} Mapped Shelters
-            </span>
-          </div>
-
-          <div className="h-[460px] w-full">
+        {/* Column 1: Leaflet Interactive Map View (Old Height, No Header) */}
+        <div className="flex flex-1 flex-col min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
+          <div className="relative h-[480px] sm:h-[580px] lg:h-[620px] w-full overflow-hidden">
             <AdminAssetWorkspaceMap
               items={mapItems}
               selectedId={selectedId}
@@ -443,7 +447,7 @@ export default function AdminEvacuationCentersPage() {
           </div>
         </div>
 
-        {/* Column 2: Filter and Distribution Sidebar */}
+        {/* Column 2: Filter and Capacity Sidebar */}
         <div className="flex w-full flex-col gap-3 lg:w-72 lg:shrink-0">
           {/* Card 1: Map Overlays */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
@@ -465,59 +469,132 @@ export default function AdminEvacuationCentersPage() {
             </div>
           </div>
 
-          {/* Card 2: Shelter Distribution & Status Donut Chart */}
+          {/* Card 2: Shelter Capacity & Filter Checklist with Custom Green Scrollbar */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-2.5 flex items-center justify-between">
               <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
-                <PieChartIcon className="size-3.5 text-emerald-400" aria-hidden />
-                Shelter Status Breakdown
+                <Users className="size-3.5 text-emerald-400" aria-hidden />
+                Capacity & Shelter Filters
               </p>
-              <span className="rounded-full bg-emerald-950/80 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-700/60 shadow-2xs">
-                {stats.total} Total
-              </span>
+              <button
+                type="button"
+                onClick={toggleAllCenters}
+                className="text-[11px] font-bold text-emerald-400 hover:text-emerald-200 transition-colors cursor-pointer"
+              >
+                {selectedCenterIds.size === allCenters.length
+                  ? "Deselect All"
+                  : "Select All"}
+              </button>
             </div>
 
-            {/* Donut Chart */}
-            <div className="relative h-44 w-full" role="img" aria-label="Evacuation shelter status breakdown">
-              <div className="pointer-events-none absolute inset-0 z-0 flex flex-col items-center justify-center text-center">
-                <span className="text-xl font-black text-white tabular-nums">
-                  {stats.openCount}
-                </span>
-                <span className="text-[9.5px] font-bold uppercase tracking-wider text-emerald-300/80">
-                  Open Shelters
+            {/* Scrollable Checklist with Custom Green Scrollbar */}
+            <div className="flex flex-col gap-2 max-h-[430px] overflow-y-auto pr-1.5 pt-1 [scrollbar-width:thin] [scrollbar-color:#059669_#022c22] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-emerald-950/40 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-600/90 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-emerald-400">
+              {allCenters.map((center) => {
+                const isSelected = selectedCenterIds.has(center.id);
+                const occ = center.occupancy ?? 0;
+                const cap = center.capacity ?? 0;
+                const pct = cap > 0 ? Math.min(100, Math.round((occ / cap) * 100)) : 0;
+                const isFull = cap > 0 && occ >= cap;
+                const isNear = cap > 0 && occ / cap >= 0.8 && !isFull;
+
+                return (
+                  <button
+                    key={center.id}
+                    type="button"
+                    onClick={() => toggleCenter(center.id)}
+                    className={cn(
+                      "flex flex-col gap-1.5 rounded-lg p-2.5 text-xs transition-all cursor-pointer border text-left",
+                      isSelected
+                        ? "border-emerald-700/60 bg-white/10 text-white shadow-xs"
+                        : "border-transparent text-emerald-200/50 hover:bg-white/5 hover:text-emerald-100",
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          className="size-3.5 rounded border-slate-600 bg-slate-800 text-emerald-500 accent-emerald-500 cursor-pointer pointer-events-none shrink-0"
+                        />
+                        <span
+                          className={cn(
+                            "size-2 rounded-full shrink-0",
+                            !center.is_open
+                              ? "bg-slate-400"
+                              : isFull
+                                ? "bg-rose-500"
+                                : isNear
+                                  ? "bg-amber-400"
+                                  : "bg-emerald-400",
+                          )}
+                        />
+                        <span className="truncate font-semibold text-[11.5px] text-white">
+                          {center.facility.name}
+                        </span>
+                      </div>
+                      <span className="rounded-full bg-emerald-950/80 px-1.5 py-0.2 text-[9.5px] font-bold text-emerald-300 border border-emerald-800/80 shrink-0">
+                        {center.facility.area_name || "San Jose"}
+                      </span>
+                    </div>
+
+                    {/* Capacity Bar & Ratio */}
+                    <div className="flex flex-col gap-1 pl-5.5">
+                      <div className="flex items-center justify-between text-[10px] text-emerald-200/80 font-mono">
+                        <span>
+                          {occ} / {cap > 0 ? cap : "—"} slots
+                        </span>
+                        <span
+                          className={cn(
+                            "font-bold",
+                            isFull
+                              ? "text-rose-400 font-black"
+                              : isNear
+                                ? "text-amber-300"
+                                : "text-emerald-300",
+                          )}
+                        >
+                          {pct}% Load
+                        </span>
+                      </div>
+                      <div className="h-1 w-full overflow-hidden rounded-full bg-emerald-950/90 border border-emerald-900/60">
+                        <div
+                          className={cn(
+                            "h-full rounded-full transition-all",
+                            !center.is_open
+                              ? "bg-slate-500"
+                              : isFull
+                                ? "bg-rose-500"
+                                : isNear
+                                  ? "bg-amber-400"
+                                  : "bg-emerald-400",
+                          )}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Bottom Overall Capacity Load Meter */}
+            <div className="mt-3 flex flex-col gap-1.5 border-t border-emerald-900/80 pt-3">
+              <div className="flex items-center justify-between text-[10.5px] font-bold text-emerald-300">
+                <span>Barangay Evac Load</span>
+                <span className="tabular-nums font-mono text-white">
+                  {stats.totalOccupancy} / {stats.totalCapacity} ({stats.pctOccupied}%)
                 </span>
               </div>
-
-              <ResponsiveContainer width="100%" height="100%" className="relative z-10">
-                <PieChart>
-                  <RechartsTooltip
-                    wrapperStyle={{ zIndex: 50, pointerEvents: "none" }}
-                    formatter={(val, name) => [`${val ?? 0} Shelters`, name]}
-                    contentStyle={{
-                      backgroundColor: "#064e3b",
-                      borderColor: "#059669",
-                      borderRadius: "8px",
-                      fontSize: "11.5px",
-                      color: "#ffffff",
-                      boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
-                    }}
-                    itemStyle={{ color: "#ffffff", fontWeight: 600 }}
-                  />
-                  <Pie
-                    data={chartData}
-                    dataKey="value"
-                    innerRadius={46}
-                    outerRadius={68}
-                    paddingAngle={3}
-                    stroke="#052e16"
-                    strokeWidth={2.5}
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`slice-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-emerald-950/90 border border-emerald-900/60">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all duration-500",
+                    stats.pctOccupied > 80 ? "bg-rose-400" : "bg-emerald-400",
+                  )}
+                  style={{ width: `${stats.pctOccupied}%` }}
+                />
+              </div>
             </div>
           </div>
         </div>
