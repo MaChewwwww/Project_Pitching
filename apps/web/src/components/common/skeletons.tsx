@@ -233,12 +233,15 @@ export function HotlinesSectionSkeleton() {
 export function FaqSectionSkeleton() {
   return (
     <FallbackSection tone="tint">
-      <div className="grid gap-8 lg:grid-cols-[1fr_1.6fr] lg:gap-12">
-        <HeaderSkeleton />
+      <div className="grid gap-8 lg:grid-cols-[1fr_1.5fr] lg:gap-12 items-start">
+        <div className="flex flex-col gap-6">
+          <HeaderSkeleton />
+          <Skeleton className="h-56 w-full rounded-2xl" />
+        </div>
         <SectionFallback label="Loading FAQs">
           <div className="flex flex-col gap-3">
             {Array.from({ length: 5 }, (_, i) => (
-              <Skeleton key={i} className="h-14 w-full rounded-xl" />
+              <Skeleton key={i} className="h-14 w-full rounded-2xl" />
             ))}
           </div>
         </SectionFallback>

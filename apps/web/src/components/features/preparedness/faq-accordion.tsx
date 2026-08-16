@@ -128,20 +128,29 @@ export function FaqAccordion({
 
   if (compact) {
     return (
-      <Accordion type="single" collapsible className={cn("w-full space-y-2.5", className)}>
+      <Accordion type="single" collapsible className={cn("w-full space-y-3", className)}>
         {faqs.map((faq) => {
           const question = pick(lang, faq.question_fil, faq.question_en);
           const answer = pick(lang, faq.answer_fil, faq.answer_en);
+          const CategoryIcon = getCategoryIcon(faq.category || "");
           return (
             <AccordionItem
               key={faq.id}
               value={faq.id}
-              className="rounded-2xl border border-neutral-200/90 bg-white px-4.5 py-1 shadow-2xs transition-all hover:border-emerald-600/40 hover:shadow-xs data-[state=open]:border-emerald-600/60 data-[state=open]:ring-2 data-[state=open]:ring-emerald-500/10"
+              className="rounded-2xl border border-neutral-200/90 bg-white px-5 py-1.5 shadow-2xs transition-all hover:border-primary-600/40 hover:shadow-xs data-[state=open]:border-primary-600/60 data-[state=open]:ring-2 data-[state=open]:ring-primary-600/10"
             >
               <AccordionTrigger className="text-left text-xs sm:text-sm font-bold text-neutral-900 hover:no-underline py-3.5 gap-3">
-                <span className="flex-1 min-w-0">{question}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 min-w-0">
+                  {faq.category ? (
+                    <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-primary-100/90 px-2.5 py-0.5 text-[11px] font-bold text-primary-800 shrink-0">
+                      <CategoryIcon className="size-3 text-primary-700" />
+                      <span>{faq.category}</span>
+                    </span>
+                  ) : null}
+                  <span className="flex-1 min-w-0 text-neutral-900 leading-snug">{question}</span>
+                </div>
               </AccordionTrigger>
-              <AccordionContent className="text-xs sm:text-sm leading-relaxed text-neutral-600 pb-4 pt-1 border-t border-neutral-100 mt-1 whitespace-pre-wrap">
+              <AccordionContent className="text-xs sm:text-sm leading-relaxed text-neutral-600 pb-4 pt-2.5 border-t border-neutral-100 mt-1 whitespace-pre-wrap">
                 {answer}
               </AccordionContent>
             </AccordionItem>
@@ -166,7 +175,7 @@ export function FaqAccordion({
                 ? "Maghanap ng tanong, paksa, o keyword..."
                 : "Search questions, topics, or keywords..."
             }
-            className="pl-10 pr-9 h-11 text-xs sm:text-sm bg-white rounded-2xl border-neutral-200 shadow-2xs focus-visible:ring-emerald-500"
+            className="pl-10 pr-9 h-11 text-xs sm:text-sm bg-white rounded-2xl border-neutral-200 shadow-2xs focus-visible:ring-primary-600"
           />
           {searchQuery ? (
             <button
@@ -188,7 +197,7 @@ export function FaqAccordion({
             className={cn(
               "flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer",
               lang === "fil"
-                ? "bg-white text-emerald-800 shadow-xs ring-1 ring-black/5"
+                ? "bg-white text-primary-800 shadow-xs ring-1 ring-black/5"
                 : "text-neutral-600 hover:text-neutral-900 hover:bg-white/60",
             )}
           >
@@ -200,7 +209,7 @@ export function FaqAccordion({
             className={cn(
               "flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer",
               lang === "en"
-                ? "bg-white text-emerald-800 shadow-xs ring-1 ring-black/5"
+                ? "bg-white text-primary-800 shadow-xs ring-1 ring-black/5"
                 : "text-neutral-600 hover:text-neutral-900 hover:bg-white/60",
             )}
           >
@@ -217,8 +226,8 @@ export function FaqAccordion({
           className={cn(
             "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 border",
             selectedCategory === "all"
-              ? "bg-emerald-700 text-white border-emerald-700 shadow-xs"
-              : "bg-white text-neutral-700 border-neutral-200 hover:border-emerald-600/40 hover:bg-emerald-50/40 shadow-2xs",
+              ? "bg-primary-700 text-white border-primary-700 shadow-xs"
+              : "bg-white text-neutral-700 border-neutral-200 hover:border-primary-600/40 hover:bg-primary-50/40 shadow-2xs",
           )}
         >
           <span>{lang === "fil" ? "Lahat ng Paksa" : "All Topics"}</span>
@@ -226,7 +235,7 @@ export function FaqAccordion({
             className={cn(
               "rounded-full px-1.5 py-0.2 text-[10px] font-extrabold",
               selectedCategory === "all"
-                ? "bg-emerald-800 text-emerald-100"
+                ? "bg-primary-800 text-primary-100"
                 : "bg-neutral-100 text-neutral-500",
             )}
           >
@@ -246,17 +255,17 @@ export function FaqAccordion({
               className={cn(
                 "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 border",
                 isSelected
-                  ? "bg-emerald-700 text-white border-emerald-700 shadow-xs"
-                  : "bg-white text-neutral-700 border-neutral-200 hover:border-emerald-600/40 hover:bg-emerald-50/40 shadow-2xs",
+                  ? "bg-primary-700 text-white border-primary-700 shadow-xs"
+                  : "bg-white text-neutral-700 border-neutral-200 hover:border-primary-600/40 hover:bg-primary-50/40 shadow-2xs",
               )}
             >
-              <CategoryIcon className={cn("size-3.5", isSelected ? "text-emerald-200" : "text-emerald-700")} />
+              <CategoryIcon className={cn("size-3.5", isSelected ? "text-primary-200" : "text-primary-700")} />
               <span>{category}</span>
               <span
                 className={cn(
                   "rounded-full px-1.5 py-0.2 text-[10px] font-extrabold",
                   isSelected
-                    ? "bg-emerald-800 text-emerald-100"
+                    ? "bg-primary-800 text-primary-100"
                     : "bg-neutral-100 text-neutral-500",
                 )}
               >
@@ -278,10 +287,10 @@ export function FaqAccordion({
                 {/* Category Header */}
                 <div className="flex items-center justify-between pb-2 border-b border-neutral-200/80">
                   <div className="flex items-center gap-2">
-                    <span className="grid size-7 place-items-center rounded-lg bg-emerald-100 text-emerald-800">
+                    <span className="grid size-7 place-items-center rounded-lg bg-primary-100 text-primary-800">
                       <CategoryIcon className="size-4" />
                     </span>
-                    <h3 className="text-xs font-black uppercase tracking-wider text-emerald-950">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-primary-950">
                       {category}
                     </h3>
                   </div>
@@ -295,16 +304,20 @@ export function FaqAccordion({
                   {items.map((faq) => {
                     const question = pick(lang, faq.question_fil, faq.question_en);
                     const answer = pick(lang, faq.answer_fil, faq.answer_en);
+                    const CategoryIconItem = getCategoryIcon(faq.category || category);
                     return (
                       <AccordionItem
                         key={faq.id}
                         value={faq.id}
-                        className="rounded-2xl border border-neutral-200/90 bg-white px-4.5 py-1 shadow-2xs transition-all hover:border-emerald-600/40 hover:shadow-xs data-[state=open]:border-emerald-600/60 data-[state=open]:ring-2 data-[state=open]:ring-emerald-500/10"
+                        className="rounded-2xl border border-neutral-200/90 bg-white px-4.5 py-1 shadow-2xs transition-all hover:border-primary-600/40 hover:shadow-xs data-[state=open]:border-primary-600/60 data-[state=open]:ring-2 data-[state=open]:ring-primary-600/10"
                       >
                         <AccordionTrigger className="text-left text-xs sm:text-sm font-bold text-neutral-900 hover:no-underline py-3.5 gap-3">
-                          <span className="flex-1 min-w-0">{question}</span>
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <CategoryIconItem className="size-4 text-primary-700 shrink-0 hidden sm:inline-block" />
+                            <span className="flex-1 min-w-0">{question}</span>
+                          </div>
                         </AccordionTrigger>
-                        <AccordionContent className="text-xs sm:text-sm leading-relaxed text-neutral-600 pb-4 pt-1 border-t border-neutral-100 mt-1 whitespace-pre-wrap">
+                        <AccordionContent className="text-xs sm:text-sm leading-relaxed text-neutral-600 pb-4 pt-1.5 border-t border-neutral-100 mt-1 whitespace-pre-wrap">
                           {answer}
                         </AccordionContent>
                       </AccordionItem>
@@ -333,7 +346,7 @@ export function FaqAccordion({
                 setSearchQuery("");
                 setSelectedCategory("all");
               }}
-              className="mt-2 text-xs font-bold text-emerald-700 hover:underline cursor-pointer"
+              className="mt-2 text-xs font-bold text-primary-700 hover:underline cursor-pointer"
             >
               {lang === "fil" ? "I-reset ang filter" : "Reset filters"}
             </button>
