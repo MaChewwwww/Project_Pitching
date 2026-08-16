@@ -19,6 +19,10 @@ import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import { formatPhtDate } from "@/lib/format";
 
+function guideLabel(value: string) {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 interface Guide {
   id: string;
   slug: string;
@@ -42,7 +46,7 @@ export default function AdminGuidesPage() {
   const remove = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/guides/${id}`),
     onSuccess: () => {
-      toast.success("Guide removed");
+      toast.success("Guide Removed");
       queryClient.invalidateQueries({ queryKey: ["admin", "guides"] });
     },
     onError: (error) => toast.error(toDisplayError(error).detail),
@@ -71,28 +75,28 @@ export default function AdminGuidesPage() {
     },
     {
       key: "hazard_type",
-      header: "Hazard / phase",
+      header: "Hazard / Phase",
       render: (row) => (
         <div className="flex flex-wrap gap-1.5">
           <span className="bg-primary-50 text-primary-800 rounded-full px-2 py-1 text-[11px] font-bold capitalize">
-            {row.hazard_type}
+            {guideLabel(row.hazard_type)}
           </span>
           <span className="rounded-full bg-neutral-100 px-2 py-1 text-[11px] font-semibold text-neutral-600 capitalize">
-            {row.phase}
+            {guideLabel(row.phase)}
           </span>
         </div>
       ),
     },
     {
       key: "last_reviewed_at",
-      header: "Review record",
+      header: "Review Record",
       render: (row) =>
         row.last_reviewed_at ? (
           <span className="text-xs text-neutral-700">
             {formatPhtDate(row.last_reviewed_at)}
           </span>
         ) : (
-          <span className="text-xs font-semibold text-amber-700">Needs date</span>
+          <span className="text-xs font-semibold text-amber-700">Needs Date</span>
         ),
     },
     {
@@ -114,10 +118,14 @@ export default function AdminGuidesPage() {
         title="Preparedness Guides"
         description="Maintain bilingual, source-dated guidance for the hazards San Jose faces."
         action={
-          <Button asChild size="sm">
+          <Button
+            asChild
+            size="sm"
+            className="h-10 rounded-full border border-emerald-600/30 bg-emerald-700 px-4 font-bold text-white shadow-md shadow-emerald-900/15 transition-all hover:bg-emerald-800 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
+          >
             <Link href={"/admin/guides/new" as Route}>
-              <Plus aria-hidden className="size-4" />
-              New guide
+              <Plus aria-hidden className="size-4 stroke-[2.5]" />
+              New Guide
             </Link>
           </Button>
         }
@@ -125,27 +133,27 @@ export default function AdminGuidesPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric
           icon={BookOpen}
-          label="Total guides"
+          label="Total Guides"
           value={metrics.total}
-          detail="preparedness records"
+          detail="Preparedness Records"
         />
         <Metric
           icon={Languages}
           label="Published"
           value={metrics.published}
-          detail="visible to residents"
+          detail="Visible To Residents"
         />
         <Metric
           icon={BookOpen}
-          label="Hazards covered"
+          label="Hazards Covered"
           value={metrics.hazards}
-          detail="distinct guide topics"
+          detail="Distinct Guide Topics"
         />
         <Metric
           icon={CalendarCheck}
-          label="Review records"
+          label="Review Records"
           value={metrics.reviewed}
-          detail="source and date complete"
+          detail="Source And Date Complete"
         />
       </div>
       <ResourceTable
@@ -160,24 +168,33 @@ export default function AdminGuidesPage() {
           { value: "draft", label: "Drafts", matches: (row) => !row.is_published },
           {
             value: "needs-review",
-            label: "Needs review date",
+            label: "Needs Review Date",
             matches: (row) => !row.last_reviewed_at,
           },
         ]}
-        emptyTitle="No guides yet"
+        emptyTitle="No Guides Yet"
         emptyDescription="Create a bilingual preparedness guide for residents."
         getRowKey={(row) => row.id}
         rowActions={(row) => (
           <>
             <GuidePreviewDialog guideId={row.id} title={row.title_en} />
-            <Button asChild size="sm" variant="warning">
+            <Button
+              asChild
+              size="sm"
+              variant="warning"
+              className="h-8 gap-1.5 rounded-lg px-2.5 text-xs font-semibold"
+              title="Edit Guide"
+              aria-label="Edit Guide"
+            >
               <Link href={`/admin/guides/${row.id}` as Route}>
                 <Pencil aria-hidden className="size-3.5" />
-                <span className="md:hidden">Edit</span>
+                <span>Edit</span>
               </Link>
             </Button>
             <ConfirmDeleteButton
               itemLabel={row.title_en}
+              actionLabel="Delete"
+              confirmLabel="Delete"
               onConfirm={() => remove.mutate(row.id)}
             />
           </>

@@ -15,6 +15,10 @@ export const metadata: Metadata = {
     "Drills, first aid training, clean-ups and community programmes in Barangay San Jose.",
 };
 
+function activityTypeLabel(type: ActivityType) {
+  return type.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 /**
  * Community activities (FR-PUB-006, FR-ACT-003).
  *
@@ -70,7 +74,7 @@ export default async function ActivitiesPage({
                 aria-current={active ? "page" : undefined}
                 className={`focus-visible:ring-primary-600 rounded-full border px-3.5 py-2 text-xs font-bold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${active ? "border-primary-700 bg-primary-700 text-white" : "hover:border-primary-300 hover:text-primary-800 border-neutral-200 bg-white text-neutral-700"}`}
               >
-                {type ? type.replace(/_/g, " ") : "All activities"}
+                {type ? activityTypeLabel(type) : "All Activities"}
               </a>
             );
           })}
@@ -86,7 +90,7 @@ export default async function ActivitiesPage({
         ) : (
           <EmptyState
             icon={CalendarDays}
-            title="Nothing scheduled right now"
+            title="Nothing Scheduled Right Now"
             description="Drills and training sessions are posted here as the barangay schedules them."
           />
         )}

@@ -96,6 +96,8 @@ photos before the first save; `/admin/activities/[id]` supplies the persistent o
 `/admin/guides`, `/admin/guides/new`, and `/admin/guides/[id]` form one bilingual guide workflow:
 source attribution and a review date are required only when publishing.
 The guide editor remains plain-text by design; `##` is the supported section-heading convention.
+The singular `/admin/guide` path and its `new`/`[id]` variants redirect to these canonical routes
+so older bookmarks retain the same editor and preview workflow.
 
 ## Weather & Flood Watch workspace
 

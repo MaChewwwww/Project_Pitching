@@ -15,10 +15,10 @@ import type { ActivityType, PublicActivity } from "@/lib/api/public-types";
 const TYPE_LABEL: Record<ActivityType, string> = {
   drill: "Drill",
   seminar: "Seminar",
-  first_aid: "First aid",
+  first_aid: "First Aid",
   cleanup: "Clean-up",
-  tree_planting: "Tree planting",
-  ngo_program: "NGO program",
+  tree_planting: "Tree Planting",
+  ngo_program: "NGO Program",
   other: "Activity",
 };
 
@@ -33,7 +33,7 @@ export function ActivityCard({
     <Link
       href={`/activities/${activity.slug}` as Route}
       className="group focus-visible:ring-primary-600 block h-full rounded-[20px] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-      aria-label={`Read activity: ${activity.title}`}
+      aria-label={`Read Activity: ${activity.title}`}
     >
       <Card
         radius="xl"

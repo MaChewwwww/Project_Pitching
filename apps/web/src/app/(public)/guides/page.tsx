@@ -38,7 +38,7 @@ export default async function GuidesPage() {
         ) : (
           <EmptyState
             icon={BookOpen}
-            title="No guidelines published yet"
+            title="No Guidelines Published Yet"
             description="Preparedness guidelines will appear here once the barangay publishes them."
           />
         )}

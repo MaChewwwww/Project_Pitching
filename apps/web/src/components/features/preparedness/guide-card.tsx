@@ -47,8 +47,14 @@ const HAZARD_LABEL: Record<HazardType, string> = {
   fire: "Fire",
   landslide: "Landslide",
   general: "General",
-  food: "Emergency food",
+  food: "Emergency Food",
 };
+
+function titleCase(value: string) {
+  return value === "n/a"
+    ? "Preparedness Essential"
+    : value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
 
 export function GuideCard({
   guide,
@@ -67,7 +73,7 @@ export function GuideCard({
         "group focus-visible:ring-primary-600 block h-full rounded-[20px] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
         className,
       )}
-      aria-label={`Read preparedness guide: ${pick(lang, guide.title_fil, guide.title_en)}`}
+      aria-label={`Read Preparedness Guide: ${pick(lang, guide.title_fil, guide.title_en)}`}
     >
       <Card radius="xl" topAccent interactive className="h-full overflow-hidden bg-white">
         <CardContent className="flex h-full flex-col gap-4 p-5 md:p-6">
@@ -81,7 +87,7 @@ export function GuideCard({
               </span>
             </div>
             <span className="rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-[10px] font-bold tracking-wider text-neutral-600 uppercase">
-              {guide.phase === "n/a" ? "Ready" : guide.phase}
+              {guide.phase === "n/a" ? "Ready" : titleCase(guide.phase)}
             </span>
           </div>
 
@@ -105,7 +111,7 @@ export function GuideCard({
                 <span />
               )}
               <span className="text-overline text-primary-700 group-hover:text-primary-800 inline-flex items-center gap-2">
-                Read guide{" "}
+                Read Guide{" "}
                 <ArrowRight
                   aria-hidden
                   className="size-4 transition-transform group-hover:translate-x-1.5"

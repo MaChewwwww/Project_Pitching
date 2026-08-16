@@ -10,11 +10,17 @@ import { pick, useLanguage } from "@/lib/i18n/language-store";
 import type { PublicGuide, PublicGuideSummary } from "@/lib/api/public-types";
 
 const phaseLabel: Record<PublicGuide["phase"], string> = {
-  before: "Before the hazard",
-  during: "During the hazard",
-  after: "After the hazard",
-  "n/a": "Preparedness essential",
+  before: "Before The Hazard",
+  during: "During The Hazard",
+  after: "After The Hazard",
+  "n/a": "Preparedness Essential",
 };
+
+function titleCase(value: string) {
+  return value === "n/a"
+    ? "Preparedness Essential"
+    : value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
 
 export function GuideDetailView({
   guide,
@@ -34,17 +40,17 @@ export function GuideDetailView({
   return (
     <>
       <PageHeader
-        eyebrow="Preparedness guide"
+        eyebrow="Preparedness Guide"
         title={title}
         description={pick(lang, guide.excerpt_fil, guide.excerpt_en)}
         breadcrumb={[
           { label: "Home", href: "/" },
-          { label: "Preparedness guidelines", href: "/guides" },
+          { label: "Preparedness Guidelines", href: "/guides" },
           { label: title },
         ]}
         action={
           <span className="border-primary-200 bg-primary-50 text-primary-800 rounded-full border px-3.5 py-2 text-xs font-bold tracking-wide uppercase">
-            {guide.hazard_type} · {guide.phase}
+            {titleCase(guide.hazard_type)} · {titleCase(guide.phase)}
           </span>
         }
       />
@@ -77,20 +83,20 @@ export function GuideDetailView({
             <div className="sticky top-24 space-y-5">
               <section className="border-primary-100 bg-primary-50/65 rounded-2xl border p-5">
                 <h2 className="inline-flex items-center gap-2 text-sm font-bold text-neutral-900">
-                  <ShieldCheck className="text-primary-700 size-4" /> Guide record
+                  <ShieldCheck className="text-primary-700 size-4" /> Guide Record
                 </h2>
                 <dl className="mt-4 space-y-3 text-sm">
                   <div>
                     <dt className="text-xs font-bold tracking-wide text-neutral-500 uppercase">
                       Hazard
                     </dt>
-                    <dd className="mt-1 font-semibold text-neutral-900 capitalize">
-                      {guide.hazard_type}
+                    <dd className="mt-1 font-semibold text-neutral-900">
+                      {titleCase(guide.hazard_type)}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-xs font-bold tracking-wide text-neutral-500 uppercase">
-                      When to use
+                      When To Use
                     </dt>
                     <dd className="mt-1 font-semibold text-neutral-900">
                       {phaseLabel[guide.phase]}
@@ -109,7 +115,7 @@ export function GuideDetailView({
                   {guide.last_reviewed_at ? (
                     <div>
                       <dt className="inline-flex items-center gap-1 text-xs font-bold tracking-wide text-neutral-500 uppercase">
-                        <CalendarCheck className="size-3" /> Last reviewed
+                        <CalendarCheck className="size-3" /> Last Reviewed
                       </dt>
                       <dd className="mt-1 font-semibold text-neutral-900">
                         {formatPhtDate(guide.last_reviewed_at)}
@@ -121,7 +127,7 @@ export function GuideDetailView({
 
               {related.length ? (
                 <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
-                  <h2 className="text-sm font-bold text-neutral-900">Other guides</h2>
+                  <h2 className="text-sm font-bold text-neutral-900">Other Guides</h2>
                   <div className="mt-3 divide-y divide-neutral-100">
                     {related.map((item) => (
                       <Link
@@ -131,7 +137,7 @@ export function GuideDetailView({
                       >
                         <span>
                           <span className="text-primary-700 block text-[10px] font-bold tracking-wider uppercase">
-                            {item.hazard_type}
+                            {titleCase(item.hazard_type)}
                           </span>
                           <span className="group-hover:text-primary-800 mt-1 block text-sm font-semibold text-neutral-900">
                             {pick(lang, item.title_fil, item.title_en)}
@@ -145,7 +151,7 @@ export function GuideDetailView({
                     href="/guides"
                     className="text-primary-700 hover:text-primary-800 mt-4 inline-flex text-sm font-bold"
                   >
-                    All preparedness guides
+                    All Preparedness Guides
                   </Link>
                 </section>
               ) : null}

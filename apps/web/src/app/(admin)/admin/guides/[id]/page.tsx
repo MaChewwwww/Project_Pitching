@@ -1,12 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/common/button";
 import { ErrorState } from "@/components/common/error-state";
 import { ListSkeleton } from "@/components/common/skeletons";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
@@ -48,7 +45,7 @@ export default function EditGuidePage() {
     mutationFn: (values: GuideEditorValues) =>
       api.patch(`/admin/guides/${id}`, guidePayload(values)),
     onSuccess: () => {
-      toast.success("Guide saved");
+      toast.success("Guide Saved");
       queryClient.invalidateQueries({ queryKey });
       queryClient.invalidateQueries({ queryKey: ["admin", "guides"] });
     },
@@ -58,7 +55,7 @@ export default function EditGuidePage() {
   });
   if (isLoading) return <ListSkeleton rows={4} />;
   if (isError || !data)
-    return <ErrorState sectionName="This guide" onRetry={() => refetch()} />;
+    return <ErrorState sectionName="This Guide" onRetry={() => refetch()} />;
   const defaults: GuideEditorValues = {
     slug: data.slug,
     hazard_type: data.hazard_type,
@@ -73,22 +70,14 @@ export default function EditGuidePage() {
     is_published: data.is_published,
   };
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-7">
+    <div className="flex w-full flex-col gap-6">
       <AdminPageHeader
-        title="Edit preparedness guide"
+        title="Edit Preparedness Guide"
         description="Keep both language versions, attribution, and review date current."
-        action={
-          <Button asChild size="sm" variant="outline">
-            <Link href="/admin/guides">
-              <ArrowLeft aria-hidden className="size-4" />
-              Back to guides
-            </Link>
-          </Button>
-        }
       />
       <GuideEditor
         defaultValues={defaults}
-        submitLabel="Save guide"
+        submitLabel="Save Guide"
         onSubmit={(values) => update.mutateAsync(values).then(() => undefined)}
         onCancel={() => router.push("/admin/guides")}
       />

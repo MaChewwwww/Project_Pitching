@@ -116,10 +116,12 @@ export function ActivityDetailView({
           <article className="flex flex-col gap-7 lg:col-span-8">
             <div className="flex flex-wrap gap-2">
               <span className="bg-primary-700 rounded-full px-3 py-1.5 text-xs font-bold text-white">
-                {activity.type.replace(/_/g, " ")}
+                {activity.type
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (letter) => letter.toUpperCase())}
               </span>
               <span className="border-primary-100 bg-primary-50 text-primary-800 rounded-full border px-3 py-1.5 text-xs font-semibold">
-                Community activity
+                Community Activity
               </span>
             </div>
 
@@ -138,7 +140,7 @@ export function ActivityDetailView({
             ) : null}
 
             <section
-              aria-label="Activity schedule"
+              aria-label="Activity Schedule"
               className="border-primary-100 bg-primary-50/70 grid gap-3 rounded-2xl border p-4 text-sm text-neutral-700 sm:grid-cols-2 md:p-5"
             >
               <p className="inline-flex items-start gap-2">
@@ -171,9 +173,9 @@ export function ActivityDetailView({
             {gallery.length ? (
               <section
                 className="border-t border-neutral-200 pt-7"
-                aria-label="Activity gallery"
+                aria-label="Activity Gallery"
               >
-                <h2 className="text-h3 mb-4 text-neutral-900">Activity gallery</h2>
+                <h2 className="text-h3 mb-4 text-neutral-900">Activity Gallery</h2>
                 <div className="grid gap-4 sm:grid-cols-2">
                   {gallery.map((image) => (
                     <Image
@@ -195,7 +197,7 @@ export function ActivityDetailView({
             <div className="sticky top-24 space-y-5">
               <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
                 <h2 className="inline-flex items-center gap-2 text-base font-bold text-neutral-900">
-                  <Users className="text-primary-700 size-4" /> Other upcoming activities
+                  <Users className="text-primary-700 size-4" /> Other Upcoming Activities
                 </h2>
                 {related.length ? (
                   <div className="mt-4 divide-y divide-neutral-100">
@@ -223,7 +225,7 @@ export function ActivityDetailView({
                   href="/activities"
                   className="text-primary-700 hover:text-primary-800 mt-5 inline-flex text-sm font-bold"
                 >
-                  View all activities
+                  View All Activities
                 </Link>
               </div>
             </div>

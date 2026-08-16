@@ -1,13 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/common/button";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import {
   GuideEditor,
@@ -26,7 +23,7 @@ export default function NewGuidePage() {
     mutationFn: (values: GuideEditorValues) =>
       api.post("/admin/guides", guidePayload(values)),
     onSuccess: (response) => {
-      toast.success("Guide created");
+      toast.success("Guide Created");
       queryClient.invalidateQueries({ queryKey: ["admin", "guides"] });
       router.replace(`/admin/guides/${response.data.id}` as Route);
     },
@@ -35,22 +32,14 @@ export default function NewGuidePage() {
     },
   });
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-7">
+    <div className="flex w-full flex-col gap-6">
       <AdminPageHeader
-        title="Create preparedness guide"
+        title="Create Preparedness Guide"
         description="Write both language versions, add the official source, then publish when review is complete."
-        action={
-          <Button asChild size="sm" variant="outline">
-            <Link href="/admin/guides">
-              <ArrowLeft aria-hidden className="size-4" />
-              Back to guides
-            </Link>
-          </Button>
-        }
       />
       <GuideEditor
         defaultValues={emptyGuideValues}
-        submitLabel="Create guide"
+        submitLabel="Create Guide"
         onSubmit={(values) => create.mutateAsync(values).then(() => undefined)}
         onCancel={() => router.push("/admin/guides")}
       />

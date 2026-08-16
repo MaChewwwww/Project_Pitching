@@ -20,6 +20,12 @@ interface AdminGuide extends PublicGuide {
   is_published: boolean;
 }
 
+function guideLabel(value: string) {
+  return value === "n/a"
+    ? "Preparedness Essential"
+    : value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 export function GuidePreviewDialog({
   guideId,
   title,
@@ -39,7 +45,7 @@ export function GuidePreviewDialog({
       <DialogTrigger asChild>
         <Button size="sm" variant="success" className="h-8 gap-1.5">
           <Eye aria-hidden className="size-3.5" />
-          <span className="md:hidden">View</span>
+          <span>View</span>
         </Button>
       </DialogTrigger>
       <DialogContent
@@ -49,7 +55,7 @@ export function GuidePreviewDialog({
         <div className="sticky top-0 flex items-start justify-between gap-4 border-b border-neutral-100 bg-white p-5">
           <div>
             <p className="text-primary-700 text-[10px] font-bold tracking-wider uppercase">
-              Admin preview
+              Admin Preview
             </p>
             <DialogTitle className="mt-1 text-xl">{data?.title_en ?? title}</DialogTitle>
           </div>
@@ -57,7 +63,7 @@ export function GuidePreviewDialog({
             <button
               type="button"
               className="grid size-11 place-items-center rounded-full border border-neutral-200 text-neutral-500 hover:bg-neutral-50"
-              aria-label="Close preview"
+              aria-label="Close Preview"
             >
               <X className="size-4" />
             </button>
@@ -66,16 +72,16 @@ export function GuidePreviewDialog({
         <div className="space-y-5 p-5 sm:p-7">
           {isLoading ? (
             <p className="py-16 text-center text-sm text-neutral-500">
-              Loading guide preview…
+              Loading Guide Preview…
             </p>
           ) : data ? (
             <>
               <div className="flex flex-wrap gap-2">
                 <span className="bg-primary-700 rounded-full px-3 py-1 text-xs font-bold text-white capitalize">
-                  {data.hazard_type}
+                  {guideLabel(data.hazard_type)}
                 </span>
                 <span className="rounded-full border border-neutral-200 px-3 py-1 text-xs font-bold text-neutral-700 capitalize">
-                  {data.phase}
+                  {guideLabel(data.phase)}
                 </span>
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-bold ${data.is_published ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}
@@ -90,7 +96,7 @@ export function GuidePreviewDialog({
               <div className="border-primary-100 bg-primary-50/60 rounded-xl border p-4 text-sm text-neutral-700">
                 <p className="inline-flex items-center gap-2 font-semibold text-neutral-900">
                   <BookOpen className="text-primary-700 size-4" />
-                  {data.source_attribution || "No source attribution"}
+                  {data.source_attribution || "No Source Attribution"}
                 </p>
                 {data.last_reviewed_at ? (
                   <p className="mt-2 inline-flex items-center gap-2">
@@ -102,7 +108,7 @@ export function GuidePreviewDialog({
             </>
           ) : (
             <p className="py-16 text-center text-sm text-neutral-500">
-              Could not load this guide.
+              Could Not Load This Guide.
             </p>
           )}
         </div>
