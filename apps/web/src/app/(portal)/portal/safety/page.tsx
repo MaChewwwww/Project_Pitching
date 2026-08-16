@@ -7,15 +7,11 @@ import { toast } from "sonner";
 import {
   AlertCircle,
   Building2,
-  Calendar,
   CheckCircle2,
-  ChevronRight,
   LifeBuoy,
   Phone,
-  ShieldAlert,
   ShieldCheck,
   Siren,
-  Sparkles,
   UsersRound,
 } from "lucide-react";
 
@@ -31,7 +27,6 @@ import type {
   SafetyStatusValue,
 } from "@/lib/api/safety-types";
 import type { PublicEmergencyEvent, PublicEvacCenter } from "@/lib/api/public-types";
-import { cn } from "@/lib/utils";
 
 export default function PortalSafetyPage() {
   const queryClient = useQueryClient();
@@ -83,7 +78,7 @@ export default function PortalSafetyPage() {
   const activeEvents = activeEventsQuery.data ?? [];
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 sm:space-y-8">
+    <div className="w-full space-y-6 sm:space-y-8">
       {/* ── Page Header ── */}
       <PortalPageHeader
         icon={ShieldCheck}
@@ -192,7 +187,7 @@ export default function PortalSafetyPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Active Event Card */}
+          {/* Active Event Banner */}
           <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border-2 border-red-500 bg-gradient-to-br from-red-600 via-rose-600 to-red-700 p-5 sm:p-6 text-white shadow-md">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -214,101 +209,108 @@ export default function PortalSafetyPage() {
             </div>
           </div>
 
-          {/* Individual Member Safety Status Control */}
-          <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
-            <CardContent className="p-5 sm:p-6 lg:p-7 space-y-5">
-              <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="grid size-8 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
-                    <UsersRound className="size-4" />
-                  </span>
-                  <div>
-                    <h3 className="text-base font-bold text-neutral-900">
-                      Family Members Status Control
-                    </h3>
-                    <p className="text-xs text-neutral-500">
-                      Tap &quot;Safe&quot; or &quot;Needs Rescue&quot; for each person in your household.
-                    </p>
+          {/* 2-Column Responsive Layout on Widescreen */}
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-start">
+            {/* Left Column: Individual Member Safety Status Control */}
+            <div className="xl:col-span-7 space-y-6">
+              <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
+                <CardContent className="p-5 sm:p-6 lg:p-7 space-y-5">
+                  <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="grid size-8 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
+                        <UsersRound className="size-4" />
+                      </span>
+                      <div>
+                        <h3 className="text-base font-bold text-neutral-900">
+                          Family Members Status Control
+                        </h3>
+                        <p className="text-xs text-neutral-500">
+                          Tap &quot;Safe&quot; or &quot;Needs Rescue&quot; for each person in your household.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {data.household?.members ? (
-                <SafetyStatusControl
-                  members={data.household.members}
-                  isSubmitting={submitMutation.isPending}
-                  onMarkMember={(memberId, status: SafetyStatusValue) =>
-                    submitMutation.mutateAsync({
-                      status,
-                      scope: "member",
-                      member_ids: [memberId],
-                      event_id: resolvedEventId,
-                      evac_center_id: centerId || null,
-                    })
-                  }
-                  onMarkHousehold={(status, acknowledgedMemberIds) =>
-                    submitMutation.mutateAsync({
-                      status,
-                      scope: "household",
-                      acknowledged_member_ids: acknowledgedMemberIds,
-                      event_id: resolvedEventId,
-                      evac_center_id: centerId || null,
-                    })
-                  }
-                />
-              ) : (
-                <p className="text-xs text-neutral-500">No household members found.</p>
-              )}
-            </CardContent>
-          </Card>
+                  {data.household?.members ? (
+                    <SafetyStatusControl
+                      members={data.household.members}
+                      isSubmitting={submitMutation.isPending}
+                      onMarkMember={(memberId, status: SafetyStatusValue) =>
+                        submitMutation.mutateAsync({
+                          status,
+                          scope: "member",
+                          member_ids: [memberId],
+                          event_id: resolvedEventId,
+                          evac_center_id: centerId || null,
+                        })
+                      }
+                      onMarkHousehold={(status, acknowledgedMemberIds) =>
+                        submitMutation.mutateAsync({
+                          status,
+                          scope: "household",
+                          acknowledged_member_ids: acknowledgedMemberIds,
+                          event_id: resolvedEventId,
+                          evac_center_id: centerId || null,
+                        })
+                      }
+                    />
+                  ) : (
+                    <p className="text-xs text-neutral-500">No household members found.</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
-          {/* Optional Evacuation Center Selection Card */}
-          <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
-            <CardContent className="p-5 sm:p-6 lg:p-7 space-y-4">
-              <div className="flex items-center gap-2.5 border-b border-neutral-100 pb-3">
-                <span className="grid size-8 place-items-center rounded-xl bg-sky-100 text-sky-700">
-                  <Building2 className="size-4" />
-                </span>
-                <div>
-                  <h3 className="text-base font-bold text-neutral-900">
-                    Shelter Assignment / Evacuation Check-In
-                  </h3>
-                  <p className="text-xs text-neutral-500">
-                    If you are evacuating to an official shelter, select the center below.
-                  </p>
-                </div>
-              </div>
+            {/* Right Column: Evacuation Center Check-In & History */}
+            <div className="xl:col-span-5 space-y-6">
+              <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
+                <CardContent className="p-5 sm:p-6 space-y-4">
+                  <div className="flex items-center gap-2.5 border-b border-neutral-100 pb-3">
+                    <span className="grid size-8 place-items-center rounded-xl bg-sky-100 text-sky-700">
+                      <Building2 className="size-4" />
+                    </span>
+                    <div>
+                      <h3 className="text-base font-bold text-neutral-900">
+                        Shelter Assignment Check-In
+                      </h3>
+                      <p className="text-xs text-neutral-500">
+                        Select an evacuation center if taking official shelter.
+                      </p>
+                    </div>
+                  </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="evac-center-select"
-                  className="text-xs font-bold text-neutral-800"
-                >
-                  Designated Evacuation Shelter (Optional)
-                </label>
-                <select
-                  id="evac-center-select"
-                  value={centerId}
-                  onChange={(e) => setCenterId(e.target.value)}
-                  className="h-11 rounded-xl border border-neutral-300 bg-neutral-50 px-3 text-xs sm:text-sm font-semibold focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                >
-                  <option value="">No center assignment (Home / Relative)</option>
-                  {centersQuery.data?.map((center) => (
-                    <option key={center.id} value={center.id}>
-                      {center.facility.name} • {center.occupancy}/{center.capacity ?? "unlimited"} slots
-                      {center.is_at_capacity ? " (AT CAPACITY)" : ""}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-[11px] text-neutral-400">
-                  Selecting a center records physical shelter occupancy for relief distribution.
-                </span>
-              </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label
+                      htmlFor="evac-center-select"
+                      className="text-xs font-bold text-neutral-800"
+                    >
+                      Designated Evacuation Shelter (Optional)
+                    </label>
+                    <select
+                      id="evac-center-select"
+                      value={centerId}
+                      onChange={(e) => setCenterId(e.target.value)}
+                      className="h-11 rounded-xl border border-neutral-300 bg-neutral-50 px-3 text-xs sm:text-sm font-semibold focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    >
+                      <option value="">No center assignment (Home / Relative)</option>
+                      {centersQuery.data?.map((center) => (
+                        <option key={center.id} value={center.id}>
+                          {center.facility.name} • {center.occupancy}/{center.capacity ?? "unlimited"} slots
+                          {center.is_at_capacity ? " (AT CAPACITY)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="text-[11px] text-neutral-400">
+                      Selecting a center records physical shelter occupancy for relief distribution.
+                    </span>
+                  </div>
 
-              {/* Evacuation Status & History */}
-              <PortalEvacuationStatusCard />
-            </CardContent>
-          </Card>
+                  {/* Evacuation Status & History */}
+                  <PortalEvacuationStatusCard />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       )}
 

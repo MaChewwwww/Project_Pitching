@@ -242,7 +242,7 @@ export default function PortalHouseholdPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {members.map((member) => {
             const initial =
               member.full_name?.trim().charAt(0).toUpperCase() || "M";

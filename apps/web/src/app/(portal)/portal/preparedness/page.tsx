@@ -55,7 +55,7 @@ export default function PortalPreparednessPage() {
   const planComplete = hasPlanMeeting && hasPlanContact;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 sm:space-y-8">
+    <div className="w-full space-y-6 sm:space-y-8">
       {/* ── Page Header ── */}
       <PortalPageHeader
         icon={Backpack}

@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/common/button";
+import { PortalBreadcrumbs } from "@/components/features/portal/portal-breadcrumbs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -256,11 +257,12 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* ── Main Content Area (with responsive padding for sidebar & mobile bottom bar) ── */}
+      {/* ── Main Content Area (Fluid width, maximizing widescreen layout) ── */}
       <div className="flex min-w-0 flex-1 flex-col pb-24 lg:pb-8 lg:pl-64">
         {/* ── Top Bar Header (Desktop & Mobile) ── */}
-        <header className="sticky top-0 z-20 border-b border-emerald-950/10 bg-white/95 px-4 py-3 backdrop-blur-md lg:px-8">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+        <header className="sticky top-0 z-20 flex h-14 sm:h-16 w-full items-center justify-between gap-4 border-b border-neutral-200/90 bg-white/95 px-4 sm:px-6 lg:px-8 xl:px-10 backdrop-blur-md">
+          {/* Left: Mobile Brand or Dynamic Breadcrumbs on Desktop */}
+          <div className="flex items-center gap-3 min-w-0">
             {/* Mobile Logo Brand */}
             <Link href="/portal" className="flex items-center gap-2 lg:hidden">
               <span className="grid size-8 place-items-center rounded-xl bg-emerald-600 text-white shadow-xs">
@@ -271,118 +273,121 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
                   SAGIP-SJ
                 </span>
                 <span className="text-[9px] font-bold text-emerald-700 uppercase">
-                  Resident Portal
+                  Resident
                 </span>
               </div>
             </Link>
 
-            {/* Desktop Breadcrumb/Context Indicator */}
-            <div className="hidden items-center gap-2 text-xs font-semibold text-neutral-600 lg:flex">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50/70 px-2.5 py-0.5 text-emerald-900 font-bold">
-                <Sparkles className="size-3 text-emerald-600" />
-                Barangay San Jose
-              </span>
-              <span className="text-neutral-300">/</span>
-              <span className="text-neutral-800 font-medium">
-                Household Readiness & Safety Platform
-              </span>
+            {/* Desktop Dynamic Breadcrumbs */}
+            <div className="hidden lg:flex min-w-0 items-center">
+              <PortalBreadcrumbs />
             </div>
+          </div>
 
-            {/* Right Action Affordances */}
-            <div className="ml-auto flex items-center gap-2 sm:gap-3">
-              {/* Rescue Fast Link */}
-              <Button
-                asChild
-                size="sm"
-                className="rounded-xl border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-600 hover:text-white shadow-2xs transition-all text-xs"
-              >
-                <Link href="/portal/rescue" className="flex items-center gap-1.5">
-                  <LifeBuoy className="size-3.5 animate-pulse" />
-                  <span>Ask for Rescue</span>
-                </Link>
-              </Button>
-
-              {/* Updates Bell Action with Unread Badge */}
-              <Link
-                href="/portal/updates"
-                aria-label="Updates & Notifications"
-                className="relative grid size-9 place-items-center rounded-xl border border-neutral-200/80 bg-white text-neutral-700 transition-colors hover:border-emerald-300 hover:bg-emerald-50/50 hover:text-emerald-900"
-              >
-                <Bell className="size-4" />
-                {unreadCount > 0 ? (
-                  <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white ring-2 ring-white">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                ) : null}
+          {/* Right Action Affordances */}
+          <div className="ml-auto flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Rescue Fast Link */}
+            <Button
+              asChild
+              size="sm"
+              className="rounded-xl border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-600 hover:text-white shadow-2xs transition-all text-xs h-9 px-3"
+            >
+              <Link href="/portal/rescue" className="flex items-center gap-1.5">
+                <LifeBuoy className="size-3.5 animate-pulse text-red-600 group-hover:text-white" />
+                <span>Ask for Rescue</span>
               </Link>
+            </Button>
 
-              {/* Profile Menu Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 rounded-full border border-neutral-200/80 bg-white p-1 pr-2.5 text-left transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-                    aria-label="Open resident profile menu"
-                  >
-                    <span className="grid size-7 place-items-center rounded-full bg-emerald-700 text-xs font-bold text-white shadow-xs">
-                      {initial}
-                    </span>
-                    <span className="hidden sm:block max-w-28 truncate text-xs font-bold text-neutral-800">
-                      {user?.full_name?.split(" ")[0] ?? "Resident"}
-                    </span>
-                    <ChevronDown className="size-3.5 text-neutral-400" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-56 rounded-2xl border border-neutral-200/80 bg-white p-1.5 shadow-xl"
+            {/* Updates Bell Action with Unread Badge */}
+            <Link
+              href="/portal/updates"
+              aria-label="Updates & Notifications"
+              className="relative grid size-9 place-items-center rounded-xl border border-neutral-200/80 bg-white text-neutral-700 transition-colors hover:border-emerald-300 hover:bg-emerald-50/50 hover:text-emerald-900 shadow-2xs"
+            >
+              <Bell className="size-4" />
+              {unreadCount > 0 ? (
+                <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white ring-2 ring-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              ) : null}
+            </Link>
+
+            {/* Profile Menu Dropdown (Barangay Portal Style with 2-line info) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="group flex items-center gap-2.5 rounded-xl border border-neutral-200/90 bg-white px-2 py-1 text-left transition-colors hover:bg-neutral-50 hover:border-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 shadow-2xs"
+                  aria-label="Open resident profile menu"
                 >
-                  <DropdownMenuLabel className="px-3 py-2">
-                    <span className="block truncate text-xs font-bold text-neutral-900">
-                      {user?.full_name}
+                  <span className="grid size-8 shrink-0 place-items-center rounded-full bg-emerald-700 text-xs font-bold text-white ring-2 ring-emerald-100 shadow-2xs">
+                    {initial}
+                  </span>
+                  <div className="hidden sm:block min-w-0 pr-0.5">
+                    <span className="block max-w-40 truncate text-xs font-bold text-neutral-900 leading-tight">
+                      {user?.full_name ?? "Resident Head"}
                     </span>
-                    <span className="block truncate text-[11px] font-normal text-neutral-500">
+                    <span className="block text-[10px] font-bold tracking-wide text-emerald-700 uppercase">
+                      Resident Head
+                    </span>
+                  </div>
+                  <ChevronDown className="size-3.5 text-neutral-400 transition-transform group-data-[state=open]:rotate-180" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-64 rounded-2xl border border-neutral-200/90 bg-white p-1.5 shadow-xl"
+              >
+                <DropdownMenuLabel className="flex items-center gap-2.5 px-3 py-2.5">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-emerald-700 text-xs font-bold text-white ring-2 ring-emerald-100">
+                    {initial}
+                  </span>
+                  <div className="min-w-0">
+                    <span className="block truncate text-sm font-bold text-neutral-900">
+                      {user?.full_name ?? "Resident Head"}
+                    </span>
+                    <span className="block truncate text-xs font-normal text-neutral-500">
                       {user?.email}
                     </span>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild className="gap-2 rounded-xl text-xs font-semibold">
-                    <Link href="/portal/household">
-                      <UsersRound className="size-3.5 text-emerald-700" />
-                      Household Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="gap-2 rounded-xl text-xs font-semibold">
-                    <Link href="/portal/preparedness">
-                      <Backpack className="size-3.5 text-emerald-700" />
-                      Preparedness Hub
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="gap-2 rounded-xl text-xs font-semibold">
-                    <Link href="/" target="_blank" rel="noreferrer">
-                      <ExternalLink className="size-3.5 text-neutral-500" />
-                      View Public Site
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    variant="destructive"
-                    className="gap-2 rounded-xl text-xs font-semibold cursor-pointer"
-                    onSelect={() => void logout()}
-                  >
-                    <LogOut className="size-3.5" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild className="gap-2 rounded-xl text-xs font-semibold px-2.5 py-2">
+                  <Link href="/portal/household">
+                    <UsersRound className="size-4 text-emerald-700" />
+                    Household Profile & Citizens
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="gap-2 rounded-xl text-xs font-semibold px-2.5 py-2">
+                  <Link href="/portal/preparedness">
+                    <Backpack className="size-4 text-emerald-700" />
+                    Preparedness Hub
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="gap-2 rounded-xl text-xs font-semibold px-2.5 py-2">
+                  <Link href="/" target="_blank" rel="noreferrer">
+                    <ExternalLink className="size-4 text-neutral-500" />
+                    View Public Site
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  className="gap-2 rounded-xl text-xs font-semibold px-2.5 py-2 cursor-pointer"
+                  onSelect={() => void logout()}
+                >
+                  <LogOut className="size-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
-        {/* ── High-Impact Active Emergency Event Banner ── */}
+        {/* ── High-Impact Active Emergency Event Banner (Fluid full width) ── */}
         {activeEvents.length > 0 ? (
-          <div className="border-b border-red-600/30 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 px-4 py-2.5 text-white shadow-md lg:px-8">
-            <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3">
+          <div className="w-full border-b border-red-600/30 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 px-4 sm:px-6 lg:px-8 xl:px-10 py-2.5 text-white shadow-md">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
                 <span className="flex size-7 items-center justify-center rounded-lg bg-white/20 ring-2 ring-white/30 backdrop-blur-xs">
                   <Siren className="size-4 animate-pulse text-white" />
@@ -414,8 +419,8 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
           </div>
         ) : null}
 
-        {/* ── Main Page Content ── */}
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+        {/* ── Main Page Content (Fluid width, maximizing widescreen layout) ── */}
+        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8 xl:p-10 space-y-6 sm:space-y-8">
           {children}
         </main>
       </div>

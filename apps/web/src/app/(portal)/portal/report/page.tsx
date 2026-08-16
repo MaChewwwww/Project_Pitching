@@ -13,7 +13,7 @@ export default function PortalReportPage() {
   const [submitted, setSubmitted] = React.useState(false);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 sm:space-y-8">
+    <div className="w-full max-w-5xl space-y-6 sm:space-y-8">
       {/* ── Page Header ── */}
       <PortalPageHeader
         icon={FileWarning}

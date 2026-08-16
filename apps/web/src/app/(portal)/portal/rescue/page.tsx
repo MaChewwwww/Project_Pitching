@@ -10,7 +10,7 @@ import { RescueRequestForm } from "@/components/common/rescue-request-form";
 
 export default function PortalRescuePage() {
   return (
-    <div className="mx-auto max-w-3xl space-y-6 sm:space-y-8">
+    <div className="w-full max-w-5xl space-y-6 sm:space-y-8">
       {/* ── Page Header ── */}
       <PortalPageHeader
         icon={LifeBuoy}
