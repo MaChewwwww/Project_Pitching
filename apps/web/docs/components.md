@@ -20,11 +20,11 @@ The inventory — every composite, what it does, what it must handle — is
 
 Both are reusable design work, but they have different homes:
 
-| It is a… | When it qualifies | Home | Examples |
-| --- | --- | --- | --- |
-| **Common component** | Stable UI behaviour that works across public, portal, and console contexts | `components/common/` | `Button`, `EmptyState`, `PageHeader`, `SectionHeader` |
-| **Feature component** | Reusable behaviour with one domain or portal responsibility | `components/features/<domain>/` | `ResourceTable`, `AdminPageHeader`, `AnnouncementForm`, `AssetMetricStrip` |
-| **Composition** | A documented page/workspace anatomy made from components plus route data and actions | Route page + this documentation | public content section, admin directory, authoring surface, asset workspace, emergency worklist |
+| It is a…              | When it qualifies                                                                    | Home                            | Examples                                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------ | ------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Common component**  | Stable UI behaviour that works across public, portal, and console contexts           | `components/common/`            | `Button`, `EmptyState`, `PageHeader`, `SectionHeader`                                           |
+| **Feature component** | Reusable behaviour with one domain or portal responsibility                          | `components/features/<domain>/` | `ResourceTable`, `AdminPageHeader`, `AnnouncementForm`, `AssetMetricStrip`                      |
+| **Composition**       | A documented page/workspace anatomy made from components plus route data and actions | Route page + this documentation | public content section, admin directory, authoring surface, asset workspace, emergency worklist |
 
 The Barangay Portal's repeated look is therefore not accidental and it is not limited to
 `common/`. Its `features/admin/` components are part of the system: use them before making a
@@ -134,12 +134,13 @@ Each maps to a defined concept, and the mapping must stay consistent everywhere:
 
 ## Responsive is not a later pass
 
-Retrofitting a mobile variant onto `DataTable` after ten screens depend on it is the single most
-expensive rework available on this project (`design.md` Section 12).
+Retrofitting a mobile record-card layout onto `ResourceTable` after ten directories depend on it
+is the single most expensive rework available on this project (`design.md` Section 12).
 
-`DataTable` ships three mobile modes — `cards`, `priority`, `scroll` — chosen per table, not
-globally. On touch, row actions become a bottom sheet, never a hover dropdown: there is no hover
-on a phone, and a 32px icon in a row is not a reliable tap target.
+Below `md`, `ResourceTable` renders each row as an identity-first card, then a two-column
+label/value grid and a labelled action footer. Search and filters remain visible; sorting remains
+desktop-only. A map or emergency workspace owns its task-specific list rather than using this
+directory surface by default.
 
 Tap targets: **44×44 minimum, 48×48 for anything used during an emergency** — safety check-in,
 rescue request, hotline. Where the visual button is smaller, pad the hit area rather than
@@ -152,9 +153,9 @@ accent inside a tinted hero. It is sized to be the first thing a resident sees o
 page. `features/admin/admin-page-header.tsx` is the console equivalent, and the two are
 deliberately not the same component.
 
-The console header is one compact row — route icon, `text-h2` title, one line of context, and
-the primary action — because in the console the header is a label above a worklist, and every
-pixel it spends is a table row an officer cannot see. It takes no `titleAccent` and no
+The console header is a compact, soft-green work-surface header — route icon, `h1` title, one
+line of context, optional action, and optional metadata — because it labels a worklist rather
+than competing with it. On narrow screens, its action separates below the title. It takes no `titleAccent` and no
 `eyebrow`: the split-colour title was decoration that forced awkward phrasing ("Register a" /
 "household"), and the eyebrow duplicated what the breadcrumb now states outright. Its icon
 defaults to the sidebar entry for the current route, so a page never restates what the nav
@@ -179,7 +180,7 @@ route's last segment is an opaque UUID, which is noise in a trail, so it reads a
 page performs instead of the id. The topbar previously showed a static "Barangay San Jose /
 Operations console" lockup, which said the same thing on all 28 screens and so located nobody.
 
-## Console DataTable and article CMS
+## Console `ResourceTable` and article CMS
 
 `features/admin/resource-table.tsx` is the shared console list surface. It owns search,
 categorical filtering, sortable headings, pagination, empty/loading/error states, and the

@@ -11,11 +11,11 @@ recorded. A demo-ready implementation is not silently promoted to `✅` by this 
 
 ## Frozen for the demo
 
-| Surface | Included, current experience |
-| --- | --- |
-| Public site | Landing overview; announcements; activities; donation drives; preparedness guides and help; weather and flood history; flood hazard and barangay-facilities maps; emergency rescue request; login and registration |
-| Barangay Portal | Emergency-event, safety, rescue, incident, walk-in, registry, facilities, evacuation, siren, weather, content, hotline, FAQ, donation-drive, activity, and guide operations |
-| Shared presentation | Finalized public-map viewports, page shells, splash lifecycle, public article patterns, and the admin workspace/DataTable language |
+| Surface             | Included, current experience                                                                                                                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Public site         | Landing overview; announcements; activities; donation drives; preparedness guides and help; weather and flood history; flood hazard and barangay-facilities maps; emergency rescue request; login and registration |
+| Barangay Portal     | Emergency-event, safety, rescue, incident, walk-in, registry, facilities, evacuation, siren, weather, content, hotline, FAQ, donation-drive, activity, and guide operations                                        |
+| Shared presentation | Finalized public-map viewports, page shells, splash lifecycle, public article patterns, and the admin workspace/`ResourceTable` language                                                                           |
 
 The three protected public-map configurations remain exactly as recorded in
 [`design.md`](./design.md) Section 7.2 and [`AGENTS.md`](../AGENTS.md): landing preview,
@@ -23,10 +23,10 @@ Flood Hazard Map, and Barangay Facilities Map. New portal or console maps use is
 
 ## Deliberately not frozen
 
-| Surface | Status and next work |
-| --- | --- |
-| Resident Portal | Existing onboarding, household edit, safety, and incident-report routes remain available, but its complete design and workflow pass is scheduled next. Do not represent it as a finalized demo surface. |
-| About page | The existing page remains a public route, but its design revision and team-profile content are scheduled next. Do not invent team names, roles, biographies, or photographs before the team supplies them. |
+| Surface         | Status and next work                                                                                                                                                                                       |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Resident Portal | Existing onboarding, household edit, safety, and incident-report routes remain available, but its complete design and workflow pass is scheduled next. Do not represent it as a finalized demo surface.    |
+| About page      | The existing page remains a public route, but its design revision and team-profile content are scheduled next. Do not invent team names, roles, biographies, or photographs before the team supplies them. |
 
 ## Returning to active development
 

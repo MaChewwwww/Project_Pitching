@@ -24,50 +24,47 @@ system fallbacks preserve the hierarchy otherwise.
 
 The following inventory serves as the architectural and design pattern reference for finalized, tweaked, and verified pages across SAGIP-SJ:
 
-### 1. Public Information & Citizen Engagement (`(public)`)
+### 1. Public Information Site (`(public)`) — final demo reference
 
-- `/` — **Landing Page**: Hero, live weather widget, alert ticker, map preview, quick hotlines.
-- `/weather` — **Weather Watch**: Telemetry metrics, rainfall & river gauges, sensor thresholds.
-- `/announcements` and `/announcements/[slug]` — **Advisories CMS**: Category filters, priority badges, full article view.
-- `/rescue` — **Public SOS**: Quick unauthenticated emergency rescue dispatch request with GPS coordinates.
-
-### 2. Interactive GIS & Spatial Visualizations (`(public)`)
-
-- `/hazard-map` — **Flood Hazard Map**: 5-yr, 25-yr, 100-yr return layers, flood depth legend, sitio boundaries.
-- `/barangay-facilities` — **Barangay Facilities**: Finalized public facilities map view and directory.
+| Route family                                                   | Composition                                                                                                                    | Reuse boundary                                                                                               |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `/`                                                            | Long-form public landing: hero → resilient, independently loaded information sections → local action/hotline routes            | Landing sections own their domain deck and fallback; `PublicShell` owns the shared frame                     |
+| `/announcements`, `/activities`, `/donation-drives`, `/guides` | Public discovery lists: page intro → domain filter/pagination → purpose-built cards → empty state                              | Keep each card and filter feature-local; the list anatomy remains calm and editorial                         |
+| Their `[slug]` routes                                          | Reading view with domain metadata, ordered media/content, and adjacent related context where appropriate                       | `AnnouncementDetailView`, activity, donation, and guide detail views; do not borrow console authoring chrome |
+| `/weather`                                                     | Public weather-and-river reading surface with forecast context and a distinct authoritative river alert gauge                  | `WeatherPanel`, `RiverLevelPanel`, flood-history section                                                     |
+| `/hazard-map`, `/barangay-facilities`                          | Map-first public information views with their finalized, protected map configurations                                          | Isolated public `HazardMap` and `BarangayFacilitiesView`; do not alter their center, zoom, or default layers |
+| `/help`, `/rescue`                                             | Help is a searchable/readable support surface; rescue is a focused, unauthenticated action form with emergency contact context | Preparedness and rescue feature components, not admin operations components                                  |
+| `/about`                                                       | Informational route outside the demo-design freeze; team profile and its visual revision remain pending approved content       | Do not add placeholder team content                                                                          |
 
 ### 3. Authentication & Onboarding (`(auth)`)
 
 - `/login` — **Unified Sign-In**: Role-based redirect for Resident, Health Worker, Barangay Admin.
 - `/register` — **Resident Registration**: Multi-step household setup and head of family onboarding.
 
-### 4. Resident Self-Service Portal (`(portal)`)
+### 4. Resident Self-Service Portal (`(portal)`) — pending work
 
-- `/portal` — **Resident Dashboard**: Household summary, emergency alert banner, quick action cards.
-- `/portal/onboarding` — **Onboarding Wizard**: First-time setup for family members and health flags.
-- `/portal/household/edit` — **Household Roster**: Family member CRUD, medical/vulnerability tagging.
-- `/portal/safety` — **Emergency Safety Check-In**: One-tap "I am Safe" / "Need Assistance" status toggle.
-- `/portal/report` — **Citizen Incident Reporting**: Geolocation, photo attachment, triage category.
+The routes exist for the resident dashboard, onboarding, household editing, safety check-in, and
+incident reporting, but this surface is not part of the finalized Public Site and Barangay Portal
+demo baseline. Treat its remaining visual and workflow work as pending; do not cite it as a
+completed portal pattern.
 
-### 5. Barangay Admin: Command Center & Emergency Operations (`(admin)`)
+### 5. Barangay Portal (`(admin)`) — final visual composition map
 
-- `/admin` — **Main Operations Dashboard**: Calamity banner, live incident ticker, summary KPIs.
-- `/admin/emergency-events` & `/[id]` & `/[id]/edit` — **Disaster Operations Console**: Sitio roll-call, event logs, backfill dialog.
-- `/admin/safety` — **Live Safety Tally**: Real-time per-sitio status, unaccounted family counter.
-- `/admin/rescue-requests` — **Emergency Dispatch Queue**: Urgency triage (P1/P2/P3), responder assignment.
-- `/admin/incident-reports` — **Incident Management**: Citizen report verification and map triage.
-- `/admin/weather-readings` — **Sensor Telemetry**: Real-time logs and gauge analytics.
-- `/admin/flood-events` — **Flood History**: Editorial record and water level logs.
+`/admin` redirects to `/admin/households`; it is not a separate dashboard. The compatibility
+route `/admin/safety` redirects into the safety-ledger tab of the selected emergency event. The
+remaining final portal routes use the following visual systems.
 
-### 6. Barangay Admin: Registry & Vulnerability Management (`(admin)`)
-
-- `/admin/households` & `/[id]` & `/new` & `/[id]/edit` — **Household Masterlist**: Vulnerability scoring tiers.
-- `/admin/citizens` & `/[id]` & `/new` & `/[id]/edit` & `/[id]/promote` — **Citizen Roster**: Health tags, age demographics.
-- `/admin/unregistered-persons` & `/[id]` & `/[id]/edit` — **Transient Log**: Walk-in evacuee intake and management.
-
-### 7. Barangay Admin: Content & Broadcast CMS (`(admin)`)
-
-- `/admin/announcements` & `/create-announcement` & `/[id]` — **Broadcast Alerts & Announcements Management**.
+| Route family                                                                           | Visual job and anatomy                                                                                                                                                                                           | Primary implementation                                                                 |
+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `/admin/households`, `/admin/citizens`                                                 | Registry directory: compact header → coverage/risk summary → searchable, filterable directory → visible record actions. Detail routes retain the record context; create/edit/promote routes become focused forms | `HouseholdRegistrySummary` / `CitizenRegistrySummary`, `ResourceTable`, registry forms |
+| `/admin/unregistered-persons`                                                          | Event-scoped walk-in intake: header → triage totals → denser multi-filter roster → conversion and intake dialogs                                                                                                 | `WalkInSummaryCards`, `UnregisteredPersonForm`, page-local conversion dialog           |
+| `/admin/emergency-events`, `/[id]`, `/[id]/edit`                                       | Emergency control room: active-event band → overview/events/response-map/safety-ledger tabs → task-specific work surface. Detail and backfill actions preserve event context                                     | `EmergencyOverviewDashboard`, `EmergencyResponseMap`, `SafetyLedgerTab`, event dialogs |
+| `/admin/rescue-requests`, `/admin/incident-reports`                                    | Live response operations: priority snapshot → independently filterable map and worklist → inspection/triage dialogs                                                                                              | `ResponseOperationsWorkspace` with `mode="rescue"` or `mode="incident"`                |
+| `/admin/weather-readings`                                                              | Weather and Flood Watch: overview shares the public weather and river panels; river-alert review and manual reading entry are separate tabs                                                                      | `WeatherPanel`, `RiverLevelPanel`, page-local review/entry panels                      |
+| `/admin/flood-events`                                                                  | Historical record: summary insight beside a filtered event directory, with view/edit/create dialogs                                                                                                              | `FloodHistoryInsights`, `ResourceTable`, `FloodEventEditorDialog`                      |
+| `/admin/evacuation-centers`, `/admin/facilities`, `/admin/sirens`                      | Asset operations: metric strip → selected asset map with legend and filter rail → filtered directory. Detail/new/edit paths are focused asset flows                                                              | `AssetMetricStrip`, `AdminAssetWorkspaceMap`, asset dialogs                            |
+| `/admin/announcements`, `/admin/activities`, `/admin/donation-drives`, `/admin/guides` | Content management: directory for discovery, then a shared create/edit composition with editor, publication context, ordered media, and preview                                                                  | `ResourceTable`, domain form/editor, `ArticleImageManager`, preview dialogs            |
+| `/admin/faqs`, `/admin/hotlines`                                                       | Compact reference-data directories: header, shared table, focused dialog for create/edit/view where needed                                                                                                       | `ResourceTable`, FAQ page controls, hotline dialogs                                    |
 
 ## Announcement routes and the shared editor
 
