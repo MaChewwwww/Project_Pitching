@@ -718,22 +718,6 @@ export default function AdminFacilitiesPage() {
               </div>
             </div>
           </div>
-
-          {/* Card 4: Spatial Resolution Diagnostics */}
-          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-3.5 text-white shadow-xl backdrop-blur-md">
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-bold text-xs text-white">
-                Spatial Resolution
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-950 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white border border-emerald-700/80">
-                <span className="size-1.5 rounded-full bg-emerald-400" />
-                100% Pinned
-              </span>
-            </div>
-            <p className="mt-1.5 text-xs text-white/90 leading-relaxed">
-              All {stats.total} facilities are geocoded with high-accuracy GPS coordinates for emergency response and public map display.
-            </p>
-          </div>
         </div>
       </div>
 
