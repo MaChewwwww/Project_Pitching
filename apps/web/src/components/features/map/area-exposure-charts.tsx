@@ -35,7 +35,13 @@ export function AreaExposureCharts({ areas }: { areas: PublicAreaStat[] }) {
   const [hoveredArea, setHoveredArea] = React.useState<string | null>(null);
 
   const areaData = React.useMemo(() => {
-    return areas.map((area) => {
+    const list = Array.isArray(areas)
+      ? areas
+      : Array.isArray((areas as unknown as { areas: PublicAreaStat[] })?.areas)
+      ? (areas as unknown as { areas: PublicAreaStat[] }).areas
+      : [];
+
+    return list.map((area) => {
       const breakdown = getAreaRiskBreakdown(area);
       const lowPct = breakdown.total ? Math.round((breakdown.low / breakdown.total) * 100) : 0;
       const medPct = breakdown.total ? Math.round((breakdown.med / breakdown.total) * 100) : 0;

@@ -32,13 +32,15 @@ export default function PortalHazardMapPage() {
         .get<{ type: string; features: AreaBoundaryFeature[] }>(
           "/public/area-boundaries",
         )
-        .then((r) => r.data.features),
+        .then((r) => r.data?.features ?? []),
   });
 
   const facilitiesQuery = useQuery({
     queryKey: ["public", "facilities"],
     queryFn: () =>
-      api.get<PublicFacility[]>("/public/facilities").then((r) => r.data),
+      api
+        .get<PublicFacility[]>("/public/facilities")
+        .then((r) => (Array.isArray(r.data) ? r.data : [])),
   });
 
   const areaStatsQuery = useQuery({
@@ -46,13 +48,15 @@ export default function PortalHazardMapPage() {
     queryFn: () =>
       api
         .get<{ areas: PublicAreaStat[] }>("/public/area-stats")
-        .then((r) => r.data.areas),
+        .then((r) => (Array.isArray(r.data?.areas) ? r.data.areas : [])),
   });
 
   const sirensQuery = useQuery({
     queryKey: ["public", "sirens"],
     queryFn: () =>
-      api.get<PublicSiren[]>("/public/sirens").then((r) => r.data),
+      api
+        .get<PublicSiren[]>("/public/sirens")
+        .then((r) => (Array.isArray(r.data) ? r.data : [])),
   });
 
   const riverQuery = useQuery({
@@ -68,7 +72,7 @@ export default function PortalHazardMapPage() {
         .get<{ items: PublicEvacCenter[] }>("/public/evacuation-centers", {
           params: { size: 50 },
         })
-        .then((r) => r.data.items),
+        .then((r) => (Array.isArray(r.data?.items) ? r.data.items : [])),
   });
 
   const isLoading =

@@ -89,7 +89,7 @@ export default function PortalDashboardPage() {
   const river = useQuery({
     queryKey: ["public", "river-level"],
     queryFn: () =>
-      api.get<PublicRiverLevel>("/public/weather/river-level").then((r) => r.data),
+      api.get<PublicRiverLevel>("/public/river-level").then((r) => r.data),
   });
 
   if (household.isLoading || !household.data) {
