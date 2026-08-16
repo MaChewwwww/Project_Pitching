@@ -185,7 +185,7 @@ export function RegisterFacilityDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="facility_name" className="text-xs font-bold text-slate-800">
-                Facility Name / Label *
+                Facility Name *
               </Label>
               <Input
                 id="facility_name"
@@ -202,7 +202,7 @@ export function RegisterFacilityDialog({
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="facility_type" className="text-xs font-bold text-slate-800">
-                Infrastructure Category *
+                Category *
               </Label>
               <Controller
                 name="type"
@@ -226,8 +226,8 @@ export function RegisterFacilityDialog({
                             <div className="flex items-center gap-2">
                               <span
                                 className={cn(
-                                  "size-2 rounded-full shrink-0",
-                                  cfg.dot,
+                                   "size-2 rounded-full shrink-0",
+                                   cfg.dot,
                                 )}
                               />
                               <Icon className={cn("size-3.5 shrink-0", cfg.color)} />
@@ -249,7 +249,7 @@ export function RegisterFacilityDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="address" className="text-xs font-bold text-slate-800">
-                Street / Sitio Address
+                Street Address
               </Label>
               <Input
                 id="address"
@@ -261,7 +261,7 @@ export function RegisterFacilityDialog({
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="contact_number" className="text-xs font-bold text-slate-800">
-                Contact Number / Hotline Desk
+                Contact Number
               </Label>
               <div className="relative">
                 <Input

@@ -225,7 +225,7 @@ export function EditFacilityDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="edit_facility_name" className="text-xs font-bold text-slate-800">
-                Facility Name / Label *
+                Facility Name *
               </Label>
               <Input
                 id="edit_facility_name"
@@ -242,7 +242,7 @@ export function EditFacilityDialog({
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="edit_facility_type" className="text-xs font-bold text-slate-800">
-                Infrastructure Category *
+                Category *
               </Label>
               <Controller
                 name="type"
@@ -289,7 +289,7 @@ export function EditFacilityDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="edit_address" className="text-xs font-bold text-slate-800">
-                Street / Sitio Address
+                Street Address
               </Label>
               <Input
                 id="edit_address"
@@ -301,7 +301,7 @@ export function EditFacilityDialog({
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="edit_contact_number" className="text-xs font-bold text-slate-800">
-                Contact Number / Hotline Desk
+                Contact Number
               </Label>
               <div className="relative">
                 <Input
