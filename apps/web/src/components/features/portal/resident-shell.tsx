@@ -384,34 +384,64 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* ── High-Impact Active Emergency Event Banner (Fluid full width) ── */}
+        {/* ── High-Impact Active Emergency Event Announcement Banner ── */}
         {activeEvents.length > 0 ? (
-          <div className="w-full border-b border-red-600/30 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 px-4 sm:px-6 lg:px-8 xl:px-10 py-2.5 text-white shadow-md">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <span className="flex size-7 items-center justify-center rounded-lg bg-white/20 ring-2 ring-white/30 backdrop-blur-xs">
-                  <Siren className="size-4 animate-pulse text-white" />
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="relative z-10 w-full overflow-hidden border-b border-red-900/40 bg-gradient-to-r from-red-950 via-rose-900 to-red-950 px-4 sm:px-6 lg:px-8 xl:px-10 py-3 text-white shadow-lg"
+          >
+            {/* Ambient background glows */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -right-12 -top-12 size-48 rounded-full bg-rose-500/20 blur-2xl"
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -left-12 -bottom-12 size-48 rounded-full bg-red-600/20 blur-2xl"
+            />
+
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+              {/* Left Details */}
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/25 shadow-inner backdrop-blur-md">
+                  <Siren className="size-5 text-white animate-pulse" />
                 </span>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded bg-white px-1.5 py-0.2 text-[10px] font-black text-red-700 uppercase">
-                      Active Emergency
+
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-300/40 bg-rose-500/30 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-rose-100 shadow-2xs backdrop-blur-xs">
+                      <span className="relative flex size-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                        <span className="relative inline-flex size-2 rounded-full bg-white" />
+                      </span>
+                      <span>Active Emergency</span>
                     </span>
-                    <span className="text-xs font-black text-white sm:text-sm">
+
+                    <h2 className="text-sm sm:text-base font-extrabold tracking-tight text-white capitalize truncate">
                       {activeEvents.length === 1
                         ? activeEvents[0].name
                         : `${activeEvents.length} Emergency Events Active`}
+                    </h2>
+
+                    <span className="hidden xl:inline-block text-xs font-semibold text-rose-200/80">
+                      • Barangay San Jose Incident Operations
                     </span>
                   </div>
+
+                  <p className="text-xs text-rose-100/90 font-medium leading-tight line-clamp-1">
+                    Confirm your family&apos;s individual status so the BDRRMC knows who is safe and can prioritize rescue.
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* Right CTA */}
+              <div className="flex items-center gap-2 shrink-0 max-sm:w-full">
                 <Link
                   href="/portal/safety"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-xs font-black text-red-700 shadow-sm transition-all hover:bg-red-50 hover:scale-105 active:scale-95"
+                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-black text-red-950 shadow-md transition-all duration-150 hover:bg-rose-50 hover:shadow-lg hover:scale-102 active:scale-98"
                 >
-                  <ShieldCheck className="size-3.5" />
+                  <ShieldCheck className="size-4 text-emerald-700" />
                   <span>Check In Household Now</span>
                 </Link>
               </div>
