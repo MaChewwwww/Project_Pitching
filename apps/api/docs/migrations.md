@@ -77,6 +77,11 @@ Demo data is different. It goes through `src/seed.py`, is explicitly marked synt
 (`architecture.md` Section 13.3). Each section checks its own table's row count first, so this
 is a no-op after the first run. `make seed` is only there for an explicit manual re-run.
 
+The weather seed preserves the verified PAGASA Montalban river snapshot as five historical
+readings plus a relative current snapshot. The historical timestamps stay fixed for the trend
+view; the current snapshot is offset from seed time so a reset database does not immediately
+display stale river data.
+
 ## When a migration is already merged
 
 Do not edit it. Write a new one. Editing a merged migration means anyone who already ran it has

@@ -1381,6 +1381,38 @@ async def seed_flood_events(session, areas: dict[str, Area]) -> None:
 
 PAGASA_STATION = "Montalban (Rodriguez) River Gauge"
 
+# Snapshot captured from the PAGASA FFWS Montalban station at the same 06:30 PHT
+# slot across five consecutive days. The timestamps are stored in UTC, matching
+# the physical schema; the current snapshot below is made relative to seed time
+# so a fresh demo database does not start with a stale river panel.
+PAGASA_RIVER_HISTORY = (
+    (
+        datetime(2026, 8, 12, 22, 30, tzinfo=UTC),
+        24.44,
+        {"ymdhm": "202608130630", "wl": "24.44(*)", "icon": "up"},
+    ),
+    (
+        datetime(2026, 8, 13, 22, 30, tzinfo=UTC),
+        24.44,
+        {"ymdhm": "202608140630", "wl": "24.44(*)", "icon": "up"},
+    ),
+    (
+        datetime(2026, 8, 14, 22, 30, tzinfo=UTC),
+        24.44,
+        {"ymdhm": "202608150630", "wl": "24.44(*)", "icon": "up"},
+    ),
+    (
+        datetime(2026, 8, 15, 22, 30, tzinfo=UTC),
+        22.58,
+        {"ymdhm": "202608160630", "wl": "22.58(*)", "icon": "down"},
+    ),
+    (
+        datetime(2026, 8, 16, 22, 30, tzinfo=UTC),
+        22.68,
+        {"ymdhm": "202608170630", "wl": "22.68(*)", "icon": "nochange"},
+    ),
+)
+
 
 async def seed_readings(session) -> None:
     if await _table_has_rows(session, Reading):
@@ -1401,8 +1433,24 @@ async def seed_readings(session) -> None:
             None,
         ),
         ("heat_index", 31.2, "°C", "open_meteo", now - timedelta(minutes=14), None, None),
-        ("river_level", 22.6, "m", "pagasa", now - timedelta(hours=1), PAGASA_STATION, None),
-        ("river_level", 23.1, "m", "pagasa", now - timedelta(minutes=22), PAGASA_STATION, None),
+        *[
+            ("river_level", value, "m", "pagasa", observed_at, PAGASA_STATION, raw)
+            for observed_at, value, raw in PAGASA_RIVER_HISTORY
+        ],
+        (
+            "river_level",
+            22.68,
+            "m",
+            "pagasa",
+            now - timedelta(minutes=14),
+            PAGASA_STATION,
+            {
+                "ymdhm": "202608170630",
+                "wl": "22.68(*)",
+                "icon": "nochange",
+                "seed_snapshot": True,
+            },
+        ),
         (
             "tcws_signal",
             0.0,
