@@ -673,7 +673,7 @@ export default function SirenDetailPage() {
         <div className="flex flex-col gap-5 lg:col-span-5">
           {/* Spatial Location Map Card */}
           <div className="rounded-2xl border border-emerald-900/60 bg-[#052e16] p-1 shadow-md overflow-hidden flex flex-col h-full">
-            <div className="flex-1 min-h-[460px] lg:min-h-[520px] w-full overflow-hidden rounded-xl">
+            <div className="flex-1 min-h-[460px] lg:min-h-[520px] w-full overflow-hidden rounded-xl bg-slate-950">
               <AdminAssetWorkspaceMap
                 items={[mapItem]}
                 selectedId={siren.id}

@@ -96,6 +96,12 @@ export interface AdminAssetWorkspaceMapProps {
 /* -------------------------------------------------------------------------- */
 
 const MAP_CSS = `
+.admin-asset-workspace-map,
+.admin-asset-workspace-map.leaflet-container,
+.admin-asset-workspace-map .leaflet-container {
+  background-color: #020617 !important;
+  background: #020617 !important;
+}
 .admin-asset-workspace-map .leaflet-top.leaflet-right {
   top: 14px;
   right: 14px;
@@ -200,6 +206,43 @@ const MAP_CSS = `
   animation: sirenRipplePulse 1.4s infinite cubic-bezier(0.25, 1, 0.5, 1) !important;
 }
 `;
+
+function AutoInvalidateSize() {
+  const map = useMap();
+
+  React.useEffect(() => {
+    const timers = [
+      setTimeout(() => map.invalidateSize(), 50),
+      setTimeout(() => map.invalidateSize(), 200),
+      setTimeout(() => map.invalidateSize(), 500),
+      setTimeout(() => map.invalidateSize(), 1200),
+    ];
+
+    const container = map.getContainer();
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && container) {
+      resizeObserver = new ResizeObserver(() => {
+        map.invalidateSize();
+      });
+      resizeObserver.observe(container);
+    }
+
+    const handleResize = () => {
+      map.invalidateSize();
+    };
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [map]);
+
+  return null;
+}
 
 function MapPanes() {
   const map = useMap();
@@ -381,6 +424,7 @@ export function AdminAssetWorkspaceMap({
         zoomControl={false}
       >
         <ZoomControl position="topright" />
+        <AutoInvalidateSize />
         <MapPanes />
         <MapSelectionFlyTo selectedId={selectedId} items={items} />
         <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} />
