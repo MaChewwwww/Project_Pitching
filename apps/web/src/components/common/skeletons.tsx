@@ -229,23 +229,18 @@ export function HotlinesSectionSkeleton() {
   );
 }
 
-/** FAQs (FR-PUB-011). Header beside the accordion, per the section's own grid. */
+/** FAQs (FR-PUB-011). Full width header over 2-column grid. */
 export function FaqSectionSkeleton() {
   return (
     <FallbackSection tone="tint">
-      <div className="grid gap-8 lg:grid-cols-[1fr_1.5fr] lg:gap-12 items-start">
-        <div className="flex flex-col gap-6">
-          <HeaderSkeleton />
-          <Skeleton className="h-56 w-full rounded-2xl" />
+      <HeaderSkeleton />
+      <SectionFallback label="Loading FAQs" className="mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {Array.from({ length: 6 }, (_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+          ))}
         </div>
-        <SectionFallback label="Loading FAQs">
-          <div className="flex flex-col gap-3">
-            {Array.from({ length: 5 }, (_, i) => (
-              <Skeleton key={i} className="h-14 w-full rounded-2xl" />
-            ))}
-          </div>
-        </SectionFallback>
-      </div>
+      </SectionFallback>
     </FallbackSection>
   );
 }

@@ -128,7 +128,7 @@ export function FaqAccordion({
 
   if (compact) {
     return (
-      <Accordion type="single" collapsible className={cn("w-full space-y-3", className)}>
+      <Accordion type="single" collapsible className={cn("w-full grid grid-cols-1 md:grid-cols-2 gap-4 items-start", className)}>
         {faqs.map((faq) => {
           const question = pick(lang, faq.question_fil, faq.question_en);
           const answer = pick(lang, faq.answer_fil, faq.answer_en);
