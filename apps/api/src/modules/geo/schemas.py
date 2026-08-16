@@ -198,7 +198,7 @@ class SirenOut(PublicSiren):
 
 
 class SirenAuditOut(BaseModel):
-    id: uuid.UUID
+    id: int
     action: str
     entity_id: uuid.UUID | None
     actor_user_id: uuid.UUID | None

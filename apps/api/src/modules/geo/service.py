@@ -496,12 +496,18 @@ async def create_siren(
         location=func.ST_SetSRID(func.ST_MakePoint(data.longitude, data.latitude), 4326),
     )
     session.add(siren)
+    await session.flush()
     await write_audit(
         session,
         actor_user_id=actor_id,
         action="siren.create",
         entity_type="siren",
         entity_id=siren.id,
+        changes={
+            "status": "idle",
+            "name": siren.name,
+            "classification": "Administrative",
+        },
     )
     await session.commit()
     await session.refresh(siren)
@@ -527,6 +533,11 @@ async def update_siren(
         action="siren.update",
         entity_type="siren",
         entity_id=siren.id,
+        changes={
+            "status": siren.status,
+            "name": siren.name,
+            "classification": "Administrative",
+        },
     )
     await session.commit()
     return siren, (data.longitude, data.latitude)
@@ -739,7 +750,12 @@ async def deactivate_siren(
         action="siren.deactivate",
         entity_type="siren",
         entity_id=siren.id,
-        changes={"is_active": False, "status": "idle", "name": siren.name},
+        changes={
+            "is_active": False,
+            "status": "idle",
+            "name": siren.name,
+            "classification": "Administrative",
+        },
     )
     await session.commit()
     row = await session.execute(
@@ -760,7 +776,12 @@ async def reactivate_siren(
         action="siren.reactivate",
         entity_type="siren",
         entity_id=siren.id,
-        changes={"is_active": True, "name": siren.name},
+        changes={
+            "is_active": True,
+            "status": "idle",
+            "name": siren.name,
+            "classification": "Administrative",
+        },
     )
     await session.commit()
     row = await session.execute(
@@ -782,7 +803,11 @@ async def delete_siren(session: AsyncSession, siren_id: uuid.UUID, *, actor_id: 
         action="siren.delete",
         entity_type="siren",
         entity_id=siren.id,
-        changes={"deleted_at": now.isoformat(), "name": siren.name},
+        changes={
+            "deleted_at": now.isoformat(),
+            "name": siren.name,
+            "classification": "Administrative",
+        },
     )
     await session.commit()
 

@@ -62,7 +62,7 @@ interface Siren {
 }
 
 interface SirenAudit {
-  id: string;
+  id: number | string;
   action: string;
   entity_id: string | null;
   actor_user_id: string | null;
@@ -372,7 +372,7 @@ export default function AdminSirensPage() {
             : "emerald";
 
         const statusLabel = isSounding
-          ? "Sounding (Simulated)"
+          ? "Sounding"
           : isTesting
             ? "Testing Drill"
             : "Idle (Standby)";
@@ -404,8 +404,9 @@ export default function AdminSirensPage() {
       header: "Siren Unit & Station",
       render: (row) => {
         const isSounding = row.is_active && row.status === "sounding";
+        const isTesting = row.is_active && row.status === "testing";
         return (
-          <div className="flex items-center gap-3 min-w-52 max-w-sm">
+          <div className="flex items-center gap-3 min-w-48 max-w-sm">
             <div
               className={cn(
                 "relative flex size-8 shrink-0 items-center justify-center rounded-lg font-bold shadow-2xs overflow-hidden transition-all",
@@ -423,53 +424,47 @@ export default function AdminSirensPage() {
               >
                 {row.name}
               </Link>
-              {areaName(row) !== "—" ? (
-                <span className="mt-0.5 inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10.5px] font-semibold text-slate-700">
-                  <MapPin className="size-2.5" />
-                  {areaName(row)}
+              <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                {areaName(row) !== "—" ? (
+                  <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700">
+                    <MapPin className="size-2.5" />
+                    {areaName(row)}
+                  </span>
+                ) : null}
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold shadow-2xs",
+                    !row.is_active
+                      ? "border-slate-200 bg-slate-100 text-slate-600"
+                      : isSounding
+                        ? "border-rose-300 bg-rose-100 text-rose-800 animate-pulse"
+                        : isTesting
+                          ? "border-amber-300 bg-amber-100 text-amber-800"
+                          : "border-emerald-200 bg-emerald-50 text-emerald-800",
+                  )}
+                >
+                  {isSounding ? (
+                    <>
+                      <Volume2 className="size-2.5 text-rose-600 animate-bounce" />
+                      Sounding
+                    </>
+                  ) : isTesting ? (
+                    <>
+                      <Activity className="size-2.5 text-amber-700" />
+                      Drill
+                    </>
+                  ) : !row.is_active ? (
+                    "Disabled"
+                  ) : (
+                    <>
+                      <VolumeX className="size-2.5 text-emerald-600" />
+                      Idle Standby
+                    </>
+                  )}
                 </span>
-              ) : null}
+              </div>
             </div>
           </div>
-        );
-      },
-    },
-    {
-      key: "status",
-      header: "Audio State",
-      render: (row) => {
-        const isSounding = row.is_active && row.status === "sounding";
-        const isTesting = row.is_active && row.status === "testing";
-        return (
-          <span
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-bold shadow-2xs",
-              !row.is_active
-                ? "border-slate-200 bg-slate-100 text-slate-600"
-                : isSounding
-                  ? "border-rose-300 bg-rose-100 text-rose-800 animate-pulse"
-                  : isTesting
-                    ? "border-amber-300 bg-amber-100 text-amber-800"
-                    : "border-emerald-200 bg-emerald-50 text-emerald-800",
-            )}
-          >
-            {isSounding ? (
-              <>
-                <Volume2 className="size-3 text-rose-600 animate-bounce" />
-                Sounding (Alarm)
-              </>
-            ) : isTesting ? (
-              <>
-                <Activity className="size-3 text-amber-700" />
-                Testing Drill
-              </>
-            ) : (
-              <>
-                <VolumeX className="size-3 text-emerald-600" />
-                Idle Standby
-              </>
-            )}
-          </span>
         );
       },
     },
@@ -480,12 +475,12 @@ export default function AdminSirensPage() {
         <span className="text-xs font-mono text-neutral-600">
           {row.last_triggered_at
             ? new Date(row.last_triggered_at).toLocaleString("en-US", {
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: true,
-              })
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })
             : "No activations yet"}
         </span>
       ),
@@ -591,7 +586,7 @@ export default function AdminSirensPage() {
                     stats.soundingCount > 0 ? "text-rose-400 animate-pulse" : "text-emerald-400",
                   )}
                 />
-                Drill Simulation
+                Simulation
               </p>
               <span
                 className={cn(

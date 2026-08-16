@@ -84,6 +84,8 @@ export interface AdminAssetWorkspaceMapProps {
   showEvacLegend?: boolean;
   showSirenLegend?: boolean;
   showFacilityLegend?: boolean;
+  showLegend?: boolean;
+  showDataSources?: boolean;
   center?: [number, number];
   zoom?: number;
   className?: string;
@@ -130,6 +132,10 @@ const MAP_CSS = `
 .admin-asset-workspace-map .leaflet-popup-content {
   margin: 0 !important;
   line-height: 1.4 !important;
+}
+.admin-asset-workspace-map .leaflet-popup-content a {
+  color: inherit !important;
+  text-decoration: none !important;
 }
 .admin-asset-workspace-map .leaflet-popup-tip {
   background: #ffffff !important;
@@ -332,6 +338,8 @@ export function AdminAssetWorkspaceMap({
   showEvacLegend,
   showSirenLegend,
   showFacilityLegend,
+  showLegend = true,
+  showDataSources = true,
   center = [14.7455, 121.1320],
   zoom = 13.8,
   className,
@@ -534,10 +542,12 @@ export function AdminAssetWorkspaceMap({
                       {item.statusLabel}
                     </span>
                   </div>
-                  <div className="mt-1 flex items-center gap-1 text-[10.5px] text-neutral-500 font-medium">
-                    <MapPin className="size-2.5 text-neutral-400 shrink-0" />
-                    <span className="truncate">
-                      {item.area_name || "Barangay San Jose, Rodriguez"}
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-800 border border-slate-200/90 shadow-2xs">
+                      <MapPin className="size-3 text-emerald-700 shrink-0" />
+                      <span className="truncate max-w-[140px] font-black text-slate-900">
+                        {item.area_name || "Barangay San Jose"}
+                      </span>
                     </span>
                   </div>
                 </div>
@@ -592,14 +602,18 @@ export function AdminAssetWorkspaceMap({
                   </div>
 
                   {/* Title & Location Header */}
-                  <div>
+                  <div className="flex flex-col gap-1.5">
                     <h4 className="text-sm font-black text-slate-900 leading-snug">
                       {item.name}
                     </h4>
-                    <p className="mt-0.5 text-[11.5px] text-slate-500 flex items-center gap-1 font-medium">
-                      <MapPin className="size-3 text-slate-400 shrink-0" />
-                      {item.area_name || "Barangay San Jose, Rodriguez"}
-                    </p>
+                    <div>
+                      <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-800 border border-slate-200/90 shadow-2xs">
+                        <MapPin className="size-3 text-emerald-700 shrink-0" />
+                        <span className="font-bold text-slate-900">
+                          {item.area_name || "Barangay San Jose, Rodriguez"}
+                        </span>
+                      </span>
+                    </div>
                   </div>
 
                   {/* Contextual Metric Strip */}
@@ -633,13 +647,13 @@ export function AdminAssetWorkspaceMap({
                           500m Buffer
                         </span>
                       </div>
-                      <div className="flex flex-col">
+                      <div className="flex flex-col text-right items-end">
                         <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-400">
                           System State
                         </span>
                         <span
                           className={cn(
-                            "mt-0.5 text-xs font-bold truncate",
+                            "mt-0.5 text-xs font-bold truncate text-right",
                             item.isSounding ? "text-rose-600 animate-pulse" : "text-emerald-700",
                           )}
                         >
@@ -666,8 +680,8 @@ export function AdminAssetWorkspaceMap({
                             }}
                             className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-700 transition-all cursor-pointer shadow-2xs"
                           >
-                            <VolumeX className="size-3.5" />
-                            Silence Alarm
+                            <VolumeX className="size-3.5 text-white" />
+                            <span className="text-white">Silence Alarm</span>
                           </button>
                         ) : (
                           <button
@@ -679,7 +693,7 @@ export function AdminAssetWorkspaceMap({
                             className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 px-3 py-1.5 text-xs font-black text-slate-950 border border-amber-400 transition-all cursor-pointer shadow-2xs"
                           >
                             <Volume2 className="size-3.5 text-slate-950" />
-                            Test Sound
+                            <span className="text-slate-950 font-black">Test Sound</span>
                           </button>
                         )}
                       </div>
@@ -688,10 +702,10 @@ export function AdminAssetWorkspaceMap({
                     {item.detailUrl ? (
                       <Link
                         href={item.detailUrl as unknown as Parameters<typeof Link>[0]["href"]}
-                        className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-all shadow-2xs cursor-pointer"
+                        className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 text-xs font-bold text-white !text-white transition-all shadow-2xs cursor-pointer"
                       >
-                        Inspect Details
-                        <ExternalLink className="size-3 text-white" />
+                        <span className="text-white !text-white font-bold">Inspect Details</span>
+                        <ExternalLink className="size-3 text-white !text-white" />
                       </Link>
                     ) : null}
                   </div>
@@ -703,195 +717,200 @@ export function AdminAssetWorkspaceMap({
       </MapContainer>
 
       {/* -------------------------------------------------------------------- */}
+      {/* -------------------------------------------------------------------- */}
       {/* Top-Left Collapsible Legend Card (Matching Screenshot Design)       */}
       {/* -------------------------------------------------------------------- */}
-      <div
-        aria-label="Map legend"
-        className={cn(
-          "absolute top-3.5 left-3.5 z-[1000] rounded-2xl border border-emerald-900/80 bg-[#052e16]/95 text-white shadow-2xl backdrop-blur-md transition-all duration-200",
-          legendExpanded
-            ? "w-64 max-w-[calc(100%-6rem)] max-h-[calc(100%-2rem)] overflow-y-auto sagip-legend-scroll p-3.5"
-            : "w-auto p-2"
-        )}
-      >
-        <button
-          type="button"
-          onClick={() => setLegendExpanded((v) => !v)}
+      {showLegend && (
+        <div
+          aria-label="Map legend"
           className={cn(
-            "flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer",
-            legendExpanded ? "w-full justify-between mb-2 pb-1.5 border-b border-emerald-900/60" : "w-auto"
+            "absolute top-3.5 left-3.5 z-[1000] rounded-2xl border border-emerald-900/80 bg-[#052e16]/95 text-white shadow-2xl backdrop-blur-md transition-all duration-200",
+            legendExpanded
+              ? "w-64 max-w-[calc(100%-6rem)] max-h-[calc(100%-2rem)] overflow-y-auto sagip-legend-scroll p-3.5"
+              : "w-auto p-2"
           )}
-          aria-expanded={legendExpanded}
-          title={legendExpanded ? "Collapse Legend" : "Expand Legend"}
         >
-          <span className="inline-flex items-center gap-1.5">
-            <Shield className="size-3.5 text-emerald-400" aria-hidden />
-            LEGEND
-          </span>
-          <ChevronDown
+          <button
+            type="button"
+            onClick={() => setLegendExpanded((v) => !v)}
             className={cn(
-              "size-3.5 text-emerald-400/80 transition-transform duration-200",
-              legendExpanded ? "rotate-180" : "rotate-0"
+              "flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer",
+              legendExpanded ? "w-full justify-between mb-2 pb-1.5 border-b border-emerald-900/60" : "w-auto"
             )}
-            aria-hidden
-          />
-        </button>
+            aria-expanded={legendExpanded}
+            title={legendExpanded ? "Collapse Legend" : "Expand Legend"}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Shield className="size-3.5 text-emerald-400" aria-hidden />
+              LEGEND
+            </span>
+            <ChevronDown
+              className={cn(
+                "size-3.5 text-emerald-400/80 transition-transform duration-200",
+                legendExpanded ? "rotate-180" : "rotate-0"
+              )}
+              aria-hidden
+            />
+          </button>
 
-        {legendExpanded && (
-          <div className="flex flex-col gap-2.5 text-[11px]">
-            {/* Flood Hazard (NOAH) */}
-            {showHazard && (
-              <div>
+          {legendExpanded && (
+            <div className="flex flex-col gap-2.5 text-[11px]">
+              {/* Flood Hazard (NOAH) */}
+              {showHazard && (
+                <div>
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                    Flood Hazard (NOAH)
+                  </p>
+                  <ul className="flex flex-col gap-1.5">
+                    {HAZARD_LEVELS.map((level) => (
+                      <li key={level.level} className="flex items-center gap-2">
+                        <span
+                          aria-hidden
+                          className="h-2.5 w-4 shrink-0 rounded-[2px] border border-white/30 shadow-2xs"
+                          style={{ backgroundColor: level.color, opacity: 0.85 }}
+                        />
+                        <span className="text-emerald-100/90">
+                          <span className="font-semibold">{level.label} Hazard</span> ({level.depth})
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Map Boundaries */}
+              <div className={showHazard ? "border-t border-emerald-900/60 pt-2" : ""}>
                 <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
-                  Flood Hazard (NOAH)
+                  Map Boundaries
                 </p>
                 <ul className="flex flex-col gap-1.5">
-                  {HAZARD_LEVELS.map((level) => (
-                    <li key={level.level} className="flex items-center gap-2">
+                  <li className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowBoundaryModal(true)}
+                      className="inline-flex items-center gap-1.5 text-left text-emerald-300 hover:text-emerald-100 transition-colors group cursor-pointer"
+                      title="View boundary notes"
+                    >
+                      <span className="h-0.5 w-4 shrink-0 bg-emerald-400 border-b border-dashed border-emerald-300 group-hover:bg-emerald-200" />
+                      <span className="underline decoration-emerald-500/50 underline-offset-2 font-medium">
+                        San Jose Boundary
+                      </span>
+                    </button>
+                  </li>
+                  {showAreas && (
+                    <li className="flex items-center gap-2">
                       <span
                         aria-hidden
-                        className="h-2.5 w-4 shrink-0 rounded-[2px] border border-white/30 shadow-2xs"
-                        style={{ backgroundColor: level.color, opacity: 0.85 }}
+                        className="h-2.5 w-4 shrink-0 rounded-[2px] border border-white/60 bg-white/10 shadow-2xs"
                       />
-                      <span className="text-emerald-100/90">
-                        <span className="font-semibold">{level.label} Hazard</span> ({level.depth})
-                      </span>
+                      <span className="text-emerald-100/90">Area Divisions (1–6)</span>
                     </li>
-                  ))}
+                  )}
                 </ul>
               </div>
-            )}
 
-            {/* Map Boundaries */}
-            <div className={showHazard ? "border-t border-emerald-900/60 pt-2" : ""}>
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
-                Map Boundaries
-              </p>
-              <ul className="flex flex-col gap-1.5">
-                <li className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowBoundaryModal(true)}
-                    className="inline-flex items-center gap-1.5 text-left text-emerald-300 hover:text-emerald-100 transition-colors group cursor-pointer"
-                    title="View boundary notes"
-                  >
-                    <span className="h-0.5 w-4 shrink-0 bg-emerald-400 border-b border-dashed border-emerald-300 group-hover:bg-emerald-200" />
-                    <span className="underline decoration-emerald-500/50 underline-offset-2 font-medium">
-                      San Jose Boundary
-                    </span>
-                  </button>
-                </li>
-                {showAreas && (
-                  <li className="flex items-center gap-2">
-                    <span
-                      aria-hidden
-                      className="h-2.5 w-4 shrink-0 rounded-[2px] border border-white/60 bg-white/10 shadow-2xs"
-                    />
-                    <span className="text-emerald-100/90">Area Divisions (1–6)</span>
-                  </li>
-                )}
-              </ul>
+              {/* Evacuation Centers */}
+              {renderEvacLegend && (
+                <div className="border-t border-emerald-900/60 pt-2">
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                    Evacuation Centers
+                  </p>
+                  <ul className="flex flex-col gap-1.5">
+                    <li className="flex items-center gap-2">
+                      <div className="grid size-4 place-items-center rounded-full bg-emerald-600 text-white font-bold">
+                        <Building2 className="size-2.5" />
+                      </div>
+                      <span className="text-emerald-100/90">Available Capacity</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="grid size-4 place-items-center rounded-full bg-rose-600 text-white font-bold">
+                        <Building2 className="size-2.5" />
+                      </div>
+                      <span className="text-emerald-100/90">Overloading Capacity</span>
+                    </li>
+                  </ul>
+                </div>
+              )}
+
+              {/* Siren Units */}
+              {renderSirenLegend && (
+                <div className="border-t border-emerald-900/60 pt-2">
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                    Siren Units
+                  </p>
+                  <ul className="flex flex-col gap-1.5">
+                    <li className="flex items-center gap-2">
+                      <div className="grid size-4 place-items-center rounded-full bg-slate-700 text-emerald-400 border border-emerald-500/50 font-bold">
+                        <Megaphone className="size-2.5" />
+                      </div>
+                      <span className="text-emerald-100/90">Idle Siren</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="grid size-4 place-items-center rounded-full bg-rose-600 text-white border border-rose-300 font-bold animate-pulse">
+                        <Megaphone className="size-2.5" />
+                      </div>
+                      <span className="text-emerald-100/90">Sounding Siren</span>
+                    </li>
+                  </ul>
+                </div>
+              )}
+
+              {/* Facilities & Infrastructure */}
+              {renderFacilityLegend && (
+                <div className="border-t border-emerald-900/60 pt-2">
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                    Facilities & Infrastructure
+                  </p>
+                  <ul className="flex flex-col gap-1.5">
+                    <li className="flex items-center gap-2">
+                      <div className="grid size-4 place-items-center rounded-full bg-rose-600 text-white font-bold">
+                        <Stethoscope className="size-2.5" />
+                      </div>
+                      <span className="text-emerald-100/90">Health Centers & Clinics</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="grid size-4 place-items-center rounded-full bg-emerald-600 text-white font-bold">
+                        <Building2 className="size-2.5" />
+                      </div>
+                      <span className="text-emerald-100/90">Administrative Halls</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="grid size-4 place-items-center rounded-full bg-sky-600 text-white font-bold">
+                        <School className="size-2.5" />
+                      </div>
+                      <span className="text-emerald-100/90">Schools & Gymnasiums</span>
+                    </li>
+                  </ul>
+                </div>
+              )}
             </div>
-
-            {/* Evacuation Centers */}
-            {renderEvacLegend && (
-              <div className="border-t border-emerald-900/60 pt-2">
-                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
-                  Evacuation Centers
-                </p>
-                <ul className="flex flex-col gap-1.5">
-                  <li className="flex items-center gap-2">
-                    <div className="grid size-4 place-items-center rounded-full bg-emerald-600 text-white font-bold">
-                      <Building2 className="size-2.5" />
-                    </div>
-                    <span className="text-emerald-100/90">Available Capacity</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="grid size-4 place-items-center rounded-full bg-rose-600 text-white font-bold">
-                      <Building2 className="size-2.5" />
-                    </div>
-                    <span className="text-emerald-100/90">Overloading Capacity</span>
-                  </li>
-                </ul>
-              </div>
-            )}
-
-            {/* Siren Units */}
-            {renderSirenLegend && (
-              <div className="border-t border-emerald-900/60 pt-2">
-                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
-                  Siren Units
-                </p>
-                <ul className="flex flex-col gap-1.5">
-                  <li className="flex items-center gap-2">
-                    <div className="grid size-4 place-items-center rounded-full bg-slate-700 text-emerald-400 border border-emerald-500/50 font-bold">
-                      <Megaphone className="size-2.5" />
-                    </div>
-                    <span className="text-emerald-100/90">Idle Siren</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="grid size-4 place-items-center rounded-full bg-rose-600 text-white border border-rose-300 font-bold animate-pulse">
-                      <Megaphone className="size-2.5" />
-                    </div>
-                    <span className="text-emerald-100/90">Sounding Siren</span>
-                  </li>
-                </ul>
-              </div>
-            )}
-
-            {/* Facilities & Infrastructure */}
-            {renderFacilityLegend && (
-              <div className="border-t border-emerald-900/60 pt-2">
-                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
-                  Facilities & Infrastructure
-                </p>
-                <ul className="flex flex-col gap-1.5">
-                  <li className="flex items-center gap-2">
-                    <div className="grid size-4 place-items-center rounded-full bg-rose-600 text-white font-bold">
-                      <Stethoscope className="size-2.5" />
-                    </div>
-                    <span className="text-emerald-100/90">Health Centers & Clinics</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="grid size-4 place-items-center rounded-full bg-emerald-600 text-white font-bold">
-                      <Building2 className="size-2.5" />
-                    </div>
-                    <span className="text-emerald-100/90">Administrative Halls</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="grid size-4 place-items-center rounded-full bg-sky-600 text-white font-bold">
-                      <School className="size-2.5" />
-                    </div>
-                    <span className="text-emerald-100/90">Schools & Gymnasiums</span>
-                  </li>
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* -------------------------------------------------------------------- */}
       {/* Bottom-Right Data Sources Attribution Card (Matching Screenshot)    */}
       {/* -------------------------------------------------------------------- */}
-      <div
-        aria-label="Data sources attribution"
-        className="pointer-events-none absolute bottom-3.5 right-3.5 z-[1000] hidden sm:flex flex-col gap-0.5 rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-3 text-[10.5px] text-emerald-200/90 shadow-2xl backdrop-blur-md"
-      >
-        <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-emerald-400 text-[10px]">
-          <Database className="size-3 text-emerald-400" aria-hidden />
-          DATA SOURCES
+      {showDataSources && (
+        <div
+          aria-label="Data sources attribution"
+          className="pointer-events-none absolute bottom-3.5 right-3.5 z-[1000] hidden sm:flex flex-col gap-0.5 rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-3 text-[10.5px] text-emerald-200/90 shadow-2xl backdrop-blur-md"
+        >
+          <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-emerald-400 text-[10px]">
+            <Database className="size-3 text-emerald-400" aria-hidden />
+            DATA SOURCES
+          </div>
+          <div>
+            <span className="font-semibold text-white/90">Locality:</span> Barangay San Jose, Rodriguez (Montalban), Rizal
+          </div>
+          <div>
+            <span className="font-semibold text-white/90">Data:</span> UP NOAH / LiPAD (ODC-ODbL)
+          </div>
+          <div className="text-[9.5px] text-emerald-400/60 pt-0.5 border-t border-emerald-900/60 mt-0.5">
+            Map: Leaflet · © OpenStreetMap · CARTO
+          </div>
         </div>
-        <div>
-          <span className="font-semibold text-white/90">Locality:</span> Barangay San Jose, Rodriguez (Montalban), Rizal
-        </div>
-        <div>
-          <span className="font-semibold text-white/90">Data:</span> UP NOAH / LiPAD (ODC-ODbL)
-        </div>
-        <div className="text-[9.5px] text-emerald-400/60 pt-0.5 border-t border-emerald-900/60 mt-0.5">
-          Map: Leaflet · © OpenStreetMap · CARTO
-        </div>
-      </div>
+      )}
 
       {/* -------------------------------------------------------------------- */}
       {/* Barangay San Jose Boundary Overview Modal                            */}
