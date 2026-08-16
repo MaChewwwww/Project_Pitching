@@ -10,22 +10,25 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
+  Flame,
   History,
   Info,
+  LogOut,
   MapPin,
   Pencil,
   Phone,
   Power,
   PowerOff,
   RotateCcw,
+  Search,
   ShieldAlert,
   Siren,
   Trash2,
   User,
   UserCheck,
-  UserPlus,
   Users,
-  Users2,
+  Waves,
+  Wind,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -38,9 +41,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  AssetMetricCard,
-} from "@/components/features/admin/asset-metric-strip";
+import { AssetMetricCard } from "@/components/features/admin/asset-metric-strip";
 import { EditEvacuationCenterDialog } from "@/components/features/admin/edit-evacuation-center-dialog";
 import { AdminAssetWorkspaceMap } from "@/components/features/map/admin-asset-workspace-map-dynamic";
 import { api, toDisplayError } from "@/lib/api/client";
@@ -81,6 +82,61 @@ interface EvacCheckinRecord {
   recorded_by_name?: string | null;
 }
 
+interface EmergencyEventItem {
+  id: string;
+  name: string;
+  type: string;
+  is_active: boolean;
+  started_at: string;
+  ended_at: string | null;
+  description?: string | null;
+}
+
+function getEventTypeBadge(type: string) {
+  const t = (type || "").toLowerCase();
+  if (t === "flood") {
+    return {
+      label: "Flood Emergency",
+      icon: Waves,
+      classes: "bg-sky-100 text-sky-900 border-sky-300 font-bold",
+    };
+  }
+  if (t === "fire") {
+    return {
+      label: "Fire Incident",
+      icon: Flame,
+      classes: "bg-rose-100 text-rose-900 border-rose-300 font-bold",
+    };
+  }
+  if (t === "typhoon" || t === "severe_weather") {
+    return {
+      label: "Typhoon / Weather",
+      icon: Wind,
+      classes: "bg-amber-100 text-amber-900 border-amber-300 font-bold",
+    };
+  }
+  return {
+    label: "Emergency Operation",
+    icon: Siren,
+    classes: "bg-teal-100 text-teal-900 border-teal-300 font-bold",
+  };
+}
+
+function formatStayDuration(checkedInAt: string, checkedOutAt: string | null): string {
+  if (!checkedOutAt) return "Active Shelter";
+  const start = new Date(checkedInAt).getTime();
+  const end = new Date(checkedOutAt).getTime();
+  if (isNaN(start) || isNaN(end)) return "—";
+  const diffMs = Math.max(0, end - start);
+  const totalMinutes = Math.floor(diffMs / (1000 * 60));
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
 export default function EvacuationCenterDetailPage() {
   useRequireRole("admin");
   const params = useParams();
@@ -88,55 +144,56 @@ export default function EvacuationCenterDetailPage() {
   const queryClient = useQueryClient();
   const centerId = params.id as string;
 
-  const [activeTab, setActiveTab] = React.useState<"active" | "history">("active");
+  const [manifestTab, setManifestTab] = React.useState<"all" | "active" | "history">("all");
+  const [selectedEventFilter, setSelectedEventFilter] = React.useState<string>("all");
+  const [searchTerm, setSearchTerm] = React.useState<string>("" );
+  const [showHazard, setShowHazard] = React.useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
   const [showCloseDialog, setShowCloseDialog] = React.useState(false);
+  const [checkoutTarget, setCheckoutTarget] = React.useState<EvacCheckinRecord | null>(null);
 
-  /* Query center details */
-  const { data: center, isLoading, isError } = useQuery({
+  /* 1. Query Center Details */
+  const {
+    data: center,
+    isLoading: isCenterLoading,
+    isError: isCenterError,
+  } = useQuery({
     queryKey: ["admin", "evacuation-centers", centerId],
     queryFn: () =>
-      api
-        .get<EvacCenterDetail>(`/admin/evacuation-centers/${centerId}`)
-        .then((r) => r.data),
+      api.get<EvacCenterDetail>(`/admin/evacuation-centers/${centerId}`).then((r) => r.data),
   });
 
-  /* Query live active check-ins */
-  const { data: activeCheckins = [] } = useQuery({
-    queryKey: ["admin", "evacuation-centers", centerId, "check-ins", "active"],
-    queryFn: () =>
-      api
-        .get<EvacCheckinRecord[]>(`/admin/evacuation-centers/${centerId}/check-ins`, {
-          params: { active_only: true },
-        })
-        .then((r) => r.data),
-  });
-
-  /* Query historical check-ins */
+  /* 2. Query All Check-In Records (Ground truth for metrics and history) */
   const { data: allCheckins = [] } = useQuery({
-    queryKey: ["admin", "evacuation-centers", centerId, "check-ins", "all"],
+    queryKey: ["admin", "evacuation-centers", centerId, "check-ins"],
     queryFn: () =>
       api
         .get<EvacCheckinRecord[]>(`/admin/evacuation-centers/${centerId}/check-ins`, {
           params: { active_only: false },
         })
         .then((r) => r.data),
-    enabled: activeTab === "history",
   });
 
-  /* Status update mutation */
+  /* 3. Query All Emergency Events for metadata enrichment */
+  const { data: eventsList = [] } = useQuery({
+    queryKey: ["admin", "emergency-events"],
+    queryFn: () =>
+      api
+        .get<{ items: EmergencyEventItem[] }>("/admin/emergency-events", {
+          params: { size: 100 },
+        })
+        .then((r) => r.data.items),
+  });
+
+  /* Toggle Open / Close Mutation */
   const toggleOpenMutation = useMutation({
     mutationFn: (nextOpen: boolean) =>
       api.patch(`/admin/evacuation-centers/${centerId}`, { is_open: nextOpen }),
     onSuccess: (_, nextOpen) => {
       toast.success(
-        nextOpen
-          ? "Evacuation center is now OPEN"
-          : "Evacuation center is now CLOSED",
+        nextOpen ? "Evacuation center is now OPEN" : "Evacuation center is now CLOSED",
       );
-      queryClient.invalidateQueries({
-        queryKey: ["admin", "evacuation-centers", centerId],
-      });
+      queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers", centerId] });
       queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
       queryClient.invalidateQueries({ queryKey: ["public", "evacuation-centers"] });
     },
@@ -145,7 +202,26 @@ export default function EvacuationCenterDetailPage() {
     },
   });
 
-  /* Soft delete / deactivate mutation */
+  /* Evacuee Check-Out Mutation */
+  const checkoutMutation = useMutation({
+    mutationFn: (checkinId: string) =>
+      api.post(`/admin/evacuation-centers/check-ins/${checkinId}/check-out`),
+    onSuccess: () => {
+      toast.success("Evacuee marked as checked out");
+      queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers", centerId] });
+      queryClient.invalidateQueries({
+        queryKey: ["admin", "evacuation-centers", centerId, "check-ins"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
+      queryClient.invalidateQueries({ queryKey: ["public", "evacuation-centers"] });
+      setCheckoutTarget(null);
+    },
+    onError: (err) => {
+      toast.error(toDisplayError(err).detail || "Failed to check out evacuee");
+    },
+  });
+
+  /* Soft Delete / Deactivate Mutation */
   const deactivateMutation = useMutation({
     mutationFn: () => api.delete(`/admin/evacuation-centers/${centerId}`),
     onSuccess: () => {
@@ -156,33 +232,136 @@ export default function EvacuationCenterDetailPage() {
       router.push("/admin/evacuation-centers");
     },
     onError: (err) => {
-      toast.error(
-        toDisplayError(err).detail || "Failed to deactivate evacuation center",
-      );
+      toast.error(toDisplayError(err).detail || "Failed to deactivate evacuation center");
     },
   });
 
-  /* Reactivate mutation */
+  /* Reactivate Mutation */
   const reactivateMutation = useMutation({
-    mutationFn: () =>
-      api.post(`/admin/evacuation-centers/${centerId}/reactivate`),
+    mutationFn: () => api.post(`/admin/evacuation-centers/${centerId}/reactivate`),
     onSuccess: () => {
       toast.success("Evacuation center reactivated successfully");
-      queryClient.invalidateQueries({
-        queryKey: ["admin", "evacuation-centers", centerId],
-      });
+      queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers", centerId] });
       queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "facilities"] });
       queryClient.invalidateQueries({ queryKey: ["public", "evacuation-centers"] });
     },
     onError: (err) => {
-      toast.error(
-        toDisplayError(err).detail || "Failed to reactivate evacuation center",
-      );
+      toast.error(toDisplayError(err).detail || "Failed to reactivate evacuation center");
     },
   });
 
-  if (isLoading) {
+  /* Compute Metrics & Historical Statistics */
+  const activeCheckins = React.useMemo(
+    () => allCheckins.filter((c) => c.checked_out_at === null),
+    [allCheckins],
+  );
+  const pastCheckins = React.useMemo(
+    () => allCheckins.filter((c) => c.checked_out_at !== null),
+    [allCheckins],
+  );
+
+  const registeredCount = React.useMemo(
+    () => allCheckins.filter((c) => Boolean(c.member_id)).length,
+    [allCheckins],
+  );
+  const walkinCount = React.useMemo(
+    () => allCheckins.filter((c) => !c.member_id).length,
+    [allCheckins],
+  );
+
+  // Average shelter stay duration in hours
+  const avgStayHours = React.useMemo(() => {
+    if (pastCheckins.length === 0) return null;
+    const durations = pastCheckins.map((c) => {
+      const start = new Date(c.checked_in_at).getTime();
+      const end = new Date(c.checked_out_at!).getTime();
+      return Math.max(0, (end - start) / (1000 * 60 * 60));
+    });
+    const avg = durations.reduce((a, b) => a + b, 0) / durations.length;
+    return avg < 1 ? "< 1" : avg.toFixed(1);
+  }, [pastCheckins]);
+
+  // Aggregate deployments by Emergency Event
+  const uniqueEvents = React.useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        eventId: string;
+        eventName: string;
+        eventType: string;
+        isActive: boolean;
+        startedAt: string | null;
+        endedAt: string | null;
+        totalCheckins: number;
+        activeCount: number;
+        completedCount: number;
+        firstCheckin: string;
+        lastCheckin: string;
+      }
+    >();
+
+    for (const c of allCheckins) {
+      const ev = eventsList.find((e) => e.id === c.event_id);
+      const existing = map.get(c.event_id);
+      const isCheckinActive = c.checked_out_at === null;
+
+      if (!existing) {
+        map.set(c.event_id, {
+          eventId: c.event_id,
+          eventName: c.event_name || ev?.name || "Emergency Event",
+          eventType: ev?.type || "emergency",
+          isActive: ev?.is_active ?? false,
+          startedAt: ev?.started_at ?? null,
+          endedAt: ev?.ended_at ?? null,
+          totalCheckins: 1,
+          activeCount: isCheckinActive ? 1 : 0,
+          completedCount: isCheckinActive ? 0 : 1,
+          firstCheckin: c.checked_in_at,
+          lastCheckin: c.checked_in_at,
+        });
+      } else {
+        existing.totalCheckins += 1;
+        if (isCheckinActive) existing.activeCount += 1;
+        else existing.completedCount += 1;
+        if (new Date(c.checked_in_at) < new Date(existing.firstCheckin)) {
+          existing.firstCheckin = c.checked_in_at;
+        }
+        if (new Date(c.checked_in_at) > new Date(existing.lastCheckin)) {
+          existing.lastCheckin = c.checked_in_at;
+        }
+      }
+    }
+
+    return Array.from(map.values()).sort(
+      (a, b) => new Date(b.lastCheckin).getTime() - new Date(a.lastCheckin).getTime(),
+    );
+  }, [allCheckins, eventsList]);
+
+  // Filtered check-in records for manifest table
+  const filteredCheckins = React.useMemo(() => {
+    return allCheckins.filter((item) => {
+      // 1. Tab status filter
+      if (manifestTab === "active" && item.checked_out_at !== null) return false;
+      if (manifestTab === "history" && item.checked_out_at === null) return false;
+
+      // 2. Event filter
+      if (selectedEventFilter !== "all" && item.event_id !== selectedEventFilter) return false;
+
+      // 3. Search query filter
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase();
+        const matchesName = item.person_name.toLowerCase().includes(q);
+        const matchesEvent = (item.event_name || "").toLowerCase().includes(q);
+        const matchesRecorder = (item.recorded_by_name || "").toLowerCase().includes(q);
+        if (!matchesName && !matchesEvent && !matchesRecorder) return false;
+      }
+
+      return true;
+    });
+  }, [allCheckins, manifestTab, selectedEventFilter, searchTerm]);
+
+  if (isCenterLoading) {
     return (
       <div className="flex flex-col gap-6 animate-pulse py-8">
         <div className="h-8 w-64 rounded-lg bg-slate-200" />
@@ -197,18 +376,15 @@ export default function EvacuationCenterDetailPage() {
     );
   }
 
-  if (isError || !center) {
+  if (isCenterError || !center) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
         <div className="rounded-full bg-rose-100 p-4 text-rose-700">
           <Building2 className="size-8" />
         </div>
-        <h2 className="text-xl font-bold text-slate-900">
-          Evacuation Center Not Found
-        </h2>
+        <h2 className="text-xl font-bold text-slate-900">Evacuation Center Not Found</h2>
         <p className="text-sm text-slate-500 max-w-md">
-          The requested evacuation center record does not exist or may have been
-          removed.
+          The requested evacuation center record does not exist or may have been removed.
         </p>
         <Link href="/admin/evacuation-centers">
           <Button variant="primary">Return to Evacuation Centers</Button>
@@ -219,14 +395,10 @@ export default function EvacuationCenterDetailPage() {
 
   const occupancy = center.occupancy ?? activeCheckins.length;
   const capacity = center.capacity;
-  const pct = capacity
-    ? Math.min(100, Math.round((occupancy / capacity) * 100))
-    : 0;
-  const remainingSlots = capacity ? Math.max(0, capacity - occupancy) : "—";
+  const pct = capacity ? Math.min(100, Math.round((occupancy / capacity) * 100)) : 0;
+  const remainingSlots = capacity ? Math.max(0, capacity - occupancy) : "Unlimited";
   const isFull = capacity ? occupancy >= capacity : false;
   const isNear = capacity ? occupancy / capacity >= 0.8 && !isFull : false;
-
-  const pastCheckins = allCheckins.filter((c) => c.checked_out_at !== null);
 
   const mapItem = {
     id: center.id,
@@ -248,7 +420,7 @@ export default function EvacuationCenterDetailPage() {
 
   return (
     <div className="flex flex-col gap-6 pb-16">
-      {/* Hero Header Card matching system design */}
+      {/* Hero Header Card */}
       <div className="flex flex-col justify-between gap-5 rounded-3xl border border-emerald-200/90 bg-gradient-to-r from-emerald-100/80 via-emerald-50/50 to-white p-6 text-slate-900 shadow-sm transition-all lg:flex-row lg:items-center">
         <div className="flex items-start gap-4">
           <div className="grid size-14 shrink-0 place-items-center rounded-2xl bg-emerald-600 text-white border border-emerald-500 shadow-sm">
@@ -276,7 +448,11 @@ export default function EvacuationCenterDetailPage() {
                 {center.is_open ? (
                   <>
                     <CheckCircle2 className="size-3.5 text-emerald-700" />
-                    {isFull ? "At Max Capacity" : isNear ? "Near Capacity (>80%)" : "Open for Intake"}
+                    {isFull
+                      ? "At Max Capacity"
+                      : isNear
+                        ? "Near Capacity (>80%)"
+                        : "Open for Intake"}
                   </>
                 ) : (
                   "Closed Standby"
@@ -285,7 +461,7 @@ export default function EvacuationCenterDetailPage() {
             </div>
             <p className="mt-1 text-sm text-slate-600 font-medium">
               {center.facility.address || "Barangay San Jose, Rodriguez (Montalban), Rizal"}
-              {center.facility.area_name ? ` • Area: ${center.facility.area_name}` : ""}
+              {center.facility.area_name ? ` • Sector: ${center.facility.area_name}` : ""}
             </p>
           </div>
         </div>
@@ -365,204 +541,383 @@ export default function EvacuationCenterDetailPage() {
         </div>
       </div>
 
-      {/* Top 4 Capacity Metrics */}
+      {/* Top 4 Historical & Operational KPI Metrics */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <AssetMetricCard
-          icon={Users}
-          label="Live Occupancy"
-          value={occupancy}
-          unit={capacity ? `/ ${capacity}` : "registered"}
-          sub={capacity ? `${pct}% capacity utilized` : "No limit set"}
-          tone={isFull ? "rose" : isNear ? "amber" : "emerald"}
+          icon={BedDouble}
+          label="Live Intake Load"
+          value={center.is_open ? `${occupancy} / ${capacity || "∞"}` : "Standby"}
+          unit={center.is_open ? (capacity ? "occupants" : "sheltered") : ""}
+          sub={
+            center.is_open
+              ? capacity
+                ? `${pct}% capacity utilized`
+                : "Accepting intakes"
+              : "Intake closed / Standby"
+          }
+          tone={center.is_open ? (isFull ? "rose" : isNear ? "amber" : "emerald") : "neutral"}
           badge={
             <span
               className={cn(
                 "rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider",
-                isFull
-                  ? "bg-rose-100 text-rose-800"
-                  : isNear
-                    ? "bg-amber-100 text-amber-800"
-                    : "bg-emerald-100 text-emerald-800",
+                !center.is_open
+                  ? "bg-slate-100 text-slate-700"
+                  : isFull
+                    ? "bg-rose-100 text-rose-800"
+                    : isNear
+                      ? "bg-amber-100 text-amber-800"
+                      : "bg-emerald-100 text-emerald-800",
               )}
             >
-              {pct}% Loaded
+              {center.is_open ? `${pct}% Loaded` : "Standby"}
             </span>
           }
         />
         <AssetMetricCard
-          icon={Users2}
-          label="Maximum Capacity"
-          value={capacity ? capacity.toLocaleString() : "Unlimited"}
-          unit={capacity ? "persons" : ""}
-          sub="Official shelter ceiling"
-          tone="neutral"
+          icon={Users}
+          label="Cumulative Sheltered"
+          value={allCheckins.length}
+          unit="evacuees"
+          sub={`${registeredCount} registered · ${walkinCount} walk-in`}
+          tone="emerald"
         />
         <AssetMetricCard
-          icon={UserPlus}
-          label="Available Space"
-          value={typeof remainingSlots === "number" ? remainingSlots.toLocaleString() : remainingSlots}
-          unit={typeof remainingSlots === "number" ? "slots" : ""}
-          sub={isFull ? "Center is at maximum capacity" : "Available for intake"}
-          tone={isFull ? "rose" : "sky"}
+          icon={ShieldAlert}
+          label="Disaster Deployments"
+          value={uniqueEvents.length}
+          unit={uniqueEvents.length === 1 ? "operation" : "operations"}
+          sub="Emergency activations"
+          tone="sky"
         />
         <AssetMetricCard
-          icon={History}
-          label="Total Check-Ins"
-          value={allCheckins.length || occupancy}
-          unit="historical"
-          sub="Cumulative evacuee logs"
+          icon={Clock}
+          label="Avg Shelter Stay"
+          value={avgStayHours ? `${avgStayHours}` : "—"}
+          unit={avgStayHours ? "hours" : ""}
+          sub={`${pastCheckins.length} completed departures`}
           tone="neutral"
         />
       </div>
 
-      {/* Main Content Layout: Left Roster & Right Dossier */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left 2 Cols: Live Guest Roster & History */}
-        <div className="flex flex-col gap-5 lg:col-span-2">
-          {/* Capacity Progress Bar Card */}
-          {capacity ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Real-Time Shelter Load
-                </span>
-                <span className="text-xs font-black tabular-nums text-slate-900">
-                  {occupancy} of {capacity} Occupants ({pct}%)
-                </span>
-              </div>
-              <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-slate-100 border border-slate-200">
-                <div
-                  className={cn(
-                    "h-full transition-all duration-500 rounded-full",
-                    isFull
-                      ? "bg-rose-600"
-                      : isNear
-                        ? "bg-amber-500"
-                        : "bg-emerald-600",
-                  )}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-              <p className="mt-2.5 text-xs text-slate-500">
-                {isFull
-                  ? "⚠️ This center has reached its official capacity threshold. Redirect new evacuees to adjacent facilities."
-                  : isNear
-                    ? "⚡ Occupancy is approaching threshold limit (>80%). Prepare overflow accommodations."
-                    : "✅ Center is operating well within safe capacity guidelines."}
-              </p>
+      {/* Main Content Layout: Left Historical & Operational Roster (7 cols) & Right Map & Dossier (5 cols) */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        {/* Left Column: Shelter Load, Disaster Deployments & Evacuee Manifest (7 cols) */}
+        <div className="flex flex-col gap-5 lg:col-span-7">
+          {/* Card 1: Shelter Operational Load & Integration Notice */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <BedDouble className="size-4 text-emerald-700" />
+                Shelter Operational Status & Real-Time Load
+              </h3>
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-0.5 text-[10px] font-bold border",
+                  center.is_open
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                    : "bg-slate-100 text-slate-700 border-slate-200",
+                )}
+              >
+                {center.is_open ? "INTAKE ACTIVE" : "CLOSED STANDBY"}
+              </span>
             </div>
-          ) : null}
 
-          {/* Sync Information Notice */}
-          <div className="flex items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50/60 p-4 text-xs text-sky-900">
-            <Info className="size-4 shrink-0 text-sky-700 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-sky-950">
-                Integrated Emergency Response Manifest
-              </p>
-              <p className="mt-0.5 text-sky-800/90 leading-relaxed text-[11.5px]">
-                Evacuee intakes, safety self-check-ins, and departures are logged live through active{" "}
-                <Link
-                  href="/admin/emergency-events?event=all&tab=map"
-                  className="font-bold underline text-sky-900 hover:text-sky-950"
-                >
-                  Emergency Events Operations
-                </Link>
-                . Records below reflect synchronized real-time data for this evacuation center.
-              </p>
+            {/* Capacity Progress Bar */}
+            {capacity ? (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                    Real-Time Capacity Allocation
+                  </span>
+                  <span className="text-xs font-black tabular-nums text-slate-900">
+                    {occupancy} of {capacity} Occupants ({pct}%)
+                  </span>
+                </div>
+                <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 border border-slate-200">
+                  <div
+                    className={cn(
+                      "h-full transition-all duration-500 rounded-full",
+                      isFull
+                        ? "bg-rose-600"
+                        : isNear
+                          ? "bg-amber-500"
+                          : "bg-emerald-600",
+                    )}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs text-slate-500 mt-1">
+                  <span>Remaining Intake Slots: <strong>{remainingSlots}</strong></span>
+                  <span>{isFull ? "⚠️ Facility at full threshold" : isNear ? "⚡ High capacity warning (>80%)" : "✅ Available space ready"}</span>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Sync Information Notice */}
+            <div className="flex items-start gap-3 rounded-xl border border-sky-200 bg-sky-50/60 p-3.5 text-xs text-sky-900">
+              <Info className="size-4 shrink-0 text-sky-700 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sky-950">
+                  Integrated Emergency Events Operations
+                </p>
+                <p className="mt-0.5 text-sky-800/90 leading-relaxed text-[11.5px]">
+                  Evacuee intakes, safety self-check-ins, and field triage are synchronized with active{" "}
+                  <Link
+                    href="/admin/emergency-events?event=all&tab=map"
+                    className="font-bold underline text-sky-900 hover:text-sky-950 inline-flex items-center gap-1"
+                  >
+                    Emergency Events Operations
+                    <ExternalLink className="size-3" />
+                  </Link>
+                  . Changes logged here immediately reflect in municipal GIS and response command centers.
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Tabbed Check-in Roster */}
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
+          {/* Card 2: Disaster Deployments & Operation History */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <ShieldAlert className="size-4 text-emerald-700" />
+                Disaster Deployments & Operation History
+              </h3>
+              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 font-mono text-[10.5px] font-bold text-slate-700 border border-slate-200">
+                {uniqueEvents.length} Operations Served
+              </span>
+            </div>
+
+            {uniqueEvents.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {uniqueEvents.map((ev) => {
+                  const badge = getEventTypeBadge(ev.eventType);
+                  const Icon = badge.icon;
+
+                  return (
+                    <div
+                      key={ev.eventId}
+                      className={cn(
+                        "rounded-xl border p-3.5 flex flex-col justify-between gap-2.5 text-xs transition-all shadow-2xs",
+                        ev.isActive
+                          ? "border-emerald-300 bg-emerald-50/40"
+                          : "border-slate-200 bg-slate-50/50 hover:bg-slate-50",
+                      )}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold border",
+                              badge.classes,
+                            )}
+                          >
+                            <Icon className="size-2.5" />
+                            {badge.label}
+                          </span>
+                          <span
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider",
+                              ev.isActive
+                                ? "bg-emerald-600 text-white animate-pulse"
+                                : "bg-slate-200 text-slate-700",
+                            )}
+                          >
+                            {ev.isActive ? "Ongoing Event" : "Concluded"}
+                          </span>
+                        </div>
+
+                        <h4 className="font-bold text-slate-900 mt-2 line-clamp-1">
+                          {ev.eventName}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Latest activity: {new Date(ev.lastCheckin).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </p>
+                      </div>
+
+                      <div className="border-t border-slate-200/80 pt-2 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                          <Users className="size-3 text-slate-500" />
+                          <span>{ev.totalCheckins} Sheltered</span>
+                          {ev.activeCount > 0 ? (
+                            <span className="text-[10px] text-emerald-700">({ev.activeCount} active)</span>
+                          ) : null}
+                        </div>
+
+                        <Link
+                          href={`/admin/emergency-events?event=${ev.eventId}&tab=map`}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-800 hover:text-sky-950 underline"
+                        >
+                          Workspace
+                          <ExternalLink className="size-2.5" />
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-4 text-xs text-slate-500">
+                <ShieldAlert className="size-5 text-slate-400 shrink-0" />
+                <p>No historical emergency disaster deployments recorded for this shelter yet.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Card 3: Evacuee Intake & Departure Manifest Ledger */}
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden flex flex-col">
+            {/* Header with Title & Record Count */}
             <div className="flex items-center justify-between border-b border-slate-200 px-5 pt-4 pb-3">
-              <div className="flex items-center gap-4">
+              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <History className="size-4 text-emerald-700" />
+                Shelter Intake & Departure Manifest Ledger
+              </h3>
+              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 font-mono text-[10.5px] font-bold text-slate-700 border border-slate-200">
+                {filteredCheckins.length} / {allCheckins.length} Records
+              </span>
+            </div>
+
+            {/* Filter Toolbar: Search, Event Select, and Status Tabs */}
+            <div className="p-4 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Search input */}
+                <div className="relative min-w-[200px] flex-1 sm:flex-initial">
+                  <Search className="absolute left-2.5 top-2.5 size-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search evacuee or officer…"
+                    className="w-full h-8 pl-8 pr-3 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+
+                {/* Event Selector Dropdown */}
+                {uniqueEvents.length > 0 ? (
+                  <select
+                    value={selectedEventFilter}
+                    onChange={(e) => setSelectedEventFilter(e.target.value)}
+                    aria-label="Filter by Emergency Operation"
+                    className="h-8 px-2.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium text-slate-700"
+                  >
+                    <option value="all">All Emergency Events ({allCheckins.length})</option>
+                    {uniqueEvents.map((ev) => (
+                      <option key={ev.eventId} value={ev.eventId}>
+                        {ev.eventName} ({ev.totalCheckins})
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+              </div>
+
+              {/* Status Tabs */}
+              <div className="flex items-center gap-1 bg-slate-200/70 p-0.5 rounded-lg text-xs font-bold shrink-0">
                 <button
                   type="button"
-                  onClick={() => setActiveTab("active")}
+                  onClick={() => setManifestTab("all")}
                   className={cn(
-                    "pb-2 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 cursor-pointer",
-                    activeTab === "active"
-                      ? "border-emerald-600 text-emerald-800"
-                      : "border-transparent text-slate-500 hover:text-slate-900",
+                    "px-2.5 py-1 rounded-md transition-all cursor-pointer",
+                    manifestTab === "all"
+                      ? "bg-white text-slate-900 shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900",
                   )}
                 >
-                  Active Sheltered Roster ({activeCheckins.length})
+                  All ({allCheckins.length})
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveTab("history")}
+                  onClick={() => setManifestTab("active")}
                   className={cn(
-                    "pb-2 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 cursor-pointer",
-                    activeTab === "history"
-                      ? "border-emerald-600 text-emerald-800"
-                      : "border-transparent text-slate-500 hover:text-slate-900",
+                    "px-2.5 py-1 rounded-md transition-all cursor-pointer",
+                    manifestTab === "active"
+                      ? "bg-white text-emerald-800 shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900",
                   )}
                 >
-                  Completed Check-Outs ({pastCheckins.length})
+                  Active ({activeCheckins.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setManifestTab("history")}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md transition-all cursor-pointer",
+                    manifestTab === "history"
+                      ? "bg-white text-slate-900 shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900",
+                  )}
+                >
+                  Departed ({pastCheckins.length})
                 </button>
               </div>
             </div>
 
-            {/* Active Roster List */}
-            {activeTab === "active" ? (
-              activeCheckins.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-                  <UserCheck className="size-8 text-slate-300" />
-                  <p className="font-bold text-sm text-slate-700">
-                    No active evacuees currently checked in
-                  </p>
-                  <p className="text-xs text-slate-500 max-w-sm">
-                    Active evacuees checked into this shelter site during emergency events will appear here in real time.
-                  </p>
-                </div>
-              ) : (
-                <div className="divide-y divide-slate-100 overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
-                      <tr>
-                        <th className="px-5 py-3">Evacuee Name</th>
-                        <th className="px-4 py-3">Emergency Event</th>
-                        <th className="px-4 py-3">Registration Profile</th>
-                        <th className="px-5 py-3 text-right">Checked In At</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {activeCheckins.map((item) => (
+            {/* Manifest Table */}
+            {filteredCheckins.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+                <UserCheck className="size-8 text-slate-300" />
+                <p className="font-bold text-sm text-slate-700">No matching evacuee records found</p>
+                <p className="text-xs text-slate-500 max-w-sm">
+                  {searchTerm || selectedEventFilter !== "all"
+                    ? "Try adjusting your search keywords or emergency event filters."
+                    : "Evacuee arrivals and departures logged during emergency operations will appear here."}
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100 overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3">Evacuee Name</th>
+                      <th className="px-4 py-3">Emergency Event</th>
+                      <th className="px-3 py-3">Intake Time</th>
+                      <th className="px-3 py-3">Duration / Status</th>
+                      <th className="px-4 py-3 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredCheckins.map((item) => {
+                      const isCurrentlyActive = item.checked_out_at === null;
+                      const duration = formatStayDuration(item.checked_in_at, item.checked_out_at);
+
+                      return (
                         <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
-                          <td className="px-5 py-3.5 font-bold text-slate-900">
+                          <td className="px-4 py-3 font-bold text-slate-900">
                             <div className="flex items-center gap-2">
-                              <div className="grid size-7 place-items-center rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs">
+                              <div
+                                className={cn(
+                                  "grid size-7 place-items-center rounded-full font-bold text-xs shrink-0",
+                                  isCurrentlyActive
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : "bg-slate-100 text-slate-700",
+                                )}
+                              >
                                 <User className="size-3.5" />
                               </div>
-                              <span>{item.person_name}</span>
+                              <div className="min-w-0">
+                                <p className="font-bold text-slate-900 truncate">{item.person_name}</p>
+                                <span className="inline-block text-[10px] font-semibold text-slate-500">
+                                  {item.member_id ? "Registered Resident" : "Transient / Walk-in"}
+                                </span>
+                              </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3.5">
+
+                          <td className="px-4 py-3">
                             {item.event_id ? (
                               <Link
                                 href={`/admin/emergency-events?event=${item.event_id}&tab=map`}
-                                className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-[10.5px] font-bold text-sky-800 hover:bg-sky-100 transition-colors"
+                                className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-800 hover:bg-sky-100 transition-colors"
                               >
                                 <Siren className="size-2.5 text-sky-700" />
-                                {item.event_name || "Emergency Event"}
+                                <span className="truncate max-w-[130px]">
+                                  {item.event_name || "Emergency Event"}
+                                </span>
                               </Link>
                             ) : (
                               <span className="text-slate-400 font-mono text-[11px]">—</span>
                             )}
                           </td>
-                          <td className="px-4 py-3.5">
-                            {item.member_id ? (
-                              <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[10.5px] font-bold text-emerald-800 border border-emerald-200">
-                                Registered Resident
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[10.5px] font-bold text-amber-800 border border-amber-200">
-                                Walk-in / Transient
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-5 py-3.5 text-right font-mono text-[11px] text-slate-600">
+
+                          <td className="px-3 py-3 font-mono text-[11px] text-slate-600">
                             {new Date(item.checked_in_at).toLocaleString("en-US", {
                               month: "short",
                               day: "numeric",
@@ -571,158 +926,156 @@ export default function EvacuationCenterDetailPage() {
                               hour12: true,
                             })}
                           </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )
-            ) : (
-              /* Completed History List */
-              pastCheckins.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-                  <Clock className="size-8 text-slate-300" />
-                  <p className="font-bold text-sm text-slate-700">
-                    No completed check-out history recorded yet
-                  </p>
-                </div>
-              ) : (
-                <div className="divide-y divide-slate-100 overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
-                      <tr>
-                        <th className="px-5 py-3">Evacuee Name</th>
-                        <th className="px-4 py-3">Emergency Event</th>
-                        <th className="px-4 py-3">Duration Sheltered</th>
-                        <th className="px-4 py-3">Checked In</th>
-                        <th className="px-5 py-3 text-right">Checked Out</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {pastCheckins.map((item) => (
-                        <tr key={item.id} className="hover:bg-slate-50/70">
-                          <td className="px-5 py-3 font-bold text-slate-900">
-                            {item.person_name}
-                          </td>
-                          <td className="px-4 py-3">
-                            {item.event_id ? (
-                              <Link
-                                href={`/admin/emergency-events?event=${item.event_id}&tab=map`}
-                                className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-[10.5px] font-bold text-sky-800 hover:bg-sky-100 transition-colors"
-                              >
-                                <Siren className="size-2.5 text-sky-700" />
-                                {item.event_name || "Emergency Event"}
-                              </Link>
+
+                          <td className="px-3 py-3">
+                            {isCurrentlyActive ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-300 animate-pulse">
+                                <span className="size-1.5 rounded-full bg-emerald-600" />
+                                Sheltered
+                              </span>
                             ) : (
-                              <span className="text-slate-400 font-mono text-[11px]">—</span>
+                              <div className="flex flex-col">
+                                <span className="font-mono text-[11px] font-bold text-slate-800">
+                                  {duration}
+                                </span>
+                                <span className="text-[10px] text-slate-400">
+                                  Out:{" "}
+                                  {new Date(item.checked_out_at!).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                  })}
+                                </span>
+                              </div>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-slate-600">
-                            {item.checked_out_at
-                              ? `${Math.max(
-                                  1,
-                                  Math.round(
-                                    (new Date(item.checked_out_at).getTime() -
-                                      new Date(item.checked_in_at).getTime()) /
-                                      (1000 * 60 * 60),
-                                  ),
-                                )} hrs`
-                              : "—"}
-                          </td>
-                          <td className="px-4 py-3 text-slate-500 font-mono text-[11px]">
-                            {new Date(item.checked_in_at).toLocaleDateString()}
-                          </td>
-                          <td className="px-5 py-3 text-right text-slate-500 font-mono text-[11px]">
-                            {item.checked_out_at
-                              ? new Date(item.checked_out_at).toLocaleString("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                })
-                              : "—"}
+
+                          <td className="px-4 py-3 text-right">
+                            {isCurrentlyActive ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCheckoutTarget(item)}
+                                disabled={checkoutMutation.isPending}
+                                className="h-7 gap-1 rounded-lg text-[11px] font-bold border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 cursor-pointer shadow-2xs"
+                              >
+                                <LogOut className="size-3" />
+                                Check Out
+                              </Button>
+                            ) : (
+                              <span className="text-slate-400 text-[11px] font-mono">Concluded</span>
+                            )}
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Right Col: Facility Dossier & GIS Map Preview */}
-        <div className="flex flex-col gap-5">
-          {/* Spatial Location Map Card */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-950 p-1 shadow-lg overflow-hidden flex flex-col">
-            <div className="h-56 w-full overflow-hidden rounded-xl">
+        {/* Right Column: Spatial Location Map & Facility Dossier (5 cols) */}
+        <div className="flex flex-col gap-5 lg:col-span-5">
+          {/* Spatial Location Map Card (Matching Siren Map Frame Design) */}
+          <div className="rounded-2xl border border-emerald-900/60 bg-[#052e16] p-1 shadow-md overflow-hidden flex flex-col">
+            <div className="min-h-[420px] lg:min-h-[460px] w-full overflow-hidden rounded-xl bg-slate-950">
               <AdminAssetWorkspaceMap
                 items={[mapItem]}
                 selectedId={center.id}
                 onSelect={() => {}}
-                showHazard
+                showHazard={showHazard}
                 showAreas
+                showLegend={false}
+                showDataSources={false}
               />
             </div>
-            <div className="p-3 text-xs text-white">
-              <div className="flex items-center justify-between text-emerald-300 font-bold">
-                <span className="flex items-center gap-1">
-                  <MapPin className="size-3.5" /> Geocoded Coordinates
+            {/* Green Footer: Flood Hazard Checkbox & Attributions */}
+            <div className="flex items-center justify-between gap-3 bg-[#052e16] px-3.5 py-2.5 text-xs text-white rounded-b-xl border-t border-emerald-900/80">
+              <label className="flex items-center gap-2 text-xs font-bold text-white cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={showHazard}
+                  onChange={(e) => setShowHazard(e.target.checked)}
+                  className="size-4 rounded border-emerald-600 bg-emerald-900/80 text-emerald-500 focus:ring-emerald-400 focus:ring-offset-0 cursor-pointer accent-emerald-500"
+                />
+                <span className="text-emerald-100 font-semibold text-[11.5px]">
+                  Show Flood Hazard Overlay
                 </span>
-                <span className="font-mono text-[11px]">
-                  {center.facility.location.coordinates[1].toFixed(5)},{" "}
-                  {center.facility.location.coordinates[0].toFixed(5)}
-                </span>
+              </label>
+
+              <div className="text-[10.5px] font-medium text-emerald-300/80 shrink-0">
+                Leaflet · © OpenStreetMap
               </div>
-              <p className="mt-1 text-[11px] text-emerald-100/70">
-                Overlay includes official UP NOAH 5-year flood inundation zones.
-              </p>
             </div>
           </div>
 
           {/* Facility Details Dossier Card */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col gap-4">
-            <h3 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-2 flex items-center gap-2">
-              <Building2 className="size-4 text-emerald-700" />
-              Facility Information
-            </h3>
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <Building2 className="size-4 text-emerald-700" />
+                Facility & Shelter Dossier
+              </h3>
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-0.5 text-[10px] font-bold border",
+                  center.is_open
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                    : "bg-slate-100 text-slate-700 border-slate-200",
+                )}
+              >
+                {center.is_open ? "Active Shelter" : "Standby Facility"}
+              </span>
+            </div>
 
-            <dl className="flex flex-col gap-3 text-xs">
+            <dl className="flex flex-col gap-3.5 text-xs">
               <div>
                 <dt className="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider">
-                  Shelter Facility
+                  Shelter Facility Name
                 </dt>
-                <dd className="font-bold text-slate-900 mt-0.5">
+                <dd className="font-bold text-slate-900 mt-0.5 text-sm">
                   {center.facility.name}
                 </dd>
               </div>
 
-              <div>
-                <dt className="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider">
-                  Assigned Area
-                </dt>
-                <dd className="font-semibold text-slate-800 mt-0.5">
-                  {center.facility.area_name || "Barangay San Jose"}
-                </dd>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <dt className="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider">
+                    Assigned Sector
+                  </dt>
+                  <dd className="font-semibold text-slate-800 mt-0.5">
+                    {center.facility.area_name || "Barangay San Jose"}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt className="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider">
+                    Geocoded Position
+                  </dt>
+                  <dd className="font-mono text-[11px] font-bold text-slate-700 mt-0.5 flex items-center gap-1">
+                    <MapPin className="size-3 text-emerald-600 shrink-0" />
+                    {center.facility.location.coordinates[1].toFixed(5)},{" "}
+                    {center.facility.location.coordinates[0].toFixed(5)}
+                  </dd>
+                </div>
               </div>
 
-              <div>
+              <div className="border-t border-slate-100 pt-3">
                 <dt className="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider">
-                  Contact Person & Hotline
+                  Designated Contact Person & Hotline
                 </dt>
-                <dd className="font-semibold text-slate-800 mt-0.5 flex items-center gap-1.5">
-                  <User className="size-3 text-slate-400" />
+                <dd className="font-semibold text-slate-800 mt-1 flex items-center gap-1.5">
+                  <User className="size-3.5 text-slate-400" />
                   {center.contact_person || "Designated Barangay Officer"}
                 </dd>
                 {center.contact_number ? (
-                  <dd className="mt-1">
+                  <dd className="mt-1.5">
                     <a
                       href={toTelHref(center.contact_number)}
-                      className="font-mono font-bold text-emerald-700 hover:underline flex items-center gap-1.5"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50/70 px-2.5 py-1 font-mono text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-colors"
                     >
-                      <Phone className="size-3" />
+                      <Phone className="size-3 text-emerald-600" />
                       {center.contact_number}
                     </a>
                   </dd>
@@ -730,11 +1083,11 @@ export default function EvacuationCenterDetailPage() {
               </div>
 
               {center.notes ? (
-                <div>
+                <div className="border-t border-slate-100 pt-3">
                   <dt className="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider">
                     Equipment & Intake Notes
                   </dt>
-                  <dd className="text-slate-600 mt-0.5 bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-[11.5px] leading-relaxed">
+                  <dd className="text-slate-600 mt-1 bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11.5px] leading-relaxed">
                     {center.notes}
                   </dd>
                 </div>
@@ -744,11 +1097,56 @@ export default function EvacuationCenterDetailPage() {
         </div>
       </div>
 
+      {/* Individual Evacuee Check-Out Confirmation Modal */}
+      <AlertDialog open={Boolean(checkoutTarget)} onOpenChange={(open) => !open && setCheckoutTarget(null)}>
+        <AlertDialogContent className="max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+          <AlertDialogHeader className="flex flex-col gap-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-800 border border-amber-200">
+                <LogOut className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                  Check Out Evacuee?
+                </AlertDialogTitle>
+                <p className="text-xs font-bold text-amber-800 truncate mt-0.5">
+                  {checkoutTarget?.person_name}
+                </p>
+              </div>
+            </div>
+            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
+              Confirm departure for <strong>{checkoutTarget?.person_name}</strong> from {center.facility.name}. This will timestamp their check-out and free up shelter capacity in real time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCheckoutTarget(null)}
+              disabled={checkoutMutation.isPending}
+              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                if (checkoutTarget) {
+                  checkoutMutation.mutate(checkoutTarget.id);
+                }
+              }}
+              disabled={checkoutMutation.isPending}
+              className="rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs cursor-pointer"
+            >
+              {checkoutMutation.isPending ? "Checking Out…" : "Confirm Check-Out"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Close Shelter Confirmation Modal */}
-      <AlertDialog
-        open={showCloseDialog}
-        onOpenChange={setShowCloseDialog}
-      >
+      <AlertDialog open={showCloseDialog} onOpenChange={setShowCloseDialog}>
         <AlertDialogContent className="max-w-md rounded-2xl border border-amber-200 bg-white p-6 shadow-2xl">
           <AlertDialogHeader className="flex flex-col gap-2 text-left">
             <div className="flex items-center gap-3">
@@ -796,10 +1194,7 @@ export default function EvacuationCenterDetailPage() {
       </AlertDialog>
 
       {/* Delete / Deactivate Evacuation Center Confirmation Modal */}
-      <AlertDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-      >
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent className="max-w-md rounded-2xl border border-rose-200 bg-white p-6 shadow-2xl">
           <AlertDialogHeader className="flex flex-col gap-2 text-left">
             <div className="flex items-center gap-3">

@@ -81,7 +81,7 @@ export function EvacuationCenterDetailsDialog({
 
       <DialogContent className="max-h-[90vh] max-w-xl flex flex-col p-0 overflow-hidden text-slate-900 rounded-2xl border border-slate-200 bg-white shadow-2xl">
         {/* Clean Standard Header matching all admin modals */}
-        <DialogHeader className="p-6 pb-4 border-b border-slate-100 shrink-0 text-left">
+        <DialogHeader className="px-6 py-3.5 border-b border-slate-100 shrink-0 text-left">
           <div className="flex items-start justify-between gap-3 pr-6">
             <div className="flex items-center gap-3">
               <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-800 font-bold shadow-2xs">
@@ -124,7 +124,7 @@ export function EvacuationCenterDetailsDialog({
         </DialogHeader>
 
         {/* Scrollable Content Body with Custom Green Scrollbar */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-4 text-xs [scrollbar-width:thin] [scrollbar-color:#059669_#f1f5f9] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-600/90 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-emerald-400">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-3.5 flex flex-col gap-3 text-xs [scrollbar-width:thin] [scrollbar-color:#059669_#f1f5f9] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-600/90 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-emerald-400">
           {/* Capacity and Occupancy Card */}
           <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
             <div className="flex items-center justify-between font-bold text-slate-900 mb-2">
@@ -262,7 +262,7 @@ export function EvacuationCenterDetailsDialog({
         </div>
 
         {/* Fixed Footer with centered, color-styled actions */}
-        <DialogFooter className="p-4 px-6 border-t border-slate-100 bg-slate-50/50 flex items-center justify-center sm:justify-center gap-2.5 flex-wrap shrink-0">
+        <DialogFooter className="px-6 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-center sm:justify-center gap-2.5 flex-wrap shrink-0">
           {onLocateOnMap && (
             <Button
               type="button"

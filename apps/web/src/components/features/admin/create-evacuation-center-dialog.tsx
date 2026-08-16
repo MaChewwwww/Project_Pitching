@@ -178,23 +178,23 @@ export function CreateEvacuationCenterDialog({
 
       <DialogContent className="max-h-[90vh] max-w-2xl flex flex-col p-0 overflow-hidden text-slate-900 rounded-2xl border border-slate-200 bg-white shadow-2xl">
         {/* Fixed Header */}
-        <DialogHeader className="p-6 pb-4 border-b border-slate-100 shrink-0 text-left">
-          <DialogTitle className="flex items-center gap-2 text-lg font-bold text-slate-900">
+        <DialogHeader className="px-6 py-3.5 border-b border-slate-100 shrink-0 text-left">
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-slate-900">
             <div className="grid size-8 place-items-center rounded-lg bg-emerald-100 text-emerald-800">
-              <BedDouble className="size-4.5" />
+              <BedDouble className="size-4" />
             </div>
             Designate Evacuation Center
           </DialogTitle>
-          <DialogDescription className="text-xs text-slate-500 mt-1">
+          <DialogDescription className="text-xs text-slate-500 mt-0.5">
             Pin a shelter location on the GIS map and configure intake capacity and emergency contacts.
           </DialogDescription>
         </DialogHeader>
 
         {/* Scrollable Form Body with Custom Green Scrollbar */}
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          <div className="flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-4 [scrollbar-width:thin] [scrollbar-color:#059669_#f1f5f9] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-600/90 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-emerald-400">
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-3.5 flex flex-col gap-3.5 [scrollbar-width:thin] [scrollbar-color:#059669_#f1f5f9] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-600/90 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-emerald-400">
             {/* Shelter Facility Name */}
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1">
               <Label htmlFor="create_evac_name" className="text-xs font-bold text-slate-800">
                 Shelter Facility Name <span className="text-rose-500 font-bold">*</span>
               </Label>
@@ -355,7 +355,7 @@ export function CreateEvacuationCenterDialog({
           </div>
 
           {/* Fixed Dialog Footer Actions - Centered with Color Styling */}
-          <DialogFooter className="p-4 px-6 border-t border-slate-100 shrink-0 bg-slate-50/50 flex items-center justify-center sm:justify-center gap-2.5">
+          <DialogFooter className="px-6 py-3 border-t border-slate-100 shrink-0 bg-slate-50/50 flex items-center justify-center sm:justify-center gap-2.5">
             <Button
               type="button"
               variant="outline"
