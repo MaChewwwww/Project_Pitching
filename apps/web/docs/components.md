@@ -35,7 +35,7 @@ Barangay Portal compositions live in [`design.md`](../../../docs/design.md) Sect
 authorization differs. Extract it after the behaviour is stable across two or more callers; do not
 promote every similarly styled card into a vague shared component.
 
-## Why pages never import `ui/` directly
+## Why pages default away from `ui/`
 
 A raw shadcn primitive is not this app's component. `design.md` assigns heights (32/40/48),
 radii, and variants (`emergency`, `danger`) that shadcn's defaults do not have. If pages import
@@ -44,7 +44,15 @@ primitives, those specs get reapplied by hand on every page and drift immediatel
 Worse: `make shadcn` **overwrites `ui/`**. Any styling put there is lost on the next reinstall,
 silently, and probably during a rebase nobody is reading closely.
 
-So: `ui/` is vendored source. `common/` is where this app's decisions live.
+So: `ui/` is vendored source. `common/` and `features/` are where this app's design decisions
+live.
+
+The narrow exception already present in the final Barangay Portal is a specialist, single-route
+interaction mechanic: for example, a `Dialog`, `AlertDialog`, `Select`, or field control where no
+portal composite fits. It must sit inside the route's canonical portal composition and use the
+established tokens and chrome; it does not license re-creating a shared header, card, table,
+button, or form-dialog layout from primitives. When a second route needs that behaviour, promote
+it to `features/`.
 
 ## How a composite overrides a primitive without editing it
 

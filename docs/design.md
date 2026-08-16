@@ -584,6 +584,13 @@ several portal modules share the same operational behaviour (for example, `Resou
 `common` only when it is equally valid outside that domain (for example, `EmptyState` or `Button`).
 This avoids both copy-paste drift and a vague “universal card” that makes every screen look alike.
 
+**Primitive exception.** A specialist, single-route portal interaction may use a raw shadcn
+mechanic (such as a dialog, select, or field control) when no composite fits. That is an
+implementation detail, not a visual pattern: it must remain inside the canonical portal
+composition and use its established chrome. Do not use the exception to reconstruct shared
+headers, cards, buttons, tables, or form-dialog layouts. Promote a behaviour used by a second
+route to `features/admin`.
+
 ### 7.3 Component specs
 
 **Buttons**

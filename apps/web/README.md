@@ -50,8 +50,10 @@ src/
 
 1. **Never edit `components/ui/`.** `make shadcn` overwrites it. Token wiring goes in
    `globals.css`; app-specific styling goes in `components/common/` (NFR-MNT-006).
-2. **Never import a `ui/` primitive into a page.** Pages import from `common/` or `features/`.
-   The primitives are raw — a stock shadcn button is not `design.md`'s button.
+2. **Default to `common/` or `features/` in pages.** A page-local specialist workflow may use a
+   raw `ui/` interaction primitive when no composite fits, but it does not define a visual
+   pattern. Never rebuild a shared button, card, header, table, or form-dialog layout from
+   primitives; extract repeated behaviour to `features/`.
 3. **Design at 360px first.** Not "check it later on mobile". Two of the core flows — safety
    check-in and BHW field registration — are mobile-_first_, not mobile-tolerant
    (`design.md` Section 9.1).
