@@ -38,7 +38,8 @@ The following inventory serves as the architectural and design pattern reference
 
 ### 3. Authentication & Onboarding (`(auth)`)
 
-- `/login` — **Unified Sign-In**: Role-based redirect for Resident, Health Worker, Barangay Admin.
+- `/login` — **Unified Sign-In**: the pitch demonstrates only Resident and Barangay Admin entry;
+  the underlying role guard remains an internal implementation detail.
 - `/register` — **Resident Registration**: Multi-step household setup and head of family onboarding.
 
 ### 4. Resident Self-Service Portal (`(portal)`) — pending work

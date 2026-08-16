@@ -9,6 +9,26 @@ This is a release-scope record, not a change to the Definition of Done. The FR t
 to use `◐` until the required peer review and final responsive/accessibility verification are
 recorded. A demo-ready implementation is not silently promoted to `✅` by this document.
 
+## Owner validation
+
+The project owner has manually tested and fine-tuned the Public Information Site and Barangay
+Portal frontend and backend. Those two frozen surfaces are therefore **complete for the pitch
+demo**. This is a demo-readiness decision, not a replacement for the peer-review evidence needed
+to mark an individual FR `✅`.
+
+## Demo personas
+
+The pitch uses exactly two user types:
+
+| Persona            | Demonstrates                                                                                              |
+| ------------------ | --------------------------------------------------------------------------------------------------------- |
+| **Resident**       | The public information site, registration/sign-in, and the resident-facing promise of the platform        |
+| **Barangay Admin** | The complete Barangay Portal: registry, operations, maps, weather, alerts, assets, and content management |
+
+BHW, SK Officer, and Super Admin are **not separate pitch personas**. They remain internal role
+values in the current code and schema so existing authorization paths are not changed for the
+demo; do not present or describe them as additional user types.
+
 ## Frozen for the demo
 
 | Surface             | Included, current experience                                                                                                                                                                                       |

@@ -100,23 +100,23 @@ A requirement is `✅` only when all of the following hold:
 
 ### 1.6 Module Progress Overview
 
-| Code  | Module                                      | Total | Done (`✅`) | In Progress (`◐`) | In Review (`👁`) | Not Started (`☐`) | Deferred (`⏸`) | Dropped (`✕`) | Active Completion |
-| ----- | ------------------------------------------- | :---: | :---------: | :---------------: | :-------------: | :---------------: | :------------: | :-----------: | :---------------: |
-| `SYS` | Platform Foundation                         |  18   |      0      |        12         |        0        |         6         |       0        |       0       |      **67%**      |
-| `PUB` | Public Information Site                     |  20   |      0      |        18         |        0        |         2         |       0        |       0       |      **90%**      |
-| `REG` | Community Registry                          |  42   |      0      |        20         |        0        |        11         |       0        |      11       |      **65%**      |
-| `MAP` | Barangay Zone Map                           |  14   |      0      |        12         |        0        |         2         |       0        |       0       |      **86%**      |
-| `WX`  | Flood & Weather Watch                       |  16   |      0      |        14         |        0        |         2         |       0        |       0       |      **88%**      |
-| `ALT` | Alerts & Announcements                      |  15   |      0      |        11         |        0        |         4         |       0        |       0       |      **73%**      |
-| `SAF` | Safety Check-In & Rescue                    |  19   |      0      |        18         |        0        |         0         |       0        |       1       |     **100%**      |
-| `EVC` | Evacuation Center Operations                |   8   |      0      |         2         |        0        |         6         |       0        |       0       |      **25%**      |
-| `DON` | Donation Drive Posts                        |  17   |      0      |         1         |        0        |         3         |       0        |      13       |      **25%**      |
-| `ACT` | Activities & Volunteers                     |  12   |      0      |         3         |        0        |         9         |       0        |       0       |      **25%**      |
-| `PRP` | Preparedness Hub                            |   9   |      0      |         5         |        0        |         4         |       0        |       0       |      **56%**      |
-| `ANL` | Analytics & Reporting                       |  11   |      0      |         2         |        0        |         7         |       0        |       2       |      **22%**      |
-| `NFR` | Non-Functional Requirements (Cross-Cutting) |  88   |      0      |         8         |        7        |        67         |       6        |       0       |      **18%**      |
+| Code  | Module                                      | Total | Done (`✅`) | In Progress (`◐`) | In Review (`👁`) | Not Started (`☐`) | Deferred (`⏸`) | Dropped (`✕`) | Active Completion | Frozen-demo status                |
+| ----- | ------------------------------------------- | :---: | :---------: | :---------------: | :-------------: | :---------------: | :------------: | :-----------: | :---------------: | --------------------------------- |
+| `SYS` | Platform Foundation                         |  18   |      0      |        12         |        0        |         6         |       0        |       0       |      **67%**      | Core demo paths complete          |
+| `PUB` | Public Information Site                     |  20   |      0      |        18         |        0        |         2         |       0        |       0       |      **90%**      | **Complete**                      |
+| `REG` | Community Registry                          |  42   |      0      |        20         |        0        |        11         |       0        |      11       |      **65%**      | Demo workspace complete           |
+| `MAP` | Barangay Zone Map                           |  14   |      0      |        12         |        0        |         2         |       0        |       0       |      **86%**      | **Complete**                      |
+| `WX`  | Flood & Weather Watch                       |  16   |      0      |        14         |        0        |         2         |       0        |       0       |      **88%**      | **Complete**                      |
+| `ALT` | Alerts & Announcements                      |  15   |      0      |        11         |        0        |         4         |       0        |       0       |      **73%**      | Demo workspace complete           |
+| `SAF` | Safety Check-In & Rescue                    |  19   |      0      |        18         |        0        |         0         |       0        |       1       |     **100%**      | Demo workspace complete           |
+| `EVC` | Evacuation Center Operations                |   8   |      0      |         2         |        0        |         6         |       0        |       0       |      **25%**      | Demo workspace complete           |
+| `DON` | Donation Drive Posts                        |  17   |      0      |         1         |        0        |         3         |       0        |      13       |      **25%**      | Informational-post scope complete |
+| `ACT` | Activities & Volunteers                     |  12   |      0      |         3         |        0        |         9         |       0        |       0       |      **25%**      | Content-management scope complete |
+| `PRP` | Preparedness Hub                            |   9   |      0      |         5         |        0        |         4         |       0        |       0       |      **56%**      | Public-content scope complete     |
+| `ANL` | Analytics & Reporting                       |  11   |      0      |         2         |        0        |         7         |       0        |       2       |      **22%**      | Not part of the frozen demo       |
+| `NFR` | Non-Functional Requirements (Cross-Cutting) |  88   |      0      |         8         |        7        |        67         |       6        |       0       |      **18%**      | Validation evidence still pending |
 
-_Overall Active Completion: **133 / 256 active requirements (52%)** implemented, in progress, or in review. The denominator excludes 27 retired FRs and 6 deferred privacy NFRs._
+_Overall Active Completion: **133 / 256 active requirements (52%)** implemented, in progress, or in review. The denominator excludes 27 retired FRs and 6 deferred privacy NFRs. This is the full roadmap metric, **not** the pitch-demo completion metric._
 
 ---
 
@@ -145,11 +145,20 @@ _Overall Active Completion: **133 / 256 active requirements (52%)** implemented,
 Portal. This is a scope and design freeze, not evidence that an FR satisfies the Definition of
 Done; status remains `◐` until peer review and the required verification are recorded.
 
-| Surface | Current state | Explicit follow-up boundary |
-| --- | --- | --- |
-| Public Information Site | Landing, announcements, activities, donation drives, preparedness/help, weather/flood history, rescue, authentication, and the three finalized map views are implemented and presentation-frozen. | Revise `/about` and add the team profile only after the team supplies approved content. |
-| Barangay Portal | Registry, emergency operations, weather, asset, evacuation, content, hotline/FAQ, activity, guide, and donation-drive workspaces are implemented and presentation-frozen. | Do not redesign this surface without an FR/NFR-scoped demo change. |
-| Resident Portal | Onboarding, household edit, safety, and authenticated incident-report routes exist. | Its full workflow and design pass remain the next planned work; do not describe it as final. |
+**Demo readiness is complete for the frozen scope.** The project owner has manually tested and
+fine-tuned the Public Information Site and Barangay Portal frontend and backend for the pitch.
+This is recorded as complete demo scope in the overview above; it does not convert individual
+requirements to `✅` without the required second-team-member review.
+
+**Demo identity boundary.** The pitch has exactly two personas: **Resident** and **Barangay
+Admin**. `FR-SYS-005` still documents the internal authorization model used by the code and
+schema; BHW, SK Officer, and Super Admin are not separate demo accounts or presentation flows.
+
+| Surface                 | Current state                                                                                                                                                                                     | Explicit follow-up boundary                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Public Information Site | Landing, announcements, activities, donation drives, preparedness/help, weather/flood history, rescue, authentication, and the three finalized map views are implemented and presentation-frozen. | Revise `/about` and add the team profile only after the team supplies approved content.      |
+| Barangay Portal         | Registry, emergency operations, weather, asset, evacuation, content, hotline/FAQ, activity, guide, and donation-drive workspaces are implemented and presentation-frozen.                         | Do not redesign this surface without an FR/NFR-scoped demo change.                           |
+| Resident Portal         | Onboarding, household edit, safety, and authenticated incident-report routes exist.                                                                                                               | Its full workflow and design pass remain the next planned work; do not describe it as final. |
 
 Do not convert this audit into invented portal screens. New target workflows require a stakeholder decision and permanent FR IDs first.
 
@@ -488,7 +497,7 @@ remaining configuration contract is retired.
 | FR-SAF-018 | Declare an emergency event               | Admin names and types an event; multiple events may be active concurrently, all operational writes select an event explicitly, and declaring a flood creates one protected linked Flood History record                                                                                          | — (new, Aug 2026) | M   | ◐      | —   |
 | FR-SAF-019 | End an emergency event                   | Admin ends a selected active event; its history is retained and its flood record finalized. Physical evacuation occupancy is preserved while another event remains active and reset only after the final active event ends                                                                      | — (new, Aug 2026) | M   | ◐      | —   |
 | FR-SAF-020 | Concurrent event operations workspace    | Admin/BHW operations are scoped to an addressable selected-event workspace; legacy omitted event IDs resolve only when exactly one event is active and fail with `409` when ambiguous. Resident statuses remain independent per event; SK access is aggregate-only without household/member PII | — (new, Aug 2026) | C   | ◐      | —   |
-| FR-SAF-021 | Incident response lifecycle              | Barangay Admin and Superadmin can link an incident to an emergency event and advance it `pending → verified → in progress → resolved`, or dismiss a non-final report. Resolution notes and dismissal reasons are required and every action is retained in the operational timeline. | — (new, Aug 2026) | S   | ◐      | —   |
+| FR-SAF-021 | Incident response lifecycle              | Barangay Admin and Superadmin can link an incident to an emergency event and advance it `pending → verified → in progress → resolved`, or dismiss a non-final report. Resolution notes and dismissal reasons are required and every action is retained in the operational timeline.             | — (new, Aug 2026) | S   | ◐      | —   |
 
 > **FR-SAF-018/019 originated as a prerequisite gap found during the SAF build.** Every operational row is event-scoped, while the original spec had no create/end lifecycle. `evacuation/service.py` owns declare/end/list/event resolution because evacuation owns `EmergencyEvent`; FR-SAF-020 replaces the initial singleton behavior with explicit concurrent-event selection and a newest-first public list.
 >
@@ -741,15 +750,15 @@ remaining configuration contract is retired.
 
 ### 15.11 Legal & Compliance — `LGL`
 
-| ID          | Requirement                                                                        | Target                                                     | Status |
-| ----------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------- | ------ |
+| ID          | Requirement                                                                        | Target                                                                                   | Status |
+| ----------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------ |
 | NFR-LGL-001 | Project NOAH data attributed under ODC-ODbL; derivatives under the same licence    | Concise map attribution plus full site footer; About refresh must retain the full credit | ◐      |
-| NFR-LGL-002 | OpenStreetMap attribution on every map view                                        | Always visible                                             | ☐      |
-| NFR-LGL-003 | Open-Meteo attributed; non-commercial usage limits respected                       | ≤ 10k calls/day                                            | ☐      |
-| NFR-LGL-004 | PAGASA data attributed; polite scraping — identified UA, ≥10 min interval, backoff | Verified                                                   | ☐      |
-| NFR-LGL-005 | Platform never presents itself as an official warning authority                    | Disclaimer on all alert surfaces                           | ☐      |
-| NFR-LGL-006 | Health guidance carries a non-diagnostic disclaimer                                | Every published item                                       | ☐      |
-| NFR-LGL-007 | Rescue surfaces state that submission does not guarantee response                  | Always, with hotlines shown                                | ☐      |
+| NFR-LGL-002 | OpenStreetMap attribution on every map view                                        | Always visible                                                                           | ☐      |
+| NFR-LGL-003 | Open-Meteo attributed; non-commercial usage limits respected                       | ≤ 10k calls/day                                                                          | ☐      |
+| NFR-LGL-004 | PAGASA data attributed; polite scraping — identified UA, ≥10 min interval, backoff | Verified                                                                                 | ☐      |
+| NFR-LGL-005 | Platform never presents itself as an official warning authority                    | Disclaimer on all alert surfaces                                                         | ☐      |
+| NFR-LGL-006 | Health guidance carries a non-diagnostic disclaimer                                | Every published item                                                                     | ☐      |
+| NFR-LGL-007 | Rescue surfaces state that submission does not guarantee response                  | Always, with hotlines shown                                                              | ☐      |
 
 ---
 
