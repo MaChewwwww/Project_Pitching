@@ -261,8 +261,8 @@ export function EvacuationCenterDetailsDialog({
           )}
         </div>
 
-        {/* Fixed Footer with matching actions */}
-        <DialogFooter className="p-4 px-6 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-2.5 flex-wrap shrink-0">
+        {/* Fixed Footer with centered, color-styled actions */}
+        <DialogFooter className="p-4 px-6 border-t border-slate-100 bg-slate-50/50 flex items-center justify-center sm:justify-center gap-2.5 flex-wrap shrink-0">
           {onLocateOnMap && (
             <Button
               type="button"
@@ -272,9 +272,9 @@ export function EvacuationCenterDetailsDialog({
                 setOpen(false);
                 onLocateOnMap();
               }}
-              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+              className="h-9 gap-1.5 rounded-xl border-slate-300 bg-white text-xs font-bold text-slate-800 hover:bg-slate-100 hover:text-slate-900 cursor-pointer shadow-2xs"
             >
-              <Crosshair className="size-3.5 mr-1 text-slate-700" />
+              <Crosshair className="size-3.5 text-slate-700" />
               Locate on Map
             </Button>
           )}
@@ -285,9 +285,9 @@ export function EvacuationCenterDetailsDialog({
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+                className="h-9 gap-1.5 rounded-xl border-amber-300/90 bg-amber-50 px-3.5 text-xs font-bold text-amber-800 hover:bg-amber-100 cursor-pointer shadow-2xs"
               >
-                <Pencil className="size-3.5 mr-1 text-slate-700" />
+                <Pencil className="size-3.5 text-amber-700" />
                 Edit Center
               </Button>
             }
@@ -298,9 +298,9 @@ export function EvacuationCenterDetailsDialog({
               type="button"
               variant="outline"
               size="sm"
-              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+              className="h-9 gap-1.5 rounded-xl border-emerald-600/30 bg-emerald-50 px-3.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 hover:text-emerald-950 cursor-pointer shadow-2xs"
             >
-              <ExternalLink className="size-3.5 mr-1 text-slate-700" />
+              <ExternalLink className="size-3.5 text-emerald-700" />
               Full Details
             </Button>
           </Link>

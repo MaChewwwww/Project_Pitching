@@ -225,7 +225,7 @@ export function EditEvacuationCenterDialog({
             <div className="grid size-8 place-items-center rounded-lg bg-amber-100 text-amber-800">
               <Pencil className="size-4.5" />
             </div>
-            Edit Evacuation Center: {center.facility.name}
+            Evacuation Center: {center.facility.name}
           </DialogTitle>
           <DialogDescription className="text-xs text-slate-500 mt-1">
             Modify shelter capacity, operational status, contact information, and re-pin its GIS coordinates on the map.
@@ -394,14 +394,14 @@ export function EditEvacuationCenterDialog({
             </div>
           </div>
 
-          {/* Fixed Dialog Footer Actions */}
-          <DialogFooter className="p-4 px-6 border-t border-slate-100 shrink-0 bg-slate-50/50 flex items-center justify-end gap-2.5">
+          {/* Fixed Dialog Footer Actions - Centered with Color Styling */}
+          <DialogFooter className="p-4 px-6 border-t border-slate-100 shrink-0 bg-slate-50/50 flex items-center justify-center sm:justify-center gap-2.5">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setOpen(false)}
-              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+              className="h-10 px-5 rounded-xl text-xs font-bold border-slate-300 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900 shadow-2xs cursor-pointer"
             >
               Cancel
             </Button>
@@ -410,7 +410,7 @@ export function EditEvacuationCenterDialog({
               variant="primary"
               size="sm"
               disabled={isSubmitting || updateMutation.isPending}
-              className="rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
+              className="h-10 px-6 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
             >
               {updateMutation.isPending ? "Saving Changes…" : "Save Changes"}
             </Button>
