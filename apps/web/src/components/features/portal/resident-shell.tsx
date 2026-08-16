@@ -404,8 +404,8 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
             <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
               {/* Left Details */}
               <div className="flex min-w-0 items-center gap-3">
-                <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/25 shadow-inner backdrop-blur-md">
-                  <Siren className="size-5 text-white animate-pulse" />
+                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white text-red-600 shadow-md ring-4 ring-white/20">
+                  <Siren className="size-5 text-red-600 animate-pulse" />
                 </span>
 
                 <div className="min-w-0 flex-1 space-y-0.5">

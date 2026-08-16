@@ -191,8 +191,8 @@ export default function PortalSafetyPage() {
           <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border-2 border-red-500 bg-gradient-to-br from-red-600 via-rose-600 to-red-700 p-5 sm:p-6 text-white shadow-md">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className="grid size-10 place-items-center rounded-xl bg-white/20 ring-2 ring-white/30">
-                  <Siren className="size-5 text-white animate-pulse" />
+                <span className="grid size-10 place-items-center rounded-full bg-white text-red-600 shadow-md ring-4 ring-white/20">
+                  <Siren className="size-5 text-red-600 animate-pulse" />
                 </span>
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-wider text-red-100">
