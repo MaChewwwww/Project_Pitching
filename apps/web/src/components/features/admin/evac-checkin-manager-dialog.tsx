@@ -201,11 +201,11 @@ export function EvacCheckinManagerDialog({
           <Button
             size="sm"
             variant="outline"
-            className="h-8 w-8 p-0 border-emerald-600/30 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900 cursor-pointer shrink-0"
+            className="h-8 w-8 p-0 border-sky-300/80 bg-sky-50 text-sky-700 hover:bg-sky-100 hover:text-sky-900 cursor-pointer shrink-0"
             title="Check-in Station"
             aria-label={`Check-in Station for ${centerName}`}
           >
-            <UserCheck className="size-3.5 text-emerald-700" />
+            <UserCheck className="size-3.5 text-sky-700" />
           </Button>
         )}
       </DialogTrigger>

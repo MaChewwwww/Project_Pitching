@@ -4,14 +4,12 @@ import * as React from "react";
 import Link from "next/link";
 import {
   BedDouble,
-  Building2,
   Crosshair,
   ExternalLink,
+  Eye,
   MapPin,
   Pencil,
   Phone,
-  Power,
-  PowerOff,
   Sparkles,
   User,
   UserCheck,
@@ -57,9 +55,11 @@ export function EvacuationCenterDetailsDialog({
           <Button
             variant="outline"
             size="sm"
-            className="h-8 gap-1.5 border-emerald-600/30 bg-emerald-50/50 text-xs font-bold text-emerald-800 hover:bg-emerald-100/60 hover:text-emerald-900 cursor-pointer"
+            className="h-8 w-8 p-0 border-emerald-600/30 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900 cursor-pointer shrink-0"
+            title="View Details"
+            aria-label={`View Details for ${center.facility.name}`}
           >
-            Details
+            <Eye className="size-3.5 text-emerald-700" />
           </Button>
         )}
       </DialogTrigger>
@@ -202,7 +202,7 @@ export function EvacuationCenterDetailsDialog({
               <Button
                 variant="primary"
                 size="sm"
-                className="h-9 rounded-xl bg-emerald-600 px-4 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 cursor-pointer"
+                className="h-9 rounded-xl bg-sky-600 px-4 text-xs font-bold text-white shadow-xs hover:bg-sky-700 cursor-pointer"
               >
                 <UserCheck className="size-3.5 mr-1.5" />
                 Check-In Station

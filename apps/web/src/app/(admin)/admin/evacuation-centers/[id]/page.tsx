@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -15,6 +15,10 @@ import {
   Pencil,
   Phone,
   Plus,
+  Power,
+  PowerOff,
+  RotateCcw,
+  Trash2,
   User,
   UserCheck,
   UserPlus,
@@ -25,6 +29,14 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/common/button";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   AssetMetricCard,
 } from "@/components/features/admin/asset-metric-strip";
@@ -95,6 +107,9 @@ export default function EvacuationCenterDetailPage() {
     enabled: activeTab === "history",
   });
 
+  const router = useRouter();
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+
   /* Status update mutation */
   const toggleOpenMutation = useMutation({
     mutationFn: (nextOpen: boolean) =>
@@ -109,9 +124,47 @@ export default function EvacuationCenterDetailPage() {
         queryKey: ["admin", "evacuation-centers", centerId],
       });
       queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
+      queryClient.invalidateQueries({ queryKey: ["public", "evacuation-centers"] });
     },
     onError: (err) => {
       toast.error(toDisplayError(err).detail || "Failed to update status");
+    },
+  });
+
+  /* Soft delete / deactivate mutation */
+  const deactivateMutation = useMutation({
+    mutationFn: () => api.delete(`/admin/evacuation-centers/${centerId}`),
+    onSuccess: () => {
+      toast.success("Evacuation center deactivated and archived");
+      queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "facilities"] });
+      queryClient.invalidateQueries({ queryKey: ["public", "evacuation-centers"] });
+      router.push("/admin/evacuation-centers");
+    },
+    onError: (err) => {
+      toast.error(
+        toDisplayError(err).detail || "Failed to deactivate evacuation center",
+      );
+    },
+  });
+
+  /* Reactivate mutation */
+  const reactivateMutation = useMutation({
+    mutationFn: () =>
+      api.post(`/admin/evacuation-centers/${centerId}/reactivate`),
+    onSuccess: () => {
+      toast.success("Evacuation center reactivated successfully");
+      queryClient.invalidateQueries({
+        queryKey: ["admin", "evacuation-centers", centerId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "facilities"] });
+      queryClient.invalidateQueries({ queryKey: ["public", "evacuation-centers"] });
+    },
+    onError: (err) => {
+      toast.error(
+        toDisplayError(err).detail || "Failed to reactivate evacuation center",
+      );
     },
   });
 
@@ -208,7 +261,7 @@ export default function EvacuationCenterDetailPage() {
           Back to Evacuation Centers Masterlist
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <EvacCheckinManagerDialog
             centerId={center.id}
             centerName={center.facility.name}
@@ -228,6 +281,60 @@ export default function EvacuationCenterDetailPage() {
               </Button>
             }
           />
+
+          {/* Toggle Open/Close Shelter */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => toggleOpenMutation.mutate(!center.is_open)}
+            disabled={toggleOpenMutation.isPending}
+            className={cn(
+              "gap-1.5 border text-xs font-bold cursor-pointer",
+              center.is_open
+                ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                : "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100",
+            )}
+            title={center.is_open ? "Close Shelter" : "Open Shelter for Intake"}
+          >
+            {center.is_open ? (
+              <>
+                <PowerOff className="size-3.5" />
+                Close Intake
+              </>
+            ) : (
+              <>
+                <Power className="size-3.5" />
+                Open Intake
+              </>
+            )}
+          </Button>
+
+          {/* Deactivate / Soft Delete Button */}
+          {center.is_active !== false ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDeleteDialog(true)}
+              disabled={deactivateMutation.isPending}
+              className="gap-1.5 border-rose-200 bg-rose-50 text-xs font-bold text-rose-700 hover:bg-rose-100 hover:border-rose-300 cursor-pointer"
+              title="Deactivate and Soft Delete Center"
+            >
+              <Trash2 className="size-3.5 text-rose-600" />
+              Deactivate
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => reactivateMutation.mutate()}
+              disabled={reactivateMutation.isPending}
+              className="gap-1.5 border-emerald-300 bg-emerald-50 text-xs font-bold text-emerald-800 hover:bg-emerald-100 cursor-pointer"
+              title="Reactivate Evacuation Center"
+            >
+              <RotateCcw className="size-3.5 text-emerald-700" />
+              Reactivate
+            </Button>
+          )}
         </div>
       </div>
 
@@ -637,6 +744,53 @@ export default function EvacuationCenterDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Delete / Deactivate Evacuation Center Confirmation Modal */}
+      <AlertDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+      >
+        <AlertDialogContent className="max-w-md rounded-2xl border border-rose-200 bg-white p-6 shadow-2xl">
+          <AlertDialogHeader className="flex flex-col gap-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-rose-100 text-rose-700 border border-rose-200">
+                <Trash2 className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                  Deactivate Evacuation Center?
+                </AlertDialogTitle>
+                <p className="text-xs font-bold text-rose-700 truncate mt-0.5">
+                  {center.facility.name}
+                </p>
+              </div>
+            </div>
+            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
+              Are you sure you want to deactivate and soft-delete this evacuation center? All active evacuees must be checked out before deactivation. This will close intake and remove its live marker from public GIS shelter maps while retaining audit history.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={deactivateMutation.isPending}
+              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => deactivateMutation.mutate()}
+              disabled={deactivateMutation.isPending}
+              className="rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs cursor-pointer"
+            >
+              {deactivateMutation.isPending ? "Deactivating…" : "Confirm Deactivate"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

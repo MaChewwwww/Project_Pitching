@@ -24,6 +24,7 @@ from src.modules.evacuation.schemas import (
     EmergencyEventOut,
     EmergencyEventPatch,
     EvacCenterIn,
+    EvacCenterPatch,
     EvacCheckinCreate,
     EvacCheckinOut,
     PortalEvacuationStatusOut,
@@ -175,7 +176,7 @@ async def admin_create_evac_center(
 )
 async def admin_update_evac_center(
     center_id: uuid.UUID,
-    body: AdminEvacCenterIn | EvacCenterIn,
+    body: AdminEvacCenterIn | EvacCenterPatch | EvacCenterIn,
     session: DbSessionDep,
     user: CurrentUser,
 ) -> AdminEvacCenterOut:

@@ -10,14 +10,11 @@ import {
   Crosshair,
   ExternalLink,
   Layers,
-  MapPin,
-  Pencil,
-  Plus,
   Power,
   PowerOff,
+  RotateCcw,
   SlidersHorizontal,
-  Sparkles,
-  UserCheck,
+  Trash2,
   Users,
   Users2,
 } from "lucide-react";
@@ -25,6 +22,14 @@ import { toast } from "sonner";
 
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   ResourceTable,
   type ResourceColumn,
@@ -118,6 +123,8 @@ export default function AdminEvacuationCentersPage() {
       api.get<EvacCenter[]>("/admin/evacuation-centers").then((r) => r.data),
   });
 
+  const [centerToDelete, setCenterToDelete] = React.useState<EvacCenter | null>(null);
+
   const toggleOpenMutation = useMutation({
     mutationFn: ({ id, is_open }: { id: string; is_open: boolean }) =>
       api.patch(`/admin/evacuation-centers/${id}`, { is_open }),
@@ -128,9 +135,42 @@ export default function AdminEvacuationCentersPage() {
           : "Evacuation center marked CLOSED",
       );
       queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
+      queryClient.invalidateQueries({ queryKey: ["public", "evacuation-centers"] });
     },
     onError: (err) => {
       toast.error(toDisplayError(err).detail || "Failed to update center status");
+    },
+  });
+
+  const deactivateMutation = useMutation({
+    mutationFn: (centerId: string) =>
+      api.delete(`/admin/evacuation-centers/${centerId}`),
+    onSuccess: () => {
+      toast.success("Evacuation center deactivated and archived");
+      queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "facilities"] });
+      queryClient.invalidateQueries({ queryKey: ["public", "evacuation-centers"] });
+    },
+    onError: (err) => {
+      toast.error(
+        toDisplayError(err).detail || "Failed to deactivate evacuation center",
+      );
+    },
+  });
+
+  const reactivateMutation = useMutation({
+    mutationFn: (centerId: string) =>
+      api.post(`/admin/evacuation-centers/${centerId}/reactivate`),
+    onSuccess: () => {
+      toast.success("Evacuation center reactivated successfully");
+      queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "facilities"] });
+      queryClient.invalidateQueries({ queryKey: ["public", "evacuation-centers"] });
+    },
+    onError: (err) => {
+      toast.error(
+        toDisplayError(err).detail || "Failed to reactivate evacuation center",
+      );
     },
   });
 
@@ -217,17 +257,10 @@ export default function AdminEvacuationCentersPage() {
     },
   ];
 
-  const [selectedCenterIds, setSelectedCenterIds] = React.useState<Set<string>>(new Set());
-
-  // Initialize selectedCenterIds when data loads
-  React.useEffect(() => {
-    if (allCenters.length > 0 && selectedCenterIds.size === 0) {
-      setSelectedCenterIds(new Set(allCenters.map((c) => c.id)));
-    }
-  }, [allCenters, selectedCenterIds.size]);
+  const [deselectedCenterIds, setDeselectedCenterIds] = React.useState<Set<string>>(new Set());
 
   const toggleCenter = (id: string) => {
-    setSelectedCenterIds((prev) => {
+    setDeselectedCenterIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -239,10 +272,10 @@ export default function AdminEvacuationCentersPage() {
   };
 
   const toggleAllCenters = () => {
-    if (selectedCenterIds.size === allCenters.length) {
-      setSelectedCenterIds(new Set());
+    if (deselectedCenterIds.size === 0) {
+      setDeselectedCenterIds(new Set(allCenters.map((c) => c.id)));
     } else {
-      setSelectedCenterIds(new Set(allCenters.map((c) => c.id)));
+      setDeselectedCenterIds(new Set());
     }
   };
 
@@ -250,7 +283,7 @@ export default function AdminEvacuationCentersPage() {
   const filteredCenters = React.useMemo(() => {
     return allCenters.filter((center) => {
       // 0. Checklist Filter
-      if (selectedCenterIds.size > 0 && !selectedCenterIds.has(center.id)) {
+      if (deselectedCenterIds.has(center.id)) {
         return false;
       }
 
@@ -275,7 +308,7 @@ export default function AdminEvacuationCentersPage() {
 
       return true;
     });
-  }, [allCenters, selectedCenterIds, statusFilter, areaFilter, occupancyTier]);
+  }, [allCenters, deselectedCenterIds, statusFilter, areaFilter, occupancyTier]);
 
   /* Map Items */
   const mapItems = React.useMemo(() => {
@@ -431,11 +464,11 @@ export default function AdminEvacuationCentersPage() {
       {/* 5 Top Operational Metric Cards */}
       <AssetMetricStrip items={metricCards} />
 
-      {/* Main 2-Column GIS Workspace & Control Sidebar */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        {/* Column 1: Leaflet Interactive Map View (Old Height, No Header) */}
-        <div className="flex flex-1 flex-col min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
-          <div className="relative h-[480px] sm:h-[580px] lg:h-[620px] w-full overflow-hidden">
+      {/* Main 2-Column GIS Workspace & Control Sidebar (Seamless Equal-Height on Desktop) */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-5 lg:h-[620px]">
+        {/* Column 1: Leaflet Interactive Map View */}
+        <div className="flex flex-1 flex-col min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl h-[480px] sm:h-[580px] lg:h-full">
+          <div className="relative h-full w-full overflow-hidden">
             <AdminAssetWorkspaceMap
               items={mapItems}
               selectedId={selectedId}
@@ -448,9 +481,9 @@ export default function AdminEvacuationCentersPage() {
         </div>
 
         {/* Column 2: Filter and Capacity Sidebar */}
-        <div className="flex w-full flex-col gap-3 lg:w-72 lg:shrink-0">
+        <div className="flex w-full flex-col gap-3 lg:w-72 lg:shrink-0 lg:h-full">
           {/* Card 1: Map Overlays */}
-          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
+          <div className="w-full shrink-0 rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
             <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
               <Layers className="size-3.5 text-emerald-400" aria-hidden />
               Map Overlays
@@ -470,8 +503,8 @@ export default function AdminEvacuationCentersPage() {
           </div>
 
           {/* Card 2: Shelter Capacity & Filter Checklist with Custom Green Scrollbar */}
-          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
-            <div className="mb-2.5 flex items-center justify-between">
+          <div className="w-full flex-1 min-h-0 rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md flex flex-col">
+            <div className="mb-2.5 flex items-center justify-between shrink-0">
               <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
                 <Users className="size-3.5 text-emerald-400" aria-hidden />
                 Capacity & Shelter Filters
@@ -481,16 +514,16 @@ export default function AdminEvacuationCentersPage() {
                 onClick={toggleAllCenters}
                 className="text-[11px] font-bold text-emerald-400 hover:text-emerald-200 transition-colors cursor-pointer"
               >
-                {selectedCenterIds.size === allCenters.length
+                {deselectedCenterIds.size === 0
                   ? "Deselect All"
                   : "Select All"}
               </button>
             </div>
 
             {/* Scrollable Checklist with Custom Green Scrollbar */}
-            <div className="flex flex-col gap-2 max-h-[430px] overflow-y-auto pr-1.5 pt-1 [scrollbar-width:thin] [scrollbar-color:#059669_#022c22] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-emerald-950/40 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-600/90 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-emerald-400">
+            <div className="flex-1 min-h-0 flex flex-col gap-2 overflow-y-auto pr-1.5 pt-1 [scrollbar-width:thin] [scrollbar-color:#059669_#022c22] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-emerald-950/40 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-600/90 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-emerald-400">
               {allCenters.map((center) => {
-                const isSelected = selectedCenterIds.has(center.id);
+                const isSelected = !deselectedCenterIds.has(center.id);
                 const occ = center.occupancy ?? 0;
                 const cap = center.capacity ?? 0;
                 const pct = cap > 0 ? Math.min(100, Math.round((occ / cap) * 100)) : 0;
@@ -503,7 +536,7 @@ export default function AdminEvacuationCentersPage() {
                     type="button"
                     onClick={() => toggleCenter(center.id)}
                     className={cn(
-                      "flex flex-col gap-1.5 rounded-lg p-2.5 text-xs transition-all cursor-pointer border text-left",
+                      "flex flex-col gap-1.5 rounded-lg p-2.5 text-xs transition-all cursor-pointer border text-left shrink-0",
                       isSelected
                         ? "border-emerald-700/60 bg-white/10 text-white shadow-xs"
                         : "border-transparent text-emerald-200/50 hover:bg-white/5 hover:text-emerald-100",
@@ -579,7 +612,7 @@ export default function AdminEvacuationCentersPage() {
             </div>
 
             {/* Bottom Overall Capacity Load Meter */}
-            <div className="mt-3 flex flex-col gap-1.5 border-t border-emerald-900/80 pt-3">
+            <div className="mt-3 shrink-0 flex flex-col gap-1.5 border-t border-emerald-900/80 pt-3">
               <div className="flex items-center justify-between text-[10.5px] font-bold text-emerald-300">
                 <span>Barangay Evac Load</span>
                 <span className="tabular-nums font-mono text-white">
@@ -719,7 +752,34 @@ export default function AdminEvacuationCentersPage() {
                 )}
               </Button>
 
-              {/* 6. Link to Detailed Page */}
+              {/* 6. Soft Delete / Deactivate (Trash2) or Reactivate */}
+              {row.is_active !== false ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCenterToDelete(row)}
+                  disabled={deactivateMutation.isPending}
+                  className="h-8 w-8 p-0 border-rose-300/80 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:border-rose-400 cursor-pointer shrink-0"
+                  title="Deactivate / Delete Center"
+                  aria-label={`Deactivate ${row.facility.name}`}
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => reactivateMutation.mutate(row.id)}
+                  disabled={reactivateMutation.isPending}
+                  className="h-8 w-8 p-0 border-emerald-300/80 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-400 cursor-pointer shrink-0"
+                  title="Reactivate Shelter"
+                  aria-label={`Reactivate ${row.facility.name}`}
+                >
+                  <RotateCcw className="size-3.5" />
+                </Button>
+              )}
+
+              {/* 7. Link to Detailed Page */}
               <Link href={`/admin/evacuation-centers/${row.id}`}>
                 <Button
                   variant="outline"
@@ -735,6 +795,59 @@ export default function AdminEvacuationCentersPage() {
           )}
         />
       </div>
+
+      {/* Delete / Deactivate Evacuation Center Confirmation Modal */}
+      <AlertDialog
+        open={!!centerToDelete}
+        onOpenChange={(open) => !open && setCenterToDelete(null)}
+      >
+        <AlertDialogContent className="max-w-md rounded-2xl border border-rose-200 bg-white p-6 shadow-2xl">
+          <AlertDialogHeader className="flex flex-col gap-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-rose-100 text-rose-700 border border-rose-200">
+                <Trash2 className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                  Deactivate Evacuation Center?
+                </AlertDialogTitle>
+                <p className="text-xs font-bold text-rose-700 truncate mt-0.5">
+                  {centerToDelete?.facility.name}
+                </p>
+              </div>
+            </div>
+            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
+              Are you sure you want to deactivate and soft-delete this evacuation center? All active evacuees must be checked out before deactivation. This will close intake and remove its live marker from public GIS shelter maps while retaining audit history.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCenterToDelete(null)}
+              disabled={deactivateMutation.isPending}
+              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => {
+                if (centerToDelete) {
+                  deactivateMutation.mutate(centerToDelete.id, {
+                    onSettled: () => setCenterToDelete(null),
+                  });
+                }
+              }}
+              disabled={deactivateMutation.isPending}
+              className="rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs cursor-pointer"
+            >
+              {deactivateMutation.isPending ? "Deactivating…" : "Confirm Deactivate"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

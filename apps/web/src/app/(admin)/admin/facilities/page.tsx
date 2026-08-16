@@ -764,11 +764,11 @@ export default function AdminFacilitiesPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 gap-1.5 border-emerald-300/90 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 hover:border-emerald-400 cursor-pointer"
+                    className="h-8 w-8 p-0 border-emerald-600/30 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900 cursor-pointer shrink-0"
                     title="View Facility Details"
+                    aria-label={`View Details for ${row.name}`}
                   >
                     <Eye className="size-3.5 text-emerald-700" />
-                    Details
                   </Button>
                 }
               />
@@ -780,11 +780,11 @@ export default function AdminFacilitiesPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 gap-1.5 border-amber-300/80 bg-amber-50 px-2.5 text-xs font-bold text-amber-800 hover:bg-amber-100 cursor-pointer"
+                    className="h-8 w-8 p-0 border-amber-300/80 bg-amber-50 text-amber-800 hover:bg-amber-100 cursor-pointer shrink-0"
                     title="Edit Facility"
+                    aria-label={`Edit ${row.name}`}
                   >
-                    <Pencil className="size-3.5" />
-                    Edit
+                    <Pencil className="size-3.5 text-amber-800" />
                   </Button>
                 }
               />

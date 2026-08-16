@@ -100,6 +100,15 @@ class EvacCenterIn(BaseModel):
     notes: str | None = None
 
 
+class EvacCenterPatch(BaseModel):
+    facility_id: uuid.UUID | None = None
+    capacity: int | None = None
+    contact_person: str | None = None
+    contact_number: str | None = None
+    is_open: bool | None = None
+    notes: str | None = None
+
+
 class EvacFacilityIn(BaseModel):
     name: str = Field(min_length=1)
     address: str | None = None

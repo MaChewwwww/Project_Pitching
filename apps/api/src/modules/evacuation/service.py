@@ -27,6 +27,7 @@ from src.modules.evacuation.schemas import (
     EmergencyEventPatch,
     EmergencyEventStats,
     EvacCenterIn,
+    EvacCenterPatch,
     EvacCheckinCreate,
     EvacCheckinOut,
     PortalEvacuationStatusOut,
@@ -726,13 +727,18 @@ async def reactivate_evac_center(
 
 
 async def update_evac_center(
-    session: AsyncSession, center_id: uuid.UUID, data: EvacCenterIn, *, actor_id: uuid.UUID
+    session: AsyncSession,
+    center_id: uuid.UUID,
+    data: EvacCenterIn | EvacCenterPatch,
+    *,
+    actor_id: uuid.UUID,
 ) -> EvacCenter:
     center = await session.get(EvacCenter, center_id)
     if center is None:
         raise NotFoundError("Evacuation center not found.")
-    for key, value in data.model_dump().items():
-        setattr(center, key, value)
+    for key, value in data.model_dump(exclude_unset=True).items():
+        if value is not None or key in ("notes", "contact_person", "contact_number"):
+            setattr(center, key, value)
     await write_audit(
         session,
         actor_user_id=actor_id,

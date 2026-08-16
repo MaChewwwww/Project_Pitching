@@ -743,16 +743,16 @@ export default function AdminSirensPage() {
                   <Crosshair aria-hidden className="size-3.5 text-slate-700" />
                 </Button>
 
-                {/* 2. Details (Green) */}
+                {/* 2. Details (Green Icon Only) */}
                 <Link href={`/admin/sirens/${row.id}`}>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 gap-1.5 border-emerald-300/90 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 hover:border-emerald-400 cursor-pointer"
+                    className="h-8 w-8 p-0 border-emerald-600/30 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900 cursor-pointer shrink-0"
                     title="View Siren Telemetry & History"
+                    aria-label={`View Details for ${row.name}`}
                   >
                     <Eye className="size-3.5 text-emerald-700" />
-                    Details
                   </Button>
                 </Link>
 

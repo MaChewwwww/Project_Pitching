@@ -2,10 +2,15 @@
 
 import * as React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { BedDouble, MapPin, Pencil } from "lucide-react";
+import {
+  CheckCircle2,
+  MapPin,
+  Pencil,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/common/button";
@@ -28,8 +33,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AdminAssetWorkspaceMap } from "@/components/features/map/admin-asset-workspace-map-dynamic";
+import type {
+  LatLng,
+  PointResolution,
+} from "@/components/features/registry/location-picker";
 import { api, toDisplayError } from "@/lib/api/client";
+
+const LocationPicker = dynamic(
+  () => import("@/components/features/registry/location-picker"),
+  {
+    ssr: false,
+    loading: () => <div className="h-64 animate-pulse rounded-xl bg-slate-900" />,
+  },
+);
 
 export interface EvacCenterEditable {
   id: string;
@@ -43,6 +59,7 @@ export interface EvacCenterEditable {
     id: string;
     name: string;
     location: { coordinates: [number, number] };
+    area_id?: string | null;
     area_name?: string | null;
     address?: string | null;
     is_active?: boolean;
@@ -50,7 +67,15 @@ export interface EvacCenterEditable {
 }
 
 const editSchema = z.object({
-  capacity: z.coerce.number().int().min(1, "Capacity must be at least 1").optional().nullable(),
+  name: z.string().min(1, "Shelter facility name is required"),
+  address: z.string().optional().nullable(),
+  longitude: z.number().min(-180).max(180),
+  latitude: z.number().min(-90).max(90),
+  area_id: z.string().optional().nullable(),
+  capacity: z.coerce
+    .number()
+    .int()
+    .min(1, "Capacity must be at least 1 person"),
   contact_person: z.string().optional().nullable(),
   contact_number: z.string().optional().nullable(),
   is_open: z.boolean(),
@@ -69,18 +94,28 @@ export function EditEvacuationCenterDialog({
   onSuccess?: () => void;
 }) {
   const [open, setOpen] = React.useState(false);
+  const [autoAreaName, setAutoAreaName] = React.useState<string | null>(
+    center.facility.area_name || null,
+  );
   const queryClient = useQueryClient();
 
   const {
     register,
     handleSubmit,
     control,
+    setValue,
+    watch,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(editSchema) as any,
     defaultValues: {
+      name: center.facility.name,
+      address: center.facility.address || "",
+      longitude: center.facility.location.coordinates[0],
+      latitude: center.facility.location.coordinates[1],
+      area_id: center.facility.area_id || null,
       capacity: center.capacity ?? 100,
       contact_person: center.contact_person ?? "",
       contact_number: center.contact_number ?? "",
@@ -92,29 +127,74 @@ export function EditEvacuationCenterDialog({
   React.useEffect(() => {
     if (open) {
       reset({
+        name: center.facility.name,
+        address: center.facility.address || "",
+        longitude: center.facility.location.coordinates[0],
+        latitude: center.facility.location.coordinates[1],
+        area_id: center.facility.area_id || null,
         capacity: center.capacity ?? 100,
         contact_person: center.contact_person ?? "",
         contact_number: center.contact_number ?? "",
         is_open: center.is_open,
         notes: center.notes ?? "",
       });
+      setAutoAreaName(center.facility.area_name || null);
     }
   }, [open, center, reset]);
 
+  const lat = watch("latitude");
+  const lng = watch("longitude");
+  const pinValue: LatLng | null = lat && lng ? { lat, lng } : null;
+
+  const handlePinChange = React.useCallback(
+    (latlng: LatLng) => {
+      setValue("latitude", latlng.lat, { shouldValidate: true });
+      setValue("longitude", latlng.lng, { shouldValidate: true });
+    },
+    [setValue],
+  );
+
+  const handleResolve = React.useCallback(
+    (resolution: PointResolution) => {
+      setAutoAreaName(resolution.area_name);
+      if (resolution.area_id) {
+        setValue("area_id", resolution.area_id, { shouldValidate: true });
+      }
+    },
+    [setValue],
+  );
+
   const updateMutation = useMutation({
-    mutationFn: (values: FormValues) =>
-      api.patch(`/admin/evacuation-centers/${center.id}`, values),
+    mutationFn: async (values: FormValues) => {
+      // 1. Update facility physical coordinates and metadata
+      await api.patch(`/admin/facilities/${center.facility.id}`, {
+        name: values.name,
+        address: values.address || null,
+        contact_number: values.contact_number || null,
+        longitude: values.longitude,
+        latitude: values.latitude,
+        area_id: values.area_id || null,
+      });
+
+      // 2. Update evacuation center operational config
+      await api.patch(`/admin/evacuation-centers/${center.id}`, {
+        capacity: values.capacity,
+        contact_person: values.contact_person || null,
+        contact_number: values.contact_number || null,
+        is_open: values.is_open,
+        notes: values.notes || null,
+      });
+    },
     onSuccess: () => {
       toast.success("Evacuation center updated successfully!");
-      queryClient.invalidateQueries({
-        queryKey: ["admin", "evacuation-centers", center.id],
-      });
       queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "facilities"] });
+      queryClient.invalidateQueries({ queryKey: ["public", "evacuation-centers"] });
       setOpen(false);
       onSuccess?.();
     },
     onError: (err) => {
-      toast.error(toDisplayError(err).detail || "Failed to update center");
+      toast.error(toDisplayError(err).detail || "Failed to update evacuation center");
     },
   });
 
@@ -122,190 +202,200 @@ export function EditEvacuationCenterDialog({
     await updateMutation.mutateAsync(values);
   }
 
-  const mapItem = {
-    id: center.id,
-    name: center.facility.name,
-    category: "evacuation_center" as const,
-    location: center.facility.location,
-    area_name: center.facility.area_name,
-    statusLabel: center.is_open ? "Open Shelter" : "Closed Shelter",
-    tone: center.is_open ? ("emerald" as const) : ("slate" as const),
-  };
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
           <Button
-            variant="outline"
             size="sm"
-            className="h-8 w-8 p-0 border-slate-300 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shrink-0"
-            title="Edit Evacuation Center"
+            variant="outline"
+            className="h-8 w-8 p-0 border-amber-300/80 bg-amber-50 text-amber-800 hover:bg-amber-100 cursor-pointer shrink-0"
+            title="Edit Center"
             aria-label={`Edit ${center.facility.name}`}
           >
-            <Pencil className="size-3.5 text-slate-700" />
+            <Pencil className="size-3.5" />
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto p-0 rounded-2xl border border-slate-200 bg-white shadow-2xl">
-        <form onSubmit={handleSubmit(onSubmit)}>
-          {/* Header */}
-          <DialogHeader className="border-b border-emerald-900/40 bg-gradient-to-r from-[#064e3b] to-[#022c22] p-5 text-white">
-            <div className="flex items-center gap-2 text-emerald-300 text-xs font-bold uppercase tracking-wider">
-              <Pencil className="size-3.5 text-emerald-400" />
-              Shelter Configuration
+
+      <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto p-6 text-slate-900 rounded-2xl border border-slate-200 bg-white shadow-2xl">
+        <DialogHeader className="border-b border-slate-100 pb-3">
+          <DialogTitle className="flex items-center gap-2 text-lg font-bold text-slate-900">
+            <div className="grid size-8 place-items-center rounded-lg bg-amber-100 text-amber-800">
+              <Pencil className="size-4.5" />
             </div>
-            <DialogTitle className="mt-1 flex items-center gap-2 text-xl font-black text-white">
-              <BedDouble className="size-5 text-emerald-400 shrink-0" />
-              Edit {center.facility.name}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-emerald-200/80">
-              Update capacity limits, operational availability, contact information, and intake notes.
-            </DialogDescription>
-          </DialogHeader>
+            Edit Evacuation Center: {center.facility.name}
+          </DialogTitle>
+          <DialogDescription className="text-xs text-slate-500">
+            Modify shelter capacity, operational status, contact information, and re-pin its GIS coordinates on the map.
+          </DialogDescription>
+        </DialogHeader>
 
-          {/* Form Body */}
-          <div className="flex flex-col gap-5 p-6">
-            {/* Facility Fixed Info Badge */}
-            <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 text-xs text-slate-800">
-              <div>
-                <p className="font-bold text-slate-900">{center.facility.name}</p>
-                <p className="text-slate-500 text-[11px]">
-                  {center.facility.area_name ? `Area: ${center.facility.area_name}` : "San Jose Municipality"}
-                  {center.facility.address ? ` • ${center.facility.address}` : ""}
-                </p>
-              </div>
-              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-300">
-                Registered Asset
-              </span>
-            </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-4 flex flex-col gap-4">
+          {/* Facility Name */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit_evac_name" className="text-xs font-bold text-slate-800">
+              Shelter Facility Name <span className="text-rose-500 font-bold">*</span>
+            </Label>
+            <Input
+              id="edit_evac_name"
+              {...register("name")}
+              className="h-10 rounded-xl border-slate-200 bg-white text-xs font-semibold text-slate-900 shadow-2xs placeholder:text-slate-400 focus-visible:border-emerald-600 focus-visible:ring-1 focus-visible:ring-emerald-600"
+            />
+            {errors.name && (
+              <p className="text-[11px] font-semibold text-rose-600">
+                {errors.name.message}
+              </p>
+            )}
+          </div>
 
-            {/* Capacity & Operational State */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="edit_capacity" className="text-xs font-bold text-slate-800">
-                  Maximum Shelter Capacity (Persons) <span className="text-rose-500 font-bold">*</span>
-                </Label>
-                <Input
-                  id="edit_capacity"
-                  type="number"
-                  min="1"
-                  {...register("capacity")}
-                  className="h-10 rounded-xl border-slate-300"
-                />
-                {errors.capacity && (
-                  <p className="text-xs font-semibold text-rose-600">
-                    {errors.capacity.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="edit_is_open" className="text-xs font-bold text-slate-800">
-                  Operational State <span className="text-rose-500 font-bold">*</span>
-                </Label>
-                <Controller
-                  name="is_open"
-                  control={control}
-                  render={({ field }) => (
-                    <Select
-                      value={field.value ? "true" : "false"}
-                      onValueChange={(v) => field.onChange(v === "true")}
-                    >
-                      <SelectTrigger
-                        id="edit_is_open"
-                        className="h-10 rounded-xl border-slate-300 bg-white text-xs font-semibold text-slate-900 shadow-2xs"
-                      >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="true">Open (Active for Intake)</SelectItem>
-                        <SelectItem value="false">Closed (Standby Reserve)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-            </div>
-
-            {/* Contact Person & Number */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="edit_contact_person" className="text-xs font-bold text-slate-800">
-                  Center Officer / Contact Person
-                </Label>
-                <Input
-                  id="edit_contact_person"
-                  placeholder="e.g. Kagawad Juan Dela Cruz"
-                  {...register("contact_person")}
-                  className="h-10 rounded-xl border-slate-300"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="edit_contact_number" className="text-xs font-bold text-slate-800">
-                  Contact / Hotline Number
-                </Label>
-                <Input
-                  id="edit_contact_number"
-                  placeholder="e.g. 09171234567"
-                  {...register("contact_number")}
-                  className="h-10 rounded-xl border-slate-300 font-mono"
-                />
-              </div>
-            </div>
-
-            {/* Intake Notes */}
+          {/* Capacity & Operational State */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="edit_notes" className="text-xs font-bold text-slate-800">
-                Intake Notes & Facility Equipment
+              <Label htmlFor="edit_capacity" className="text-xs font-bold text-slate-800">
+                Maximum Shelter Capacity (Persons) <span className="text-rose-500 font-bold">*</span>
               </Label>
-              <Textarea
-                id="edit_notes"
-                rows={2}
-                placeholder="Special instructions, generator status, water supplies..."
-                {...register("notes")}
-                className="rounded-xl border-slate-300 resize-none text-xs"
+              <Input
+                id="edit_capacity"
+                type="number"
+                min={1}
+                {...register("capacity")}
+                className="h-10 rounded-xl border-slate-200 bg-white text-xs font-semibold text-slate-900 shadow-2xs placeholder:text-slate-400 focus-visible:border-emerald-600 focus-visible:ring-1 focus-visible:ring-emerald-600"
               />
+              {errors.capacity && (
+                <p className="text-[11px] font-semibold text-rose-600">
+                  {errors.capacity.message}
+                </p>
+              )}
             </div>
 
-            {/* Mini Map Location Preview */}
-            <div className="flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3.5">
-              <div className="flex items-center justify-between text-xs font-bold text-emerald-950">
-                <span className="flex items-center gap-1.5">
-                  <MapPin className="size-3.5 text-emerald-700" />
-                  Facility Coordinates
-                </span>
-                <span className="font-mono text-[11px] text-emerald-800">
-                  {center.facility.location.coordinates[1].toFixed(5)}, {center.facility.location.coordinates[0].toFixed(5)}
-                </span>
-              </div>
-              <div className="h-40 w-full overflow-hidden rounded-lg border border-emerald-300">
-                <AdminAssetWorkspaceMap
-                  items={[mapItem]}
-                  selectedId={center.id}
-                  onSelect={() => {}}
-                  center={[
-                    center.facility.location.coordinates[1],
-                    center.facility.location.coordinates[0],
-                  ]}
-                  zoom={15.5}
-                  showLegend={false}
-                  showDataSources={false}
-                  className="h-full w-full"
-                />
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs font-bold text-slate-800">
+                Operational State <span className="text-rose-500 font-bold">*</span>
+              </Label>
+              <Controller
+                name="is_open"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value ? "open" : "closed"}
+                    onValueChange={(val) => field.onChange(val === "open")}
+                  >
+                    <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-white text-xs font-semibold text-slate-900 shadow-2xs focus-visible:border-emerald-600 focus-visible:ring-1 focus-visible:ring-emerald-600">
+                      <SelectValue placeholder="Select operational state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="open">Open (Active for Intake)</SelectItem>
+                      <SelectItem value="closed">Closed (Standby)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </div>
           </div>
 
-          {/* Footer */}
-          <DialogFooter className="border-t border-slate-100 bg-slate-50/80 px-6 py-4 flex items-center justify-end gap-2">
+          {/* Interactive Map Pinning (Re-pinning location) */}
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                <MapPin className="size-3.5 text-emerald-700" />
+                Shelter Location Pin <span className="text-rose-500 font-bold">*</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10.5px] font-semibold text-emerald-800">
+                <span className="relative flex size-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex size-1.5 rounded-full bg-emerald-600" />
+                </span>
+                Click map to relocate
+              </span>
+            </div>
+
+            <div className="h-64 w-full overflow-hidden rounded-xl border border-slate-300 shadow-inner bg-slate-900">
+              <LocationPicker
+                value={pinValue}
+                onChange={handlePinChange}
+                onResolve={handleResolve}
+              />
+            </div>
+
+            {/* Coordinates & Area Telemetry */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 pt-2 text-xs">
+              <div className="flex items-center gap-2 text-slate-600">
+                <span className="font-semibold text-slate-700">Coordinates:</span>
+                <span className="font-mono text-[11px] font-bold text-emerald-700">
+                  {lat ? lat.toFixed(5) : "—"}, {lng ? lng.toFixed(5) : "—"}
+                </span>
+              </div>
+              {autoAreaName && (
+                <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-100/70 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  <CheckCircle2 className="size-3 text-emerald-700" />
+                  Detected: {autoAreaName}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Address & Contacts */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit_address" className="text-xs font-bold text-slate-800">
+              Street Address / Landmark
+            </Label>
+            <Input
+              id="edit_address"
+              placeholder="e.g. Phase 1A, Kasiglahan Village 1, Barangay San Jose"
+              {...register("address")}
+              className="h-10 rounded-xl border-slate-200 bg-white text-xs font-semibold text-slate-900 shadow-2xs placeholder:text-slate-400 focus-visible:border-emerald-600 focus-visible:ring-1 focus-visible:ring-emerald-600"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="edit_officer" className="text-xs font-bold text-slate-800">
+                Center Officer / Contact Person
+              </Label>
+              <Input
+                id="edit_officer"
+                placeholder="e.g. Kagawad Juan Dela Cruz"
+                {...register("contact_person")}
+                className="h-10 rounded-xl border-slate-200 bg-white text-xs font-semibold text-slate-900 shadow-2xs placeholder:text-slate-400 focus-visible:border-emerald-600 focus-visible:ring-1 focus-visible:ring-emerald-600"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="edit_hotline" className="text-xs font-bold text-slate-800">
+                Contact / Hotline Number
+              </Label>
+              <Input
+                id="edit_hotline"
+                placeholder="e.g. 09171234567"
+                {...register("contact_number")}
+                className="h-10 rounded-xl border-slate-200 bg-white text-xs font-semibold text-slate-900 shadow-2xs placeholder:text-slate-400 focus-visible:border-emerald-600 focus-visible:ring-1 focus-visible:ring-emerald-600"
+              />
+            </div>
+          </div>
+
+          {/* Intake Notes & Equipment */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit_notes" className="text-xs font-bold text-slate-800">
+              Intake Notes & Facility Equipment
+            </Label>
+            <Textarea
+              id="edit_notes"
+              rows={2}
+              placeholder="Special intake instructions, generator power backup, water filtration unit, medical cot capacity…"
+              {...register("notes")}
+              className="rounded-xl border-slate-200 bg-white text-xs font-medium text-slate-900 shadow-2xs placeholder:text-slate-400 focus-visible:border-emerald-600 focus-visible:ring-1 focus-visible:ring-emerald-600"
+            />
+          </div>
+
+          {/* Dialog Footer Actions */}
+          <DialogFooter className="mt-2 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setOpen(false)}
-              className="h-9 rounded-xl border-slate-300 text-xs font-bold text-slate-700"
+              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
             >
               Cancel
             </Button>
@@ -314,9 +404,9 @@ export function EditEvacuationCenterDialog({
               variant="primary"
               size="sm"
               disabled={isSubmitting || updateMutation.isPending}
-              className="h-9 rounded-xl bg-emerald-600 px-5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700"
+              className="rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
             >
-              {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              {updateMutation.isPending ? "Saving Changes…" : "Save Changes"}
             </Button>
           </DialogFooter>
         </form>
