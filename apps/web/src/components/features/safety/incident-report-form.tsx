@@ -241,67 +241,89 @@ export function IncidentReportForm({ onDone }: { onDone: () => void }) {
         </div>
       </div>
 
-      {/* ── Active Event Linking ── */}
-      {activeEvents.length > 0 ? (
-        <div className="space-y-1.5 rounded-2xl border border-amber-200 bg-amber-50/40 p-4">
-          <Label htmlFor="incident-event" className="text-xs font-bold text-neutral-800">
-            Active Emergency Event Link
-          </Label>
-          <select
-            id="incident-event"
-            value={resolvedEventId}
-            onChange={(event) => setEventId(event.target.value)}
-            className="w-full h-11 rounded-xl border border-amber-300 bg-white px-3 text-xs font-medium text-neutral-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none"
-          >
-            {activeEvents.length > 1 ? (
-              <option value="">Select active disaster event</option>
-            ) : null}
-            {activeEvents.map((event) => (
-              <option key={event.id} value={event.id}>
-                {event.name} ({event.type.replace(/_/g, " ")})
-              </option>
-            ))}
-          </select>
-          <p className="text-[11px] text-amber-800/80">
-            {activeEvents.length > 1
-              ? "Multiple emergency operations are underway. Select the appropriate event."
-              : "This report will automatically link to the ongoing barangay disaster operations."}
-          </p>
-        </div>
-      ) : null}
-
-      {/* ── Field 1: Incident Hazard Type ── */}
-      <div className="space-y-1.5">
-        <Label className="text-xs font-bold text-neutral-800">
-          Incident Hazard Type <span className="text-red-500">*</span>
-        </Label>
-        <Controller
-          control={control}
-          name="type"
-          render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger className="h-11 w-full rounded-xl border-neutral-300 bg-neutral-50/50 px-3 text-xs font-semibold focus:border-emerald-500 focus:bg-white">
-                <SelectValue />
+      {/* ── Active Event & Hazard Type Grid ── */}
+      <div
+        className={cn(
+          "grid gap-4",
+          activeEvents.length > 0 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1",
+        )}
+      >
+        {/* Active Event Linking */}
+        {activeEvents.length > 0 ? (
+          <div className="space-y-1.5">
+            <Label htmlFor="incident-event" className="text-xs font-bold text-neutral-800">
+              Active Emergency Event Link
+            </Label>
+            <Select
+              value={resolvedEventId || ""}
+              onValueChange={(val) => setEventId(val)}
+            >
+              <SelectTrigger
+                id="incident-event"
+                className="h-11 w-full rounded-xl border-amber-300/90 bg-amber-50/50 px-3 text-xs font-semibold text-neutral-900 focus:border-amber-500 focus:bg-white"
+              >
+                <SelectValue placeholder="Select active disaster event" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                {Object.entries(INCIDENT_CONFIG).map(([value, cfg]) => {
-                  const Icon = cfg.icon;
-                  return (
-                    <SelectItem key={value} value={value} className="text-xs py-2.5">
-                      <div className="flex items-center gap-2.5">
-                        <Icon className={cn("size-4", cfg.color)} />
-                        <div>
-                          <strong className="text-neutral-900 block">{cfg.label}</strong>
-                          <span className="text-[10.5px] text-neutral-500 block">{cfg.tagalog}</span>
-                        </div>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
+              <SelectContent className="rounded-xl border-amber-200">
+                {activeEvents.map((event) => (
+                  <SelectItem key={event.id} value={event.id} className="text-xs py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="size-2 rounded-full bg-amber-500 shrink-0" />
+                      <span className="font-bold text-neutral-900">{event.name}</span>
+                      <span className="text-neutral-500 text-[11px] capitalize">
+                        ({event.type.replace(/_/g, " ")})
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-          )}
-        />
+            <p className="text-[10.5px] text-amber-800/80">
+              {activeEvents.length > 1
+                ? "Select which active disaster event this report relates to."
+                : "Automatically linked to ongoing barangay disaster operations."}
+            </p>
+          </div>
+        ) : null}
+
+        {/* Field 1: Incident Hazard Type */}
+        <div className="space-y-1.5">
+          <Label className="text-xs font-bold text-neutral-800">
+            Incident Hazard Type <span className="text-red-500">*</span>
+          </Label>
+          <Controller
+            control={control}
+            name="type"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger className="h-11 w-full rounded-xl border-neutral-300 bg-neutral-50/50 px-3 text-xs font-semibold text-neutral-900 focus:border-emerald-500 focus:bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {Object.entries(INCIDENT_CONFIG).map(([value, cfg]) => {
+                    const Icon = cfg.icon;
+                    return (
+                      <SelectItem key={value} value={value} className="text-xs py-2">
+                        <div className="flex items-center gap-2">
+                          <Icon className={cn("size-4 shrink-0", cfg.color)} />
+                          <span className="font-bold text-neutral-900">{cfg.label}</span>
+                          <span className="text-neutral-500 text-[11px]">
+                            ({cfg.tagalog})
+                          </span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {activeEvents.length > 0 ? (
+            <p className="text-[10.5px] text-neutral-500">
+              Specific type of community hazard observed.
+            </p>
+          ) : null}
+        </div>
       </div>
 
       {/* ── Field 2: Description ── */}

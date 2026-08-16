@@ -218,93 +218,93 @@ export default function PortalHistoryPage() {
         </Card>
       </div>
 
-      {/* ── 2. Filters & Search Bar ── */}
-      <div className="flex flex-col gap-3 border-b border-neutral-200/80 pb-4 sm:flex-row sm:items-center sm:justify-between">
-        {/* Category Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setFilter("all")}
-            className={cn(
-              "cursor-pointer rounded-full px-4 py-2 text-xs font-bold transition-all shadow-2xs",
-              filter === "all"
-                ? "bg-emerald-700 text-white shadow-sm ring-2 ring-emerald-600/30"
-                : "border border-neutral-300/80 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400",
-            )}
-          >
-            All Activity ({combinedItems.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter("rescue")}
-            className={cn(
-              "cursor-pointer rounded-full px-4 py-2 text-xs font-bold transition-all shadow-2xs",
-              filter === "rescue"
-                ? "bg-red-700 text-white shadow-sm ring-2 ring-red-600/30"
-                : "border border-neutral-300/80 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400",
-            )}
-          >
-            Rescue Requests ({rescueItems.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter("incident")}
-            className={cn(
-              "cursor-pointer rounded-full px-4 py-2 text-xs font-bold transition-all shadow-2xs",
-              filter === "incident"
-                ? "bg-amber-700 text-white shadow-sm ring-2 ring-amber-600/30"
-                : "border border-neutral-300/80 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400",
-            )}
-          >
-            Incident Reports ({reportItems.length})
-          </button>
+      {/* ── 2. Unified Activity Feed Card Container ── */}
+      <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+        {/* Container Header: Filters & Search */}
+        <div className="flex flex-col gap-3 border-b border-neutral-100 bg-neutral-50/70 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between">
+          {/* Category Filter Pills */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setFilter("all")}
+              className={cn(
+                "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                filter === "all"
+                  ? "bg-emerald-700 text-white shadow-xs ring-2 ring-emerald-600/30"
+                  : "border border-neutral-300/80 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400",
+              )}
+            >
+              All Activity ({combinedItems.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter("rescue")}
+              className={cn(
+                "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                filter === "rescue"
+                  ? "bg-red-700 text-white shadow-xs ring-2 ring-red-600/30"
+                  : "border border-neutral-300/80 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400",
+              )}
+            >
+              Rescue Requests ({rescueItems.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter("incident")}
+              className={cn(
+                "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                filter === "incident"
+                  ? "bg-amber-700 text-white shadow-xs ring-2 ring-amber-600/30"
+                  : "border border-neutral-300/80 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400",
+              )}
+            >
+              Incident Reports ({reportItems.length})
+            </button>
+          </div>
+
+          {/* Quick Search */}
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search records…"
+              className="w-full h-9 rounded-full border border-neutral-300 bg-white pl-8 pr-3 text-xs font-medium text-neutral-800 placeholder:text-neutral-400 focus:border-emerald-500 focus:outline-none shadow-2xs"
+            />
+          </div>
         </div>
 
-        {/* Quick Search */}
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search records…"
-            className="w-full h-9 rounded-full border border-neutral-300 bg-white pl-8 pr-3 text-xs font-medium text-neutral-800 placeholder:text-neutral-400 focus:border-emerald-500 focus:outline-none shadow-2xs"
-          />
-        </div>
-      </div>
+        {/* Container Body */}
+        {isLoading ? (
+          <div className="p-6 space-y-4 animate-pulse">
+            <div className="h-32 rounded-2xl bg-slate-100" />
+            <div className="h-32 rounded-2xl bg-slate-100" />
+          </div>
+        ) : rescueQuery.isError || reportsQuery.isError ? (
+          <div className="flex flex-col items-center justify-center p-8 text-center sm:p-12">
+            <History className="size-10 text-amber-700" />
+            <h3 className="mt-3 text-base font-black text-neutral-900">
+              Activity history is temporarily unavailable
+            </h3>
+            <p className="mt-1 max-w-md text-xs leading-relaxed text-neutral-600">
+              Your records have not been lost. Please try refreshing or check back in a few moments.
+            </p>
+          </div>
+        ) : filteredItems.length > 0 ? (
+          <div className="divide-y divide-neutral-100">
+            {filteredItems.map((item) => {
+              const isRescue = item.kind === "rescue";
+              const tone =
+                statusToneMap[item.status.toLowerCase()] ?? statusToneMap.pending;
 
-      {/* ── 3. Activity Timeline List ── */}
-      {isLoading ? (
-        <div className="space-y-4 animate-pulse">
-          <div className="h-36 rounded-3xl bg-slate-100" />
-          <div className="h-36 rounded-3xl bg-slate-100" />
-          <div className="h-36 rounded-3xl bg-slate-100" />
-        </div>
-      ) : rescueQuery.isError || reportsQuery.isError ? (
-        <div className="flex flex-col items-center justify-center rounded-3xl border border-amber-200 bg-amber-50/50 p-8 text-center shadow-xs sm:p-12">
-          <History className="size-10 text-amber-700" />
-          <h3 className="mt-3 text-base font-black text-neutral-900">
-            Activity history is temporarily unavailable
-          </h3>
-          <p className="mt-1 max-w-md text-xs leading-relaxed text-neutral-600">
-            Your records have not been lost. Please try refreshing or check back in a few moments.
-          </p>
-        </div>
-      ) : filteredItems.length > 0 ? (
-        <div className="space-y-4">
-          {filteredItems.map((item) => {
-            const isRescue = item.kind === "rescue";
-            const tone =
-              statusToneMap[item.status.toLowerCase()] ?? statusToneMap.pending;
-
-            return (
-              <Card
-                key={`${item.kind}-${item.id}`}
-                className="overflow-hidden border-neutral-200/90 bg-white shadow-xs transition-all hover:border-neutral-300 hover:shadow-sm"
-              >
-                <CardContent className="p-5 sm:p-6 space-y-4">
-                  {/* Card Header: Icon, Type, Subtitle, Date, Status */}
-                  <div className="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-100 pb-3.5">
+              return (
+                <div
+                  key={`${item.kind}-${item.id}`}
+                  className="p-5 sm:p-6 space-y-4 hover:bg-neutral-50/40 transition-colors"
+                >
+                  {/* Item Header: Icon, Type, Subtitle, Date, Status */}
+                  <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <span
                         className={cn(
@@ -392,15 +392,13 @@ export default function PortalHistoryPage() {
                       </span>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      ) : (
-        /* Empty State */
-        <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
-          <CardContent className="flex flex-col items-center justify-center p-8 sm:p-12 text-center space-y-4">
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          /* Empty State */
+          <div className="flex flex-col items-center justify-center p-8 sm:p-14 text-center space-y-4">
             <div className="grid size-14 place-items-center rounded-2xl bg-neutral-100 text-neutral-500 shadow-2xs">
               <ClipboardList className="size-7 text-neutral-600" />
             </div>
@@ -448,9 +446,9 @@ export default function PortalHistoryPage() {
                 </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

@@ -18,12 +18,12 @@ public_router = APIRouter(tags=["activities"])
 admin_router = APIRouter(tags=["activities"])
 
 
-@public_router.get("/activities", summary="Published upcoming activities")
+@public_router.get("/activities", summary="Published community activities")
 async def public_activities(
     session: DbSessionDep,
     page: int = 1,
     size: int = 20,
-    upcoming: bool = True,
+    upcoming: bool | None = None,
     activity_type: Annotated[ActivityType | None, Query(alias="type")] = None,
 ) -> Page[PublicActivity]:
     return await service.list_activities(

@@ -102,96 +102,94 @@ export default function PortalUpdatesPage() {
         }
       />
 
-      {/* ── 2-Column Responsive Layout (12-col grid) ── */}
+      {/* ── 12-Column Responsive Layout ── */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8 items-start">
-        {/* ── PRIMARY LEFT COLUMN: Notices List & Filter Bar (7-8 cols) ── */}
-        <div className="lg:col-span-7 xl:col-span-8 space-y-5">
-          {/* 1. Filter & Search Controls */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-neutral-200/80 pb-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setFilter("all")}
-                className={cn(
-                  "cursor-pointer rounded-full px-4 py-2 text-xs font-bold transition-all shadow-2xs",
-                  filter === "all"
-                    ? "bg-emerald-700 text-white shadow-sm ring-2 ring-emerald-600/30"
-                    : "border border-neutral-300/80 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400",
-                )}
-              >
-                All Notices ({allItems.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilter("unread")}
-                className={cn(
-                  "cursor-pointer rounded-full px-4 py-2 text-xs font-bold transition-all shadow-2xs",
-                  filter === "unread"
-                    ? "bg-emerald-700 text-white shadow-sm ring-2 ring-emerald-600/30"
-                    : "border border-neutral-300/80 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400",
-                )}
-              >
-                Unread ({unreadCount})
-              </button>
+        {/* ── PRIMARY LEFT COLUMN: Unified Notices Container (7-8 cols) ── */}
+        <div className="lg:col-span-7 xl:col-span-8">
+          <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+            {/* 1. Container Header: Filters & Search Toolbar */}
+            <div className="flex flex-col gap-3 border-b border-neutral-100 bg-neutral-50/70 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between">
+              {/* Filter Pills */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFilter("all")}
+                  className={cn(
+                    "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                    filter === "all"
+                      ? "bg-emerald-700 text-white shadow-xs ring-2 ring-emerald-600/30"
+                      : "border border-neutral-300/80 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400",
+                  )}
+                >
+                  All Notices ({allItems.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilter("unread")}
+                  className={cn(
+                    "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                    filter === "unread"
+                      ? "bg-emerald-700 text-white shadow-xs ring-2 ring-emerald-600/30"
+                      : "border border-neutral-300/80 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400",
+                  )}
+                >
+                  Unread ({unreadCount})
+                </button>
+              </div>
+
+              {/* Quick Search */}
+              <div className="relative w-full sm:w-60">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search notices…"
+                  className="w-full h-9 rounded-full border border-neutral-300 bg-white pl-8 pr-3 text-xs font-medium text-neutral-800 placeholder:text-neutral-400 focus:border-emerald-500 focus:outline-none shadow-2xs"
+                />
+              </div>
             </div>
 
-            {/* Quick Search */}
-            <div className="relative w-full sm:w-60">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search notices…"
-                className="w-full h-9 rounded-full border border-neutral-300 bg-white pl-8 pr-3 text-xs font-medium text-neutral-800 placeholder:text-neutral-400 focus:border-emerald-500 focus:outline-none shadow-2xs"
-              />
-            </div>
-          </div>
+            {/* 2. Container Body: Notifications Timeline */}
+            {notices.isLoading ? (
+              <div className="p-6 space-y-3 animate-pulse">
+                <div className="h-24 rounded-2xl bg-slate-100" />
+                <div className="h-24 rounded-2xl bg-slate-100" />
+              </div>
+            ) : notices.isError ? (
+              <div className="flex flex-col items-center justify-center p-8 text-center sm:p-12">
+                <AlertTriangle className="size-10 text-amber-700" />
+                <h3 className="mt-3 text-base font-black text-neutral-900">
+                  Notices are temporarily unavailable
+                </h3>
+                <p className="mt-1 max-w-md text-xs leading-relaxed text-neutral-600">
+                  Please try again shortly. For urgent situations, submit a direct rescue ticket or call the barangay hotline.
+                </p>
+                <Button
+                  asChild
+                  size="sm"
+                  className="mt-4 rounded-full bg-red-600 text-xs font-bold text-white hover:bg-red-700"
+                >
+                  <Link href="/portal/rescue">Ask for Rescue</Link>
+                </Button>
+              </div>
+            ) : filteredItems.length > 0 ? (
+              <div className="divide-y divide-neutral-100">
+                {filteredItems.map((notice) => {
+                  const isUnread = !notice.read_at;
+                  const isAlert =
+                    notice.type.includes("alert") || notice.type.includes("emergency");
+                  const isIncident =
+                    notice.type.includes("incident") || notice.type.includes("report");
 
-          {/* 2. Notifications Timeline Items */}
-          {notices.isLoading ? (
-            <div className="space-y-3 animate-pulse">
-              <div className="h-28 rounded-3xl bg-slate-100" />
-              <div className="h-28 rounded-3xl bg-slate-100" />
-              <div className="h-28 rounded-3xl bg-slate-100" />
-            </div>
-          ) : notices.isError ? (
-            <div className="flex flex-col items-center justify-center rounded-3xl border border-amber-200 bg-amber-50/50 p-8 text-center shadow-xs sm:p-12">
-              <AlertTriangle className="size-10 text-amber-700" />
-              <h3 className="mt-3 text-base font-black text-neutral-900">
-                Notices are temporarily unavailable
-              </h3>
-              <p className="mt-1 max-w-md text-xs leading-relaxed text-neutral-600">
-                Please try again shortly. For urgent situations, submit a direct rescue ticket or call the barangay hotline.
-              </p>
-              <Button
-                asChild
-                size="sm"
-                className="mt-4 rounded-full bg-red-600 text-xs font-bold text-white hover:bg-red-700"
-              >
-                <Link href="/portal/rescue">Ask for Rescue</Link>
-              </Button>
-            </div>
-          ) : filteredItems.length > 0 ? (
-            <div className="space-y-3.5">
-              {filteredItems.map((notice) => {
-                const isUnread = !notice.read_at;
-                const isAlert =
-                  notice.type.includes("alert") || notice.type.includes("emergency");
-                const isIncident =
-                  notice.type.includes("incident") || notice.type.includes("report");
-
-                return (
-                  <Card
-                    key={notice.id}
-                    className={cn(
-                      "overflow-hidden border transition-all hover:border-neutral-300 hover:shadow-xs",
-                      isUnread
-                        ? "border-emerald-300/90 bg-gradient-to-r from-emerald-50/40 via-white to-white shadow-2xs"
-                        : "border-neutral-200/90 bg-white",
-                    )}
-                  >
-                    <CardContent className="p-4 sm:p-5">
+                  return (
+                    <div
+                      key={notice.id}
+                      className={cn(
+                        "p-4 sm:p-5 transition-colors hover:bg-neutral-50/60",
+                        isUnread && "bg-emerald-50/25",
+                      )}
+                    >
                       <div className="flex items-start gap-3.5">
                         <span
                           className={cn(
@@ -257,15 +255,13 @@ export default function PortalUpdatesPage() {
                           ) : null}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          ) : (
-            /* Empty State */
-            <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
-              <CardContent className="flex flex-col items-center justify-center p-8 sm:p-12 text-center space-y-3">
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              /* Empty State */
+              <div className="flex flex-col items-center justify-center p-8 sm:p-14 text-center space-y-3">
                 <div className="grid size-14 place-items-center rounded-2xl bg-neutral-100 text-neutral-500 shadow-2xs">
                   <Bell className="size-7 text-neutral-600" />
                 </div>
@@ -289,9 +285,9 @@ export default function PortalUpdatesPage() {
                     View All Notices
                   </Button>
                 ) : null}
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            )}
+          </Card>
         </div>
 
         {/* ── SECONDARY RIGHT COLUMN: Inbox Stats, Danger Banner, Channels Guide (4-5 cols) ── */}

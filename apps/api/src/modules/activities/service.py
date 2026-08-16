@@ -93,7 +93,7 @@ async def list_activities(
     *,
     page: int = 1,
     size: int = 20,
-    upcoming: bool = True,
+    upcoming: bool | None = None,
     published_only: bool = True,
     activity_type: ActivityType | None = None,
 ) -> Page[PublicActivity]:
@@ -101,11 +101,14 @@ async def list_activities(
     stmt = select(Activity, Area.name).outerjoin(Area, Activity.area_id == Area.id)
     if published_only:
         stmt = stmt.where(Activity.publication_status == "published")
-    if upcoming:
+    if upcoming is True:
         stmt = stmt.where(Activity.starts_at > now)
+    elif upcoming is False:
+        stmt = stmt.where(Activity.starts_at <= now)
     if activity_type:
         stmt = stmt.where(Activity.type == activity_type)
-    rows = (await session.execute(stmt.order_by(Activity.starts_at))).all()
+    ordering = Activity.starts_at if upcoming is True else Activity.starts_at.desc()
+    rows = (await session.execute(stmt.order_by(ordering))).all()
     paged = rows[(page - 1) * size : page * size]
     return Page[PublicActivity](
         items=[

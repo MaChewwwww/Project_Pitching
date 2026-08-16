@@ -9,9 +9,9 @@ import { ActivityCard } from "@/components/features/activities/activity-card";
 import { Section } from "./section";
 import { getActivities } from "@/lib/api/public";
 
-/** The next few activities (FR-PUB-006, BR-0.6). Full listing on `/activities`. */
+/** The latest completed community activities (FR-PUB-006, BR-0.6). */
 export async function ActivitiesSection() {
-  const { items: activities } = await getActivities({ upcoming: true });
+  const { items: activities } = await getActivities({ upcoming: false, size: 3 });
 
   if (activities.length === 0) return null;
 
@@ -19,11 +19,17 @@ export async function ActivitiesSection() {
     <Section id="activities" tone="tint">
       <SectionHeader
         icon={CalendarDays}
-        title="Current"
+        title="Latest"
         titleAccent="Activities"
         description="Drills, training and community programs. Open to all residents unless stated otherwise."
         action={
-          <Button asChild variant="outline" pill size="md" className="shrink-0 max-sm:px-3">
+          <Button
+            asChild
+            variant="outline"
+            pill
+            size="md"
+            className="shrink-0 max-sm:px-3"
+          >
             <Link href="/activities" aria-label="View All">
               <span className="hidden sm:inline">View All</span>
               <ArrowRight aria-hidden className="size-4" />
