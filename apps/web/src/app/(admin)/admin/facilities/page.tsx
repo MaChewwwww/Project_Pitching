@@ -13,6 +13,7 @@ import {
   Layers,
   MapPin,
   Pencil,
+  PieChart as PieChartIcon,
   Power,
   PowerOff,
   RotateCcw,
@@ -22,6 +23,13 @@ import {
   Stethoscope,
   Trash2,
 } from "lucide-react";
+import {
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+} from "recharts";
 import { toast } from "sonner";
 
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
@@ -290,6 +298,20 @@ export default function AdminFacilitiesPage() {
       tone: "sky",
     },
   ];
+
+  /* Distribution Breakdown for Sidebar Pie Chart */
+  const pieChartData = React.useMemo(() => {
+    return FACILITY_TYPE_CONFIGS.map((cfg) => {
+      const count = stats.countByType.get(cfg.type) ?? 0;
+      return {
+        name: cfg.singleLabel,
+        shortLabel: cfg.label,
+        value: count,
+        color: cfg.hexColor,
+        type: cfg.type,
+      };
+    }).filter((item) => item.value > 0);
+  }, [stats.countByType]);
 
   /* Toggle Facility Type in Sidebar Checklist */
   const toggleType = React.useCallback((type: FacilityType) => {
@@ -600,68 +622,86 @@ export default function AdminFacilitiesPage() {
             </div>
           </div>
 
-          {/* Card 3: Filters Card */}
+          {/* Card 3: Distribution Breakdown Pie Chart */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
-            <div className="mb-3 flex items-center justify-between h-6">
+            <div className="mb-2 flex items-center justify-between">
               <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
-                <Filter className="size-3.5 text-emerald-400" aria-hidden />
-                Facility Filters
+                <PieChartIcon className="size-3.5 text-emerald-400" aria-hidden />
+                Facility Distribution
               </p>
-              {(typeDropdownFilter !== "all" ||
-                areaFilter !== "all" ||
-                statusFilter !== "active" ||
-                selectedTypes.size !== ALL_FACILITY_TYPES.length) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTypeDropdownFilter("all");
-                    setAreaFilter("all");
-                    setStatusFilter("active");
-                    setSelectedTypes(new Set(ALL_FACILITY_TYPES));
-                  }}
-                  className="inline-flex items-center gap-1 rounded bg-emerald-900/80 px-2 py-0.5 text-[10px] font-bold text-white border border-emerald-700/60 hover:bg-emerald-800 transition-all shadow-2xs cursor-pointer"
-                >
-                  <RotateCcw className="size-2.5" />
-                  Reset
-                </button>
-              )}
+              <span className="rounded-full bg-emerald-950/80 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-700/60">
+                {stats.total} Total
+              </span>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-white">
-                  Assigned Area
-                </label>
-                <Select value={areaFilter} onValueChange={setAreaFilter}>
-                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Areas</SelectItem>
-                    {SAN_JOSE_AREAS.map((area) => (
-                      <SelectItem key={area} value={area}>
-                        {area}
-                      </SelectItem>
+            {/* Donut Chart with Center Counter */}
+            <div className="relative h-36 w-full" role="img" aria-label="Facility distribution breakdown">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <RechartsTooltip
+                    formatter={(val, name) => [`${val ?? 0} Facilities`, name]}
+                    contentStyle={{
+                      backgroundColor: "#064e3b",
+                      borderColor: "#059669",
+                      borderRadius: "8px",
+                      fontSize: "11.5px",
+                      color: "#ffffff",
+                      boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
+                    }}
+                    itemStyle={{ color: "#ffffff", fontWeight: 600 }}
+                  />
+                  <Pie
+                    data={pieChartData}
+                    dataKey="value"
+                    innerRadius={36}
+                    outerRadius={56}
+                    paddingAngle={3}
+                    stroke="#052e16"
+                    strokeWidth={2}
+                  >
+                    {pieChartData.map((entry, index) => (
+                      <Cell key={`slice-${index}`} fill={entry.color} />
                     ))}
-                  </SelectContent>
-                </Select>
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                <span className="text-base font-black text-white tabular-nums">
+                  {stats.total}
+                </span>
+                <span className="text-[9.5px] font-bold uppercase tracking-wider text-emerald-300/80">
+                  Facilities
+                </span>
               </div>
+            </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-white">
-                  Status
-                </label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active Only</SelectItem>
-                    <SelectItem value="inactive">Inactive Only</SelectItem>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Compact Category Distribution Breakdown List */}
+            <div className="mt-2 flex flex-col gap-1 max-h-40 overflow-y-auto pr-0.5">
+              {pieChartData.map((item) => {
+                const pct = stats.total > 0 ? Math.round((item.value / stats.total) * 100) : 0;
+                return (
+                  <div
+                    key={item.name}
+                    className="flex items-center justify-between text-[11px] text-white/90 py-0.5 px-1.5 rounded hover:bg-white/5 transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span
+                        className="size-2 rounded-full shrink-0"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="truncate text-slate-200 font-medium">
+                        {item.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 tabular-nums">
+                      <span className="font-bold text-white font-mono">{item.value}</span>
+                      <span className="text-[10px] text-emerald-400 font-semibold w-7 text-right">
+                        {pct}%
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -680,6 +720,18 @@ export default function AdminFacilitiesPage() {
           searchPlaceholder="Search facility name, category, address, hotline…"
           filterSlots={
             <div className="flex flex-wrap items-center gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="inline-flex h-9 w-fit min-w-[130px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
+                  <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent align="end" className="min-w-44">
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="active">Active Only</SelectItem>
+                  <SelectItem value="inactive">Inactive Only</SelectItem>
+                </SelectContent>
+              </Select>
+
               <Select
                 value={typeDropdownFilter}
                 onValueChange={setTypeDropdownFilter}

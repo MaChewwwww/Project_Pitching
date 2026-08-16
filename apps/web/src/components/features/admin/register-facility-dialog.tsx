@@ -185,7 +185,7 @@ export function RegisterFacilityDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="facility_name" className="text-xs font-bold text-slate-800">
-                Facility Name *
+                Facility Name <span className="text-rose-500 font-bold">*</span>
               </Label>
               <Input
                 id="facility_name"
@@ -202,7 +202,7 @@ export function RegisterFacilityDialog({
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="facility_type" className="text-xs font-bold text-slate-800">
-                Category *
+                Category <span className="text-rose-500 font-bold">*</span>
               </Label>
               <Controller
                 name="type"
@@ -226,8 +226,8 @@ export function RegisterFacilityDialog({
                             <div className="flex items-center gap-2">
                               <span
                                 className={cn(
-                                   "size-2 rounded-full shrink-0",
-                                   cfg.dot,
+                                  "size-2 rounded-full shrink-0",
+                                  cfg.dot,
                                 )}
                               />
                               <Icon className={cn("size-3.5 shrink-0", cfg.color)} />
@@ -280,7 +280,7 @@ export function RegisterFacilityDialog({
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                 <MapPin className="size-3.5 text-emerald-700" />
-                Place Facility Location on Map *
+                Place Facility Location on Map <span className="text-rose-500 font-bold">*</span>
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10.5px] font-semibold text-emerald-800">
                 <span className="relative flex size-1.5">

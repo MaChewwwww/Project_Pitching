@@ -263,7 +263,7 @@ export function EvacCheckinManagerDialog({
             <form onSubmit={handleCheckinSubmit} className="flex flex-col gap-3">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold text-neutral-700">
-                  Emergency event
+                  Emergency event <span className="text-rose-500 font-bold">*</span>
                 </label>
                 <select
                   value={resolvedEventId}
@@ -279,7 +279,7 @@ export function EvacCheckinManagerDialog({
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold text-neutral-700">
-                  Resident Name <span className="text-red-500">*</span>
+                  Resident Name <span className="text-rose-500 font-bold">*</span>
                 </label>
                 <Input
                   type="text"

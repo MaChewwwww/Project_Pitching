@@ -225,7 +225,7 @@ export function EditFacilityDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="edit_facility_name" className="text-xs font-bold text-slate-800">
-                Facility Name *
+                Facility Name <span className="text-rose-500 font-bold">*</span>
               </Label>
               <Input
                 id="edit_facility_name"
@@ -242,7 +242,7 @@ export function EditFacilityDialog({
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="edit_facility_type" className="text-xs font-bold text-slate-800">
-                Category *
+                Category <span className="text-rose-500 font-bold">*</span>
               </Label>
               <Controller
                 name="type"
@@ -320,7 +320,7 @@ export function EditFacilityDialog({
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                 <MapPin className="size-3.5 text-emerald-700" />
-                Place Facility Location on Map *
+                Place Facility Location on Map <span className="text-rose-500 font-bold">*</span>
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10.5px] font-semibold text-emerald-800">
                 <span className="relative flex size-1.5">

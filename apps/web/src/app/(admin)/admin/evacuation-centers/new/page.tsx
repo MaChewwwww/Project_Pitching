@@ -142,7 +142,7 @@ export default function NewEvacuationCenterPage() {
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="facility_id" className="text-xs font-bold text-slate-800">
-              Select Barangay Facility *
+              Select Barangay Facility <span className="text-rose-500 font-bold">*</span>
             </Label>
             <Controller
               name="facility_id"

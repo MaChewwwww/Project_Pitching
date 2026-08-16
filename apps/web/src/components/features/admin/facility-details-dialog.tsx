@@ -233,72 +233,58 @@ export function FacilityDetailsDialog({
           </div>
 
           {/* Dialog Action Buttons */}
-          <DialogFooter className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
-            <div className="flex items-center gap-2">
-              {onLocate && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    onLocate(facility.id);
-                    setOpen(false);
-                  }}
-                  className="h-9 gap-1.5 rounded-xl border-slate-300 bg-white text-xs font-bold text-slate-800 hover:bg-slate-50 cursor-pointer"
-                >
-                  <Crosshair className="size-3.5 text-slate-700" />
-                  Locate on Map
-                </Button>
-              )}
-
-              {onToggleStatus && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    onToggleStatus(facility);
-                    setOpen(false);
-                  }}
-                  className="h-9 gap-1.5 rounded-xl text-xs font-bold cursor-pointer"
-                >
-                  {facility.is_active ? (
-                    <>
-                      <PowerOff className="size-3.5 text-neutral-600" />
-                      Deactivate
-                    </>
-                  ) : (
-                    <>
-                      <Power className="size-3.5 text-emerald-600" />
-                      Reactivate
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
+          <DialogFooter className="mt-4 flex flex-wrap items-center justify-center gap-2.5 border-t border-slate-100 pt-3 sm:justify-center">
+            {onLocate && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setIsEditOpen(true)}
-                className="h-9 gap-1.5 rounded-xl border-amber-300/80 bg-amber-50 px-3 text-xs font-bold text-amber-800 hover:bg-amber-100 cursor-pointer"
+                onClick={() => {
+                  onLocate(facility.id);
+                  setOpen(false);
+                }}
+                className="h-9 gap-1.5 rounded-xl border-slate-300 bg-white text-xs font-bold text-slate-800 hover:bg-slate-50 cursor-pointer"
               >
-                <Pencil className="size-3.5" />
-                Edit Facility
+                <Crosshair className="size-3.5 text-slate-700" />
+                Locate on Map
               </Button>
+            )}
 
+            {onToggleStatus && (
               <Button
                 type="button"
-                variant="primary"
+                variant="outline"
                 size="sm"
-                onClick={() => setOpen(false)}
-                className="h-9 rounded-xl bg-slate-900 hover:bg-slate-800 px-4 text-xs font-bold text-white cursor-pointer"
+                onClick={() => {
+                  onToggleStatus(facility);
+                  setOpen(false);
+                }}
+                className="h-9 gap-1.5 rounded-xl text-xs font-bold cursor-pointer"
               >
-                Close
+                {facility.is_active ? (
+                  <>
+                    <PowerOff className="size-3.5 text-neutral-600" />
+                    Deactivate
+                  </>
+                ) : (
+                  <>
+                    <Power className="size-3.5 text-emerald-600" />
+                    Reactivate
+                  </>
+                )}
               </Button>
-            </div>
+            )}
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditOpen(true)}
+              className="h-9 gap-1.5 rounded-xl border-amber-300/80 bg-amber-50 px-3 text-xs font-bold text-amber-800 hover:bg-amber-100 cursor-pointer"
+            >
+              <Pencil className="size-3.5" />
+              Edit Facility
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

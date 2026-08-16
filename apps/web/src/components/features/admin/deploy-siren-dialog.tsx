@@ -142,7 +142,7 @@ export function DeploySirenDialog({
           {/* Station Name Input */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="siren_name" className="text-xs font-bold text-slate-800">
-              Siren Station Name / Label *
+              Siren Station Name / Label <span className="text-rose-500 font-bold">*</span>
             </Label>
             <Input
               id="siren_name"
@@ -162,7 +162,7 @@ export function DeploySirenDialog({
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                 <MapPin className="size-3.5 text-emerald-700" />
-                Place Siren Tower Location *
+                Place Siren Tower Location <span className="text-rose-500 font-bold">*</span>
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10.5px] font-semibold text-emerald-800">
                 <span className="relative flex size-1.5">
