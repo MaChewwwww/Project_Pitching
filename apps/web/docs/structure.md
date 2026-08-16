@@ -229,7 +229,9 @@ Two consequences worth knowing:
   of not blocking the rest of the page on it.
 
 `AboutBandSection` is synchronous, so it gets a boundary but no `Suspense` — there is nothing
-to wait for.
+to wait for. The current `/about` route is intentionally outside the August 16 demo-design freeze:
+its team profile and visual revision are pending approved team content. Do not add placeholder
+biographies or imagery as a substitute.
 
 ## Verifying in a headless or hidden browser pane
 

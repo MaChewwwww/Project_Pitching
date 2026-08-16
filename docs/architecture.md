@@ -1,7 +1,7 @@
 # System Architecture
 
 **Project:** `SAGIP-SJ` (System for Alert, Guidance, Incident Reporting, and Preparedness) — Barangay San Jose Disaster Readiness & Community Health Platform
-**Version:** 0.1 (Draft) · **Date:** August 2026
+**Version:** 0.2 · **Date:** August 16, 2026
 
 **Companions:** [`business-requirements.md`](./business-requirements.md) · [`frs_nfrs.md`](./frs_nfrs.md) · [`tech_stack.md`](./tech_stack.md) · [`design.md`](./design.md) · [`schema.md`](./schema.md)
 
@@ -459,7 +459,8 @@ POST  /admin/readings                manual river/weather reading (FR-WX-007); r
 GET   /admin/readings/river-history  cached river-level observations for the Weather Watch history chart (admin/BHW)
 POST  /admin/readings/simulate-typhoon  admin-only demo sequence that writes readings and alert prompts
 GET   /admin/evacuation-centers
-POST  /admin/evacuation-centers/{id}/checkins
+POST  /admin/evacuation-centers/check-ins
+POST  /admin/evacuation-centers/check-ins/{id}/check-out
 GET   /admin/analytics/*
 GET   /admin/audit-log
 GET   /admin/config                 legacy/internal settings read (not linked in the console)
@@ -473,7 +474,7 @@ PUT   /admin/config/{key}           legacy/internal settings write (not linked i
 /admin/hotlines               POST, GET, PATCH, DELETE
 /admin/sirens                 POST, GET, PATCH, POST /{id}/trigger, DELETE (FR-MAP-014)
 /admin/facilities            POST, GET, PATCH, DELETE
-/admin/donation-drives        POST, GET, PATCH        (+ nested drive_need)
+/admin/donation-drives        POST, GET, GET /{id}, PATCH, DELETE (informational article only)
 /admin/flood-events            POST, GET, PATCH, DELETE (admin-only; admin GET includes `area_ids`; DELETE removes manual records only and returns 409 for Emergency Event-linked records)
 /admin/areas                    GET, PATCH             (internal reference data; not linked in the console)
 GET   /admin/alert-prompts      threshold prompt history with optional unresolved filter (FR-WX-009; embedded in `/admin/weather-readings`)
@@ -481,9 +482,10 @@ POST  /admin/alert-prompts/{id}/acknowledge  keep the reviewed prompt in history
 DELETE /admin/alert-prompts/{id}  delete only an unacknowledged false-positive prompt
 ```
 
-The deployed donation-drive CRUD still exposes legacy nested `drive_need` data. D-16 retires
-that contract. Later development removes nested needs and the donation/assistance endpoints; it
-does not replace them with another donor, receipt, or household-distribution workflow.
+Donation drives are deployed as informational articles. The `0018_article_cms` migration removed
+the legacy `drive_need`, donation, and assistance records; public and admin routes expose only
+article content, organiser/drop-off details, publication state, and ordered media. This does not
+create another donor, receipt, payment, distribution, or household-assistance workflow.
 
 **Article media operations**
 
@@ -504,22 +506,21 @@ closure preserves them. Flood declarations alone create and finalize protected F
 `POST` is multipart and reuses `core/uploads.py`: JPEG, PNG, or WebP; magic-byte validation;
 5 MB per file; UUID storage names. `PATCH` selects the single cover.
 `PUT .../order` accepts the complete ordered image-ID list and rejects missing, duplicate, or
-foreign IDs. These operations are deployed for announcements; the same shape is reserved for
-activities and donation drives. Drafts may have no image. Publication requires exactly one cover,
-no more than ten images and a selected cover image.
+foreign IDs. These operations are deployed for announcements, activities, and donation drives.
+Drafts may have no image. Publication requires exactly one cover, no more than ten images and a
+selected cover image.
 
-### 6.4 Shared article contract — planned
+### 6.4 Shared article contract — deployed
 
-> **Current implementation note (August 2026):** the announcement contract is now deployed,
-> including public slug detail, ordered gallery operations, and soft deactivation. Keep the
-> announcement CMS as the frontend and lifecycle reference when planned activity and donation-drive
-> article routes are brought online. Public reads exclude deactivated announcements; the active-alert
-> endpoint remains text-first and is independent of article imagery.
+> **Current implementation note (August 16, 2026):** announcements, activities, and donation
+> drives are deployed with public slug detail and ordered gallery operations. Announcements retain
+> soft deactivation; public reads exclude deactivated announcements, while the active-alert endpoint
+> remains text-first and independent of article imagery.
 
 Announcements, activities, and donation drives keep separate services, tables, permissions, and
 domain fields. They share an API shape and frontend authoring components; there is no polymorphic
-`article` table. Announcement image entities are deployed; the activity and donation-drive variants
-remain reserved for the next article modules.
+`article` table. Each module has its own deployed image entity; common authoring components do not
+erase those separate service and permission boundaries.
 This contract traces `FR-ALT-013`–`015`, `FR-ACT-010`–`012`, `FR-DON-015`–`017`, and
 `FR-PUB-019`–`020` back to their permanent BR IDs in `frs_nfrs.md`; emergency-alert behavior
 continues to use `FR-ALT-001`–`011`.
@@ -716,11 +717,12 @@ The human step in the middle is the architecture, not a formality.
 
 > **Only the public site benefits from server rendering.** Making the whole app SSR would add auth-on-the-server complexity for zero user-visible gain.
 
-**August 11 staging audit.** The citizen portal currently renders the household summary, safety
-check-in, and incident-report entry points. The admin console exposes the broad module navigation
-and deployed CRUD, but its responsive hierarchy and the three content-authoring workflows still
-need a design pass. This is current-state evidence, not permission to invent the remaining portal
-screens; `frs_nfrs.md` Section 2.1 owns that backlog.
+**August 16 demo-freeze audit.** The Public Information Site and Barangay Portal are the approved
+demo baseline at `ce66a7e`, including the shared article-authoring and operational-workspace pass.
+The Resident Portal remains limited to its existing onboarding, household, safety, and
+incident-report routes pending its full workflow/design pass; the About page awaits its
+team-profile revision. This is a scope boundary, not permission to invent the remaining screens;
+`frs_nfrs.md` Section 2.1 owns that backlog.
 
 ### 10.2 Structure
 

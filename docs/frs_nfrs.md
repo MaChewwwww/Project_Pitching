@@ -139,15 +139,17 @@ _Overall Active Completion: **133 / 256 active requirements (52%)** implemented,
 | Any barangay other than San Jose                                                                         | BRD 4.0                                                                                                                                                       |
 | Full offline sync                                                                                        | `design.md` D-OI-8                                                                                                                                            |
 
-### 2.1 Portal and console revision audit — August 11, 2026
+### 2.1 Demo-freeze audit — August 16, 2026
 
-This is an evidence-backed backlog, not a new screen specification. Staging at commit
-`8a3eaec` was reviewed with the seeded superadmin and household-head accounts.
+`main` at `ce66a7e` is the approved demo baseline for the Public Information Site and Barangay
+Portal. This is a scope and design freeze, not evidence that an FR satisfies the Definition of
+Done; status remains `◐` until peer review and the required verification are recorded.
 
-| Surface        | Verified current state                                                                                                      | Revision boundary                                                                                                                                                                                                                                                           |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Citizen portal | Household reference/area/member summary, safety check-in, and authenticated incident reporting are reachable.               | Household/member editing, alerts, activity participation, volunteer tools, go-bag progress, notifications, and other still-open FRs must be designed before implementation. The cut assistance tracker is not part of that redesign.                                        |
-| Admin console  | Registry, emergency response, weather, alerts, facilities, activities, guides, FAQs, and donation-drive CRUD are reachable. | The article-authoring routes and shared list surface now have a focused editorial/DataTable pass. Responsive acceptance and peer review remain required before any linked FR is marked done. Current breadth is not evidence that every linked FR meets Definition of Done. |
+| Surface | Current state | Explicit follow-up boundary |
+| --- | --- | --- |
+| Public Information Site | Landing, announcements, activities, donation drives, preparedness/help, weather/flood history, rescue, authentication, and the three finalized map views are implemented and presentation-frozen. | Revise `/about` and add the team profile only after the team supplies approved content. |
+| Barangay Portal | Registry, emergency operations, weather, asset, evacuation, content, hotline/FAQ, activity, guide, and donation-drive workspaces are implemented and presentation-frozen. | Do not redesign this surface without an FR/NFR-scoped demo change. |
+| Resident Portal | Onboarding, household edit, safety, and authenticated incident-report routes exist. | Its full workflow and design pass remain the next planned work; do not describe it as final. |
 
 Do not convert this audit into invented portal screens. New target workflows require a stakeholder decision and permanent FR IDs first.
 
@@ -701,7 +703,7 @@ remaining configuration contract is retired.
 >
 > - **NFR-MNT-008** — the README exists and the stack comes up from a clean clone, but nobody has actually timed a teammate doing it. That is the acceptance criterion, so it stays `◐` until someone does.
 > - **NFR-MNT-009** — `OpenMeteoSource` and `PagasaSource` are real now: both fetch live, and `PagasaSource` carries a bundled TLS intermediate certificate because the FFWS server doesn't send one itself (`tech_stack.md` Section 7). `ManualSource` is deliberately a pass-through — nothing ever calls its `fetch()`, since manual entry is a write triggered by `POST /admin/readings`, not a scheduled pull. Stays `◐` on peer review alone.
-> - **NFR-OBS-002** — three of the six jobs (`fetch_weather`, `fetch_river_level`, `evaluate_thresholds`) are real and verified against live sources; `flag_stale_records`, `send_activity_reminders`, and `backup_database` remain stubs. The `@job` decorator's start/outcome/duration logging already covers all six structurally — the gap is job bodies, not observability.
+> - **NFR-OBS-002** — four of the seven scheduled jobs (`fetch_weather`, `fetch_river_level`, `fetch_tcws_signal`, and `evaluate_thresholds`) are real and verified against live sources; `flag_stale_records`, `send_activity_reminders`, and `backup_database` remain stubs. The `@job` decorator's start/outcome/duration logging already covers every registered job structurally — the gap is job bodies, not observability.
 
 ### 15.8 Observability — `OBS`
 
@@ -741,7 +743,7 @@ remaining configuration contract is retired.
 
 | ID          | Requirement                                                                        | Target                                                     | Status |
 | ----------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------- | ------ |
-| NFR-LGL-001 | Project NOAH data attributed under ODC-ODbL; derivatives under the same licence    | Concise map attribution plus full site footer/About credit | ☐      |
+| NFR-LGL-001 | Project NOAH data attributed under ODC-ODbL; derivatives under the same licence    | Concise map attribution plus full site footer; About refresh must retain the full credit | ◐      |
 | NFR-LGL-002 | OpenStreetMap attribution on every map view                                        | Always visible                                             | ☐      |
 | NFR-LGL-003 | Open-Meteo attributed; non-commercial usage limits respected                       | ≤ 10k calls/day                                            | ☐      |
 | NFR-LGL-004 | PAGASA data attributed; polite scraping — identified UA, ≥10 min interval, backoff | Verified                                                   | ☐      |

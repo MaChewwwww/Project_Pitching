@@ -13,7 +13,7 @@ Every module in `src/modules/` has the same four, and they do not swap jobs:
 | ------------ | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
 | `router.py`  | Declares HTTP routes, applies auth dependencies, calls a service, returns its result | Touch the database. Contain business logic. Decide authorization itself |
 | `schemas.py` | Pydantic request/response models — the API contract                                  | Contain ORM models                                                      |
-| `service.py` | Business logic, transaction boundaries, audit writes                                 | Import another module's `models.py`                                     |
+| `service.py` | Business logic, transaction boundaries, audit writes                                 | Call another module's business logic through its model import           |
 | `models.py`  | SQLAlchemy ORM                                                                       | Invent columns not in `schema.md`                                       |
 
 A fifth file is fine when a module grows (`selectors.py`, `permissions.py`). Four is the floor,
@@ -25,9 +25,10 @@ A router that queries directly is a router that can forget the area-scope filter
 should see 40 households sees 1,284. Keeping the query in the service means the filter lives in
 one place per resource instead of one place per route.
 
-The same reasoning drives rule 2. If `donations/service.py` queries `registry`'s `Household`
-model directly, then a change to how households are soft-deleted has to be found in every module
-that reached in. Going through `registry`'s service means it is found in one.
+Read-only joins are the narrow exception to rule 2: a service may import another module's model
+class when the query stays a plain join. Cross-module writes, lifecycle rules, and anything beyond
+that join go through the owning service. This permits the safety/registry/evacuation projections
+without creating a second owner for their business rules.
 
 ## Where things go when it is not obvious
 

@@ -9,10 +9,9 @@ import {
 /**
  * The public route group's shell.
  *
- * ISR at ~60 seconds (architecture.md Section 10.1). Against fixtures it changes
- * nothing except re-running `fixtureNow()`, which keeps demo timestamps current;
- * the moment real fetches land it is already the right caching strategy for a
- * page that must be fast on a congested connection (NFR-PERF-001).
+ * ISR at ~60 seconds (architecture.md Section 10.1) keeps the public shell's
+ * cached API reads fresh without making a constrained connection wait on every
+ * upstream request (NFR-PERF-001).
  *
  * The alert and hotlines are loaded here rather than per-page so the banner and
  * the floating action button exist on all four public routes without each page

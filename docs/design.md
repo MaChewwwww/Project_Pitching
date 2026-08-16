@@ -3,7 +3,7 @@
 **Project:** `SAGIP-SJ` (System for Alert, Guidance, Incident Reporting, and Preparedness) — Barangay San Jose Disaster Readiness & Community Health Platform
 
 **Companion to:** `business-requirements.md`, `tech_stack.md`
-**Version:** 0.2 (Draft) · **Date:** August 2026
+**Version:** 0.2 · **Date:** August 16, 2026
 
 > **Scope.** Visual language, tokens, and the component inventory. Screen-by-screen layouts and user flows belong in a separate UI spec.
 
@@ -616,9 +616,10 @@ The same tokens, deliberately different personalities.
 | Motion  | Scroll reveals, carousel            | Minimal — state changes only                                          |
 | Goal    | Reassure and inform                 | Get work done quickly                                                 |
 
-**Revision backlog, not a screen spec.** The August 11 staging audit found that the citizen
-portal is still a sparse household summary with safety and incident-report actions, while the
-admin console has broad navigation but uneven workflow hierarchy and mobile polish. Preserve the
+**Demo-freeze boundary, not a screen spec.** The August 16 demo freeze approves the Public
+Information Site and Barangay Portal presentation as the pitch baseline. The Resident Portal is
+still limited to its existing household, safety, and incident-report routes pending its full design
+pass; the About page also awaits its team-profile content and revision. Preserve the
 verified workflows; define future household editing, alerts, activities, volunteer, go-bag, and
 notification screens with stakeholders before drawing them. The cut assistance tracker must not
 return through the redesign.

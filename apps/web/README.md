@@ -4,6 +4,10 @@ Three surfaces in one app: the public information site, the resident portal, and
 admin console. Same design tokens, deliberately different personalities
 ([`design.md`](../../docs/design.md) Section 8).
 
+The August 16 demo freeze covers the public site and barangay admin console. The resident portal
+and About/team-profile work remain active next steps; see
+[`docs/demo-freeze.md`](../../docs/demo-freeze.md).
+
 ## Run it
 
 From the **repository root**:

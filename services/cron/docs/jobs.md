@@ -24,8 +24,10 @@ On every cron container startup, `main.py` runs `fetch_weather` before registeri
 schedule. A deploy or worker restart therefore refreshes the cached weather and forecast data
 immediately; the normal 20-minute interval resumes afterward.
 
-> All six are currently stubs that log and return. The scheduling, logging, and failure
-> isolation around them is real; the bodies land with their FRs.
+The weather, river, TCWS, and threshold-evaluation jobs are implemented in the demo baseline.
+`flag_stale_records`, `send_activity_reminders`, and `backup_database` remain scheduled-job
+contracts whose production delivery depends on their corresponding maintenance, notification, and
+off-box backup work; do not describe them as active delivery without that evidence.
 
 ## Discipline every job follows
 

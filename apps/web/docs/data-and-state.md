@@ -121,19 +121,10 @@ Static copy — navigation, footer groups, hero wording, mission and vision — 
 `src/lib/content/`, **not** in `fixtures/`. It is never served by an API and never will be;
 mixing the two is how a fixture directory becomes permanent.
 
-### Fixture timestamps are relative, on purpose
-
-`fixtureNow()` is a function called during render, not a module constant. A constant is
-evaluated once when the module first loads and then frozen for the life of the process, so
-"14 minutes ago" becomes "3 weeks ago" the month after it was written — on a page whose entire
-premise is that data freshness is visible. ISR's 60-second revalidation re-runs it.
-
-The two genuinely historical dates (Ondoy 2009, Ulysses 2020) use `fixedDate` instead, because
-there the date is part of the fact.
-
 ### Where a null is the right answer
 
-Several figures are genuinely unknown, and the fixtures encode that rather than papering over it:
+Several figures are genuinely unknown, and the API contract preserves that rather than papering
+over it:
 
 | Field                                         | Why null                                                        | Renders as                                 |
 | --------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------ |

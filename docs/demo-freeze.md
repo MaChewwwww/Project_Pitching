@@ -1,0 +1,37 @@
+# Demo freeze — August 16, 2026
+
+**Snapshot:** `ce66a7e` on `main` is the approved code and design baseline for the SK Project
+Pitching demo. It covers the Public Information Site and Barangay Portal (the officer/admin
+console). Treat visual and workflow changes on those surfaces as deliberate demo changes, not
+opportunistic cleanup.
+
+This is a release-scope record, not a change to the Definition of Done. The FR tables continue
+to use `◐` until the required peer review and final responsive/accessibility verification are
+recorded. A demo-ready implementation is not silently promoted to `✅` by this document.
+
+## Frozen for the demo
+
+| Surface | Included, current experience |
+| --- | --- |
+| Public site | Landing overview; announcements; activities; donation drives; preparedness guides and help; weather and flood history; flood hazard and barangay-facilities maps; emergency rescue request; login and registration |
+| Barangay Portal | Emergency-event, safety, rescue, incident, walk-in, registry, facilities, evacuation, siren, weather, content, hotline, FAQ, donation-drive, activity, and guide operations |
+| Shared presentation | Finalized public-map viewports, page shells, splash lifecycle, public article patterns, and the admin workspace/DataTable language |
+
+The three protected public-map configurations remain exactly as recorded in
+[`design.md`](./design.md) Section 7.2 and [`AGENTS.md`](../AGENTS.md): landing preview,
+Flood Hazard Map, and Barangay Facilities Map. New portal or console maps use isolated views.
+
+## Deliberately not frozen
+
+| Surface | Status and next work |
+| --- | --- |
+| Resident Portal | Existing onboarding, household edit, safety, and incident-report routes remain available, but its complete design and workflow pass is scheduled next. Do not represent it as a finalized demo surface. |
+| About page | The existing page remains a public route, but its design revision and team-profile content are scheduled next. Do not invent team names, roles, biographies, or photographs before the team supplies them. |
+
+## Returning to active development
+
+1. Start a new FR/NFR-scoped branch from this snapshot.
+2. Preserve public-map defaults and the public/admin presentation patterns unless a requirement
+   explicitly changes them.
+3. Update the affected root and local documentation in the same change, then record the actual
+   review and verification evidence before moving any FR to `✅`.

@@ -1,5 +1,9 @@
 # Components
 
+The August 16 demo freeze preserves the public-site and Barangay Portal presentation patterns
+documented here. Resident Portal and About/team-profile work are the next intentional design
+changes; do not use that work to alter the frozen public or admin map and workspace defaults.
+
 Three layers, and the boundaries between them are the whole point.
 
 ```

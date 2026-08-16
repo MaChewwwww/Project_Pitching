@@ -232,3 +232,12 @@ wrong for as long as the follow-up takes, and follow-ups slip.
 If a teammate uses a coding agent that reads a different filename (e.g. `.cursorrules`,
 `copilot-instructions.md`), add it as a one-line pointer to this file, matching the pattern
 in `CLAUDE.md` / `GEMINI.md`. Never fork the rules into a second copy.
+
+## 9. Demo freeze — August 16, 2026
+
+`main` at `ce66a7e` is the approved demo baseline for the Public Information Site and Barangay
+Portal. Do not make speculative layout or workflow changes there while the Resident Portal and
+About/team-profile work are still pending. This protects the pitch baseline; it does **not** waive
+the FR/NFR mapping, Definition of Done, authorization, documentation, lint, or review rules.
+
+See [`docs/demo-freeze.md`](./docs/demo-freeze.md) for the exact frozen and unfinished scope.

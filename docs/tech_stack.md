@@ -2,7 +2,7 @@
 
 **Project:** Barangay San Jose Disaster Readiness & Community Health Platform
 **Companion to:** `business-requirements.md`
-**Version:** 0.1 (Draft) · **Date:** August 2026
+**Version:** 0.2 · **Date:** August 16, 2026
 
 > **Scope note.** This document lists _what tools we use and why_. How the system is structured — services, data model, API design, deployment topology — belongs in `architecture.md`.
 
@@ -72,8 +72,9 @@ and data URLs are rejected. This supports `FR-ALT-013`–`015`, `FR-ACT-010`–`
 renderer deterministic and avoids an HTML sanitizer dependency while still giving non-technical
 officers a real rich-text editor. The BR-to-FR mapping remains owned by `frs_nfrs.md`.
 
-> **Approved, not installed at `8a3eaec`.** Add the five Tiptap packages only in the later CMS
-> implementation PR, together with its lockfile and generated API-type changes.
+> **Deployed in the demo baseline.** The five Tiptap packages, their lockfile entries, and the
+> article API contract are present in `main` at `ce66a7e`. Keep the constrained schema above;
+> adding a rich-text capability still requires a security and contract decision first.
 
 ### Mapping — two libraries, two jobs
 

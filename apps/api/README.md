@@ -46,7 +46,9 @@ not do is in [`docs/modules.md`](./docs/modules.md) — read it before adding on
 ## The rules you are most likely to break
 
 1. **Routers never touch the database.** Router → service → ORM.
-2. **A service never imports another module's `models.py`.** Go through the owning service.
+2. **Cross-module model imports are read-only joins only.** A service may import another
+   module's model for a plain join; cross-module writes and business operations go through the
+   owning service.
 3. **`domain/` stays pure.** That is what makes it unit-testable (NFR-MNT-005).
 4. **No request path calls an external service.** The scheduler fetches; the API reads.
 5. **Every new `models.py` goes into `src/db/models_registry.py`** — otherwise Alembic

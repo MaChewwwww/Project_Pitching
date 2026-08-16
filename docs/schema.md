@@ -2,7 +2,7 @@
 
 **Project:** `SAGIP-SJ` (System for Alert, Guidance, Incident Reporting, and Preparedness) — Barangay San Jose Disaster Readiness & Community Health Platform
 **Database:** PostgreSQL 16 + PostGIS 3.4
-**Version:** 0.1 (Draft) · **Date:** August 2026
+**Version:** 0.2 · **Date:** August 16, 2026
 
 **Companions:** [`architecture.md`](./architecture.md) · [`frs_nfrs.md`](./frs_nfrs.md) · [`tech_stack.md`](./tech_stack.md)
 
