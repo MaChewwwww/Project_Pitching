@@ -1,23 +1,24 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Building,
+  BedDouble,
   Building2,
   CheckCircle2,
+  Compass,
   Crosshair,
   Eye,
   Filter,
   Layers,
   MapPin,
   Pencil,
-  Plus,
+  Power,
+  PowerOff,
   RotateCcw,
-  School,
   Shield,
   SlidersHorizontal,
+  Sparkles,
   Stethoscope,
   Trash2,
 } from "lucide-react";
@@ -27,7 +28,6 @@ import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
 import {
   ResourceTable,
-  plainValue,
   type ResourceColumn,
 } from "@/components/features/admin/resource-table";
 import {
@@ -44,6 +44,26 @@ import {
 } from "@/components/ui/select";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
+import { RegisterFacilityDialog } from "@/components/features/admin/register-facility-dialog";
+import {
+  EditFacilityDialog,
+  type FacilityEditable,
+} from "@/components/features/admin/edit-facility-dialog";
+import { FacilityDetailsDialog } from "@/components/features/admin/facility-details-dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  ALL_FACILITY_TYPES,
+  FACILITY_TYPE_CONFIGS,
+  type FacilityType,
+  getFacilityTypeConfig,
+} from "@/lib/facility-types";
 import { cn } from "@/lib/utils";
 
 interface Facility {
@@ -62,18 +82,6 @@ interface Area {
   id: string;
   name: string;
 }
-
-const FACILITY_TYPES = [
-  { value: "evacuation_center", label: "Evacuation Center" },
-  { value: "barangay_hall", label: "Barangay Hall / Outpost" },
-  { value: "health_center", label: "Health Center / Clinic" },
-  { value: "hospital", label: "Hospital / Medical Facility" },
-  { value: "school", label: "Public / Private School" },
-  { value: "covered_court", label: "Covered Court / Gymnasium" },
-  { value: "police_station", label: "Police / Security Station" },
-  { value: "fire_station", label: "Fire Station" },
-  { value: "other", label: "Other Community Asset" },
-];
 
 const SAN_JOSE_AREAS = [
   "Area 1",
@@ -111,17 +119,33 @@ export default function AdminFacilitiesPage() {
   const queryClient = useQueryClient();
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
-  const [showHazard, setShowHazard] = React.useState(true);
   const [showAreas, setShowAreas] = React.useState(true);
+  const [showHazard, setShowHazard] = React.useState(false);
 
-  const [typeFilter, setTypeFilter] = React.useState("all");
+  // Selected types set for sidebar type filters
+  const [selectedTypes, setSelectedTypes] = React.useState<Set<FacilityType>>(
+    () => new Set(ALL_FACILITY_TYPES),
+  );
+
+  const [typeDropdownFilter, setTypeDropdownFilter] = React.useState("all");
   const [areaFilter, setAreaFilter] = React.useState("all");
   const [statusFilter, setStatusFilter] = React.useState("active");
 
   const [countdown, setCountdown] = React.useState(60);
   const [isManualRefreshing, setIsManualRefreshing] = React.useState(false);
 
-  const { data: facilities, isLoading, isFetching, isError, refetch } = useQuery({
+  const [facilityToDeactivate, setFacilityToDeactivate] =
+    React.useState<Facility | null>(null);
+  const [facilityToDelete, setFacilityToDelete] =
+    React.useState<Facility | null>(null);
+
+  const {
+    data: facilities,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["admin", "facilities"],
     queryFn: () => api.get<Facility[]>("/admin/facilities").then((r) => r.data),
     refetchInterval: 60_000,
@@ -149,21 +173,26 @@ export default function AdminFacilitiesPage() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const deleteMutation = useMutation({
+  const deactivateMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/facilities/${id}`),
     onSuccess: () => {
-      toast.success("Facility deactivated");
+      toast.success("Facility deactivated successfully");
       queryClient.invalidateQueries({ queryKey: ["admin", "facilities"] });
+      queryClient.invalidateQueries({ queryKey: ["public", "facilities"] });
     },
-    onError: (err) => toast.error(toDisplayError(err).detail || "Could not deactivate facility"),
+    onError: (err) =>
+      toast.error(toDisplayError(err).detail || "Could not deactivate facility"),
   });
 
   const reactivateMutation = useMutation({
     mutationFn: (id: string) => api.post(`/admin/facilities/${id}/reactivate`),
     onSuccess: () => {
-      toast.success("Facility reactivated");
+      toast.success("Facility reactivated successfully");
       queryClient.invalidateQueries({ queryKey: ["admin", "facilities"] });
+      queryClient.invalidateQueries({ queryKey: ["public", "facilities"] });
     },
+    onError: (err) =>
+      toast.error(toDisplayError(err).detail || "Could not reactivate facility"),
   });
 
   const allFacilities = React.useMemo(() => facilities ?? [], [facilities]);
@@ -180,17 +209,47 @@ export default function AdminFacilitiesPage() {
   const stats = React.useMemo(() => {
     const total = allFacilities.length;
     const active = allFacilities.filter((f) => f.is_active);
-    const evacCount = active.filter((f) => f.type === "evacuation_center").length;
+    const evacCount = active.filter(
+      (f) => f.type === "evacuation_center" || f.type.includes("evac"),
+    ).length;
     const healthCount = active.filter(
       (f) =>
-        f.type === "health_center" ||
+        f.type === "clinic" ||
         f.type === "hospital" ||
+        f.type === "health_center" ||
         f.type.includes("health") ||
         f.type.includes("clinic"),
+    ).length;
+    const emergencyCount = active.filter(
+      (f) =>
+        f.type === "police" ||
+        f.type === "fire" ||
+        f.type === "rescue_station" ||
+        f.type === "police_station" ||
+        f.type === "fire_station" ||
+        f.type.includes("rescue"),
     ).length;
     const hallCount = active.filter(
       (f) => f.type === "barangay_hall" || f.type.includes("hall"),
     ).length;
+
+    // Count per type
+    const countByType = new Map<FacilityType, number>();
+    ALL_FACILITY_TYPES.forEach((t) => countByType.set(t, 0));
+    allFacilities.forEach((f) => {
+      const cfg = getFacilityTypeConfig(f.type);
+      countByType.set(cfg.type, (countByType.get(cfg.type) ?? 0) + 1);
+    });
+
+    // Count per area
+    const countByArea = new Map<string, number>();
+    SAN_JOSE_AREAS.forEach((a) => countByArea.set(a, 0));
+    allFacilities.forEach((f) => {
+      const a = areaName(f);
+      if (countByArea.has(a)) {
+        countByArea.set(a, (countByArea.get(a) ?? 0) + 1);
+      }
+    });
 
     return {
       total,
@@ -198,9 +257,12 @@ export default function AdminFacilitiesPage() {
       inactiveCount: total - active.length,
       evacCount,
       healthCount,
+      emergencyCount,
       hallCount,
+      countByType,
+      countByArea,
     };
-  }, [allFacilities]);
+  }, [allFacilities, areaName]);
 
   /* 5 Operational Metric Cards */
   const metricCards: AssetMetricCardProps[] = [
@@ -214,76 +276,109 @@ export default function AdminFacilitiesPage() {
     },
     {
       icon: CheckCircle2,
-      label: "Active Assets",
+      label: "Operational Assets",
       value: stats.activeCount,
-      unit: `/ ${stats.total}`,
+      unit: `/ ${stats.total} total`,
       sub: `${stats.inactiveCount} inactive/archived`,
       tone: "emerald",
       badge: (
         <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-300">
-          Operational
+          Ready
         </span>
       ),
     },
     {
-      icon: Shield,
+      icon: BedDouble,
       label: "Evacuation Shelters",
       value: stats.evacCount,
       unit: "centers",
       sub: "Designated shelter sites",
-      tone: "sky",
+      tone: "emerald",
     },
     {
       icon: Stethoscope,
-      label: "Health Stations",
+      label: "Health & Medical",
       value: stats.healthCount,
-      unit: "clinics",
-      sub: "Medical & triage hubs",
+      unit: "facilities",
+      sub: "Clinics & hospitals",
       tone: "rose",
     },
     {
-      icon: Building,
-      label: "Administrative Halls",
-      value: stats.hallCount,
-      unit: "outposts",
-      sub: "Command & sitio desks",
-      tone: "amber",
+      icon: Shield,
+      label: "Emergency & Safety",
+      value: stats.emergencyCount,
+      unit: "stations",
+      sub: "Police, fire, rescue units",
+      tone: "sky",
     },
   ];
+
+  /* Toggle Facility Type in Sidebar Checklist */
+  const toggleType = React.useCallback((type: FacilityType) => {
+    setSelectedTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) {
+        next.delete(type);
+      } else {
+        next.add(type);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleAllTypes = React.useCallback(() => {
+    setSelectedTypes((prev) => {
+      if (prev.size === ALL_FACILITY_TYPES.length) {
+        return new Set();
+      } else {
+        return new Set(ALL_FACILITY_TYPES);
+      }
+    });
+  }, []);
 
   /* Filter items for Map and Table */
   const filteredFacilities = React.useMemo(() => {
     return allFacilities.filter((facility) => {
-      if (statusFilter === "active" && !facility.is_active) return false;
-      if (statusFilter === "inactive" && facility.is_active) return false;
+      const typeCfg = getFacilityTypeConfig(facility.type);
 
-      if (typeFilter !== "all" && facility.type !== typeFilter) return false;
+      // 1. Sidebar Type Checkbox Filter
+      if (selectedTypes.size > 0 && !selectedTypes.has(typeCfg.type)) {
+        return false;
+      }
 
+      // 2. Table Dropdown Type Filter
+      if (typeDropdownFilter !== "all" && typeCfg.type !== typeDropdownFilter) {
+        return false;
+      }
+
+      // 3. Area Filter
       if (areaFilter !== "all") {
         const itemArea = areaName(facility);
         if (itemArea !== areaFilter) return false;
       }
 
+      // 4. Status Filter
+      if (statusFilter === "active" && !facility.is_active) return false;
+      if (statusFilter === "inactive" && facility.is_active) return false;
+
       return true;
     });
-  }, [allFacilities, statusFilter, typeFilter, areaFilter, areaName]);
+  }, [
+    allFacilities,
+    selectedTypes,
+    typeDropdownFilter,
+    areaFilter,
+    statusFilter,
+    areaName,
+  ]);
 
-  /* Map Items */
+  /* Map Items - active and selected facilities */
   const mapItems = React.useMemo(() => {
     return filteredFacilities.map((facility) => {
-      const isEvac = facility.type === "evacuation_center";
-      const isHealth =
-        facility.type.includes("health") ||
-        facility.type.includes("clinic") ||
-        facility.type.includes("hospital");
-
-      const tone: "emerald" | "amber" | "rose" | "slate" | "sky" = !facility.is_active
+      const typeCfg = getFacilityTypeConfig(facility.type);
+      const tone = !facility.is_active
         ? "slate"
-        : isEvac
-          ? "sky"
-          : isHealth
-            ? "rose"
-            : "emerald";
+        : (typeCfg.tone as "emerald" | "amber" | "rose" | "slate" | "sky");
 
       return {
         id: facility.id,
@@ -291,11 +386,10 @@ export default function AdminFacilitiesPage() {
         category: "facility" as const,
         location: facility.location,
         area_name: areaName(facility),
-        statusLabel: facility.is_active ? plainValue(facility.type) : "Inactive Asset",
+        statusLabel: facility.is_active ? typeCfg.singleLabel : "Inactive Asset",
         tone,
-        facilityType: facility.type,
-        subDetail: facility.address || "Barangay San Jose",
-        detailUrl: `/admin/facilities/${facility.id}`,
+        facilityType: typeCfg.type,
+        subDetail: facility.address || "Barangay San Jose, Rodriguez",
       };
     });
   }, [filteredFacilities, areaName]);
@@ -304,41 +398,45 @@ export default function AdminFacilitiesPage() {
   const columns: ResourceColumn<Facility>[] = [
     {
       key: "name",
-      header: "Facility & Address",
+      header: "Facility & Location",
       render: (row) => {
-        const isHealth =
-          row.type.includes("health") ||
-          row.type.includes("clinic") ||
-          row.type.includes("hospital");
-        const isEvac = row.type === "evacuation_center";
-        const isSchool = row.type.includes("school");
+        const typeCfg = getFacilityTypeConfig(row.type);
+        const Icon = typeCfg.icon;
 
         return (
           <div className="flex items-start gap-3 min-w-56 max-w-sm">
-            <div className="relative mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 font-bold overflow-hidden shadow-2xs">
-              {isHealth ? (
-                <Stethoscope className="size-4 text-emerald-700" />
-              ) : isEvac ? (
-                <Building2 className="size-4 text-emerald-700" />
-              ) : isSchool ? (
-                <School className="size-4 text-emerald-700" />
-              ) : (
-                <Building className="size-4 text-emerald-700" />
+            <div
+              className={cn(
+                "relative mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg font-bold shadow-2xs overflow-hidden",
+                typeCfg.bg,
               )}
+            >
+              <Icon className="size-4" />
             </div>
             <div className="min-w-0">
-              <Link
-                href={`/admin/facilities/${row.id}`}
-                className="font-bold text-neutral-900 hover:text-emerald-700 hover:underline transition-colors truncate block"
-              >
-                {row.name}
-              </Link>
+              <FacilityDetailsDialog
+                facility={row as FacilityEditable}
+                onLocate={setSelectedId}
+                onToggleStatus={(f) =>
+                  f.is_active
+                    ? setFacilityToDeactivate(f as Facility)
+                    : reactivateMutation.mutate(f.id)
+                }
+                trigger={
+                  <button
+                    type="button"
+                    className="font-bold text-sm text-neutral-900 hover:text-emerald-700 hover:underline transition-colors truncate block text-left cursor-pointer"
+                  >
+                    {row.name}
+                  </button>
+                }
+              />
               <p className="mt-0.5 text-xs text-neutral-500 line-clamp-1">
-                {row.address || "No detailed address notes"}
+                {row.address || "Barangay San Jose"}
               </p>
               {areaName(row) !== "—" ? (
                 <span className="mt-1 inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10.5px] font-semibold text-slate-700">
-                  <MapPin className="size-2.5" />
+                  <MapPin className="size-2.5 text-emerald-700" />
                   {areaName(row)}
                 </span>
               ) : null}
@@ -349,26 +447,21 @@ export default function AdminFacilitiesPage() {
     },
     {
       key: "type",
-      header: "Infrastructure Type",
+      header: "Infrastructure Category",
       render: (row) => {
-        const isEvac = row.type === "evacuation_center";
-        const isHealth =
-          row.type.includes("health") ||
-          row.type.includes("clinic") ||
-          row.type.includes("hospital");
+        const typeCfg = getFacilityTypeConfig(row.type);
+        const Icon = typeCfg.icon;
 
         return (
           <span
             className={cn(
-              "inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-xs font-bold border",
-              isEvac
-                ? "bg-sky-50 text-sky-800 border-sky-200"
-                : isHealth
-                  ? "bg-rose-50 text-rose-800 border-rose-200"
-                  : "bg-neutral-50 text-neutral-800 border-neutral-200",
+              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold border",
+              typeCfg.badge,
             )}
           >
-            {plainValue(row.type)}
+            <span className={cn("size-1.5 rounded-full shrink-0", typeCfg.dot)} />
+            <Icon className="size-3.5 shrink-0" />
+            <span>{typeCfg.singleLabel}</span>
           </span>
         );
       },
@@ -377,9 +470,15 @@ export default function AdminFacilitiesPage() {
       key: "contact_number",
       header: "Hotline / Desk",
       render: (row) => (
-        <span className="text-xs font-mono text-neutral-700">
-          {row.contact_number || "—"}
-        </span>
+        <div className="flex items-center gap-1.5">
+          {row.contact_number ? (
+            <span className="text-xs font-mono font-medium text-neutral-800">
+              {row.contact_number}
+            </span>
+          ) : (
+            <span className="text-xs text-neutral-400 font-mono">—</span>
+          )}
+        </div>
       ),
     },
     {
@@ -400,7 +499,10 @@ export default function AdminFacilitiesPage() {
               Active
             </>
           ) : (
-            "Inactive"
+            <>
+              <PowerOff className="size-3 text-slate-400" />
+              Inactive
+            </>
           )}
         </span>
       ),
@@ -409,10 +511,10 @@ export default function AdminFacilitiesPage() {
 
   return (
     <div className="flex flex-col gap-6 pb-12">
-      {/* Page Header */}
+      {/* Page Header matching /admin/sirens standard */}
       <AdminPageHeader
-        title="Barangay Facilities"
-        description="Public infrastructure catalog and spatial inventory: evacuation centers, health clinics, schools, and barangay offices."
+        title="Barangay Facilities & Services"
+        description="Public infrastructure spatial catalog and emergency services directory: evacuation centers, health clinics, hospitals, police, and fire stations across San Jose."
         action={
           <div className="flex items-center gap-2.5">
             {/* Auto refresh badge */}
@@ -443,25 +545,18 @@ export default function AdminFacilitiesPage() {
               </button>
             </div>
 
-            <Link href="/admin/facilities/new">
-              <Button
-                variant="primary"
-                className="h-9 gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700 shadow-2xs cursor-pointer shrink-0"
-              >
-                <Plus className="size-3.5" />
-                Register Facility
-              </Button>
-            </Link>
+            {/* Register Facility Dialog Modal */}
+            <RegisterFacilityDialog />
           </div>
         }
       />
 
-      {/* Top 5 Metric Cards */}
+      {/* Top 5 Metrics Strip */}
       <AssetMetricStrip items={metricCards} />
 
       {/* Two-Column Map Workspace */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
-        {/* Column 1: Leaflet Map */}
+        {/* Column 1: Map Canvas */}
         <div className="flex flex-1 flex-col min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
           <div className="relative h-[480px] sm:h-[580px] lg:h-[620px] w-full overflow-hidden">
             <AdminAssetWorkspaceMap
@@ -477,9 +572,9 @@ export default function AdminFacilitiesPage() {
           </div>
         </div>
 
-        {/* Column 2: Filter Sidebar */}
+        {/* Column 2: Filter and Layer Control Sidebar */}
         <div className="flex w-full flex-col gap-3 lg:w-72 lg:shrink-0">
-          {/* Map Layers */}
+          {/* Card 1: GIS Overlays (Switched Order: Boundaries ON TOP, Flood Hazard BELOW) */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
             <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
               <Layers className="size-3.5 text-emerald-400" aria-hidden />
@@ -487,34 +582,96 @@ export default function AdminFacilitiesPage() {
             </p>
             <div className="flex flex-col gap-2">
               <LayerCheckbox
-                checked={showHazard}
-                onChange={setShowHazard}
-                label="5-Year Flood Hazard"
-              />
-              <LayerCheckbox
                 checked={showAreas}
                 onChange={setShowAreas}
                 label="Barangay Area Boundaries"
               />
+              <LayerCheckbox
+                checked={showHazard}
+                onChange={setShowHazard}
+                label="5-Year Flood Hazard"
+              />
             </div>
           </div>
 
-          {/* Filters Card */}
+          {/* Card 2: Facilities per Type Filter (Matching Attached Image UI) */}
+          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md flex flex-col gap-2.5">
+            <div className="flex items-center justify-between gap-1">
+              <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+                <Compass className="size-3.5 text-emerald-400" aria-hidden />
+                Facilities per Type
+              </p>
+              <button
+                type="button"
+                onClick={toggleAllTypes}
+                className="text-[11px] font-bold text-emerald-400 hover:text-emerald-200 transition-colors cursor-pointer"
+              >
+                {selectedTypes.size === ALL_FACILITY_TYPES.length
+                  ? "Deselect All"
+                  : "Select All"}
+              </button>
+            </div>
+
+            {/* Checklist of 7 types */}
+            <div className="flex flex-col gap-1.5 pt-1">
+              {FACILITY_TYPE_CONFIGS.map((cfg) => {
+                const isSelected = selectedTypes.has(cfg.type);
+                const count = stats.countByType.get(cfg.type) ?? 0;
+                const Icon = cfg.icon;
+
+                return (
+                  <button
+                    key={cfg.type}
+                    type="button"
+                    onClick={() => toggleType(cfg.type)}
+                    className={cn(
+                      "flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-all cursor-pointer border text-left",
+                      isSelected
+                        ? "border-emerald-700/60 bg-white/10 text-white shadow-xs"
+                        : "border-transparent text-emerald-200/60 hover:bg-white/5 hover:text-white",
+                    )}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => {}}
+                        className="size-3.5 rounded border-slate-600 bg-slate-800 text-emerald-500 accent-emerald-500 cursor-pointer pointer-events-none"
+                      />
+                      <span className={cn("size-2 rounded-full shrink-0", cfg.dot)} />
+                      <Icon className={cn("size-3.5 shrink-0", isSelected ? "text-emerald-300" : "text-emerald-400/60")} />
+                      <span className="truncate font-semibold text-[11.5px]">
+                        {cfg.label}
+                      </span>
+                    </div>
+
+                    <span className="rounded-full bg-white/15 px-2 py-0.2 text-[10px] font-mono font-bold text-white shrink-0 ml-1">
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Card 3: Filters Card */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
             <div className="mb-3 flex items-center justify-between h-6">
               <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
                 <Filter className="size-3.5 text-emerald-400" aria-hidden />
                 Facility Filters
               </p>
-              {(typeFilter !== "all" ||
+              {(typeDropdownFilter !== "all" ||
                 areaFilter !== "all" ||
-                statusFilter !== "active") && (
+                statusFilter !== "active" ||
+                selectedTypes.size !== ALL_FACILITY_TYPES.length) && (
                 <button
                   type="button"
                   onClick={() => {
-                    setTypeFilter("all");
+                    setTypeDropdownFilter("all");
                     setAreaFilter("all");
                     setStatusFilter("active");
+                    setSelectedTypes(new Set(ALL_FACILITY_TYPES));
                   }}
                   className="inline-flex items-center gap-1 rounded bg-emerald-900/80 px-2 py-0.5 text-[10px] font-bold text-white border border-emerald-700/60 hover:bg-emerald-800 transition-all shadow-2xs cursor-pointer"
                 >
@@ -525,25 +682,6 @@ export default function AdminFacilitiesPage() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-white">
-                  Facility Type
-                </label>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Facility Types</SelectItem>
-                    {FACILITY_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="flex flex-col gap-1">
                 <label className="text-[10.5px] font-bold text-white">
                   Assigned Area
@@ -581,7 +719,7 @@ export default function AdminFacilitiesPage() {
             </div>
           </div>
 
-          {/* Spatial Inventory Diagnostics Card */}
+          {/* Card 4: Spatial Resolution Diagnostics */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-3.5 text-white shadow-xl backdrop-blur-md">
             <div className="flex items-center justify-between gap-2">
               <span className="font-bold text-xs text-white">
@@ -593,134 +731,377 @@ export default function AdminFacilitiesPage() {
               </span>
             </div>
             <p className="mt-1.5 text-xs text-white/90 leading-relaxed">
-              All {stats.total} facilities are mapped with high-accuracy GPS
-              coordinates for dispatch and public map display.
+              All {stats.total} facilities are geocoded with high-accuracy GPS coordinates for emergency response and public map display.
             </p>
           </div>
         </div>
       </div>
 
-      {/* ResourceTable */}
-      <ResourceTable
-        columns={columns}
-        data={filteredFacilities}
-        isLoading={isLoading}
-        isError={isError}
-        onRetry={refetch}
-        getRowKey={(row) => row.id}
-        selectedRowKey={selectedId}
-        onRowSelect={(row) => setSelectedId(row.id)}
-        searchPlaceholder="Search facility name, type, address, hotline…"
-        filterSlots={
-          <div className="flex flex-wrap items-center gap-2">
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="inline-flex h-9 w-fit min-w-[130px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent align="end" className="min-w-44">
-                <SelectItem value="all">All Types</SelectItem>
-                {FACILITY_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {/* 2-Column Lower Section: Column 1 (ResourceTable) | Column 2 (Readiness & Distribution Insights) */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-start">
+        {/* Column 1: Facilities Management Table */}
+        <div className="flex flex-col gap-3 xl:col-span-7">
+          <ResourceTable
+            columns={columns}
+            data={filteredFacilities}
+            isLoading={isLoading}
+            isError={isError}
+            onRetry={refetch}
+            getRowKey={(row) => row.id}
+            selectedRowKey={selectedId}
+            onRowSelect={(row) => setSelectedId(row.id)}
+            searchPlaceholder="Search facility name, category, address, hotline…"
+            filterSlots={
+              <div className="flex flex-wrap items-center gap-2">
+                <Select
+                  value={typeDropdownFilter}
+                  onValueChange={setTypeDropdownFilter}
+                >
+                  <SelectTrigger className="inline-flex h-9 w-fit min-w-[140px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
+                    <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent align="end" className="min-w-48">
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {FACILITY_TYPE_CONFIGS.map((t) => (
+                      <SelectItem key={t.type} value={t.type}>
+                        <div className="flex items-center gap-1.5">
+                          <span className={cn("size-2 rounded-full", t.dot)} />
+                          <span>{t.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-            <Select value={areaFilter} onValueChange={setAreaFilter}>
-              <SelectTrigger className="inline-flex h-9 w-fit min-w-[120px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
-                <SelectValue placeholder="All Areas" />
-              </SelectTrigger>
-              <SelectContent align="end" className="min-w-40">
-                <SelectItem value="all">All Areas</SelectItem>
-                {SAN_JOSE_AREAS.map((area) => (
-                  <SelectItem key={area} value={area}>
-                    {area}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                <Select value={areaFilter} onValueChange={setAreaFilter}>
+                  <SelectTrigger className="inline-flex h-9 w-fit min-w-[120px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
+                    <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                    <SelectValue placeholder="All Areas" />
+                  </SelectTrigger>
+                  <SelectContent align="end" className="min-w-40">
+                    <SelectItem value="all">All Areas</SelectItem>
+                    {SAN_JOSE_AREAS.map((area) => (
+                      <SelectItem key={area} value={area}>
+                        {area}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            }
+            toolbarAction={<RegisterFacilityDialog />}
+            rowActions={(row) => (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {/* 1. Locate (Icon Only) */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedId(row.id)}
+                  aria-label={`Locate ${row.name}`}
+                  className="h-8 w-8 p-0 border-slate-300 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shrink-0"
+                  title="Locate on Map"
+                >
+                  <Crosshair aria-hidden className="size-3.5 text-slate-700" />
+                </Button>
+
+                {/* 2. Details (Green Modal) */}
+                <FacilityDetailsDialog
+                  facility={row as FacilityEditable}
+                  onLocate={setSelectedId}
+                  onToggleStatus={(f) =>
+                    f.is_active
+                      ? setFacilityToDeactivate(f as Facility)
+                      : reactivateMutation.mutate(f.id)
+                  }
+                  trigger={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 border-emerald-300/90 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 hover:border-emerald-400 cursor-pointer"
+                      title="View Facility Details"
+                    >
+                      <Eye className="size-3.5 text-emerald-700" />
+                      Details
+                    </Button>
+                  }
+                />
+
+                {/* 3. Edit (Modal) */}
+                <EditFacilityDialog
+                  facility={row as FacilityEditable}
+                  trigger={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 border-amber-300/80 bg-amber-50 px-2.5 text-xs font-bold text-amber-800 hover:bg-amber-100 cursor-pointer"
+                      title="Edit Facility"
+                    >
+                      <Pencil className="size-3.5" />
+                      Edit
+                    </Button>
+                  }
+                />
+
+                {/* 4. Deactivate / Reactivate */}
+                {row.is_active ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setFacilityToDeactivate(row)}
+                    disabled={deactivateMutation.isPending}
+                    className="h-8 gap-1.5 border-neutral-300 bg-neutral-100 px-2.5 text-xs font-bold text-neutral-800 hover:bg-neutral-200 hover:text-neutral-950 cursor-pointer"
+                    title="Deactivate Facility"
+                  >
+                    <PowerOff className="size-3.5 text-neutral-600" />
+                    Deactivate
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => reactivateMutation.mutate(row.id)}
+                    disabled={reactivateMutation.isPending}
+                    className="h-8 gap-1.5 border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 cursor-pointer"
+                    title="Reactivate Facility"
+                  >
+                    <Power className="size-3.5 text-emerald-600" />
+                    Reactivate
+                  </Button>
+                )}
+
+                {/* 5. Delete Confirmation Modal */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFacilityToDelete(row)}
+                  disabled={deactivateMutation.isPending}
+                  className="h-8 gap-1.5 border-rose-200 bg-rose-50/60 px-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 cursor-pointer"
+                  title="Delete Facility (Soft Delete)"
+                >
+                  <Trash2 className="size-3.5" />
+                  Delete
+                </Button>
+              </div>
+            )}
+          />
+        </div>
+
+        {/* Column 2: Facility Readiness & Distribution Insights */}
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs xl:col-span-5">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 shadow-2xs">
+                <Compass className="size-4" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-slate-900 leading-tight">
+                  Facility Registry Insights
+                </h3>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Spatial distribution and readiness across San Jose Areas
+                </p>
+              </div>
+            </div>
+            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 font-mono text-[10.5px] font-bold text-slate-700 border border-slate-200 shrink-0">
+              {stats.total} Total
+            </span>
           </div>
-        }
-        toolbarAction={
-          <Link href="/admin/facilities/new">
-            <Button
-              variant="primary"
-              className="h-9 gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700 shadow-2xs cursor-pointer shrink-0"
-            >
-              <Plus className="size-3.5" />
-              Register Facility
-            </Button>
-          </Link>
-        }
-        rowActions={(row) => (
-          <div className="flex items-center gap-1.5">
+
+          {/* Area Distribution Grid */}
+          <div className="flex flex-col gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Area Allocation (1–6)
+            </span>
+            <div className="grid grid-cols-3 gap-2">
+              {SAN_JOSE_AREAS.map((area) => {
+                const count = stats.countByArea.get(area) ?? 0;
+                const isFiltered = areaFilter === area;
+
+                return (
+                  <button
+                    key={area}
+                    type="button"
+                    onClick={() =>
+                      setAreaFilter(areaFilter === area ? "all" : area)
+                    }
+                    className={cn(
+                      "flex flex-col items-center justify-center rounded-xl border p-2.5 transition-all text-center cursor-pointer",
+                      isFiltered
+                        ? "border-emerald-600 bg-emerald-50/80 shadow-xs"
+                        : "border-slate-200 bg-slate-50/60 hover:bg-slate-100/80 hover:border-slate-300",
+                    )}
+                  >
+                    <span className="text-[10.5px] font-bold text-slate-600">
+                      {area}
+                    </span>
+                    <span className="mt-0.5 text-base font-black text-slate-900">
+                      {count}
+                    </span>
+                    <span className="text-[9.5px] text-slate-400 font-medium">
+                      facilities
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Category Breakdown Matrix */}
+          <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 pt-3">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Category Distribution Matrix
+            </span>
+            <div className="flex flex-col gap-2">
+              {FACILITY_TYPE_CONFIGS.map((cfg) => {
+                const count = stats.countByType.get(cfg.type) ?? 0;
+                const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
+                const Icon = cfg.icon;
+
+                return (
+                  <div
+                    key={cfg.type}
+                    className="flex flex-col gap-1 rounded-xl border border-slate-100 bg-slate-50/50 p-2.5"
+                  >
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                      <div className="flex items-center gap-1.5">
+                        <Icon className={cn("size-3.5", cfg.color)} />
+                        <span>{cfg.label}</span>
+                      </div>
+                      <span className="font-mono text-slate-700">
+                        {count} ({pct}%)
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200/80">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${pct}%`,
+                          backgroundColor: cfg.hexColor,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Contextual Card Footer */}
+          <div className="mt-1 flex items-start gap-2 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 text-xs text-emerald-950">
+            <Sparkles className="size-4 text-emerald-700 shrink-0 mt-0.5" />
+            <p className="text-[11.5px] leading-relaxed text-emerald-900">
+              All infrastructure sites are linked to San Jose disaster readiness plans and displayed on public resident maps.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Deactivate Facility Confirmation Modal */}
+      <AlertDialog
+        open={!!facilityToDeactivate}
+        onOpenChange={(open) => !open && setFacilityToDeactivate(null)}
+      >
+        <AlertDialogContent className="max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+          <AlertDialogHeader className="flex flex-col gap-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-neutral-100 text-neutral-800 border border-neutral-200">
+                <PowerOff className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                  Deactivate Facility?
+                </AlertDialogTitle>
+                <p className="text-xs font-bold text-slate-500 truncate mt-0.5">
+                  {facilityToDeactivate?.name}
+                </p>
+              </div>
+            </div>
+            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
+              Placing this facility into an inactive state will remove its marker pin from public GIS maps while retaining its registry record for administration.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setSelectedId(row.id)}
-              aria-label={`Locate ${row.name}`}
-              className="h-8 px-2 text-xs"
-              title="Locate on Map"
+              onClick={() => setFacilityToDeactivate(null)}
+              disabled={deactivateMutation.isPending}
+              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
             >
-              <Crosshair aria-hidden className="size-3.5 text-slate-700" />
+              Cancel
             </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                if (facilityToDeactivate) {
+                  deactivateMutation.mutate(facilityToDeactivate.id, {
+                    onSettled: () => setFacilityToDeactivate(null),
+                  });
+                }
+              }}
+              disabled={deactivateMutation.isPending}
+              className="rounded-xl text-xs font-bold bg-neutral-900 hover:bg-neutral-800 text-white shadow-xs cursor-pointer"
+            >
+              {deactivateMutation.isPending ? "Deactivating…" : "Confirm Deactivate"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-            <Link href={`/admin/facilities/${row.id}`}>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1 border-slate-300 bg-white px-2.5 text-xs font-bold text-slate-800 hover:bg-slate-50 hover:text-emerald-700"
-                title="View Facility Details"
-              >
-                <Eye className="size-3.5" />
-                <span className="hidden sm:inline">Details</span>
-              </Button>
-            </Link>
-
-            <Link href={`/admin/facilities/${row.id}/edit`}>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1 border-amber-300/80 bg-amber-50 px-2.5 text-xs font-semibold text-amber-800 hover:bg-amber-100"
-                title="Edit Facility"
-              >
-                <Pencil className="size-3.5" />
-                <span className="hidden sm:inline">Edit</span>
-              </Button>
-            </Link>
-
-            {row.is_active ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (window.confirm(`Deactivate ${row.name}?`)) {
-                    deleteMutation.mutate(row.id);
-                  }
-                }}
-                disabled={deleteMutation.isPending}
-                className="h-8 text-xs font-semibold text-rose-700 hover:bg-rose-50 border-rose-200"
-                title="Deactivate Facility"
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => reactivateMutation.mutate(row.id)}
-                disabled={reactivateMutation.isPending}
-                className="h-8 text-xs text-emerald-700 hover:bg-emerald-50"
-              >
-                Reactivate
-              </Button>
-            )}
-          </div>
-        )}
-      />
+      {/* Delete Facility Confirmation Modal */}
+      <AlertDialog
+        open={!!facilityToDelete}
+        onOpenChange={(open) => !open && setFacilityToDelete(null)}
+      >
+        <AlertDialogContent className="max-w-md rounded-2xl border border-rose-200 bg-white p-6 shadow-2xl">
+          <AlertDialogHeader className="flex flex-col gap-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-rose-100 text-rose-700 border border-rose-200">
+                <Trash2 className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                  Delete Facility Record?
+                </AlertDialogTitle>
+                <p className="text-xs font-bold text-rose-700 truncate mt-0.5">
+                  {facilityToDelete?.name}
+                </p>
+              </div>
+            </div>
+            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
+              Are you sure you want to delete this facility record? This will archive the physical asset from GIS maps and emergency routing while keeping historical audit entries intact.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFacilityToDelete(null)}
+              disabled={deactivateMutation.isPending}
+              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => {
+                if (facilityToDelete) {
+                  deactivateMutation.mutate(facilityToDelete.id, {
+                    onSettled: () => setFacilityToDelete(null),
+                  });
+                }
+              }}
+              disabled={deactivateMutation.isPending}
+              className="rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs cursor-pointer"
+            >
+              {deactivateMutation.isPending ? "Deleting…" : "Confirm Delete"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

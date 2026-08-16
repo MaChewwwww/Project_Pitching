@@ -173,7 +173,7 @@ export default function NewEvacuationCenterPage() {
             <p className="text-[11px] text-slate-500">
               Need a new building? You can add one in the{" "}
               <Link
-                href="/admin/facilities/new"
+                href="/admin/facilities"
                 className="text-emerald-700 font-bold underline"
               >
                 Facilities Registry

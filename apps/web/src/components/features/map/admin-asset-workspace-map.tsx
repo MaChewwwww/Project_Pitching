@@ -16,10 +16,14 @@ import {
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
+  BedDouble,
   Building2,
   ChevronDown,
   Database,
   ExternalLink,
+  Flame,
+  Hospital as HospitalIcon,
+  LifeBuoy,
   MapPin,
   Megaphone,
   School,
@@ -162,11 +166,18 @@ const MAP_CSS = `
 .admin-asset-workspace-map .leaflet-popup-close-button:hover {
   color: #0f172a !important;
 }
+.admin-asset-workspace-map .leaflet-tooltip-pane {
+  z-index: 850 !important;
+}
+.admin-asset-workspace-map .leaflet-popup-pane {
+  z-index: 900 !important;
+}
 .admin-asset-workspace-map .leaflet-tooltip {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
+  z-index: 850 !important;
 }
 .admin-asset-workspace-map .leaflet-tooltip::before,
 .admin-asset-workspace-map .leaflet-tooltip::after {
@@ -259,6 +270,10 @@ function MapPanes() {
       const markerPane = map.createPane("assetMarkerPane");
       markerPane.style.zIndex = "670";
     }
+    if (!map.getPane("workspaceTooltipPane")) {
+      const tooltipPane = map.createPane("workspaceTooltipPane");
+      tooltipPane.style.zIndex = "850";
+    }
   }, [map]);
   return null;
 }
@@ -302,16 +317,17 @@ function createBoundaryLabelIcon() {
 }
 
 function createAssetMarkerIcon(item: AssetWorkspaceMapItem, selected: boolean) {
-  const toneBg = {
+  const size = selected ? 38 : 30;
+  const isSounding = item.isSounding;
+  const type = item.facilityType || "";
+
+  let toneBg = {
     emerald: "#059669",
     amber: "#d97706",
     rose: "#e11d48",
     sky: "#0284c7",
     slate: "#475569",
-  }[item.tone];
-
-  const size = selected ? 38 : 30;
-  const isSounding = item.isSounding;
+  }[item.tone] || "#059669";
 
   let iconInnerHtml = "";
   if (item.category === "siren") {
@@ -322,17 +338,23 @@ function createAssetMarkerIcon(item: AssetWorkspaceMapItem, selected: boolean) {
       </svg>
     `;
   } else if (item.category === "evacuation_center") {
+    toneBg = "#059669";
     iconInnerHtml = `
       <svg xmlns="http://www.w3.org/2000/svg" width="${selected ? 18 : 14}" height="${selected ? 18 : 14}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
-        <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
-        <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+        <path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/>
       </svg>
     `;
   } else {
-    // Facility
-    const type = item.facilityType || "";
-    if (type.includes("health") || type.includes("clinic") || type.includes("hospital")) {
+    // Facility Types
+    if (type === "evacuation_center" || type.includes("evac")) {
+      toneBg = "#059669";
+      iconInnerHtml = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="${selected ? 18 : 14}" height="${selected ? 18 : 14}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/>
+        </svg>
+      `;
+    } else if (type === "clinic" || type === "health_center" || type.includes("clinic")) {
+      toneBg = "#0d9488";
       iconInnerHtml = `
         <svg xmlns="http://www.w3.org/2000/svg" width="${selected ? 18 : 14}" height="${selected ? 18 : 14}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
@@ -340,14 +362,43 @@ function createAssetMarkerIcon(item: AssetWorkspaceMapItem, selected: boolean) {
           <circle cx="20" cy="10" r="2"/>
         </svg>
       `;
-    } else if (type.includes("school") || type.includes("court")) {
+    } else if (type === "hospital" || type.includes("hospital")) {
+      toneBg = "#e11d48";
       iconInnerHtml = `
         <svg xmlns="http://www.w3.org/2000/svg" width="${selected ? 18 : 14}" height="${selected ? 18 : 14}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 22v-4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4"/>
-          <path d="m18 10 3.4-1.7a1 1 0 0 0 .6-.9V4a1 1 0 0 0-.6-.9L14 0 2 6v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9Z"/>
+          <path d="M12 6v4"/><path d="M14 14h-4"/><path d="M14 18h-4"/><path d="M14 8h-4"/><path d="M18 12h-4"/><path d="M6 12h4"/><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/>
+        </svg>
+      `;
+    } else if (type === "police" || type === "police_station") {
+      toneBg = "#4f46e5";
+      iconInnerHtml = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="${selected ? 18 : 14}" height="${selected ? 18 : 14}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+        </svg>
+      `;
+    } else if (type === "fire" || type === "fire_station") {
+      toneBg = "#d97706";
+      iconInnerHtml = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="${selected ? 18 : 14}" height="${selected ? 18 : 14}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+        </svg>
+      `;
+    } else if (type === "rescue_station" || type.includes("rescue")) {
+      toneBg = "#ea580c";
+      iconInnerHtml = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="${selected ? 18 : 14}" height="${selected ? 18 : 14}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" x2="9.17" y1="4.93" y2="9.17"/><line x1="14.83" x2="19.07" y1="14.83" y2="19.07"/><line x1="14.83" x2="19.07" y1="9.17" y2="4.93"/><line x1="4.93" x2="9.17" y1="19.07" y2="14.83"/>
+        </svg>
+      `;
+    } else if (type === "barangay_hall" || type.includes("hall")) {
+      toneBg = "#2563eb";
+      iconInnerHtml = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="${selected ? 18 : 14}" height="${selected ? 18 : 14}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>
         </svg>
       `;
     } else {
+      toneBg = "#059669";
       iconInnerHtml = `
         <svg xmlns="http://www.w3.org/2000/svg" width="${selected ? 18 : 14}" height="${selected ? 18 : 14}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>
@@ -355,6 +406,10 @@ function createAssetMarkerIcon(item: AssetWorkspaceMapItem, selected: boolean) {
         </svg>
       `;
     }
+  }
+
+  if (item.tone === "slate") {
+    toneBg = "#475569";
   }
 
   const rippleClass = isSounding ? "siren-ripple-active" : "";
@@ -545,7 +600,7 @@ export function AdminAssetWorkspaceMap({
                 click: () => onSelect(item.id),
               }}
             >
-              <Tooltip direction="top" offset={[0, -18]} opacity={1}>
+              <Tooltip direction="top" offset={[0, -18]} opacity={1} pane="workspaceTooltipPane">
                 <div
                   className="flex flex-col rounded-xl bg-white/98 p-2.5 text-slate-900 shadow-xl backdrop-blur-md whitespace-normal break-words pointer-events-none"
                   style={{
@@ -799,31 +854,8 @@ export function AdminAssetWorkspaceMap({
 
           {legendExpanded && (
             <div className="flex flex-col gap-2.5 text-[11px]">
-              {/* Flood Hazard (NOAH) */}
-              {showHazard && (
-                <div>
-                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
-                    Flood Hazard (NOAH)
-                  </p>
-                  <ul className="flex flex-col gap-1.5">
-                    {HAZARD_LEVELS.map((level) => (
-                      <li key={level.level} className="flex items-center gap-2">
-                        <span
-                          aria-hidden
-                          className="h-2.5 w-4 shrink-0 rounded-[2px] border border-white/30 shadow-2xs"
-                          style={{ backgroundColor: level.color, opacity: 0.85 }}
-                        />
-                        <span className="text-emerald-100/90">
-                          <span className="font-semibold">{level.label} Hazard</span> ({level.depth})
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Map Boundaries */}
-              <div className={showHazard ? "border-t border-emerald-900/60 pt-2" : ""}>
+              {/* Map Boundaries (Top) */}
+              <div>
                 <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
                   Map Boundaries
                 </p>
@@ -853,6 +885,29 @@ export function AdminAssetWorkspaceMap({
                 </ul>
               </div>
 
+              {/* Flood Hazard (NOAH) */}
+              {showHazard && (
+                <div className="border-t border-emerald-900/60 pt-2">
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
+                    Flood Hazard (NOAH)
+                  </p>
+                  <ul className="flex flex-col gap-1.5">
+                    {HAZARD_LEVELS.map((level) => (
+                      <li key={level.level} className="flex items-center gap-2">
+                        <span
+                          aria-hidden
+                          className="h-2.5 w-4 shrink-0 rounded-[2px] border border-white/30 shadow-2xs"
+                          style={{ backgroundColor: level.color, opacity: 0.85 }}
+                        />
+                        <span className="text-emerald-100/90">
+                          <span className="font-semibold">{level.label} Hazard</span> ({level.depth})
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {/* Evacuation Centers */}
               {renderEvacLegend && (
                 <div className="border-t border-emerald-900/60 pt-2">
@@ -862,13 +917,13 @@ export function AdminAssetWorkspaceMap({
                   <ul className="flex flex-col gap-1.5">
                     <li className="flex items-center gap-2">
                       <div className="grid size-4 place-items-center rounded-full bg-emerald-600 text-white font-bold">
-                        <Building2 className="size-2.5" />
+                        <BedDouble className="size-2.5" />
                       </div>
                       <span className="text-emerald-100/90">Available Capacity</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <div className="grid size-4 place-items-center rounded-full bg-rose-600 text-white font-bold">
-                        <Building2 className="size-2.5" />
+                        <BedDouble className="size-2.5" />
                       </div>
                       <span className="text-emerald-100/90">Overloading Capacity</span>
                     </li>
@@ -899,30 +954,54 @@ export function AdminAssetWorkspaceMap({
                 </div>
               )}
 
-              {/* Facilities & Infrastructure */}
+              {/* Facilities & Emergency Services (7 Official Types matching /barangay-facilities) */}
               {renderFacilityLegend && (
                 <div className="border-t border-emerald-900/60 pt-2">
                   <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/60">
-                    Facilities & Infrastructure
+                    Facilities per Type
                   </p>
                   <ul className="flex flex-col gap-1.5">
                     <li className="flex items-center gap-2">
-                      <div className="grid size-4 place-items-center rounded-full bg-rose-600 text-white font-bold">
+                      <div className="grid size-4 place-items-center rounded-full bg-emerald-600 text-white font-bold">
+                        <BedDouble className="size-2.5" />
+                      </div>
+                      <span className="text-emerald-100/90">Evacuation Centers</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="grid size-4 place-items-center rounded-full bg-teal-600 text-white font-bold">
                         <Stethoscope className="size-2.5" />
                       </div>
-                      <span className="text-emerald-100/90">Health Centers & Clinics</span>
+                      <span className="text-emerald-100/90">Health Clinics & Outposts</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <div className="grid size-4 place-items-center rounded-full bg-emerald-600 text-white font-bold">
+                      <div className="grid size-4 place-items-center rounded-full bg-rose-600 text-white font-bold">
+                        <HospitalIcon className="size-2.5" />
+                      </div>
+                      <span className="text-emerald-100/90">Hospitals</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="grid size-4 place-items-center rounded-full bg-indigo-600 text-white font-bold">
+                        <Shield className="size-2.5" />
+                      </div>
+                      <span className="text-emerald-100/90">Police Stations</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="grid size-4 place-items-center rounded-full bg-amber-600 text-white font-bold">
+                        <Flame className="size-2.5" />
+                      </div>
+                      <span className="text-emerald-100/90">Fire Stations</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="grid size-4 place-items-center rounded-full bg-orange-600 text-white font-bold">
+                        <LifeBuoy className="size-2.5" />
+                      </div>
+                      <span className="text-emerald-100/90">Rescue Stations</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="grid size-4 place-items-center rounded-full bg-blue-600 text-white font-bold">
                         <Building2 className="size-2.5" />
                       </div>
-                      <span className="text-emerald-100/90">Administrative Halls</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <div className="grid size-4 place-items-center rounded-full bg-sky-600 text-white font-bold">
-                        <School className="size-2.5" />
-                      </div>
-                      <span className="text-emerald-100/90">Schools & Gymnasiums</span>
+                      <span className="text-emerald-100/90">Barangay Hall</span>
                     </li>
                   </ul>
                 </div>
