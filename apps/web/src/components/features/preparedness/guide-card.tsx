@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   Backpack,
+  CalendarCheck,
   Flame,
   Mountain,
   Waves,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/common/card";
+import { formatPhtDate } from "@/lib/format";
 import { pick, useLanguage } from "@/lib/i18n/language-store";
 import { cn } from "@/lib/utils";
 import type { HazardType, PublicGuideSummary } from "@/lib/api/public-types";
@@ -59,49 +61,60 @@ export function GuideCard({
   const Icon = ICONS[guide.hazard_type];
 
   return (
-    <Card
-      radius="xl"
-      topAccent
-      interactive
+    <Link
+      href={`/guides/${guide.slug}`}
       className={cn(
-        "group card-hover-lift h-full overflow-hidden bg-white transition-all duration-200",
+        "group focus-visible:ring-primary-600 block h-full rounded-[20px] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
         className,
       )}
+      aria-label={`Read preparedness guide: ${pick(lang, guide.title_fil, guide.title_en)}`}
     >
-      <CardContent className="flex h-full flex-col gap-4 p-5 md:p-6">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="from-primary-500 to-primary-700 grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br text-white shadow-sm transition-transform duration-200 group-hover:scale-105">
-              <Icon aria-hidden className="size-5" strokeWidth={2} />
-            </span>
-            <span className="text-caption text-primary-700 bg-primary-50/80 border-primary-100 rounded-full border px-2.5 py-1 font-bold tracking-wider uppercase">
-              {HAZARD_LABEL[guide.hazard_type]}
+      <Card radius="xl" topAccent interactive className="h-full overflow-hidden bg-white">
+        <CardContent className="flex h-full flex-col gap-4 p-5 md:p-6">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="from-primary-500 to-primary-700 grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br text-white shadow-sm transition-transform duration-200 group-hover:scale-105">
+                <Icon aria-hidden className="size-5" strokeWidth={2} />
+              </span>
+              <span className="text-caption text-primary-700 bg-primary-50/80 border-primary-100 rounded-full border px-2.5 py-1 font-bold tracking-wider uppercase">
+                {HAZARD_LABEL[guide.hazard_type]}
+              </span>
+            </div>
+            <span className="rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-[10px] font-bold tracking-wider text-neutral-600 uppercase">
+              {guide.phase === "n/a" ? "Ready" : guide.phase}
             </span>
           </div>
-        </div>
 
-        <h3 className="text-h3 group-hover:text-primary-800 leading-snug font-bold text-neutral-900 transition-colors">
-          {pick(lang, guide.title_fil, guide.title_en)}
-        </h3>
+          <h3 className="text-h3 group-hover:text-primary-800 leading-snug font-bold text-neutral-900 transition-colors">
+            {pick(lang, guide.title_fil, guide.title_en)}
+          </h3>
 
-        <p className="text-body leading-relaxed text-neutral-600">
-          {pick(lang, guide.excerpt_fil, guide.excerpt_en)}
-        </p>
+          <p className="text-body leading-relaxed text-neutral-600">
+            {pick(lang, guide.excerpt_fil, guide.excerpt_en)}
+          </p>
 
-        <div className="mt-auto flex flex-col gap-3 pt-3">
-          <span aria-hidden className="block border-t border-neutral-100" />
-          <Link
-            href={`/guides/${guide.slug}`}
-            className="text-overline text-primary-700 group-hover:text-primary-800 focus-visible:ring-ring inline-flex items-center gap-2 rounded-sm font-bold tracking-wider transition-colors focus-visible:ring-2 focus-visible:outline-none"
-          >
-            Learn more
-            <ArrowRight
-              aria-hidden
-              className="size-4 transition-transform group-hover:translate-x-1.5"
-            />
-          </Link>
-        </div>
-      </CardContent>
-    </Card>
+          <div className="mt-auto flex flex-col gap-3 pt-3">
+            <span aria-hidden className="block border-t border-neutral-100" />
+            <span className="flex items-center justify-between gap-2 text-xs font-semibold text-neutral-500">
+              {guide.last_reviewed_at ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarCheck aria-hidden className="text-primary-600 size-3.5" />
+                  Reviewed {formatPhtDate(guide.last_reviewed_at)}
+                </span>
+              ) : (
+                <span />
+              )}
+              <span className="text-overline text-primary-700 group-hover:text-primary-800 inline-flex items-center gap-2">
+                Read guide{" "}
+                <ArrowRight
+                  aria-hidden
+                  className="size-4 transition-transform group-hover:translate-x-1.5"
+                />
+              </span>
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }

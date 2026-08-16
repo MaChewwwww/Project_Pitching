@@ -24,6 +24,7 @@ import { ApiFetchError, serverGet } from "./server";
 import type {
   Page,
   ActivityDetail,
+  ActivityType,
   AnnouncementDetail,
   DonationDriveDetail,
   PublicActivity,
@@ -237,11 +238,12 @@ export async function getActivities(options?: {
   page?: number;
   size?: number;
   upcoming?: boolean;
+  type?: ActivityType;
 }): Promise<Page<PublicActivity>> {
-  const { page = 1, size = 20, upcoming = true } = options ?? {};
+  const { page = 1, size = 20, upcoming = true, type } = options ?? {};
   try {
     return await serverGet("/public/activities", publicActivityPageSchema, {
-      searchParams: { page, size, upcoming },
+      searchParams: { page, size, upcoming, ...(type ? { type } : {}) },
     });
   } catch (error) {
     logDegraded("/public/activities", error);

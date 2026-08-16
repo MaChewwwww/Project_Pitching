@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
 
-import { Button } from "@/components/common/button";
-import { PageHeader } from "@/components/common/page-header";
-import { GuideArticle } from "@/components/features/preparedness/guide-article";
+import { GuideDetailView } from "@/components/features/preparedness/guide-detail-view";
 import { getGuide, getGuides } from "@/lib/api/public";
 
 export const dynamic = "force-dynamic";
@@ -39,34 +35,14 @@ export async function generateMetadata({
 
 export default async function GuidePage({ params }: PageProps<"/guides/[slug]">) {
   const { slug } = await params;
-  const guide = await getGuide(slug);
+  const [guide, guides] = await Promise.all([getGuide(slug), getGuides({ size: 50 })]);
 
   if (!guide) notFound();
 
   return (
-    <>
-      <PageHeader
-        eyebrow="Preparedness guide"
-        title={guide.title_en}
-        breadcrumb={[
-          { label: "Home", href: "/" },
-          { label: "Preparedness guidelines", href: "/guides" },
-          { label: guide.title_en },
-        ]}
-      />
-
-      <div className="mx-auto max-w-3xl px-4 py-8 md:px-6 md:py-12">
-        <GuideArticle guide={guide} />
-
-        <div className="mt-10">
-          <Button asChild variant="outline" pill size="md" className="max-sm:w-full">
-            <Link href="/guides">
-              <ArrowLeft aria-hidden className="size-4" />
-              All guides
-            </Link>
-          </Button>
-        </div>
-      </div>
-    </>
+    <GuideDetailView
+      guide={guide}
+      related={guides.items.filter((item) => item.id !== guide.id).slice(0, 4)}
+    />
   );
 }

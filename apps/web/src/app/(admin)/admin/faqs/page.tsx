@@ -102,9 +102,9 @@ function FaqDetailDialog({ faq }: { faq: FaqItem }) {
       <DialogTrigger asChild>
         <Button
           size="sm"
-          className="h-8 rounded-lg border border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100 hover:text-sky-900 font-semibold text-xs px-2.5 gap-1.5 shadow-2xs transition-colors cursor-pointer"
+          className="h-8 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900 font-semibold text-xs px-2.5 gap-1.5 shadow-2xs transition-colors cursor-pointer"
         >
-          <Eye className="size-3.5 text-sky-600 shrink-0" />
+          <Eye className="size-3.5 text-emerald-600 shrink-0" />
           <span>View</span>
         </Button>
       </DialogTrigger>
@@ -715,9 +715,9 @@ export default function AdminFaqsPage() {
               trigger={
                 <Button
                   size="sm"
-                  className="h-8 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900 font-semibold text-xs px-2.5 gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  className="h-8 rounded-lg border border-amber-300/90 bg-amber-50 text-amber-900 hover:bg-amber-100 hover:text-amber-950 font-semibold text-xs px-2.5 gap-1.5 shadow-2xs transition-colors cursor-pointer"
                 >
-                  <Pencil className="size-3.5 text-emerald-600 shrink-0" />
+                  <Pencil className="size-3.5 text-amber-700 shrink-0" />
                   <span>Edit</span>
                 </Button>
               }

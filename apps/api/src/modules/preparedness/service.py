@@ -17,6 +17,7 @@ from src.core.errors import NotFoundError
 from src.core.pagination import Page, page_meta
 from src.modules.preparedness.models import Faq, Guide
 from src.modules.preparedness.schemas import (
+    AdminGuide,
     FaqIn,
     GuideIn,
     PublicFaq,
@@ -64,10 +65,27 @@ async def get_guide(session: AsyncSession, slug: str) -> PublicGuide | None:
     )
 
 
-async def list_guides_admin(session: AsyncSession) -> list[PublicGuide]:
+async def get_guide_admin(session: AsyncSession, guide_id: uuid.UUID) -> AdminGuide:
+    guide = await session.get(Guide, guide_id)
+    if guide is None:
+        raise NotFoundError("Guide not found.")
+    return AdminGuide(
+        **_summary(guide).model_dump(),
+        body_fil=guide.body_fil,
+        body_en=guide.body_en,
+        is_published=guide.is_published,
+    )
+
+
+async def list_guides_admin(session: AsyncSession) -> list[AdminGuide]:
     rows = (await session.execute(select(Guide).order_by(Guide.sort_order))).scalars().all()
     return [
-        PublicGuide(**_summary(g).model_dump(), body_fil=g.body_fil, body_en=g.body_en)
+        AdminGuide(
+            **_summary(g).model_dump(),
+            body_fil=g.body_fil,
+            body_en=g.body_en,
+            is_published=g.is_published,
+        )
         for g in rows
     ]
 

@@ -17,7 +17,7 @@ from src.core.pagination import Page, page_meta
 from src.core.uploads import save_upload
 from src.domain.article_document import slug_base
 from src.modules.activities.models import Activity, ActivityImage
-from src.modules.activities.schemas import ActivityDetail, ActivityIn, PublicActivity
+from src.modules.activities.schemas import ActivityDetail, ActivityIn, ActivityType, PublicActivity
 from src.modules.alerts.schemas import ArticleImageOut, ArticleImagePatch, ImageOrderIn
 from src.modules.geo.models import Area
 
@@ -95,6 +95,7 @@ async def list_activities(
     size: int = 20,
     upcoming: bool = True,
     published_only: bool = True,
+    activity_type: ActivityType | None = None,
 ) -> Page[PublicActivity]:
     now = datetime.now(UTC)
     stmt = select(Activity, Area.name).outerjoin(Area, Activity.area_id == Area.id)
@@ -102,6 +103,8 @@ async def list_activities(
         stmt = stmt.where(Activity.publication_status == "published")
     if upcoming:
         stmt = stmt.where(Activity.starts_at > now)
+    if activity_type:
+        stmt = stmt.where(Activity.type == activity_type)
     rows = (await session.execute(stmt.order_by(Activity.starts_at))).all()
     paged = rows[(page - 1) * size : page * size]
     return Page[PublicActivity](
@@ -220,6 +223,27 @@ async def update_activity(
     )
     await session.commit()
     return activity
+
+
+async def delete_activity(
+    session: AsyncSession, activity_id: uuid.UUID, *, actor_id: uuid.UUID
+) -> None:
+    activity = await session.get(Activity, activity_id)
+    if activity is None:
+        raise NotFoundError("Activity not found.")
+    images = await _images(session, activity_id)
+    paths = [Path(settings.upload_dir) / image.file_path for image in images]
+    await session.delete(activity)
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="activity.delete",
+        entity_type="activity",
+        entity_id=activity_id,
+    )
+    await session.commit()
+    for path in paths:
+        path.unlink(missing_ok=True)
 
 
 async def add_image(

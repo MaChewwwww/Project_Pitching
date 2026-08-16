@@ -354,7 +354,7 @@ GET  /public/donation-drives
 GET  /public/donation-drives/{slug}     implemented — FR-DON-017
 POST /public/rescue-requests            implemented — FR-SAF-009, no account, rate limited
 GET  /public/emergency-events/active    implemented — newest-first list of active events
-GET  /public/activities
+GET  /public/activities                 optional `?type=` filter; upcoming-first
 GET  /public/activities/{slug}          implemented — FR-ACT-012
 GET  /public/guides
 GET  /public/guides/{slug}              FR-PUB-005 — "each card opens the full guide"
@@ -468,7 +468,7 @@ PUT   /admin/config/{key}           legacy/internal settings write (not linked i
 # content CRUD — the barangay information layer (FR-PUB-013 close-out)
 /admin/announcements        POST, GET, PATCH, DELETE (deactivate — FR-ALT-011)
 /admin/activities           POST, GET, PATCH, DELETE
-/admin/guides                POST, GET, PATCH, DELETE
+/admin/guides                POST, GET, GET /{id}, PATCH, DELETE
 /admin/faqs                  POST, GET, PATCH, DELETE
 /admin/hotlines               POST, GET, PATCH, DELETE
 /admin/sirens                 POST, GET, PATCH, POST /{id}/trigger, DELETE (FR-MAP-014)

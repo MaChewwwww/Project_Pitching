@@ -209,7 +209,7 @@ export function ActivityForm({
             )}
           />
           <p className="text-xs text-neutral-500">
-            A cover image and alt text are required before publishing.
+            Exactly one cover image is required before publishing.
           </p>
         </div>
       ) : null}

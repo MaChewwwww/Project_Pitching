@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 HazardType = Literal["flood", "earthquake", "typhoon", "fire", "landslide", "general", "food"]
 GuidePhase = Literal["before", "during", "after", "n/a"]
@@ -40,6 +40,10 @@ class PublicGuide(PublicGuideSummary):
     body_en: str
 
 
+class AdminGuide(PublicGuide):
+    is_published: bool
+
+
 class GuideIn(BaseModel):
     slug: str
     hazard_type: HazardType
@@ -52,6 +56,16 @@ class GuideIn(BaseModel):
     last_reviewed_at: datetime | None = None
     is_published: bool = True
     sort_order: int = 0
+
+    @model_validator(mode="after")
+    def _published_guides_are_attributed_and_reviewed(self) -> GuideIn:
+        if self.is_published and (
+            not self.source_attribution or not self.source_attribution.strip()
+        ):
+            raise ValueError("Published guides need a source attribution.")
+        if self.is_published and self.last_reviewed_at is None:
+            raise ValueError("Published guides need a last-reviewed date.")
+        return self
 
 
 class PublicFaq(BaseModel):

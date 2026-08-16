@@ -17,6 +17,7 @@ from src.core.pagination import Page
 from src.db.session import DbSessionDep
 from src.modules.preparedness import service
 from src.modules.preparedness.schemas import (
+    AdminGuide,
     FaqIn,
     GuideIn,
     PublicFaq,
@@ -57,23 +58,27 @@ async def public_faqs(session: DbSessionDep) -> list[PublicFaq]:
 @admin_router.get(
     "/guides", dependencies=[Depends(require_role("admin"))], summary="List all guides"
 )
-async def admin_list_guides(session: DbSessionDep) -> list[PublicGuide]:
+async def admin_list_guides(session: DbSessionDep) -> list[AdminGuide]:
     return await service.list_guides_admin(session)
 
 
 @admin_router.post(
     "/guides", dependencies=[Depends(require_role("admin"))], summary="Create a guide"
 )
-async def admin_create_guide(
-    body: GuideIn, session: DbSessionDep, user: CurrentUser
-) -> PublicGuide:
+async def admin_create_guide(body: GuideIn, session: DbSessionDep, user: CurrentUser) -> AdminGuide:
     guide = await service.create_guide(session, body, actor_id=user.id)
-    return await service.get_guide(session, guide.slug) or await _admin_get(session, guide.id)
+    return await _admin_get(session, guide.id)
 
 
-async def _admin_get(session: DbSessionDep, guide_id: uuid.UUID) -> PublicGuide:
-    items = await service.list_guides_admin(session)
-    return next(g for g in items if g.id == guide_id)
+async def _admin_get(session: DbSessionDep, guide_id: uuid.UUID) -> AdminGuide:
+    return await service.get_guide_admin(session, guide_id)
+
+
+@admin_router.get(
+    "/guides/{guide_id}", dependencies=[Depends(require_role("admin"))], summary="Get a guide"
+)
+async def admin_guide_detail(guide_id: uuid.UUID, session: DbSessionDep) -> AdminGuide:
+    return await service.get_guide_admin(session, guide_id)
 
 
 @admin_router.patch(
@@ -81,7 +86,7 @@ async def _admin_get(session: DbSessionDep, guide_id: uuid.UUID) -> PublicGuide:
 )
 async def admin_update_guide(
     guide_id: uuid.UUID, body: GuideIn, session: DbSessionDep, user: CurrentUser
-) -> PublicGuide:
+) -> AdminGuide:
     await service.update_guide(session, guide_id, body, actor_id=user.id)
     return await _admin_get(session, guide_id)
 

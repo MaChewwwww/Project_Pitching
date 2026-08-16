@@ -9,7 +9,7 @@ its own layout and its own guard.
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | `(public)` | Landing (`/`), announcements, weather & river level, evacuation centres, hazard map, preparedness guides, activities, donation drives, help & FAQs, about | None                                      |
 | `(auth)`   | Login, register, password reset                                                                                                                           | None — but redirects if already signed in |
-| `(portal)` | Resident's own household, safety check-in, incident reporting, onboarding                                                                                | Signed in                                 |
+| `(portal)` | Resident's own household, safety check-in, incident reporting, onboarding                                                                                 | Signed in                                 |
 | `(admin)`  | Barangay admin command center & operations console                                                                                                        | Signed in **and** role-checked            |
 
 > The guards here are **convenience, not security**. Every one of them is re-checked
@@ -25,20 +25,24 @@ system fallbacks preserve the hierarchy otherwise.
 The following inventory serves as the architectural and design pattern reference for finalized, tweaked, and verified pages across SAGIP-SJ:
 
 ### 1. Public Information & Citizen Engagement (`(public)`)
+
 - `/` — **Landing Page**: Hero, live weather widget, alert ticker, map preview, quick hotlines.
 - `/weather` — **Weather Watch**: Telemetry metrics, rainfall & river gauges, sensor thresholds.
 - `/announcements` and `/announcements/[slug]` — **Advisories CMS**: Category filters, priority badges, full article view.
 - `/rescue` — **Public SOS**: Quick unauthenticated emergency rescue dispatch request with GPS coordinates.
 
 ### 2. Interactive GIS & Spatial Visualizations (`(public)`)
+
 - `/hazard-map` — **Flood Hazard Map**: 5-yr, 25-yr, 100-yr return layers, flood depth legend, sitio boundaries.
 - `/barangay-facilities` — **Barangay Facilities**: Finalized public facilities map view and directory.
 
 ### 3. Authentication & Onboarding (`(auth)`)
+
 - `/login` — **Unified Sign-In**: Role-based redirect for Resident, Health Worker, Barangay Admin.
 - `/register` — **Resident Registration**: Multi-step household setup and head of family onboarding.
 
 ### 4. Resident Self-Service Portal (`(portal)`)
+
 - `/portal` — **Resident Dashboard**: Household summary, emergency alert banner, quick action cards.
 - `/portal/onboarding` — **Onboarding Wizard**: First-time setup for family members and health flags.
 - `/portal/household/edit` — **Household Roster**: Family member CRUD, medical/vulnerability tagging.
@@ -46,6 +50,7 @@ The following inventory serves as the architectural and design pattern reference
 - `/portal/report` — **Citizen Incident Reporting**: Geolocation, photo attachment, triage category.
 
 ### 5. Barangay Admin: Command Center & Emergency Operations (`(admin)`)
+
 - `/admin` — **Main Operations Dashboard**: Calamity banner, live incident ticker, summary KPIs.
 - `/admin/emergency-events` & `/[id]` & `/[id]/edit` — **Disaster Operations Console**: Sitio roll-call, event logs, backfill dialog.
 - `/admin/safety` — **Live Safety Tally**: Real-time per-sitio status, unaccounted family counter.
@@ -55,11 +60,13 @@ The following inventory serves as the architectural and design pattern reference
 - `/admin/flood-events` — **Flood History**: Editorial record and water level logs.
 
 ### 6. Barangay Admin: Registry & Vulnerability Management (`(admin)`)
+
 - `/admin/households` & `/[id]` & `/new` & `/[id]/edit` — **Household Masterlist**: Vulnerability scoring tiers.
 - `/admin/citizens` & `/[id]` & `/new` & `/[id]/edit` & `/[id]/promote` — **Citizen Roster**: Health tags, age demographics.
 - `/admin/unregistered-persons` & `/[id]` & `/[id]/edit` — **Transient Log**: Walk-in evacuee intake and management.
 
 ### 7. Barangay Admin: Content & Broadcast CMS (`(admin)`)
+
 - `/admin/announcements` & `/create-announcement` & `/[id]` — **Broadcast Alerts & Announcements Management**.
 
 ## Announcement routes and the shared editor
@@ -80,6 +87,13 @@ records are excluded from public reads.
 
 The admin route set intentionally has no `/admin/areas` or `/admin/config` page. Those values are
 reference/service data consumed by operational screens, not standalone console workflows.
+
+## Activity and guide authoring
+
+`/admin/activities` uses the shared article lifecycle with a date-led public preview, gallery, and
+activity-type filtering. `/admin/guides`, `/admin/guides/new`, and `/admin/guides/[id]` form one
+bilingual guide workflow: source attribution and a review date are required only when publishing.
+The guide editor remains plain-text by design; `##` is the supported section-heading convention.
 
 ## Weather & Flood Watch workspace
 

@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 
 from src.core.deps import CurrentUser, require_role
 from src.core.pagination import Page
 from src.db.session import DbSessionDep
 from src.modules.activities import service
-from src.modules.activities.schemas import ActivityDetail, ActivityIn, PublicActivity
+from src.modules.activities.schemas import ActivityDetail, ActivityIn, ActivityType, PublicActivity
 from src.modules.alerts.schemas import ArticleImageOut, ArticleImagePatch, ImageOrderIn
 
 public_router = APIRouter(tags=["activities"])
@@ -19,9 +20,15 @@ admin_router = APIRouter(tags=["activities"])
 
 @public_router.get("/activities", summary="Published upcoming activities")
 async def public_activities(
-    session: DbSessionDep, page: int = 1, size: int = 20, upcoming: bool = True
+    session: DbSessionDep,
+    page: int = 1,
+    size: int = 20,
+    upcoming: bool = True,
+    activity_type: Annotated[ActivityType | None, Query(alias="type")] = None,
 ) -> Page[PublicActivity]:
-    return await service.list_activities(session, page=page, size=size, upcoming=upcoming)
+    return await service.list_activities(
+        session, page=page, size=size, upcoming=upcoming, activity_type=activity_type
+    )
 
 
 @public_router.get("/activities/{slug}", summary="Published activity article")
@@ -59,6 +66,16 @@ async def admin_update_activity(
     return next(
         item for item in await service.list_activities_admin(session) if item.id == activity.id
     )
+
+
+@admin_router.delete(
+    "/activities/{activity_id}", dependencies=[Depends(require_role("admin", "sk"))]
+)
+async def admin_delete_activity(
+    activity_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> dict[str, bool]:
+    await service.delete_activity(session, activity_id, actor_id=user.id)
+    return {"ok": True}
 
 
 @admin_router.post(

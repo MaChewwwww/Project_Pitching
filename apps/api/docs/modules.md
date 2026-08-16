@@ -87,6 +87,13 @@ minimal: file path, order, cover flag, and timestamps—there are no alt-text or
 When adding another article-like module, mirror this router → schema → service → model split and the
 same public/admin lifecycle instead of coupling a new page directly to persistence.
 
+## Activities and preparedness guides
+
+Activities support an optional public `type` filter while retaining the upcoming-only default. The
+admin delete route owns its audit write and removes the article's uploaded files after its database
+transaction succeeds. Preparedness guides use a distinct admin response so publication state is never
+lost in the public serializer; published guide writes require source attribution and a review date.
+
 ## Weather and flood-history lifecycle
 
 `src/modules/weather/` owns both the cached weather/readings surface and FR-WX-013 flood history.

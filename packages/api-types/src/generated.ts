@@ -699,7 +699,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get a facility */
+        get: operations["admin_get_facility_api_v1_admin_facilities__facility_id__get"];
         put?: never;
         post?: never;
         /** Remove a facility */
@@ -708,6 +709,23 @@ export interface paths {
         head?: never;
         /** Update a facility */
         patch: operations["admin_update_facility_api_v1_admin_facilities__facility_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/facilities/{facility_id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reactivate a facility */
+        post: operations["admin_reactivate_facility_api_v1_admin_facilities__facility_id__reactivate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/admin/areas": {
@@ -762,7 +780,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/sirens/{siren_id}": {
+    "/api/v1/admin/sirens/audits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List siren drill and trigger audit logs */
+        get: operations["admin_list_siren_audits_api_v1_admin_sirens_audits_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sirens/drill/trigger": {
         parameters: {
             query?: never;
             header?: never;
@@ -771,13 +806,65 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Trigger all sirens for emergency drill simulation */
+        post: operations["admin_trigger_all_sirens_drill_api_v1_admin_sirens_drill_trigger_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sirens/drill/silence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Silence all sirens from emergency drill simulation */
+        post: operations["admin_silence_all_sirens_drill_api_v1_admin_sirens_drill_silence_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sirens/{siren_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a siren */
+        get: operations["admin_get_siren_api_v1_admin_sirens__siren_id__get"];
+        put?: never;
         post?: never;
-        /** Remove a siren */
+        /** Soft-delete a siren unit */
         delete: operations["admin_delete_siren_api_v1_admin_sirens__siren_id__delete"];
         options?: never;
         head?: never;
         /** Update a siren */
         patch: operations["admin_update_siren_api_v1_admin_sirens__siren_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/sirens/{siren_id}/audits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List audits for a specific siren unit */
+        get: operations["admin_get_siren_audits_api_v1_admin_sirens__siren_id__audits_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/admin/sirens/{siren_id}/trigger": {
@@ -791,6 +878,57 @@ export interface paths {
         put?: never;
         /** Trigger/toggle siren status (simulation) */
         post: operations["admin_trigger_siren_api_v1_admin_sirens__siren_id__trigger_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sirens/{siren_id}/silence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Silence a siren simulation */
+        post: operations["admin_silence_siren_api_v1_admin_sirens__siren_id__silence_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sirens/{siren_id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deactivate/disable a siren unit */
+        post: operations["admin_deactivate_siren_api_v1_admin_sirens__siren_id__deactivate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sirens/{siren_id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reactivate a siren */
+        post: operations["admin_reactivate_siren_api_v1_admin_sirens__siren_id__reactivate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -966,7 +1104,8 @@ export interface paths {
         get: operations["admin_activity_detail_api_v1_admin_activities__activity_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Admin Delete Activity */
+        delete: operations["admin_delete_activity_api_v1_admin_activities__activity_id__delete"];
         options?: never;
         head?: never;
         /** Admin Update Activity */
@@ -1050,7 +1189,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get a guide */
+        get: operations["admin_guide_detail_api_v1_admin_guides__guide_id__get"];
         put?: never;
         post?: never;
         /** Remove a guide */
@@ -1176,14 +1316,33 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get an evacuation center */
+        get: operations["admin_get_evac_center_api_v1_admin_evacuation_centers__center_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Deactivate an evacuation center */
+        delete: operations["admin_deactivate_evac_center_api_v1_admin_evacuation_centers__center_id__delete"];
         options?: never;
         head?: never;
         /** Update an evacuation centre */
         patch: operations["admin_update_evac_center_api_v1_admin_evacuation_centers__center_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/evacuation-centers/{center_id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reactivate an evacuation center */
+        post: operations["admin_reactivate_evac_center_api_v1_admin_evacuation_centers__center_id__reactivate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/admin/evacuation-centers/check-ins": {
@@ -1283,7 +1442,8 @@ export interface paths {
         get: operations["admin_donation_drive_detail_api_v1_admin_donation_drives__drive_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete a donation drive and its images */
+        delete: operations["admin_delete_donation_drive_api_v1_admin_donation_drives__drive_id__delete"];
         options?: never;
         head?: never;
         /** Admin Update Donation Drive */
@@ -2160,6 +2320,86 @@ export interface components {
             publication_status: "draft" | "published" | "archived";
         };
         /**
+         * AdminEvacCenterIn
+         * @description One workspace owns both the facility identity and centre operations.
+         */
+        AdminEvacCenterIn: {
+            facility: components["schemas"]["EvacFacilityIn"];
+            /** Capacity */
+            capacity?: number | null;
+            /** Contact Person */
+            contact_person?: string | null;
+            /** Contact Number */
+            contact_number?: string | null;
+            /**
+             * Is Open
+             * @default true
+             */
+            is_open: boolean;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** AdminEvacCenterOut */
+        AdminEvacCenterOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Capacity */
+            capacity: number | null;
+            /** Is Open */
+            is_open: boolean;
+            /** Notes */
+            notes: string | null;
+            /** Contact Number */
+            contact_number: string | null;
+            facility: components["schemas"]["AdminFacilityOut"];
+            /** Occupancy */
+            occupancy: number;
+            /** Occupancy Pct */
+            occupancy_pct: number | null;
+            /** Is At Capacity */
+            is_at_capacity: boolean;
+            /**
+             * Occupancy As Of
+             * Format: date-time
+             */
+            occupancy_as_of: string;
+            /** Contact Person */
+            contact_person: string | null;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /**
+         * AdminFacilityOut
+         * @description Admin registry view: public map data plus lifecycle metadata.
+         */
+        AdminFacilityOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+            /** Address */
+            address: string | null;
+            /** Contact Number */
+            contact_number: string | null;
+            location: components["schemas"]["GeoJsonPoint"];
+            /** Area Id */
+            area_id: string | null;
+            /** Area Name */
+            area_name: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Evac Center Id */
+            evac_center_id?: string | null;
+        };
+        /**
          * AdminFloodEvent
          * @description Flood history record enriched with the area ids needed by the editor.
          */
@@ -2197,6 +2437,46 @@ export interface components {
             area_names: string[];
             /** Area Ids */
             area_ids: string[];
+        };
+        /** AdminGuide */
+        AdminGuide: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slug */
+            slug: string;
+            /**
+             * Hazard Type
+             * @enum {string}
+             */
+            hazard_type: "flood" | "earthquake" | "typhoon" | "fire" | "landslide" | "general" | "food";
+            /** Title Fil */
+            title_fil: string;
+            /** Title En */
+            title_en: string;
+            /**
+             * Phase
+             * @enum {string}
+             */
+            phase: "before" | "during" | "after" | "n/a";
+            /** Source Attribution */
+            source_attribution: string | null;
+            /** Last Reviewed At */
+            last_reviewed_at: string | null;
+            /** Sort Order */
+            sort_order: number;
+            /** Excerpt Fil */
+            excerpt_fil: string;
+            /** Excerpt En */
+            excerpt_en: string;
+            /** Body Fil */
+            body_fil: string;
+            /** Body En */
+            body_en: string;
+            /** Is Published */
+            is_published: boolean;
         };
         /**
          * AdminMemberCreate
@@ -2884,6 +3164,21 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /** EvacCenterPatch */
+        EvacCenterPatch: {
+            /** Facility Id */
+            facility_id?: string | null;
+            /** Capacity */
+            capacity?: number | null;
+            /** Contact Person */
+            contact_person?: string | null;
+            /** Contact Number */
+            contact_number?: string | null;
+            /** Is Open */
+            is_open?: boolean | null;
+            /** Notes */
+            notes?: string | null;
+        };
         /** EvacCheckinCreate */
         EvacCheckinCreate: {
             /**
@@ -2941,12 +3236,28 @@ export interface components {
             /** Recorded By Name */
             recorded_by_name: string | null;
         };
+        /** EvacFacilityIn */
+        EvacFacilityIn: {
+            /** Name */
+            name: string;
+            /** Address */
+            address?: string | null;
+            /** Contact Number */
+            contact_number?: string | null;
+            /** Longitude */
+            longitude: number;
+            /** Latitude */
+            latitude: number;
+        };
         /** FacilityIn */
         FacilityIn: {
             /** Name */
             name: string;
-            /** Type */
-            type: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "evacuation_center" | "hospital" | "clinic" | "barangay_hall" | "police" | "fire" | "rescue_station";
             /** Address */
             address?: string | null;
             /** Contact Number */
@@ -2981,8 +3292,12 @@ export interface components {
             location: components["schemas"]["GeoJsonPoint"];
             /** Area Id */
             area_id: string | null;
+            /** Area Name */
+            area_name: string | null;
             /** Is Active */
             is_active: boolean;
+            /** Evac Center Id */
+            evac_center_id?: string | null;
         };
         /** FaqIn */
         FaqIn: {
@@ -4450,6 +4765,11 @@ export interface components {
             category: string;
             /** Sort Order */
             sort_order: number;
+            /**
+             * Is Published
+             * @default true
+             */
+            is_published: boolean;
         };
         /** PublicFloodEvent */
         PublicFloodEvent: {
@@ -5310,6 +5630,41 @@ export interface components {
              */
             highest_alert_level: 0 | 1 | 2 | 3;
         };
+        /** SirenAuditOut */
+        SirenAuditOut: {
+            /** Id */
+            id: number;
+            /** Action */
+            action: string;
+            /** Entity Id */
+            entity_id: string | null;
+            /** Actor User Id */
+            actor_user_id: string | null;
+            /** Classification */
+            classification: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Changes */
+            changes?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** SirenDrillResult */
+        SirenDrillResult: {
+            /** Ok */
+            ok: boolean;
+            /** Action */
+            action: string;
+            /** Classification */
+            classification: string;
+            /** Affected Count */
+            affected_count: number;
+            /** Sirens */
+            sirens: components["schemas"]["SirenOut"][];
+        };
         /** SirenIn */
         SirenIn: {
             /** Name */
@@ -5320,11 +5675,6 @@ export interface components {
             latitude: number;
             /** Area Id */
             area_id?: string | null;
-            /**
-             * Status
-             * @default idle
-             */
-            status: string;
         };
         /** SirenOut */
         SirenOut: {
@@ -5340,6 +5690,12 @@ export interface components {
             location: components["schemas"]["GeoJsonPoint"];
             /** Area Id */
             area_id: string | null;
+            /** Area Name */
+            area_name: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Last Triggered At */
+            last_triggered_at: string | null;
         };
         /**
          * UnregisteredPersonIn
@@ -6130,6 +6486,7 @@ export interface operations {
                 page?: number;
                 size?: number;
                 upcoming?: boolean;
+                type?: ("drill" | "seminar" | "first_aid" | "cleanup" | "tree_planting" | "ngo_program" | "other") | null;
             };
             header?: never;
             path?: never;
@@ -6328,6 +6685,7 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                status?: string | null;
             };
             header?: never;
             path?: never;
@@ -6931,7 +7289,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PublicFacility"][];
+                    "application/json": unknown;
                 };
             };
         };
@@ -6948,6 +7306,37 @@ export interface operations {
                 "application/json": components["schemas"]["FacilityIn"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FacilityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_get_facility_api_v1_admin_facilities__facility_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                facility_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -7016,6 +7405,37 @@ export interface operations {
                 "application/json": components["schemas"]["FacilityIn"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FacilityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_reactivate_facility_api_v1_admin_facilities__facility_id__reactivate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                facility_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -7145,6 +7565,97 @@ export interface operations {
             };
         };
     };
+    admin_list_siren_audits_api_v1_admin_sirens_audits_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SirenAuditOut"][];
+                };
+            };
+        };
+    };
+    admin_trigger_all_sirens_drill_api_v1_admin_sirens_drill_trigger_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SirenDrillResult"];
+                };
+            };
+        };
+    };
+    admin_silence_all_sirens_drill_api_v1_admin_sirens_drill_silence_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SirenDrillResult"];
+                };
+            };
+        };
+    };
+    admin_get_siren_api_v1_admin_sirens__siren_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                siren_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SirenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     admin_delete_siren_api_v1_admin_sirens__siren_id__delete: {
         parameters: {
             query?: never;
@@ -7213,7 +7724,135 @@ export interface operations {
             };
         };
     };
+    admin_get_siren_audits_api_v1_admin_sirens__siren_id__audits_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                siren_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SirenAuditOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     admin_trigger_siren_api_v1_admin_sirens__siren_id__trigger_post: {
+        parameters: {
+            query?: {
+                is_drill?: boolean;
+            };
+            header?: never;
+            path: {
+                siren_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SirenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_silence_siren_api_v1_admin_sirens__siren_id__silence_post: {
+        parameters: {
+            query?: {
+                is_drill?: boolean;
+            };
+            header?: never;
+            path: {
+                siren_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SirenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_deactivate_siren_api_v1_admin_sirens__siren_id__deactivate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                siren_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SirenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_reactivate_siren_api_v1_admin_sirens__siren_id__reactivate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -7719,6 +8358,39 @@ export interface operations {
             };
         };
     };
+    admin_delete_activity_api_v1_admin_activities__activity_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     admin_update_activity_api_v1_admin_activities__activity_id__patch: {
         parameters: {
             query?: never;
@@ -7909,7 +8581,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PublicGuide"][];
+                    "application/json": components["schemas"]["AdminGuide"][];
                 };
             };
         };
@@ -7933,7 +8605,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PublicGuide"];
+                    "application/json": components["schemas"]["AdminGuide"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_guide_detail_api_v1_admin_guides__guide_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                guide_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminGuide"];
                 };
             };
             /** @description Validation Error */
@@ -8001,7 +8704,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PublicGuide"];
+                    "application/json": components["schemas"]["AdminGuide"];
                 };
             };
             /** @description Validation Error */
@@ -8350,7 +9053,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PublicEvacCenter"][];
+                    "application/json": components["schemas"]["AdminEvacCenterOut"][];
                 };
             };
         };
@@ -8364,7 +9067,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EvacCenterIn"];
+                "application/json": components["schemas"]["AdminEvacCenterIn"] | components["schemas"]["EvacCenterIn"];
             };
         };
         responses: {
@@ -8374,8 +9077,70 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/json": components["schemas"]["AdminEvacCenterOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_get_evac_center_api_v1_admin_evacuation_centers__center_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                center_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminEvacCenterOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_deactivate_evac_center_api_v1_admin_evacuation_centers__center_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                center_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
                     "application/json": {
-                        [key: string]: string;
+                        [key: string]: boolean;
                     };
                 };
             };
@@ -8401,7 +9166,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EvacCenterIn"];
+                "application/json": components["schemas"]["AdminEvacCenterIn"] | components["schemas"]["EvacCenterPatch"] | components["schemas"]["EvacCenterIn"];
             };
         };
         responses: {
@@ -8411,9 +9176,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
+                    "application/json": components["schemas"]["AdminEvacCenterOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_reactivate_evac_center_api_v1_admin_evacuation_centers__center_id__reactivate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                center_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminEvacCenterOut"];
                 };
             };
             /** @description Validation Error */
@@ -8616,6 +9410,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DonationDriveDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_delete_donation_drive_api_v1_admin_donation_drives__drive_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                drive_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
                 };
             };
             /** @description Validation Error */
