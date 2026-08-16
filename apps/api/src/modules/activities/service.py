@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Literal
 
 from fastapi import UploadFile
 from sqlalchemy import select
@@ -93,7 +94,7 @@ async def list_activities(
     *,
     page: int = 1,
     size: int = 20,
-    upcoming: bool | None = None,
+    period: Literal["all", "upcoming", "past"] = "all",
     published_only: bool = True,
     activity_type: ActivityType | None = None,
 ) -> Page[PublicActivity]:
@@ -101,13 +102,13 @@ async def list_activities(
     stmt = select(Activity, Area.name).outerjoin(Area, Activity.area_id == Area.id)
     if published_only:
         stmt = stmt.where(Activity.publication_status == "published")
-    if upcoming is True:
+    if period == "upcoming":
         stmt = stmt.where(Activity.starts_at > now)
-    elif upcoming is False:
+    elif period == "past":
         stmt = stmt.where(Activity.starts_at <= now)
     if activity_type:
         stmt = stmt.where(Activity.type == activity_type)
-    ordering = Activity.starts_at if upcoming is True else Activity.starts_at.desc()
+    ordering = Activity.starts_at if period == "upcoming" else Activity.starts_at.desc()
     rows = (await session.execute(stmt.order_by(ordering))).all()
     paged = rows[(page - 1) * size : page * size]
     return Page[PublicActivity](

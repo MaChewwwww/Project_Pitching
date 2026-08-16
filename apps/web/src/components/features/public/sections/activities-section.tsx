@@ -11,7 +11,7 @@ import { getActivities } from "@/lib/api/public";
 
 /** The latest completed community activities (FR-PUB-006, BR-0.6). */
 export async function ActivitiesSection() {
-  const { items: activities } = await getActivities({ upcoming: false, size: 3 });
+  const { items: activities } = await getActivities({ period: "past", size: 3 });
 
   if (activities.length === 0) return null;
 

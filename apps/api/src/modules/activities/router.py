@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, File, Query, UploadFile
 
@@ -23,11 +23,11 @@ async def public_activities(
     session: DbSessionDep,
     page: int = 1,
     size: int = 20,
-    upcoming: bool | None = None,
+    period: Literal["all", "upcoming", "past"] = "all",
     activity_type: Annotated[ActivityType | None, Query(alias="type")] = None,
 ) -> Page[PublicActivity]:
     return await service.list_activities(
-        session, page=page, size=size, upcoming=upcoming, activity_type=activity_type
+        session, page=page, size=size, period=period, activity_type=activity_type
     )
 
 

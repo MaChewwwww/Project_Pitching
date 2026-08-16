@@ -354,7 +354,7 @@ GET  /public/donation-drives
 GET  /public/donation-drives/{slug}     implemented — FR-DON-017
 POST /public/rescue-requests            implemented — FR-SAF-009, no account, rate limited
 GET  /public/emergency-events/active    implemented — newest-first list of active events
-GET  /public/activities                 optional `?type=` and `?upcoming=true|false` filters; latest first by default
+GET  /public/activities                 optional `?type=` and `?period=all|upcoming|past` filters; latest first by default
 GET  /public/activities/{slug}          implemented — FR-ACT-012
 GET  /public/guides
 GET  /public/guides/{slug}              FR-PUB-005 — "each card opens the full guide"

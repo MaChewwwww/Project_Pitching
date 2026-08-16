@@ -88,9 +88,9 @@ export function ActivitiesFilterNav({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All activity reports</SelectItem>
-          <SelectItem value="upcoming">Upcoming activities</SelectItem>
-          <SelectItem value="past">Past activities</SelectItem>
+          <SelectItem value="all">All Activity Reports</SelectItem>
+          <SelectItem value="upcoming">Upcoming Activities</SelectItem>
+          <SelectItem value="past">Past Activities</SelectItem>
         </SelectContent>
       </Select>
     </nav>

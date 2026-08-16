@@ -52,7 +52,7 @@ export default async function ActivitiesPage({
   const activities = await getActivities({
     page,
     size: 9,
-    upcoming: selectedStatus === "all" ? undefined : selectedStatus === "upcoming",
+    period: selectedStatus,
     type: selectedType,
   });
 
