@@ -9,6 +9,8 @@ import {
   AlertTriangle,
   Building2,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Clock,
   Flame,
   LifeBuoy,
@@ -48,6 +50,7 @@ import type {
   SafetyStatusSelfIn,
   SafetyStatusValue,
 } from "@/lib/api/safety-types";
+import type { HouseholdDetailOut } from "@/lib/api/registry-types";
 import type { PublicEmergencyEvent, PublicEvacCenter } from "@/lib/api/public-types";
 import { cn } from "@/lib/utils";
 
@@ -81,20 +84,48 @@ function formatDuration(startedAt: string, endedAt: string | null): string {
   return `${Math.max(1, totalMins)}m`;
 }
 
+function formatStatusBadge(status: SafetyStatusValue) {
+  switch (status) {
+    case "safe":
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+          <CheckCircle2 className="size-2.5 text-emerald-700" />
+          <span>Safe</span>
+        </span>
+      );
+    case "needs_rescue":
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 border border-red-200 px-2 py-0.5 text-[10px] font-bold text-red-800 animate-pulse">
+          <AlertTriangle className="size-2.5 text-red-600" />
+          <span>Needs Rescue</span>
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 border border-neutral-200 px-2 py-0.5 text-[10px] font-medium text-neutral-600">
+          <span>Unaccounted</span>
+        </span>
+      );
+  }
+}
+
 export default function PortalSafetyPage() {
   const queryClient = useQueryClient();
   const [selectedEventId, setSelectedEventId] = React.useState("");
+  const [showAllCenters, setShowAllCenters] = React.useState(false);
 
-  // Individual Member Action Dialog State (includes Event and Shelter assignment)
+  // Individual Member Action Dialog State
   const [memberActionDialog, setMemberActionDialog] = React.useState<{
     memberId: string;
     memberName: string;
+    isHead: boolean;
+    currentStatus: SafetyStatusValue;
     status: "safe" | "needs_rescue";
     eventId: string;
     centerId: string;
   } | null>(null);
 
-  // Bulk Mark All Safe Dialog State (includes Event and Shelter assignment)
+  // Bulk Mark All Safe Dialog State
   const [bulkDialogOpen, setBulkDialogOpen] = React.useState(false);
   const [bulkEventId, setBulkEventId] = React.useState("");
   const [bulkCenterId, setBulkCenterId] = React.useState("none");
@@ -117,6 +148,12 @@ export default function PortalSafetyPage() {
         .then((response) => response.data.items),
   });
 
+  const householdQuery = useQuery({
+    queryKey: ["me", "household"],
+    queryFn: () =>
+      api.get<HouseholdDetailOut>("/me/household").then((r) => r.data),
+  });
+
   const resolvedEventId = selectedEventId || activeEventsQuery.data?.[0]?.id || "";
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -131,7 +168,7 @@ export default function PortalSafetyPage() {
   const submitMutation = useMutation({
     mutationFn: (body: SafetyStatusSelfIn) => api.post("/me/safety-status", body),
     onSuccess: () => {
-      toast.success("Safety status & shelter assignment updated");
+      toast.success("Safety status updated successfully");
       queryClient.invalidateQueries({ queryKey: ["me", "safety"] });
       queryClient.invalidateQueries({ queryKey: ["public", "evacuation-centers"] });
       queryClient.invalidateQueries({ queryKey: ["portal", "evacuation-status"] });
@@ -148,15 +185,40 @@ export default function PortalSafetyPage() {
   const rescueCount = members.filter((m) => m.status === "needs_rescue").length;
   const unaccountedCount = members.length - safeCount - rescueCount;
 
-  // Handler for opening member action modal
+  // Prioritize evacuation centers in the household's registered area
+  const userAreaId = householdQuery.data?.area_id;
+  const userAreaName = householdQuery.data?.area_name;
+
+  const sortedCenters = React.useMemo(() => {
+    if (!centers) return [];
+    return [...centers].sort((a, b) => {
+      const aInArea =
+        (userAreaId && a.facility.area_id === userAreaId) ||
+        (userAreaName && a.facility.area_name === userAreaName);
+      const bInArea =
+        (userAreaId && b.facility.area_id === userAreaId) ||
+        (userAreaName && b.facility.area_name === userAreaName);
+      if (aInArea && !bInArea) return -1;
+      if (!aInArea && bInArea) return 1;
+      return 0;
+    });
+  }, [centers, userAreaId, userAreaName]);
+
+  const visibleCenters = showAllCenters ? sortedCenters : sortedCenters.slice(0, 3);
+
+  // Handlers for opening member action modal
   const openMemberAction = (
     memberId: string,
     memberName: string,
+    isHead: boolean,
+    currentStatus: SafetyStatusValue,
     status: "safe" | "needs_rescue",
   ) => {
     setMemberActionDialog({
       memberId,
       memberName,
+      isHead,
+      currentStatus,
       status,
       eventId: resolvedEventId,
       centerId: "none",
@@ -178,9 +240,11 @@ export default function PortalSafetyPage() {
       member_ids: [memberActionDialog.memberId],
       event_id: memberActionDialog.eventId || resolvedEventId,
       evac_center_id:
-        memberActionDialog.centerId === "none" || !memberActionDialog.centerId
-          ? null
-          : memberActionDialog.centerId,
+        memberActionDialog.status === "safe" &&
+        memberActionDialog.centerId &&
+        memberActionDialog.centerId !== "none"
+          ? memberActionDialog.centerId
+          : null,
     });
     setMemberActionDialog(null);
   };
@@ -494,7 +558,7 @@ export default function PortalSafetyPage() {
                             Family Members Status Control
                           </h2>
                           <p className="text-xs text-neutral-500">
-                            Tap &quot;Safe&quot; or &quot;Needs Rescue&quot; for each family member to designate their shelter location.
+                            Tap &quot;Safe&quot; or &quot;Needs Rescue&quot; for each family member.
                           </p>
                         </div>
                       </div>
@@ -576,13 +640,21 @@ export default function PortalSafetyPage() {
                               </div>
                             </div>
 
-                            {/* Action Buttons with Confirmation & Shelter Dialog Trigger */}
+                            {/* Action Buttons with Confirmation Dialog Trigger */}
                             <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
                               <Button
                                 type="button"
                                 size="sm"
                                 disabled={submitMutation.isPending}
-                                onClick={() => openMemberAction(member.member_id, member.full_name, "safe")}
+                                onClick={() =>
+                                  openMemberAction(
+                                    member.member_id,
+                                    member.full_name,
+                                    Boolean(member.is_head),
+                                    member.status,
+                                    "safe",
+                                  )
+                                }
                                 className={cn(
                                   "h-9 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-bold transition-all shadow-2xs active:scale-[0.98]",
                                   isSafe
@@ -598,7 +670,15 @@ export default function PortalSafetyPage() {
                                 type="button"
                                 size="sm"
                                 disabled={submitMutation.isPending}
-                                onClick={() => openMemberAction(member.member_id, member.full_name, "needs_rescue")}
+                                onClick={() =>
+                                  openMemberAction(
+                                    member.member_id,
+                                    member.full_name,
+                                    Boolean(member.is_head),
+                                    member.status,
+                                    "needs_rescue",
+                                  )
+                                }
                                 className={cn(
                                   "h-9 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-bold transition-all shadow-2xs active:scale-[0.98]",
                                   needsRescue
@@ -623,7 +703,7 @@ export default function PortalSafetyPage() {
                 {/* Active Stay & Evacuation History Component */}
                 <PortalEvacuationStatusCard />
 
-                {/* Evacuation Centers Real-Time Directory Card */}
+                {/* Evacuation Centers Real-Time Directory Card (Max 3 items, Prioritizing Household Area, Expandable) */}
                 <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
                   <CardContent className="p-5 sm:p-6 space-y-4">
                     <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
@@ -640,22 +720,39 @@ export default function PortalSafetyPage() {
                           </p>
                         </div>
                       </div>
+
+                      {userAreaName ? (
+                        <span className="rounded-full bg-emerald-100 border border-emerald-200 px-2 py-0.5 text-[10px] font-black text-emerald-800 uppercase">
+                          {userAreaName}
+                        </span>
+                      ) : null}
                     </div>
 
-                    <div className="space-y-2.5 divide-y divide-neutral-100">
-                      {centers.length > 0 ? (
-                        centers.map((center) => {
+                    <div className="space-y-3 divide-y divide-neutral-100">
+                      {visibleCenters.length > 0 ? (
+                        visibleCenters.map((center) => {
                           const pct = center.capacity
                             ? Math.min(100, Math.round((center.occupancy / center.capacity) * 100))
                             : 0;
 
+                          const isSameArea =
+                            (userAreaId && center.facility.area_id === userAreaId) ||
+                            (userAreaName && center.facility.area_name === userAreaName);
+
                           return (
-                            <div key={center.id} className="pt-2.5 first:pt-0 space-y-1.5">
+                            <div key={center.id} className="pt-3 first:pt-0 space-y-1.5">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
-                                  <p className="text-xs font-bold text-neutral-900 truncate">
-                                    {center.facility.name}
-                                  </p>
+                                  <div className="flex items-center gap-1.5">
+                                    <p className="text-xs font-bold text-neutral-900 truncate">
+                                      {center.facility.name}
+                                    </p>
+                                    {isSameArea ? (
+                                      <span className="shrink-0 rounded-full bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.2 text-[9px] font-extrabold text-emerald-800">
+                                        Your Area
+                                      </span>
+                                    ) : null}
+                                  </div>
                                   <p className="text-[10.5px] text-neutral-500 flex items-center gap-1">
                                     <MapPin className="size-3 text-neutral-400" />
                                     <span>{center.facility.area_name || "Barangay San Jose"}</span>
@@ -701,6 +798,31 @@ export default function PortalSafetyPage() {
                         <p className="text-xs text-neutral-400 py-2">No evacuation centers registered.</p>
                       )}
                     </div>
+
+                    {/* Expand / Collapse Button if > 3 centers */}
+                    {sortedCenters.length > 3 ? (
+                      <div className="pt-2 border-t border-neutral-100">
+                        <button
+                          type="button"
+                          onClick={() => setShowAllCenters(!showAllCenters)}
+                          className="flex w-full items-center justify-center gap-1.5 rounded-xl py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-50 transition-colors cursor-pointer"
+                        >
+                          {showAllCenters ? (
+                            <>
+                              <ChevronUp className="size-3.5" />
+                              <span>Show Fewer Shelters</span>
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="size-3.5" />
+                              <span>
+                                View All {sortedCenters.length} Shelters ({sortedCenters.length - 3} more)
+                              </span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    ) : null}
                   </CardContent>
                 </Card>
 
@@ -754,26 +876,26 @@ export default function PortalSafetyPage() {
         </div>
       )}
 
-      {/* ── Confirmation Dialog for Individual Member Action (Includes Emergency Event & Shelter Choice) ── */}
+      {/* ── Confirmation Dialog for Individual Member Action (Mark Safe vs. Flag Needs Rescue) ── */}
       <Dialog
         open={Boolean(memberActionDialog)}
         onOpenChange={(open) => {
           if (!open) setMemberActionDialog(null);
         }}
       >
-        <DialogContent className="max-w-lg overflow-hidden rounded-3xl border border-neutral-200 bg-white p-0 shadow-2xl">
+        <DialogContent className="max-w-md overflow-hidden rounded-3xl border border-neutral-200 bg-white p-0 shadow-2xl">
           <DialogHeader className="border-b border-neutral-100 bg-neutral-50/80 px-6 py-5">
             <div className="flex items-center gap-3">
               <span
                 className={cn(
                   "grid size-10 place-items-center rounded-2xl shadow-2xs",
                   memberActionDialog?.status === "needs_rescue"
-                    ? "bg-red-100 text-red-700"
+                    ? "bg-rose-100 text-rose-700"
                     : "bg-emerald-100 text-emerald-800",
                 )}
               >
                 {memberActionDialog?.status === "needs_rescue" ? (
-                  <LifeBuoy className="size-5" />
+                  <AlertTriangle className="size-5" />
                 ) : (
                   <CheckCircle2 className="size-5" />
                 )}
@@ -781,50 +903,47 @@ export default function PortalSafetyPage() {
               <div>
                 <DialogTitle className="text-base font-black text-neutral-900">
                   {memberActionDialog?.status === "needs_rescue"
-                    ? `Request Rescue: ${memberActionDialog?.memberName}`
-                    : `Safety Check-In: ${memberActionDialog?.memberName}`}
+                    ? `Flag ${memberActionDialog?.memberName} — Needs Rescue`
+                    : `Mark ${memberActionDialog?.memberName} Safe`}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-neutral-500">
-                  {memberActionDialog?.status === "needs_rescue"
-                    ? "Confirm rescue dispatch priority and location"
-                    : "Confirm safety status and current shelter location"}
+                  Confirm this individual event-scoped safety update.
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
 
           <div className="p-6 space-y-4 text-xs text-neutral-600">
-            {/* Status Context Banner */}
+            {/* Rescue Warning Banner (Only on Needs Rescue) */}
             {memberActionDialog?.status === "needs_rescue" ? (
-              <div className="rounded-2xl border border-red-200 bg-red-50/70 p-3.5 text-[11.5px] text-red-900 space-y-1">
-                <p className="font-bold flex items-center gap-1.5">
-                  <AlertTriangle className="size-3.5 text-red-600 shrink-0" />
-                  <span>Priority Rescue Dispatch</span>
-                </p>
-                <p className="leading-relaxed">
-                  Flagging <strong>{memberActionDialog?.memberName}</strong> as needing rescue will alert
-                  the BDRRMC Incident Command for boat or medical evacuation.
-                </p>
+              <div className="flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50/80 p-3.5 text-xs text-rose-900 shadow-2xs">
+                <AlertTriangle className="size-4 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Emergency Rescue Flag</p>
+                  <p className="text-[11px] text-rose-800 mt-0.5 leading-relaxed">
+                    This will flag the subject(s) in need of urgent assistance and dispatch an entry
+                    to the Rescue Queue for field responders.
+                  </p>
+                </div>
               </div>
-            ) : (
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-3.5 text-[11.5px] text-emerald-900 space-y-1">
-                <p className="font-bold flex items-center gap-1.5">
-                  <ShieldCheck className="size-3.5 text-emerald-700 shrink-0" />
-                  <span>Safety Status Confirmation</span>
-                </p>
-                <p className="leading-relaxed">
-                  Confirming <strong>{memberActionDialog?.memberName}</strong> as safe records their
-                  status in the official emergency ledger.
-                </p>
-              </div>
-            )}
+            ) : null}
 
-            {/* Emergency Event Context Selector (if multiple active) */}
-            {activeEvents.length > 1 ? (
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-neutral-800">
-                  Emergency Incident Operation <span className="text-red-500">*</span>
-                </Label>
+            {/* Target Subject Card with Current Status (Matches Barangay Admin Map Dialog) */}
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3.5 flex items-center justify-between text-xs shadow-2xs">
+              <span className="font-bold text-neutral-900">
+                {memberActionDialog?.memberName}
+                {memberActionDialog?.isHead ? " (Head)" : ""}
+              </span>
+              {memberActionDialog ? formatStatusBadge(memberActionDialog.currentStatus) : null}
+            </div>
+
+            {/* Active Emergency Event Selector */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-neutral-800 flex items-center gap-1.5">
+                <Siren className="size-3.5 text-emerald-600 shrink-0" />
+                <span>Active Emergency Event <span className="text-rose-500">*</span></span>
+              </Label>
+              {activeEvents.length > 0 ? (
                 <Select
                   value={memberActionDialog?.eventId || resolvedEventId}
                   onValueChange={(val) =>
@@ -832,60 +951,73 @@ export default function PortalSafetyPage() {
                   }
                 >
                   <SelectTrigger className="h-10 w-full rounded-xl border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-900 shadow-2xs focus-visible:border-emerald-600 focus-visible:ring-emerald-500/20">
-                    <SelectValue placeholder="Select Emergency Incident" />
+                    <SelectValue placeholder="Select Active Emergency Event..." />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-neutral-200 bg-white shadow-xl">
                     {activeEvents.map((evt) => (
                       <SelectItem key={evt.id} value={evt.id} showCheckmark>
-                        {evt.name} ({evt.type.toUpperCase()})
+                        <div className="flex items-center justify-between w-full gap-3">
+                          <span className="font-bold text-neutral-900">{evt.name}</span>
+                          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-300">
+                            {evt.type}
+                          </span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-            ) : null}
-
-            {/* Individual Shelter Assignment Selector */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-neutral-800">
-                Shelter / Evacuation Location
-              </Label>
-              <Select
-                value={memberActionDialog?.centerId || "none"}
-                onValueChange={(val) =>
-                  setMemberActionDialog((prev) => (prev ? { ...prev, centerId: val } : null))
-                }
-              >
-                <SelectTrigger className="h-10 w-full rounded-xl border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-900 shadow-2xs focus-visible:border-emerald-600 focus-visible:ring-emerald-500/20">
-                  <SelectValue placeholder="No center assignment (Home / Relatives)" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-neutral-200 bg-white shadow-xl max-h-60">
-                  <SelectItem value="none" showCheckmark>
-                    No center assignment (Home / Relatives / In Place)
-                  </SelectItem>
-                  {centers.map((center) => (
-                    <SelectItem
-                      key={center.id}
-                      value={center.id}
-                      disabled={Boolean(center.is_at_capacity)}
-                      showCheckmark
-                    >
-                      <span className="flex items-center justify-between gap-2 w-full">
-                        <span>{center.facility.name}</span>
-                        <span className="text-[10px] font-mono text-neutral-400">
-                          ({center.occupancy}/{center.capacity ?? "∞"})
-                          {center.is_at_capacity ? " [FULL]" : ""}
-                        </span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-[11px] text-neutral-500 leading-relaxed">
-                If this person is taking refuge at an official shelter, select it here to track their
-                individual stay for relief distribution.
+              ) : (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 font-medium">
+                  No active emergency event is ongoing.
+                </div>
+              )}
+              <p className="text-[11px] text-neutral-500 leading-tight">
+                Links this check-in directly to the selected incident record for downstream response analysis and post-disaster logs.
               </p>
             </div>
+
+            {/* Optional Evacuation Center Selector (ONLY for Safe Status, NEVER for Rescue) */}
+            {memberActionDialog?.status === "safe" ? (
+              <div className="space-y-1.5 animate-in fade-in-50 duration-150">
+                <Label className="text-xs font-bold text-neutral-800">
+                  Optional Evacuation Center
+                </Label>
+                <Select
+                  value={memberActionDialog?.centerId || "none"}
+                  onValueChange={(val) =>
+                    setMemberActionDialog((prev) => (prev ? { ...prev, centerId: val } : null))
+                  }
+                >
+                  <SelectTrigger className="h-10 w-full rounded-xl border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-900 shadow-2xs focus-visible:border-emerald-600 focus-visible:ring-emerald-500/20">
+                    <SelectValue placeholder="No New Center Assignment" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-neutral-200 bg-white shadow-xl max-h-60">
+                    <SelectItem value="none" showCheckmark>
+                      No New Center Assignment
+                    </SelectItem>
+                    {sortedCenters.map((center) => (
+                      <SelectItem
+                        key={center.id}
+                        value={center.id}
+                        disabled={Boolean(center.is_at_capacity)}
+                        showCheckmark
+                      >
+                        <span className="flex items-center justify-between gap-2 w-full">
+                          <span>{center.facility.name}</span>
+                          <span className="text-[10px] font-mono text-neutral-400">
+                            ({center.occupancy}/{center.capacity ?? "∞"})
+                            {center.is_at_capacity ? " [FULL]" : ""}
+                          </span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-neutral-500 leading-tight">
+                  Leave blank to keep any existing physical assignment unchanged.
+                </p>
+              </div>
+            ) : null}
           </div>
 
           <DialogFooter className="border-t border-neutral-100 bg-neutral-50/60 px-6 py-4 flex items-center justify-end gap-2.5">
@@ -904,19 +1036,19 @@ export default function PortalSafetyPage() {
               className={cn(
                 "h-10 cursor-pointer gap-2 rounded-full px-5 text-xs font-bold text-white shadow-md active:scale-[0.98]",
                 memberActionDialog?.status === "needs_rescue"
-                  ? "bg-red-600 hover:bg-red-700 shadow-red-900/15"
-                  : "bg-emerald-700 hover:bg-emerald-800 shadow-emerald-900/15",
+                  ? "bg-rose-600 hover:bg-rose-700 shadow-rose-900/15"
+                  : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/15",
               )}
             >
               {memberActionDialog?.status === "needs_rescue" ? (
                 <>
                   <LifeBuoy className="size-3.5 stroke-[2.5]" />
-                  <span>Confirm Rescue Request</span>
+                  <span>Confirm Rescue Flag</span>
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="size-3.5 stroke-[2.5]" />
-                  <span>Confirm Safe & Location</span>
+                  <span>Confirm Safe Check-In</span>
                 </>
               )}
             </Button>
@@ -924,9 +1056,9 @@ export default function PortalSafetyPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Confirmation Dialog for Bulk Mark All Safe (Includes Shelter Choice) ── */}
+      {/* ── Confirmation Dialog for Bulk Mark All Safe ── */}
       <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
-        <DialogContent className="max-w-lg overflow-hidden rounded-3xl border border-neutral-200 bg-white p-0 shadow-2xl">
+        <DialogContent className="max-w-md overflow-hidden rounded-3xl border border-neutral-200 bg-white p-0 shadow-2xl">
           <DialogHeader className="border-b border-neutral-100 bg-neutral-50/80 px-6 py-5">
             <div className="flex items-center gap-3">
               <span className="grid size-10 place-items-center rounded-2xl bg-emerald-100 text-emerald-800 shadow-2xs">
@@ -934,10 +1066,10 @@ export default function PortalSafetyPage() {
               </span>
               <div>
                 <DialogTitle className="text-base font-black text-neutral-900">
-                  Mark All {members.length} Members Safe?
+                  Mark All {members.length} Members Safe
                 </DialogTitle>
                 <DialogDescription className="text-xs text-neutral-500">
-                  Confirm whole household safety status and designate shelter location.
+                  Confirm whole household event-scoped safety update.
                 </DialogDescription>
               </div>
             </div>
@@ -949,56 +1081,66 @@ export default function PortalSafetyPage() {
               location:
             </p>
 
-            <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 space-y-1.5 max-h-36 overflow-y-auto">
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3 space-y-1.5 max-h-36 overflow-y-auto">
               {members.map((m) => (
-                <div key={m.member_id} className="flex items-center gap-2 font-semibold text-neutral-800 text-xs">
-                  <CheckCircle2 className="size-3.5 text-emerald-700 shrink-0" />
-                  <span>{m.full_name}</span>
+                <div key={m.member_id} className="flex items-center justify-between font-semibold text-neutral-800 text-xs py-0.5">
+                  <span>{m.full_name}{m.is_head ? " (Head)" : ""}</span>
+                  {formatStatusBadge(m.status)}
                 </div>
               ))}
             </div>
 
-            {/* Emergency Event Context (if multiple) */}
-            {activeEvents.length > 1 ? (
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-neutral-800">
-                  Emergency Incident Operation <span className="text-red-500">*</span>
-                </Label>
+            {/* Active Emergency Event Selector */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-neutral-800 flex items-center gap-1.5">
+                <Siren className="size-3.5 text-emerald-600 shrink-0" />
+                <span>Active Emergency Event <span className="text-rose-500">*</span></span>
+              </Label>
+              {activeEvents.length > 0 ? (
                 <Select
                   value={bulkEventId || resolvedEventId}
                   onValueChange={(val) => setBulkEventId(val)}
                 >
                   <SelectTrigger className="h-10 w-full rounded-xl border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-900 shadow-2xs focus-visible:border-emerald-600 focus-visible:ring-emerald-500/20">
-                    <SelectValue placeholder="Select Emergency Incident" />
+                    <SelectValue placeholder="Select Active Emergency Event..." />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-neutral-200 bg-white shadow-xl">
                     {activeEvents.map((evt) => (
                       <SelectItem key={evt.id} value={evt.id} showCheckmark>
-                        {evt.name} ({evt.type.toUpperCase()})
+                        <div className="flex items-center justify-between w-full gap-3">
+                          <span className="font-bold text-neutral-900">{evt.name}</span>
+                          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-300">
+                            {evt.type}
+                          </span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-            ) : null}
+              ) : (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 font-medium">
+                  No active emergency event is ongoing.
+                </div>
+              )}
+            </div>
 
-            {/* Bulk Shelter Assignment Option */}
+            {/* Bulk Evacuation Center Selector */}
             <div className="space-y-1.5">
               <Label className="text-xs font-bold text-neutral-800">
-                Designated Evacuation Shelter for Whole Household
+                Optional Evacuation Center
               </Label>
               <Select
                 value={bulkCenterId}
                 onValueChange={(val) => setBulkCenterId(val)}
               >
                 <SelectTrigger className="h-10 w-full rounded-xl border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-900 shadow-2xs focus-visible:border-emerald-600 focus-visible:ring-emerald-500/20">
-                  <SelectValue placeholder="No center assignment (Home / Relatives)" />
+                  <SelectValue placeholder="No New Center Assignment" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-neutral-200 bg-white shadow-xl max-h-60">
                   <SelectItem value="none" showCheckmark>
-                    No center assignment (Home / Relatives / In Place)
+                    No New Center Assignment
                   </SelectItem>
-                  {centers.map((center) => (
+                  {sortedCenters.map((center) => (
                     <SelectItem
                       key={center.id}
                       value={center.id}
@@ -1016,12 +1158,10 @@ export default function PortalSafetyPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-[11px] text-neutral-500 leading-tight">
+                Leave blank to keep any existing physical assignment unchanged.
+              </p>
             </div>
-
-            <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 p-2.5 rounded-xl">
-              <strong>Notice:</strong> If family members are at different locations or someone requires
-              boat/medic rescue, update them individually instead.
-            </p>
           </div>
 
           <DialogFooter className="border-t border-neutral-100 bg-neutral-50/60 px-6 py-4 flex items-center justify-end gap-2.5">
@@ -1037,10 +1177,10 @@ export default function PortalSafetyPage() {
               type="button"
               disabled={submitMutation.isPending}
               onClick={handleConfirmBulkSafe}
-              className="h-10 cursor-pointer gap-2 rounded-full border border-emerald-600/30 bg-emerald-700 px-5 text-xs font-bold text-white shadow-md shadow-emerald-900/15 hover:bg-emerald-800 active:scale-[0.98]"
+              className="h-10 cursor-pointer gap-2 rounded-full border border-emerald-600/30 bg-emerald-600 px-5 text-xs font-bold text-white shadow-md shadow-emerald-900/15 hover:bg-emerald-700 active:scale-[0.98]"
             >
               <CheckCircle2 className="size-3.5 stroke-[2.5]" />
-              <span>Confirm & Mark All Safe</span>
+              <span>Confirm Safe Check-In</span>
             </Button>
           </DialogFooter>
         </DialogContent>
