@@ -41,7 +41,7 @@ export default function AdminActivitiesPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/activities/${id}`),
     onSuccess: () => {
-      toast.success("Activity removed");
+      toast.success("Activity Removed");
       queryClient.invalidateQueries({ queryKey: ["admin", "activities"] });
     },
   });
@@ -63,7 +63,7 @@ export default function AdminActivitiesPage() {
         <div>
           <p className="font-bold text-neutral-900">{row.title}</p>
           <p className="mt-0.5 line-clamp-1 text-xs text-neutral-500">
-            {row.excerpt || "No summary yet"}
+            {row.excerpt || "No Summary Yet"}
           </p>
         </div>
       ),
@@ -73,7 +73,7 @@ export default function AdminActivitiesPage() {
       header: "Type",
       render: (row) => (
         <span className="bg-primary-50 text-primary-800 rounded-full px-2.5 py-1 text-[11px] font-bold">
-          {row.type.replace(/_/g, " ")}
+          {row.type.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
         </span>
       ),
     },
@@ -110,10 +110,14 @@ export default function AdminActivitiesPage() {
         title="Community Activities"
         description="Create the public activity story, then add a cover image and publish when it is ready."
         action={
-          <Button asChild size="sm">
+          <Button
+            asChild
+            size="sm"
+            className="h-10 rounded-full border border-emerald-600/30 bg-emerald-700 px-4 font-bold text-white shadow-md shadow-emerald-900/15 transition-all hover:bg-emerald-800 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
+          >
             <Link href={"/admin/activities/new" as Route}>
-              <Plus aria-hidden className="size-4" />
-              New activity
+              <Plus aria-hidden className="size-4 stroke-[2.5]" />
+              New Activity
             </Link>
           </Button>
         }
@@ -123,25 +127,25 @@ export default function AdminActivitiesPage() {
           icon={CalendarDays}
           label="Upcoming"
           value={metrics.upcoming}
-          detail="scheduled activities"
+          detail="Scheduled Activities"
         />
         <Metric
           icon={Radio}
           label="Published"
           value={metrics.published}
-          detail="visible to residents"
+          detail="Visible To Residents"
         />
         <Metric
           icon={Layers}
           label="Drafts"
           value={metrics.drafts}
-          detail="need completion"
+          detail="Need Completion"
         />
         <Metric
           icon={MapPin}
-          label="Area-specific"
+          label="Area-Specific"
           value={metrics.areaSpecific}
-          detail="local programmes"
+          detail="Local Programmes"
         />
       </div>
       <ResourceTable
@@ -177,23 +181,34 @@ export default function AdminActivitiesPage() {
             "other",
           ].map((type) => ({
             value: `type:${type}`,
-            label: type.replace(/_/g, " "),
+            label: type
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (letter) => letter.toUpperCase()),
             matches: (row: Activity) => row.type === type,
           })),
         ]}
-        emptyTitle="No activities yet"
+        emptyTitle="No Activities Yet"
         getRowKey={(row) => row.id}
         rowActions={(row) => (
           <>
             <ActivityPreviewDialog activityId={row.id} title={row.title} />
-            <Button asChild size="sm" variant="warning">
+            <Button
+              asChild
+              size="sm"
+              variant="warning"
+              className="h-8 gap-1.5 rounded-lg px-2.5 text-xs font-semibold"
+              title="Edit Activity"
+              aria-label="Edit Activity"
+            >
               <Link href={`/admin/activities/${row.id}` as Route}>
                 <Pencil aria-hidden className="size-3.5" />
-                <span className="md:hidden">Edit</span>
+                <span>Edit</span>
               </Link>
             </Button>
             <ConfirmDeleteButton
               itemLabel={row.title}
+              actionLabel="Delete"
+              confirmLabel="Delete"
               onConfirm={() => deleteMutation.mutate(row.id)}
             />
           </>

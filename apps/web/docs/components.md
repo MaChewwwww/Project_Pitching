@@ -180,8 +180,10 @@ Known gap: the `<md` stacked-card layout has no sort control, so sorting is desk
 small screens. Search and filter both work there.
 
 Article creation starts on its own route rather than inside a scrolling dialog. The first save
-creates a draft, then the full editor pairs the form with `ArticleImageManager`. This keeps media
-validation visible without weakening the server-side publication rule.
+creates a draft, and the activity create surface can stage up to ten photos with its cover before
+that save. The full editor pairs the form with `ArticleImageManager` for persistent upload,
+cover selection, ordering, and removal. This keeps media validation visible without weakening the
+server-side publication rule.
 
 Both admin announcement previews use a viewport-bounded dialog with a fixed header and one
 internal scroll area. This preserves the title and 44px close target on a short mobile viewport
@@ -206,6 +208,9 @@ admin-managed content:
   contract.
 - `RichTextEditor` is the constrained body editor. `ArticlePreviewDialog` is the shared live/admin
   preview: viewport-bounded, keyboard reachable, with a stable header and one internal scroll region.
+- `ActivityForm` follows the same two-column anatomy with date/location and publication cards in
+  the right rail. Its create mode uploads staged activity photos after the draft is created;
+  edit mode supplies the persistent `ArticleImageManager` rail.
 - The page shell is an `AdminPageHeader` followed by a primary white work surface and a right rail
   for media, targeting, and publishing. On narrow screens the rail stacks below the form, while the
   compact Type/Category classification row stays usable at 360px and the publication selector stays

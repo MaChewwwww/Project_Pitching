@@ -91,8 +91,10 @@ reference/service data consumed by operational screens, not standalone console w
 ## Activity and guide authoring
 
 `/admin/activities` uses the shared article lifecycle with a date-led public preview, gallery, and
-activity-type filtering. `/admin/guides`, `/admin/guides/new`, and `/admin/guides/[id]` form one
-bilingual guide workflow: source attribution and a review date are required only when publishing.
+activity-type filtering. `/admin/activities/new` creates the draft and can stage its cover/gallery
+photos before the first save; `/admin/activities/[id]` supplies the persistent ordered image manager.
+`/admin/guides`, `/admin/guides/new`, and `/admin/guides/[id]` form one bilingual guide workflow:
+source attribution and a review date are required only when publishing.
 The guide editor remains plain-text by design; `##` is the supported section-heading convention.
 
 ## Weather & Flood Watch workspace

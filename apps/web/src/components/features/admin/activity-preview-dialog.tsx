@@ -39,7 +39,7 @@ export function ActivityPreviewDialog({
       <DialogTrigger asChild>
         <Button size="sm" variant="success" className="h-8 gap-1.5">
           <Eye aria-hidden className="size-3.5" />
-          <span className="md:hidden">View</span>
+          <span>View</span>
         </Button>
       </DialogTrigger>
       <DialogContent
@@ -49,7 +49,7 @@ export function ActivityPreviewDialog({
         <div className="sticky top-0 flex items-start justify-between gap-4 border-b border-neutral-100 bg-white p-5">
           <div>
             <p className="text-primary-700 text-[10px] font-bold tracking-wider uppercase">
-              Admin preview
+              Admin Preview
             </p>
             <DialogTitle className="mt-1 text-xl">{data?.title ?? title}</DialogTitle>
           </div>
@@ -57,7 +57,7 @@ export function ActivityPreviewDialog({
             <button
               type="button"
               className="grid size-11 place-items-center rounded-full border border-neutral-200 text-neutral-500 hover:bg-neutral-50"
-              aria-label="Close preview"
+              aria-label="Close Preview"
             >
               <X className="size-4" />
             </button>
@@ -66,13 +66,15 @@ export function ActivityPreviewDialog({
         <div className="space-y-5 p-5 sm:p-7">
           {isLoading ? (
             <p className="py-16 text-center text-sm text-neutral-500">
-              Loading activity preview…
+              Loading Activity Preview…
             </p>
           ) : data ? (
             <>
               <div className="flex flex-wrap gap-2">
                 <span className="bg-primary-700 rounded-full px-3 py-1 text-xs font-bold text-white capitalize">
-                  {data.type.replace(/_/g, " ")}
+                  {data.type
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (letter) => letter.toUpperCase())}
                 </span>
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-bold ${data.archived_at ? "bg-neutral-200 text-neutral-700" : data.published_at ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}
@@ -107,12 +109,12 @@ export function ActivityPreviewDialog({
                 ) : null}
               </div>
               <p className="text-base leading-7 text-neutral-700">
-                {data.excerpt || "No preview summary yet."}
+                {data.excerpt || "No Preview Summary Yet."}
               </p>
             </>
           ) : (
             <p className="py-16 text-center text-sm text-neutral-500">
-              Could not load this activity.
+              Could Not Load This Activity.
             </p>
           )}
         </div>

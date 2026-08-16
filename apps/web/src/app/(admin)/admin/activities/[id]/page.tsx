@@ -1,21 +1,17 @@
 "use client";
 
-import Link from "next/link";
-import type { Route } from "next";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/common/button";
 import { ErrorState } from "@/components/common/error-state";
 import { ListSkeleton } from "@/components/common/skeletons";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
+import { ArticleImageManager } from "@/components/features/admin/article-image-manager";
 import {
   ActivityForm,
   type ActivityFormValues,
 } from "@/components/features/admin/activity-form";
-import { ArticleImageManager } from "@/components/features/admin/article-image-manager";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import type { ArticleDocument, ArticleImage } from "@/lib/api/public-types";
@@ -65,7 +61,7 @@ export default function AdminActivityEditorPage() {
         area_id: values.area_id || null,
       }),
     onSuccess: () => {
-      toast.success("Activity saved");
+      toast.success("Activity Saved");
       queryClient.invalidateQueries({ queryKey });
       queryClient.invalidateQueries({ queryKey: ["admin", "activities"] });
     },
@@ -75,7 +71,7 @@ export default function AdminActivityEditorPage() {
   });
   if (isLoading) return <ListSkeleton rows={4} />;
   if (isError || !data)
-    return <ErrorState sectionName="This activity" onRetry={() => refetch()} />;
+    return <ErrorState sectionName="This Activity" onRetry={() => refetch()} />;
   const defaultValues: ActivityFormValues = {
     title: data.title,
     excerpt: data.excerpt,
@@ -92,37 +88,26 @@ export default function AdminActivityEditorPage() {
         : "draft",
   };
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
+    <div className="flex w-full flex-col gap-6">
       <AdminPageHeader
         title="Edit Activity"
         description="Write the public activity story, then add accessible media before publishing."
-        action={
-          <Button asChild size="sm" variant="outline">
-            <Link href="/admin/activities">
-              <ArrowLeft aria-hidden className="size-4" />
-              Back to activities
-            </Link>
-          </Button>
+      />
+      <ActivityForm
+        areas={areas}
+        defaultValues={defaultValues}
+        submitLabel="Update Activity"
+        onSubmit={(values) => updateMutation.mutateAsync(values).then(() => undefined)}
+        onCancel={() => router.push("/admin/activities")}
+        mediaPanel={
+          <ArticleImageManager
+            resource="activities"
+            articleId={data.id}
+            images={data.images}
+            onChanged={() => queryClient.invalidateQueries({ queryKey })}
+          />
         }
       />
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_26rem]">
-        <div className="rounded-[16px] border border-neutral-200 bg-white p-6 shadow-sm-card sm:p-8">
-          <ActivityForm
-            areas={areas}
-            defaultValues={defaultValues}
-            onSubmit={(values) =>
-              updateMutation.mutateAsync(values).then(() => undefined)
-            }
-            onCancel={() => router.push("/admin/activities" as Route)}
-          />
-        </div>
-        <ArticleImageManager
-          resource="activities"
-          articleId={data.id}
-          images={data.images}
-          onChanged={() => queryClient.invalidateQueries({ queryKey })}
-        />
-      </div>
     </div>
   );
 }
