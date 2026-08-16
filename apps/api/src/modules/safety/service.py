@@ -107,6 +107,17 @@ VULNERABILITY_FLAGS = (
     "is_bedridden",
 )
 
+# An infant flag is derived from a registered member's birth date. Walk-in
+# records intentionally do not collect a birth date, so only project the
+# vulnerability fields they actually store.
+UNREGISTERED_VULNERABILITY_FLAGS = tuple(
+    flag for flag in VULNERABILITY_FLAGS if flag != "is_infant"
+)
+
+
+def _unregistered_flags(person: UnregisteredPerson) -> list[str]:
+    return [flag for flag in UNREGISTERED_VULNERABILITY_FLAGS if getattr(person, flag, False)]
+
 
 def _member_flags(member: Member) -> list[str]:
     flags: list[str] = []
@@ -640,10 +651,7 @@ async def _sync_unregistered_rescue(
             .first()
         )
 
-        flags: set[str] = set()
-        for flag in VULNERABILITY_FLAGS:
-            if getattr(person, flag, False):
-                flags.add(flag)
+        flags: set[str] = set(_unregistered_flags(person))
         priority, _ = triage_priority(flags=flags, people_count=1)
         desc = (
             f"Rescue flagged for unregistered walk-in {person.full_name} via emergency workspace."
@@ -1257,7 +1265,7 @@ async def emergency_workspace(
                 location=location,
                 status=status_row.status if status_row else "unaccounted",
                 status_set_at=status_row.set_at if status_row else None,
-                vulnerability_flags=[flag for flag in VULNERABILITY_FLAGS if getattr(person, flag)],
+                vulnerability_flags=_unregistered_flags(person),
                 evac_center_id=assignment[0] if assignment else None,
                 evac_center_name=assignment[1] if assignment else None,
             )
@@ -1636,7 +1644,7 @@ async def update_unregistered(
         person.location_note = body.location_note
     if body.latitude is not None and body.longitude is not None:
         person.location = func.ST_SetSRID(func.ST_MakePoint(body.longitude, body.latitude), 4326)
-    for field in VULNERABILITY_FLAGS:
+    for field in UNREGISTERED_VULNERABILITY_FLAGS:
         value = getattr(body, field)
         if value is not None:
             setattr(person, field, value)
@@ -2300,7 +2308,7 @@ async def get_safety_ledger(
             )
         elif u_row:
             c_info = center_assignments.get(u_row.id)
-            flags: list[str] = [f for f in VULNERABILITY_FLAGS if getattr(u_row, f, False)]
+            flags = _unregistered_flags(u_row)
             items.append(
                 SafetyCheckinLogItem(
                     id=s_row.id,
@@ -2570,7 +2578,7 @@ async def get_person_safety_journey(
                     )
                 )
 
-        flags = [f for f in VULNERABILITY_FLAGS if getattr(person, f, False)]
+        flags = _unregistered_flags(person)
         timeline.sort(key=lambda t: t.timestamp, reverse=True)
 
         return PersonSafetyJourneyOut(
