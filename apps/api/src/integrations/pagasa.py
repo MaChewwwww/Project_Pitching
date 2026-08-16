@@ -107,11 +107,13 @@ def _pagasa_query_time(now: datetime | None = None) -> str:
     """Return the latest complete PAGASA observation slot in PHT.
 
     The FFWS endpoint returns an idle station list when `ymdhm` is omitted, and
-    its gauges publish on ten-minute slots. Requesting the current minute can
-    also return `nodata` until that slot is published, so round down to the
-    latest complete slot before polling.
+    its gauges publish on ten-minute slots. The current slot can still return
+    `nodata` while PAGASA is publishing it, so request one completed slot behind
+    the current time.
     """
-    current = (now or datetime.now(UTC)).astimezone(_PHT)
+    current = (now or datetime.now(UTC)).astimezone(_PHT) - timedelta(
+        minutes=_OBSERVATION_INTERVAL_MINUTES
+    )
     minute = current.minute - (current.minute % _OBSERVATION_INTERVAL_MINUTES)
     slot = current.replace(minute=minute, second=0, microsecond=0)
     return slot.strftime("%Y%m%d%H%M")

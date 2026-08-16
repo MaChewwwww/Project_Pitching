@@ -6,7 +6,7 @@ from integrations.pagasa import PagasaSource, _pagasa_query_time
 def test_pagasa_query_time_uses_latest_complete_ten_minute_slot() -> None:
     now = datetime(2026, 8, 16, 22, 36, tzinfo=UTC)
 
-    assert _pagasa_query_time(now) == "202608170630"
+    assert _pagasa_query_time(now) == "202608170620"
 
 
 def test_get_stations_sends_observation_slot(monkeypatch) -> None:
