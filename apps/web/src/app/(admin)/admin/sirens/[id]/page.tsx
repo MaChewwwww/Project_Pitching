@@ -27,6 +27,14 @@ import {
 } from "@/components/features/admin/asset-metric-strip";
 import { AdminAssetWorkspaceMap } from "@/components/features/map/admin-asset-workspace-map-dynamic";
 import { EditSirenDialog } from "@/components/features/admin/edit-siren-dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import { useSirenAudio } from "@/hooks/use-siren-audio";
@@ -40,7 +48,10 @@ interface SirenDetail {
   area_id: string | null;
   area_name?: string | null;
   is_active: boolean;
-  last_triggered_at?: string | null;
+  code?: string;
+  last_triggered_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 interface Area {
@@ -57,6 +68,8 @@ export default function SirenDetailPage() {
   const sirenAudio = useSirenAudio();
 
   const [showHazard, setShowHazard] = React.useState(true);
+  const [isDisableOpen, setIsDisableOpen] = React.useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
 
   const { data: siren, isLoading, isError } = useQuery({
     queryKey: ["admin", "sirens", sirenId],
@@ -472,15 +485,7 @@ export default function SirenDetailPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      if (
-                        window.confirm(
-                          `Disable siren station "${siren.name}"?\n\nThe unit will be placed into an inactive standby state.`,
-                        )
-                      ) {
-                        deactivateMutation.mutate();
-                      }
-                    }}
+                    onClick={() => setIsDisableOpen(true)}
                     disabled={deactivateMutation.isPending}
                     className="gap-1.5 rounded-xl text-xs font-bold border-neutral-300 bg-neutral-100 text-neutral-800 hover:bg-neutral-200 shadow-2xs cursor-pointer"
                   >
@@ -503,15 +508,7 @@ export default function SirenDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `Delete siren station "${siren.name}"?\n\nThis will remove the unit from active GIS maps and operational monitoring while preserving all historical audit logs and simulation records.`,
-                      )
-                    ) {
-                      deleteMutation.mutate();
-                    }
-                  }}
+                  onClick={() => setIsDeleteOpen(true)}
                   disabled={deleteMutation.isPending}
                   className="gap-1.5 rounded-xl text-xs font-bold text-rose-700 border-rose-200 bg-rose-50 hover:bg-rose-100 shadow-2xs cursor-pointer"
                 >
@@ -534,7 +531,7 @@ export default function SirenDetailPage() {
               </span>
             </div>
 
-            <div className="flex flex-col gap-3">
+            <div className="flex max-h-[420px] flex-col gap-2.5 overflow-y-auto pr-1.5 custom-scrollbar">
               {audits.length > 0 ? (
                 audits.map((log) => {
                   const isDrill = log.classification === "Drill" || log.action.includes("drill");
@@ -709,6 +706,108 @@ export default function SirenDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Disable Siren Confirmation Modal */}
+      <AlertDialog
+        open={isDisableOpen}
+        onOpenChange={setIsDisableOpen}
+      >
+        <AlertDialogContent className="max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+          <AlertDialogHeader className="flex flex-col gap-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-neutral-100 text-neutral-800 border border-neutral-200">
+                <PowerOff className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                  Disable Siren Station?
+                </AlertDialogTitle>
+                <p className="text-xs font-bold text-slate-500 truncate mt-0.5">
+                  {siren.name} · {siren.code || "SRN-SYS"}
+                </p>
+              </div>
+            </div>
+            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
+              Placing this siren station into standby disabled state will temporarily deactivate its acoustic broadcasting and disarm emergency simulation triggers until reactivated.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsDisableOpen(false)}
+              disabled={deactivateMutation.isPending}
+              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                deactivateMutation.mutate(undefined, {
+                  onSettled: () => setIsDisableOpen(false),
+                });
+              }}
+              disabled={deactivateMutation.isPending}
+              className="rounded-xl text-xs font-bold bg-neutral-900 hover:bg-neutral-800 text-white shadow-xs cursor-pointer"
+            >
+              {deactivateMutation.isPending ? "Disabling…" : "Confirm Disable"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Siren Confirmation Modal */}
+      <AlertDialog
+        open={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
+      >
+        <AlertDialogContent className="max-w-md rounded-2xl border border-rose-200 bg-white p-6 shadow-2xl">
+          <AlertDialogHeader className="flex flex-col gap-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-rose-100 text-rose-700 border border-rose-200">
+                <Trash2 className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                  Delete Siren Station?
+                </AlertDialogTitle>
+                <p className="text-xs font-bold text-rose-700 truncate mt-0.5">
+                  {siren.name} · {siren.code || "SRN-SYS"}
+                </p>
+              </div>
+            </div>
+            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
+              Are you sure you want to delete this siren station? This will remove the unit from active GIS map views and operational monitoring while preserving all historical audit logs and simulation records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsDeleteOpen(false)}
+              disabled={deleteMutation.isPending}
+              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => {
+                deleteMutation.mutate(undefined, {
+                  onSettled: () => setIsDeleteOpen(false),
+                });
+              }}
+              disabled={deleteMutation.isPending}
+              className="rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs cursor-pointer"
+            >
+              {deleteMutation.isPending ? "Deleting…" : "Confirm Delete"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

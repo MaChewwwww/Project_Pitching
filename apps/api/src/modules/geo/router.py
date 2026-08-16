@@ -259,16 +259,6 @@ async def admin_list_sirens(session: DbSessionDep) -> list[SirenOut]:
     return [service.siren_to_out(siren, coords, area_name) for siren, coords, area_name in rows]
 
 
-@admin_router.get(
-    "/sirens/{siren_id}", dependencies=[Depends(require_role("admin"))], summary="Get a siren"
-)
-async def admin_get_siren(siren_id: uuid.UUID, session: DbSessionDep) -> SirenOut:
-    siren = await service.get_siren_or_404(session, siren_id)
-    coords = await service.siren_coordinates(session, siren.id)
-    area_name = await service.siren_area_name(session, siren.area_id)
-    return service.siren_to_out(siren, coords, area_name)
-
-
 @admin_router.post("/sirens", dependencies=[Depends(require_role("admin"))], summary="Add a siren")
 async def admin_create_siren(body: SirenIn, session: DbSessionDep, user: CurrentUser) -> SirenOut:
     siren, coords = await service.create_siren(session, body, actor_id=user.id)
@@ -277,18 +267,13 @@ async def admin_create_siren(body: SirenIn, session: DbSessionDep, user: Current
     )
 
 
-@admin_router.patch(
-    "/sirens/{siren_id}",
+@admin_router.get(
+    "/sirens/audits",
     dependencies=[Depends(require_role("admin"))],
-    summary="Update a siren",
+    summary="List siren drill and trigger audit logs",
 )
-async def admin_update_siren(
-    siren_id: uuid.UUID, body: SirenIn, session: DbSessionDep, user: CurrentUser
-) -> SirenOut:
-    siren, coords = await service.update_siren(session, siren_id, body, actor_id=user.id)
-    return service.siren_to_out(
-        siren, coords, await service.siren_area_name(session, siren.area_id)
-    )
+async def admin_list_siren_audits(session: DbSessionDep) -> list[SirenAuditOut]:
+    return await service.list_siren_audits(session)
 
 
 @admin_router.post(
@@ -330,12 +315,27 @@ async def admin_silence_all_sirens_drill(
 
 
 @admin_router.get(
-    "/sirens/audits",
-    dependencies=[Depends(require_role("admin"))],
-    summary="List siren drill and trigger audit logs",
+    "/sirens/{siren_id}", dependencies=[Depends(require_role("admin"))], summary="Get a siren"
 )
-async def admin_list_siren_audits(session: DbSessionDep) -> list[SirenAuditOut]:
-    return await service.list_siren_audits(session)
+async def admin_get_siren(siren_id: uuid.UUID, session: DbSessionDep) -> SirenOut:
+    siren = await service.get_siren_or_404(session, siren_id)
+    coords = await service.siren_coordinates(session, siren.id)
+    area_name = await service.siren_area_name(session, siren.area_id)
+    return service.siren_to_out(siren, coords, area_name)
+
+
+@admin_router.patch(
+    "/sirens/{siren_id}",
+    dependencies=[Depends(require_role("admin"))],
+    summary="Update a siren",
+)
+async def admin_update_siren(
+    siren_id: uuid.UUID, body: SirenIn, session: DbSessionDep, user: CurrentUser
+) -> SirenOut:
+    siren, coords = await service.update_siren(session, siren_id, body, actor_id=user.id)
+    return service.siren_to_out(
+        siren, coords, await service.siren_area_name(session, siren.area_id)
+    )
 
 
 @admin_router.get(
