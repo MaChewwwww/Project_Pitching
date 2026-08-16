@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/common/page-header";
 import { PaginationControls } from "@/components/common/pagination-controls";
 import { Reveal } from "@/components/common/reveal";
 import { ActivityCard } from "@/components/features/activities/activity-card";
+import { ActivitiesFilterNav } from "@/components/features/activities/activities-filter-nav";
 import { getActivities } from "@/lib/api/public";
 import type { ActivityType } from "@/lib/api/public-types";
 
@@ -63,22 +64,8 @@ export default async function ActivitiesPage({
       />
 
       <div className="mx-auto max-w-[1440px] px-4 pt-5 pb-8 md:px-6 md:pt-6 md:pb-12">
-        <nav aria-label="Filter activities" className="mb-6 flex flex-wrap gap-2">
-          {[undefined, ...types].map((type) => {
-            const active = type === selectedType;
-            const href = type ? `/activities?type=${type}` : "/activities";
-            return (
-              <a
-                key={type ?? "all"}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={`focus-visible:ring-primary-600 rounded-full border px-3.5 py-2 text-xs font-bold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${active ? "border-primary-700 bg-primary-700 text-white" : "hover:border-primary-300 hover:text-primary-800 border-neutral-200 bg-white text-neutral-700"}`}
-              >
-                {type ? activityTypeLabel(type) : "All Activities"}
-              </a>
-            );
-          })}
-        </nav>
+        <ActivitiesFilterNav selectedType={selectedType} />
+
         {activities.items.length > 0 ? (
           <div className="grid gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
             {activities.items.map((activity, i) => (
