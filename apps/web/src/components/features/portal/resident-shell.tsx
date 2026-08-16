@@ -442,7 +442,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
                   className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-black text-red-950 shadow-md transition-all duration-150 hover:bg-rose-50 hover:shadow-lg hover:scale-102 active:scale-98"
                 >
                   <ShieldCheck className="size-4 text-emerald-700" />
-                  <span>Check In Household Now</span>
+                  <span>Safety Check-in</span>
                 </Link>
               </div>
             </div>
