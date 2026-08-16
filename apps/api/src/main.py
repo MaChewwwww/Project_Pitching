@@ -36,10 +36,13 @@ from src.modules.config.router import admin_router as config_admin_router
 from src.modules.donations.router import admin_router as donations_admin_router
 from src.modules.donations.router import public_router as donations_public_router
 from src.modules.evacuation.router import admin_router as evacuation_admin_router
+from src.modules.evacuation.router import me_router as evacuation_me_router
 from src.modules.evacuation.router import public_router as evacuation_public_router
 from src.modules.geo.router import admin_router as geo_admin_router
 from src.modules.geo.router import public_router as geo_public_router
+from src.modules.notifications.router import me_router as notifications_me_router
 from src.modules.preparedness.router import admin_router as preparedness_admin_router
+from src.modules.preparedness.router import me_router as preparedness_me_router
 from src.modules.preparedness.router import public_router as preparedness_public_router
 from src.modules.registry.router import admin_router as registry_admin_router
 from src.modules.registry.router import me_router as registry_me_router
@@ -165,6 +168,9 @@ admin_router.include_router(safety_admin_router)
 
 me_router.include_router(registry_me_router)
 me_router.include_router(safety_me_router)
+me_router.include_router(evacuation_me_router)
+me_router.include_router(preparedness_me_router)
+me_router.include_router(notifications_me_router)
 
 api_v1.include_router(health_router)
 api_v1.include_router(auth_router)

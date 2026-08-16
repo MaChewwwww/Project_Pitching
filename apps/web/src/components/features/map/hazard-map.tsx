@@ -28,7 +28,7 @@ const HazardMapClientDynamic = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="animate-pulse h-full w-full bg-slate-950 rounded-xl flex items-center justify-center min-h-[340px]">
+      <div className="flex h-full min-h-[340px] w-full animate-pulse items-center justify-center rounded-xl bg-slate-950">
         <span className="text-sm font-medium text-slate-400">Loading map preview…</span>
       </div>
     ),
@@ -44,6 +44,10 @@ export interface HazardMapProps {
   center?: [number, number];
   zoom?: number;
   showHazardLayer?: boolean;
+  /** A private, read-only marker used by the resident household view. */
+  householdMarker?: { position: [number, number]; label?: string };
+  /** Keep a supplied center for static embeds instead of using the public overview viewport. */
+  preserveStaticCenter?: boolean;
   className?: string;
 }
 
@@ -56,6 +60,8 @@ export function HazardMap({
   center,
   zoom,
   showHazardLayer = true,
+  householdMarker,
+  preserveStaticCenter,
   className,
 }: HazardMapProps) {
   return (
@@ -69,6 +75,8 @@ export function HazardMap({
         center={center}
         zoom={zoom}
         showHazardLayer={showHazardLayer}
+        householdMarker={householdMarker}
+        preserveStaticCenter={preserveStaticCenter}
       />
     </div>
   );

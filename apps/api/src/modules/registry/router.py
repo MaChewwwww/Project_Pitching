@@ -40,6 +40,7 @@ from src.modules.registry.schemas import (
     RegistryMemberOut,
     RegistryMemberSummary,
     RegistrySummary,
+    ResidentDashboardOut,
 )
 
 # `/me` — first occupant of this tier (main.py's me_router previously had zero
@@ -58,6 +59,25 @@ members_admin_router = APIRouter(prefix="/members", tags=["registry"])
 @me_router.get("/household", summary="The caller's own household, if onboarded")
 async def get_my_household(user: CurrentUser, session: DbSessionDep) -> HouseholdDetailOut | None:
     return await service.get_household_for_user(session, user.id)
+
+
+@me_router.get("/dashboard", summary="Resident household dashboard read model")
+async def get_my_dashboard(user: CurrentUser, session: DbSessionDep) -> ResidentDashboardOut:
+    household = await service.get_household_for_user(session, user.id)
+    if household is None:
+        raise NotFoundError("Complete onboarding before viewing your dashboard.")
+    return ResidentDashboardOut(
+        household=household,
+        history=await service.get_household_activity(session, household_id=household.id, user=user),
+    )
+
+
+@me_router.get("/history", summary="Resident household operational history")
+async def get_my_history(user: CurrentUser, session: DbSessionDep) -> HouseholdActivityOut:
+    household = await service.household_for_user_id(session, user.id)
+    if household is None:
+        raise NotFoundError("Complete onboarding before viewing household history.")
+    return await service.get_household_activity(session, household_id=household.id, user=user)
 
 
 @me_router.post(

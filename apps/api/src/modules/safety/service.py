@@ -34,6 +34,7 @@ from src.modules.evacuation.models import EmergencyEvent, EvacCenter, EvacChecki
 from src.modules.evacuation.schemas import EvacCheckinCreate, PublicEmergencyEvent
 from src.modules.geo.models import Area, Facility  # join-only (AGENTS.md Section 5)
 from src.modules.geo.service import point_to_geojson
+from src.modules.notifications import service as notification_service
 from src.modules.registry import service as registry_service
 from src.modules.registry.models import Household, Member  # join-only
 from src.modules.safety.models import (
@@ -60,6 +61,8 @@ from src.modules.safety.schemas import (
     RescueRequestOut,
     RescueRequestPatch,
     RescueRequestPublicIn,
+    ResidentIncidentReportOut,
+    ResidentRescueRequestOut,
     ResponseTimelineEntry,
     SafetyCheckinLogItem,
     SafetyLedgerPageOut,
@@ -1311,6 +1314,109 @@ async def create_public_rescue_request(
     return RescueRequestAck(id=row.id, received_at=row.created_at)
 
 
+async def create_authenticated_rescue_request(
+    session: AsyncSession,
+    *,
+    body: RescueRequestPublicIn,
+    actor: AuthenticatedUser,
+    source_ip: str | None,
+) -> RescueRequestAck:
+    """FR-SAF-022. This path is intentionally separate from the anonymous
+    route: it may resolve an event and household because the caller opted in.
+    """
+    active_events = await evacuation_service.list_active_events(session, limit=2)
+    if len(active_events) > 1:
+        raise ConflictError(
+            "Multiple emergency events are active. Select an event before asking for rescue."
+        )
+    event = active_events[0] if active_events else None
+    household = await registry_service.household_for_user_id(session, actor.id)
+    location = (
+        func.ST_SetSRID(func.ST_MakePoint(body.longitude, body.latitude), 4326)
+        if body.latitude is not None and body.longitude is not None
+        else None
+    )
+    row = RescueRequest(
+        event_id=event.id if event else None,
+        household_id=household.id if household else None,
+        submitted_by_user_id=actor.id,
+        requester_name=body.requester_name,
+        contact_number=body.contact_number,
+        location=location,
+        location_note=body.location_note,
+        description=body.description,
+        people_count=body.people_count,
+        source_ip=source_ip,
+    )
+    session.add(row)
+    await session.flush()
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="rescue_request.create_authenticated",
+        entity_type="rescue_request",
+        entity_id=row.id,
+        ip=source_ip,
+    )
+    await session.commit()
+    return RescueRequestAck(id=row.id, received_at=row.created_at)
+
+
+async def _resident_rescue_out(
+    session: AsyncSession, row: RescueRequest
+) -> ResidentRescueRequestOut:
+    event = await session.get(EmergencyEvent, row.event_id) if row.event_id else None
+    return ResidentRescueRequestOut(
+        id=row.id,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+        event_id=row.event_id,
+        event_name=event.name if event else None,
+        requester_name=row.requester_name,
+        contact_number=row.contact_number,
+        location=point_to_geojson(row.location),
+        location_note=row.location_note,
+        description=row.description,
+        people_count=row.people_count,
+        status=row.status,
+        resolved_at=row.resolved_at,
+        resolution_note=row.resolution_note,
+    )
+
+
+async def list_resident_rescue_requests(
+    session: AsyncSession, *, user_id: uuid.UUID, page: int = 1, size: int = 20
+) -> Page[ResidentRescueRequestOut]:
+    stmt = select(RescueRequest).where(RescueRequest.submitted_by_user_id == user_id)
+    total = (await session.scalar(select(func.count()).select_from(stmt.subquery()))) or 0
+    rows = (
+        (
+            await session.execute(
+                stmt.order_by(RescueRequest.created_at.desc()).limit(size).offset((page - 1) * size)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return Page[ResidentRescueRequestOut](
+        items=[await _resident_rescue_out(session, row) for row in rows],
+        **page_meta(total, page, size),
+    )
+
+
+async def get_resident_rescue_request(
+    session: AsyncSession, *, request_id: uuid.UUID, user_id: uuid.UUID
+) -> ResidentRescueRequestOut:
+    row = await session.scalar(
+        select(RescueRequest).where(
+            RescueRequest.id == request_id, RescueRequest.submitted_by_user_id == user_id
+        )
+    )
+    if row is None:
+        raise NotFoundError("Rescue request not found.")
+    return await _resident_rescue_out(session, row)
+
+
 async def get_unregistered_or_404(
     session: AsyncSession, unregistered_id: uuid.UUID
 ) -> UnregisteredPerson:
@@ -1765,6 +1871,17 @@ async def update_rescue_request(
         changes["event_id"] = str(row.event_id) if row.event_id else None
 
     await session.flush()
+    if "status" in changes and row.submitted_by_user_id is not None:
+        await notification_service.create_notification(
+            session,
+            user_id=row.submitted_by_user_id,
+            type="rescue_update",
+            title="Rescue request updated",
+            body=f"Your rescue request is now marked {row.status.replace('_', ' ')}.",
+            link_path="/portal/history",
+            source_type=f"rescue_status:{row.status}",
+            source_id=row.id,
+        )
     await write_audit(
         session,
         actor_user_id=actor.id,
@@ -1911,6 +2028,64 @@ async def list_incident_reports(
     return Page[IncidentReportOut](items=items, **page_meta(total, page, size))
 
 
+async def _resident_incident_out(
+    session: AsyncSession, row: IncidentReport
+) -> ResidentIncidentReportOut:
+    event = await session.get(EmergencyEvent, row.event_id) if row.event_id else None
+    return ResidentIncidentReportOut(
+        id=row.id,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+        event_id=row.event_id,
+        event_name=event.name if event else None,
+        type=row.type,
+        description=row.description,
+        location=point_to_geojson(row.location),
+        location_note=row.location_note,
+        photo_url=f"/uploads/{row.photo_path}" if row.photo_path else None,
+        status=row.status,
+        verified_at=row.verified_at,
+        dismissal_reason=row.dismissal_reason,
+        resolved_at=row.resolved_at,
+        resolution_note=row.resolution_note,
+    )
+
+
+async def list_resident_incident_reports(
+    session: AsyncSession, *, user_id: uuid.UUID, page: int = 1, size: int = 20
+) -> Page[ResidentIncidentReportOut]:
+    stmt = select(IncidentReport).where(IncidentReport.reported_by_user_id == user_id)
+    total = (await session.scalar(select(func.count()).select_from(stmt.subquery()))) or 0
+    rows = (
+        (
+            await session.execute(
+                stmt.order_by(IncidentReport.created_at.desc())
+                .limit(size)
+                .offset((page - 1) * size)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return Page[ResidentIncidentReportOut](
+        items=[await _resident_incident_out(session, row) for row in rows],
+        **page_meta(total, page, size),
+    )
+
+
+async def get_resident_incident_report(
+    session: AsyncSession, *, report_id: uuid.UUID, user_id: uuid.UUID
+) -> ResidentIncidentReportOut:
+    row = await session.scalar(
+        select(IncidentReport).where(
+            IncidentReport.id == report_id, IncidentReport.reported_by_user_id == user_id
+        )
+    )
+    if row is None:
+        raise NotFoundError("Incident report not found.")
+    return await _resident_incident_out(session, row)
+
+
 async def get_incident_report_or_404(session: AsyncSession, report_id: uuid.UUID) -> IncidentReport:
     row = await session.get(IncidentReport, report_id)
     if row is None:
@@ -1956,6 +2131,17 @@ async def review_incident_report(
         changes["event_id"] = str(row.event_id) if row.event_id else None
 
     await session.flush()
+    if "status" in changes and row.reported_by_user_id is not None:
+        await notification_service.create_notification(
+            session,
+            user_id=row.reported_by_user_id,
+            type="incident_update",
+            title="Incident report updated",
+            body=f"Your incident report is now marked {row.status.replace('_', ' ')}.",
+            link_path="/portal/history",
+            source_type=f"incident_status:{row.status}",
+            source_id=row.id,
+        )
     await write_audit(
         session,
         actor_user_id=actor.id,

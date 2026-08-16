@@ -34,6 +34,7 @@ from src.modules.evacuation.schemas import (
 
 public_router = APIRouter(tags=["evacuation"])
 admin_router = APIRouter(tags=["evacuation"])
+me_router = APIRouter(tags=["evacuation"])
 
 
 @public_router.get(
@@ -247,9 +248,9 @@ async def admin_list_center_checkins(
     )
 
 
-@admin_router.get(
-    "/portal/evacuation-status",
-    dependencies=[Depends(require_role("head", "admin", "bhw", "sk"))],
+@me_router.get(
+    "/evacuation-status",
+    dependencies=[Depends(require_role("head"))],
     summary="Get citizen active evacuation status and history",
 )
 async def portal_evacuation_status(

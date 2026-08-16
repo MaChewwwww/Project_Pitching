@@ -262,6 +262,13 @@ class HouseholdActivityOut(BaseModel):
     incident_reports: list[HouseholdActivityItem] = Field(default_factory=list)
 
 
+class ResidentDashboardOut(BaseModel):
+    """Compact resident read model; every nested record belongs to the caller."""
+
+    household: HouseholdDetailOut
+    history: HouseholdActivityOut
+
+
 class RegistrySummary(BaseModel):
     households: int
     citizens: int

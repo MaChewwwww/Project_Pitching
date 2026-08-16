@@ -1,7 +1,8 @@
 "use client";
 
-import { AuthProvider } from "@/lib/auth/auth-context";
 import { PortalGate } from "@/components/features/registry/portal-gate";
+import { ResidentShell } from "@/components/features/portal/resident-shell";
+import { usePathname } from "next/navigation";
 
 /**
  * `(portal)` — resident self-service. Client-side rendered, role-guarded
@@ -12,5 +13,14 @@ import { PortalGate } from "@/components/features/registry/portal-gate";
  * feed, editing) is future work.
  */
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
-  return <PortalGate>{children}</PortalGate>;
+  const pathname = usePathname();
+  return (
+    <PortalGate>
+      {pathname === "/portal/onboarding" ? (
+        children
+      ) : (
+        <ResidentShell>{children}</ResidentShell>
+      )}
+    </PortalGate>
+  );
 }

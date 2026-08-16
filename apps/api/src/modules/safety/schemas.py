@@ -210,6 +210,45 @@ class RescueRequestAck(BaseModel):
     received_at: datetime
 
 
+class ResidentRescueRequestOut(BaseModel):
+    """Resident-safe request view — never exposes queue priority or assignment."""
+
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+    event_id: uuid.UUID | None
+    event_name: str | None
+    requester_name: str
+    contact_number: str | None
+    location: GeoJsonPoint | None
+    location_note: str | None
+    description: str
+    people_count: int | None
+    status: RescueRequestStatus
+    resolved_at: datetime | None
+    resolution_note: str | None
+
+
+class ResidentIncidentReportOut(BaseModel):
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+    event_id: uuid.UUID | None
+    event_name: str | None
+    type: Literal[
+        "flooding", "fire", "fallen_tree", "road_blockage", "landslide", "power_outage", "other"
+    ]
+    description: str
+    location: GeoJsonPoint | None
+    location_note: str | None
+    photo_url: str | None
+    status: IncidentStatus
+    verified_at: datetime | None
+    dismissal_reason: str | None
+    resolved_at: datetime | None
+    resolution_note: str | None
+
+
 class RescueRequestOut(BaseModel):
     """The admin/BHW queue view (FR-SAF-010). `source_ip` never appears here
     — abuse-investigation data, reachable only via the audit log and psql."""

@@ -9,9 +9,11 @@ autogenerate will emit a migration that drops its table.
 
 from __future__ import annotations
 
+import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Integer, Text, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, Text, func, text
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.base import Base, UUIDPrimaryKeyMixin
@@ -61,3 +63,45 @@ class Faq(UUIDPrimaryKeyMixin, Base):
     category: Mapped[str | None] = mapped_column(Text, nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     is_published: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+
+
+class GoBagItem(UUIDPrimaryKeyMixin, Base):
+    __tablename__ = "go_bag_item"
+
+    name_fil: Mapped[str] = mapped_column(Text, nullable=False)
+    name_en: Mapped[str] = mapped_column(Text, nullable=False)
+    category: Mapped[str] = mapped_column(Text, nullable=False)
+    is_essential: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+
+
+class GoBagProgress(Base):
+    __tablename__ = "go_bag_progress"
+
+    household_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("household.id", ondelete="CASCADE"), primary_key=True
+    )
+    go_bag_item_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("go_bag_item.id", ondelete="CASCADE"), primary_key=True
+    )
+    has_item: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class FamilyEmergencyPlan(UUIDPrimaryKeyMixin, Base):
+    __tablename__ = "family_emergency_plan"
+
+    household_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("household.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    meeting_point: Mapped[str | None] = mapped_column(Text, nullable=True)
+    out_of_area_contact: Mapped[str | None] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )

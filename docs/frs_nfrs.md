@@ -196,6 +196,8 @@ remaining configuration contract is retired.
 | FR-SYS-016 | Rate limiting on sensitive endpoints         | Login and rescue-request endpoints throttled per IP                                                                                                                                                                                                     | Tech Stack 5     | S   | ◐      | —   |
 | FR-SYS-017 | Consent capture at registration              | Consent text version recorded with timestamp, covering all members                                                                                                                                                                                      | BR-1.41          | M   | ☐      | —   |
 | FR-SYS-018 | Data export / deletion request handling      | Admin can export or delete a household record on request                                                                                                                                                                                                | BR-1.42, BR-1.43 | S   | ☐      | —   |
+| FR-SYS-019 | Resident portal shell and navigation         | Onboarding-aware head portal has mobile navigation, desktop rail, persistent emergency action and update entry point                                                                         | — (new, Aug 2026) | M | ◐ | — |
+| FR-SYS-020 | Contextual resident dashboard                | Calm and emergency views show household state, active events, urgent actions, preparedness and local hazard context                                                                      | — (new, Aug 2026) | M | ◐ | — |
 
 ---
 
@@ -291,6 +293,7 @@ remaining configuration contract is retired.
 | FR-REG-024 | All members in one visit      | BHW flow captures every member in a single session without re-entry; each added member records required sex and optional contact number | BR-1.36    | M   | ◐      | —   |
 | FR-REG-025 | Member repeater UX            | One member per collapsible card, one open at a time, "Member N of M" progress, sticky save                                              | Design 9.5 | M   | ◐      | —   |
 | FR-REG-026 | Split an adult member out     | Adult member becomes head of a new household, retaining profile history                                                                 | BR-1.37    | C   | ◐      | —   |
+| FR-REG-027 | Resident household history    | Household head sees only their roster, safety, rescue, incident and evacuation history                                                 | — (new, Aug 2026) | S | ◐ | — |
 
 > **Registration and members are real and verified end-to-end** (self-registration
 > at `/register` → `/portal/onboarding`; BHW-assisted at `/admin/households/new`;
@@ -420,6 +423,7 @@ remaining configuration contract is retired.
 | FR-MAP-013 | Location picker                    | Draggable pin primary; GPS button only in secure context                                                                                                                                                                                           | Design 9.5        | M   | ◐      | —   |
 | FR-MAP-014 | Siren / IoT alert unit pins        | Pin siren locations on interactive map with status indicators (idle / sounding); admin can add/edit/geo-pin siren units                                                                                                                            | BR-4.11, BR-2.4   | S   | ◐      | —   |
 | FR-MAP-015 | Private emergency household map    | Event-selected admin/BHW map shows area-scoped household pins, flood-risk classification, member safety/support details, evacuation assignments, rescue emphasis, and operational filters without changing the finalized public map configurations | — (new, Aug 2026) | C   | ◐      | —   |
+| FR-MAP-016 | Household hazard context           | Resident sees their saved household pin over the flood overlay in an isolated, read-only map with legend, attribution and location-edit link | — (new, Aug 2026) | M | ◐ | — |
 
 ---
 
@@ -443,6 +447,7 @@ remaining configuration contract is retired.
 | FR-WX-014 | Forecast-based advance warning            | Predicted threshold breach surfaced where data supports it                                                                      | BR-3.6       | S   | ☐      | —   |
 | FR-WX-015 | Heat index & typhoon advisories           | Surfaced on portal and public site                                                                                              | BR-3.7       | C   | ◐      | —   |
 | FR-WX-016 | Demo/simulation mode                      | Seeded scenario can drive readings on a scripted timeline for the pitch                                                         | Tech Stack 7 | S   | ☐      | —   |
+| FR-WX-017 | Resident weather and flood watch           | Portal shows cached weather and river readings with source, timestamp and stale-data treatment                                    | — (new, Aug 2026) | S | ◐ | — |
 
 ---
 
@@ -500,6 +505,9 @@ remaining configuration contract is retired.
 | FR-SAF-019 | End an emergency event                   | Admin ends a selected active event; its history is retained and its flood record finalized. Physical evacuation occupancy is preserved while another event remains active and reset only after the final active event ends                                                                      | — (new, Aug 2026) | M   | ◐      | —   |
 | FR-SAF-020 | Concurrent event operations workspace    | Admin/BHW operations are scoped to an addressable selected-event workspace; legacy omitted event IDs resolve only when exactly one event is active and fail with `409` when ambiguous. Resident statuses remain independent per event; SK access is aggregate-only without household/member PII | — (new, Aug 2026) | C   | ◐      | —   |
 | FR-SAF-021 | Incident response lifecycle              | Barangay Admin and Superadmin can link an incident to an emergency event and advance it `pending → verified → in progress → resolved`, or dismiss a non-final report. Resolution notes and dismissal reasons are required and every action is retained in the operational timeline.             | — (new, Aug 2026) | S   | ◐      | —   |
+| FR-SAF-022 | Authenticated rescue request             | Household head can submit a rescue request linked to their account and household; anonymous public rescue remains unchanged                                                     | — (new, Aug 2026) | M | ◐ | — |
+| FR-SAF-023 | Resident rescue tracking                 | Household head can view only their rescue requests, public lifecycle state and resolution note, never internal triage                                                              | — (new, Aug 2026) | S | ◐ | — |
+| FR-SAF-024 | Resident incident tracking               | Household head can view only their incident reports and barangay lifecycle updates                                                                                                 | — (new, Aug 2026) | S | ◐ | — |
 
 > **FR-SAF-018/019 originated as a prerequisite gap found during the SAF build.** Every operational row is event-scoped, while the original spec had no create/end lifecycle. `evacuation/service.py` owns declare/end/list/event resolution because evacuation owns `EmergencyEvent`; FR-SAF-020 replaces the initial singleton behavior with explicit concurrent-event selection and a newest-first public list.
 >
@@ -527,6 +535,7 @@ remaining configuration contract is retired.
 | FR-EVC-006 | Supply levels                    | Food, water, medicine stock recorded per centre                                                                                  | BR-6.4 | S   | ☐      | —   |
 | FR-EVC-007 | Facilities status                | Comfort rooms, power, water availability                                                                                         | BR-6.5 | C   | ☐      | —   |
 | FR-EVC-008 | Capacity warning                 | Centre at or above capacity is visibly flagged to admins; capacity is advisory and never rejects an arrival                      | BR-6.2 | S   | ◐      | —   |
+| FR-EVC-009 | Resident evacuation history      | Household head can view current and historical evacuation check-ins for their household                                           | — (new, Aug 2026) | S | ◐ | — |
 
 ---
 
@@ -560,16 +569,16 @@ remaining configuration contract is retired.
 | ---------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | --- | ------ | --- |
 | FR-ACT-001 | Create an activity          | Title, type, date, venue, description; admin and SK officer                                                                                                | BR-8.1          | M   | ◐      | —   |
 | FR-ACT-002 | Activity types              | Drill, seminar, first aid training, clean-up, tree planting, NGO programme                                                                                 | BR-8.1          | M   | ◐      | —   |
-| FR-ACT-003 | Public and portal listing   | Upcoming activities on both surfaces                                                                                                                       | BR-8.2          | M   | ◐      | —   |
-| FR-ACT-004 | Attendance intent           | Resident indicates they will attend                                                                                                                        | BR-8.3          | S   | ☐      | —   |
-| FR-ACT-005 | Event reminders             | In-app reminder before the event                                                                                                                           | BR-8.3          | S   | ☐      | —   |
-| FR-ACT-006 | Volunteer registration      | Resident registers as volunteer with skills inventory                                                                                                      | BR-8.4          | S   | ☐      | —   |
-| FR-ACT-007 | Attendance recording        | Admin records actual attendance; reportable                                                                                                                | BR-8.5          | S   | ☐      | —   |
-| FR-ACT-008 | Volunteer task assignment   | Volunteers assigned to tasks during an emergency                                                                                                           | BR-8.6          | C   | ☐      | —   |
-| FR-ACT-009 | Training certificates       | Issued and tracked per volunteer                                                                                                                           | BR-8.7          | C   | ☐      | —   |
+| FR-ACT-003 | Public activity listing     | Published activity posts appear on the public site only                                                                                                    | BR-8.2          | M   | ◐      | —   |
+| ~~FR-ACT-004~~ | ~~Attendance intent~~   | **Cut, Aug 2026** — activities are informational posts only                                                                                                | ~~BR-8.3~~      | —   | ✕      | —   |
+| ~~FR-ACT-005~~ | ~~Event reminders~~     | **Cut, Aug 2026** — activities are informational posts only                                                                                                | ~~BR-8.3~~      | —   | ✕      | —   |
+| ~~FR-ACT-006~~ | ~~Volunteer registration~~ | **Cut, Aug 2026** — activities are informational posts only                                                                                              | ~~BR-8.4~~      | —   | ✕      | —   |
+| ~~FR-ACT-007~~ | ~~Attendance recording~~ | **Cut, Aug 2026** — activities are informational posts only                                                                                               | ~~BR-8.5~~      | —   | ✕      | —   |
+| ~~FR-ACT-008~~ | ~~Volunteer task assignment~~ | **Cut, Aug 2026** — activities are informational posts only                                                                                           | ~~BR-8.6~~      | —   | ✕      | —   |
+| ~~FR-ACT-009~~ | ~~Training certificates~~ | **Cut, Aug 2026** — activities are informational posts only                                                                                               | ~~BR-8.7~~      | —   | ✕      | —   |
 | FR-ACT-010 | Activity article authoring  | Activity records include slug, excerpt, constrained rich-text body, and draft/published/archived lifecycle while retaining type, schedule, venue, and area | BR-8.1a         | M   | ◐      | —   |
 | FR-ACT-011 | Activity image gallery      | A published activity has one cover image and may have up to ten ordered images                                                                             | BR-8.1b         | M   | ◐      | —   |
-| FR-ACT-012 | Activity preview and detail | Public and portal previews link to the canonical article detail; attendance and volunteer workflows remain separate                                        | BR-0.6a, BR-8.2 | M   | ◐      | —   |
+| FR-ACT-012 | Activity preview and detail | Public previews link to the canonical article detail; attendance and volunteer workflows are cut                                                          | BR-0.6a, BR-8.2 | M   | ◐      | —   |
 
 ---
 
@@ -743,8 +752,8 @@ remaining configuration contract is retired.
 
 | ID          | Requirement                                                  | Target                     | Status |
 | ----------- | ------------------------------------------------------------ | -------------------------- | ------ |
-| NFR-LOC-001 | Filipino primary, English secondary                          | All resident-facing copy   | ☐      |
-| NFR-LOC-002 | Language switchable and persisted                            | Per user/session           | ☐      |
+| NFR-LOC-001 | English-first resident portal                                | Resident-portal overhaul; existing bilingual public content remains unchanged | ◐ |
+| NFR-LOC-002 | Resident language switching deferred                          | Stakeholder-selected scope; no portal language switch in this overhaul         | ◐ |
 | NFR-LOC-003 | No concatenated translation fragments                        | Full parameterised strings | ☐      |
 | NFR-LOC-004 | Layout tolerates ~30% string expansion without clipping      | Verified                   | ☐      |
 | NFR-LOC-005 | Dates and numbers formatted for `fil-PH`                     | Verified                   | ☐      |

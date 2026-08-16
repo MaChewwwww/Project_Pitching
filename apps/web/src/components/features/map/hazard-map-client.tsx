@@ -56,13 +56,21 @@ function MapPanes() {
   return null;
 }
 
-function InvalidateSizeOnMount({ interactive = true, initialZoom }: { interactive?: boolean; initialZoom?: number }) {
+function InvalidateSizeOnMount({
+  interactive = true,
+  initialZoom,
+  preserveStaticCenter = false,
+}: {
+  interactive?: boolean;
+  initialZoom?: number;
+  preserveStaticCenter?: boolean;
+}) {
   const map = useMap();
   React.useEffect(() => {
-    if (!interactive) {
+    if (!interactive && !preserveStaticCenter) {
       const isMobile = window.innerWidth < 640;
       const overviewZoom = isMobile ? 12.75 : 13.38;
-      map.setView([14.7440, 121.1305], overviewZoom);
+      map.setView([14.744, 121.1305], overviewZoom);
     } else if (initialZoom) {
       const isMobile = window.innerWidth < 640;
       const targetZoom = isMobile ? initialZoom - 0.5 : initialZoom;
@@ -72,7 +80,7 @@ function InvalidateSizeOnMount({ interactive = true, initialZoom }: { interactiv
       map.invalidateSize();
     }, 200);
     return () => clearTimeout(timer);
-  }, [map, interactive, initialZoom]);
+  }, [map, interactive, initialZoom, preserveStaticCenter]);
   return null;
 }
 
@@ -202,6 +210,8 @@ export interface HazardMapClientProps {
   center?: [number, number];
   zoom?: number;
   showHazardLayer?: boolean;
+  householdMarker?: { position: [number, number]; label?: string };
+  preserveStaticCenter?: boolean;
 }
 
 export function HazardMapClient({
@@ -213,6 +223,8 @@ export function HazardMapClient({
   center = BARANGAY_VIEW.center,
   zoom = BARANGAY_VIEW.zoom,
   showHazardLayer = true,
+  householdMarker,
+  preserveStaticCenter = false,
 }: HazardMapClientProps) {
   const { visible } = useMapLayers();
   const hazard = useHazardGeoJson(showHazardLayer ? visible.hazard : false);
@@ -232,14 +244,14 @@ export function HazardMapClient({
   }, [areaStats]);
 
   return (
-    <div className="relative min-h-[340px] h-full w-full bg-slate-950 font-sans text-slate-100 overflow-hidden rounded-2xl border border-slate-800 shadow-2xl">
+    <div className="relative h-full min-h-[340px] w-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 font-sans text-slate-100 shadow-2xl">
       {/* Leaflet Map Canvas */}
       <MapContainer
         center={center}
         zoom={zoom}
         minZoom={BARANGAY_VIEW.minZoom}
         maxZoom={BARANGAY_VIEW.maxZoom}
-        className="h-full w-full min-h-[340px]"
+        className="h-full min-h-[340px] w-full"
         style={{ height: "100%", width: "100%", minHeight: "340px" }}
         scrollWheelZoom={interactive}
         dragging={interactive}
@@ -251,7 +263,11 @@ export function HazardMapClient({
         attributionControl={false}
       >
         <MapPanes />
-        <InvalidateSizeOnMount interactive={interactive} initialZoom={zoom} />
+        <InvalidateSizeOnMount
+          interactive={interactive}
+          initialZoom={zoom}
+          preserveStaticCenter={preserveStaticCenter}
+        />
 
         {/* CartoDB Dark Matter Obsidian Basemap Tiles */}
         <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} />
@@ -277,6 +293,24 @@ export function HazardMapClient({
           style={() => BOUNDARY_LINE_STYLE}
         />
 
+        {householdMarker ? (
+          <CircleMarker
+            center={householdMarker.position}
+            radius={9}
+            pane="topMarkerPane"
+            pathOptions={{
+              color: "#ffffff",
+              weight: 3,
+              fillColor: "#1F8049",
+              fillOpacity: 1,
+            }}
+          >
+            <Tooltip direction="top" offset={[0, -8]} opacity={1}>
+              {householdMarker.label ?? "Your household"}
+            </Tooltip>
+          </CircleMarker>
+        ) : null}
+
         {/* Boundary Label Badge — Centered on top of the boundary line */}
         <Marker
           position={[14.7615, 121.133]}
@@ -289,7 +323,12 @@ export function HazardMapClient({
         {interactive && visible.areas && areaBoundaries.length > 0 && (
           <GeoJSON
             key="areas-distinct-shading"
-            data={{ type: "FeatureCollection", features: areaBoundaries } as GeoJSON.GeoJsonObject}
+            data={
+              {
+                type: "FeatureCollection",
+                features: areaBoundaries,
+              } as GeoJSON.GeoJsonObject
+            }
             style={(feature) =>
               distinctAreaStyle(
                 (feature as unknown as AreaBoundaryFeature).properties.name,
@@ -297,25 +336,31 @@ export function HazardMapClient({
             }
             onEachFeature={(feature, layer) => {
               const props = (feature as AreaBoundaryFeature).properties;
-              const stat = statByAreaId.get(props.area_id) ?? statByAreaId.get(props.name);
+              const stat =
+                statByAreaId.get(props.area_id) ?? statByAreaId.get(props.name);
 
               const total = stat?.registered_households ?? 0;
               let low = stat?.low_risk_households;
               let med = stat?.medium_risk_households;
               let high = stat?.high_risk_households;
 
-              if (low == null || med == null || high == null || (low === 0 && med === 0 && high === 0 && total > 0)) {
+              if (
+                low == null ||
+                med == null ||
+                high == null ||
+                (low === 0 && med === 0 && high === 0 && total > 0)
+              ) {
                 const exposure = props.flood_exposure ?? stat?.flood_exposure;
                 if (exposure === "high") {
                   high = Math.round(total * 0.55);
                   med = Math.round(total * 0.35);
                   low = Math.max(0, total - high - med);
                 } else if (exposure === "low") {
-                  high = Math.round(total * 0.10);
-                  med = Math.round(total * 0.30);
+                  high = Math.round(total * 0.1);
+                  med = Math.round(total * 0.3);
                   low = Math.max(0, total - high - med);
                 } else {
-                  high = Math.round(total * 0.20);
+                  high = Math.round(total * 0.2);
                   med = Math.round(total * 0.55);
                   low = Math.max(0, total - high - med);
                 }
@@ -360,7 +405,8 @@ export function HazardMapClient({
         )}
 
         {/* All Facility markers — color-coded per facility.type */}
-        {interactive && visible.facilities &&
+        {interactive &&
+          visible.facilities &&
           facilities.map((facility) => {
             const [lon, lat] = facility.location.coordinates;
             const fColor = facilityColor(facility.type);
@@ -378,36 +424,40 @@ export function HazardMapClient({
                 }}
               >
                 <Popup className="dark-leaflet-popup">
-                  <div className="p-2 font-sans min-w-[200px] space-y-2">
+                  <div className="min-w-[200px] space-y-2 p-2 font-sans">
                     <div className="flex items-start gap-2">
-                      <div className="w-4 h-4 shrink-0 flex items-center justify-center mt-0.5">
+                      <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
                         <span
-                          className="size-2 rounded-full animate-pulse"
+                          className="size-2 animate-pulse rounded-full"
                           style={{ backgroundColor: fColor }}
                         />
                       </div>
                       <div className="flex flex-col">
-                        <strong className="block text-sm font-bold text-white leading-snug">
+                        <strong className="block text-sm leading-snug font-bold text-white">
                           {facility.name}
                         </strong>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300">
+                        <span className="text-[10px] font-bold tracking-wider text-slate-300 uppercase">
                           {facilityLabel(facility.type)}
                         </span>
                       </div>
                     </div>
                     {(facility as FacilityWithCapacity).capacity != null && (
                       <div className="flex items-center gap-2 text-xs text-slate-200">
-                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-emerald-400">
+                        <div className="flex h-4 w-4 shrink-0 items-center justify-center text-emerald-400">
                           <Users className="size-3.5" />
                         </div>
                         <span>
-                          Capacity: <span className="font-bold text-white">{(facility as FacilityWithCapacity).capacity}</span> persons
+                          Capacity:{" "}
+                          <span className="font-bold text-white">
+                            {(facility as FacilityWithCapacity).capacity}
+                          </span>{" "}
+                          persons
                         </span>
                       </div>
                     )}
                     {facility.address && (
                       <div className="flex items-start gap-2 text-xs font-medium text-amber-300">
-                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-amber-300 mt-0.5">
+                        <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center text-amber-300">
                           <MapPin className="size-3.5" />
                         </div>
                         <span className="leading-tight break-words">
@@ -417,7 +467,7 @@ export function HazardMapClient({
                     )}
                     {facility.contact_number && (
                       <div className="flex items-center gap-2 text-xs font-semibold text-red-400">
-                        <div className="w-4 h-4 shrink-0 flex items-center justify-center text-red-400">
+                        <div className="flex h-4 w-4 shrink-0 items-center justify-center text-red-400">
                           <Phone className="size-3.5" />
                         </div>
                         <a
@@ -428,16 +478,24 @@ export function HazardMapClient({
                         </a>
                       </div>
                     )}
-                    <div className="pt-2 border-t border-emerald-900/60 mt-2">
+                    <div className="mt-2 border-t border-emerald-900/60 pt-2">
                       <a
                         href={googleMapsDirectionsUrl(lon, lat, facility.name)}
                         target="_blank"
                         rel="noreferrer noopener"
-                        className="sagip-gmaps-btn text-xs font-bold text-white !text-white bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 shadow-xs flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 transition-colors no-underline"
+                        className="sagip-gmaps-btn flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold !text-white text-white no-underline shadow-xs transition-colors hover:bg-emerald-500 active:bg-emerald-700"
                         style={{ color: "#ffffff" }}
                       >
-                        <Navigation className="size-3.5 text-white !text-white shrink-0" style={{ color: "#ffffff", stroke: "#ffffff" }} />
-                        <span className="!text-white font-bold" style={{ color: "#ffffff" }}>Google Maps Directions</span>
+                        <Navigation
+                          className="size-3.5 shrink-0 !text-white text-white"
+                          style={{ color: "#ffffff", stroke: "#ffffff" }}
+                        />
+                        <span
+                          className="font-bold !text-white"
+                          style={{ color: "#ffffff" }}
+                        >
+                          Google Maps Directions
+                        </span>
                       </a>
                     </div>
                   </div>
@@ -447,7 +505,8 @@ export function HazardMapClient({
           })}
 
         {/* Siren markers — ALWAYS ON TOP MOST LAYER */}
-        {interactive && visible.sirens &&
+        {interactive &&
+          visible.sirens &&
           sirens.map((siren) => {
             const [lon, lat] = siren.location.coordinates;
             const isSounding = siren.status === "sounding";
@@ -468,9 +527,9 @@ export function HazardMapClient({
                 <Popup className="dark-leaflet-popup">
                   <div className="p-1.5 font-sans">
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 shrink-0 flex items-center justify-center">
+                      <div className="flex h-4 w-4 shrink-0 items-center justify-center">
                         {isSounding ? (
-                          <Volume2 className="size-4 text-red-400 animate-pulse" />
+                          <Volume2 className="size-4 animate-pulse text-red-400" />
                         ) : (
                           <VolumeX className="size-4 text-slate-400" />
                         )}

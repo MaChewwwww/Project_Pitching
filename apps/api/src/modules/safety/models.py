@@ -177,6 +177,11 @@ class RescueRequest(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     household_id: Mapped[uuid.UUID | None] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("household.id", ondelete="SET NULL"), nullable=True
     )
+    # Set only by the authenticated resident endpoint. Anonymous public requests
+    # deliberately remain unlinked so their write path performs no read.
+    submitted_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("user.id", ondelete="SET NULL"), nullable=True
+    )
     requester_name: Mapped[str] = mapped_column(Text, nullable=False)
     contact_number: Mapped[str | None] = mapped_column(Text, nullable=True)
     location: Mapped[object | None] = mapped_column(

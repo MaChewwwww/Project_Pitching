@@ -6,10 +6,17 @@ rendering here would buy auth-on-the-server complexity for no user-visible gain
 
 Mobile-first: a resident may be using this during a flood, on a cheap phone.
 
-Current routes cover onboarding, household editing, safety status, and authenticated incident
-reporting. The Resident Portal is deliberately **not** part of the August 16 public/admin demo
-freeze: its complete workflow and design pass is next. Preserve the existing server-enforced
-`/me` contracts, but do not present unfinished activity, volunteer, go-bag, notification, or
-assistance-tracker screens as implemented. The assistance tracker remains cut.
+The resident portal is intentionally distinct from the editorial public site and the barangay
+operations console: its calm default view becomes emergency-led when an event is active. The
+mobile shell is a bottom navigation with a safe-area inset; desktop uses a resident rail. Do not
+reuse the admin shell or alter a finalized public map configuration.
 
-Requirements: FR-REG-009, FR-REG-020 …, FR-SAF-001 …, FR-PRP-002.
+Current routes cover household members, event safety check-in, authenticated rescue requests,
+incident reporting, history, notifications, preparedness, weather, and a household-centred flood
+map. Activities remain public informational posts only and have no resident route.
+
+The household hazard map uses the saved pin as a read-only context marker. A missing household
+location is an actionable empty state; the map must never silently fall back to one of the public
+map viewports. Its flood layer may degrade independently of the private marker.
+
+Requirements: FR-SYS-019/020, FR-REG-027, FR-SAF-022 … 024, FR-EVC-009, FR-MAP-016, FR-PRP-002/006.

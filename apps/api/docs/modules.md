@@ -70,6 +70,17 @@ and writable by an admin appears in both tiers, with **different response schema
 point: the public serializer physically cannot return a contact number, because it has no field
 for one.
 
+## Resident portal contracts
+
+Resident routes remain mounted under `/me` and are always ownership-scoped in their service.
+Authenticated rescue requests are a separate path from the anonymous public write: only the
+resident path links `submitted_by_user_id` and household context. Resident serializers must never
+reuse the admin rescue queue DTO because priority, staff assignment and triage factors are private.
+
+Preparedness owns go-bag progress and the family plan; notification ownership lives in
+`notifications/`. Both use a household/user-scoped read before mutation. The resident map is a web
+presentation of the existing saved household point and hazard data, not a new geospatial API.
+
 ## Alerts and announcements
 
 `src/modules/alerts/` is the reference content module for future portal-managed articles. Its

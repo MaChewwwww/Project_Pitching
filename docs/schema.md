@@ -781,20 +781,20 @@ CREATE UNIQUE INDEX uq_evac_checkin_open_unregistered ON evac_checkin(unregister
 `first_aid` · `cleanup` · `tree_planting` · `ngo_program` · `other`), `starts_at`, `ends_at`,
 `venue`, `area_id` (nullable), `created_by_user_id`.
 
-### `activity_attendance` (FR-ACT-004, 007)
+### `activity_attendance` — **cut, Aug 2026**
 
 `id`, `activity_id`, `user_id` (nullable), `member_id` (nullable), `intent` (CHECK: `attending` · `not_attending`), `attended BOOLEAN`, `recorded_by_user_id`.
 `UNIQUE (activity_id, user_id)`
 
-### `volunteer` (FR-ACT-006)
+### `volunteer` — **cut, Aug 2026**
 
 `id`, `user_id` UNIQUE, `registered_at`, `is_active`, `notes`.
 
-### `volunteer_skill`
+### `volunteer_skill` — **cut, Aug 2026**
 
 `volunteer_id`, `skill` TEXT, `PRIMARY KEY (volunteer_id, skill)`.
 
-### `volunteer_assignment` (FR-ACT-008)
+### `volunteer_assignment` — **cut, Aug 2026**
 
 `id`, `volunteer_id`, `event_id`, `task`, `status`, `assigned_by_user_id`.
 
@@ -896,7 +896,7 @@ database backup rather than relying on downgrade if retired transaction data is 
 
 ### `notification` (FR-SYS-011)
 
-`id`, `user_id`, `type` (CHECK: `alert` · `activity_reminder` · `assistance` · `system`), `title`, `body`, `link_path`, `read_at`, `created_at`. (`feedback` was dropped from the set, Aug 2026 — the `feedback` table it notified for is cut.) The deployed CHECK still accepts the legacy `assistance` value; D-16 prohibits creating those notifications, and the later donation-retirement migration should remove the value.
+`id`, `user_id`, `type` (CHECK: `alert` · `rescue_update` · `incident_update` · `system`), `title`, `body`, `link_path`, `source_type`, `source_id`, `read_at`, `created_at`. `source_type` and `source_id` make delivery of a status change idempotent; the public route never exposes these internal source fields.
 
 ```sql
 CREATE INDEX idx_notification_unread ON notification(user_id, created_at DESC) WHERE read_at IS NULL;
