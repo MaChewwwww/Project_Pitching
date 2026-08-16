@@ -29,20 +29,6 @@ function resolvePortalBreadcrumbs(pathname: string): BreadcrumbItem[] {
       { label: "Edit Details" },
     ];
   }
-  if (pathname === "/portal/household/members/new") {
-    return [
-      ...base,
-      { label: "Household", href: "/portal/household" as Route },
-      { label: "Add Citizen" },
-    ];
-  }
-  if (pathname.startsWith("/portal/household/members/")) {
-    return [
-      ...base,
-      { label: "Household", href: "/portal/household" as Route },
-      { label: "Edit Citizen Profile" },
-    ];
-  }
   if (pathname === "/portal/safety") {
     return [...base, { label: "Safety Check-In" }];
   }

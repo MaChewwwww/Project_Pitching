@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Database, ExternalLink, MapPin, MapPinned, Pencil } from "lucide-react";
+import { Layers, MapPinned, Pencil } from "lucide-react";
 
 import { Button } from "@/components/common/button";
 import { HazardMap } from "@/components/features/map/hazard-map";
 import type { HouseholdDetailOut } from "@/lib/api/registry-types";
 import { HAZARD_LEVELS } from "@/lib/map";
+import { cn } from "@/lib/utils";
 
 export function PortalHouseholdMap({
   household,
@@ -16,6 +17,8 @@ export function PortalHouseholdMap({
   household: HouseholdDetailOut;
   preview?: boolean;
 }) {
+  const [showHazardLayer, setShowHazardLayer] = React.useState(true);
+
   if (!household.location) {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl sm:rounded-3xl border border-dashed border-emerald-300 bg-emerald-50/40 p-8 text-center shadow-2xs">
@@ -43,31 +46,6 @@ export function PortalHouseholdMap({
 
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-neutral-200/90 bg-white shadow-xs">
-      {/* Top Map Context Strip */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-100 bg-neutral-50/60 px-4 py-2.5 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="grid size-6 place-items-center rounded-lg bg-emerald-100 text-emerald-700">
-            <MapPin className="size-3.5" />
-          </span>
-          <span className="font-bold text-neutral-800">
-            {household.area_name ?? "Barangay San Jose"}
-          </span>
-          <span className="font-mono text-[11px] text-neutral-400">
-            ({latitude.toFixed(4)}, {longitude.toFixed(4)})
-          </span>
-        </div>
-
-        {preview ? (
-          <Link
-            href="/portal/hazard-map"
-            className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline"
-          >
-            <span>Full Map & Shelters</span>
-            <ExternalLink className="size-3" />
-          </Link>
-        ) : null}
-      </div>
-
       {/* Embedded Leaflet Map */}
       <div className="relative">
         <HazardMap
@@ -76,36 +54,23 @@ export function PortalHouseholdMap({
           zoom={16}
           interactive={!preview}
           preserveStaticCenter={preview}
+          showHazardLayer={showHazardLayer}
           householdMarker={{
             position: [latitude, longitude],
             label: `${household.head_name}'s Home`,
           }}
         />
-
-        {/* Data Sources Attribution Badge (Admin Portal Style) */}
-        <div
-          aria-label="Data sources attribution"
-          className="pointer-events-none absolute bottom-3.5 right-3.5 z-[1000] hidden sm:flex flex-col gap-0.5 rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-2.5 text-[10px] text-emerald-200/90 shadow-xl backdrop-blur-md"
-        >
-          <div className="flex items-center gap-1 font-bold uppercase tracking-wider text-emerald-400 text-[9.5px]">
-            <Database className="size-3 text-emerald-400" aria-hidden />
-            <span>Data Sources</span>
-          </div>
-          <div>
-            <span className="font-semibold text-white/90">Locality:</span> San Jose, Rodriguez, Rizal
-          </div>
-          <div>
-            <span className="font-semibold text-white/90">Flood Model:</span> UP NOAH / LiPAD (ODC-ODbL)
-          </div>
-          <div className="text-[9px] text-emerald-400/60 pt-0.5 border-t border-emerald-900/60 mt-0.5">
-            Map: Leaflet · © OpenStreetMap · CARTO
-          </div>
-        </div>
       </div>
 
-      {/* Map Legend & Hazard Strip Footer */}
+      {/* Map Controls & Legend Strip Footer */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 bg-white px-4 py-3 text-xs">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+        {/* Left: Hazard Color Legend */}
+        <div
+          className={cn(
+            "flex flex-wrap items-center gap-x-4 gap-y-1.5 transition-opacity",
+            !showHazardLayer && "opacity-40",
+          )}
+        >
           <span className="font-bold text-neutral-500 uppercase tracking-wider text-[10px]">
             Flood Hazard:
           </span>
@@ -121,17 +86,19 @@ export function PortalHouseholdMap({
           ))}
         </div>
 
-        {!preview ? (
-          <a
-            href="/hazard-map"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:underline"
-          >
-            Open Public Map
-            <ExternalLink className="size-3" />
-          </a>
-        ) : null}
+        {/* Right: Toggle Flood Hazard Checkbox */}
+        <label className="inline-flex cursor-pointer select-none items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50/80 px-2.5 py-1 text-xs font-bold text-neutral-800 shadow-2xs transition-colors hover:bg-emerald-50 hover:border-emerald-200">
+          <input
+            type="checkbox"
+            checked={showHazardLayer}
+            onChange={(e) => setShowHazardLayer(e.target.checked)}
+            className="size-3.5 rounded border-neutral-300 text-emerald-600 accent-emerald-600 focus:ring-emerald-500 cursor-pointer"
+          />
+          <span className="flex items-center gap-1">
+            <Layers className="size-3 text-emerald-700" />
+            <span>Flood Hazard Layer</span>
+          </span>
+        </label>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import {
   Edit,
   ExternalLink,
   Home,
+  Map,
   MapPin,
   Pencil,
   Plus,
@@ -19,10 +20,11 @@ import {
 
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import { HouseholdMemberDialog } from "@/components/features/portal/household-member-dialog";
 import { PortalHouseholdMap } from "@/components/features/portal/portal-household-map";
 import { PortalPageHeader } from "@/components/features/portal/portal-page-header";
 import { api } from "@/lib/api/client";
-import type { HouseholdDetailOut } from "@/lib/api/registry-types";
+import type { HouseholdDetailOut, MemberOut } from "@/lib/api/registry-types";
 import { cn } from "@/lib/utils";
 
 function computeAge(birthDateStr: string | null | undefined): number | null {
@@ -39,11 +41,24 @@ function computeAge(birthDateStr: string | null | undefined): number | null {
 }
 
 export default function PortalHouseholdPage() {
+  const [memberDialogOpen, setMemberDialogOpen] = React.useState(false);
+  const [selectedMember, setSelectedMember] = React.useState<MemberOut | null>(null);
+
   const household = useQuery({
     queryKey: ["me", "household"],
     queryFn: () =>
       api.get<HouseholdDetailOut | null>("/me/household").then((r) => r.data),
   });
+
+  const handleOpenAddMember = () => {
+    setSelectedMember(null);
+    setMemberDialogOpen(true);
+  };
+
+  const handleOpenEditMember = (m: MemberOut) => {
+    setSelectedMember(m);
+    setMemberDialogOpen(true);
+  };
 
   if (household.isLoading || !household.data) {
     return (
@@ -102,14 +117,13 @@ export default function PortalHouseholdPage() {
         action={
           <div className="flex flex-wrap items-center gap-2.5">
             <Button
-              asChild
+              type="button"
               size="sm"
+              onClick={handleOpenAddMember}
               className="h-10 cursor-pointer gap-2 rounded-full border border-emerald-600/30 bg-emerald-700 px-4 font-bold text-white shadow-md shadow-emerald-900/15 transition-all hover:bg-emerald-800 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
             >
-              <Link href="/portal/household/members/new">
-                <Plus aria-hidden className="size-4 stroke-[2.5]" />
-                <span>Add Household Member</span>
-              </Link>
+              <Plus aria-hidden className="size-4 stroke-[2.5]" />
+              <span>Add Household Member</span>
             </Button>
             <Button
               asChild
@@ -248,14 +262,13 @@ export default function PortalHouseholdPage() {
               </div>
 
               <Button
-                asChild
+                type="button"
                 size="sm"
+                onClick={handleOpenAddMember}
                 className="h-9 cursor-pointer gap-1.5 rounded-full border border-emerald-600/30 bg-emerald-700 px-3.5 text-xs font-bold text-white shadow-sm shadow-emerald-900/15 transition-all hover:bg-emerald-800 active:scale-[0.98]"
               >
-                <Link href="/portal/household/members/new">
-                  <Plus aria-hidden className="size-3.5 stroke-[2.5]" />
-                  <span>Add Household Member</span>
-                </Link>
+                <Plus aria-hidden className="size-3.5 stroke-[2.5]" />
+                <span>Add Household Member</span>
               </Button>
             </div>
 
@@ -362,15 +375,14 @@ export default function PortalHouseholdPage() {
                     {/* Edit Member Profile Action */}
                     <div className="mt-4 border-t border-neutral-100 pt-3">
                       <Button
-                        asChild
+                        type="button"
                         size="sm"
                         variant="outline"
-                        className="w-full rounded-xl text-xs font-bold border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                        onClick={() => handleOpenEditMember(member)}
+                        className="w-full rounded-xl text-xs font-bold border-neutral-200 text-neutral-700 hover:bg-neutral-50 cursor-pointer"
                       >
-                        <Link href={`/portal/household/members/${member.id}/edit`}>
-                          <Edit className="size-3.5" />
-                          <span>Edit Profile</span>
-                        </Link>
+                        <Edit className="size-3.5" />
+                        <span>Edit Profile</span>
                       </Button>
                     </div>
                   </div>
@@ -399,8 +411,13 @@ export default function PortalHouseholdPage() {
                 </div>
               </div>
 
-              <Button asChild size="sm" variant="outline" className="rounded-xl text-xs font-bold">
+              <Button
+                asChild
+                size="sm"
+                className="h-9 cursor-pointer gap-1.5 rounded-full border border-emerald-600/30 bg-emerald-700 px-3.5 text-xs font-bold text-white shadow-sm shadow-emerald-900/15 transition-all hover:bg-emerald-800 active:scale-[0.98]"
+              >
                 <Link href="/portal/hazard-map">
+                  <Map aria-hidden className="size-3.5" />
                   <span>Full Map</span>
                 </Link>
               </Button>
@@ -459,6 +476,13 @@ export default function PortalHouseholdPage() {
           </Card>
         </div>
       </div>
+
+      {/* ── Household Member Modal (Add & Edit) ── */}
+      <HouseholdMemberDialog
+        open={memberDialogOpen}
+        onOpenChange={setMemberDialogOpen}
+        member={selectedMember}
+      />
     </div>
   );
 }
