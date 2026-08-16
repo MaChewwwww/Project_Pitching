@@ -53,8 +53,10 @@ export default function AdminDonationDriveEditorPage() {
     queryKey: ["admin", "emergency-events"],
     queryFn: () =>
       api
-        .get<{ id: string; name: string }[]>("/admin/emergency-events")
-        .then((r) => r.data)
+        .get<{ items: { id: string; name: string }[] }>("/admin/emergency-events", {
+          params: { size: 100 },
+        })
+        .then((r) => r.data.items ?? [])
         .catch(() => []),
   });
 

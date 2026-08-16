@@ -233,7 +233,8 @@ export function DonationDriveForm({
   const activeUntil = useWatch({ control, name: "active_until" });
   const eventId = useWatch({ control, name: "event_id" });
 
-  const selectedEventName = events.find((e) => e.id === eventId)?.name;
+  const eventList = Array.isArray(events) ? events : [];
+  const selectedEventName = eventList.find((e) => e.id === eventId)?.name;
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -564,7 +565,7 @@ export function DonationDriveForm({
               />
             </div>
 
-            {events.length > 0 ? (
+            {eventList.length > 0 ? (
               <div className="flex flex-col gap-2">
                 <Label
                   htmlFor="event_id"
@@ -588,7 +589,7 @@ export function DonationDriveForm({
                       </SelectTrigger>
                       <SelectContent align="start">
                         <SelectItem value="none">None (General Drive)</SelectItem>
-                        {events.map((evt) => (
+                        {eventList.map((evt) => (
                           <SelectItem key={evt.id} value={evt.id}>
                             {evt.name}
                           </SelectItem>
