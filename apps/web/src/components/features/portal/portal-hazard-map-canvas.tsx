@@ -92,8 +92,8 @@ function createHouseholdMarkerIcon() {
     className: "portal-household-pin-icon",
     html: `
       <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
-        <span style="position: absolute; width: 100%; height: 100%; border-radius: 9999px; background-color: #10B981; opacity: 0.6; animation: sagip-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
-        <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 9999px; background-color: #064E3B; border: 2.5px solid #ffffff; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); color: #ffffff;">
+        <span style="position: absolute; width: 100%; height: 100%; border-radius: 9999px; background-color: #38BDF8; opacity: 0.6; animation: sagip-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
+        <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 9999px; background-color: #1D4ED8; border: 2.5px solid #ffffff; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); color: #ffffff;">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         </div>
       </div>
@@ -395,7 +395,7 @@ export function PortalHazardMapCanvas({
             );
           })}
 
-        {/* ── Household Location Marker (Pulsing Emerald Pin with Rich Popup) ── */}
+        {/* ── Household Location Marker (Pulsing Blue Pin with Rich Popup) ── */}
         {layers.household && householdLocation && (
           <Marker
             position={householdLocation}
@@ -409,7 +409,7 @@ export function PortalHazardMapCanvas({
               className="portal-dark-tooltip"
             >
               <div className="px-1 py-0.5 font-sans text-xs">
-                <span className="font-black text-emerald-300">Your Household</span>
+                <span className="font-black text-sky-300">Your Household</span>
                 <span className="block text-[10px] text-slate-200">
                   {householdInfo.head_name}
                 </span>
@@ -418,23 +418,23 @@ export function PortalHazardMapCanvas({
 
             <Popup className="portal-dark-popup">
               <div className="p-2.5 font-sans min-w-[220px] space-y-2.5">
-                <div className="flex items-center gap-2.5 border-b border-emerald-800/80 pb-2">
-                  <span className="grid size-8 place-items-center rounded-xl bg-emerald-600 text-white shadow-sm">
+                <div className="flex items-center gap-2.5 border-b border-sky-800/80 pb-2">
+                  <span className="grid size-8 place-items-center rounded-xl bg-blue-600 text-white shadow-sm">
                     <Home className="size-4" />
                   </span>
                   <div>
                     <strong className="block text-sm font-bold text-white">
                       {householdInfo.head_name}
                     </strong>
-                    <span className="text-[10.5px] font-bold text-emerald-300">
+                    <span className="text-[10.5px] font-bold text-sky-300">
                       Reference #{householdInfo.reference_no}
                     </span>
                   </div>
                 </div>
 
-                <div className="text-xs text-emerald-100 space-y-1">
+                <div className="text-xs text-slate-200 space-y-1">
                   <p className="flex items-center gap-1.5 text-slate-200">
-                    <MapPin className="size-3.5 text-emerald-400 shrink-0" />
+                    <MapPin className="size-3.5 text-sky-400 shrink-0" />
                     <span>{householdInfo.street_address}</span>
                   </p>
                   <p className="text-[11px] text-slate-300">
@@ -442,13 +442,13 @@ export function PortalHazardMapCanvas({
                   </p>
                   <p className="text-[11px] text-slate-300">
                     Proximity:{" "}
-                    <span className="font-semibold text-emerald-300 capitalize">
+                    <span className="font-semibold text-sky-300 capitalize">
                       {householdInfo.waterway_proximity?.replace(/_/g, " ") ?? "Standard"}
                     </span>
                   </p>
                 </div>
 
-                <div className="pt-1 border-t border-emerald-800/80">
+                <div className="pt-1 border-t border-sky-800/80">
                   <a
                     href={googleMapsDirectionsUrl(
                       householdLocation[0],
@@ -456,7 +456,7 @@ export function PortalHazardMapCanvas({
                     )}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 py-1.5 px-3 text-xs font-bold text-white shadow-sm transition-colors w-full"
+                    className="flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 py-1.5 px-3 text-xs font-bold text-white shadow-sm transition-colors w-full"
                   >
                     <Navigation className="size-3" />
                     <span>Open in Google Maps</span>

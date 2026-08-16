@@ -25,7 +25,7 @@ COMPOSE_DEV := $(COMPOSE) -f infra/compose.override.yml
 PY          := python
 
 .DEFAULT_GOAL := help
-.PHONY: help env dev up down restart logs ps migrate revision seed shell-api shell-db \
+.PHONY: help env dev up down restart logs ps migrate revision seed reseed-content shell-api shell-db \
         test test-api test-web lint lint-api lint-web format types shadcn \
         hazard hazard-derive hazard-web backup restore clean
 
@@ -68,6 +68,9 @@ revision:  ## autogenerate a migration:  make revision m="add household"
 
 seed:  ## load seed data (schema.md Section 15) — runs automatically on container start; this is only for a manual re-run
 	$(COMPOSE_DEV) run --rm api python -m src.seed
+
+reseed-content:  ## replace all demo activities, announcements, donation notices, and their media
+	$(COMPOSE_DEV) run --rm api python -m src.seed --replace-public-content
 
 shell-api:  ## shell into the api container
 	$(COMPOSE_DEV) run --rm api bash

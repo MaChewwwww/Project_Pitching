@@ -4,18 +4,18 @@ Reference data is loaded by migration, not at runtime (NFR-DAT-007); this module
 handles the *demo* dataset instead: synthetic content and households, everything
 marked or clearly identifiable as such (NFR-DAT-006, NFR-PRV-007).
 
-It exists so the public site reads identically the morning after the fixture→API
-swap as it did the night before — every row below is a direct transcription of
-`apps/web/src/lib/fixtures/*.ts`, same copy, same shape.
+It provides the curated demo content shown by the public site.
 
-**Idempotent.** Each section checks whether its table already has rows and skips
-if so, so `make seed` twice is harmless. This is not run automatically anywhere
-(AGENTS.md Section 1) — it is an explicit command, same as a migration but never
-confused with one: this is throwaway demo content, not schema.
+**Idempotent by default.** Each section checks whether its table already has rows
+and skips if so, so normal application startup is harmless. The explicit
+`--replace-public-content` option refreshes only public articles by deleting
+activities, announcements, donation notices, and their media before inserting
+this curated set. It is throwaway demo content, not schema.
 """
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import logging
 import random
@@ -38,7 +38,7 @@ from src.db.models_registry import Base  # noqa: F401
 from src.db.session import SessionLocal, engine
 from src.domain.article_document import plain_text_document, slug_base
 from src.modules.activities.models import Activity, ActivityImage
-from src.modules.alerts.models import Announcement, AnnouncementArea, AnnouncementImage
+from src.modules.alerts.models import Announcement, AnnouncementImage
 from src.modules.donations.models import DonationDrive, DonationDriveImage
 from src.modules.evacuation.models import EmergencyEvent, EvacCenter
 from src.modules.geo.models import Area, Facility, Hotline
@@ -734,7 +734,6 @@ FAQ_DEFS = [
         "Registration",
         4,
     ),
-
     # 2. Emergencies
     (
         "Saan ang pinakamalapit na evacuation center?",
@@ -776,7 +775,6 @@ FAQ_DEFS = [
         "Emergencies",
         9,
     ),
-
     # 3. Preparedness
     (
         "Ano ang dapat na laman ng aking Go Bag?",
@@ -802,7 +800,6 @@ FAQ_DEFS = [
         "Preparedness",
         12,
     ),
-
     # 4. Evacuation & Assistance
     (
         "Paano ko malalaman kung may bakanteng espasyo pa sa isang evacuation center?",
@@ -828,7 +825,6 @@ FAQ_DEFS = [
         "Evacuation & Assistance",
         15,
     ),
-
     # 5. Community
     (
         "Saan ko makikita ang mga paparating na aktibidad ng barangay?",
@@ -846,7 +842,6 @@ FAQ_DEFS = [
         "Community",
         17,
     ),
-
     # 6. Donations
     (
         "Paano ako makakapag-donate o makapagbibigay ng donasyon?",
@@ -856,7 +851,6 @@ FAQ_DEFS = [
         "Donations",
         18,
     ),
-
     # 7. Using the Website
     (
         "Kailangan ko ba ng account para magamit ang website?",
@@ -898,7 +892,6 @@ FAQ_DEFS = [
         "Using the Website",
         23,
     ),
-
     # 8. Alerts & Notifications
     (
         "Paano ako makakatanggap ng mga alerto mula sa website?",
@@ -924,7 +917,6 @@ FAQ_DEFS = [
         "Alerts & Notifications",
         26,
     ),
-
     # 9. Profile & Privacy
     (
         "Makikita ba ng lahat ang impormasyon ng aking pamilya?",
@@ -950,7 +942,6 @@ FAQ_DEFS = [
         "Profile & Privacy",
         29,
     ),
-
     # 10. Website Help
     (
         "Ano ang dapat kong gawin kung hindi gumagana ang isang pahina o feature?",
@@ -1005,49 +996,35 @@ async def seed_faqs(session) -> None:
     log.info("seeded faqs", extra={"count": len(FAQ_DEFS)})
 
 
-# --- activities (fixtures/activities.ts) ---------------------------------------
+# --- activities ---------------------------------------------------------------
 
 ACTIVITY_DEFS = [
     (
-        "Barangay-wide Earthquake Drill",
-        "drill",
-        "A simultaneous Duck, Cover and Hold drill across all puroks, followed by an evacuation "
-        "walkthrough.",
-        4,
-        "All puroks — assembly at Phase 1B Covered Court, Kasiglahan Village",
-        None,
-    ),
-    (
-        "Basic First Aid and CPR Training",
-        "first_aid",
-        "Hands-on session run by the Philippine Red Cross. Limited to 40 participants.",
-        9,
-        "Barangay San Jose Hall, Session Room",
-        None,
-    ),
-    (
-        "Riverbank Clean-Up Drive",
+        "Operation Stripes: San Jose Tigers Youth in Action",
         "cleanup",
-        "Clearing debris from the drainage channels before the next heavy rainfall.",
-        13,
-        "Riverside Road, Purok 2 to Purok 6",
-        "Area 1",
-    ),
-    (
-        "Disaster Preparedness Seminar for Households",
-        "seminar",
-        "Go Bag preparation, evacuation routes, and how the barangay alert levels work.",
-        18,
-        "San Jose Elementary School, Covered Court",
+        "Youth volunteers cleared storm debris and waste in Pag-Asa Village, Kasiglahan Village, helping restore a cleaner and safer community after recent flooding.",
+        datetime(2026, 8, 1, 8, tzinfo=UTC),
+        datetime(2026, 8, 1, 12, tzinfo=UTC),
+        "Pag-Asa Village, Kasiglahan Village",
         None,
     ),
     (
-        "Tree Planting along the Riverbank",
-        "tree_planting",
-        "Bamboo and native species planting to slow erosion along the riverbank.",
-        24,
-        "Riverbank, Purok 6",
-        "Area 6",
+        "Project Kabuhay: Kabataan para sa Buhay at Hanapbuhay",
+        "ngo_program",
+        "A Linggo ng Kabataan 2026 workshop on perfume and coffee making that equipped young people with practical livelihood and entrepreneurship skills.",
+        datetime(2026, 8, 8, 9, tzinfo=UTC),
+        datetime(2026, 8, 8, 16, tzinfo=UTC),
+        "Barangay San Jose Covered Court",
+        None,
+    ),
+    (
+        "Training on Basic Life Support and Standard First Aid for Health Workers",
+        "first_aid",
+        "The Municipal Health Office and Philippine Red Cross – Rizal Chapter led a four-day training to strengthen health workers’ emergency and disaster-response skills.",
+        datetime(2026, 7, 21, 8, tzinfo=UTC),
+        datetime(2026, 7, 24, 17, tzinfo=UTC),
+        "Municipal Health Office",
+        None,
     ),
 ]
 
@@ -1056,7 +1033,7 @@ async def seed_activities(session, areas: dict[str, Area], users: dict[str, User
     if await _table_has_rows(session, Activity):
         return
     creator = users["Admin Demo"]
-    for title, type_, description, days_ahead, venue, area_name in ACTIVITY_DEFS:
+    for title, type_, description, starts_at, ends_at, venue, area_name in ACTIVITY_DEFS:
         session.add(
             Activity(
                 title=title,
@@ -1065,9 +1042,9 @@ async def seed_activities(session, areas: dict[str, Area], users: dict[str, User
                 excerpt=description,
                 body_json=plain_text_document(description),
                 publication_status="published",
-                published_at=_now(),
-                starts_at=_now() + timedelta(days=days_ahead),
-                ends_at=_now() + timedelta(days=days_ahead, hours=3),
+                published_at=starts_at,
+                starts_at=starts_at,
+                ends_at=ends_at,
                 venue=venue,
                 area_id=areas[area_name].id if area_name else None,
                 created_by_user_id=creator.id,
@@ -1076,382 +1053,214 @@ async def seed_activities(session, areas: dict[str, Area], users: dict[str, User
     log.info("seeded activities", extra={"count": len(ACTIVITY_DEFS)})
 
 
-# --- announcements (fixtures/announcements.ts) ---------------------------------
+# --- announcements ------------------------------------------------------------
 
 ANNOUNCEMENT_DEFS = [
     (
-        "alert",
-        "flood_warning",
-        "emergency",
-        "Alert Level 2 — Evacuate riverside areas now",
-        "The river has risen past the Level 2 threshold and continues to climb. Residents in "
-        "Areas 1 and 2 must move to an evacuation centre now.",
-        # Both centres named here must be ones that actually exist and sit in the
-        # areas this announcement targets (Areas 1 and 2) — directing evacuees to
-        # a centre in another area, or to one no longer in the registry, is the
-        # kind of detail that gets someone hurt.
-        "Go to San Jose Litex Senior High School or Rodriguez Heights Elementary School now. "
-        "Bring your Go Bag, IDs, and medication.",
-        False,
-        -2,
-        10,
-        None,
-        ["Area 1", "Area 2"],
+        "road_closure",
+        "warning",
+        "Protective Measures: Concrete Barrier Installation",
+        "Concrete barriers along the shortcut to Phase 1B, Kasiglahan Village were repaired and reinforced to help protect motorists and pedestrians during adverse weather. The work was coordinated by Area 1 Alpha, the General Services Office, and the Barangay Disaster Risk Reduction and Management Office. Residents should report weather-related hazards and emergencies immediately through the appropriate hotlines.",
+        datetime(2026, 8, 12, 14, tzinfo=UTC),
         "Barangay Disaster Risk Reduction and Management Committee",
     ),
     (
-        "announcement",
         "class_suspension",
-        "warning",
-        "Classes suspended in all levels tomorrow",
-        "Following the Alert Level 2 declaration, classes in all public and private schools are "
-        "suspended for tomorrow.",
-        None,
-        True,
-        -3,
-        20,
-        None,
-        [],
+        "info",
+        "Face-to-Face Classes Resume Across Montalban Public Schools",
+        "Face-to-face classes resumed on August 13, 2026 in all grade levels across Montalban public schools after schools used as evacuation centers were cleaned and restored. The reopening supports students’ safe return to learning following the recent calamity.",
+        datetime(2026, 8, 13, 8, tzinfo=UTC),
         "Office of the Barangay Captain",
     ),
     (
-        "announcement",
-        "road_closure",
-        "warning",
-        "Riverside Road impassable to all vehicles",
-        "Riverside Road between Purok 2 and Purok 6 is impassable due to floodwater. Use the "
-        "Quirino Highway route instead.",
-        None,
-        False,
-        -5,
-        None,
-        None,
-        ["Area 1", "Area 2"],
-        "Barangay Public Safety Office",
-    ),
-    (
-        "announcement",
-        "utility_interruption",
-        "info",
-        "Scheduled water interruption, Saturday 8:00 AM to 4:00 PM",
-        "Manila Water will carry out pipeline maintenance affecting Areas 3, 4 and 5. Store "
-        "enough water for the day.",
-        None,
-        False,
-        -24,
-        None,
-        None,
-        ["Area 3", "Area 4", "Area 5"],
-        "Office of the Barangay Captain",
-    ),
-    (
-        "announcement",
-        "general",
-        "info",
-        "Household registration now open at the barangay hall",
-        "Barangay Health Workers are assisting residents with household registration every "
-        "weekday, 8:00 AM to 5:00 PM.",
-        None,
-        True,
-        -72,
-        None,
-        None,
-        [],
-        "Barangay Health Office",
-    ),
-    (
-        "announcement",
-        "general",
-        "info",
-        "Free first aid training — limited slots",
-        "The Philippine Red Cross will run a basic first aid and CPR session at the barangay "
-        "hall. Slots limited to 40.",
-        None,
-        True,
-        -120,
-        None,
-        None,
-        [],
-        "Sangguniang Kabataan",
-    ),
-    (
-        "alert",
         "heavy_rainfall",
         "warning",
-        "Alert Level 1 — Prepare to evacuate",
-        "Continuous heavy rainfall has pushed the river past the Level 1 threshold. This is a "
-        "preparation notice.",
-        "Prepare your Go Bag and identification documents. Move valuables and appliances to "
-        "higher ground.",
-        False,
-        -48,
-        None,
-        -48,
-        ["Area 1", "Area 2"],
+        "Habagat Advisory and Water Level Monitoring",
+        "The Southwest Monsoon continues to bring scattered rains and thunderstorms to CALABARZON, with possible flash floods and landslides in vulnerable and low-lying areas. The water level beneath San Jose Bridge remains low as of the latest monitoring, but residents should keep emergency kits ready, follow official weather advisories, review household evacuation plans, and exercise caution in hazard-prone areas.",
+        datetime(2026, 8, 14, 5, 40, tzinfo=UTC),
         "Barangay Disaster Risk Reduction and Management Committee",
     ),
 ]
 
 
-async def seed_announcements(session, areas: dict[str, Area], users: dict[str, User]) -> None:
+async def seed_announcements(session, users: dict[str, User]) -> None:
     if await _table_has_rows(session, Announcement):
         return
     for (
-        kind,
         type_,
         severity,
         title,
         body,
-        instruction,
-        is_barangay_wide,
-        published_hours_ago,
-        expires_hours_ahead,
-        deactivated_hours_ago,
-        area_names,
+        published_at,
         issuer_name,
     ) in ANNOUNCEMENT_DEFS:
         announcement = Announcement(
-            kind=kind,
+            kind="announcement",
             type=type_,
             severity=severity,
             title=title,
             slug=slug_base(title),
             excerpt=body,
             body_json=plain_text_document(body),
-            publication_status="archived" if deactivated_hours_ago else "published",
-            instruction=instruction,
-            is_barangay_wide=is_barangay_wide,
-            published_at=_now() + timedelta(hours=published_hours_ago),
-            expires_at=_now() + timedelta(hours=expires_hours_ahead)
-            if expires_hours_ahead
-            else None,
-            deactivated_at=_now() + timedelta(hours=deactivated_hours_ago)
-            if deactivated_hours_ago
-            else None,
-            archived_at=_now() + timedelta(hours=deactivated_hours_ago)
-            if deactivated_hours_ago
-            else None,
+            publication_status="published",
+            is_barangay_wide=True,
+            published_at=published_at,
             issued_by_user_id=users[issuer_name].id,
         )
         session.add(announcement)
-        await session.flush()
-        for area_name in area_names:
-            session.add(
-                AnnouncementArea(announcement_id=announcement.id, area_id=areas[area_name].id)
-            )
     log.info("seeded announcements", extra={"count": len(ANNOUNCEMENT_DEFS)})
 
 
-# --- donation drives (fixtures/donation-drives.ts) -----------------------------
+# --- donation drives ----------------------------------------------------------
 
 
 async def seed_donations(session, users: dict[str, User]) -> None:
     if await _table_has_rows(session, DonationDrive):
         return
 
-    event = EmergencyEvent(
-        name="Continuous Heavy Rainfall — Riverside Areas",
-        type="flood",
-        started_at=_now() - timedelta(days=3),
-        is_active=False,
-        declared_by_user_id=users["Barangay Disaster Risk Reduction and Management Committee"].id,
-    )
-    session.add(event)
-    await session.flush()
+    published_at = datetime(2026, 8, 14, 8, tzinfo=UTC)
+    drives = [
+        (
+            "Relief Drive for Habagat-Affected Families",
+            "relief-drive-for-habagat-affected-families",
+            "Rotaract Club of Rodriguez is collecting financial and in-kind support for families affected by Habagat in Montalban.",
+            "The Rotaract Club of Rodriguez is accepting financial and in-kind donations for families affected by the Southwest Monsoon (Habagat) in Montalban. Needed items include drinking water, canned goods and ready-to-eat food, hygiene supplies, clean clothes, and blankets. Financial donations may be sent through GCash or InstaPay to Vienn Nicole Ocampo, 09524597132. Scan the QR code in the accompanying poster for payment details.",
+            "Rotaract Club of Rodriguez",
+            "09616499215",
+            "Isabel Terraces, San Jose, Rodriguez, Rizal",
+        ),
+        (
+            "Laban Kontra Bagyong Maymay Donation Drive",
+            "laban-kontra-bagyong-maymay-donation-drive",
+            "The Eagle Scouts Association of Montalban is collecting monetary and in-kind donations for people affected by Bagyong Maymay.",
+            "The Eagle Scouts Association of Montalban is calling for monetary and in-kind donations for people affected by Bagyong Maymay in evacuation areas across Montalban. Needed items include first-aid kits, biscuits, clothes, toothbrushes, toothpaste, shampoo, soap, sanitary napkins, and diapers. Monetary donations may be sent through GCash to Reniel N., 09305393812.",
+            "Eagle Scouts Association of Montalban",
+            "Reniel N. · 09305393812",
+            None,
+        ),
+        (
+            "Upper Hills and Mountains Donation Drive",
+            "upper-hills-and-mountains-donation-drive",
+            "Upper Hills and Mountains is accepting donations for clothes, medicine, canned goods, money, and other essential relief items.",
+            "Upper Hills and Mountains is accepting donations of clothes, medicine, canned goods, money, and other essential relief items. For coordination, contact Reniel Noel directly. Monetary donations may be sent to Reniel N., 09305393812.",
+            "Upper Hills and Mountains",
+            "Reniel N. · 09305393812",
+            "Coordinate directly with Reniel Noel through the organization’s official social-media page.",
+        ),
+    ]
+    for (
+        title,
+        slug,
+        excerpt,
+        body,
+        organizer_name,
+        organizer_contact,
+        drop_off_instructions,
+    ) in drives:
+        session.add(
+            DonationDrive(
+                title=title,
+                slug=slug,
+                excerpt=excerpt,
+                body_json=plain_text_document(body),
+                publication_status="published",
+                published_at=published_at,
+                organizer_name=organizer_name,
+                organizer_contact=organizer_contact,
+                drop_off_instructions=drop_off_instructions,
+                active_from=published_at,
+                created_by_user_id=users["Admin Demo"].id,
+            )
+        )
 
-    drive1 = DonationDrive(
-        event_id=event.id,
-        title="Relief Goods for Riverside Households",
-        slug="relief-goods-for-riverside-households",
-        excerpt=(
-            "Supporting the households in Areas 1 and 2 currently sheltering "
-            "at San Jose Elementary School."
-        ),
-        body_json=plain_text_document(
-            "Supporting the households in Areas 1 and 2 currently sheltering at San Jose Elementary School."
-        ),
-        publication_status="published",
-        published_at=_now() - timedelta(days=3),
-        active_from=_now() - timedelta(days=3),
-        created_by_user_id=users["Admin Demo"].id,
-    )
-    drive2 = DonationDrive(
-        title="Go Bag Supplies for Priority Households",
-        slug="go-bag-supplies-for-priority-households",
-        excerpt=(
-            "Building ready-to-issue Go Bags for households with seniors, "
-            "infants, or members who need help evacuating."
-        ),
-        body_json=plain_text_document(
-            "Building ready-to-issue Go Bags for households with seniors, infants, or members who need help evacuating."
-        ),
-        publication_status="published",
-        published_at=_now() - timedelta(days=11),
-        active_from=_now() - timedelta(days=11),
-        created_by_user_id=users["Admin Demo"].id,
-    )
-    session.add_all([drive1, drive2])
-    await session.flush()
-
-    log.info("seeded donation drives", extra={"count": 2})
+    log.info("seeded donation drives", extra={"count": len(drives)})
 
 
 # --- article cover media -------------------------------------------------------
 
-# These are generated fictional documentary photographs.  They are intentionally
-# stored with the demo seed rather than in the web app: public cards receive the
-# same `cover_image` DTO and Caddy-served upload URL as an officer-uploaded image.
-ARTICLE_COVER_DEFS = (
+# Each tuple is (model, image model, foreign-key field, article slug, filenames).
+# The first image is the card cover; the remaining images retain the user-supplied
+# article-gallery ordering.
+ARTICLE_MEDIA_DEFS = (
     (
         Announcement,
         AnnouncementImage,
         "announcement_id",
-        "alert-level-2-evacuate-riverside-areas-now",
-        "alert-level-2-evacuate.png",
-        "Adult residents carrying go-bags toward a covered evacuation centre during heavy rain.",
-        "Fictional demo image: community evacuation preparation during heavy rain.",
+        "protective-measures-concrete-barrier-installation",
+        ("barrier-installation-1.jpg", "barrier-installation-2.jpg", "barrier-installation-3.jpg"),
     ),
     (
         Announcement,
         AnnouncementImage,
         "announcement_id",
-        "classes-suspended-in-all-levels-tomorrow",
-        "classes-suspended.png",
-        "A school caretaker secures learning materials beside rain-soaked classroom windows.",
-        "Fictional demo image: a school prepares during persistent rain.",
+        "face-to-face-classes-resume-across-montalban-public-schools",
+        ("classes-resume-1.jpeg",),
     ),
     (
         Announcement,
         AnnouncementImage,
         "announcement_id",
-        "riverside-road-impassable-to-all-vehicles",
-        "riverside-road-closure.png",
-        "A community volunteer keeps traffic away from a rain-flooded neighborhood road.",
-        "Fictional demo image: a temporary road closure after heavy rain.",
-    ),
-    (
-        Announcement,
-        AnnouncementImage,
-        "announcement_id",
-        "scheduled-water-interruption-saturday-8-00-am-to-4-00-pm",
-        "water-interruption.png",
-        "A maintenance worker prepares water containers near a neighborhood utility access point.",
-        "Fictional demo image: water maintenance preparation.",
-    ),
-    (
-        Announcement,
-        AnnouncementImage,
-        "announcement_id",
-        "household-registration-now-open-at-the-barangay-hall",
-        "household-registration.png",
-        "A community health worker assists a resident at a registration desk.",
-        "Fictional demo image: household registration assistance.",
-    ),
-    (
-        Announcement,
-        AnnouncementImage,
-        "announcement_id",
-        "free-first-aid-training-limited-slots",
-        "free-first-aid-training.png",
-        "An adult volunteer demonstrates first aid at a community training session.",
-        "Fictional demo image: community first-aid training.",
-    ),
-    (
-        Announcement,
-        AnnouncementImage,
-        "announcement_id",
-        "alert-level-1-prepare-to-evacuate",
-        "alert-level-1-prepare.png",
-        "Residents pack an emergency go-bag beside a rain-streaked window.",
-        "Fictional demo image: a household prepares for heavy rain.",
+        "habagat-advisory-and-water-level-monitoring",
+        ("water-level-monitoring-1.jpg",),
     ),
     (
         Activity,
         ActivityImage,
         "activity_id",
-        "barangay-wide-earthquake-drill",
-        "earthquake-drill.png",
-        "Adult residents practise Duck, Cover and Hold during a community earthquake drill.",
-        "Fictional demo image: earthquake preparedness drill.",
+        "operation-stripes-san-jose-tigers-youth-in-action",
+        ("operation-stripes-1.jpg", "operation-stripes-2.jpg", "operation-stripes-3.jpg"),
     ),
     (
         Activity,
         ActivityImage,
         "activity_id",
-        "basic-first-aid-and-cpr-training",
-        "first-aid-cpr-training.png",
-        "An instructor demonstrates CPR on a practice mannequin at a barangay session.",
-        "Fictional demo image: CPR and first-aid training.",
+        "project-kabuhay-kabataan-para-sa-buhay-at-hanapbuhay",
+        ("project-kabuhay-1.jpeg", "project-kabuhay-2.jpeg"),
     ),
     (
         Activity,
         ActivityImage,
         "activity_id",
-        "riverbank-clean-up-drive",
-        "riverbank-cleanup.png",
-        "Adult volunteers collect debris beside a riverbank drainage channel.",
-        "Fictional demo image: riverbank clean-up activity.",
-    ),
-    (
-        Activity,
-        ActivityImage,
-        "activity_id",
-        "disaster-preparedness-seminar-for-households",
-        "preparedness-seminar.png",
-        "A facilitator leads residents through a preparedness discussion in a covered hall.",
-        "Fictional demo image: household preparedness seminar.",
-    ),
-    (
-        Activity,
-        ActivityImage,
-        "activity_id",
-        "tree-planting-along-the-riverbank",
-        "tree-planting.png",
-        "Adult volunteers plant native seedlings on a green riverbank.",
-        "Fictional demo image: riverbank tree planting.",
+        "training-on-basic-life-support-and-standard-first-aid-for-health-workers",
+        (
+            "bls-first-aid-1.jpeg",
+            "bls-first-aid-2.jpeg",
+            "bls-first-aid-3.jpeg",
+            "bls-first-aid-4.jpeg",
+        ),
     ),
     (
         DonationDrive,
         DonationDriveImage,
         "donation_drive_id",
-        "relief-goods-for-riverside-households",
-        "relief-goods.png",
-        "Volunteers organize relief packs and blankets inside a community hall.",
-        "Fictional demo image: relief goods preparation.",
+        "relief-drive-for-habagat-affected-families",
+        ("rotaract-relief-drive.jpg",),
     ),
     (
         DonationDrive,
         DonationDriveImage,
         "donation_drive_id",
-        "go-bag-supplies-for-priority-households",
-        "go-bag-supplies.png",
-        "Volunteers arrange essential go-bag supplies on a community table.",
-        "Fictional demo image: go-bag supply assembly.",
+        "laban-kontra-bagyong-maymay-donation-drive",
+        ("eagle-scouts-maymay-drive.jpg",),
+    ),
+    (
+        DonationDrive,
+        DonationDriveImage,
+        "donation_drive_id",
+        "upper-hills-and-mountains-donation-drive",
+        ("upper-hills-donation-drive.jpg",),
     ),
 )
 
 
 async def seed_article_cover_media(session) -> None:
-    """Attach bundled demo covers without touching officer-managed media.
-
-    Existing environments already contain seeded parent rows, so this runs even
-    when the main article seed functions correctly no-op.  It only inserts a
-    cover when that parent has no media at all; an officer's image always wins.
-    """
+    """Attach bundled gallery images when an article has no managed media."""
     source_dir = Path(__file__).parent / "seed_media" / "article-covers"
     upload_dir = Path(settings.upload_dir) / "article-covers"
     upload_dir.mkdir(parents=True, exist_ok=True)
 
     added = 0
-    for (
-        parent_model,
-        image_model,
-        parent_key,
-        slug,
-        filename,
-        _,
-        _,
-    ) in ARTICLE_COVER_DEFS:
+    for parent_model, image_model, parent_key, slug, filenames in ARTICLE_MEDIA_DEFS:
         parent = (
             await session.execute(select(parent_model).where(parent_model.slug == slug))
         ).scalar_one_or_none()
@@ -1465,21 +1274,22 @@ async def seed_article_cover_media(session) -> None:
         if has_media is not None:
             continue
 
-        source = source_dir / filename
-        target = upload_dir / filename
-        if not source.is_file():
-            raise RuntimeError(f"Missing bundled article cover: {source}")
-        if not target.exists():
-            copyfile(source, target)
-        session.add(
-            image_model(
-                **{parent_key: parent.id},
-                file_path=f"article-covers/{filename}",
-                sort_order=0,
-                is_cover=True,
+        for sort_order, filename in enumerate(filenames):
+            source = source_dir / filename
+            target = upload_dir / filename
+            if not source.is_file():
+                raise RuntimeError(f"Missing bundled article image: {source}")
+            if not target.exists():
+                copyfile(source, target)
+            session.add(
+                image_model(
+                    **{parent_key: parent.id},
+                    file_path=f"article-covers/{filename}",
+                    sort_order=sort_order,
+                    is_cover=sort_order == 0,
+                )
             )
-        )
-        added += 1
+            added += 1
     if added:
         log.info("seeded article cover media", extra={"count": added})
 
@@ -1954,7 +1764,18 @@ async def seed_incident_reports(session, users: dict[str, User]) -> None:
     log.info("seeded incident-report demo data", extra={"incident_reports": len(reports)})
 
 
-async def seed() -> None:
+async def clear_public_content(session) -> None:
+    """Remove public article content before an explicitly requested demo refresh."""
+    await session.execute(delete(ActivityImage))
+    await session.execute(delete(AnnouncementImage))
+    await session.execute(delete(DonationDriveImage))
+    await session.execute(delete(Activity))
+    await session.execute(delete(Announcement))
+    await session.execute(delete(DonationDrive))
+    log.info("cleared public article content for demo refresh")
+
+
+async def seed(*, replace_public_content: bool = False) -> None:
     async with SessionLocal() as session:
         areas = await seed_areas(session)
         await session.commit()
@@ -1975,10 +1796,14 @@ async def seed() -> None:
         await seed_faqs(session)
         await session.commit()
 
+        if replace_public_content:
+            await clear_public_content(session)
+            await session.commit()
+
         await seed_activities(session, areas, users)
         await session.commit()
 
-        await seed_announcements(session, areas, users)
+        await seed_announcements(session, users)
         await session.commit()
 
         await seed_donations(session, users)
@@ -2007,8 +1832,15 @@ async def seed() -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Load SAGIP-SJ demo data.")
+    parser.add_argument(
+        "--replace-public-content",
+        action="store_true",
+        help="delete all activities, announcements, donation notices, and their media first",
+    )
+    args = parser.parse_args()
     configure_logging()
-    asyncio.run(seed())
+    asyncio.run(seed(replace_public_content=args.replace_public_content))
 
 
 if __name__ == "__main__":

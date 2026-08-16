@@ -13,16 +13,14 @@ import {
   Pencil,
   Siren,
   Sparkles,
+  Waves,
 } from "lucide-react";
 
 import { Button } from "@/components/common/button";
-import { EvacCenterFilterGrid } from "@/components/features/evacuation/evac-center-filter-grid";
-import { AreaExposureCharts } from "@/components/features/map/area-exposure-charts";
 import { PortalPageHeader } from "@/components/features/portal/portal-page-header";
 import type {
   AreaBoundaryFeature,
   PublicAreaStat,
-  PublicEvacCenter,
   PublicFacility,
   PublicRiverLevel,
 } from "@/lib/api/public-types";
@@ -56,7 +54,6 @@ interface PortalHazardMapViewProps {
   areaStats: PublicAreaStat[];
   sirens: PublicSiren[];
   river: PublicRiverLevel;
-  evacCenters: PublicEvacCenter[];
 }
 
 export function PortalHazardMapView({
@@ -66,7 +63,6 @@ export function PortalHazardMapView({
   areaStats,
   sirens,
   river,
-  evacCenters,
 }: PortalHazardMapViewProps) {
   // Local layer visibility state: facilities initially false per user specification
   const [layers, setLayers] = React.useState({
@@ -125,22 +121,15 @@ export function PortalHazardMapView({
         title="Flood Hazard"
         titleAccent="Map"
         description="Official UP NOAH / LiPAD 5-year flood simulation overlay centered on your household location in Barangay San Jose."
-        badge={
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/80 bg-emerald-100/90 px-3 py-0.5 text-xs font-black text-emerald-900 shadow-2xs">
-            <Sparkles className="size-3 text-emerald-700" />
-            <span>UP NOAH / LiPAD Model</span>
-          </span>
-        }
         action={
           <div className="flex flex-wrap items-center gap-2">
             <Button
               asChild
-              variant="outline"
               size="sm"
-              className="rounded-xl border-emerald-300 text-xs font-bold text-emerald-900 hover:bg-emerald-50 shadow-2xs"
+              className="h-9 cursor-pointer gap-1.5 rounded-full border border-emerald-600/30 bg-emerald-700 px-3.5 text-xs font-bold text-white shadow-sm shadow-emerald-900/15 transition-all hover:bg-emerald-800 active:scale-[0.98]"
             >
               <Link href="/portal/household/edit">
-                <Pencil className="size-3.5" />
+                <Pencil aria-hidden className="size-3.5 stroke-[2.5]" />
                 <span>Update Coordinates</span>
               </Link>
             </Button>
@@ -150,9 +139,9 @@ export function PortalHazardMapView({
 
       {/* ── Main Map Canvas & Controls Section (Matching Public Hazard Map Architecture) ── */}
       <section aria-label="Interactive flood hazard map">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
-          {/* Map canvas */}
-          <div className="relative h-[480px] sm:h-[580px] lg:h-[700px] flex-1 overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 shadow-2xl">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-6">
+          {/* Map canvas (Expands to match or exceed sidebar height) */}
+          <div className="relative min-h-[580px] sm:min-h-[680px] lg:min-h-[820px] w-full flex-1 self-stretch overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 shadow-2xl">
             <PortalHazardMapCanvas
               center={householdCoords ?? [14.7415, 121.1315]}
               zoom={householdCoords ? 15.2 : 14.25}
@@ -173,7 +162,7 @@ export function PortalHazardMapView({
           </div>
 
           {/* Sidebar Controls (Layers, Legend, Data Sources) */}
-          <div className="flex flex-col gap-4 lg:w-72 lg:shrink-0">
+          <div className="flex flex-col gap-4 lg:w-80 lg:shrink-0">
             {/* River Alert Level Pill (Sitting directly above the Layers container) */}
             {river.alert_level > 0 ? (
               <div className="flex items-center justify-center gap-2 rounded-2xl border border-primary-800/60 bg-primary-950/95 px-4 py-3 text-xs font-extrabold text-white shadow-xl backdrop-blur-md">
@@ -221,23 +210,23 @@ export function PortalHazardMapView({
               </div>
 
               <div className="space-y-2 text-xs">
-                {/* Household Pin Toggle */}
+                {/* Household Pin Toggle (Blue) */}
                 {hasLocation ? (
                   <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-lg p-1.5 hover:bg-white/5 transition-colors">
                     <input
                       type="checkbox"
                       checked={layers.household}
                       onChange={() => toggleLayer("household")}
-                      className="size-4 rounded border-primary-600 bg-primary-900 text-emerald-500 focus:ring-emerald-500"
+                      className="size-4 rounded border-primary-600 bg-primary-900 text-sky-500 focus:ring-sky-500"
                     />
-                    <span className="font-semibold text-emerald-200 flex items-center gap-1.5">
-                      <Home className="size-3.5 text-emerald-400" />
+                    <span className="font-semibold text-sky-300 flex items-center gap-1.5">
+                      <Home className="size-3.5 text-sky-400 shrink-0" />
                       <span>My Household Location</span>
                     </span>
                   </label>
                 ) : null}
 
-                {/* Flood Hazard 5-Year Toggle */}
+                {/* Flood Hazard 5-Year Toggle (Amber Waves) */}
                 <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-lg p-1.5 hover:bg-white/5 transition-colors">
                   <input
                     type="checkbox"
@@ -245,10 +234,13 @@ export function PortalHazardMapView({
                     onChange={() => toggleLayer("hazard")}
                     className="size-4 rounded border-primary-600 bg-primary-900 text-emerald-500 focus:ring-emerald-500"
                   />
-                  <span className="font-medium text-white/90">Flood hazard (5-year)</span>
+                  <span className="font-medium text-white/90 flex items-center gap-1.5">
+                    <Waves className="size-3.5 text-amber-400 shrink-0" />
+                    <span>Flood hazard (5-year)</span>
+                  </span>
                 </label>
 
-                {/* Area List / Boundaries Toggle */}
+                {/* Area List / Boundaries Toggle (Emerald MapPin) */}
                 <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-lg p-1.5 hover:bg-white/5 transition-colors">
                   <input
                     type="checkbox"
@@ -256,10 +248,13 @@ export function PortalHazardMapView({
                     onChange={() => toggleLayer("areas")}
                     className="size-4 rounded border-primary-600 bg-primary-900 text-emerald-500 focus:ring-emerald-500"
                   />
-                  <span className="font-medium text-white/90">Area list</span>
+                  <span className="font-medium text-white/90 flex items-center gap-1.5">
+                    <MapPin className="size-3.5 text-emerald-400 shrink-0" />
+                    <span>Area list</span>
+                  </span>
                 </label>
 
-                {/* Evacuation Centers Toggle (Initially False) */}
+                {/* Evacuation Centers Toggle (Green Building2) */}
                 <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-lg p-1.5 hover:bg-white/5 transition-colors">
                   <input
                     type="checkbox"
@@ -268,12 +263,12 @@ export function PortalHazardMapView({
                     className="size-4 rounded border-primary-600 bg-primary-900 text-emerald-500 focus:ring-emerald-500"
                   />
                   <span className="font-medium text-white/90 flex items-center gap-1.5">
-                    <Building2 className="size-3.5 text-sky-400" />
+                    <Building2 className="size-3.5 text-emerald-400 shrink-0" />
                     <span>Evacuation Centers</span>
                   </span>
                 </label>
 
-                {/* Siren Units Toggle */}
+                {/* Siren Units Toggle (Rose Siren) */}
                 <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-lg p-1.5 hover:bg-white/5 transition-colors">
                   <input
                     type="checkbox"
@@ -282,7 +277,7 @@ export function PortalHazardMapView({
                     className="size-4 rounded border-primary-600 bg-primary-900 text-emerald-500 focus:ring-emerald-500"
                   />
                   <span className="font-medium text-white/90 flex items-center gap-1.5">
-                    <Siren className="size-3.5 text-amber-400" />
+                    <Siren className="size-3.5 text-rose-400 shrink-0" />
                     <span>Siren units</span>
                   </span>
                 </label>
@@ -328,17 +323,30 @@ export function PortalHazardMapView({
                 </div>
               </div>
 
-              {/* Household Pin Marker */}
+              {/* Evacuation Centers (Green) */}
+              <div className="space-y-1.5 pt-2 border-t border-white/10">
+                <span className="text-[10.5px] font-black uppercase tracking-wider text-primary-400">
+                  Evacuation Centers
+                </span>
+                <div className="flex items-center gap-2 text-xs text-emerald-300 font-semibold">
+                  <span className="grid size-4 place-items-center rounded-full bg-emerald-600 text-white ring-2 ring-white text-[9px] shrink-0">
+                    <Building2 className="size-2.5" />
+                  </span>
+                  <span>Evacuation Center (Green)</span>
+                </div>
+              </div>
+
+              {/* Household Pin Marker (Blue) */}
               {hasLocation ? (
                 <div className="space-y-1.5 pt-2 border-t border-white/10">
                   <span className="text-[10.5px] font-black uppercase tracking-wider text-primary-400">
                     Your Household
                   </span>
-                  <div className="flex items-center gap-2 text-xs text-emerald-300 font-semibold">
-                    <span className="grid size-4 place-items-center rounded-full bg-emerald-600 text-white ring-2 ring-white text-[9px] shrink-0">
+                  <div className="flex items-center gap-2 text-xs text-sky-300 font-semibold">
+                    <span className="grid size-4 place-items-center rounded-full bg-blue-600 text-white ring-2 ring-white text-[9px] shrink-0">
                       <Home className="size-2.5" />
                     </span>
-                    <span>Your Household Pin</span>
+                    <span>Your Household Pin (Blue)</span>
                   </div>
                 </div>
               ) : null}
@@ -387,9 +395,13 @@ export function PortalHazardMapView({
             </div>
           </div>
 
-          <Button asChild size="sm" variant="outline" className="rounded-xl text-xs font-bold">
+          <Button
+            asChild
+            size="sm"
+            className="h-9 cursor-pointer gap-1.5 rounded-full border border-emerald-600/30 bg-emerald-700 px-3.5 text-xs font-bold text-white shadow-sm shadow-emerald-900/15 transition-all hover:bg-emerald-800 active:scale-[0.98]"
+          >
             <Link href="/portal/household/edit">
-              <Pencil className="size-3.5" />
+              <Pencil aria-hidden className="size-3.5 stroke-[2.5]" />
               <span>Edit Coordinates</span>
             </Link>
           </Button>
@@ -451,23 +463,6 @@ export function PortalHazardMapView({
             <p className="text-[11px] text-neutral-500">UP NOAH 5-Year Flood Model</p>
           </div>
         </div>
-      </section>
-
-      {/* ── Exposure by Area Charts Section ── */}
-      <section className="space-y-4">
-        <div className="border-b border-neutral-200/80 pb-3">
-          <h2 className="text-base sm:text-lg font-black text-neutral-900">Exposure by Area</h2>
-          <p className="text-xs text-neutral-500">
-            Household risk classification distribution per area and overall across Barangay San Jose.
-          </p>
-        </div>
-
-        <AreaExposureCharts areas={areaStats} />
-      </section>
-
-      {/* ── Evacuation Centers Directory Grid Section ── */}
-      <section className="space-y-4">
-        <EvacCenterFilterGrid centers={evacCenters} />
       </section>
     </div>
   );

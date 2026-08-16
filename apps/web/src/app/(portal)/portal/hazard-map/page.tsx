@@ -11,7 +11,6 @@ import { api } from "@/lib/api/client";
 import type {
   AreaBoundaryFeature,
   PublicAreaStat,
-  PublicEvacCenter,
   PublicFacility,
   PublicRiverLevel,
 } from "@/lib/api/public-types";
@@ -65,22 +64,11 @@ export default function PortalHazardMapPage() {
       api.get<PublicRiverLevel>("/public/river-level").then((r) => r.data),
   });
 
-  const evacCentersQuery = useQuery({
-    queryKey: ["public", "evacuation-centers"],
-    queryFn: () =>
-      api
-        .get<{ items: PublicEvacCenter[] }>("/public/evacuation-centers", {
-          params: { size: 50 },
-        })
-        .then((r) => (Array.isArray(r.data?.items) ? r.data.items : [])),
-  });
-
   const isLoading =
     householdQuery.isLoading ||
     areaBoundariesQuery.isLoading ||
     facilitiesQuery.isLoading ||
-    areaStatsQuery.isLoading ||
-    evacCentersQuery.isLoading;
+    areaStatsQuery.isLoading;
 
   const isError =
     householdQuery.isError ||
@@ -148,7 +136,6 @@ export default function PortalHazardMapPage() {
           last_known_good: null,
         }
       }
-      evacCenters={evacCentersQuery.data ?? []}
     />
   );
 }
