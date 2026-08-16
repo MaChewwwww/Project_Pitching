@@ -52,7 +52,7 @@ import type {
   SafetyStatusSelfIn,
   SafetyStatusValue,
 } from "@/lib/api/safety-types";
-import type { HouseholdDetailOut } from "@/lib/api/registry-types";
+import type { HouseholdDetailOut, MemberOut } from "@/lib/api/registry-types";
 import type { PublicEmergencyEvent, PublicEvacCenter } from "@/lib/api/public-types";
 import { cn } from "@/lib/utils";
 
@@ -226,6 +226,16 @@ export default function PortalSafetyPage() {
 
     if (counts.length === 0) return "Standard evacuation protocol";
     return counts.slice(0, 2).join(" · ") + (counts.length > 2 ? ` +${counts.length - 2} more` : "");
+  }, [householdQuery.data?.members]);
+
+  const memberDetailsMap = React.useMemo(() => {
+    const map = new Map<string, MemberOut>();
+    if (householdQuery.data?.members) {
+      for (const m of householdQuery.data.members) {
+        map.set(m.id, m);
+      }
+    }
+    return map;
   }, [householdQuery.data?.members]);
 
   // Household Flood Risk & Proximity Assessment
@@ -707,6 +717,62 @@ export default function PortalSafetyPage() {
                       {members.map((member) => {
                         const isSafe = member.status === "safe";
                         const needsRescue = member.status === "needs_rescue";
+                        const detail = memberDetailsMap.get(member.member_id);
+
+                        const specialBadges: Array<{
+                          label: string;
+                          bg: string;
+                          text: string;
+                          border: string;
+                        }> = [];
+                        if (detail?.is_pwd) {
+                          specialBadges.push({
+                            label: "PWD",
+                            bg: "bg-blue-50",
+                            text: "text-blue-700",
+                            border: "border-blue-200",
+                          });
+                        }
+                        if (detail?.is_senior) {
+                          specialBadges.push({
+                            label: "Senior 60+",
+                            bg: "bg-amber-50",
+                            text: "text-amber-800",
+                            border: "border-amber-200",
+                          });
+                        }
+                        if (detail?.is_pregnant) {
+                          specialBadges.push({
+                            label: "Pregnant",
+                            bg: "bg-pink-50",
+                            text: "text-pink-700",
+                            border: "border-pink-200",
+                          });
+                        }
+                        if (detail?.is_lactating) {
+                          specialBadges.push({
+                            label: "Lactating",
+                            bg: "bg-purple-50",
+                            text: "text-purple-700",
+                            border: "border-purple-200",
+                          });
+                        }
+                        if (detail?.is_bedridden) {
+                          specialBadges.push({
+                            label: "Bedridden",
+                            bg: "bg-rose-50",
+                            text: "text-rose-700",
+                            border: "border-rose-200",
+                          });
+                        }
+                        if (detail?.has_chronic_condition) {
+                          specialBadges.push({
+                            label: "Chronic Care",
+                            bg: "bg-teal-50",
+                            text: "text-teal-700",
+                            border: "border-teal-200",
+                          });
+                        }
 
                         return (
                           <div
@@ -720,7 +786,7 @@ export default function PortalSafetyPage() {
                                 : "border-neutral-200/90 hover:border-neutral-300",
                             )}
                           >
-                            {/* Member Info & Current Status Pill */}
+                            {/* Member Info & Special Needs Badges */}
                             <div className="flex items-start sm:items-center gap-3 min-w-0">
                               <span
                                 className={cn(
@@ -747,23 +813,23 @@ export default function PortalSafetyPage() {
                                   ) : null}
                                 </div>
 
-                                <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                                  {isSafe ? (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 text-[10.5px] font-bold text-emerald-900">
-                                      <CheckCircle2 className="size-3 text-emerald-700" />
-                                      <span>Confirmed Safe</span>
-                                    </span>
-                                  ) : needsRescue ? (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-red-600 text-white px-2.5 py-0.5 text-[10.5px] font-bold shadow-2xs animate-pulse">
-                                      <AlertTriangle className="size-3" />
-                                      <span>Needs Immediate Rescue</span>
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 border border-neutral-200 px-2.5 py-0.5 text-[10.5px] font-medium text-neutral-600">
-                                      <span>Not Yet Checked In</span>
-                                    </span>
-                                  )}
-                                </div>
+                                {specialBadges.length > 0 ? (
+                                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                    {specialBadges.map((badge) => (
+                                      <span
+                                        key={badge.label}
+                                        className={cn(
+                                          "inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                                          badge.bg,
+                                          badge.text,
+                                          badge.border,
+                                        )}
+                                      >
+                                        {badge.label}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : null}
                               </div>
                             </div>
 

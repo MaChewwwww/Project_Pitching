@@ -26,11 +26,11 @@ export default function PortalHazardMapPage() {
   });
 
   const areaBoundariesQuery = useQuery({
-    queryKey: ["public", "areas", "boundaries"],
+    queryKey: ["public", "area-boundaries"],
     queryFn: () =>
       api
         .get<{ type: string; features: AreaBoundaryFeature[] }>(
-          "/public/areas/boundaries",
+          "/public/area-boundaries",
         )
         .then((r) => r.data.features),
   });
@@ -42,10 +42,10 @@ export default function PortalHazardMapPage() {
   });
 
   const areaStatsQuery = useQuery({
-    queryKey: ["public", "areas", "stats"],
+    queryKey: ["public", "area-stats"],
     queryFn: () =>
       api
-        .get<{ areas: PublicAreaStat[] }>("/public/areas/stats")
+        .get<{ areas: PublicAreaStat[] }>("/public/area-stats")
         .then((r) => r.data.areas),
   });
 
