@@ -143,8 +143,19 @@ export function EmergencyHotlinesDialog({
             </div>
           </div>
 
-          {/* Filter Dropdown + Search Row */}
+          {/* Search + Filter Dropdown Row */}
           <div className="flex items-center gap-2.5 pt-1">
+            {/* Quick Search */}
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400 pointer-events-none" />
+              <Input
+                value={searchQuery}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                placeholder="Search area or number..."
+                className="pl-8 h-9 text-xs bg-white rounded-full border-neutral-200 shadow-2xs focus-visible:ring-emerald-500"
+              />
+            </div>
+
             {/* Category Dropdown Pill */}
             <div className="shrink-0">
               <Select
@@ -159,7 +170,7 @@ export function EmergencyHotlinesDialog({
                 </SelectTrigger>
                 <SelectContent
                   position="popper"
-                  align="start"
+                  align="end"
                   sideOffset={6}
                   className="z-[2500] w-56 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md"
                 >
@@ -193,17 +204,6 @@ export function EmergencyHotlinesDialog({
                   })}
                 </SelectContent>
               </Select>
-            </div>
-
-            {/* Quick Search */}
-            <div className="relative flex-1 min-w-0">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400 pointer-events-none" />
-              <Input
-                value={searchQuery}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                placeholder="Search area or number..."
-                className="pl-8 h-9 text-xs bg-white rounded-full border-neutral-200 shadow-2xs focus-visible:ring-emerald-500"
-              />
             </div>
           </div>
         </DialogHeader>
