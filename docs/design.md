@@ -438,6 +438,8 @@ These are the app's actual vocabulary. Each is built from primitives above.
 | `AdminPageHeader` | The console's header row: route icon + `h2` title + one context line + action slot. Compact on purpose — the console header labels a worklist, so height spent here is a table row an officer cannot see            |
 | `SectionHeader`   | Tinted rounded-square icon + title + description line. Used at the top of every content card                                                                                                                        |
 | `Footer`          | Barangay info, contacts, socials, hotline, copyright (BR-0.12)                                                                                                                                                      |
+| `LogoLockup`      | Inline SVG mark + `APP_NAME` wordmark, with a variant for dark surfaces; the final logo asset remains an open brand decision                                                                                         |
+| `Reveal`          | Public-site scroll reveal using CSS `animation-timeline: view()` behind `@supports`, so it needs no observer or JavaScript                                                                                          |
 
 #### Data display
 
@@ -550,8 +552,37 @@ On 360px screens the editor toolbar wraps without horizontal scrolling. The anno
 Type and Category in one compact row, stacks long-form content below, and moves the right rail below
 the editor.
 Emergency takeover banners remain text-first and never wait for article media.
-| `LogoLockup` | Logo placeholder while D-OI-2 is open. Inline SVG mark + `APP_NAME` wordmark, with a variant for dark surfaces |
-| `Reveal` | Scroll-reveal wrapper for the public site (Section 8). CSS `animation-timeline: view()` behind `@supports`, so no observer and no JavaScript |
+
+### 7.2.1 Canonical coded patterns — Public Site and Barangay Portal
+
+The current code is the pattern library for the pitch. A **component** has a reusable API and is
+used by several screens; a **composition** is a repeatable arrangement of components, data, and
+actions. Both are design-system assets. Do not duplicate a composition just because it is not one
+file, and do not extract a new `common/` component until it has stable behaviour across domains.
+
+| Surface | Canonical composition | Reuse before writing another |
+| --- | --- | --- |
+| Public shell | Service-first utility bar, public navigation, content, footer, alert/hotline affordances, and one splash lifecycle | `PublicShell`, `PublicNavbar`, `PageSplashLoader`, `EmergencyAlertBanner`, `HotlineButton` |
+| Public route intro | Breadcrumb → expressive page title/description → optional action, on a light green-to-white band | `PageHeader`; do not use an admin header or make a one-off hero |
+| Public content section | Overline/icon → two-tone section heading → explanatory copy → optional View All → purpose-built content deck | `SectionHeader`, `SectionBoundary`, section skeletons, domain cards |
+| Public editorial reading | Calm article reading column with domain metadata and ordered media; announcement detail may add a recent-content rail | `AnnouncementDetailView`, `ArticleDetail`, cards and media carousels |
+| Barangay Portal shell | Dark forest navigation rail, route-aware breadcrumbs, compact white workspace, staff profile menu | `AdminShell`, `AdminBreadcrumbs`, `ADMIN_CATEGORIES`; never recreate local navigation |
+| Barangay Portal workspace | Compact action-oriented header → optional KPI/metric strip → single connected work surface → contextual dialogs/drawers | `AdminPageHeader`, `AssetMetricStrip`, `EmptyState`, `ErrorState`, skeletons |
+| Barangay Portal directory | Header action → shared search/filter toolbar → sortable green DataTable → responsive cards and labelled row actions | `ResourceTable`; pages provide columns, filters, and domain actions rather than reimplementing table chrome |
+| Barangay Portal authoring | Header → primary editor/form → contextual right rail for media, targeting, publishing, or provenance; rail stacks below on narrow screens | `AnnouncementForm`, `ActivityForm`, `DonationDriveForm`, `GuideEditor`, `ArticleImageManager`, preview dialogs |
+| Barangay Portal asset operations | Metrics and filters beside one selected record/map state; creation/edit/details stay in focused dialogs | asset-map workspace, `AssetMetricStrip`, facility/evacuation/siren dialogs |
+| Emergency operations | Event context first, then the selected operational view (overview, map, accounted-for, worklist); detail actions open without losing the worklist | emergency workspace, response map/worklist, `SafetyJourneyDrawer` |
+
+The public site earns attention through roomy hierarchy, descriptive copy, and restrained reveal
+motion. The Barangay Portal earns trust through information density, stable locations for actions,
+green operational chrome, and plain-language status. They share tokens and accessible primitives,
+not the same header or page anatomy.
+
+**Extraction test.** Keep a pattern feature-local when it carries domain terminology, workflow, or
+data ownership (for example, an evacuation check-in dialog). Promote it to `features/admin` when
+several portal modules share the same operational behaviour (for example, `ResourceTable`), and to
+`common` only when it is equally valid outside that domain (for example, `EmptyState` or `Button`).
+This avoids both copy-paste drift and a vague “universal card” that makes every screen look alike.
 
 ### 7.3 Component specs
 

@@ -16,6 +16,25 @@ components/
 The inventory — every composite, what it does, what it must handle — is
 [`design.md`](../../../docs/design.md) Section 7.2. This file is about the mechanics.
 
+## Component or composition?
+
+Both are reusable design work, but they have different homes:
+
+| It is a… | When it qualifies | Home | Examples |
+| --- | --- | --- | --- |
+| **Common component** | Stable UI behaviour that works across public, portal, and console contexts | `components/common/` | `Button`, `EmptyState`, `PageHeader`, `SectionHeader` |
+| **Feature component** | Reusable behaviour with one domain or portal responsibility | `components/features/<domain>/` | `ResourceTable`, `AdminPageHeader`, `AnnouncementForm`, `AssetMetricStrip` |
+| **Composition** | A documented page/workspace anatomy made from components plus route data and actions | Route page + this documentation | public content section, admin directory, authoring surface, asset workspace, emergency worklist |
+
+The Barangay Portal's repeated look is therefore not accidental and it is not limited to
+`common/`. Its `features/admin/` components are part of the system: use them before making a
+screen-local table, header, generic form, metric strip, or CRUD dialog. The canonical Public and
+Barangay Portal compositions live in [`design.md`](../../../docs/design.md) Section 7.2.1.
+
+**Extraction rule:** duplicate one-off domain workflow only when its language, state, or
+authorization differs. Extract it after the behaviour is stable across two or more callers; do not
+promote every similarly styled card into a vague shared component.
+
 ## Why pages never import `ui/` directly
 
 A raw shadcn primitive is not this app's component. `design.md` assigns heights (32/40/48),
