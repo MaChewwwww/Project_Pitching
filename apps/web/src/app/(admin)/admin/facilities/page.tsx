@@ -721,264 +721,152 @@ export default function AdminFacilitiesPage() {
         </div>
       </div>
 
-      {/* 2-Column Lower Section: Column 1 (ResourceTable) | Column 2 (Readiness & Distribution Insights) */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-start">
-        {/* Column 1: Facilities Management Table */}
-        <div className="flex flex-col gap-3 xl:col-span-7">
-          <ResourceTable
-            columns={columns}
-            data={filteredFacilities}
-            isLoading={isLoading}
-            isError={isError}
-            onRetry={refetch}
-            getRowKey={(row) => row.id}
-            selectedRowKey={selectedId}
-            onRowSelect={(row) => setSelectedId(row.id)}
-            searchPlaceholder="Search facility name, category, address, hotline…"
-            filterSlots={
-              <div className="flex flex-wrap items-center gap-2">
-                <Select
-                  value={typeDropdownFilter}
-                  onValueChange={setTypeDropdownFilter}
-                >
-                  <SelectTrigger className="inline-flex h-9 w-fit min-w-[140px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                    <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent align="end" className="min-w-48">
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {FACILITY_TYPE_CONFIGS.map((t) => (
-                      <SelectItem key={t.type} value={t.type}>
-                        <div className="flex items-center gap-1.5">
-                          <span className={cn("size-2 rounded-full", t.dot)} />
-                          <span>{t.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={areaFilter} onValueChange={setAreaFilter}>
-                  <SelectTrigger className="inline-flex h-9 w-fit min-w-[120px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                    <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
-                    <SelectValue placeholder="All Areas" />
-                  </SelectTrigger>
-                  <SelectContent align="end" className="min-w-40">
-                    <SelectItem value="all">All Areas</SelectItem>
-                    {SAN_JOSE_AREAS.map((area) => (
-                      <SelectItem key={area} value={area}>
-                        {area}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            }
-            toolbarAction={<RegisterFacilityDialog />}
-            rowActions={(row) => (
-              <div className="flex flex-wrap items-center gap-1.5">
-                {/* 1. Locate (Icon Only) */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedId(row.id)}
-                  aria-label={`Locate ${row.name}`}
-                  className="h-8 w-8 p-0 border-slate-300 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shrink-0"
-                  title="Locate on Map"
-                >
-                  <Crosshair aria-hidden className="size-3.5 text-slate-700" />
-                </Button>
-
-                {/* 2. Details (Green Modal) */}
-                <FacilityDetailsDialog
-                  facility={row as FacilityEditable}
-                  onLocate={setSelectedId}
-                  onToggleStatus={(f) =>
-                    f.is_active
-                      ? setFacilityToDeactivate(f as Facility)
-                      : reactivateMutation.mutate(f.id)
-                  }
-                  trigger={
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 gap-1.5 border-emerald-300/90 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 hover:border-emerald-400 cursor-pointer"
-                      title="View Facility Details"
-                    >
-                      <Eye className="size-3.5 text-emerald-700" />
-                      Details
-                    </Button>
-                  }
-                />
-
-                {/* 3. Edit (Modal) */}
-                <EditFacilityDialog
-                  facility={row as FacilityEditable}
-                  trigger={
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 gap-1.5 border-amber-300/80 bg-amber-50 px-2.5 text-xs font-bold text-amber-800 hover:bg-amber-100 cursor-pointer"
-                      title="Edit Facility"
-                    >
-                      <Pencil className="size-3.5" />
-                      Edit
-                    </Button>
-                  }
-                />
-
-                {/* 4. Deactivate / Reactivate */}
-                {row.is_active ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setFacilityToDeactivate(row)}
-                    disabled={deactivateMutation.isPending}
-                    className="h-8 gap-1.5 border-neutral-300 bg-neutral-100 px-2.5 text-xs font-bold text-neutral-800 hover:bg-neutral-200 hover:text-neutral-950 cursor-pointer"
-                    title="Deactivate Facility"
-                  >
-                    <PowerOff className="size-3.5 text-neutral-600" />
-                    Deactivate
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => reactivateMutation.mutate(row.id)}
-                    disabled={reactivateMutation.isPending}
-                    className="h-8 gap-1.5 border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 cursor-pointer"
-                    title="Reactivate Facility"
-                  >
-                    <Power className="size-3.5 text-emerald-600" />
-                    Reactivate
-                  </Button>
-                )}
-
-                {/* 5. Delete Confirmation Modal */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setFacilityToDelete(row)}
-                  disabled={deactivateMutation.isPending}
-                  className="h-8 gap-1.5 border-rose-200 bg-rose-50/60 px-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 cursor-pointer"
-                  title="Delete Facility (Soft Delete)"
-                >
-                  <Trash2 className="size-3.5" />
-                  Delete
-                </Button>
-              </div>
-            )}
-          />
-        </div>
-
-        {/* Column 2: Facility Readiness & Distribution Insights */}
-        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs xl:col-span-5">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 shadow-2xs">
-                <Compass className="size-4" />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm text-slate-900 leading-tight">
-                  Facility Registry Insights
-                </h3>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Spatial distribution and readiness across San Jose Areas
-                </p>
-              </div>
-            </div>
-            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 font-mono text-[10.5px] font-bold text-slate-700 border border-slate-200 shrink-0">
-              {stats.total} Total
-            </span>
-          </div>
-
-          {/* Area Distribution Grid */}
-          <div className="flex flex-col gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Area Allocation (1–6)
-            </span>
-            <div className="grid grid-cols-3 gap-2">
-              {SAN_JOSE_AREAS.map((area) => {
-                const count = stats.countByArea.get(area) ?? 0;
-                const isFiltered = areaFilter === area;
-
-                return (
-                  <button
-                    key={area}
-                    type="button"
-                    onClick={() =>
-                      setAreaFilter(areaFilter === area ? "all" : area)
-                    }
-                    className={cn(
-                      "flex flex-col items-center justify-center rounded-xl border p-2.5 transition-all text-center cursor-pointer",
-                      isFiltered
-                        ? "border-emerald-600 bg-emerald-50/80 shadow-xs"
-                        : "border-slate-200 bg-slate-50/60 hover:bg-slate-100/80 hover:border-slate-300",
-                    )}
-                  >
-                    <span className="text-[10.5px] font-bold text-slate-600">
-                      {area}
-                    </span>
-                    <span className="mt-0.5 text-base font-black text-slate-900">
-                      {count}
-                    </span>
-                    <span className="text-[9.5px] text-slate-400 font-medium">
-                      facilities
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Category Breakdown Matrix */}
-          <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 pt-3">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Category Distribution Matrix
-            </span>
-            <div className="flex flex-col gap-2">
-              {FACILITY_TYPE_CONFIGS.map((cfg) => {
-                const count = stats.countByType.get(cfg.type) ?? 0;
-                const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
-                const Icon = cfg.icon;
-
-                return (
-                  <div
-                    key={cfg.type}
-                    className="flex flex-col gap-1 rounded-xl border border-slate-100 bg-slate-50/50 p-2.5"
-                  >
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+      {/* Facilities Management Table (Full Width) */}
+      <div className="flex flex-col gap-3 w-full">
+        <ResourceTable
+          columns={columns}
+          data={filteredFacilities}
+          isLoading={isLoading}
+          isError={isError}
+          onRetry={refetch}
+          getRowKey={(row) => row.id}
+          selectedRowKey={selectedId}
+          onRowSelect={(row) => setSelectedId(row.id)}
+          searchPlaceholder="Search facility name, category, address, hotline…"
+          filterSlots={
+            <div className="flex flex-wrap items-center gap-2">
+              <Select
+                value={typeDropdownFilter}
+                onValueChange={setTypeDropdownFilter}
+              >
+                <SelectTrigger className="inline-flex h-9 w-fit min-w-[140px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
+                  <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent align="end" className="min-w-48">
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {FACILITY_TYPE_CONFIGS.map((t) => (
+                    <SelectItem key={t.type} value={t.type}>
                       <div className="flex items-center gap-1.5">
-                        <Icon className={cn("size-3.5", cfg.color)} />
-                        <span>{cfg.label}</span>
+                        <span className={cn("size-2 rounded-full", t.dot)} />
+                        <span>{t.label}</span>
                       </div>
-                      <span className="font-mono text-slate-700">
-                        {count} ({pct}%)
-                      </span>
-                    </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200/80">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${pct}%`,
-                          backgroundColor: cfg.hexColor,
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-          {/* Contextual Card Footer */}
-          <div className="mt-1 flex items-start gap-2 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 text-xs text-emerald-950">
-            <Sparkles className="size-4 text-emerald-700 shrink-0 mt-0.5" />
-            <p className="text-[11.5px] leading-relaxed text-emerald-900">
-              All infrastructure sites are linked to San Jose disaster readiness plans and displayed on public resident maps.
-            </p>
-          </div>
-        </div>
+              <Select value={areaFilter} onValueChange={setAreaFilter}>
+                <SelectTrigger className="inline-flex h-9 w-fit min-w-[120px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
+                  <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                  <SelectValue placeholder="All Areas" />
+                </SelectTrigger>
+                <SelectContent align="end" className="min-w-40">
+                  <SelectItem value="all">All Areas</SelectItem>
+                  {SAN_JOSE_AREAS.map((area) => (
+                    <SelectItem key={area} value={area}>
+                      {area}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          }
+          toolbarAction={<RegisterFacilityDialog />}
+          rowActions={(row) => (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {/* 1. Locate (Icon Only) */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedId(row.id)}
+                aria-label={`Locate ${row.name}`}
+                className="h-8 w-8 p-0 border-slate-300 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shrink-0"
+                title="Locate on Map"
+              >
+                <Crosshair aria-hidden className="size-3.5 text-slate-700" />
+              </Button>
+
+              {/* 2. Details (Green Modal) */}
+              <FacilityDetailsDialog
+                facility={row as FacilityEditable}
+                onLocate={setSelectedId}
+                onToggleStatus={(f) =>
+                  f.is_active
+                    ? setFacilityToDeactivate(f as Facility)
+                    : reactivateMutation.mutate(f.id)
+                }
+                trigger={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 border-emerald-300/90 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 hover:border-emerald-400 cursor-pointer"
+                    title="View Facility Details"
+                  >
+                    <Eye className="size-3.5 text-emerald-700" />
+                    Details
+                  </Button>
+                }
+              />
+
+              {/* 3. Edit (Modal) */}
+              <EditFacilityDialog
+                facility={row as FacilityEditable}
+                trigger={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 border-amber-300/80 bg-amber-50 px-2.5 text-xs font-bold text-amber-800 hover:bg-amber-100 cursor-pointer"
+                    title="Edit Facility"
+                  >
+                    <Pencil className="size-3.5" />
+                    Edit
+                  </Button>
+                }
+              />
+
+              {/* 4. Deactivate / Reactivate */}
+              {row.is_active ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFacilityToDeactivate(row)}
+                  disabled={deactivateMutation.isPending}
+                  className="h-8 gap-1.5 border-neutral-300 bg-neutral-100 px-2.5 text-xs font-bold text-neutral-800 hover:bg-neutral-200 hover:text-neutral-950 cursor-pointer"
+                  title="Deactivate Facility"
+                >
+                  <PowerOff className="size-3.5 text-neutral-600" />
+                  Deactivate
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => reactivateMutation.mutate(row.id)}
+                  disabled={reactivateMutation.isPending}
+                  className="h-8 gap-1.5 border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 cursor-pointer"
+                  title="Reactivate Facility"
+                >
+                  <Power className="size-3.5 text-emerald-600" />
+                  Reactivate
+                </Button>
+              )}
+
+              {/* 5. Delete Confirmation Modal */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFacilityToDelete(row)}
+                disabled={deactivateMutation.isPending}
+                className="h-8 gap-1.5 border-rose-200 bg-rose-50/60 px-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 cursor-pointer"
+                title="Delete Facility (Soft Delete)"
+              >
+                <Trash2 className="size-3.5" />
+                Delete
+              </Button>
+            </div>
+          )}
+        />
       </div>
 
       {/* Deactivate Facility Confirmation Modal */}
