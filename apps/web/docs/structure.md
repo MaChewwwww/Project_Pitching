@@ -46,8 +46,8 @@ The following inventory serves as the architectural and design pattern reference
 
 The routes exist for the resident dashboard, onboarding, household editing, safety check-in, and
 incident reporting, but this surface is not part of the finalized Public Site and Barangay Portal
-demo baseline. Treat its remaining visual and workflow work as pending; do not cite it as a
-completed portal pattern.
+baseline. Its remaining visual and workflow work is required before the overall pitch demo is
+complete; do not cite it as a completed portal pattern yet.
 
 ### 5. Barangay Portal (`(admin)`) — final visual composition map
 

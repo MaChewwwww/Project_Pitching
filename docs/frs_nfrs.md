@@ -100,7 +100,7 @@ A requirement is `✅` only when all of the following hold:
 
 ### 1.6 Module Progress Overview
 
-| Code  | Module                                      | Total | Done (`✅`) | In Progress (`◐`) | In Review (`👁`) | Not Started (`☐`) | Deferred (`⏸`) | Dropped (`✕`) | Active Completion | Frozen-demo status                |
+| Code  | Module                                      | Total | Done (`✅`) | In Progress (`◐`) | In Review (`👁`) | Not Started (`☐`) | Deferred (`⏸`) | Dropped (`✕`) | Active Completion | Public/Admin baseline status      |
 | ----- | ------------------------------------------- | :---: | :---------: | :---------------: | :-------------: | :---------------: | :------------: | :-----------: | :---------------: | --------------------------------- |
 | `SYS` | Platform Foundation                         |  18   |      0      |        12         |        0        |         6         |       0        |       0       |      **67%**      | Core demo paths complete          |
 | `PUB` | Public Information Site                     |  20   |      0      |        18         |        0        |         2         |       0        |       0       |      **90%**      | **Complete**                      |
@@ -116,7 +116,7 @@ A requirement is `✅` only when all of the following hold:
 | `ANL` | Analytics & Reporting                       |  11   |      0      |         2         |        0        |         7         |       0        |       2       |      **22%**      | Not part of the frozen demo       |
 | `NFR` | Non-Functional Requirements (Cross-Cutting) |  88   |      0      |         8         |        7        |        67         |       6        |       0       |      **18%**      | Validation evidence still pending |
 
-_Overall Active Completion: **133 / 256 active requirements (52%)** implemented, in progress, or in review. The denominator excludes 27 retired FRs and 6 deferred privacy NFRs. This is the full roadmap metric, **not** the pitch-demo completion metric._
+_Overall Active Completion: **133 / 256 active requirements (52%)** implemented, in progress, or in review. The denominator excludes 27 retired FRs and 6 deferred privacy NFRs. This is the full roadmap metric, **not** the pitch-demo completion metric. The full pitch demo remains in progress until the Resident Portal and About/team work are complete._
 
 ---
 
@@ -145,20 +145,22 @@ _Overall Active Completion: **133 / 256 active requirements (52%)** implemented,
 Portal. This is a scope and design freeze, not evidence that an FR satisfies the Definition of
 Done; status remains `◐` until peer review and the required verification are recorded.
 
-**Demo readiness is complete for the frozen scope.** The project owner has manually tested and
+**The Public/Admin demo baseline is complete.** The project owner has manually tested and
 fine-tuned the Public Information Site and Barangay Portal frontend and backend for the pitch.
-This is recorded as complete demo scope in the overview above; it does not convert individual
+The overall pitch demo remains in progress until the Resident Portal design/workflow pass and the
+About/team-profile revision are complete. This baseline status does not convert individual
 requirements to `✅` without the required second-team-member review.
 
 **Demo identity boundary.** The pitch has exactly two personas: **Resident** and **Barangay
 Admin**. `FR-SYS-005` still documents the internal authorization model used by the code and
 schema; BHW, SK Officer, and Super Admin are not separate demo accounts or presentation flows.
 
-| Surface                 | Current state                                                                                                                                                                                     | Explicit follow-up boundary                                                                  |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Public Information Site | Landing, announcements, activities, donation drives, preparedness/help, weather/flood history, rescue, authentication, and the three finalized map views are implemented and presentation-frozen. | Revise `/about` and add the team profile only after the team supplies approved content.      |
-| Barangay Portal         | Registry, emergency operations, weather, asset, evacuation, content, hotline/FAQ, activity, guide, and donation-drive workspaces are implemented and presentation-frozen.                         | Do not redesign this surface without an FR/NFR-scoped demo change.                           |
-| Resident Portal         | Onboarding, household edit, safety, and authenticated incident-report routes exist.                                                                                                               | Its full workflow and design pass remain the next planned work; do not describe it as final. |
+| Surface                 | Current state                                                                                                                                                                                     | Explicit follow-up boundary                                                                                 |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Public Information Site | Landing, announcements, activities, donation drives, preparedness/help, weather/flood history, rescue, authentication, and the three finalized map views are implemented and presentation-frozen. | Revise `/about` only as part of the required About/team completion work.                                    |
+| Barangay Portal         | Registry, emergency operations, weather, asset, evacuation, content, hotline/FAQ, activity, guide, and donation-drive workspaces are implemented and presentation-frozen.                         | Do not redesign this surface without an FR/NFR-scoped demo change.                                          |
+| Resident Portal         | Onboarding, household edit, safety, and authenticated incident-report routes exist.                                                                                                               | Complete its full workflow and design pass before calling the overall pitch demo complete.                  |
+| About/team page         | The public About route exists.                                                                                                                                                                    | Complete its visual revision and add approved team profiles before calling the overall pitch demo complete. |
 
 Do not convert this audit into invented portal screens. New target workflows require a stakeholder decision and permanent FR IDs first.
 
