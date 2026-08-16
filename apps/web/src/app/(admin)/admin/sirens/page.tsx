@@ -146,6 +146,13 @@ export default function AdminSirensPage() {
     queryFn: () => api.get<SirenAudit[]>("/admin/sirens/audits").then((r) => r.data),
   });
 
+  const mapSectionRef = React.useRef<HTMLDivElement>(null);
+
+  const handleLocate = React.useCallback((id: string) => {
+    setSelectedId(id);
+    mapSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
   const triggerMutation = useMutation({
     mutationFn: (id: string) => api.post(`/admin/sirens/${id}/trigger`),
     onSuccess: (res: { data: Siren }) => {
@@ -490,7 +497,7 @@ export default function AdminSirensPage() {
       <AssetMetricStrip items={metricCards} />
 
       {/* Two-Column Map Workspace */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
+      <div ref={mapSectionRef} className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5 scroll-mt-6">
         {/* Column 1: Map Canvas */}
         <div className="flex flex-1 flex-col min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
           <div className="relative h-[480px] sm:h-[580px] lg:h-[620px] w-full overflow-hidden">
@@ -735,7 +742,7 @@ export default function AdminSirensPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setSelectedId(row.id)}
+                  onClick={() => handleLocate(row.id)}
                   aria-label={`Locate ${row.name}`}
                   className="h-8 w-8 p-0 border-slate-300 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shrink-0"
                   title="Locate on Map"

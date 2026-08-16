@@ -67,7 +67,7 @@ export default function SirenDetailPage() {
   const sirenId = params.id as string;
   const sirenAudio = useSirenAudio();
 
-  const [showHazard, setShowHazard] = React.useState(true);
+  const [showHazard, setShowHazard] = React.useState(false);
   const [isDisableOpen, setIsDisableOpen] = React.useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
 

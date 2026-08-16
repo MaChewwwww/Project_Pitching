@@ -229,7 +229,23 @@ export function resolveAdminBreadcrumbs(pathname: string): AdminCrumb[] {
                     : index === 0
                       ? "Citizen Details"
                       : (LEAF_LABELS[segment] ?? "Citizen Details")
-              : (LEAF_LABELS[segment] ?? "Edit");
+              : link.href === "/admin/evacuation-centers"
+                ? segment === "new"
+                  ? "Designate Evacuation Center"
+                  : segment === "edit"
+                    ? "Edit Evacuation Center"
+                    : index === 0
+                      ? "Evacuation Center Details"
+                      : (LEAF_LABELS[segment] ?? "Evacuation Center Details")
+                : link.href === "/admin/facilities"
+                  ? segment === "new"
+                    ? "Register Facility"
+                    : segment === "edit"
+                      ? "Edit Facility"
+                      : index === 0
+                        ? "Facility Details"
+                        : (LEAF_LABELS[segment] ?? "Facility Details")
+                  : (LEAF_LABELS[segment] ?? "Edit");
     const href =
       (link.href === "/admin/households" || link.href === "/admin/citizens") &&
       index === 0 &&

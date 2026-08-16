@@ -42,7 +42,6 @@ import { AdminAssetWorkspaceMap } from "@/components/features/map/admin-asset-wo
 import { CreateEvacuationCenterDialog } from "@/components/features/admin/create-evacuation-center-dialog";
 import { EditEvacuationCenterDialog, type EvacCenterEditable } from "@/components/features/admin/edit-evacuation-center-dialog";
 import { EvacuationCenterDetailsDialog } from "@/components/features/admin/evacuation-center-details-dialog";
-import { EvacCheckinManagerDialog } from "@/components/features/admin/evac-checkin-manager-dialog";
 import {
   Select,
   SelectContent,
@@ -124,6 +123,14 @@ export default function AdminEvacuationCentersPage() {
   });
 
   const [centerToDelete, setCenterToDelete] = React.useState<EvacCenter | null>(null);
+  const [centerToClose, setCenterToClose] = React.useState<EvacCenter | null>(null);
+
+  const mapSectionRef = React.useRef<HTMLDivElement>(null);
+
+  const handleLocate = React.useCallback((id: string) => {
+    setSelectedId(id);
+    mapSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   const toggleOpenMutation = useMutation({
     mutationFn: ({ id, is_open }: { id: string; is_open: boolean }) =>
@@ -465,7 +472,7 @@ export default function AdminEvacuationCentersPage() {
       <AssetMetricStrip items={metricCards} />
 
       {/* Main 2-Column GIS Workspace & Control Sidebar (Seamless Equal-Height on Desktop) */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-5 lg:h-[620px]">
+      <div ref={mapSectionRef} className="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-5 lg:h-[620px] scroll-mt-6">
         {/* Column 1: Leaflet Interactive Map View */}
         <div className="flex flex-1 flex-col min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl h-[480px] sm:h-[580px] lg:h-full">
           <div className="relative h-full w-full overflow-hidden">
@@ -700,7 +707,7 @@ export default function AdminEvacuationCentersPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setSelectedId(row.id)}
+                onClick={() => handleLocate(row.id)}
                 aria-label={`Locate ${row.facility.name}`}
                 className="h-8 w-8 p-0 border-slate-300 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shrink-0"
                 title="Locate on Map"
@@ -711,17 +718,10 @@ export default function AdminEvacuationCentersPage() {
               {/* 2. Details Modal */}
               <EvacuationCenterDetailsDialog
                 center={row as EvacCenterEditable}
-                onLocateOnMap={() => setSelectedId(row.id)}
+                onLocateOnMap={() => handleLocate(row.id)}
               />
 
-              {/* 3. Check-In Station Modal (UserCheck icon) */}
-              <EvacCheckinManagerDialog
-                centerId={row.id}
-                centerName={row.facility.name}
-                capacity={row.capacity}
-              />
-
-              {/* 4. Edit Modal (Pencil icon) */}
+              {/* 3. Edit Modal (Pencil icon) */}
               <EditEvacuationCenterDialog
                 center={row as EvacCenterEditable}
               />
@@ -730,12 +730,17 @@ export default function AdminEvacuationCentersPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  toggleOpenMutation.mutate({
-                    id: row.id,
-                    is_open: !row.is_open,
-                  })
-                }
+                onClick={() => {
+                  if (row.is_open) {
+                    setCenterToClose(row);
+                  } else {
+                    toggleOpenMutation.mutate({
+                      id: row.id,
+                      is_open: true,
+                    });
+                  }
+                }}
+                disabled={toggleOpenMutation.isPending}
                 className={cn(
                   "h-8 w-8 p-0 border cursor-pointer shrink-0",
                   row.is_open
@@ -795,6 +800,60 @@ export default function AdminEvacuationCentersPage() {
           )}
         />
       </div>
+
+      {/* Close Shelter Confirmation Modal */}
+      <AlertDialog
+        open={!!centerToClose}
+        onOpenChange={(open) => !open && setCenterToClose(null)}
+      >
+        <AlertDialogContent className="max-w-md rounded-2xl border border-amber-200 bg-white p-6 shadow-2xl">
+          <AlertDialogHeader className="flex flex-col gap-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-800 border border-amber-200">
+                <PowerOff className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                  Close Evacuation Center?
+                </AlertDialogTitle>
+                <p className="text-xs font-bold text-amber-800 truncate mt-0.5">
+                  {centerToClose?.facility.name}
+                </p>
+              </div>
+            </div>
+            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
+              Are you sure you want to mark this evacuation center as <strong>CLOSED</strong>? This will switch the shelter operational state to Standby, and public hazard maps will display it as not currently accepting new evacuees.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCenterToClose(null)}
+              disabled={toggleOpenMutation.isPending}
+              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                if (centerToClose) {
+                  toggleOpenMutation.mutate(
+                    { id: centerToClose.id, is_open: false },
+                    { onSettled: () => setCenterToClose(null) },
+                  );
+                }
+              }}
+              disabled={toggleOpenMutation.isPending}
+              className="rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs cursor-pointer"
+            >
+              {toggleOpenMutation.isPending ? "Closing…" : "Confirm Close Shelter"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete / Deactivate Evacuation Center Confirmation Modal */}
       <AlertDialog
