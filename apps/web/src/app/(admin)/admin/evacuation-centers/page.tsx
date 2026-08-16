@@ -4,21 +4,31 @@ import * as React from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  BedDouble,
   Building2,
   CheckCircle2,
   Crosshair,
-  Eye,
-  Filter,
+  ExternalLink,
   Layers,
   MapPin,
   Pencil,
+  PieChart as PieChartIcon,
   Plus,
-  RotateCcw,
-  ShieldAlert,
+  Power,
+  PowerOff,
   SlidersHorizontal,
+  Sparkles,
+  UserCheck,
   Users,
   Users2,
 } from "lucide-react";
+import {
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+} from "recharts";
 import { toast } from "sonner";
 
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
@@ -32,6 +42,9 @@ import {
   type AssetMetricCardProps,
 } from "@/components/features/admin/asset-metric-strip";
 import { AdminAssetWorkspaceMap } from "@/components/features/map/admin-asset-workspace-map-dynamic";
+import { CreateEvacuationCenterDialog } from "@/components/features/admin/create-evacuation-center-dialog";
+import { EditEvacuationCenterDialog, type EvacCenterEditable } from "@/components/features/admin/edit-evacuation-center-dialog";
+import { EvacuationCenterDetailsDialog } from "@/components/features/admin/evacuation-center-details-dialog";
 import { EvacCheckinManagerDialog } from "@/components/features/admin/evac-checkin-manager-dialog";
 import {
   Select,
@@ -113,20 +126,6 @@ export default function AdminEvacuationCentersPage() {
       api.get<EvacCenter[]>("/admin/evacuation-centers").then((r) => r.data),
   });
 
-
-
-  const reactivateMutation = useMutation({
-    mutationFn: (id: string) =>
-      api.post(`/admin/evacuation-centers/${id}/reactivate`),
-    onSuccess: () => {
-      toast.success("Evacuation center reactivated");
-      queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
-    },
-    onError: (err) => {
-      toast.error(toDisplayError(err).detail || "Could not reactivate center");
-    },
-  });
-
   const toggleOpenMutation = useMutation({
     mutationFn: ({ id, is_open }: { id: string; is_open: boolean }) =>
       api.patch(`/admin/evacuation-centers/${id}`, { is_open }),
@@ -152,6 +151,7 @@ export default function AdminEvacuationCentersPage() {
     const open = active.filter((c) => c.is_open);
     const totalCapacity = active.reduce((acc, c) => acc + (c.capacity ?? 0), 0);
     const totalOccupancy = active.reduce((acc, c) => acc + (c.occupancy ?? 0), 0);
+    const remainingSlots = Math.max(0, totalCapacity - totalOccupancy);
     const atCapacity = active.filter(
       (c) => c.capacity && (c.occupancy ?? 0) >= c.capacity,
     ).length;
@@ -166,6 +166,7 @@ export default function AdminEvacuationCentersPage() {
       closedCount: active.length - open.length,
       totalCapacity,
       totalOccupancy,
+      remainingSlots,
       atCapacity,
       nearCapacity,
       pctOccupied:
@@ -175,18 +176,18 @@ export default function AdminEvacuationCentersPage() {
     };
   }, [allCenters]);
 
-  /* Top 5 Metrics */
+  /* Top 5 Metrics Strip */
   const metricCards: AssetMetricCardProps[] = [
     {
       icon: Building2,
-      label: "Operational Centers",
+      label: "Operational Shelters",
       value: stats.openCount,
       unit: `/ ${stats.total} total`,
-      sub: stats.openCount > 0 ? "Ready to accept evacuees" : "No open centers",
+      sub: stats.openCount > 0 ? "Ready to accept evacuees" : "No open shelters",
       tone: stats.openCount > 0 ? "emerald" : "amber",
       badge: (
         <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-300">
-          {stats.openCount} Open
+          Ready
         </span>
       ),
     },
@@ -195,86 +196,65 @@ export default function AdminEvacuationCentersPage() {
       label: "Gross Capacity",
       value: stats.totalCapacity.toLocaleString(),
       unit: "slots",
-      sub: "Across all verified facilities",
+      sub: "Across all designated shelters",
       tone: "neutral",
     },
     {
       icon: Users,
-      label: "Current Occupancy",
+      label: "Active Evacuees",
       value: stats.totalOccupancy.toLocaleString(),
-      unit: `(${stats.pctOccupied}%)`,
-      sub: `${stats.totalCapacity - stats.totalOccupancy} slots available`,
-      tone: stats.pctOccupied > 80 ? "rose" : "sky",
-      badge: (
-        <span
-          className={cn(
-            "inline-flex items-center rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider border",
-            stats.pctOccupied > 80
-              ? "bg-rose-100 text-rose-800 border-rose-300"
-              : "bg-sky-100 text-sky-800 border-sky-300",
-          )}
-        >
-          {stats.pctOccupied}% Loaded
-        </span>
-      ),
+      unit: "persons",
+      sub: `${stats.atCapacity} sites at capacity`,
+      tone: stats.totalOccupancy > 0 ? "rose" : "neutral",
     },
     {
-      icon: ShieldAlert,
-      label: "Congestion Alert",
-      value: stats.atCapacity + stats.nearCapacity,
-      unit: "centers",
-      sub:
-        stats.atCapacity > 0
-          ? `${stats.atCapacity} at max, ${stats.nearCapacity} near capacity`
-          : stats.nearCapacity > 0
-            ? `${stats.nearCapacity} centers near capacity`
-            : "No capacity bottlenecks",
-      tone:
-        stats.atCapacity > 0
-          ? "rose"
-          : stats.nearCapacity > 0
-            ? "amber"
-            : "neutral",
-      badge:
-        stats.atCapacity > 0 ? (
-          <span className="inline-flex items-center rounded-full bg-rose-600 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-2xs animate-pulse">
-            Full
-          </span>
-        ) : null,
-    },
-    {
-      icon: MapPin,
-      label: "Spatial Pinning",
-      value: "100%",
-      unit: "Mapped",
-      sub: "Geocoded to Barangay San Jose",
+      icon: CheckCircle2,
+      label: "Available Spaces",
+      value: stats.remainingSlots.toLocaleString(),
+      unit: "slots",
+      sub: `${stats.openCount} open shelter sites`,
       tone: "emerald",
-      badge: (
-        <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-300">
-          GIS Active
-        </span>
-      ),
+    },
+    {
+      icon: BedDouble,
+      label: "Overall Occupancy",
+      value: `${stats.pctOccupied}%`,
+      unit: "load",
+      sub: `${stats.totalOccupancy} / ${stats.totalCapacity} capacity`,
+      tone: stats.pctOccupied >= 80 ? "rose" : "sky",
     },
   ];
 
-  /* Filtered Items for Table and Map */
+  /* Donut Chart Data */
+  const chartData = React.useMemo(() => {
+    return [
+      { name: "Open & Available", value: Math.max(0, stats.openCount - stats.atCapacity - stats.nearCapacity), color: "#10b981" },
+      { name: "Near Capacity", value: stats.nearCapacity, color: "#f59e0b" },
+      { name: "Full / At Capacity", value: stats.atCapacity, color: "#ef4444" },
+      { name: "Closed / Standby", value: stats.closedCount, color: "#64748b" },
+    ].filter((item) => item.value > 0);
+  }, [stats]);
+
+  /* Filtered Centers */
   const filteredCenters = React.useMemo(() => {
     return allCenters.filter((center) => {
+      // 1. Status Filter
       if (statusFilter === "open" && !center.is_open) return false;
       if (statusFilter === "closed" && center.is_open) return false;
-      if (statusFilter === "inactive" && center.is_active !== false) return false;
 
+      // 2. Area Filter
       if (areaFilter !== "all") {
-        if (center.facility.area_name !== areaFilter) return false;
+        const itemArea = center.facility.area_name;
+        if (itemArea !== areaFilter) return false;
       }
 
+      // 3. Occupancy Tier Filter
       if (occupancyTier !== "all") {
-        const ratio = center.capacity
-          ? (center.occupancy ?? 0) / center.capacity
-          : 0;
-        if (occupancyTier === "full" && ratio < 1) return false;
-        if (occupancyTier === "near" && (ratio < 0.8 || ratio >= 1)) return false;
-        if (occupancyTier === "available" && ratio >= 0.8) return false;
+        const cap = center.capacity ?? 0;
+        const occ = center.occupancy ?? 0;
+        if (occupancyTier === "full" && (!cap || occ < cap)) return false;
+        if (occupancyTier === "near" && (!cap || occ / cap < 0.8 || occ >= cap)) return false;
+        if (occupancyTier === "available" && cap > 0 && occ / cap >= 0.8) return false;
       }
 
       return true;
@@ -284,31 +264,19 @@ export default function AdminEvacuationCentersPage() {
   /* Map Items */
   const mapItems = React.useMemo(() => {
     return filteredCenters.map((center) => {
-      const inactive =
-        center.is_active === false || center.facility.is_active === false;
-      const ratio = center.capacity
-        ? (center.occupancy ?? 0) / center.capacity
-        : 0;
+      const isFull = center.capacity && (center.occupancy ?? 0) >= center.capacity;
+      const isNear =
+        center.capacity &&
+        (center.occupancy ?? 0) / center.capacity >= 0.8 &&
+        !isFull;
 
-      const tone: "emerald" | "amber" | "rose" | "slate" = inactive
+      const tone = !center.is_open
         ? "slate"
-        : !center.is_open
-          ? "slate"
-          : center.capacity && ratio >= 1
-            ? "rose"
-            : ratio >= 0.8
-              ? "amber"
-              : "emerald";
-
-      const statusLabel = inactive
-        ? "Inactive Center"
-        : !center.is_open
-          ? "Closed"
-          : center.capacity && ratio >= 1
-            ? "At Capacity (100%)"
-            : ratio >= 0.8
-              ? `Near Capacity (${Math.round(ratio * 100)}%)`
-              : `Open (${center.occupancy ?? 0}/${center.capacity ?? "—"})`;
+        : isFull
+          ? "rose"
+          : isNear
+            ? "amber"
+            : "emerald";
 
       return {
         id: center.id,
@@ -316,12 +284,16 @@ export default function AdminEvacuationCentersPage() {
         category: "evacuation_center" as const,
         location: center.facility.location,
         area_name: center.facility.area_name,
-        statusLabel,
-        tone,
+        statusLabel: center.is_open
+          ? isFull
+            ? "Full (At Capacity)"
+            : isNear
+              ? "Near Capacity"
+              : "Open for Intake"
+          : "Closed (Standby)",
+        tone: tone as "emerald" | "amber" | "rose" | "slate" | "sky",
         occupancy: center.occupancy,
         capacity: center.capacity,
-        subDetail: center.notes || center.facility.address || undefined,
-        detailUrl: `/admin/evacuation-centers/${center.id}`,
       };
     });
   }, [filteredCenters]);
@@ -329,160 +301,137 @@ export default function AdminEvacuationCentersPage() {
   /* ResourceTable Columns */
   const columns: ResourceColumn<EvacCenter>[] = [
     {
-      key: "facility",
-      header: "Center & Facility",
-      render: (row) => (
-        <div className="flex items-start gap-3 min-w-56 max-w-sm">
-          <div className="relative mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 font-bold overflow-hidden shadow-2xs">
-            <Building2 className="size-4 text-emerald-700" />
-          </div>
-          <div className="min-w-0" onClick={(e) => e.stopPropagation()}>
-            <Link
-              href={`/admin/evacuation-centers/${row.id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="font-bold text-neutral-900 hover:text-emerald-700 hover:underline transition-colors truncate block"
-            >
-              {row.facility.name}
-            </Link>
-            <p className="mt-0.5 text-xs text-neutral-500 line-clamp-1">
-              {row.facility.address || row.notes || "No additional address notes"}
-            </p>
-            {row.facility.area_name ? (
-              <span className="mt-1 inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10.5px] font-semibold text-slate-700">
-                <MapPin className="size-2.5" />
-                {row.facility.area_name}
-              </span>
-            ) : null}
-          </div>
+      key: "name",
+      header: "Shelter & Facility Name",
+      render: (row: EvacCenter) => (
+        <div className="flex flex-col gap-0.5 py-0.5">
+          <Link
+            href={`/admin/evacuation-centers/${row.id}`}
+            className="font-bold text-slate-900 hover:text-emerald-700 transition-colors flex items-center gap-1.5"
+          >
+            <BedDouble className="size-4 text-emerald-700 shrink-0" />
+            <span>{row.facility.name}</span>
+          </Link>
+          <span className="text-[11px] text-slate-500">
+            {row.facility.address || "San Jose Municipality, Rodriguez (Montalban), Rizal"}
+          </span>
         </div>
       ),
     },
     {
-      key: "occupancy",
-      header: "Occupancy & Capacity",
-      render: (row) => {
+      key: "area",
+      header: "Assigned Area",
+      render: (row: EvacCenter) => (
+        <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700 border border-slate-200">
+          {row.facility.area_name || "San Jose"}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (row: EvacCenter) => (
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold shadow-2xs",
+            row.is_open
+              ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+              : "bg-slate-100 text-slate-600 border border-slate-300",
+          )}
+        >
+          <span
+            className={cn(
+              "size-1.5 rounded-full",
+              row.is_open ? "bg-emerald-600 animate-pulse" : "bg-slate-400",
+            )}
+          />
+          {row.is_open ? "Open" : "Closed"}
+        </span>
+      ),
+    },
+    {
+      key: "capacity",
+      header: "Live Occupancy & Load",
+      render: (row: EvacCenter) => {
         const occ = row.occupancy ?? 0;
-        const cap = row.capacity;
-        const pct = cap ? Math.min(100, Math.round((occ / cap) * 100)) : 0;
-        const isFull = cap ? occ >= cap : false;
-        const isNear = cap ? occ / cap >= 0.8 && occ < cap : false;
+        const cap = row.capacity ?? 0;
+        const pct = cap > 0 ? Math.min(100, Math.round((occ / cap) * 100)) : 0;
+        const isFull = cap > 0 && occ >= cap;
+        const isNear = cap > 0 && occ / cap >= 0.8 && !isFull;
 
         return (
-          <div className="min-w-44 max-w-xs flex flex-col gap-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-bold tabular-nums text-neutral-900">
-                {occ}{" "}
-                <span className="font-normal text-neutral-500">
-                  / {cap ?? "—"}
-                </span>
+          <div className="flex flex-col gap-1 min-w-[140px] py-1">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+              <span className="font-mono">
+                {occ} / {cap > 0 ? cap : "—"}
               </span>
-              {cap ? (
-                <span
-                  className={cn(
-                    "rounded px-1.5 py-0.2 text-[10.5px] font-bold",
-                    isFull
-                      ? "bg-rose-100 text-rose-800"
-                      : isNear
-                        ? "bg-amber-100 text-amber-800"
-                        : "bg-emerald-100 text-emerald-800",
-                  )}
-                >
-                  {pct}%
-                </span>
-              ) : null}
+              <span
+                className={cn(
+                  "text-[11px]",
+                  isFull ? "text-rose-600 font-black" : isNear ? "text-amber-600 font-bold" : "text-emerald-700 font-semibold",
+                )}
+              >
+                {pct}% Full
+              </span>
             </div>
-            {cap ? (
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                <div
-                  className={cn(
-                    "h-full transition-all duration-300",
-                    isFull
-                      ? "bg-rose-600"
-                      : isNear
-                        ? "bg-amber-500"
-                        : "bg-emerald-600",
-                  )}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            ) : null}
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all",
+                  isFull ? "bg-rose-500" : isNear ? "bg-amber-500" : "bg-emerald-500",
+                )}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
           </div>
         );
       },
     },
     {
       key: "contact",
-      header: "Contact & Personnel",
-      render: (row) => (
-        <div className="min-w-36 text-xs text-neutral-700">
-          <p className="font-semibold text-neutral-900">
-            {row.contact_person || "Barangay Admin"}
-          </p>
-          <p className="mt-0.5 text-neutral-500 font-mono text-[11px]">
-            {row.contact_number || "Emergency Desk"}
-          </p>
+      header: "Officer & Hotline",
+      render: (row: EvacCenter) => (
+        <div className="flex flex-col text-xs">
+          <span className="font-semibold text-slate-800">
+            {row.contact_person || "Command Center"}
+          </span>
+          <span className="font-mono text-[11px] text-slate-500">
+            {row.contact_number || "Barangay San Jose Hotline"}
+          </span>
         </div>
       ),
-    },
-    {
-      key: "status",
-      header: "Operational State",
-      render: (row) => {
-        const isInactive = row.is_active === false;
-        return (
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold shadow-2xs",
-              isInactive
-                ? "border-slate-200 bg-slate-100 text-slate-600"
-                : row.is_open
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                  : "border-amber-200 bg-amber-50 text-amber-800",
-            )}
-          >
-            {isInactive ? (
-              "Inactive"
-            ) : row.is_open ? (
-              <>
-                <CheckCircle2 className="size-3 text-emerald-600" />
-                Open
-              </>
-            ) : (
-              "Closed"
-            )}
-          </span>
-        );
-      },
     },
   ];
 
   return (
-    <div className="flex flex-col gap-6 pb-12">
-      {/* Page Header */}
+    <div className="flex flex-col gap-6 pb-16">
+      {/* Admin Page Header with Designate Dialog */}
       <AdminPageHeader
-        title="Evacuation Centers"
-        description="Monitor real-time shelter capacity, live family check-in rosters, flood hazard exposure, and center activations."
-        action={
-          <Link href="/admin/evacuation-centers/new">
-            <Button
-              variant="primary"
-              className="h-9 gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700 shadow-2xs cursor-pointer shrink-0"
-            >
-              <Plus className="size-3.5" />
-              Register Center
-            </Button>
-          </Link>
-        }
+        title="Evacuation Centers Management"
+        description="Monitor disaster shelter capacities, live evacuee headcounts, operational intake availability, and check-in stations."
+        action={<CreateEvacuationCenterDialog />}
       />
 
-      {/* Top 5 Metrics Strip */}
+      {/* 5 Top Operational Metric Cards */}
       <AssetMetricStrip items={metricCards} />
 
-      {/* Two-Column Interactive Workspace: Map Canvas + Controls */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
-        {/* Column 1: Leaflet Map */}
-        <div className="flex flex-1 flex-col min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
-          <div className="relative h-[480px] sm:h-[580px] lg:h-[620px] w-full overflow-hidden">
+      {/* Main 2-Column GIS Workspace & Control Sidebar */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+        {/* Column 1: Leaflet Interactive Map View */}
+        <div className="flex-1 overflow-hidden rounded-2xl border border-emerald-900/40 bg-neutral-900 shadow-xl">
+          <div className="flex items-center justify-between border-b border-emerald-950/80 bg-gradient-to-r from-[#064e3b] to-[#022c22] px-4 py-2.5 text-white">
+            <div className="flex items-center gap-2">
+              <BedDouble className="size-4 text-emerald-400" />
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
+                Evacuation Shelter Spatial Workspace
+              </span>
+            </div>
+            <span className="rounded-full bg-emerald-950/80 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-700/60 shadow-2xs">
+              {mapItems.length} Mapped Shelters
+            </span>
+          </div>
+
+          <div className="h-[460px] w-full">
             <AdminAssetWorkspaceMap
               items={mapItems}
               selectedId={selectedId}
@@ -490,14 +439,13 @@ export default function AdminEvacuationCentersPage() {
               showHazard={showHazard}
               showAreas={showAreas}
               showEvacLegend={true}
-              showSirenLegend={false}
             />
           </div>
         </div>
 
-        {/* Column 2: Filter and Capacity Sidebar */}
+        {/* Column 2: Filter and Distribution Sidebar */}
         <div className="flex w-full flex-col gap-3 lg:w-72 lg:shrink-0">
-          {/* Map Layers */}
+          {/* Card 1: Map Overlays */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
             <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
               <Layers className="size-3.5 text-emerald-400" aria-hidden />
@@ -505,242 +453,170 @@ export default function AdminEvacuationCentersPage() {
             </p>
             <div className="flex flex-col gap-2">
               <LayerCheckbox
-                checked={showHazard}
-                onChange={setShowHazard}
-                label="5-Year Flood Hazard"
-              />
-              <LayerCheckbox
                 checked={showAreas}
                 onChange={setShowAreas}
                 label="Barangay Area Boundaries"
               />
+              <LayerCheckbox
+                checked={showHazard}
+                onChange={setShowHazard}
+                label="5-Year Flood Hazard"
+              />
             </div>
           </div>
 
-          {/* Quick Filters */}
+          {/* Card 2: Shelter Distribution & Status Donut Chart */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
-            <div className="mb-3 flex items-center justify-between h-6">
+            <div className="mb-2 flex items-center justify-between">
               <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
-                <Filter className="size-3.5 text-emerald-400" aria-hidden />
-                Filter Workspace
+                <PieChartIcon className="size-3.5 text-emerald-400" aria-hidden />
+                Shelter Status Breakdown
               </p>
-              {(statusFilter !== "all" ||
-                areaFilter !== "all" ||
-                occupancyTier !== "all") && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStatusFilter("all");
-                    setAreaFilter("all");
-                    setOccupancyTier("all");
-                  }}
-                  className="inline-flex items-center gap-1 rounded bg-emerald-900/80 px-2 py-0.5 text-[10px] font-bold text-white border border-emerald-700/60 hover:bg-emerald-800 transition-all shadow-2xs cursor-pointer"
-                >
-                  <RotateCcw className="size-2.5" />
-                  Reset
-                </button>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-white">
-                  Status
-                </label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="open">Open Only</SelectItem>
-                    <SelectItem value="closed">Closed Only</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-white">
-                  Assigned Area
-                </label>
-                <Select value={areaFilter} onValueChange={setAreaFilter}>
-                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Areas</SelectItem>
-                    {SAN_JOSE_AREAS.map((area) => (
-                      <SelectItem key={area} value={area}>
-                        {area}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-white">
-                  Occupancy Tier
-                </label>
-                <Select value={occupancyTier} onValueChange={setOccupancyTier}>
-                  <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Tiers</SelectItem>
-                    <SelectItem value="available">Available (&lt;80%)</SelectItem>
-                    <SelectItem value="near">Near Capacity (80-99%)</SelectItem>
-                    <SelectItem value="full">At Capacity (100%)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          {/* Capacity Diagnostic Panel */}
-          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-3.5 text-white shadow-xl backdrop-blur-md">
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-bold text-xs text-white">
-                Evacuation Readiness
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-950 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white border border-emerald-700/80">
-                <span className="size-1.5 rounded-full bg-emerald-400" />
-                {stats.openCount} Open
+              <span className="rounded-full bg-emerald-950/80 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-700/60 shadow-2xs">
+                {stats.total} Total
               </span>
             </div>
-            <p className="mt-1.5 text-xs text-white/90 leading-relaxed">
-              Total sheltered headcount:{" "}
-              <strong className="text-white font-bold">
-                {stats.totalOccupancy.toLocaleString()}
-              </strong>{" "}
-              of{" "}
-              <strong className="text-white font-bold">
-                {stats.totalCapacity.toLocaleString()}
-              </strong>{" "}
-              capacity.
-            </p>
 
-            <div className="mt-2.5 flex flex-col gap-1 border-t border-emerald-900/60 pt-2">
-              <div className="flex items-center justify-between text-[10px] font-semibold text-slate-300">
-                <span>Barangay Load</span>
-                <span className="tabular-nums font-bold text-white">
-                  {stats.pctOccupied}%
+            {/* Donut Chart */}
+            <div className="relative h-44 w-full" role="img" aria-label="Evacuation shelter status breakdown">
+              <div className="pointer-events-none absolute inset-0 z-0 flex flex-col items-center justify-center text-center">
+                <span className="text-xl font-black text-white tabular-nums">
+                  {stats.openCount}
+                </span>
+                <span className="text-[9.5px] font-bold uppercase tracking-wider text-emerald-300/80">
+                  Open Shelters
                 </span>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-950 border border-emerald-900/80">
-                <div
-                  className={cn(
-                    "h-full rounded-full transition-all duration-500",
-                    stats.pctOccupied > 80 ? "bg-rose-400" : "bg-emerald-400",
-                  )}
-                  style={{ width: `${stats.pctOccupied}%` }}
-                />
-              </div>
+
+              <ResponsiveContainer width="100%" height="100%" className="relative z-10">
+                <PieChart>
+                  <RechartsTooltip
+                    wrapperStyle={{ zIndex: 50, pointerEvents: "none" }}
+                    formatter={(val, name) => [`${val ?? 0} Shelters`, name]}
+                    contentStyle={{
+                      backgroundColor: "#064e3b",
+                      borderColor: "#059669",
+                      borderRadius: "8px",
+                      fontSize: "11.5px",
+                      color: "#ffffff",
+                      boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
+                    }}
+                    itemStyle={{ color: "#ffffff", fontWeight: 600 }}
+                  />
+                  <Pie
+                    data={chartData}
+                    dataKey="value"
+                    innerRadius={46}
+                    outerRadius={68}
+                    paddingAngle={3}
+                    stroke="#052e16"
+                    strokeWidth={2.5}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`slice-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ResourceTable */}
-      <ResourceTable
-        columns={columns}
-        data={filteredCenters}
-        isLoading={isLoading}
-        isError={isError}
-        onRetry={refetch}
-        getRowKey={(row) => row.id}
-        selectedRowKey={selectedId}
-        searchPlaceholder="Search center name, address, sitio area, contact…"
-        filterSlots={
-          <div className="flex flex-wrap items-center gap-2">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="inline-flex h-9 w-fit min-w-[125px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent align="end" className="min-w-44">
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="open">Open Only</SelectItem>
-                <SelectItem value="closed">Closed Only</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* Evacuation Centers Management Table (Full Width) */}
+      <div className="flex flex-col gap-3 w-full">
+        <ResourceTable
+          columns={columns}
+          data={filteredCenters}
+          isLoading={isLoading}
+          isError={isError}
+          onRetry={refetch}
+          getRowKey={(row) => row.id}
+          selectedRowKey={selectedId}
+          searchPlaceholder="Search shelter name, area, officer, address…"
+          filterSlots={
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Status Filter */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="inline-flex h-9 w-fit min-w-[130px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
+                  <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent align="end" className="min-w-44">
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="open">Open Only</SelectItem>
+                  <SelectItem value="closed">Closed Only</SelectItem>
+                </SelectContent>
+              </Select>
 
-            <Select value={areaFilter} onValueChange={setAreaFilter}>
-              <SelectTrigger className="inline-flex h-9 w-fit min-w-[120px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
-                <SelectValue placeholder="All Areas" />
-              </SelectTrigger>
-              <SelectContent align="end" className="min-w-40">
-                <SelectItem value="all">All Areas</SelectItem>
-                {SAN_JOSE_AREAS.map((area) => (
-                  <SelectItem key={area} value={area}>
-                    {area}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        }
-        toolbarAction={
-          <Link href="/admin/evacuation-centers/new">
-            <Button
-              variant="primary"
-              className="h-9 gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700 shadow-2xs cursor-pointer shrink-0"
+              {/* Area Filter */}
+              <Select value={areaFilter} onValueChange={setAreaFilter}>
+                <SelectTrigger className="inline-flex h-9 w-fit min-w-[120px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
+                  <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                  <SelectValue placeholder="All Areas" />
+                </SelectTrigger>
+                <SelectContent align="end" className="min-w-40">
+                  <SelectItem value="all">All Areas</SelectItem>
+                  {SAN_JOSE_AREAS.map((area) => (
+                    <SelectItem key={area} value={area}>
+                      {area}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Occupancy Tier Filter */}
+              <Select value={occupancyTier} onValueChange={setOccupancyTier}>
+                <SelectTrigger className="inline-flex h-9 w-fit min-w-[140px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
+                  <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                  <SelectValue placeholder="All Occupancy" />
+                </SelectTrigger>
+                <SelectContent align="end" className="min-w-48">
+                  <SelectItem value="all">All Occupancy</SelectItem>
+                  <SelectItem value="available">Available (&lt;80%)</SelectItem>
+                  <SelectItem value="near">Near Capacity (80-99%)</SelectItem>
+                  <SelectItem value="full">At Capacity (100%)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          }
+          toolbarAction={<CreateEvacuationCenterDialog />}
+          rowActions={(row) => (
+            <div
+              className="flex flex-wrap items-center gap-1.5"
+              onClick={(e) => e.stopPropagation()}
             >
-              <Plus className="size-3.5" />
-              Register Center
-            </Button>
-          </Link>
-        }
-        rowActions={(row) => (
-          <div
-            className="flex items-center gap-1.5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedId(row.id)}
-              aria-label={`Locate ${row.facility.name}`}
-              className="h-8 px-2 text-xs"
-              title="Locate on Map"
-            >
-              <Crosshair aria-hidden className="size-3.5 text-slate-700" />
-            </Button>
-
-            <EvacCheckinManagerDialog
-              centerId={row.id}
-              centerName={row.facility.name}
-              capacity={row.capacity}
-            />
-
-            <Link href={`/admin/evacuation-centers/${row.id}`}>
+              {/* 1. Locate (Icon Only) */}
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 gap-1 border-slate-300 bg-white px-2.5 text-xs font-bold text-slate-800 hover:bg-slate-50 hover:text-emerald-700"
-                title="View Comprehensive Details"
+                onClick={() => setSelectedId(row.id)}
+                aria-label={`Locate ${row.facility.name}`}
+                className="h-8 w-8 p-0 border-slate-300 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shrink-0"
+                title="Locate on Map"
               >
-                <Eye className="size-3.5" />
-                <span className="hidden sm:inline">Details</span>
+                <Crosshair aria-hidden className="size-3.5 text-slate-700" />
               </Button>
-            </Link>
 
-            <Link href={`/admin/evacuation-centers/${row.id}/edit`}>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1 border-amber-300/80 bg-amber-50 px-2.5 text-xs font-semibold text-amber-800 hover:bg-amber-100"
-                title="Edit Center"
-              >
-                <Pencil className="size-3.5" />
-                <span className="hidden sm:inline">Edit</span>
-              </Button>
-            </Link>
+              {/* 2. Details Modal */}
+              <EvacuationCenterDetailsDialog
+                center={row as EvacCenterEditable}
+                onLocateOnMap={() => setSelectedId(row.id)}
+              />
 
-            {row.is_active !== false ? (
+              {/* 3. Check-In Station Modal (UserCheck icon) */}
+              <EvacCheckinManagerDialog
+                centerId={row.id}
+                centerName={row.facility.name}
+                capacity={row.capacity}
+              />
+
+              {/* 4. Edit Modal (Pencil icon) */}
+              <EditEvacuationCenterDialog
+                center={row as EvacCenterEditable}
+              />
+
+              {/* 5. Toggle Open/Close State (Power icon) */}
               <Button
                 variant="outline"
                 size="sm"
@@ -750,30 +626,38 @@ export default function AdminEvacuationCentersPage() {
                     is_open: !row.is_open,
                   })
                 }
-                disabled={toggleOpenMutation.isPending}
                 className={cn(
-                  "h-8 text-xs font-bold",
+                  "h-8 w-8 p-0 border cursor-pointer shrink-0",
                   row.is_open
-                    ? "text-amber-700 hover:bg-amber-50"
-                    : "text-emerald-700 hover:bg-emerald-50",
+                    ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                    : "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
                 )}
+                title={row.is_open ? "Close Shelter" : "Open Shelter for Intake"}
+                aria-label={row.is_open ? "Close Shelter" : "Open Shelter"}
               >
-                {row.is_open ? "Close" : "Open"}
+                {row.is_open ? (
+                  <PowerOff className="size-3.5" />
+                ) : (
+                  <Power className="size-3.5" />
+                )}
               </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => reactivateMutation.mutate(row.id)}
-                disabled={reactivateMutation.isPending}
-                className="h-8 text-xs text-emerald-700 hover:bg-emerald-50"
-              >
-                Reactivate
-              </Button>
-            )}
-          </div>
-        )}
-      />
+
+              {/* 6. Link to Detailed Page */}
+              <Link href={`/admin/evacuation-centers/${row.id}`}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0 border-slate-300 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shrink-0"
+                  title="View Full Details Page"
+                  aria-label="View Full Details Page"
+                >
+                  <ExternalLink className="size-3.5 text-slate-700" />
+                </Button>
+              </Link>
+            </div>
+          )}
+        />
+      </div>
     </div>
   );
 }

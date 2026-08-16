@@ -29,6 +29,7 @@ import {
   AssetMetricCard,
 } from "@/components/features/admin/asset-metric-strip";
 import { EvacCheckinManagerDialog } from "@/components/features/admin/evac-checkin-manager-dialog";
+import { EditEvacuationCenterDialog } from "@/components/features/admin/edit-evacuation-center-dialog";
 import { AdminAssetWorkspaceMap } from "@/components/features/map/admin-asset-workspace-map-dynamic";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
@@ -214,16 +215,19 @@ export default function EvacuationCenterDetailPage() {
             capacity={center.capacity}
           />
 
-          <Link href={`/admin/evacuation-centers/${center.id}/edit`}>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 border-slate-300 bg-white text-xs font-bold text-slate-800 hover:bg-slate-50"
-            >
-              <Pencil className="size-3.5" />
-              Edit Center
-            </Button>
-          </Link>
+          <EditEvacuationCenterDialog
+            center={center}
+            trigger={
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 border-slate-300 bg-white text-xs font-bold text-slate-800 hover:bg-slate-50 cursor-pointer"
+              >
+                <Pencil className="size-3.5 text-slate-700" />
+                Edit Center
+              </Button>
+            }
+          />
         </div>
       </div>
 

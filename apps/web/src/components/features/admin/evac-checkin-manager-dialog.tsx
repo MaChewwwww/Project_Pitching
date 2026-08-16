@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, LogOut, Plus, Search, UserCheck, Users } from "lucide-react";
+import { Check, Clock, LogOut, Plus, Search, Sparkles, UserCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/common/button";
@@ -15,8 +15,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api, toDisplayError } from "@/lib/api/client";
 import type { EvacCheckinOut, PublicEmergencyEvent } from "@/lib/api/public-types";
+import { cn } from "@/lib/utils";
 
 interface HouseholdMember {
   id: string;
@@ -107,10 +109,11 @@ export function EvacCheckinManagerDialog({
       });
     },
     onSuccess: () => {
-      toast.success("Resident checked in");
+      toast.success("Resident checked in successfully");
       setPersonName("");
       setSelectedMemberId(null);
       setCheckedInAt("");
+      setSearchFilter("");
       queryClient.invalidateQueries({
         queryKey: ["admin", "evacuation-checkins", centerId],
       });
@@ -126,7 +129,7 @@ export function EvacCheckinManagerDialog({
     mutationFn: (checkinId: string) =>
       api.post(`/admin/evacuation-centers/check-ins/${checkinId}/check-out`),
     onSuccess: () => {
-      toast.success("Resident checked out");
+      toast.success("Resident checked out successfully");
       queryClient.invalidateQueries({
         queryKey: ["admin", "evacuation-checkins", centerId],
       });
@@ -185,73 +188,94 @@ export function EvacCheckinManagerDialog({
     });
   };
 
+  const maxCap = capacity ?? 0;
+  const currentCount = activeCheckins.length;
+  const pct = maxCap > 0 ? Math.min(100, Math.round((currentCount / maxCap) * 100)) : 0;
+  const isFull = maxCap > 0 && currentCount >= maxCap;
+  const isNear = maxCap > 0 && currentCount / maxCap >= 0.8 && !isFull;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
           <Button
             size="sm"
-            variant="primary"
-            className="h-8 gap-1.5 rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+            variant="outline"
+            className="h-8 w-8 p-0 border-emerald-600/30 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900 cursor-pointer shrink-0"
+            title="Check-in Station"
+            aria-label={`Check-in Station for ${centerName}`}
           >
-            <UserCheck className="size-4 text-emerald-600" />
-            Check-in Station
+            <UserCheck className="size-3.5 text-emerald-700" />
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto p-6">
-        <DialogHeader className="border-b border-neutral-100 pb-4">
-          <DialogTitle className="flex items-center gap-2 text-xl font-bold text-neutral-900">
-            <Users className="size-5 text-emerald-600" />
+      <DialogContent className="max-h-[90vh] max-w-4xl lg:max-w-5xl overflow-hidden p-0 rounded-2xl border border-slate-200 bg-white shadow-2xl flex flex-col">
+        {/* Dark Green Gradient Header */}
+        <DialogHeader className="border-b border-emerald-900/40 bg-gradient-to-r from-[#064e3b] via-[#065f46] to-[#022c22] p-5 text-white shrink-0">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-300">
+              <Sparkles className="size-3.5 text-emerald-400" />
+              Shelter Intake & Roster Station
+            </span>
+            <span
+              className={cn(
+                "rounded-full px-3 py-0.5 text-xs font-mono font-bold shadow-xs",
+                isFull ? "bg-rose-500 text-white" : isNear ? "bg-amber-400 text-amber-950" : "bg-emerald-400 text-emerald-950",
+              )}
+            >
+              {currentCount} {maxCap > 0 ? `/ ${maxCap} Capacity (${pct}%)` : "Evacuees Active"}
+            </span>
+          </div>
+
+          <DialogTitle className="mt-1 flex items-center gap-2 text-2xl font-black text-white">
+            <Users className="size-6 text-emerald-400 shrink-0" />
             Station Check-In: {centerName}
           </DialogTitle>
-          <DialogDescription className="text-xs text-neutral-600">
-            Record residents checked in at this facility. Currently active:{" "}
-            <strong className="font-extrabold text-emerald-700">
-              {activeCheckins.length}
-            </strong>
-            {capacity ? ` / ${capacity} max capacity` : " evacuees"}.
+          <DialogDescription className="text-xs text-emerald-200/80">
+            Log resident intake arrivals, link with verified citizen registry profiles, and manage live roster departures.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 gap-6 pt-2 md:grid-cols-2">
-          {/* Check-In Form (Left Side) */}
-          <div className="flex flex-col gap-4 rounded-xl border border-neutral-200/80 bg-neutral-50/60 p-4">
-            <h4 className="flex items-center gap-1.5 text-sm font-bold text-neutral-900">
-              <Plus className="size-4 text-emerald-600" />
-              New Check-In Record
+        {/* 2-Column Responsive Body */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-6 overflow-y-auto flex-1">
+          {/* Check-In Form (Left Side - 5 cols) */}
+          <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-5 md:col-span-5 shadow-2xs">
+            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 border-b border-slate-200/80 pb-2.5">
+              <Plus className="size-4 text-emerald-700" />
+              New Evacuee Check-In
             </h4>
 
-            {/* Resident Search & Lookup */}
+            {/* Resident Search & Autocomplete */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-neutral-700">
+              <Label className="text-xs font-bold text-slate-700">
                 Search Registered Resident (Optional)
-              </label>
+              </Label>
               <div className="relative">
-                <Search className="absolute top-2.5 left-3 size-4 text-neutral-400" />
+                <Search className="absolute top-2.5 left-3 size-4 text-slate-400" />
                 <Input
                   type="text"
-                  placeholder="Search by name or HH ref..."
+                  placeholder="Search citizen name or HH reference…"
                   value={searchFilter}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setSearchFilter(e.target.value)
                   }
-                  className="pl-9 text-xs"
+                  className="pl-9 text-xs h-9 rounded-xl bg-white border-slate-300"
                 />
               </div>
+
               {filteredMembers.length > 0 && (
-                <div className="max-h-36 divide-y divide-neutral-100 overflow-y-auto rounded-lg border border-neutral-200 bg-white shadow-md">
+                <div className="max-h-40 divide-y divide-slate-100 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
                   {filteredMembers.map((m) => (
                     <button
                       key={m.id}
                       type="button"
                       onClick={() => handleSelectMember(m)}
-                      className="flex w-full items-center justify-between px-3 py-2 text-left text-xs transition-colors hover:bg-emerald-50"
+                      className="flex w-full items-center justify-between px-3 py-2 text-left text-xs transition-colors hover:bg-emerald-50 cursor-pointer"
                     >
-                      <span className="font-semibold text-neutral-900">
+                      <span className="font-semibold text-slate-900">
                         {m.full_name}
                       </span>
-                      <span className="font-mono text-[10px] text-neutral-500">
+                      <span className="font-mono text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
                         {m.household_ref}
                       </span>
                     </button>
@@ -260,27 +284,34 @@ export function EvacCheckinManagerDialog({
               )}
             </div>
 
-            <form onSubmit={handleCheckinSubmit} className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold text-neutral-700">
-                  Emergency event <span className="text-rose-500 font-bold">*</span>
-                </label>
+            <form onSubmit={handleCheckinSubmit} className="flex flex-col gap-3.5 pt-1">
+              {/* Emergency Event */}
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs font-bold text-slate-800">
+                  Emergency Event <span className="text-rose-500 font-bold">*</span>
+                </Label>
                 <select
                   value={resolvedEventId}
                   onChange={(event) => setEventId(event.target.value)}
-                  className="min-h-10 rounded-lg border border-neutral-200 bg-white px-3 text-xs focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+                  className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-900 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none shadow-2xs cursor-pointer"
                 >
-                  {activeEvents?.map((event) => (
-                    <option key={event.id} value={event.id}>
-                      {event.name}
-                    </option>
-                  ))}
+                  {activeEvents && activeEvents.length > 0 ? (
+                    activeEvents.map((event) => (
+                      <option key={event.id} value={event.id}>
+                        {event.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">General Disaster Operations</option>
+                  )}
                 </select>
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold text-neutral-700">
+
+              {/* Resident Full Name */}
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs font-bold text-slate-800">
                   Resident Name <span className="text-rose-500 font-bold">*</span>
-                </label>
+                </Label>
                 <Input
                   type="text"
                   placeholder="Full name of evacuee"
@@ -289,65 +320,72 @@ export function EvacCheckinManagerDialog({
                     setPersonName(e.target.value)
                   }
                   required
-                  className="text-xs"
+                  className="h-10 text-xs rounded-xl bg-white border-slate-300"
                 />
                 {selectedMemberId && (
-                  <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
-                    <Check className="size-3" /> Linked to registered member profile
+                  <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 w-fit">
+                    <Check className="size-3" /> Linked to registered citizen profile
                   </span>
                 )}
               </div>
 
-              {/* Backfilling Timestamp Field */}
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold text-neutral-700">
-                  Check-In Time{" "}
-                  <span className="font-normal text-neutral-400">
-                    (Leave blank for now)
+              {/* Manual Timestamp Override */}
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs font-bold text-slate-800">
+                  Check-In Timestamp{" "}
+                  <span className="font-normal text-slate-500">
+                    (Optional manual entry)
                   </span>
-                </label>
+                </Label>
                 <Input
                   type="datetime-local"
                   value={checkedInAt}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setCheckedInAt(e.target.value)
                   }
-                  className="text-xs"
+                  className="h-10 text-xs rounded-xl bg-white border-slate-300"
                 />
-                <span className="text-[10px] text-neutral-500">
-                  Allows manual entry/backfilling for blackout power recovery.
+                <span className="text-[10px] text-slate-500">
+                  Allows manual backfilling during network recovery.
                 </span>
               </div>
 
               <Button
                 type="submit"
                 size="sm"
-                className="mt-2 bg-emerald-600 font-bold text-white hover:bg-emerald-700"
+                className="mt-2 h-10 bg-emerald-600 font-bold text-white shadow-xs hover:bg-emerald-700 rounded-xl cursor-pointer"
                 disabled={checkinMutation.isPending}
               >
-                <Plus className="mr-1 size-4" />
-                {checkinMutation.isPending ? "Recording..." : "Check In Resident"}
+                <Plus className="mr-1.5 size-4" />
+                {checkinMutation.isPending ? "Recording Intake..." : "Check In Resident"}
               </Button>
             </form>
           </div>
 
-          {/* Currently Active Evacuees List (Right Side) */}
-          <div className="flex flex-col gap-3">
-            <h4 className="flex items-center justify-between text-sm font-bold text-neutral-900">
-              <span>Currently Checked In ({activeCheckins.length})</span>
-            </h4>
+          {/* Currently Active Evacuees Roster (Right Side - 7 cols) */}
+          <div className="flex flex-col gap-3.5 md:col-span-7">
+            <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5">
+              <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900">
+                <Users className="size-4 text-emerald-700" />
+                <span>Active Evacuee Roster</span>
+                <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-mono font-bold text-emerald-800 border border-emerald-300">
+                  {activeCheckins.length} Active
+                </span>
+              </h4>
+            </div>
 
             {isLoading ? (
-              <p className="py-6 text-center text-xs text-neutral-500">
-                Loading check-in records...
-              </p>
+              <div className="py-12 text-center text-xs text-slate-500">
+                Loading live intake records…
+              </div>
             ) : activeCheckins.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50/50 p-6 text-center">
-                <p className="text-xs font-medium text-neutral-600">
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center flex flex-col items-center justify-center gap-2">
+                <Users className="size-8 text-slate-400" />
+                <p className="text-xs font-bold text-slate-700">
                   No active evacuees currently checked in.
                 </p>
-                <p className="mt-1 text-[11px] text-neutral-400">
-                  Use the form on the left to record new arrivals.
+                <p className="text-[11px] text-slate-500 max-w-xs">
+                  Use the intake form on the left to record incoming arrivals at this shelter site.
                 </p>
               </div>
             ) : (
@@ -355,30 +393,34 @@ export function EvacCheckinManagerDialog({
                 {activeCheckins.map((c) => (
                   <div
                     key={c.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200/80 bg-white p-3 shadow-2xs transition-all hover:border-emerald-300"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs transition-all hover:border-emerald-300 hover:shadow-sm"
                   >
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-bold text-neutral-900">
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <span className="text-xs font-bold text-slate-900 truncate">
                         {c.person_name}
                       </span>
-                      <span className="text-[10px] text-neutral-500">
-                        In:{" "}
-                        {new Date(c.checked_in_at).toLocaleString([], {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        })}
-                        {c.recorded_by_name ? ` • by ${c.recorded_by_name}` : ""}
-                      </span>
+                      <div className="flex items-center gap-2 text-[10.5px] text-slate-500">
+                        <span className="flex items-center gap-1 font-mono">
+                          <Clock className="size-3 text-slate-400" />
+                          {new Date(c.checked_in_at).toLocaleString([], {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
+                        </span>
+                        {c.recorded_by_name && (
+                          <span>• by {c.recorded_by_name}</span>
+                        )}
+                      </div>
                     </div>
 
                     <Button
                       size="sm"
                       variant="outline"
-                      className="shrink-0 border-neutral-200 font-bold text-red-600 hover:border-red-300 hover:bg-red-50"
+                      className="shrink-0 h-8 rounded-lg border-rose-200 bg-rose-50/60 font-bold text-rose-700 hover:border-rose-300 hover:bg-rose-100 cursor-pointer text-xs"
                       disabled={checkoutMutation.isPending}
                       onClick={() => checkoutMutation.mutate(c.id)}
                     >
-                      <LogOut className="mr-1 size-3" />
+                      <LogOut className="mr-1 size-3 text-rose-600" />
                       Check Out
                     </Button>
                   </div>
@@ -386,23 +428,24 @@ export function EvacCheckinManagerDialog({
               </div>
             )}
 
-            {/* Past check-ins collapsible list */}
+            {/* Past Checkouts History Drawer */}
             {pastCheckins.length > 0 && (
-              <details className="mt-2 border-t border-neutral-100 pt-2 text-xs text-neutral-600">
-                <summary className="cursor-pointer font-bold select-none hover:text-neutral-900">
-                  View Past Checked-Out Records ({pastCheckins.length})
+              <details className="mt-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-xs text-slate-700">
+                <summary className="cursor-pointer font-bold select-none hover:text-emerald-800 flex items-center justify-between">
+                  <span>Checked-Out History Log ({pastCheckins.length})</span>
+                  <span className="text-[10px] text-slate-500">Click to expand</span>
                 </summary>
-                <div className="mt-2 flex max-h-36 flex-col gap-1.5 overflow-y-auto pr-1">
+                <div className="mt-2.5 flex max-h-36 flex-col gap-1.5 overflow-y-auto pr-1">
                   {pastCheckins.map((c) => (
                     <div
                       key={c.id}
-                      className="flex justify-between rounded border border-neutral-100 bg-neutral-50 p-2 text-[11px] text-neutral-500"
+                      className="flex items-center justify-between rounded-lg border border-slate-200/80 bg-white px-3 py-1.5 text-[11px] text-slate-600"
                     >
-                      <span className="font-semibold text-neutral-700">
+                      <span className="font-semibold text-slate-800">
                         {c.person_name}
                       </span>
-                      <span>
-                        Out:{" "}
+                      <span className="font-mono text-[10px] text-slate-500">
+                        Checked Out:{" "}
                         {c.checked_out_at
                           ? new Date(c.checked_out_at).toLocaleString([], {
                               dateStyle: "short",

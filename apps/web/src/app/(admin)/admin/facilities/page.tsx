@@ -603,7 +603,7 @@ export default function AdminFacilitiesPage() {
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => {}}
+                        onChange={() => { }}
                         className="size-3.5 rounded border-slate-600 bg-slate-800 text-emerald-500 accent-emerald-500 cursor-pointer pointer-events-none"
                       />
                       <span className={cn("size-2 rounded-full shrink-0", cfg.dot)} />
@@ -624,16 +624,6 @@ export default function AdminFacilitiesPage() {
 
           {/* Card 3: Distribution Breakdown Pie Chart */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
-                <PieChartIcon className="size-3.5 text-emerald-400" aria-hidden />
-                Facility Distribution
-              </p>
-              <span className="rounded-full bg-emerald-950/80 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-700/60 shadow-2xs">
-                {stats.total} Total
-              </span>
-            </div>
-
             {/* Donut Chart with Center Counter */}
             <div className="relative h-44 w-full" role="img" aria-label="Facility distribution breakdown">
               {/* Background center counter (z-0) so tooltips render on top */}
