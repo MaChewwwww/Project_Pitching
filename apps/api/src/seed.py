@@ -1129,7 +1129,7 @@ async def seed_donations(session, users: dict[str, User]) -> None:
 
     drives = [
         (
-            datetime(2026, 8, 13, 8, tzinfo=UTC),
+            datetime(2026, 8, 14, 8, tzinfo=UTC),
             "Relief Drive for Habagat-Affected Families",
             "relief-drive-for-habagat-affected-families",
             "Rotaract Club of Rodriguez is collecting financial and in-kind support for families affected by Habagat in Montalban.",
@@ -1149,7 +1149,7 @@ async def seed_donations(session, users: dict[str, User]) -> None:
             None,
         ),
         (
-            datetime(2026, 8, 14, 8, tzinfo=UTC),
+            datetime(2026, 8, 13, 8, tzinfo=UTC),
             "Upper Hills and Mountains Donation Drive",
             "upper-hills-and-mountains-donation-drive",
             "Upper Hills and Mountains is accepting donations for clothes, medicine, canned goods, money, and other essential relief items.",

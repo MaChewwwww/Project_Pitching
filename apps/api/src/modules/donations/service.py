@@ -115,7 +115,7 @@ async def list_donation_drives(
     else:
         stmt = stmt.where(DonationDrive.publication_status == "published")
 
-    stmt = stmt.order_by(DonationDrive.published_at.asc().nullslast(), DonationDrive.title)
+    stmt = stmt.order_by(DonationDrive.published_at.desc().nullslast(), DonationDrive.title)
     drives = (await session.execute(stmt)).scalars().all()
     names = await get_event_names(session, [drive.event_id for drive in drives if drive.event_id])
     page_drives = drives[(page - 1) * size : page * size]
