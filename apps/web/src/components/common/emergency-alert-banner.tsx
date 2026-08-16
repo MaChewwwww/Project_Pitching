@@ -3,15 +3,7 @@
 import * as React from "react";
 import { Info, Phone, Siren, TriangleAlert } from "lucide-react";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { HotlineList } from "./hotline-list";
+import { EmergencyHotlinesDialog } from "./emergency-hotlines-dialog";
 import { cn } from "@/lib/utils";
 import type {
   PublicAnnouncement,
@@ -163,8 +155,9 @@ export function EmergencyAlertBanner({
         {/* Right CTA Button */}
         {primaryHotline ? (
           <div className="shrink-0 max-sm:w-full">
-            <Dialog>
-              <DialogTrigger asChild>
+            <EmergencyHotlinesDialog
+              hotlines={availableHotlines}
+              trigger={
                 <button
                   type="button"
                   className={cn(
@@ -180,25 +173,8 @@ export function EmergencyAlertBanner({
                   <Phone aria-hidden className="size-4" strokeWidth={2.5} />
                   <span>Emergency Hotlines</span>
                 </button>
-              </DialogTrigger>
-              <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-2xl sm:max-w-lg">
-                <DialogHeader className="space-y-2 pb-2">
-                  <DialogTitle className="text-h3 flex items-center gap-3 font-bold text-neutral-900">
-                    <span className="from-danger-bg border-danger/20 text-danger grid size-10 shrink-0 place-items-center rounded-2xl border bg-gradient-to-br to-red-100 shadow-xs">
-                      <Phone className="size-5" strokeWidth={2.5} />
-                    </span>
-                    Emergency Hotlines
-                  </DialogTitle>
-                  <DialogDescription className="text-body-sm leading-relaxed text-neutral-600">
-                    Call directly or click to copy emergency contact numbers for Barangay
-                    San Jose.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="pt-2">
-                  <HotlineList hotlines={availableHotlines} layout="stack" />
-                </div>
-              </DialogContent>
-            </Dialog>
+              }
+            />
           </div>
         ) : null}
       </div>

@@ -256,7 +256,7 @@ export default function AdminHotlinesPage() {
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         title="Emergency Hotlines"
-        description="Manage 24/7 emergency dispatch numbers, BHERT response teams, and zonal hotline contacts for Barangay San Jose."
+        description="Manage 24/7 emergency dispatch numbers, Barangay lines, and area hotline contacts for Barangay San Jose."
         action={
           <HotlineFormDialog
             onSubmit={async (values) => {
@@ -312,11 +312,11 @@ export default function AdminHotlinesPage() {
           </div>
         </div>
 
-        {/* Card 3: BHERT & Zonal Hotlines */}
+        {/* Card 3: Barangay & Area Lines */}
         <div className="flex flex-col justify-between rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white via-teal-50/20 to-emerald-50/30 p-5 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-teal-900">
-              BHERT & Zonal Areas
+              Barangay & Area Lines
             </span>
             <div className="grid size-9 place-items-center rounded-xl bg-teal-100 text-teal-700 shadow-2xs">
               <Users className="size-4.5 stroke-[2.2]" />
@@ -384,12 +384,12 @@ export default function AdminHotlinesPage() {
           },
           {
             value: "type:bhert",
-            label: "BHERT Health Response Teams",
+            label: "Barangay Lines",
             matches: (r) => r.label.toLowerCase().includes("bhert"),
           },
           {
             value: "type:zonal",
-            label: "San Jose Proper & Zonal Lines",
+            label: "Area Lines",
             matches: (r) =>
               r.type === "barangay" && !r.label.toLowerCase().includes("bhert"),
           },
@@ -400,7 +400,7 @@ export default function AdminHotlinesPage() {
           },
         ]}
         emptyTitle="No hotlines registered yet"
-        emptyDescription="Add emergency contacts and BHERT response lines to populate the directory."
+        emptyDescription="Add emergency contacts and callable response lines to populate the directory."
         getRowKey={(row) => row.id}
         rowActions={(row) => (
           <>

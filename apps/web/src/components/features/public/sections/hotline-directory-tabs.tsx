@@ -12,7 +12,14 @@ interface HotlineDirectoryTabsProps {
   hotlines: PublicHotline[];
 }
 
-type TabKey = "all" | "emergency" | "bhert" | "zonal";
+type TabKey =
+  | "all"
+  | "emergency"
+  | "police"
+  | "fire"
+  | "healthcare"
+  | "bhert"
+  | "zonal";
 
 export function HotlineDirectoryTabs({ hotlines }: HotlineDirectoryTabsProps) {
   const [activeTab, setActiveTab] = React.useState<TabKey>("all");
@@ -22,10 +29,17 @@ export function HotlineDirectoryTabs({ hotlines }: HotlineDirectoryTabsProps) {
     let list = hotlines;
 
     if (activeTab === "emergency") {
-      list = list.filter((h) =>
-        ["mdrrmo", "police", "fire", "hospital", "ambulance", "rescue"].includes(h.type) ||
-        (h.type === "barangay" && h.label.toLowerCase().includes("emergency")),
+      list = list.filter(
+        (h) =>
+          ["mdrrmo", "rescue"].includes(h.type) ||
+          (h.type === "barangay" && h.label.toLowerCase().includes("emergency")),
       );
+    } else if (activeTab === "police") {
+      list = list.filter((h) => h.type === "police");
+    } else if (activeTab === "fire") {
+      list = list.filter((h) => h.type === "fire");
+    } else if (activeTab === "healthcare") {
+      list = list.filter((h) => ["hospital", "ambulance"].includes(h.type));
     } else if (activeTab === "bhert") {
       list = list.filter((h) => h.label.toLowerCase().includes("bhert"));
     } else if (activeTab === "zonal") {
@@ -50,13 +64,16 @@ export function HotlineDirectoryTabs({ hotlines }: HotlineDirectoryTabsProps) {
     return list;
   }, [hotlines, activeTab, searchQuery]);
 
-  const counts = React.useMemo(() => {
-    const total = hotlines.length;
+  const counts: Record<TabKey, number> = React.useMemo(() => {
+    const all = hotlines.length;
     const emergency = hotlines.filter(
       (h) =>
-        ["mdrrmo", "police", "fire", "hospital", "ambulance", "rescue"].includes(h.type) ||
+        ["mdrrmo", "rescue"].includes(h.type) ||
         (h.type === "barangay" && h.label.toLowerCase().includes("emergency")),
     ).length;
+    const police = hotlines.filter((h) => h.type === "police").length;
+    const fire = hotlines.filter((h) => h.type === "fire").length;
+    const healthcare = hotlines.filter((h) => ["hospital", "ambulance"].includes(h.type)).length;
     const bhert = hotlines.filter((h) => h.label.toLowerCase().includes("bhert")).length;
     const zonal = hotlines.filter(
       (h) =>
@@ -65,14 +82,17 @@ export function HotlineDirectoryTabs({ hotlines }: HotlineDirectoryTabsProps) {
         !h.label.toLowerCase().includes("emergency"),
     ).length;
 
-    return { total, emergency, bhert, zonal };
+    return { all, emergency, police, fire, healthcare, bhert, zonal };
   }, [hotlines]);
 
   const tabs: { key: TabKey; label: string; count: number }[] = [
-    { key: "all", label: "All Hotlines", count: counts.total },
-    { key: "emergency", label: "Emergency & Municipal", count: counts.emergency },
-    { key: "bhert", label: "BHERT Health Teams", count: counts.bhert },
-    { key: "zonal", label: "Purok & Area Lines", count: counts.zonal },
+    { key: "all", label: "All Hotlines", count: counts.all },
+    { key: "emergency", label: "Emergency & Disaster", count: counts.emergency },
+    { key: "police", label: "Police (PNP)", count: counts.police },
+    { key: "fire", label: "Fire (BFP)", count: counts.fire },
+    { key: "healthcare", label: "Healthcare", count: counts.healthcare },
+    { key: "bhert", label: "Barangay Lines", count: counts.bhert },
+    { key: "zonal", label: "Area Lines", count: counts.zonal },
   ];
 
   return (
@@ -130,7 +150,7 @@ export function HotlineDirectoryTabs({ hotlines }: HotlineDirectoryTabsProps) {
         <div className="rounded-2xl border border-dashed border-neutral-300 p-8 text-center bg-white">
           <p className="text-sm font-bold text-neutral-800">No matching hotlines found</p>
           <p className="text-xs text-neutral-500 mt-1">
-            Try searching for another area name, purok, or department.
+            Try searching for another area name or department.
           </p>
         </div>
       )}

@@ -65,12 +65,19 @@ export function HotlineButton({
             side="top"
             align="end"
             sideOffset={12}
-            className="shadow-lg-card pointer-events-auto w-[min(22rem,calc(100vw-2rem))] rounded-[14px] border-neutral-200 p-3"
+            className="shadow-xl pointer-events-auto w-[min(24rem,calc(100vw-2rem))] max-h-[75vh] flex flex-col rounded-2xl border-neutral-200 p-3.5 bg-white z-[2000] overflow-hidden"
           >
-            <p className="text-overline mb-2 px-1 text-neutral-500">{label}</p>
-            <HotlineList hotlines={hotlines} layout="stack" />
-            <p className="text-caption mt-2 px-1 text-neutral-500">
-              In an emergency, call rather than submitting anything online.
+            <div className="flex items-center justify-between border-b border-neutral-100 pb-2 mb-2 px-1">
+              <p className="text-overline font-bold text-neutral-600">{label}</p>
+              <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                {hotlines.length} Active Lines
+              </span>
+            </div>
+            <div className="flex-1 overflow-y-auto pr-1">
+              <HotlineList hotlines={hotlines} layout="stack" />
+            </div>
+            <p className="text-caption mt-2.5 pt-2 border-t border-neutral-100 px-1 text-neutral-500 text-[11px]">
+              In an emergency, call directly rather than submitting requests online.
             </p>
           </PopoverContent>
         </Popover>

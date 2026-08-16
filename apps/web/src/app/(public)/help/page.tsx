@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
-import { Clock, MapPin, Phone } from "lucide-react";
+import { Clock, MapPin } from "lucide-react";
 
-import { Attribution } from "@/components/common/attribution";
 import { Card, CardContent } from "@/components/common/card";
-import { HotlineList } from "@/components/common/hotline-list";
 import { PageHeader } from "@/components/common/page-header";
-import { SectionHeader } from "@/components/common/section-header";
 import { FaqAccordion } from "@/components/features/preparedness/faq-accordion";
+import { HelpEmergencyDirectory } from "@/components/features/preparedness/help-emergency-directory";
 import { getFaqs, getHotlines } from "@/lib/api/public";
 import { UTILITY_BAR } from "@/lib/content/site";
 import { BARANGAY } from "@/lib/brand";
@@ -38,22 +36,13 @@ export default async function HelpPage() {
       />
 
       <div className="mx-auto max-w-[1440px] px-4 pt-5 pb-8 md:px-6 md:pt-6 md:pb-12">
-        <div className="grid gap-10 lg:grid-cols-[1.6fr_1fr] lg:gap-12">
-          <div>
+        <div className="grid gap-10 lg:grid-cols-[60%_40%] lg:gap-12 min-w-0">
+          <div className="min-w-0">
             <FaqAccordion faqs={faqs} />
           </div>
 
-          <div className="flex flex-col gap-6">
-            <div>
-              <SectionHeader
-                as="h3"
-                icon={Phone}
-                eyebrow="In an emergency"
-                title="Hotlines"
-              />
-              <HotlineList hotlines={hotlines} layout="stack" className="mt-4" />
-              <Attribution className="mt-4" disclaimer="no-rescue-promise" />
-            </div>
+          <div className="flex flex-col gap-6 min-w-0">
+            <HelpEmergencyDirectory hotlines={hotlines} />
 
             <Card radius="xl" variant="tint">
               <CardContent className="flex flex-col gap-3">
