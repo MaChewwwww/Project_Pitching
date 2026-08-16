@@ -56,51 +56,54 @@ export function HouseholdMemberDialog({
   onOpenChange,
   member,
 }: HouseholdMemberDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl overflow-hidden rounded-3xl border border-neutral-200 bg-white p-0 shadow-2xl">
+        {open ? (
+          <HouseholdMemberForm
+            key={member?.id ?? "new"}
+            member={member}
+            onOpenChange={onOpenChange}
+          />
+        ) : null}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function HouseholdMemberForm({
+  member,
+  onOpenChange,
+}: {
+  member?: MemberOut | null;
+  onOpenChange: (open: boolean) => void;
+}) {
   const isEditing = Boolean(member);
   const client = useQueryClient();
 
-  const [fullName, setFullName] = React.useState("");
-  const [birthDate, setBirthDate] = React.useState("");
-  const [sex, setSex] = React.useState<"male" | "female" | "">("");
-  const [contactNumber, setContactNumber] = React.useState("");
-  const [relationship, setRelationship] = React.useState("");
-  const [isPwd, setIsPwd] = React.useState(false);
-  const [isPregnant, setIsPregnant] = React.useState(false);
-  const [isLactating, setIsLactating] = React.useState(false);
-  const [hasChronicCondition, setHasChronicCondition] = React.useState(false);
-  const [chronicConditionNote, setChronicConditionNote] = React.useState("");
-  const [isBedridden, setIsBedridden] = React.useState(false);
-
-  // Sync state whenever member changes or dialog opens
-  React.useEffect(() => {
-    if (open) {
-      if (member) {
-        setFullName(member.full_name || "");
-        setBirthDate(member.birth_date || "");
-        setSex(member.sex === "female" || member.sex === "male" ? member.sex : "");
-        setContactNumber(member.contact_number || "");
-        setRelationship(member.relationship_to_head || "");
-        setIsPwd(Boolean(member.is_pwd));
-        setIsPregnant(Boolean(member.is_pregnant));
-        setIsLactating(Boolean(member.is_lactating));
-        setHasChronicCondition(Boolean(member.has_chronic_condition));
-        setChronicConditionNote(member.chronic_condition_note || "");
-        setIsBedridden(Boolean(member.is_bedridden));
-      } else {
-        setFullName("");
-        setBirthDate("");
-        setSex("");
-        setContactNumber("");
-        setRelationship("");
-        setIsPwd(false);
-        setIsPregnant(false);
-        setIsLactating(false);
-        setHasChronicCondition(false);
-        setChronicConditionNote("");
-        setIsBedridden(false);
-      }
-    }
-  }, [open, member]);
+  const [fullName, setFullName] = React.useState(member?.full_name || "");
+  const [birthDate, setBirthDate] = React.useState(member?.birth_date || "");
+  const [sex, setSex] = React.useState<"male" | "female" | "">(
+    member?.sex === "female" || member?.sex === "male" ? member.sex : "",
+  );
+  const [contactNumber, setContactNumber] = React.useState(
+    member?.contact_number || "",
+  );
+  const [relationship, setRelationship] = React.useState(
+    member?.relationship_to_head || "",
+  );
+  const [isPwd, setIsPwd] = React.useState(Boolean(member?.is_pwd));
+  const [isPregnant, setIsPregnant] = React.useState(Boolean(member?.is_pregnant));
+  const [isLactating, setIsLactating] = React.useState(Boolean(member?.is_lactating));
+  const [hasChronicCondition, setHasChronicCondition] = React.useState(
+    Boolean(member?.has_chronic_condition),
+  );
+  const [chronicConditionNote, setChronicConditionNote] = React.useState(
+    member?.chronic_condition_note || "",
+  );
+  const [isBedridden, setIsBedridden] = React.useState(
+    Boolean(member?.is_bedridden),
+  );
 
   const createMutation = useMutation({
     mutationFn: (payload: MemberUpdate) =>
@@ -174,40 +177,38 @@ export function HouseholdMemberDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl overflow-hidden rounded-3xl border border-neutral-200 bg-white p-0 shadow-2xl">
-        {/* Header */}
-        <DialogHeader className="border-b border-neutral-100 bg-neutral-50/80 px-6 py-5">
-          <div className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-2xl bg-emerald-100 text-emerald-800 shadow-2xs">
-              {isEditing ? (
-                <UserCheck className="size-5" />
-              ) : (
-                <UserPlus className="size-5" />
-              )}
-            </span>
-            <div>
-              <DialogTitle className="text-lg font-black text-neutral-900">
-                {isEditing ? `Edit Profile: ${member?.full_name}` : "Add Household Member"}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-neutral-500">
-                {isEditing
-                  ? "Update birth date, relationship, or special vulnerability care flags."
-                  : "Register a family member to your official household roster."}
-              </DialogDescription>
-            </div>
+    <>
+      {/* Header */}
+      <DialogHeader className="border-b border-neutral-100 bg-neutral-50/80 px-6 py-5 text-left">
+        <div className="flex items-center gap-3">
+          <span className="grid size-10 place-items-center rounded-2xl bg-emerald-100 text-emerald-800 shadow-2xs">
+            {isEditing ? (
+              <UserCheck className="size-5" />
+            ) : (
+              <UserPlus className="size-5" />
+            )}
+          </span>
+          <div>
+            <DialogTitle className="text-lg font-black text-neutral-900">
+              {isEditing ? `Edit Profile: ${member?.full_name}` : "Add Household Member"}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-neutral-500">
+              {isEditing
+                ? "Update demographic or special vulnerability details for this resident."
+                : "Register a family member living in this household to ensure accurate disaster vulnerability tracking."}
+            </DialogDescription>
           </div>
-        </DialogHeader>
+        </div>
+      </DialogHeader>
 
-        {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit}>
-          <div className="max-h-[min(70vh,560px)] space-y-6 overflow-y-auto p-6">
-            {/* Section 1: Member Profile */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 border-b border-neutral-100 pb-2 text-xs font-bold text-neutral-900">
-                <UserRound className="size-3.5 text-emerald-700" />
-                <span>Personal Information</span>
-              </div>
+      <form onSubmit={handleSubmit}>
+        <div className="max-h-[min(70vh,560px)] space-y-6 overflow-y-auto p-6">
+          {/* Section 1: Member Profile */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 border-b border-neutral-100 pb-2 text-xs font-bold text-neutral-900">
+              <UserRound className="size-3.5 text-emerald-700" />
+              <span>Personal Information</span>
+            </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1 sm:col-span-2">
@@ -420,7 +421,6 @@ export function HouseholdMemberDialog({
             </Button>
           </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </>
   );
 }

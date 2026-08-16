@@ -4,23 +4,21 @@ import * as React from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AlertTriangle,
   ArrowRight,
   Backpack,
+  Bell,
   Building2,
-  Calendar,
-  CheckCircle2,
   ChevronRight,
-  ClipboardList,
   CloudSun,
   Droplets,
+  ExternalLink,
+  FileText,
   FileWarning,
   HeartPulse,
   Home,
   LifeBuoy,
   Map,
-  MapPin,
-  ShieldAlert,
+  Radio,
   ShieldCheck,
   Sparkles,
   Users,
@@ -43,10 +41,28 @@ import type {
 } from "@/lib/api/public-types";
 import { cn } from "@/lib/utils";
 
+type GoBagItem = { id: string; is_essential: boolean };
 type GoBagResponse = {
-  items: { id: string; is_essential: boolean }[];
+  items: GoBagItem[];
   checked_item_ids: string[];
 };
+
+type FamilyPlanResponse = {
+  meeting_point: string | null;
+  out_of_area_contact: string | null;
+  notes: string | null;
+};
+
+type Notice = {
+  id: string;
+  title: string;
+  body: string;
+  link_path: string | null;
+  read_at: string | null;
+  created_at: string;
+  type: string;
+};
+type NoticePage = { items: Notice[] };
 
 export default function PortalDashboardPage() {
   const household = useQuery({
@@ -80,6 +96,17 @@ export default function PortalDashboardPage() {
     queryFn: () => api.get<GoBagResponse>("/me/go-bag").then((r) => r.data),
   });
 
+  const familyPlan = useQuery({
+    queryKey: ["me", "family-plan"],
+    queryFn: () =>
+      api.get<FamilyPlanResponse>("/me/family-emergency-plan").then((r) => r.data),
+  });
+
+  const notices = useQuery({
+    queryKey: ["me", "notifications"],
+    queryFn: () => api.get<NoticePage>("/me/notifications").then((r) => r.data),
+  });
+
   const weather = useQuery({
     queryKey: ["public", "weather-current"],
     queryFn: () =>
@@ -94,15 +121,24 @@ export default function PortalDashboardPage() {
 
   if (household.isLoading || !household.data) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-44 rounded-3xl bg-emerald-100/40" />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="h-28 rounded-2xl bg-slate-100" />
-          <div className="h-28 rounded-2xl bg-slate-100" />
-          <div className="h-28 rounded-2xl bg-slate-100" />
-          <div className="h-28 rounded-2xl bg-slate-100" />
+      <div className="space-y-6 sm:space-y-8 animate-pulse">
+        <div className="h-48 rounded-3xl bg-emerald-100/40" />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="h-32 rounded-3xl bg-slate-100" />
+          <div className="h-32 rounded-3xl bg-slate-100" />
+          <div className="h-32 rounded-3xl bg-slate-100" />
+          <div className="h-32 rounded-3xl bg-slate-100" />
         </div>
-        <div className="h-64 rounded-3xl bg-slate-100" />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-8 space-y-6">
+            <div className="h-64 rounded-3xl bg-slate-100" />
+            <div className="h-80 rounded-3xl bg-slate-100" />
+          </div>
+          <div className="lg:col-span-4 space-y-6">
+            <div className="h-64 rounded-3xl bg-slate-100" />
+            <div className="h-64 rounded-3xl bg-slate-100" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -113,6 +149,7 @@ export default function PortalDashboardPage() {
   const specialNeedsCount = members.filter(
     (m) =>
       m.is_pwd ||
+      m.is_senior ||
       m.is_pregnant ||
       m.is_lactating ||
       m.has_chronic_condition ||
@@ -126,440 +163,630 @@ export default function PortalDashboardPage() {
     ]),
   );
 
-  // Calculate Go-Bag Progress
-  const goBagTotal = goBag.data?.items.length ?? 12;
-  const goBagChecked = goBag.data?.checked_item_ids.length ?? 0;
-  const goBagPercent = Math.round((goBagChecked / (goBagTotal || 1)) * 100);
+  // Safety counts
+  const safetyMembersList = safety.data?.household?.members ?? [];
+  const safeCount = safetyMembersList.filter((m) => m.status === "safe").length;
+  const needsRescueCount = safetyMembersList.filter((m) => m.status === "needs_rescue").length;
 
-  // River alert level name
+  // Go-Bag calculations
+  const goBagItems = goBag.data?.items ?? [];
+  const goBagCheckedIds = goBag.data?.checked_item_ids ?? [];
+  const goBagTotal = goBagItems.length || 12;
+  const goBagChecked = goBagCheckedIds.length;
+  const goBagPercent = Math.round((goBagChecked / (goBagTotal || 1)) * 100);
+  const essentialTotal = goBagItems.filter((i) => i.is_essential).length;
+  const essentialChecked = goBagItems.filter(
+    (i) => i.is_essential && goBagCheckedIds.includes(i.id),
+  ).length;
+
+  // Family plan calculations
+  const hasMeetingPoint = Boolean(familyPlan.data?.meeting_point?.trim());
+  const hasOutOfAreaContact = Boolean(familyPlan.data?.out_of_area_contact?.trim());
+  const familyPlanPercent =
+    (hasMeetingPoint ? 50 : 0) + (hasOutOfAreaContact ? 50 : 0);
+
+  // River telemetry
   const alertLevel = river.data?.alert_level ?? 0;
   const alertLevelName =
     alertLevel === 0
       ? "Normal"
       : alertLevel === 1
-        ? "Prepare"
+        ? "Alert Level 1"
         : alertLevel === 2
-          ? "Evacuate"
-          : "Critical";
+          ? "Alert Level 2 (Evacuate)"
+          : "Critical Alarm";
 
   // Proximity label mapping
   const proximityMap: Record<
     string,
-    { label: string; tone: string; badge: string }
+    { label: string; tone: string; badge: string; desc: string }
   > = {
     very_near: {
-      label: "Very Near (<1 km)",
-      tone: "border-red-200 bg-red-50/60 text-red-950",
-      badge: "bg-red-100 text-red-700 border-red-300",
+      label: "Very High Proximity (<1 km)",
+      tone: "border-red-200/90 bg-gradient-to-br from-red-50/60 to-rose-50/30 text-red-950",
+      badge: "bg-red-100 text-red-800 border-red-300",
+      desc: "Waterway within 1,000 meters. Prepare early evacuation when Alert Level 1 is raised.",
     },
     near: {
-      label: "Near (1–5 km)",
-      tone: "border-amber-200 bg-amber-50/60 text-amber-950",
+      label: "Moderate Proximity (1–5 km)",
+      tone: "border-amber-200/90 bg-gradient-to-br from-amber-50/60 to-orange-50/30 text-amber-950",
       badge: "bg-amber-100 text-amber-800 border-amber-300",
+      desc: "Secondary flood runoff zone. Monitor local street drainage during heavy rainfall.",
     },
     far: {
-      label: "Low Risk (>5 km)",
-      tone: "border-emerald-200 bg-emerald-50/60 text-emerald-950",
+      label: "Low Proximity (>5 km)",
+      tone: "border-emerald-200/90 bg-gradient-to-br from-emerald-50/60 to-teal-50/30 text-emerald-950",
       badge: "bg-emerald-100 text-emerald-800 border-emerald-300",
+      desc: "Elevated residential area with minimal direct river backflow risk.",
     },
   };
 
   const currentProximity =
     proximityMap[data.waterway_proximity ?? ""] || proximityMap.far;
 
+  // Recent notifications
+  const recentNotices = (notices.data?.items ?? []).slice(0, 2);
+  const unreadNoticesCount = (notices.data?.items ?? []).filter((n) => !n.read_at).length;
+
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* ── 1. Hero Greeting & Emergency Takeover Header ── */}
-      {activeEvents.length > 0 ? (
-        <section className="relative overflow-hidden rounded-2xl sm:rounded-3xl border-2 border-red-500 bg-gradient-to-br from-red-600 via-rose-600 to-red-700 p-6 sm:p-8 text-white shadow-lg">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-12 -right-12 size-60 rounded-full bg-white/10 blur-3xl"
-          />
-          <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-black tracking-wider uppercase backdrop-blur-xs">
-                <span className="size-2 rounded-full bg-white animate-ping" />
-                <span>Emergency Operations Active</span>
-              </div>
+      {/* ── 1. Hero Greeting & Live Environmental Telemetry Banner ── */}
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-900/15 bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-950 p-6 sm:p-8 text-white shadow-md">
+        {/* Background glow accents */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-16 -right-16 size-80 rounded-full bg-emerald-400/15 blur-3xl"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-16 -left-16 size-72 rounded-full bg-teal-300/10 blur-3xl"
+        />
+
+        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          {/* Left: Resident Greeting & Credentials */}
+          <div className="space-y-3 min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-700/60 px-3 py-0.5 text-xs font-black text-emerald-100 shadow-2xs backdrop-blur-xs">
+                <Sparkles className="size-3 text-emerald-300" />
+                <span>San Jose Resident Portal</span>
+              </span>
+              <span className="rounded-full border border-white/25 bg-white/10 px-2.5 py-0.5 font-mono text-xs font-bold text-emerald-100 backdrop-blur-xs">
+                #{data.reference_no}
+              </span>
+              <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-200">
+                {data.area_name ?? "San Jose Zone"}
+              </span>
+            </div>
+
+            <div>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white">
-                {activeEvents.length === 1
-                  ? activeEvents[0].name
-                  : "Active Barangay Emergency Declared"}
+                Mabuhay, <span className="text-emerald-300">{firstName}!</span>
               </h1>
-              <p className="max-w-2xl text-xs sm:text-sm text-red-100/90 leading-relaxed">
-                Confirm your family’s individual status to let the BDRRMC know who is
-                safe and dispatch rescue if water levels rise.
+              <p className="mt-1 max-w-2xl text-xs sm:text-sm leading-relaxed text-emerald-100/90 font-medium">
+                Welcome to your family readiness cockpit. Keep your emergency roster, 72-hour go-bag, and flood action plan ready for upcoming weather disturbances.
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5 max-sm:w-full max-sm:pt-2">
+            {/* Quick Action Navigation Links */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
               <Button
                 asChild
-                className="h-11 rounded-xl bg-white px-5 text-xs font-black text-red-700 hover:bg-red-50 shadow-md transition-all active:scale-95"
+                size="sm"
+                className="h-9 cursor-pointer gap-2 rounded-full border border-emerald-400/50 bg-emerald-500/90 px-4 text-xs font-bold text-emerald-950 shadow-xs transition-all hover:bg-white hover:text-emerald-900 active:scale-[0.98]"
               >
-                <Link href="/portal/safety">
-                  <ShieldCheck className="size-4" />
-                  Check In Household
+                <Link href="/portal/household">
+                  <Users className="size-3.5" />
+                  <span>Household Profile</span>
                 </Link>
               </Button>
               <Button
                 asChild
                 variant="outline"
-                className="h-11 rounded-xl border-white/40 bg-white/10 text-xs font-bold text-white hover:bg-white/20"
+                size="sm"
+                className="h-9 cursor-pointer gap-2 rounded-full border-white/30 bg-white/10 px-4 text-xs font-bold text-white shadow-2xs transition-all hover:bg-white/20 active:scale-[0.98]"
               >
-                <Link href="/portal/rescue">
-                  <LifeBuoy className="size-4" />
-                  Request Rescue
+                <Link href="/portal/safety">
+                  <ShieldCheck className="size-3.5 text-emerald-300" />
+                  <span>Safety Check-In</span>
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="h-9 cursor-pointer gap-2 rounded-full border-white/30 bg-white/10 px-4 text-xs font-bold text-white shadow-2xs transition-all hover:bg-white/20 active:scale-[0.98]"
+              >
+                <Link href="/portal/hazard-map">
+                  <Map className="size-3.5 text-emerald-300" />
+                  <span>Flood Map</span>
                 </Link>
               </Button>
             </div>
           </div>
-        </section>
-      ) : (
-        <section className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-emerald-950/10 bg-gradient-to-br from-white via-emerald-50/30 to-teal-50/20 p-6 sm:p-8 shadow-xs">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-12 -right-12 size-60 rounded-full bg-emerald-500/10 blur-3xl"
-          />
-          <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/80 bg-emerald-100/90 px-3 py-0.5 text-xs font-black text-emerald-900 shadow-2xs">
-                  <Sparkles className="size-3.5 text-emerald-700" />
-                  <span>Household Registered</span>
-                </span>
-                <span className="rounded-full border border-neutral-200 bg-white px-2.5 py-0.5 font-mono text-xs font-bold text-neutral-700">
-                  {data.reference_no}
+
+          {/* Right: Real-time River & Weather Telemetry Capsule */}
+          <div className="flex flex-col gap-3 rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur-md shadow-md lg:w-80 shrink-0">
+            <div className="flex items-center justify-between border-b border-white/15 pb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="grid size-7 place-items-center rounded-lg bg-emerald-400/20 text-emerald-200">
+                  <Radio className="size-3.5 animate-pulse" />
+                </div>
+                <span className="text-xs font-black uppercase tracking-wider text-emerald-100">
+                  Live Sensor Telemetry
                 </span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-neutral-900">
-                Mabuhay, <span className="text-emerald-700">{firstName}!</span>
-              </h1>
-              <p className="max-w-2xl text-xs sm:text-sm leading-relaxed text-neutral-600">
-                Welcome to your Barangay San Jose household readiness space. Keep your
-                family roster, go-bag supplies, and emergency plan current.
-              </p>
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider",
+                  alertLevel === 0
+                    ? "bg-emerald-400/30 text-emerald-100 border border-emerald-300/40"
+                    : alertLevel === 1
+                      ? "bg-amber-400/30 text-amber-100 border border-amber-300/50 animate-pulse"
+                      : "bg-red-500/40 text-red-100 border border-red-300/60 animate-pulse",
+                )}
+              >
+                {alertLevelName}
+              </span>
             </div>
 
-            {/* Quick Live River & Weather Status Pill */}
-            {river.data || weather.data ? (
-              <div className="flex flex-col gap-2 rounded-2xl border border-emerald-200/80 bg-white/90 p-4 shadow-2xs sm:min-w-64">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1.5 font-bold text-neutral-700">
-                    <Waves className="size-4 text-emerald-600" />
-                    Montalban River
-                  </span>
-                  <span
-                    className={cn(
-                      "rounded-full px-2 py-0.2 text-[10px] font-black uppercase",
-                      alertLevel === 0
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-amber-100 text-amber-800 animate-pulse",
-                    )}
-                  >
-                    {alertLevelName}
-                  </span>
-                </div>
-                <div className="flex items-baseline justify-between pt-1 text-xs">
-                  <span className="text-neutral-500 font-medium">Water Level</span>
-                  <span className="text-base font-black text-neutral-900 tabular-nums">
-                    {river.data?.reading?.value !== undefined
-                      ? `${river.data.reading.value.toFixed(2)} m`
-                      : "22.60 m"}
-                  </span>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </section>
-      )}
+            {/* River Metrics */}
+            <div className="flex items-center justify-between text-xs">
+              <span className="flex items-center gap-1.5 text-emerald-100 font-medium">
+                <Waves className="size-3.5 text-emerald-300" />
+                <span>Montalban River:</span>
+              </span>
+              <span className="font-mono text-base font-black text-white">
+                {river.data?.reading?.value !== undefined
+                  ? `${river.data.reading.value.toFixed(2)} m`
+                  : "22.60 m"}
+              </span>
+            </div>
 
-      {/* ── 2. Four Key Household Metric Cards Strip ── */}
+            {/* Weather Metrics */}
+            {(() => {
+              const tempReading = weather.data?.readings?.find(
+                (r) => r.metric === "temperature",
+              );
+              const rainReading = weather.data?.readings?.find(
+                (r) => r.metric === "rainfall",
+              );
+              return (
+                <div className="flex items-center justify-between text-xs pt-0.5">
+                  <span className="flex items-center gap-1.5 text-emerald-100 font-medium">
+                    <CloudSun className="size-3.5 text-emerald-300" />
+                    <span>Current Weather:</span>
+                  </span>
+                  <span className="font-mono text-sm font-bold text-white">
+                    {tempReading?.value !== undefined
+                      ? `${tempReading.value.toFixed(0)}°C`
+                      : "30°C"}
+                    {" • "}
+                    <span className="text-emerald-200 font-medium text-[11px]">
+                      {rainReading?.value !== undefined && rainReading.value > 0
+                        ? `${rainReading.value.toFixed(1)} mm/hr Rain`
+                        : "Fair / Dry"}
+                    </span>
+                  </span>
+                </div>
+              );
+            })()}
+
+            {/* Bottom Link */}
+            <Link
+              href="/portal/weather"
+              className="mt-1 flex items-center justify-between rounded-xl bg-white/10 px-3 py-1.5 text-[11px] font-bold text-emerald-200 hover:bg-white/20 hover:text-white transition-colors"
+            >
+              <span>View River Gauge Charts</span>
+              <ChevronRight className="size-3" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 2. Four Key Operational Metrics Grid ── */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
-        {/* Card 1: Household Number & Area */}
-        <div className="flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-4 shadow-2xs hover:shadow-xs transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black tracking-wider text-slate-500 uppercase">
-              Household ID
-            </span>
-            <div className="grid size-7 place-items-center rounded-lg bg-slate-100 text-slate-700">
-              <Home className="size-3.5" />
+        {/* Card 1: Household ID & Registered Area */}
+        <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden transition-all hover:border-neutral-300 hover:shadow-sm">
+          <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black tracking-wider text-neutral-400 uppercase">
+                Household Ref
+              </span>
+              <div className="grid size-8 place-items-center rounded-xl bg-slate-100 text-slate-700 shadow-2xs">
+                <Home className="size-4" />
+              </div>
             </div>
-          </div>
-          <div className="mt-2">
-            <span className="font-mono text-lg sm:text-xl font-black text-slate-900 truncate block">
-              {data.reference_no}
-            </span>
-            <span className="text-[11px] font-bold text-emerald-700 truncate block mt-0.5">
-              {data.area_name ?? "San Jose"}
-            </span>
-          </div>
-        </div>
+            <div>
+              <span className="font-mono text-lg sm:text-xl font-black text-neutral-900 block truncate">
+                {data.reference_no}
+              </span>
+              <span className="text-xs font-bold text-emerald-700 truncate block mt-0.5">
+                {data.area_name ?? "San Jose Zone"}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Card 2: Household Members */}
-        <div className="flex flex-col justify-between rounded-2xl border border-emerald-200/80 bg-emerald-50/40 p-4 shadow-2xs hover:shadow-xs transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black tracking-wider text-emerald-800 uppercase">
-              Registered Members
-            </span>
-            <div className="grid size-7 place-items-center rounded-lg bg-emerald-100 text-emerald-700">
-              <UsersRound className="size-3.5" />
+        {/* Card 2: Registered Family Members */}
+        <Card className="border-emerald-200/80 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 shadow-xs overflow-hidden transition-all hover:border-emerald-300 hover:shadow-sm">
+          <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black tracking-wider text-emerald-800 uppercase">
+                Family Roster
+              </span>
+              <div className="grid size-8 place-items-center rounded-xl bg-emerald-100 text-emerald-700 shadow-2xs">
+                <UsersRound className="size-4" />
+              </div>
             </div>
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl sm:text-3xl font-black text-emerald-950 tabular-nums">
-              {members.length}
-            </span>
-            <span className="text-[11px] font-medium text-emerald-800 block mt-0.5">
-              {specialNeedsCount > 0
-                ? `${specialNeedsCount} special care flags`
-                : "No special care flags"}
-            </span>
-          </div>
-        </div>
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-black text-emerald-950 tabular-nums">
+                  {members.length}
+                </span>
+                <span className="text-xs font-bold text-emerald-800">
+                  Member{members.length === 1 ? "" : "s"}
+                </span>
+              </div>
+              <span className="text-[11px] font-medium text-emerald-700 block mt-0.5">
+                {specialNeedsCount > 0
+                  ? `${specialNeedsCount} special care flag(s)`
+                  : "Standard evacuation profile"}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Card 3: Waterway Proximity / Flood Risk */}
-        <div
+        <Card
           className={cn(
-            "flex flex-col justify-between rounded-2xl border p-4 shadow-2xs hover:shadow-xs transition-all",
+            "shadow-xs overflow-hidden transition-all hover:shadow-sm",
             currentProximity.tone,
           )}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black tracking-wider uppercase text-neutral-600">
-              Flood Proximity
-            </span>
-            <div className="grid size-7 place-items-center rounded-lg bg-white/80 text-neutral-700">
-              <Droplets className="size-3.5" />
+          <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black tracking-wider uppercase text-neutral-500">
+                Flood Risk Proximity
+              </span>
+              <div className="grid size-8 place-items-center rounded-xl bg-white/90 text-neutral-700 shadow-2xs">
+                <Droplets className="size-4 text-blue-600" />
+              </div>
             </div>
-          </div>
-          <div className="mt-2">
-            <span className="text-sm sm:text-base font-black text-neutral-900 block truncate">
-              {currentProximity.label}
-            </span>
-            <span
-              className={cn(
-                "inline-flex items-center rounded-md border px-1.5 py-0.2 text-[9.5px] font-bold mt-1",
-                currentProximity.badge,
+            <div>
+              <span className="text-sm sm:text-base font-black text-neutral-900 block truncate">
+                {currentProximity.label}
+              </span>
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-bold mt-1 shadow-2xs",
+                  currentProximity.badge,
+                )}
+              >
+                Waterway Zone
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card 4: 72-Hour Go-Bag Readiness Status */}
+        <Card className="border-sky-200/90 bg-gradient-to-br from-sky-50/50 to-blue-50/30 shadow-xs overflow-hidden transition-all hover:border-sky-300 hover:shadow-sm">
+          <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black tracking-wider text-sky-800 uppercase">
+                Go-Bag Readiness
+              </span>
+              <div className="grid size-8 place-items-center rounded-xl bg-sky-100 text-sky-700 shadow-2xs">
+                <Backpack className="size-4" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-baseline justify-between">
+                <span className="text-2xl font-black text-sky-950 tabular-nums">
+                  {goBagPercent}%
+                </span>
+                <span className="text-[11px] font-bold text-sky-700">
+                  {goBagChecked} of {goBagTotal} packed
+                </span>
+              </div>
+              <MeterBar
+                value={goBagChecked}
+                max={goBagTotal}
+                label="Go-Bag pack percentage"
+                className="h-2 rounded-full"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* ── 3. Main 12-Column Responsive Dashboard Layout ── */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8 items-start">
+        {/* ── LEFT COLUMN: Family Roster + Flood Hazard Map (8 cols) ── */}
+        <div className="lg:col-span-8 space-y-6 sm:space-y-8">
+          {/* Module A: Household Safety & Members Roster */}
+          <section className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200/80 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="grid size-9 place-items-center rounded-xl bg-emerald-100 text-emerald-700 shadow-2xs">
+                  <UsersRound className="size-4.5" />
+                </span>
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-neutral-900">
+                    Household Members Roster
+                  </h2>
+                  <p className="text-xs text-neutral-500 font-normal">
+                    Registered family members & individual safety check-in status
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {activeEvents.length > 0 ? (
+                  <span
+                    className={cn(
+                      "rounded-full px-3 py-1 text-xs font-bold border",
+                      needsRescueCount > 0
+                        ? "bg-red-50 text-red-800 border-red-200 animate-pulse"
+                        : "bg-emerald-50 text-emerald-800 border-emerald-200",
+                    )}
+                  >
+                    {needsRescueCount > 0
+                      ? `${needsRescueCount} Needs Rescue`
+                      : `${safeCount} of ${members.length} Confirmed Safe`}
+                  </span>
+                ) : null}
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="h-9 rounded-full border-neutral-300 bg-white px-4 text-xs font-bold text-neutral-800 hover:bg-neutral-50 shadow-2xs"
+                >
+                  <Link href="/portal/household">
+                    <span>Manage Roster</span>
+                    <ArrowRight className="size-3.5 ml-1" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            <HouseholdSafetyLine members={members} statuses={statuses} />
+          </section>
+
+          {/* Module B: Local Flood Hazard Map Preview */}
+          <section className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200/80 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="grid size-9 place-items-center rounded-xl bg-emerald-100 text-emerald-700 shadow-2xs">
+                  <Map className="size-4.5" />
+                </span>
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-neutral-900">
+                    Local Flood Hazard Context
+                  </h2>
+                  <p className="text-xs text-neutral-500 font-normal">
+                    Official UP NOAH flood hazard model centered on your residence in {data.area_name ?? "San Jose"}
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="h-9 rounded-full border-neutral-300 bg-white px-4 text-xs font-bold text-neutral-800 hover:bg-neutral-50 shadow-2xs"
+              >
+                <Link href="/portal/hazard-map">
+                  <span>Open Full Hazard Map</span>
+                  <ExternalLink className="size-3.5 ml-1" />
+                </Link>
+              </Button>
+            </div>
+
+            <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+              <CardContent className="p-0">
+                <PortalHouseholdMap household={data} preview />
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 bg-neutral-50/70 p-4 text-xs">
+                  <div className="flex items-center gap-2 text-neutral-600">
+                    <Building2 className="size-4 text-emerald-700" />
+                    <span>
+                      Nearest Evacuation Facility:{" "}
+                      <strong className="text-neutral-900 font-bold">
+                        Kasiglahan Village Elementary School / San Jose Covered Court
+                      </strong>
+                    </span>
+                  </div>
+                  <Link
+                    href="/portal/hazard-map"
+                    className="font-bold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1"
+                  >
+                    <span>View Evacuation Routes</span>
+                    <ChevronRight className="size-3.5" />
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+        </div>
+
+        {/* ── RIGHT COLUMN: Readiness Health + Broadcasts + Emergency Trigger (4 cols) ── */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* Module C: Family Preparedness Health Index Card */}
+          <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
+            <CardContent className="p-5 sm:p-6 space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-neutral-100 pb-3">
+                <span className="grid size-8 place-items-center rounded-xl bg-emerald-100 text-emerald-700 shadow-2xs">
+                  <HeartPulse className="size-4.5" />
+                </span>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-neutral-900">
+                    Preparedness Health Index
+                  </h3>
+                  <span className="text-[11px] text-neutral-500">
+                    Household Readiness Scorecard
+                  </span>
+                </div>
+              </div>
+
+              {/* Progress 1: Go-Bag */}
+              <div className="space-y-1.5 rounded-xl border border-neutral-200/70 bg-neutral-50/50 p-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-1.5 font-bold text-neutral-800">
+                    <Backpack className="size-3.5 text-emerald-700" />
+                    <span>72-Hour Go-Bag</span>
+                  </span>
+                  <span className="font-bold text-emerald-800">{goBagPercent}%</span>
+                </div>
+                <MeterBar
+                  value={goBagChecked}
+                  max={goBagTotal}
+                  label="Go-bag pack meter"
+                  className="h-1.5 rounded-full"
+                />
+                <span className="text-[10.5px] text-neutral-500 block pt-0.5">
+                  {essentialChecked} of {essentialTotal} essential survival supplies packed
+                </span>
+              </div>
+
+              {/* Progress 2: Family Plan */}
+              <div className="space-y-1.5 rounded-xl border border-neutral-200/70 bg-neutral-50/50 p-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-1.5 font-bold text-neutral-800">
+                    <FileText className="size-3.5 text-sky-700" />
+                    <span>Emergency Family Plan</span>
+                  </span>
+                  <span
+                    className={cn(
+                      "font-bold text-xs",
+                      familyPlanPercent === 100 ? "text-emerald-700" : "text-amber-700",
+                    )}
+                  >
+                    {familyPlanPercent === 100 ? "Configured ✓" : "Incomplete"}
+                  </span>
+                </div>
+                <span className="text-[10.5px] text-neutral-500 block">
+                  {hasMeetingPoint
+                    ? `Assembly: ${familyPlan.data?.meeting_point}`
+                    : "No meeting point assigned yet"}
+                </span>
+              </div>
+
+              {/* Action Button */}
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="w-full rounded-full border-neutral-300 bg-white font-bold text-neutral-800 hover:bg-neutral-50 text-xs shadow-2xs"
+              >
+                <Link href="/portal/preparedness">
+                  <span>Open Preparedness Hub</span>
+                  <ArrowRight className="size-3 ml-1" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Module D: Recent Official Notices & Activity Feed */}
+          <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
+            <CardContent className="p-5 space-y-3.5">
+              <div className="flex items-center justify-between border-b border-neutral-100 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="grid size-7 place-items-center rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                    <Bell className="size-3.5" />
+                  </div>
+                  <h3 className="text-xs font-bold text-neutral-900">
+                    Latest Advisories
+                  </h3>
+                </div>
+                {unreadNoticesCount > 0 ? (
+                  <span className="text-[10px] font-black text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
+                    {unreadNoticesCount} Unread
+                  </span>
+                ) : null}
+              </div>
+
+              {recentNotices.length > 0 ? (
+                <div className="space-y-2.5">
+                  {recentNotices.map((notice) => (
+                    <Link
+                      key={notice.id}
+                      href={(notice.link_path ?? "/portal/updates") as never}
+                      className="group block rounded-xl border border-neutral-200/80 bg-neutral-50/50 p-3 transition-colors hover:border-emerald-300 hover:bg-emerald-50/40"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-bold text-neutral-900 text-xs truncate group-hover:text-emerald-900">
+                          {notice.title}
+                        </span>
+                        <span className="text-[10px] text-neutral-400 shrink-0">
+                          {new Intl.DateTimeFormat("en-PH", {
+                            month: "short",
+                            day: "numeric",
+                          }).format(new Date(notice.created_at))}
+                        </span>
+                      </div>
+                      <p className="text-[11.5px] text-neutral-600 line-clamp-2 mt-1 leading-snug">
+                        {notice.body}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-neutral-500 py-2 text-center">
+                  No active emergency broadcasts right now.
+                </p>
               )}
-            >
-              Waterway Proximity
-            </span>
-          </div>
-        </div>
 
-        {/* Card 4: Go-Bag Readiness Status */}
-        <div className="flex flex-col justify-between rounded-2xl border border-sky-200 bg-sky-50/40 p-4 shadow-2xs hover:shadow-xs transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black tracking-wider text-sky-800 uppercase">
-              Go-Bag Status
-            </span>
-            <div className="grid size-7 place-items-center rounded-lg bg-sky-100 text-sky-700">
-              <Backpack className="size-3.5" />
-            </div>
-          </div>
-          <div className="mt-2 space-y-1.5">
-            <div className="flex items-baseline justify-between">
-              <span className="text-xl sm:text-2xl font-black text-sky-950 tabular-nums">
-                {goBagPercent}%
-              </span>
-              <span className="text-[10px] font-bold text-sky-700">
-                {goBagChecked}/{goBagTotal} packed
+              <Link
+                href="/portal/updates"
+                className="block text-center text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline pt-1"
+              >
+                View all notifications & logs →
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Module E: Direct Emergency Dispatch Callout */}
+          <div className="rounded-2xl border-2 border-red-300/90 bg-gradient-to-br from-red-50 via-rose-50/80 to-red-100/60 p-5 shadow-sm space-y-3">
+            <div className="flex items-center gap-2 text-red-800">
+              <LifeBuoy className="size-4 text-red-700" />
+              <span className="text-[10px] font-black tracking-[0.14em] uppercase">
+                Life-Safety Emergency
               </span>
             </div>
-            <MeterBar
-              value={goBagChecked}
-              max={goBagTotal}
-              label="Go-Bag pack percentage"
-              className="h-2 rounded-full"
-            />
+            <div>
+              <h4 className="text-sm font-black text-neutral-900">
+                Need Immediate Rescue or Medical Evacuation?
+              </h4>
+              <p className="mt-1 text-xs leading-relaxed text-neutral-600">
+                Submit an urgent GPS rescue dispatch ticket or dial the 24/7 BDRRMC command center.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <Button
+                asChild
+                size="sm"
+                className="w-full cursor-pointer gap-1.5 rounded-full bg-red-600 font-bold text-white shadow-xs hover:bg-red-700 text-xs active:scale-[0.98]"
+              >
+                <Link href="/portal/rescue">
+                  <LifeBuoy className="size-3.5" />
+                  <span>Request Rescue</span>
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="w-full cursor-pointer gap-1.5 rounded-full border-neutral-300 bg-white font-bold text-neutral-800 hover:bg-neutral-50 text-xs"
+              >
+                <Link href="/portal/report">
+                  <FileWarning className="size-3.5 text-amber-700" />
+                  <span>Report Hazard</span>
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
-      </section>
-
-      {/* ── 3. Household Members Safety Roster ── */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3 border-b border-neutral-200/80 pb-3">
-          <div className="flex items-center gap-2.5">
-            <span className="grid size-8 place-items-center rounded-xl bg-emerald-100 text-emerald-700 shadow-2xs">
-              <UsersRound className="size-4" />
-            </span>
-            <div>
-              <h2 className="text-base sm:text-lg font-black text-neutral-900">
-                Household Members Roster
-              </h2>
-              <p className="text-xs text-neutral-500 font-normal">
-                People listed under Reference #{data.reference_no}
-              </p>
-            </div>
-          </div>
-
-          <Button asChild size="sm" variant="outline" className="rounded-xl text-xs font-bold">
-            <Link href="/portal/household">
-              <span>Manage Roster</span>
-              <ArrowRight className="size-3.5 ml-1" />
-            </Link>
-          </Button>
-        </div>
-
-        <HouseholdSafetyLine members={members} statuses={statuses} />
-      </section>
-
-      {/* ── 4. Local Flood Context & Map Preview ── */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3 border-b border-neutral-200/80 pb-3">
-          <div className="flex items-center gap-2.5">
-            <span className="grid size-8 place-items-center rounded-xl bg-emerald-100 text-emerald-700 shadow-2xs">
-              <Map className="size-4" />
-            </span>
-            <div>
-              <h2 className="text-base sm:text-lg font-black text-neutral-900">
-                Local Flood Hazard Context
-              </h2>
-              <p className="text-xs text-neutral-500 font-normal">
-                Official UP NOAH 5-year flood layer centered on your home
-              </p>
-            </div>
-          </div>
-
-          <Button asChild size="sm" variant="outline" className="rounded-xl text-xs font-bold">
-            <Link href="/portal/hazard-map">
-              <span>View Map</span>
-              <ArrowRight className="size-3.5 ml-1" />
-            </Link>
-          </Button>
-        </div>
-
-        <PortalHouseholdMap household={data} preview />
-      </section>
-
-      {/* ── 5. Readiness & Action Hub (4 Interactive Feature Cards) ── */}
-      <section className="space-y-4">
-        <div className="flex items-center gap-2.5 border-b border-neutral-200/80 pb-3">
-          <span className="grid size-8 place-items-center rounded-xl bg-emerald-100 text-emerald-700 shadow-2xs">
-            <HeartPulse className="size-4" />
-          </span>
-          <div>
-            <h2 className="text-base sm:text-lg font-black text-neutral-900">
-              Household Readiness Hub
-            </h2>
-            <p className="text-xs text-neutral-500 font-normal">
-              Essential preparation tools and community reporting services
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Card 1: Go-Bag Checklist */}
-          <Link
-            href="/portal/preparedness/go-bag"
-            className="group flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-2xs transition-all hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-xs"
-          >
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="grid size-10 place-items-center rounded-xl bg-emerald-100 text-emerald-700 group-hover:scale-105 transition-transform">
-                  <Backpack className="size-5" />
-                </span>
-                <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-black text-emerald-800">
-                  {goBagPercent}% Complete
-                </span>
-              </div>
-              <h3 className="mt-3.5 text-sm font-bold text-neutral-900 group-hover:text-emerald-800 transition-colors">
-                Go-Bag Checklist
-              </h3>
-              <p className="mt-1 text-xs text-neutral-500 leading-relaxed">
-                Pack 72-hour emergency food, water, medicine, and survival gear.
-              </p>
-            </div>
-            <div className="mt-4 flex items-center gap-1 text-xs font-bold text-emerald-700">
-              <span>Open checklist</span>
-              <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-            </div>
-          </Link>
-
-          {/* Card 2: Family Emergency Plan */}
-          <Link
-            href="/portal/preparedness/family-plan"
-            className="group flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-2xs transition-all hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-xs"
-          >
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="grid size-10 place-items-center rounded-xl bg-sky-100 text-sky-700 group-hover:scale-105 transition-transform">
-                  <Home className="size-5" />
-                </span>
-                <span className="rounded-full bg-sky-50 border border-sky-200 px-2.5 py-0.5 text-[10px] font-black text-sky-800">
-                  Plan
-                </span>
-              </div>
-              <h3 className="mt-3.5 text-sm font-bold text-neutral-900 group-hover:text-emerald-800 transition-colors">
-                Family Emergency Plan
-              </h3>
-              <p className="mt-1 text-xs text-neutral-500 leading-relaxed">
-                Set meeting points and outside emergency contact numbers.
-              </p>
-            </div>
-            <div className="mt-4 flex items-center gap-1 text-xs font-bold text-emerald-700">
-              <span>Review plan</span>
-              <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-            </div>
-          </Link>
-
-          {/* Card 3: Report Incident */}
-          <Link
-            href="/portal/report"
-            className="group flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-2xs transition-all hover:border-amber-300 hover:bg-amber-50/30 hover:shadow-xs"
-          >
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="grid size-10 place-items-center rounded-xl bg-amber-100 text-amber-800 group-hover:scale-105 transition-transform">
-                  <FileWarning className="size-5" />
-                </span>
-                <span className="rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-[10px] font-black text-amber-800">
-                  Report
-                </span>
-              </div>
-              <h3 className="mt-3.5 text-sm font-bold text-neutral-900 group-hover:text-amber-900 transition-colors">
-                Report an Incident
-              </h3>
-              <p className="mt-1 text-xs text-neutral-500 leading-relaxed">
-                Send geotagged photos of flooding, blocked roads, or power outages.
-              </p>
-            </div>
-            <div className="mt-4 flex items-center gap-1 text-xs font-bold text-amber-800">
-              <span>File report</span>
-              <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-            </div>
-          </Link>
-
-          {/* Card 4: Household History */}
-          <Link
-            href="/portal/history"
-            className="group flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-2xs transition-all hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-xs"
-          >
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="grid size-10 place-items-center rounded-xl bg-slate-100 text-slate-700 group-hover:scale-105 transition-transform">
-                  <ClipboardList className="size-5" />
-                </span>
-                <span className="rounded-full bg-slate-50 border border-slate-200 px-2.5 py-0.5 text-[10px] font-black text-slate-700">
-                  Log
-                </span>
-              </div>
-              <h3 className="mt-3.5 text-sm font-bold text-neutral-900 group-hover:text-emerald-800 transition-colors">
-                Household History
-              </h3>
-              <p className="mt-1 text-xs text-neutral-500 leading-relaxed">
-                View past safety check-ins, evacuation logs, and resolution notes.
-              </p>
-            </div>
-            <div className="mt-4 flex items-center gap-1 text-xs font-bold text-emerald-700">
-              <span>View timeline</span>
-              <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-            </div>
-          </Link>
-        </div>
-      </section>
+      </div>
     </div>
   );
 }

@@ -13,7 +13,6 @@ import {
   ListChecks,
   MapPinned,
   Phone,
-  Sparkles,
 } from "lucide-react";
 
 import { Button } from "@/components/common/button";
@@ -62,12 +61,6 @@ export default function PortalPreparednessPage() {
         title="Preparedness"
         titleAccent="Hub"
         description="Household readiness checklist, family emergency protocols, and official Barangay San Jose disaster survival guides."
-        badge={
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/80 bg-emerald-100/90 px-3 py-0.5 text-xs font-black text-emerald-900 shadow-2xs">
-            <Sparkles className="size-3 text-emerald-700" />
-            <span>Pre-Disaster Readiness</span>
-          </span>
-        }
       />
 
       {/* ── Readiness command band ── */}

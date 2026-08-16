@@ -150,7 +150,7 @@ export function AdminNotificationsPopover({
                     className="h-7 rounded-lg bg-red-600 px-2.5 text-[11px] font-bold text-white hover:bg-red-700 shadow-2xs"
                   >
                     <Link
-                      href={`/admin/emergency-events/${evt.id}` as any}
+                      href={`/admin/emergency-events/${evt.id}` as never}
                       onClick={() => setOpen(false)}
                     >
                       Open Event

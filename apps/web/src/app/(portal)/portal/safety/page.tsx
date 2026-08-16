@@ -187,10 +187,11 @@ export default function PortalSafetyPage() {
   const rescueCount = members.filter((m) => m.status === "needs_rescue").length;
   const unaccountedCount = members.length - safeCount - rescueCount;
 
+  const householdMembers = householdQuery.data?.members ?? [];
+
   // Household Special Care & Vulnerability Calculations
   const specialCareMembers = React.useMemo(() => {
-    if (!householdQuery.data?.members) return [];
-    return householdQuery.data.members.filter(
+    return householdMembers.filter(
       (m) =>
         m.is_pwd ||
         m.is_senior ||
@@ -199,10 +200,10 @@ export default function PortalSafetyPage() {
         m.is_bedridden ||
         m.has_chronic_condition,
     );
-  }, [householdQuery.data?.members]);
+  }, [householdMembers]);
 
   const specialCareSummary = React.useMemo(() => {
-    if (!householdQuery.data?.members) return "No special care flags";
+    if (householdMembers.length === 0) return "No special care flags";
     const counts: string[] = [];
     let pwd = 0;
     let senior = 0;
@@ -210,7 +211,7 @@ export default function PortalSafetyPage() {
     let bedridden = 0;
     let chronic = 0;
 
-    householdQuery.data.members.forEach((m) => {
+    householdMembers.forEach((m) => {
       if (m.is_pwd) pwd++;
       if (m.is_senior) senior++;
       if (m.is_pregnant) pregnant++;
@@ -226,17 +227,15 @@ export default function PortalSafetyPage() {
 
     if (counts.length === 0) return "Standard evacuation protocol";
     return counts.slice(0, 2).join(" · ") + (counts.length > 2 ? ` +${counts.length - 2} more` : "");
-  }, [householdQuery.data?.members]);
+  }, [householdMembers]);
 
   const memberDetailsMap = React.useMemo(() => {
     const map = new Map<string, MemberOut>();
-    if (householdQuery.data?.members) {
-      for (const m of householdQuery.data.members) {
-        map.set(m.id, m);
-      }
+    for (const m of householdMembers) {
+      map.set(m.id, m);
     }
     return map;
-  }, [householdQuery.data?.members]);
+  }, [householdMembers]);
 
   // Household Flood Risk & Proximity Assessment
   const waterwayProximity = householdQuery.data?.waterway_proximity;

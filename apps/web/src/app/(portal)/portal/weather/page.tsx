@@ -3,12 +3,9 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Activity,
   CloudSun,
   ExternalLink,
-  Radio,
   Phone,
-  ShieldCheck,
 } from "lucide-react";
 
 import { Button } from "@/components/common/button";
@@ -33,49 +30,27 @@ export default function PortalWeatherPage() {
   const hasData = weather.data && river.data;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 sm:space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* ── Page Header ── */}
       <PortalPageHeader
         icon={CloudSun}
         title="Weather & River"
         titleAccent="Watch"
         description="Check the latest cached forecast and Montalban River reading before you travel, prepare your household, or follow a barangay advisory."
-        badge={
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-300/80 bg-sky-100/90 px-3 py-0.5 text-xs font-black text-sky-900 shadow-2xs">
-            <Radio className="size-3 text-sky-700" />
-            <span>Barangay Weather Watch</span>
-          </span>
-        }
         action={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             <Button
               asChild
               variant="outline"
               size="sm"
-              className="rounded-xl border-emerald-300 text-xs font-bold text-emerald-900 hover:bg-emerald-50"
+              className="h-10 cursor-pointer gap-2 rounded-full border border-neutral-300/90 bg-white px-4 font-bold text-neutral-800 shadow-xs transition-all hover:bg-neutral-50 hover:border-neutral-400 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
             >
               <Link href="/weather" target="_blank">
-                <span>Open public weather</span>
-                <ExternalLink className="ml-1 size-3.5" />
+                <ExternalLink aria-hidden className="size-3.5 text-neutral-600" />
+                <span>Open Public Weather</span>
               </Link>
             </Button>
           </div>
-        }
-        meta={
-          <>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-neutral-600">
-              <Activity className="size-3.5 text-emerald-700" /> Current conditions and
-              short-term forecast
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-neutral-600">
-              <Radio className="size-3.5 text-emerald-700" /> Every reading shows its
-              source and time
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-neutral-600">
-              <ShieldCheck className="size-3.5 text-emerald-700" /> Alert levels are
-              issued by barangay officers
-            </span>
-          </>
         }
       />
 
