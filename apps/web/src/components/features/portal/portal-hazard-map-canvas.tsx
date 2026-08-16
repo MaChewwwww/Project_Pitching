@@ -281,12 +281,14 @@ export function PortalHazardMapCanvas({
           />
         )}
 
-        {/* Evacuation Centers & Facilities Markers (Controlled by Layer Toggle, Initially Off) */}
+        {/* Evacuation Centers Markers (Controlled by Layer Toggle, Filtered to Only Evacuation Centers) */}
         {layers.facilities &&
-          facilities.map((fac) => {
-            const [lon, lat] = fac.location.coordinates;
-            const color = facilityColor(fac.type);
-            const gmapsUrl = googleMapsDirectionsUrl(lat, lon);
+          facilities
+            .filter((fac) => fac.type === "evacuation_center")
+            .map((fac) => {
+              const [lon, lat] = fac.location.coordinates;
+              const color = facilityColor(fac.type);
+              const gmapsUrl = googleMapsDirectionsUrl(lat, lon);
 
             return (
               <CircleMarker

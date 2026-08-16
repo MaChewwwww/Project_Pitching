@@ -64,18 +64,18 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/portal", label: "Dashboard", icon: Home, exact: true },
       { href: "/portal/household", label: "Household & Members", icon: UsersRound },
-      { href: "/portal/safety", label: "Safety Check-In", icon: ShieldCheck },
       { href: "/portal/hazard-map", label: "Flood Hazard Map", icon: Map },
+      { href: "/portal/safety", label: "Safety Check-in", icon: ShieldCheck },
     ],
   },
   {
     title: "Planning & Services",
     items: [
-      { href: "/portal/preparedness", label: "Preparedness Hub", icon: Backpack },
-      { href: "/portal/updates", label: "Updates & Notices", icon: Bell, hasBadge: true },
       { href: "/portal/weather", label: "Weather & River Watch", icon: CloudSun },
+      { href: "/portal/preparedness", label: "Preparedness Hub", icon: Backpack },
       { href: "/portal/report", label: "Report Incident", icon: FileWarning },
       { href: "/portal/history", label: "Household History", icon: ClipboardList },
+      { href: "/portal/updates", label: "Updates & Notices", icon: Bell, hasBadge: true },
     ],
   },
 ];
@@ -83,8 +83,8 @@ const NAV_GROUPS: NavGroup[] = [
 const MOBILE_PRIMARY: NavItem[] = [
   { href: "/portal", label: "Home", icon: Home, exact: true },
   { href: "/portal/household", label: "Household", icon: UsersRound },
-  { href: "/portal/safety", label: "Safety", icon: ShieldCheck },
   { href: "/portal/hazard-map", label: "Map", icon: Map },
+  { href: "/portal/safety", label: "Safety", icon: ShieldCheck },
 ];
 
 function isLinkActive(pathname: string, href: string, exact = false) {
@@ -526,35 +526,20 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2">
                 <Link
-                  href="/portal/preparedness"
-                  onClick={() => setMoreDrawerOpen(false)}
-                  className="flex items-center gap-2.5 rounded-xl border border-neutral-200/90 bg-white p-3 text-xs font-bold text-neutral-800 shadow-2xs hover:bg-emerald-50/50"
-                >
-                  <Backpack className="size-4 text-emerald-700" />
-                  <span>Preparedness</span>
-                </Link>
-                <Link
-                  href="/portal/updates"
-                  onClick={() => setMoreDrawerOpen(false)}
-                  className="flex items-center justify-between rounded-xl border border-neutral-200/90 bg-white p-3 text-xs font-bold text-neutral-800 shadow-2xs hover:bg-emerald-50/50"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Bell className="size-4 text-emerald-700" />
-                    <span>Updates</span>
-                  </div>
-                  {unreadCount > 0 ? (
-                    <span className="rounded-full bg-red-500 px-1.5 py-0.2 text-[9px] font-black text-white">
-                      {unreadCount}
-                    </span>
-                  ) : null}
-                </Link>
-                <Link
                   href="/portal/weather"
                   onClick={() => setMoreDrawerOpen(false)}
                   className="flex items-center gap-2.5 rounded-xl border border-neutral-200/90 bg-white p-3 text-xs font-bold text-neutral-800 shadow-2xs hover:bg-emerald-50/50"
                 >
                   <CloudSun className="size-4 text-emerald-700" />
                   <span>Weather Watch</span>
+                </Link>
+                <Link
+                  href="/portal/preparedness"
+                  onClick={() => setMoreDrawerOpen(false)}
+                  className="flex items-center gap-2.5 rounded-xl border border-neutral-200/90 bg-white p-3 text-xs font-bold text-neutral-800 shadow-2xs hover:bg-emerald-50/50"
+                >
+                  <Backpack className="size-4 text-emerald-700" />
+                  <span>Preparedness</span>
                 </Link>
                 <Link
                   href="/portal/report"
@@ -571,6 +556,21 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
                 >
                   <ClipboardList className="size-4 text-neutral-700" />
                   <span>History & Logs</span>
+                </Link>
+                <Link
+                  href="/portal/updates"
+                  onClick={() => setMoreDrawerOpen(false)}
+                  className="flex items-center justify-between rounded-xl border border-neutral-200/90 bg-white p-3 text-xs font-bold text-neutral-800 shadow-2xs hover:bg-emerald-50/50"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Bell className="size-4 text-emerald-700" />
+                    <span>Updates</span>
+                  </div>
+                  {unreadCount > 0 ? (
+                    <span className="rounded-full bg-red-500 px-1.5 py-0.2 text-[9px] font-black text-white">
+                      {unreadCount}
+                    </span>
+                  ) : null}
                 </Link>
                 <Link
                   href="/help"

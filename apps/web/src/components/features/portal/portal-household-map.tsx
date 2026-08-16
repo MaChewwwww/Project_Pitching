@@ -17,7 +17,7 @@ export function PortalHouseholdMap({
   household: HouseholdDetailOut;
   preview?: boolean;
 }) {
-  const [showHazardLayer, setShowHazardLayer] = React.useState(true);
+  const [showHazardLayer, setShowHazardLayer] = React.useState(false);
 
   if (!household.location) {
     return (
