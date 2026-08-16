@@ -1655,7 +1655,11 @@ def _synthetic_household_sizes() -> list[int]:
 def _point_within(area: Area):
     """Generate one point inside an approximate area polygon with PostGIS."""
 
-    return func.ST_GeometryN(func.ST_GeneratePoints(area.geom, 1), 1)
+    # Area instances cross several explicit seed commits. Referencing their
+    # expired geometry attribute would trigger implicit async I/O; keep the
+    # geometry in the SQL expression instead.
+    area_geom = select(Area.geom).where(Area.id == area.id).scalar_subquery()
+    return func.ST_GeometryN(func.ST_GeneratePoints(area_geom, 1), 1)
 
 
 def _waterway_proximity(rng: random.Random, exposure: str | None) -> str:
@@ -1670,6 +1674,9 @@ def _waterway_proximity(rng: random.Random, exposure: str | None) -> str:
 async def seed_households(session, areas: dict[str, Area], users: dict[str, User]) -> None:
     if await _table_has_rows(session, Household):
         return
+
+    for area in areas.values():
+        await session.refresh(area, attribute_names=["flood_exposure"])
 
     rng = random.Random(20260817)
     sizes = _synthetic_household_sizes()
