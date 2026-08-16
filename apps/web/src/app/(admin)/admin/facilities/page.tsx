@@ -131,9 +131,6 @@ export default function AdminFacilitiesPage() {
   const [areaFilter, setAreaFilter] = React.useState("all");
   const [statusFilter, setStatusFilter] = React.useState("active");
 
-  const [countdown, setCountdown] = React.useState(60);
-  const [isManualRefreshing, setIsManualRefreshing] = React.useState(false);
-
   const [facilityToDeactivate, setFacilityToDeactivate] =
     React.useState<Facility | null>(null);
   const [facilityToDelete, setFacilityToDelete] =
@@ -142,36 +139,17 @@ export default function AdminFacilitiesPage() {
   const {
     data: facilities,
     isLoading,
-    isFetching,
     isError,
     refetch,
   } = useQuery({
     queryKey: ["admin", "facilities"],
     queryFn: () => api.get<Facility[]>("/admin/facilities").then((r) => r.data),
-    refetchInterval: 60_000,
   });
 
   const { data: areas = [] } = useQuery({
     queryKey: ["admin", "areas"],
     queryFn: () => api.get<Area[]>("/admin/areas").then((r) => r.data),
   });
-
-  const handleManualRefresh = async () => {
-    setIsManualRefreshing(true);
-    setCountdown(60);
-    try {
-      await refetch();
-    } finally {
-      setTimeout(() => setIsManualRefreshing(false), 600);
-    }
-  };
-
-  React.useEffect(() => {
-    const timer = window.setInterval(() => {
-      setCountdown((prev) => (prev <= 1 ? 60 : prev - 1));
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, []);
 
   const deactivateMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/facilities/${id}`),
@@ -413,7 +391,7 @@ export default function AdminFacilitiesPage() {
             >
               <Icon className="size-4" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0" onClick={(e) => e.stopPropagation()}>
               <FacilityDetailsDialog
                 facility={row as FacilityEditable}
                 onLocate={setSelectedId}
@@ -425,6 +403,7 @@ export default function AdminFacilitiesPage() {
                 trigger={
                   <button
                     type="button"
+                    onClick={(e) => e.stopPropagation()}
                     className="font-bold text-sm text-neutral-900 hover:text-emerald-700 hover:underline transition-colors truncate block text-left cursor-pointer"
                   >
                     {row.name}
@@ -511,44 +490,11 @@ export default function AdminFacilitiesPage() {
 
   return (
     <div className="flex flex-col gap-6 pb-12">
-      {/* Page Header matching /admin/sirens standard */}
+      {/* Page Header */}
       <AdminPageHeader
         title="Barangay Facilities & Services"
         description="Public infrastructure spatial catalog and emergency services directory: evacuation centers, health clinics, hospitals, police, and fire stations across San Jose."
-        action={
-          <div className="flex items-center gap-2.5">
-            {/* Auto refresh badge */}
-            <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/90 py-1 pr-1.5 pl-3 text-xs font-semibold text-emerald-900 shadow-xs">
-              <span className="relative flex size-2 shrink-0">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
-              </span>
-              <span>
-                Live Feed{" "}
-                <span className="font-bold text-emerald-950 tabular-nums">
-                  ({countdown}s)
-                </span>
-              </span>
-              <button
-                type="button"
-                onClick={handleManualRefresh}
-                title="Refresh now"
-                disabled={isManualRefreshing || isFetching}
-                className="flex size-5 items-center justify-center rounded-full text-emerald-700 hover:bg-emerald-200/80 hover:text-emerald-950 transition-colors cursor-pointer"
-              >
-                <RotateCcw
-                  className={cn(
-                    "size-3",
-                    (isFetching || isManualRefreshing) && "animate-spin",
-                  )}
-                />
-              </button>
-            </div>
-
-            {/* Register Facility Dialog Modal */}
-            <RegisterFacilityDialog />
-          </div>
-        }
+        action={<RegisterFacilityDialog />}
       />
 
       {/* Top 5 Metrics Strip */}
@@ -731,7 +677,6 @@ export default function AdminFacilitiesPage() {
           onRetry={refetch}
           getRowKey={(row) => row.id}
           selectedRowKey={selectedId}
-          onRowSelect={(row) => setSelectedId(row.id)}
           searchPlaceholder="Search facility name, category, address, hotline…"
           filterSlots={
             <div className="flex flex-wrap items-center gap-2">
@@ -774,7 +719,10 @@ export default function AdminFacilitiesPage() {
           }
           toolbarAction={<RegisterFacilityDialog />}
           rowActions={(row) => (
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div
+              className="flex flex-wrap items-center gap-1.5"
+              onClick={(e) => e.stopPropagation()}
+            >
               {/* 1. Locate (Icon Only) */}
               <Button
                 variant="outline"

@@ -128,16 +128,12 @@ export default function AdminSirensPage() {
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [areaFilter, setAreaFilter] = React.useState("all");
 
-  const [countdown, setCountdown] = React.useState(60);
-  const [isManualRefreshing, setIsManualRefreshing] = React.useState(false);
-
   const [sirenToDisable, setSirenToDisable] = React.useState<Siren | null>(null);
   const [sirenToDelete, setSirenToDelete] = React.useState<Siren | null>(null);
 
-  const { data: sirens, isLoading, isFetching, isError, refetch } = useQuery({
+  const { data: sirens, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "sirens"],
     queryFn: () => api.get<Siren[]>("/admin/sirens").then((r) => r.data),
-    refetchInterval: 60_000,
   });
 
   const { data: areas = [] } = useQuery({
@@ -148,25 +144,7 @@ export default function AdminSirensPage() {
   const { data: audits = [], isLoading: isAuditsLoading } = useQuery<SirenAudit[]>({
     queryKey: ["admin", "sirens", "audits"],
     queryFn: () => api.get<SirenAudit[]>("/admin/sirens/audits").then((r) => r.data),
-    refetchInterval: 10_000,
   });
-
-  const handleManualRefresh = async () => {
-    setIsManualRefreshing(true);
-    setCountdown(60);
-    try {
-      await Promise.all([refetch(), queryClient.invalidateQueries({ queryKey: ["admin", "sirens", "audits"] })]);
-    } finally {
-      setTimeout(() => setIsManualRefreshing(false), 600);
-    }
-  };
-
-  React.useEffect(() => {
-    const timer = window.setInterval(() => {
-      setCountdown((prev) => (prev <= 1 ? 60 : prev - 1));
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, []);
 
   const triggerMutation = useMutation({
     mutationFn: (id: string) => api.post(`/admin/sirens/${id}/trigger`),
@@ -428,9 +406,10 @@ export default function AdminSirensPage() {
             >
               <Megaphone className="size-4" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0" onClick={(e) => e.stopPropagation()}>
               <Link
                 href={`/admin/sirens/${row.id}`}
+                onClick={(e) => e.stopPropagation()}
                 className="font-bold text-sm text-neutral-900 hover:text-emerald-700 hover:underline transition-colors truncate block"
               >
                 {row.name}
@@ -504,39 +483,7 @@ export default function AdminSirensPage() {
       <AdminPageHeader
         title="Siren Alert Network"
         description="Public early warning acoustic simulation system. Control siren test drills, sound alerts during flash floods, and monitor Area coverage."
-        action={
-          <div className="flex items-center gap-2.5">
-            {/* Auto refresh badge */}
-            <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/90 py-1 pr-1.5 pl-3 text-xs font-semibold text-emerald-900 shadow-xs">
-              <span className="relative flex size-2 shrink-0">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
-              </span>
-              <span>
-                Live Feed{" "}
-                <span className="font-bold text-emerald-950 tabular-nums">
-                  ({countdown}s)
-                </span>
-              </span>
-              <button
-                type="button"
-                onClick={handleManualRefresh}
-                title="Refresh now"
-                disabled={isManualRefreshing || isFetching}
-                className="flex size-5 items-center justify-center rounded-full text-emerald-700 hover:bg-emerald-200/80 hover:text-emerald-950 transition-colors cursor-pointer"
-              >
-                <RotateCcw
-                  className={cn(
-                    "size-3",
-                    (isFetching || isManualRefreshing) && "animate-spin",
-                  )}
-                />
-              </button>
-            </div>
-
-            <DeploySirenDialog />
-          </div>
-        }
+        action={<DeploySirenDialog />}
       />
 
       {/* Top 5 Metrics Strip */}
@@ -745,7 +692,6 @@ export default function AdminSirensPage() {
             onRetry={refetch}
             getRowKey={(row) => row.id}
             selectedRowKey={selectedId}
-            onRowSelect={(row) => setSelectedId(row.id)}
             searchPlaceholder="Search siren unit name, area, status…"
             filterSlots={
               <div className="flex flex-wrap items-center gap-2">
@@ -781,7 +727,10 @@ export default function AdminSirensPage() {
             }
             toolbarAction={<DeploySirenDialog />}
             rowActions={(row) => (
-              <div className="flex flex-wrap items-center gap-1.5">
+              <div
+                className="flex flex-wrap items-center gap-1.5"
+                onClick={(e) => e.stopPropagation()}
+              >
                 {/* 1. Locate (Icon Only) */}
                 <Button
                   variant="outline"

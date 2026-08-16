@@ -107,32 +107,11 @@ export default function AdminEvacuationCentersPage() {
   const [areaFilter, setAreaFilter] = React.useState("all");
   const [occupancyTier, setOccupancyTier] = React.useState("all");
 
-  const [countdown, setCountdown] = React.useState(60);
-  const [isManualRefreshing, setIsManualRefreshing] = React.useState(false);
-
-  const { data, isLoading, isFetching, isError, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "evacuation-centers"],
     queryFn: () =>
       api.get<EvacCenter[]>("/admin/evacuation-centers").then((r) => r.data),
-    refetchInterval: 60_000,
   });
-
-  const handleManualRefresh = async () => {
-    setIsManualRefreshing(true);
-    setCountdown(60);
-    try {
-      await refetch();
-    } finally {
-      setTimeout(() => setIsManualRefreshing(false), 600);
-    }
-  };
-
-  React.useEffect(() => {
-    const timer = window.setInterval(() => {
-      setCountdown((prev) => (prev <= 1 ? 60 : prev - 1));
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, []);
 
 
 
@@ -357,9 +336,10 @@ export default function AdminEvacuationCentersPage() {
           <div className="relative mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 font-bold overflow-hidden shadow-2xs">
             <Building2 className="size-4 text-emerald-700" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0" onClick={(e) => e.stopPropagation()}>
             <Link
               href={`/admin/evacuation-centers/${row.id}`}
+              onClick={(e) => e.stopPropagation()}
               className="font-bold text-neutral-900 hover:text-emerald-700 hover:underline transition-colors truncate block"
             >
               {row.facility.name}
@@ -483,45 +463,15 @@ export default function AdminEvacuationCentersPage() {
         title="Evacuation Centers"
         description="Monitor real-time shelter capacity, live family check-in rosters, flood hazard exposure, and center activations."
         action={
-          <div className="flex items-center gap-2.5">
-            {/* Auto refresh badge */}
-            <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/90 py-1 pr-1.5 pl-3 text-xs font-semibold text-emerald-900 shadow-xs">
-              <span className="relative flex size-2 shrink-0">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
-              </span>
-              <span>
-                Live Feed{" "}
-                <span className="font-bold text-emerald-950 tabular-nums">
-                  ({countdown}s)
-                </span>
-              </span>
-              <button
-                type="button"
-                onClick={handleManualRefresh}
-                title="Refresh now"
-                disabled={isManualRefreshing || isFetching}
-                className="flex size-5 items-center justify-center rounded-full text-emerald-700 hover:bg-emerald-200/80 hover:text-emerald-950 transition-colors cursor-pointer"
-              >
-                <RotateCcw
-                  className={cn(
-                    "size-3",
-                    (isFetching || isManualRefreshing) && "animate-spin",
-                  )}
-                />
-              </button>
-            </div>
-
-            <Link href="/admin/evacuation-centers/new">
-              <Button
-                variant="primary"
-                className="h-9 gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700 shadow-2xs cursor-pointer shrink-0"
-              >
-                <Plus className="size-3.5" />
-                Register Center
-              </Button>
-            </Link>
-          </div>
+          <Link href="/admin/evacuation-centers/new">
+            <Button
+              variant="primary"
+              className="h-9 gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700 shadow-2xs cursor-pointer shrink-0"
+            >
+              <Plus className="size-3.5" />
+              Register Center
+            </Button>
+          </Link>
         }
       />
 
@@ -701,7 +651,6 @@ export default function AdminEvacuationCentersPage() {
         onRetry={refetch}
         getRowKey={(row) => row.id}
         selectedRowKey={selectedId}
-        onRowSelect={(row) => setSelectedId(row.id)}
         searchPlaceholder="Search center name, address, sitio area, contact…"
         filterSlots={
           <div className="flex flex-wrap items-center gap-2">
@@ -746,7 +695,10 @@ export default function AdminEvacuationCentersPage() {
           </Link>
         }
         rowActions={(row) => (
-          <div className="flex items-center gap-1.5">
+          <div
+            className="flex items-center gap-1.5"
+            onClick={(e) => e.stopPropagation()}
+          >
             <Button
               variant="outline"
               size="sm"

@@ -599,7 +599,10 @@ export function ResourceTable<T extends object>({
                   </TableCell>
                 ))}
                 {rowActions ? (
-                  <TableCell className="px-4 py-3 text-right">
+                  <TableCell
+                    className="px-4 py-3 text-right"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <div className="flex justify-end gap-2">{rowActions(row)}</div>
                   </TableCell>
                 ) : null}
