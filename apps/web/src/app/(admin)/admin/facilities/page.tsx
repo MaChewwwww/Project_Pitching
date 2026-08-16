@@ -629,16 +629,27 @@ export default function AdminFacilitiesPage() {
                 <PieChartIcon className="size-3.5 text-emerald-400" aria-hidden />
                 Facility Distribution
               </p>
-              <span className="rounded-full bg-emerald-950/80 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-700/60">
+              <span className="rounded-full bg-emerald-950/80 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-700/60 shadow-2xs">
                 {stats.total} Total
               </span>
             </div>
 
             {/* Donut Chart with Center Counter */}
-            <div className="relative h-36 w-full" role="img" aria-label="Facility distribution breakdown">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="relative h-44 w-full" role="img" aria-label="Facility distribution breakdown">
+              {/* Background center counter (z-0) so tooltips render on top */}
+              <div className="pointer-events-none absolute inset-0 z-0 flex flex-col items-center justify-center text-center">
+                <span className="text-xl font-black text-white tabular-nums">
+                  {stats.total}
+                </span>
+                <span className="text-[9.5px] font-bold uppercase tracking-wider text-emerald-300/80">
+                  Facilities
+                </span>
+              </div>
+
+              <ResponsiveContainer width="100%" height="100%" className="relative z-10">
                 <PieChart>
                   <RechartsTooltip
+                    wrapperStyle={{ zIndex: 50, pointerEvents: "none" }}
                     formatter={(val, name) => [`${val ?? 0} Facilities`, name]}
                     contentStyle={{
                       backgroundColor: "#064e3b",
@@ -653,11 +664,11 @@ export default function AdminFacilitiesPage() {
                   <Pie
                     data={pieChartData}
                     dataKey="value"
-                    innerRadius={36}
-                    outerRadius={56}
+                    innerRadius={46}
+                    outerRadius={68}
                     paddingAngle={3}
                     stroke="#052e16"
-                    strokeWidth={2}
+                    strokeWidth={2.5}
                   >
                     {pieChartData.map((entry, index) => (
                       <Cell key={`slice-${index}`} fill={entry.color} />
@@ -665,43 +676,6 @@ export default function AdminFacilitiesPage() {
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
-              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-                <span className="text-base font-black text-white tabular-nums">
-                  {stats.total}
-                </span>
-                <span className="text-[9.5px] font-bold uppercase tracking-wider text-emerald-300/80">
-                  Facilities
-                </span>
-              </div>
-            </div>
-
-            {/* Compact Category Distribution Breakdown List */}
-            <div className="mt-2 flex flex-col gap-1 max-h-40 overflow-y-auto pr-0.5">
-              {pieChartData.map((item) => {
-                const pct = stats.total > 0 ? Math.round((item.value / stats.total) * 100) : 0;
-                return (
-                  <div
-                    key={item.name}
-                    className="flex items-center justify-between text-[11px] text-white/90 py-0.5 px-1.5 rounded hover:bg-white/5 transition-colors"
-                  >
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span
-                        className="size-2 rounded-full shrink-0"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="truncate text-slate-200 font-medium">
-                        {item.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0 tabular-nums">
-                      <span className="font-bold text-white font-mono">{item.value}</span>
-                      <span className="text-[10px] text-emerald-400 font-semibold w-7 text-right">
-                        {pct}%
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           </div>
         </div>
