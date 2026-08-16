@@ -117,7 +117,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
   const initial = user?.full_name?.trim().charAt(0).toUpperCase() || "R";
 
   return (
-    <div className="min-h-screen bg-[#f7faf7] text-neutral-950 flex flex-col antialiased">
+    <div className="min-h-screen bg-neutral-100 text-neutral-950 flex flex-col antialiased">
       {/* ── Desktop Sidebar Navigation (≥lg) ── */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-emerald-950/20 bg-primary-950 text-white lg:flex">
         {/* Brand Lockup Header */}
@@ -260,7 +260,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
       {/* ── Main Content Area (Fluid width, maximizing widescreen layout) ── */}
       <div className="flex min-w-0 flex-1 flex-col pb-24 lg:pb-8 lg:pl-64">
         {/* ── Top Bar Header (Desktop & Mobile) ── */}
-        <header className="sticky top-0 z-20 flex h-14 sm:h-16 w-full items-center justify-between gap-4 border-b border-neutral-200/90 bg-white/95 px-4 sm:px-6 lg:px-8 xl:px-10 backdrop-blur-md">
+        <header className="sticky top-0 z-20 flex h-14 sm:h-16 w-full items-center justify-between gap-4 border-b border-emerald-950/10 bg-[#f0f4f1]/90 px-4 sm:px-6 lg:px-8 xl:px-10 backdrop-blur-md">
           {/* Left: Mobile Brand or Dynamic Breadcrumbs on Desktop */}
           <div className="flex items-center gap-3 min-w-0">
             {/* Mobile Logo Brand */}
@@ -457,7 +457,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Mobile Bottom Navigation Bar (<lg) ── */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 flex min-h-[68px] items-center justify-around border-t border-emerald-950/10 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-md shadow-lg lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 flex min-h-[68px] items-center justify-around border-t border-emerald-950/10 bg-[#f0f4f1]/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-md shadow-lg lg:hidden"
         aria-label="Resident Mobile Navigation"
       >
         {MOBILE_PRIMARY.map(({ href, label, icon: Icon, exact }) => {

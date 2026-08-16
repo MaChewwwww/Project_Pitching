@@ -40,7 +40,7 @@ export default function PortalNewMemberPage() {
       <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
         <CardContent className="p-5 sm:p-6 lg:p-7">
           <RegistryMemberForm
-            submitLabel="Save & Add Citizen"
+            submitLabel="Save & Add Household Member"
             onSubmit={(values) =>
               create.mutateAsync(values).then(() => undefined)
             }

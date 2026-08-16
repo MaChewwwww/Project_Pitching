@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ExternalLink, MapPin, MapPinned, Pencil } from "lucide-react";
+import { Database, ExternalLink, MapPin, MapPinned, Pencil } from "lucide-react";
 
 import { Button } from "@/components/common/button";
 import { HazardMap } from "@/components/features/map/hazard-map";
@@ -71,7 +71,7 @@ export function PortalHouseholdMap({
       {/* Embedded Leaflet Map */}
       <div className="relative">
         <HazardMap
-          className={preview ? "h-56 sm:h-64 w-full" : "h-[min(65vh,580px)] w-full"}
+          className={preview ? "h-56 sm:h-64 w-full" : "h-[360px] sm:h-[420px] lg:h-[460px] w-full"}
           center={[latitude, longitude]}
           zoom={16}
           interactive={!preview}
@@ -81,6 +81,26 @@ export function PortalHouseholdMap({
             label: `${household.head_name}'s Home`,
           }}
         />
+
+        {/* Data Sources Attribution Badge (Admin Portal Style) */}
+        <div
+          aria-label="Data sources attribution"
+          className="pointer-events-none absolute bottom-3.5 right-3.5 z-[1000] hidden sm:flex flex-col gap-0.5 rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-2.5 text-[10px] text-emerald-200/90 shadow-xl backdrop-blur-md"
+        >
+          <div className="flex items-center gap-1 font-bold uppercase tracking-wider text-emerald-400 text-[9.5px]">
+            <Database className="size-3 text-emerald-400" aria-hidden />
+            <span>Data Sources</span>
+          </div>
+          <div>
+            <span className="font-semibold text-white/90">Locality:</span> San Jose, Rodriguez, Rizal
+          </div>
+          <div>
+            <span className="font-semibold text-white/90">Flood Model:</span> UP NOAH / LiPAD (ODC-ODbL)
+          </div>
+          <div className="text-[9px] text-emerald-400/60 pt-0.5 border-t border-emerald-900/60 mt-0.5">
+            Map: Leaflet · © OpenStreetMap · CARTO
+          </div>
+        </div>
       </div>
 
       {/* Map Legend & Hazard Strip Footer */}

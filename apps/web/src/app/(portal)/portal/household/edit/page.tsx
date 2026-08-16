@@ -105,30 +105,30 @@ export default function PortalHouseholdEditPage() {
         description="Update your address, pinpoint coordinates on the map, and manage household members for emergency records."
         backHref="/portal/household"
         backLabel="Back to Household"
-        badge={
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/80 bg-emerald-100/90 px-3 py-0.5 text-xs font-black text-emerald-900 shadow-2xs">
-            <Sparkles className="size-3 text-emerald-700" />
-            <span>Reference #{household.reference_no}</span>
-          </span>
-        }
       />
 
       {/* ── 1. Household Address & Location Form Card ── */}
       <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
         <CardContent className="p-5 sm:p-6 lg:p-7 space-y-5">
-          <div className="flex items-center gap-2.5 border-b border-neutral-100 pb-3">
-            <span className="grid size-8 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
-              <Home className="size-4" />
-            </span>
-            <div>
-              <h2 className="text-base font-bold text-neutral-900">
-                Household Details & Map Location
-              </h2>
-              <p className="text-xs text-neutral-500">
-                Drag the map pin to update your coordinates and automatically detect your
-                area and flood proximity.
-              </p>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 pb-3">
+            <div className="flex items-center gap-2.5">
+              <span className="grid size-8 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
+                <Home className="size-4" />
+              </span>
+              <div>
+                <h2 className="text-base font-bold text-neutral-900">
+                  Household Details & Map Location
+                </h2>
+                <p className="text-xs text-neutral-500">
+                  Drag the map pin to update your coordinates and automatically detect your
+                  area and flood proximity.
+                </p>
+              </div>
             </div>
+            <span className="inline-flex items-center gap-1.5 font-mono text-xs font-black text-emerald-900 bg-emerald-50 border border-emerald-200/90 px-3 py-1 rounded-full shadow-2xs">
+              <Sparkles className="size-3 text-emerald-600" />
+              <span>Reference #{household.reference_no}</span>
+            </span>
           </div>
 
           <RegistryHouseholdForm
@@ -163,12 +163,16 @@ export default function PortalHouseholdEditPage() {
 
             <Button
               size="sm"
-              variant={adding ? "secondary" : "outline"}
+              variant={adding ? "secondary" : "primary"}
               onClick={() => setAdding((val) => !val)}
-              className="rounded-xl text-xs font-bold"
+              className={
+                adding
+                  ? "h-9 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-bold"
+                  : "h-9 cursor-pointer gap-1.5 rounded-full border border-emerald-600/30 bg-emerald-700 px-3.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-800 active:scale-[0.98]"
+              }
             >
-              <Plus className="size-3.5" />
-              {adding ? "Cancel Adding" : "Add Citizen"}
+              <Plus aria-hidden className="size-3.5 stroke-[2.5]" />
+              <span>{adding ? "Cancel Adding" : "Add Household Member"}</span>
             </Button>
           </div>
 
@@ -176,14 +180,14 @@ export default function PortalHouseholdEditPage() {
             <div className="rounded-2xl border border-emerald-300 bg-emerald-50/50 p-5 shadow-xs animate-in fade-in-50 duration-200">
               <div className="mb-4">
                 <h3 className="text-sm font-bold text-emerald-950">
-                  Add New Citizen to Household
+                  Add New Household Member
                 </h3>
                 <p className="text-xs text-emerald-700">
                   Fill in birth date, sex, and health needs.
                 </p>
               </div>
               <RegistryMemberForm
-                submitLabel="Add Citizen"
+                submitLabel="Add Household Member"
                 onSubmit={(values) =>
                   addMember.mutateAsync(values).then(() => undefined)
                 }
