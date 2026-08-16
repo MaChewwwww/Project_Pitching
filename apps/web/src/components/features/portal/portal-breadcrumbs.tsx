@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Route } from "next";
-import { ChevronRight, Sparkles } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BreadcrumbItem {
@@ -13,10 +13,10 @@ interface BreadcrumbItem {
 }
 
 function resolvePortalBreadcrumbs(pathname: string): BreadcrumbItem[] {
-  const base: BreadcrumbItem[] = [{ label: "Portal", href: "/portal" as Route }];
+  const base: BreadcrumbItem[] = [{ label: "Resident Portal", href: "/portal" as Route }];
 
   if (pathname === "/portal") {
-    return [{ label: "Portal", href: "/portal" as Route }, { label: "Dashboard" }];
+    return [{ label: "Resident Portal", href: "/portal" as Route }, { label: "Dashboard" }];
   }
 
   if (pathname === "/portal/household") {
@@ -93,14 +93,7 @@ export function PortalBreadcrumbs({ className }: { className?: string }) {
   const crumbs = resolvePortalBreadcrumbs(pathname);
 
   return (
-    <nav aria-label="Breadcrumb" className={cn("min-w-0 flex items-center gap-2", className)}>
-      <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-200/90 bg-emerald-50/80 px-2.5 py-0.5 text-[11px] font-black text-emerald-900">
-        <Sparkles className="size-3 text-emerald-600" />
-        <span>Barangay San Jose</span>
-      </span>
-
-      <span className="hidden sm:inline text-neutral-300 font-light">/</span>
-
+    <nav aria-label="Breadcrumb" className={cn("min-w-0", className)}>
       <ol className="flex min-w-0 items-center gap-1.5 text-xs sm:text-sm">
         {crumbs.map((crumb, index) => {
           const last = index === crumbs.length - 1;
