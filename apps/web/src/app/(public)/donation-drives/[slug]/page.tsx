@@ -1,37 +1,29 @@
 import { notFound } from "next/navigation";
-import { ArticleDetail } from "@/components/features/public/article-detail";
-import { PageHeader } from "@/components/common/page-header";
-import { getDonationDrive } from "@/lib/api/public";
-import { formatPhtDateTime } from "@/lib/format";
+import { DonationDriveDetailView } from "@/components/features/public/donation-drive-detail-view";
+import { getDonationDrive, getDonationDrives } from "@/lib/api/public";
 
 export default async function DonationDriveArticlePage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const article = await getDonationDrive((await params).slug);
-  if (!article) notFound();
+  const slug = (await params).slug;
+
+  const [drive, recentResponse] = await Promise.all([
+    getDonationDrive(slug),
+    getDonationDrives({ size: 6 }),
+  ]);
+
+  if (!drive) notFound();
+
+  const recentDrives = (recentResponse?.items || [])
+    .filter((item) => item.id !== drive.id)
+    .slice(0, 4);
+
   return (
-    <>
-      <PageHeader
-        title={article.title}
-        description={article.excerpt}
-        breadcrumb={[
-          { label: "Home", href: "/" },
-          { label: "Donation Drives", href: "/donation-drives" },
-          { label: article.title },
-        ]}
-      />
-      <ArticleDetail
-        body={article.body_json}
-        images={article.images}
-        cover={article.cover_image}
-        eyebrow="Collection notice"
-        metadata={[
-          article.published_at ? formatPhtDateTime(article.published_at) : "Published notice",
-          article.organizer_name ?? "Barangay San Jose",
-        ]}
-      />
-    </>
+    <DonationDriveDetailView
+      drive={drive}
+      recentDrives={recentDrives}
+    />
   );
 }

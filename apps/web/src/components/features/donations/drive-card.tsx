@@ -1,68 +1,190 @@
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import type { Route } from "next";
-import { CalendarDays, MapPin } from "lucide-react";
+import {
+  ArrowRight,
+  Calendar,
+  CalendarClock,
+  Gift,
+  HandHeart,
+  Sparkles,
+  User,
+} from "lucide-react";
 
-import { Card, CardContent } from "@/components/common/card";
+import { formatPhtDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { PublicDonationDrive } from "@/lib/api/public-types";
 
-/** Informational donation-drive preview; no transaction or pledge progress exists. */
+export interface DriveCardProps {
+  drive: PublicDonationDrive;
+  clamp?: boolean;
+  className?: string;
+}
+
 export function DriveCard({
   drive,
+  clamp = false,
   className,
-}: {
-  drive: PublicDonationDrive;
-  className?: string;
-}) {
+}: DriveCardProps) {
+  const href = `/donation-drives/${drive.slug}` as Route;
+  const summary = drive.excerpt;
+
+  const now = new Date();
+  const activeFromDate = drive.active_from ? new Date(drive.active_from) : null;
+  const activeUntilDate = drive.active_until ? new Date(drive.active_until) : null;
+
+  const isArchived = Boolean(drive.archived_at);
+  const isPast = activeUntilDate ? activeUntilDate < now : false;
+  const isUpcoming = activeFromDate ? activeFromDate > now : false;
+
+  let badgeLabel = "Active Drive";
+  let badgeStyle = "bg-emerald-700 text-white font-bold";
+  let BadgeIcon: React.ElementType = HandHeart;
+
+  if (isArchived || isPast) {
+    badgeLabel = "Completed";
+    badgeStyle = "bg-slate-700 text-white font-bold";
+    BadgeIcon = Gift;
+  } else if (isUpcoming) {
+    badgeLabel = "Upcoming Drive";
+    badgeStyle = "bg-amber-600 text-white font-bold";
+    BadgeIcon = Calendar;
+  }
+
   return (
     <Link
-      href={`/donation-drives/${drive.slug}` as Route}
-      className="group block h-full rounded-[20px] focus-visible:ring-primary-600 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      href={href}
+      className={cn(
+        "group focus-visible:ring-primary-600 block h-full rounded-[20px] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+        className,
+      )}
       aria-label={`Read donation drive: ${drive.title}`}
     >
-    <Card radius="xl" className={cn("h-full overflow-hidden", className)} interactive>
-      {drive.cover_image ? (
-        <div className="relative block aspect-video bg-neutral-100">
-          <Image
-            src={drive.cover_image.url}
-            alt=""
-            fill
-            unoptimized
-            className="object-cover"
-          />
-        </div>
-      ) : null}
-      <CardContent className="flex h-full flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <span className="text-overline text-primary-700">Collection notice</span>
-          <h3 className="text-h3 text-neutral-900">
-            {drive.title}
-          </h3>
-          <p className="text-body text-neutral-600">{drive.excerpt}</p>
+      <article
+        className={cn(
+          "relative flex h-full flex-col overflow-hidden rounded-[20px] border bg-white transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-black/5",
+          isArchived || isPast
+            ? "border-neutral-200/80 hover:border-slate-400 shadow-xs"
+            : "border-emerald-200/80 hover:border-emerald-600 shadow-xs",
+        )}
+      >
+        {/* Cover Image Header */}
+        <div className="relative aspect-[16/10] w-full overflow-hidden bg-neutral-100">
+          {drive.cover_image ? (
+            <>
+              <Image
+                src={drive.cover_image.url}
+                alt=""
+                fill
+                unoptimized
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80" />
+            </>
+          ) : (
+            <div className="relative flex h-full w-full flex-col justify-between bg-gradient-to-br from-emerald-950 via-emerald-900 to-neutral-900 p-4 text-white">
+              <div
+                aria-hidden
+                className="absolute -right-8 -bottom-10 size-44 rounded-full border-[20px] border-white/10"
+              />
+              <div className="relative z-10 flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-white/70">
+                  Official Relief Notice
+                </span>
+                <HandHeart className="size-5 text-emerald-400 opacity-80" />
+              </div>
+              <div className="relative z-10 font-display text-sm font-semibold tracking-tight text-white/90">
+                Barangay San Jose
+              </div>
+            </div>
+          )}
+
+          {/* Top Header Overlay: Badge & Date */}
+          <div className="absolute top-3 inset-x-3 z-10 flex items-center justify-between gap-2">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold shadow-md backdrop-blur-xs",
+                badgeStyle,
+              )}
+            >
+              <BadgeIcon aria-hidden className="size-3.5 shrink-0" />
+              {badgeLabel}
+            </span>
+
+            {drive.published_at ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white shadow-xs backdrop-blur-sm">
+                <CalendarClock aria-hidden className="size-3 shrink-0 text-white/80" />
+                <time dateTime={drive.published_at}>
+                  {formatPhtDateTime(drive.published_at)}
+                </time>
+              </span>
+            ) : null}
+          </div>
         </div>
 
-        <div className="mt-auto flex flex-col gap-2 border-t border-neutral-100 pt-3 text-sm text-neutral-600">
-          {drive.active_until ? (
-            <span className="inline-flex items-center gap-2">
-              <CalendarDays className="text-primary-600 size-4" /> Active until{" "}
-              {new Date(drive.active_until).toLocaleDateString("en-PH", {
-                timeZone: "Asia/Manila",
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </span>
-          ) : null}
+        {/* Card Body */}
+        <div className="flex flex-1 flex-col p-5">
+          <h3 className="font-display text-lg font-bold leading-snug tracking-tight text-neutral-900 transition-colors line-clamp-2 group-hover:text-emerald-700">
+            {drive.title}
+          </h3>
+
+          <p
+            className={cn(
+              "mt-2 text-sm leading-relaxed text-neutral-600",
+              clamp ? "line-clamp-2" : "line-clamp-3",
+            )}
+          >
+            {summary}
+          </p>
+
+          {/* Drop-off Callout */}
           {drive.drop_off_instructions ? (
-            <span className="inline-flex items-start gap-2">
-              <MapPin className="text-primary-600 mt-0.5 size-4 shrink-0" />{" "}
-              {drive.drop_off_instructions}
-            </span>
+            <div className="mt-3.5 rounded-xl border border-emerald-200/80 bg-emerald-50/60 p-3 text-xs leading-relaxed text-emerald-950 shadow-2xs">
+              <span className="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+                Drop-off Instructions
+              </span>
+              <p className="font-medium line-clamp-2">{drive.drop_off_instructions}</p>
+            </div>
           ) : null}
+
+          {/* Pinned Card Footer */}
+          <div className="mt-auto flex items-end justify-between gap-3 pt-5 border-t border-neutral-100">
+            <div className="flex min-w-0 flex-col gap-1 text-xs font-medium text-neutral-500">
+              <span className="inline-flex items-center gap-1.5 truncate">
+                <User aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
+                <span className="truncate">
+                  {drive.organizer_name || "Barangay San Jose Relief Desk"}
+                </span>
+              </span>
+
+              {drive.event_name ? (
+                <span className="inline-flex items-center gap-1.5 truncate">
+                  <Sparkles aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
+                  <span className="truncate text-emerald-800 font-semibold">
+                    {drive.event_name}
+                  </span>
+                </span>
+              ) : null}
+
+              {drive.active_until ? (
+                <span className="inline-flex items-center gap-1.5 truncate">
+                  <Calendar aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
+                  <span className="truncate">
+                    Active until {formatPhtDateTime(drive.active_until)}
+                  </span>
+                </span>
+              ) : null}
+            </div>
+
+            <span
+              aria-hidden
+              className="grid size-9 shrink-0 place-items-center rounded-full border border-neutral-200 bg-neutral-50 text-neutral-600 transition-all duration-300 group-hover:translate-x-1 group-hover:border-emerald-600 group-hover:bg-emerald-600 group-hover:text-white"
+            >
+              <ArrowRight className="size-4" />
+            </span>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </article>
     </Link>
   );
 }

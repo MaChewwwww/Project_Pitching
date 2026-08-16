@@ -95,22 +95,29 @@ async def _event_name(session: AsyncSession, event_id: uuid.UUID | None) -> str 
 
 
 async def list_donation_drives(
-    session: AsyncSession, *, page: int = 1, size: int = 20
+    session: AsyncSession, *, page: int = 1, size: int = 20, status: str | None = None
 ) -> Page[PublicDonationDrive]:
     now = datetime.now(UTC)
-    drives = (
-        (
-            await session.execute(
-                select(DonationDrive)
-                .where(DonationDrive.publication_status == "published")
-                .where((DonationDrive.active_from.is_(None)) | (DonationDrive.active_from <= now))
-                .where((DonationDrive.active_until.is_(None)) | (DonationDrive.active_until >= now))
-                .order_by(DonationDrive.published_at.desc())
-            )
-        )
-        .scalars()
-        .all()
+    stmt = (
+        select(DonationDrive)
+        .where(DonationDrive.publication_status.in_(("published", "archived")))
     )
+    if status == "active":
+        stmt = (
+            stmt.where(DonationDrive.publication_status == "published")
+            .where((DonationDrive.active_from.is_(None)) | (DonationDrive.active_from <= now))
+            .where((DonationDrive.active_until.is_(None)) | (DonationDrive.active_until >= now))
+        )
+    elif status in ("completed", "past", "archived"):
+        stmt = stmt.where(
+            (DonationDrive.publication_status == "archived")
+            | ((DonationDrive.active_until.is_not(None)) & (DonationDrive.active_until < now))
+        )
+    else:
+        stmt = stmt.where(DonationDrive.publication_status == "published")
+
+    stmt = stmt.order_by(DonationDrive.published_at.desc().nullslast(), DonationDrive.title)
+    drives = (await session.execute(stmt)).scalars().all()
     names = await get_event_names(session, [drive.event_id for drive in drives if drive.event_id])
     page_drives = drives[(page - 1) * size : page * size]
     return Page[PublicDonationDrive](
@@ -126,7 +133,7 @@ async def list_donation_drives_admin(session: AsyncSession) -> list[PublicDonati
         (
             await session.execute(
                 select(DonationDrive).order_by(
-                    DonationDrive.published_at.desc(), DonationDrive.title
+                    DonationDrive.published_at.desc().nullslast(), DonationDrive.title
                 )
             )
         )
@@ -185,8 +192,6 @@ async def create_donation_drive(
         archived_at=now if data.publication_status == "archived" else None,
         created_by_user_id=actor_id,
     )
-    if data.publication_status == "published":
-        _ensure_publishable([])
     session.add(drive)
     await session.flush()
     await write_audit(
@@ -226,6 +231,27 @@ async def update_donation_drive(
     )
     await session.commit()
     return drive
+
+
+async def delete_donation_drive(
+    session: AsyncSession, drive_id: uuid.UUID, *, actor_id: uuid.UUID
+) -> None:
+    drive = await session.get(DonationDrive, drive_id)
+    if drive is None:
+        raise NotFoundError("Donation drive not found.")
+    images = await _images(session, drive_id)
+    for image in images:
+        path = Path(settings.upload_dir) / image.file_path
+        path.unlink(missing_ok=True)
+    await session.delete(drive)
+    await write_audit(
+        session,
+        actor_user_id=actor_id,
+        action="donation_drive.delete",
+        entity_type="donation_drive",
+        entity_id=drive_id,
+    )
+    await session.commit()
 
 
 async def add_image(

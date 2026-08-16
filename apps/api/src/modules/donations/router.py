@@ -19,9 +19,9 @@ admin_router = APIRouter(tags=["donations"])
 
 @public_router.get("/donation-drives")
 async def public_donation_drives(
-    session: DbSessionDep, page: int = 1, size: int = 20
+    session: DbSessionDep, page: int = 1, size: int = 20, status: str | None = None
 ) -> Page[PublicDonationDrive]:
-    return await service.list_donation_drives(session, page=page, size=size)
+    return await service.list_donation_drives(session, page=page, size=size, status=status)
 
 
 @public_router.get("/donation-drives/{slug}")
@@ -98,6 +98,18 @@ async def admin_order_donation_drive_images(
     drive_id: uuid.UUID, body: ImageOrderIn, session: DbSessionDep, user: CurrentUser
 ) -> list[ArticleImageOut]:
     return await service.order_images(session, drive_id, body, actor_id=user.id)
+
+
+@admin_router.delete(
+    "/donation-drives/{drive_id}",
+    dependencies=[Depends(require_role("admin", "sk"))],
+    summary="Delete a donation drive and its images",
+)
+async def admin_delete_donation_drive(
+    drive_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> dict[str, bool]:
+    await service.delete_donation_drive(session, drive_id, actor_id=user.id)
+    return {"ok": True}
 
 
 @admin_router.delete(

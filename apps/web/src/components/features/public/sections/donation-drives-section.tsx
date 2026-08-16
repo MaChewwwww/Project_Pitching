@@ -27,7 +27,7 @@ export async function DonationDrivesSection() {
         <SectionHeader
           icon={HandHeart}
           title="Donation"
-          titleAccent="Drive"
+          titleAccent="Drives"
           description="Collection notices, verified contact details, and drop-off instructions from the barangay."
           action={
             <Button

@@ -277,11 +277,12 @@ export async function getAnnouncement(slug: string): Promise<AnnouncementDetail 
 export async function getDonationDrives(options?: {
   page?: number;
   size?: number;
+  status?: string;
 }): Promise<Page<PublicDonationDrive>> {
-  const { page = 1, size = 20 } = options ?? {};
+  const { page = 1, size = 20, status } = options ?? {};
   try {
     return await serverGet("/public/donation-drives", publicDonationDrivePageSchema, {
-      searchParams: { page, size },
+      searchParams: { page, size, status },
     });
   } catch (error) {
     logDegraded("/public/donation-drives", error);
