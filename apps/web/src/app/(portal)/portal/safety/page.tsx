@@ -683,16 +683,23 @@ export default function PortalSafetyPage() {
                         </div>
                       </div>
 
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={openBulkAction}
-                        disabled={submitMutation.isPending || members.length === 0}
-                        className="h-9 cursor-pointer gap-1.5 rounded-full border border-emerald-600/30 bg-emerald-700 px-3.5 text-xs font-bold text-white shadow-sm shadow-emerald-900/15 transition-all hover:bg-emerald-800 active:scale-[0.98]"
-                      >
-                        <CheckCircle2 className="size-3.5 stroke-[2.5]" />
-                        <span>Mark All Safe</span>
-                      </Button>
+                      {unaccountedCount === 0 && rescueCount === 0 && members.length > 0 ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-200 px-3.5 py-1 text-xs font-bold text-emerald-800 shadow-2xs">
+                          <CheckCircle2 className="size-3.5 text-emerald-700" />
+                          <span>All Members Safe</span>
+                        </span>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={openBulkAction}
+                          disabled={submitMutation.isPending || members.length === 0}
+                          className="h-9 cursor-pointer gap-1.5 rounded-full border border-emerald-600/30 bg-emerald-700 px-3.5 text-xs font-bold text-white shadow-sm shadow-emerald-900/15 transition-all hover:bg-emerald-800 active:scale-[0.98]"
+                        >
+                          <CheckCircle2 className="size-3.5 stroke-[2.5]" />
+                          <span>Mark All Safe</span>
+                        </Button>
+                      )}
                     </div>
 
                     {/* Individual Member Roster Cards */}
@@ -760,55 +767,73 @@ export default function PortalSafetyPage() {
                               </div>
                             </div>
 
-                            {/* Action Buttons with Confirmation Dialog Trigger */}
+                            {/* Action Area: Hide buttons when safe, or allow marking safe if in rescue, or show both if unaccounted */}
                             <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-                              <Button
-                                type="button"
-                                size="sm"
-                                disabled={submitMutation.isPending}
-                                onClick={() =>
-                                  openMemberAction(
-                                    member.member_id,
-                                    member.full_name,
-                                    Boolean(member.is_head),
-                                    member.status,
-                                    "safe",
-                                  )
-                                }
-                                className={cn(
-                                  "h-9 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-bold transition-all shadow-2xs active:scale-[0.98]",
-                                  isSafe
-                                    ? "bg-emerald-700 text-white hover:bg-emerald-800"
-                                    : "border border-emerald-300/80 bg-white text-emerald-900 hover:bg-emerald-50",
-                                )}
-                              >
-                                <CheckCircle2 className="size-3.5" />
-                                <span>Safe</span>
-                              </Button>
+                              {isSafe ? (
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100/90 border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-900 shadow-2xs">
+                                  <CheckCircle2 className="size-3.5 text-emerald-700" />
+                                  <span>Accounted Safe</span>
+                                </span>
+                              ) : needsRescue ? (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  disabled={submitMutation.isPending}
+                                  onClick={() =>
+                                    openMemberAction(
+                                      member.member_id,
+                                      member.full_name,
+                                      Boolean(member.is_head),
+                                      member.status,
+                                      "safe",
+                                    )
+                                  }
+                                  className="h-9 cursor-pointer gap-1.5 rounded-full bg-emerald-700 px-3.5 text-xs font-bold text-white shadow-2xs hover:bg-emerald-800 active:scale-[0.98]"
+                                >
+                                  <CheckCircle2 className="size-3.5" />
+                                  <span>Mark Safe / Rescued</span>
+                                </Button>
+                              ) : (
+                                <>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    disabled={submitMutation.isPending}
+                                    onClick={() =>
+                                      openMemberAction(
+                                        member.member_id,
+                                        member.full_name,
+                                        Boolean(member.is_head),
+                                        member.status,
+                                        "safe",
+                                      )
+                                    }
+                                    className="h-9 cursor-pointer gap-1.5 rounded-full border border-emerald-300/80 bg-white px-3.5 text-xs font-bold text-emerald-900 shadow-2xs hover:bg-emerald-50 active:scale-[0.98]"
+                                  >
+                                    <CheckCircle2 className="size-3.5" />
+                                    <span>Safe</span>
+                                  </Button>
 
-                              <Button
-                                type="button"
-                                size="sm"
-                                disabled={submitMutation.isPending}
-                                onClick={() =>
-                                  openMemberAction(
-                                    member.member_id,
-                                    member.full_name,
-                                    Boolean(member.is_head),
-                                    member.status,
-                                    "needs_rescue",
-                                  )
-                                }
-                                className={cn(
-                                  "h-9 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-bold transition-all shadow-2xs active:scale-[0.98]",
-                                  needsRescue
-                                    ? "bg-red-600 text-white hover:bg-red-700"
-                                    : "border border-red-200 bg-red-50 text-red-700 hover:bg-red-600 hover:text-white",
-                                )}
-                              >
-                                <LifeBuoy className="size-3.5" />
-                                <span>Needs Rescue</span>
-                              </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    disabled={submitMutation.isPending}
+                                    onClick={() =>
+                                      openMemberAction(
+                                        member.member_id,
+                                        member.full_name,
+                                        Boolean(member.is_head),
+                                        member.status,
+                                        "needs_rescue",
+                                      )
+                                    }
+                                    className="h-9 cursor-pointer gap-1.5 rounded-full border border-red-200 bg-red-50 px-3.5 text-xs font-bold text-red-700 shadow-2xs hover:bg-red-600 hover:text-white active:scale-[0.98]"
+                                  >
+                                    <LifeBuoy className="size-3.5" />
+                                    <span>Needs Rescue</span>
+                                  </Button>
+                                </>
+                              )}
                             </div>
                           </div>
                         );
