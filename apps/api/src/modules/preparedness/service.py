@@ -133,6 +133,7 @@ def _faq_public(f: Faq) -> PublicFaq:
         answer_en=f.answer_en,
         category=f.category or "general",
         sort_order=f.sort_order,
+        is_published=f.is_published,
     )
 
 

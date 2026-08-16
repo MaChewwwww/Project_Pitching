@@ -200,7 +200,7 @@ remaining configuration contract is retired.
 | FR-PUB-008 | Evacuation centres list          | Address, capacity, map preview; live occupancy once EVC is built                                                                            | BR-0.8                     | M   | ◐      | —   |
 | FR-PUB-009 | Public hazard map embed          | Flood-prone areas, safe zones, evacuation centres, facilities                                                                               | BR-0.9                     | M   | ◐      | —   |
 | FR-PUB-010 | Donation drives section          | Published informational article previews with cover image, active dates, organizer/contact, and drop-off instructions; no donor transaction | BR-0.10                    | S   | ◐      | —   |
-| FR-PUB-011 | FAQs                             | Published, maintainable, accordion presentation                                                                                             | BR-0.11                    | S   | ◐      | —   |
+| FR-PUB-011 | FAQs                             | Published, maintainable, accordion presentation                                                                                             | BR-0.11                    | S   | ✅     | —   |
 | FR-PUB-012 | Footer                           | Barangay info, contacts, socials, hotline, copyright                                                                                        | BR-0.12                    | M   | ◐      | —   |
 | FR-PUB-013 | Live content, single source      | Every dynamic section reads from its module; no duplicated content store                                                                    | BR-0.13                    | M   | ◐      | —   |
 | FR-PUB-014 | No personal data on public pages | Only area-level aggregates rendered; verified by review                                                                                     | BR-0.14, BR-1.52           | M   | ◐      | —   |
@@ -568,7 +568,7 @@ remaining configuration contract is retired.
 | FR-PRP-002 | Go-bag checklist                  | Interactive tick-off; state persisted per household                 | BR-9.2  | M   | ☐      | —   |
 | FR-PRP-003 | Emergency food guide              | Shelf-stable options, safe water, storage, emergency cooking        | BR-9.3  | M   | ◐      | —   |
 | FR-PRP-004 | Localized San Jose Go Bag         | Reflects local conditions, not generic national advice              | BR-9.4  | S   | ◐      | —   |
-| FR-PRP-005 | FAQs                              | Published and maintainable via admin                                | BR-9.5  | S   | ◐      | —   |
+| FR-PRP-005 | FAQs                              | Published and maintainable via admin                                | BR-9.5  | S   | ✅     | —   |
 | FR-PRP-006 | Family emergency plan             | Household drafts and saves a plan                                   | BR-9.6  | C   | ☐      | —   |
 | FR-PRP-007 | Source attribution and dating     | Every guide cites NDRRMC/DOH/PRC/NNC and shows last-reviewed date   | BR-9.8  | M   | ◐      | —   |
 | FR-PRP-008 | Go-bag status feeds vulnerability | Completion contributes to capacity factors                          | BR-1.47 | S   | ☐      | —   |

@@ -40,7 +40,7 @@ export async function FaqSection() {
         </Reveal>
 
         <Reveal delay={1}>
-          <FaqAccordion faqs={faqs.slice(0, 5)} />
+          <FaqAccordion faqs={faqs.slice(0, 5)} compact />
         </Reveal>
       </div>
     </Section>

@@ -701,86 +701,295 @@ async def seed_guides(session) -> None:
 # --- faqs (fixtures/faqs.ts) ----------------------------------------------------
 
 FAQ_DEFS = [
+    # 1. Registration
     (
-        "Paano ako makakapagparehistro ng aking sambahayan?",
+        "Paano ko mairehistro ang aking sambahayan?",
         "How do I register my household?",
-        "Ang online na pagpaparehistro ay hindi pa bukas. Sa ngayon, maaari kayong "
-        "magparehistro nang"
-        "personal sa barangay hall tuwing Lunes hanggang Biyernes, 8:00 AM hanggang 5:00 PM.",
-        "Online registration is not open yet. For now you can register in person at the barangay "
-        "hall, Monday to Friday, 8:00 AM to 5:00 PM.",
+        "Maaari kayong magparehistro sa pamamagitan ng paggawa ng account sa website at pagrehistro ng lahat ng miyembro ng inyong sambahayan. Maaari rin kayong pumunta sa Barangay Hall upang magparehistro. Ang online na pagpaparehistro ay maaari ding magamit sa website na ito.",
+        "You can register by creating an account on the website and registering all your household members. You can also go to the Barangay Hall to get registered. Online registration may also be available through this website.",
         "Registration",
         1,
     ),
     (
-        "Bakit kailangang magparehistro?",
+        "Bakit kailangan kong magparehistro?",
         "Why should I register?",
-        "Ang rehistro ang ginagamit ng barangay upang malaman kung sino ang nasa mga lugar na "
-        "madaling"
-        "bahain at ilan ang inaasahang darating sa bawat evacuation center.",
-        "The barangay uses the registry to know who lives in flood-prone areas and how many people "
-        "to expect at each evacuation centre.",
+        "Ang pagpaparehistro ay tumutulong sa barangay na matukoy ang mga residenteng maaaring mangailangan ng tulong sa panahon ng emergency at kalamidad. Nagbibigay din ito ng mahalagang impormasyon upang mas mapaganda ng barangay ang pagpaplano ng serbisyo, mapabuti ang kaligtasan, at mabilis na matugunan ang mga pangangailangan ng mga residente.",
+        "Registration helps the barangay identify residents who may need help during emergencies and disasters. It also provides important information about the community, which helps the barangay plan better services, improve safety measures, and respond more effectively to the needs of residents.",
         "Registration",
         2,
     ),
     (
-        "Saan ang pinakamalapit na evacuation center?",
-        "Where is the nearest evacuation centre?",
-        "Nakalista sa pahinang ito ang lahat ng evacuation center kasama ang kanilang address "
-        "at kapasidad.",
-        "Every evacuation centre is listed on this site with its address and capacity.",
-        "Emergencies",
+        "Anong impormasyon ang kailangan kong ibigay para magparehistro?",
+        "What information do I need to register?",
+        "Maaaring kailanganin mong ibigay ang iyong pangalan, tirahan o address, numero ng telepono, listahan ng mga miyembro ng pamilya, at iba pang pangunahing impormasyon ng sambahayan.",
+        "You may need to provide your name, address, contact number, family members, and other basic household information.",
+        "Registration",
         3,
     ),
     (
-        "Ano ang ibig sabihin ng Alert Level 1, 2, at 3?",
-        "What do Alert Levels 1, 2 and 3 mean?",
-        "Ang Alert Level 1 ay Paghahanda, ang Level 2 ay Lumikas, at ang Level 3 ay Sapilitang "
-        "Paglikas.",
-        "Alert Level 1 means Prepare, Level 2 means Evacuate, and Level 3 means Forced Evacuation.",
-        "Emergencies",
+        "Paano kung may magbago sa impormasyon ng aking pamilya?",
+        "What if my family information changes?",
+        "I-update ang inyong impormasyon sa pamamagitan ng website o ipagbigay-alam sa Tanggapan ng Barangay upang manatiling tama at napapanahon ang inyong rekord ng sambahayan.",
+        "Update your information through the website or inform the Barangay Office so your household record stays correct.",
+        "Registration",
         4,
     ),
+
+    # 2. Emergencies
     (
-        "Paano ako mag-uulat ng insidente o hihingi ng tulong?",
-        "How do I report an incident or ask for rescue?",
-        "Sa isang emergency, tumawag sa hotline ng barangay. Ito ang pinakamabilis at "
-        "pinaka-maaasahang paraan.",
-        "In an emergency, call the barangay hotline. That is the fastest and most reliable route.",
+        "Saan ang pinakamalapit na evacuation center?",
+        "Where is the nearest evacuation center?",
+        "Tingnan ang Hazard Map o ang pahina ng Evacuation Centers upang mahanap ang pinakamalapit na evacuation center at ang direksyon papunta roon.",
+        "Check the Hazard Map or Evacuation Centers page to find the nearest evacuation center and directions.",
         "Emergencies",
         5,
     ),
     (
-        "Ano ang dapat na laman ng Go Bag?",
-        "What should be inside my Go Bag?",
-        "Tubig at pagkain para sa tatlong araw, kopya ng mga dokumento, at flashlight.",
-        "Three days of water and food, copies of your documents, and a flashlight.",
-        "Preparedness",
+        "Ano ang ibig sabihin ng Alert Levels 1, 2, at 3?",
+        "What do Alert Levels 1, 2, and 3 mean?",
+        "Ipinapaalam ng mga alert level kung gaano kaseryoso ang sitwasyon. Palaging basahin at sundin ang mga tagubilin na nakasaad sa opisyal na alerto ng barangay.",
+        "Alert levels tell you how serious the situation is. Always read and follow the instructions included in the barangay alert.",
+        "Emergencies",
         6,
     ),
     (
-        "Paano ako makakapagbigay ng donasyon?",
-        "How can I donate?",
-        "Tumatanggap ang barangay ng mga bagay na kailangan gaya ng pagkain, tubig, at kumot.",
-        "The barangay accepts goods such as food, water and blankets.",
-        "Donations",
+        "Paano ako mag-uulat ng insidente o hihingi ng tulong/rescue?",
+        "How do I report an incident or ask for rescue?",
+        "Gamitin ang Report an Incident upang ipadala ang lokasyon at detalye ng emergency. Maaari rin kayong direktang tumawag sa Barangay o Rescue Team sa pamamagitan ng mga numerong nakalista sa seksyon ng Hotlines.",
+        "Use Report an Incident to send the location and details of the emergency. You can also contact the Barangay or Rescue Team directly through the hotlines listed in the Hotlines section.",
+        "Emergencies",
         7,
     ),
     (
-        "Ang impormasyon ba ng aking pamilya ay makikita ng publiko?",
-        "Is my family's information visible to the public?",
-        "Hindi. Walang pangalan, address, o anumang detalye ng sambahayan ang lumalabas sa "
-        "pampublikong pahinang ito.",
-        "No. No name, address, or household detail appears anywhere on this public site.",
-        "Privacy",
+        "Paano kung may nangangailangan ng agarang tulong?",
+        "What if someone needs immediate help?",
+        "Tumawag agad sa emergency hotline. Huwag nang maghintay ng sagot sa online report kung mayroong nasa agarang panganib.",
+        "Call the emergency hotline immediately. Do not wait for an online report to be answered if someone is in immediate danger.",
+        "Emergencies",
         8,
+    ),
+    (
+        "Paano ko malalaman kung kailangan na naming lumikas?",
+        "How will I know if we need to evacuate?",
+        "Maging alerto sa mga opisyal na anunsyo sa paglikas, emergency alerts, mensaheng SMS, at mga direktang tagubilin mula sa mga opisyal ng barangay.",
+        "Stay alert for official evacuation announcements, emergency alerts, SMS messages, and instructions from barangay officials.",
+        "Emergencies",
+        9,
+    ),
+
+    # 3. Preparedness
+    (
+        "Ano ang dapat na laman ng aking Go Bag?",
+        "What should be inside my Go Bag?",
+        "Maghanda ng maiinom na tubig, pagkain, mga gamot, flashlight, ekstrang baterya, power bank, first aid kit, damit, hygiene kit, mahahalagang dokumento, at pito (whistle).",
+        "Prepare water, food, medicines, flashlight, batteries, power bank, first aid supplies, clothes, hygiene items, important documents, and a whistle.",
+        "Preparedness",
+        10,
+    ),
+    (
+        "Ano ang dapat gawin ng aking pamilya bago ang sakuna?",
+        "What should my family do before a disaster?",
+        "Ihanda ang inyong Go Bag, alamin ang pinakamalapit na evacuation center, i-save ang mga emergency number, at tiyaking alam ng bawat miyembro ng pamilya kung saan pupunta.",
+        "Prepare your Go Bag, know your nearest evacuation center, save emergency numbers, and make sure everyone in your household knows where to go.",
+        "Preparedness",
+        11,
+    ),
+    (
+        "Ano ang dapat kong dalhin kapag lilikas?",
+        "What should I bring when evacuating?",
+        "Dalhin ang inyong Go Bag, mga gamot, mahahalagang dokumento, inuming tubig, damit, at mga espesyal na gamit para sa mga bata, matatanda, PWDs, o iba pang kapamilya na nangangailangan ng karagdagang suporta.",
+        "Bring your Go Bag, medicines, important documents, drinking water, clothes, and essential items for children, seniors, PWDs, or other family members who need additional support.",
+        "Preparedness",
+        12,
+    ),
+
+    # 4. Evacuation & Assistance
+    (
+        "Paano ko malalaman kung may bakanteng espasyo pa sa isang evacuation center?",
+        "How do I know if an evacuation center has available space?",
+        "Tingnan ang pahina ng Evacuation Centers para sa pinakabagong impormasyon tungkol sa kapasidad at dami ng mga taong naroroon.",
+        "Check the Evacuation Centers page for the latest available information about capacity and occupancy.",
+        "Evacuation & Assistance",
+        13,
+    ),
+    (
+        "Paano ko malalaman kung kailan ipapamahagi ang mga relief goods?",
+        "How do I know when relief goods will be distributed?",
+        "Tingnan ang Barangay Announcements o ang pahina ng Assistance para sa mga iskedyul at pinakabagong balita.",
+        "Check Barangay Announcements or the Assistance page for schedules and updates.",
+        "Evacuation & Assistance",
+        14,
+    ),
+    (
+        "Paano ko masusuri ang katayuan ng aking kahilingan sa tulong?",
+        "How can I check my assistance request?",
+        "Gamitin ang Assistance Tracker upang tingnan kung ang inyong kahilingan ay pending, approved, o na-claim na.",
+        "Use the Assistance Tracker to check whether your request is pending, approved, or already claimed.",
+        "Evacuation & Assistance",
+        15,
+    ),
+
+    # 5. Community
+    (
+        "Saan ko makikita ang mga paparating na aktibidad ng barangay?",
+        "Where can I see upcoming barangay activities?",
+        "Tingnan ang Community Activities para sa mga disaster drill, seminar, first aid training, clean-up drive, at iba pang mga kaganapan.",
+        "Check Community Activities for disaster drills, seminars, first aid training, clean-up drives, and other activities.",
+        "Community",
+        16,
+    ),
+    (
+        "Paano ako makakapag-boluntaryo sa mga aktibidad o emergency ng barangay?",
+        "How can I volunteer during barangay activities or emergencies?",
+        "Magparehistro sa pamamagitan ng seksyon ng Volunteer o bumisita sa Tanggapan ng Barangay para sa impormasyon ukol sa mga bukas na pagkakataon sa pagboboluntaryo.",
+        "Register through the Volunteer section or visit the Barangay Office for information on available volunteer activities.",
+        "Community",
+        17,
+    ),
+
+    # 6. Donations
+    (
+        "Paano ako makakapag-donate o makapagbibigay ng donasyon?",
+        "How can I donate?",
+        "Tingnan ang seksyon ng Donations o makipag-ugnayan sa Tanggapan ng Barangay upang malaman kung anong mga gamit o donasyon ang kasalukuyang kinakailangan at kung saan ito maaaring dalhin.",
+        "Check the Donations section or contact the Barangay Office to know what items are currently needed and where they can be brought.",
+        "Donations",
+        18,
+    ),
+
+    # 7. Using the Website
+    (
+        "Kailangan ko ba ng account para magamit ang website?",
+        "Do I need an account to use the website?",
+        "Ang ilang impormasyon ay maaaring matingnan kahit walang account, ngunit ang ilang partikular na serbisyo at personalized na feature ay nangangailangan ng pag-log in.",
+        "Some information can be viewed without an account, while certain services and personalized features require you to log in.",
+        "Using the Website",
+        19,
+    ),
+    (
+        "Maaari ko bang gamitin ang website sa aking cellphone o smartphone?",
+        "Can I use the website on my phone?",
+        "Oo. Maaaring buksan at gamitin ang website gamit ang alinmang suportadong web browser sa smartphone, tablet, laptop, o computer.",
+        "Yes. The website can be accessed using a supported web browser on a smartphone, tablet, laptop, or computer.",
+        "Using the Website",
+        20,
+    ),
+    (
+        "Saan ko makikita ang mga emergency contact number?",
+        "Where can I find emergency contact numbers?",
+        "Buksan ang seksyon ng Emergency Contacts o Hotlines upang makita ang lahat ng magagamit na numero ng barangay at emergency hotline.",
+        "Open the Emergency Contacts section to view the available barangay and emergency hotlines.",
+        "Using the Website",
+        21,
+    ),
+    (
+        "Paano ako mag-uulat ng insidente gamit ang website?",
+        "How do I report an incident through the website?",
+        "Buksan ang Incident Reporting, punan ang mga kinakailangang detalye, at i-submit ang inyong ulat. Maaari rin kayong maglakip ng litrato at lokasyon kung mayroon.",
+        "Open Incident Reporting, provide the requested details, and submit your report. You may also attach a photo and location when available.",
+        "Using the Website",
+        22,
+    ),
+    (
+        "Maaari ko bang masubaybayan ang katayuan ng aking naiulat na insidente?",
+        "Can I check the status of something I reported?",
+        "Oo, kung available ang tracking. Mag-log in sa inyong account at tingnan ang status ng inyong isinumiteng ulat.",
+        "Yes, when tracking is available. Log in to your account and check the status of your submitted report.",
+        "Using the Website",
+        23,
+    ),
+
+    # 8. Alerts & Notifications
+    (
+        "Paano ako makakatanggap ng mga alerto mula sa website?",
+        "How do I receive alerts from the website?",
+        "Tiyaking tama ang inyong impormasyon sa account at numero ng telepono, at nakabukas ang notifications kapag kinakailangan.",
+        "Make sure your account information and contact number are correct and that notifications are enabled when required.",
+        "Alerts & Notifications",
+        24,
+    ),
+    (
+        "Bakit hindi ako nakakatanggap ng SMS o mga abiso sa website?",
+        "Why am I not receiving SMS or website notifications?",
+        "Suriin kung tama ang inyong nakarehistrong contact number. Ang pagkaantala sa signal ng network, kawalan ng mobile service, o naka-disable na notifications ay maaari ding makaapekto sa pagtanggap.",
+        "Check that your registered contact information is correct. Network delays, unavailable mobile service, or disabled notifications may also affect delivery.",
+        "Alerts & Notifications",
+        25,
+    ),
+    (
+        "Maaari ba akong makatanggap ng paalala tungkol sa mga aktibidad ng barangay?",
+        "Can I receive reminders about barangay activities?",
+        "Oo. Ang mga rehistradong residente ay maaaring makatanggap ng mga paalala para sa mga nakatakdang aktibidad at anunsyo kapag aktibo ang feature na ito.",
+        "Yes. Registered residents may receive reminders for scheduled activities and announcements when this feature is available.",
+        "Alerts & Notifications",
+        26,
+    ),
+
+    # 9. Profile & Privacy
+    (
+        "Makikita ba ng lahat ang impormasyon ng aking pamilya?",
+        "Is my family's information visible to everyone?",
+        "Hindi. Ang pribadong impormasyon ng sambahayan ay hindi ipinapakita sa publiko at awtorisadong kawani lamang ng barangay ang may access dito.",
+        "No. Private household information is not intended to be publicly displayed and should only be accessible to authorized users.",
+        "Profile & Privacy",
+        27,
+    ),
+    (
+        "Bakit hinihingi ng website ang aking lokasyon?",
+        "Why does the website ask for my location?",
+        "Ang impormasyon sa lokasyon ay ginagamit para sa mga feature ng website tulad ng household mapping para sa kaligtasan at mabilis na pagtugon sa incident reporting.",
+        "Location information is used by certain website features, such as household mapping and incident reporting.",
+        "Profile & Privacy",
+        28,
+    ),
+    (
+        "Maaari ko bang baguhin o iwasto ang impormasyon sa aking profile?",
+        "Can I change or correct information in my profile?",
+        "Oo. Maaari ninyong i-edit ang mga impormasyong pinahihintulutan ng website na baguhin. Para sa mga impormasyong hindi mabago nang direkta, makipag-ugnayan sa Tanggapan ng Barangay.",
+        "Yes. You can edit information that the website allows you to update. For information that cannot be changed directly, contact the Barangay Office.",
+        "Profile & Privacy",
+        29,
+    ),
+
+    # 10. Website Help
+    (
+        "Ano ang dapat kong gawin kung hindi gumagana ang isang pahina o feature?",
+        "What should I do if a page or feature is not working?",
+        "I-refresh ang pahina at suriin ang inyong koneksyon sa internet. Kung magpatuloy ang problema, makipag-ugnayan sa Tanggapan ng Barangay o sa website administrator.",
+        "Refresh the page and check your internet connection. If the problem continues, contact the Barangay Office or website administrator.",
+        "Website Help",
+        30,
+    ),
+    (
+        "Ano ang dapat kong gawin kung may maling impormasyon sa website?",
+        "What should I do if information on the website is incorrect?",
+        "Ipagbigay-alam ang maling impormasyon sa Tanggapan ng Barangay upang masuri at maiwasto agad ito.",
+        "Report the incorrect information to the Barangay Office so it can be checked and updated.",
+        "Website Help",
+        31,
+    ),
+    (
+        "May makakatulong ba sa akin kung hindi ko alam gamitin ang website?",
+        "Can someone help me if I don't know how to use the website?",
+        "Oo. Maaari kayong humingi ng gabay at tulong nang personal sa Tanggapan ng Barangay o sa mga Barangay Health Worker.",
+        "Yes. You may ask for assistance at the Barangay Office.",
+        "Website Help",
+        32,
+    ),
+    (
+        "Paano kung hindi ko mabuksan ang website habang may emergency?",
+        "What if I cannot access the website during an emergency?",
+        "Gamitin agad ang mga opisyal na emergency contact number ng barangay o iba pang magagamit na linya ng komunikasyon.",
+        "Use the barangay's official emergency contact numbers or other available communication channels.",
+        "Website Help",
+        33,
     ),
 ]
 
 
 async def seed_faqs(session) -> None:
-    if await _table_has_rows(session, Faq):
-        return
+    # Remove existing FAQs to reseed with canonical dataset
+    await session.execute(delete(Faq))
     for q_fil, q_en, a_fil, a_en, category, sort_order in FAQ_DEFS:
         session.add(
             Faq(
@@ -790,6 +999,7 @@ async def seed_faqs(session) -> None:
                 answer_en=a_en,
                 category=category,
                 sort_order=sort_order,
+                is_published=True,
             )
         )
     log.info("seeded faqs", extra={"count": len(FAQ_DEFS)})

@@ -136,6 +136,7 @@ export const publicFaqSchema = z.object({
   answer_en: z.string(),
   category: z.string(),
   sort_order: z.number(),
+  is_published: z.boolean().optional().default(true),
 });
 
 /* --- hotlines ------------------------------------------------------------------ */

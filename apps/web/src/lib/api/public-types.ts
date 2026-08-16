@@ -186,6 +186,7 @@ export interface PublicFaq {
   answer_en: string;
   category: string;
   sort_order: number;
+  is_published: boolean;
 }
 
 /* ---------------------------------------------------------------------------

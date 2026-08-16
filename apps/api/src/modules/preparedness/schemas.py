@@ -62,6 +62,7 @@ class PublicFaq(BaseModel):
     answer_en: str
     category: str
     sort_order: int
+    is_published: bool = True
 
 
 class FaqIn(BaseModel):
