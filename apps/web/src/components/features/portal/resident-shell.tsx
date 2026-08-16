@@ -286,11 +286,11 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
 
           {/* Right Action Affordances */}
           <div className="ml-auto flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Rescue Fast Link */}
+            {/* Rescue Fast Link (Mobile only, desktop has dedicated sidebar action) */}
             <Button
               asChild
               size="sm"
-              className="rounded-xl border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-600 hover:text-white shadow-2xs transition-all text-xs h-9 px-3"
+              className="rounded-xl border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-600 hover:text-white shadow-2xs transition-all text-xs h-9 px-3 lg:hidden"
             >
               <Link href="/portal/rescue" className="flex items-center gap-1.5">
                 <LifeBuoy className="size-3.5 animate-pulse text-red-600 group-hover:text-white" />
