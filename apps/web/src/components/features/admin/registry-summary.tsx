@@ -33,7 +33,7 @@ function Metric({
   tone: string;
 }) {
   return (
-    <div className={`rounded-2xl border p-4 ${tone}`}>
+    <div className={`rounded-2xl border p-4 portal-card-hover ${tone}`}>
       <div className="flex items-start justify-between gap-3">
         <p className="text-[10px] font-bold tracking-[0.12em] text-neutral-500 uppercase">
           {label}
@@ -86,7 +86,7 @@ export function RegistrySummaryRibbon({ summary }: { summary?: RegistrySummary }
         />
       </div>
 
-      <Card className="overflow-hidden border-emerald-200/80 bg-gradient-to-br from-white via-white to-emerald-50/50">
+      <Card className="overflow-hidden border-emerald-200/80 bg-gradient-to-br from-white via-white to-emerald-50/50 portal-card-hover">
         <CardContent className="p-4 sm:p-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>

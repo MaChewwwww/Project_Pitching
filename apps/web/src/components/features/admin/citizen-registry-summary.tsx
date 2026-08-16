@@ -144,7 +144,7 @@ export function CitizenRegistrySummary({
   return (
     <section aria-label="Registered citizen overview" className="grid gap-3 lg:grid-cols-[1fr_1.15fr_1.1fr]">
       {/* CARD 1: Population & Registry Health */}
-      <Card className="overflow-hidden border-emerald-200/80 bg-gradient-to-br from-emerald-50/80 via-white to-white">
+      <Card className="overflow-hidden border-emerald-200/80 bg-gradient-to-br from-emerald-50/80 via-white to-white portal-card-hover">
         <CardContent className="p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -217,7 +217,7 @@ export function CitizenRegistrySummary({
       </Card>
 
       {/* CARD 2: Age Demographics Breakdown */}
-      <Card className="overflow-hidden border-sky-200/80 bg-gradient-to-br from-white via-white to-sky-50/50">
+      <Card className="overflow-hidden border-sky-200/80 bg-gradient-to-br from-white via-white to-sky-50/50 portal-card-hover">
         <CardContent className="p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -336,7 +336,7 @@ export function CitizenRegistrySummary({
       </Card>
 
       {/* CARD 3: Citizens with Support Needs (Pie Chart) */}
-      <Card className="overflow-hidden border-violet-200/80 bg-gradient-to-br from-violet-50/70 via-white to-amber-50/30">
+      <Card className="overflow-hidden border-violet-200/80 bg-gradient-to-br from-violet-50/70 via-white to-amber-50/30 portal-card-hover">
         <CardContent className="p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">

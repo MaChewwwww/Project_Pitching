@@ -436,7 +436,7 @@ export function ResourceTable<T extends object>({
                 key={getRowKey(row)}
                 onClick={() => onRowSelect?.(row)}
                 className={cn(
-                  "relative space-y-3 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-4 shadow-2xs transition-all",
+                  "relative space-y-3 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-4 shadow-2xs portal-card-hover",
                   onRowSelect && "cursor-pointer",
                   selectedRowKey === getRowKey(row) && "ring-2 ring-emerald-500",
                 )}
@@ -582,7 +582,7 @@ export function ResourceTable<T extends object>({
                 key={getRowKey(row)}
                 onClick={() => onRowSelect?.(row)}
                 className={cn(
-                  "border-primary-100/80 hover:bg-primary-50/80 transition-colors",
+                  "border-primary-100/80 hover:bg-primary-50/80 transition-colors duration-150",
                   index % 2 === 1 && "bg-emerald-50/35",
                   onRowSelect && "cursor-pointer",
                   selectedRowKey === getRowKey(row) && "bg-emerald-100/70",

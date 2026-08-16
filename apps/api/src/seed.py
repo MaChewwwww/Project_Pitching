@@ -1057,28 +1057,34 @@ async def seed_activities(session, areas: dict[str, Area], users: dict[str, User
 
 ANNOUNCEMENT_DEFS = [
     (
+        "announcement",
         "road_closure",
         "warning",
         "Protective Measures: Concrete Barrier Installation",
         "Concrete barriers along the shortcut to Phase 1B, Kasiglahan Village were repaired and reinforced to help protect motorists and pedestrians during adverse weather. The work was coordinated by Area 1 Alpha, the General Services Office, and the Barangay Disaster Risk Reduction and Management Office. Residents should report weather-related hazards and emergencies immediately through the appropriate hotlines.",
         datetime(2026, 8, 12, 14, tzinfo=UTC),
         "Barangay Disaster Risk Reduction and Management Committee",
+        None,
     ),
     (
+        "alert",
         "class_suspension",
         "info",
         "Face-to-Face Classes Resume Across Montalban Public Schools",
         "Face-to-face classes resumed on August 13, 2026 in all grade levels across Montalban public schools after schools used as evacuation centers were cleaned and restored. The reopening supports students’ safe return to learning following the recent calamity.",
         datetime(2026, 8, 13, 8, tzinfo=UTC),
         "Office of the Barangay Captain",
+        "Parents and students should follow their school’s announced schedule and continue to observe school safety guidelines.",
     ),
     (
+        "announcement",
         "heavy_rainfall",
         "warning",
         "Habagat Advisory and Water Level Monitoring",
         "The Southwest Monsoon continues to bring scattered rains and thunderstorms to CALABARZON, with possible flash floods and landslides in vulnerable and low-lying areas. The water level beneath San Jose Bridge remains low as of the latest monitoring, but residents should keep emergency kits ready, follow official weather advisories, review household evacuation plans, and exercise caution in hazard-prone areas.",
         datetime(2026, 8, 14, 5, 40, tzinfo=UTC),
         "Barangay Disaster Risk Reduction and Management Committee",
+        None,
     ),
 ]
 
@@ -1087,15 +1093,17 @@ async def seed_announcements(session, users: dict[str, User]) -> None:
     if await _table_has_rows(session, Announcement):
         return
     for (
+        kind,
         type_,
         severity,
         title,
         body,
         published_at,
         issuer_name,
+        instruction,
     ) in ANNOUNCEMENT_DEFS:
         announcement = Announcement(
-            kind="announcement",
+            kind=kind,
             type=type_,
             severity=severity,
             title=title,
@@ -1105,6 +1113,7 @@ async def seed_announcements(session, users: dict[str, User]) -> None:
             publication_status="published",
             is_barangay_wide=True,
             published_at=published_at,
+            instruction=instruction,
             issued_by_user_id=users[issuer_name].id,
         )
         session.add(announcement)
@@ -1118,9 +1127,9 @@ async def seed_donations(session, users: dict[str, User]) -> None:
     if await _table_has_rows(session, DonationDrive):
         return
 
-    published_at = datetime(2026, 8, 14, 8, tzinfo=UTC)
     drives = [
         (
+            datetime(2026, 8, 13, 8, tzinfo=UTC),
             "Relief Drive for Habagat-Affected Families",
             "relief-drive-for-habagat-affected-families",
             "Rotaract Club of Rodriguez is collecting financial and in-kind support for families affected by Habagat in Montalban.",
@@ -1130,6 +1139,7 @@ async def seed_donations(session, users: dict[str, User]) -> None:
             "Isabel Terraces, San Jose, Rodriguez, Rizal",
         ),
         (
+            datetime(2026, 8, 12, 8, tzinfo=UTC),
             "Laban Kontra Bagyong Maymay Donation Drive",
             "laban-kontra-bagyong-maymay-donation-drive",
             "The Eagle Scouts Association of Montalban is collecting monetary and in-kind donations for people affected by Bagyong Maymay.",
@@ -1139,6 +1149,7 @@ async def seed_donations(session, users: dict[str, User]) -> None:
             None,
         ),
         (
+            datetime(2026, 8, 14, 8, tzinfo=UTC),
             "Upper Hills and Mountains Donation Drive",
             "upper-hills-and-mountains-donation-drive",
             "Upper Hills and Mountains is accepting donations for clothes, medicine, canned goods, money, and other essential relief items.",
@@ -1149,6 +1160,7 @@ async def seed_donations(session, users: dict[str, User]) -> None:
         ),
     ]
     for (
+        published_at,
         title,
         slug,
         excerpt,

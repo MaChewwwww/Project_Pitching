@@ -445,7 +445,10 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
         ) : null}
 
         {/* ── Main Page Content (Fluid width, maximizing widescreen layout) ── */}
-        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8 xl:p-10 space-y-6 sm:space-y-8">
+        <main
+          key={pathname}
+          className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8 xl:p-10 space-y-6 sm:space-y-8 animate-portal-enter"
+        >
           {children}
         </main>
       </div>

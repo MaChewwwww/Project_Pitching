@@ -98,9 +98,8 @@ async def list_donation_drives(
     session: AsyncSession, *, page: int = 1, size: int = 20, status: str | None = None
 ) -> Page[PublicDonationDrive]:
     now = datetime.now(UTC)
-    stmt = (
-        select(DonationDrive)
-        .where(DonationDrive.publication_status.in_(("published", "archived")))
+    stmt = select(DonationDrive).where(
+        DonationDrive.publication_status.in_(("published", "archived"))
     )
     if status == "active":
         stmt = (
@@ -116,7 +115,7 @@ async def list_donation_drives(
     else:
         stmt = stmt.where(DonationDrive.publication_status == "published")
 
-    stmt = stmt.order_by(DonationDrive.published_at.desc().nullslast(), DonationDrive.title)
+    stmt = stmt.order_by(DonationDrive.published_at.asc().nullslast(), DonationDrive.title)
     drives = (await session.execute(stmt)).scalars().all()
     names = await get_event_names(session, [drive.event_id for drive in drives if drive.event_id])
     page_drives = drives[(page - 1) * size : page * size]

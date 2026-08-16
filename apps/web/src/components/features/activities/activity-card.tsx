@@ -27,6 +27,8 @@ export function ActivityCard({
   activity: PublicActivity;
   className?: string;
 }) {
+  const dateDay = phtDayOfMonth(activity.starts_at).padStart(2, "0");
+
   return (
     <Link
       href={`/activities/${activity.slug}` as Route}
@@ -75,14 +77,14 @@ export function ActivityCard({
 
             <time
               dateTime={activity.starts_at}
-              className="inline-grid min-w-14 place-items-center rounded-lg border border-white/25 bg-black/65 px-2 py-1.5 text-white shadow-md backdrop-blur-md"
-              aria-label={`${phtMonthShort(activity.starts_at)} ${phtDayOfMonth(activity.starts_at)}`}
+              className="bg-primary-700 border-primary-500/80 inline-grid min-w-14 place-items-center rounded-lg border px-2 py-1.5 text-white shadow-md"
+              aria-label={`${phtMonthShort(activity.starts_at)} ${dateDay}`}
             >
               <span className="text-primary-100 text-[10px] font-extrabold tracking-[0.16em] uppercase">
                 {phtMonthShort(activity.starts_at)}
               </span>
               <span className="font-display text-2xl leading-6 font-bold tracking-tight tabular-nums">
-                {phtDayOfMonth(activity.starts_at)}
+                {dateDay}
               </span>
             </time>
           </div>

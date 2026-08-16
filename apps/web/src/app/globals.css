@@ -1174,4 +1174,93 @@
   .custom-scrollbar-dark::-webkit-scrollbar-thumb:hover {
     background: #34d399;
   }
+
+  /* --- Portal & Admin Motion Keyframes & Transitions --- */
+  @keyframes portal-enter {
+    0% {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes portal-fade {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes portal-scale-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.985);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes portal-slide-right {
+    0% {
+      opacity: 0;
+      transform: translateX(-8px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-portal-enter {
+    animation: portal-enter 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-portal-fade {
+    animation: portal-fade 0.22s ease-out both;
+  }
+
+  .animate-portal-scale {
+    animation: portal-scale-in 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-portal-slide-right {
+    animation: portal-slide-right 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-delay-1 {
+    animation-delay: 50ms;
+  }
+  .animate-delay-2 {
+    animation-delay: 100ms;
+  }
+  .animate-delay-3 {
+    animation-delay: 150ms;
+  }
+  .animate-delay-4 {
+    animation-delay: 200ms;
+  }
+
+  /* Micro-interaction helper for cards and items */
+  .portal-card-hover {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  }
+  .portal-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+  }
+
+  .portal-interactive {
+    transition: transform 0.12s ease, opacity 0.12s ease;
+  }
+  .portal-interactive:active {
+    transform: scale(0.98);
+    opacity: 0.92;
+  }
 }

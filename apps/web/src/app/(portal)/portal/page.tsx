@@ -411,7 +411,7 @@ export default function PortalDashboardPage() {
       {/* ── 2. Five Key Operational Metrics Grid ── */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 sm:gap-4">
         {/* Card 1: Household ID & Registered Area */}
-        <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden transition-all hover:border-neutral-300 hover:shadow-sm">
+        <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden portal-card-hover">
           <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black tracking-wider text-neutral-400 uppercase">
@@ -433,7 +433,7 @@ export default function PortalDashboardPage() {
         </Card>
 
         {/* Card 2: Registered Family Members */}
-        <Card className="border-emerald-200/80 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 shadow-xs overflow-hidden transition-all hover:border-emerald-300 hover:shadow-sm">
+        <Card className="border-emerald-200/80 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 shadow-xs overflow-hidden portal-card-hover">
           <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black tracking-wider text-emerald-800 uppercase">
@@ -462,7 +462,7 @@ export default function PortalDashboardPage() {
         {/* Card 3: Special Needs / Care Flags */}
         <Card
           className={cn(
-            "shadow-xs overflow-hidden transition-all hover:shadow-sm",
+            "shadow-xs overflow-hidden portal-card-hover",
             specialNeedsCount > 0
               ? "border-purple-200/90 bg-gradient-to-br from-purple-50/60 to-pink-50/30 text-purple-950"
               : "border-neutral-200/90 bg-white",
@@ -525,7 +525,7 @@ export default function PortalDashboardPage() {
         {/* Card 4: Waterway Proximity / Flood Risk */}
         <Card
           className={cn(
-            "shadow-xs overflow-hidden transition-all hover:shadow-sm",
+            "shadow-xs overflow-hidden portal-card-hover",
             currentProximity.tone,
           )}
         >
@@ -555,7 +555,7 @@ export default function PortalDashboardPage() {
         </Card>
 
         {/* Card 5: 72-Hour Go-Bag Readiness Status */}
-        <Card className="col-span-2 sm:col-span-1 border-sky-200/90 bg-gradient-to-br from-sky-50/50 to-blue-50/30 shadow-xs overflow-hidden transition-all hover:border-sky-300 hover:shadow-sm">
+        <Card className="col-span-2 sm:col-span-1 border-sky-200/90 bg-gradient-to-br from-sky-50/50 to-blue-50/30 shadow-xs overflow-hidden portal-card-hover">
           <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black tracking-wider text-sky-800 uppercase">
@@ -697,7 +697,7 @@ export default function PortalDashboardPage() {
         {/* ── RIGHT COLUMN: Readiness Health + Broadcasts + Emergency Trigger (4 cols) ── */}
         <div className="lg:col-span-4 space-y-6">
           {/* Module C: Family Preparedness Health Index Card */}
-          <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
+          <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden portal-card-hover">
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div className="flex items-center gap-2.5 border-b border-neutral-100 pb-3">
                 <span className="grid size-8 place-items-center rounded-xl bg-emerald-100 text-emerald-700 shadow-2xs">
@@ -772,7 +772,7 @@ export default function PortalDashboardPage() {
           </Card>
 
           {/* Module D: Recent Official Notices & Activity Feed */}
-          <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
+          <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden portal-card-hover">
             <CardContent className="p-5 space-y-3.5">
               <div className="flex items-center justify-between border-b border-neutral-100 pb-2.5">
                 <div className="flex items-center gap-2">

@@ -61,24 +61,52 @@ const DEFAULT_VALUES: RescueRequestFormValues = {
   location_note: "",
 };
 
+export interface RescueRequestFormProps {
+  endpoint?: string;
+  badgeLabel?: string;
+  title?: string;
+  subtitle?: string;
+  defaultValues?: Partial<RescueRequestFormValues>;
+  isResidentPortal?: boolean;
+  onSuccess?: (ack: RescueRequestAck) => void;
+}
+
 export function RescueRequestForm({
   endpoint = "/public/rescue-requests",
-}: {
-  endpoint?: string;
-}) {
+  badgeLabel,
+  title = "Rescue Dispatch Form",
+  subtitle = "Submit immediate emergency request to barangay rescue team",
+  defaultValues,
+  isResidentPortal = false,
+  onSuccess,
+}: RescueRequestFormProps) {
   const [ack, setAck] = React.useState<RescueRequestAck | null>(null);
   const [serverError, setServerError] = React.useState<string | null>(null);
 
   const form = useForm<RescueRequestFormValues>({
     resolver: zodResolver(rescueRequestSchema),
-    defaultValues: DEFAULT_VALUES,
+    defaultValues: {
+      ...DEFAULT_VALUES,
+      ...defaultValues,
+    },
   });
   const {
     control,
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = form;
+
+  // Keep form in sync when defaultValues load asynchronously (e.g. household query)
+  React.useEffect(() => {
+    if (defaultValues && Object.keys(defaultValues).length > 0) {
+      reset((prev) => ({
+        ...prev,
+        ...defaultValues,
+      }));
+    }
+  }, [defaultValues, reset]);
 
   const { hasDraft, resume, discard, clearOnSuccess } = useRegistrationDraft(
     DRAFT_KEY,
@@ -100,6 +128,7 @@ export function RescueRequestForm({
       const response = await api.post<RescueRequestAck>(endpoint, payload);
       clearOnSuccess();
       setAck(response.data);
+      onSuccess?.(response.data);
     } catch (error) {
       const problem = toDisplayError(error);
       setServerError(
@@ -161,6 +190,27 @@ export function RescueRequestForm({
             </p>
           </div>
 
+          {isResidentPortal ? (
+            <div className="flex flex-wrap gap-2.5 pt-2">
+              <Button
+                asChild
+                size="sm"
+                className="rounded-full bg-emerald-700 font-bold text-white shadow-xs hover:bg-emerald-800 text-xs px-5"
+              >
+                <a href="/portal/history">View in Household History Logs</a>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setAck(null)}
+                className="rounded-full border-neutral-300 bg-white text-xs font-bold text-neutral-700 hover:bg-neutral-50 px-5"
+              >
+                Submit Another Update
+              </Button>
+            </div>
+          ) : null}
+
           <Attribution disclaimer="no-rescue-promise" />
         </CardContent>
       </Card>
@@ -185,17 +235,17 @@ export function RescueRequestForm({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-h3 font-extrabold tracking-tight text-neutral-900">
-                  Rescue Dispatch Form
+                  {title}
                 </h2>
               </div>
               <p className="text-caption mt-0.5 font-medium text-neutral-500">
-                Submit immediate emergency request to barangay rescue team
+                {subtitle}
               </p>
             </div>
           </div>
           <span className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-extrabold text-emerald-800 sm:self-auto">
             <span className="size-2 shrink-0 animate-ping rounded-full bg-emerald-500" />
-            No Account Needed
+            {badgeLabel || "No Account Needed"}
           </span>
         </div>
 
@@ -231,170 +281,167 @@ export function RescueRequestForm({
             </div>
           ) : null}
 
-          {/* Section 1: Requester Contact Details */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="grid size-5.5 place-items-center rounded-full bg-neutral-900 text-[10px] font-black text-white">
-                1
-              </span>
-              <h3 className="text-xs font-extrabold tracking-wider text-neutral-800 uppercase">
-                Your Contact Details
-              </h3>
-            </div>
+          {/* Double Column Form Grid (Left: Details & Situation, Right: Map Location & Landmark) */}
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 items-start">
+            {/* ── Left Column: Contact & Situation ── */}
+            <div className="space-y-4">
+              {/* Section 1: Requester Contact Details */}
+              <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
+                <div className="flex items-center gap-2">
+                  <span className="grid size-5.5 place-items-center rounded-full bg-neutral-900 text-[10px] font-black text-white">
+                    1
+                  </span>
+                  <h3 className="text-xs font-extrabold tracking-wider text-neutral-800 uppercase">
+                    Your Contact Details
+                  </h3>
+                </div>
 
-            <div className="grid gap-3.5 sm:grid-cols-2">
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="requester_name"
-                  className="flex items-center gap-1 text-xs font-bold text-neutral-800"
-                >
-                  Your Name <span className="font-black text-rose-500">*</span>
-                </Label>
-                <Input
-                  id="requester_name"
-                  placeholder="Full Name or Nickname"
-                  autoComplete="name"
-                  className="h-10 rounded-xl border-neutral-200/90 bg-neutral-50/30 text-xs focus:border-emerald-500 focus:ring-emerald-500/20 sm:text-sm"
-                  {...register("requester_name")}
-                />
-                {errors.requester_name ? (
-                  <p className="text-danger text-[11px] font-bold">
-                    {errors.requester_name.message}
-                  </p>
-                ) : null}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
+                    <Label
+                      htmlFor="requester_name"
+                      className="flex items-center gap-1 text-xs font-bold text-neutral-800"
+                    >
+                      Your Name <span className="font-black text-rose-500">*</span>
+                    </Label>
+                    <Input
+                      id="requester_name"
+                      placeholder="Full Name or Nickname"
+                      autoComplete="name"
+                      className="h-10 rounded-xl border-neutral-200/90 bg-white text-xs focus:border-emerald-500 focus:ring-emerald-500/20 sm:text-sm"
+                      {...register("requester_name")}
+                    />
+                    {errors.requester_name ? (
+                      <p className="text-danger text-[11px] font-bold">
+                        {errors.requester_name.message}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label
+                      htmlFor="contact_number"
+                      className="text-xs font-bold text-neutral-800"
+                    >
+                      Contact Number{" "}
+                      <span className="font-normal text-neutral-400">(optional)</span>
+                    </Label>
+                    <Input
+                      id="contact_number"
+                      type="tel"
+                      inputMode="tel"
+                      placeholder="09XX-XXX-XXXX"
+                      autoComplete="tel"
+                      className="h-10 rounded-xl border-neutral-200/90 bg-white text-xs focus:border-emerald-500 focus:ring-emerald-500/20 sm:text-sm"
+                      {...register("contact_number")}
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="contact_number"
-                  className="text-xs font-bold text-neutral-800"
-                >
-                  Contact Number{" "}
-                  <span className="font-normal text-neutral-400">(optional)</span>
-                </Label>
-                <Input
-                  id="contact_number"
-                  type="tel"
-                  inputMode="tel"
-                  placeholder="09XX-XXX-XXXX"
-                  autoComplete="tel"
-                  className="h-10 rounded-xl border-neutral-200/90 bg-neutral-50/30 text-xs focus:border-emerald-500 focus:ring-emerald-500/20 sm:text-sm"
-                  {...register("contact_number")}
-                />
-              </div>
-            </div>
-          </div>
+              {/* Section 2: Situation Details & Headcount */}
+              <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="grid size-5.5 place-items-center rounded-full bg-neutral-900 text-[10px] font-black text-white">
+                      2
+                    </span>
+                    <h3 className="text-xs font-extrabold tracking-wider text-neutral-800 uppercase">
+                      Situation & Triage
+                    </h3>
+                  </div>
+                </div>
 
-          {/* Section 2: Location Pin & Landmark */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="grid size-5.5 place-items-center rounded-full bg-neutral-900 text-[10px] font-black text-white">
-                  2
-                </span>
-                <h3 className="text-xs font-extrabold tracking-wider text-neutral-800 uppercase">
-                  Pin Location & Landmark
-                </h3>
-              </div>
-              <span className="text-[11px] font-semibold text-neutral-500">
-                Step 2 of 3
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Controller
-                control={control}
-                name="location"
-                render={({ field }) => (
-                  <LocationPicker
-                    value={field.value as LatLng | null}
-                    onChange={field.onChange}
-                    caption="Drag the pin or tap the map to mark exact rescue spot."
+                <div className="flex flex-col gap-1.5">
+                  <Label
+                    htmlFor="people_count"
+                    className="text-xs font-bold text-neutral-800"
+                  >
+                    People Needing Rescue{" "}
+                    <span className="font-normal text-neutral-400">(estimated count)</span>
+                  </Label>
+                  <Input
+                    id="people_count"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={99}
+                    placeholder="e.g. 4 persons"
+                    className="h-10 rounded-xl border-neutral-200/90 bg-white text-xs focus:border-emerald-500 focus:ring-emerald-500/20 sm:text-sm"
+                    {...register("people_count")}
                   />
-                )}
-              />
-            </div>
+                </div>
 
-            <div className="flex flex-col gap-1.5 pt-1">
-              <Label
-                htmlFor="location_note"
-                className="text-xs font-bold text-neutral-800"
-              >
-                Landmark / Specific Location Notes
-              </Label>
-              <Input
-                id="location_note"
-                placeholder="e.g. Near Wawa bridge, 2nd floor red roof, beside sari-sari store"
-                className="h-10 rounded-xl border-neutral-200/90 bg-neutral-50/30 text-xs focus:border-emerald-500 focus:ring-emerald-500/20 sm:text-sm"
-                {...register("location_note")}
-              />
-              {errors.location_note ? (
-                <p className="text-danger text-[11px] font-bold">
-                  {errors.location_note.message}
-                </p>
-              ) : null}
-            </div>
-          </div>
-
-          {/* Section 3: Situation Details */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="grid size-5.5 place-items-center rounded-full bg-neutral-900 text-[10px] font-black text-white">
-                  3
-                </span>
-                <h3 className="text-xs font-extrabold tracking-wider text-neutral-800 uppercase">
-                  Situation & Triage
-                </h3>
+                <div className="flex flex-col gap-1.5">
+                  <Label
+                    htmlFor="description"
+                    className="flex items-center gap-1 text-xs font-bold text-neutral-800"
+                  >
+                    What&apos;s Happening <span className="font-black text-rose-500">*</span>
+                  </Label>
+                  <Textarea
+                    id="description"
+                    rows={4}
+                    placeholder="Describe flood water level, trapped on roof / 2nd floor, senior citizens, infants, injuries, or urgent medical needs..."
+                    className="resize-none rounded-xl border-neutral-200/90 bg-white text-xs focus:border-emerald-500 focus:ring-emerald-500/20 sm:text-sm"
+                    {...register("description")}
+                  />
+                  {errors.description ? (
+                    <p className="text-danger text-[11px] font-bold">
+                      {errors.description.message}
+                    </p>
+                  ) : null}
+                </div>
               </div>
-              <span className="text-[11px] font-semibold text-neutral-500">
-                Final Step
-              </span>
             </div>
 
-            <div className="grid gap-3.5 sm:grid-cols-3">
-              <div className="flex flex-col gap-1.5 sm:col-span-2">
-                <Label
-                  htmlFor="description"
-                  className="flex items-center gap-1 text-xs font-bold text-neutral-800"
-                >
-                  What&apos;s Happening{" "}
-                  <span className="font-black text-rose-500">*</span>
-                </Label>
-                <Textarea
-                  id="description"
-                  rows={3}
-                  placeholder="Describe flood water level, trapped family members, seniors/children, or urgent medical needs..."
-                  className="resize-none rounded-xl border-neutral-200/90 bg-neutral-50/30 text-xs focus:border-emerald-500 focus:ring-emerald-500/20 sm:text-sm"
-                  {...register("description")}
-                />
-                {errors.description ? (
-                  <p className="text-danger text-[11px] font-bold">
-                    {errors.description.message}
-                  </p>
-                ) : null}
-              </div>
+            {/* ── Right Column: Map Location Pin & Landmark ── */}
+            <div className="space-y-4">
+              <div className="space-y-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="grid size-5.5 place-items-center rounded-full bg-neutral-900 text-[10px] font-black text-white">
+                      3
+                    </span>
+                    <h3 className="text-xs font-extrabold tracking-wider text-neutral-800 uppercase">
+                      Pin Rescue GPS Position
+                    </h3>
+                  </div>
+                </div>
 
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="people_count"
-                  className="text-xs font-bold text-neutral-800"
-                >
-                  People Needing Rescue
-                </Label>
-                <Input
-                  id="people_count"
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={99}
-                  placeholder="e.g. 3"
-                  className="h-10 rounded-xl border-neutral-200/90 bg-neutral-50/30 text-xs focus:border-emerald-500 focus:ring-emerald-500/20 sm:text-sm"
-                  {...register("people_count")}
-                />
-                <span className="text-[10.5px] font-medium text-neutral-400">
-                  Estimated count
-                </span>
+                <div className="flex flex-col gap-2">
+                  <Controller
+                    control={control}
+                    name="location"
+                    render={({ field }) => (
+                      <LocationPicker
+                        value={field.value as LatLng | null}
+                        onChange={field.onChange}
+                        caption="Drag the pin or tap the map to mark exact rescue spot."
+                      />
+                    )}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5 pt-1">
+                  <Label
+                    htmlFor="location_note"
+                    className="text-xs font-bold text-neutral-800"
+                  >
+                    Landmark / Specific Location Notes
+                  </Label>
+                  <Input
+                    id="location_note"
+                    placeholder="e.g. Phase 1K, Block 12, red roof, near Wawa bridge"
+                    className="h-10 rounded-xl border-neutral-200/90 bg-white text-xs focus:border-emerald-500 focus:ring-emerald-500/20 sm:text-sm"
+                    {...register("location_note")}
+                  />
+                  {errors.location_note ? (
+                    <p className="text-danger text-[11px] font-bold">
+                      {errors.location_note.message}
+                    </p>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>

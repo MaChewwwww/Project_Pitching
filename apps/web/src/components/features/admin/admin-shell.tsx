@@ -225,6 +225,7 @@ function ConsoleNav({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const { user, logout } = useAuth();
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
 
@@ -336,7 +337,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <AdminBreadcrumbs />
         </div>
 
-        <main className="min-w-0 flex-1 p-4 md:p-6 xl:p-8">{children}</main>
+        <main
+          key={pathname}
+          className="min-w-0 flex-1 p-4 md:p-6 xl:p-8 animate-portal-enter"
+        >
+          {children}
+        </main>
       </div>
     </div>
   );
