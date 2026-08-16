@@ -67,41 +67,40 @@ const LocationPicker = dynamic(
  * /me/household`; `PortalGate` is what routed the resident here.
  */
 
-const onboardingSchema = z
-  .object({
-    street_address: z.string().optional(),
-    waterway_proximity: z
-      .enum(["very_near", "near", "far"], {
-        message: "Kailangang piliin ang kalapitan sa daanan ng tubig",
-      })
-      .optional()
-      .refine((value) => Boolean(value), {
-        message: "Kailangang piliin ang kalapitan sa daanan ng tubig",
-      }),
-    area_id: z.string().min(1, "Pumili ng inyong area / purok sa San Jose"),
-    contact_number: z.string().optional(),
-    is_unreachable_by_phone: z.boolean(),
-    birth_date: z.string().optional(),
-    sex: z.enum(["male", "female"]).optional(),
-    is_pwd: z.boolean(),
-    is_pregnant: z.boolean(),
-    is_lactating: z.boolean(),
-    has_chronic_condition: z.boolean(),
-    chronic_condition_note: z.string().optional(),
-    is_bedridden: z.boolean(),
-  })
-  .superRefine((values, ctx) => {
-    // FR-REG-005 — required unless the household is flagged unreachable by
-    // phone; that checkbox is the only way around it, not a blank field.
-    if (!values.is_unreachable_by_phone && !values.contact_number?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          "Maglagay ng contact number, o piliin ang “Wala akong regular na numero ng telepono”",
-        path: ["contact_number"],
-      });
-    }
-  });
+const onboardingSchema = z.object({
+  street_address: z
+    .string()
+    .trim()
+    .min(1, "Ilagay ang inyong house no., street, o subdivision"),
+  waterway_proximity: z
+    .enum(["very_near", "near", "far"], {
+      message: "Kailangang piliin ang kalapitan sa daanan ng tubig",
+    })
+    .optional()
+    .refine((value) => Boolean(value), {
+      message: "Kailangang piliin ang kalapitan sa daanan ng tubig",
+    }),
+  area_id: z.string().min(1, "Pumili ng inyong area / purok sa San Jose"),
+  contact_number: z
+    .string()
+    .trim()
+    .min(1, "Ilagay ang inyong contact number"),
+  birth_date: z.string().min(1, "Ilagay ang inyong kaarawan (Birthday)"),
+  sex: z
+    .enum(["male", "female"], {
+      message: "Piliin ang inyong kasarian (Sex)",
+    })
+    .optional()
+    .refine((value) => Boolean(value), {
+      message: "Piliin ang inyong kasarian (Sex)",
+    }),
+  is_pwd: z.boolean(),
+  is_pregnant: z.boolean(),
+  is_lactating: z.boolean(),
+  has_chronic_condition: z.boolean(),
+  chronic_condition_note: z.string().optional(),
+  is_bedridden: z.boolean(),
+});
 
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
 
@@ -110,7 +109,6 @@ const emptyValues: OnboardingFormValues = {
   waterway_proximity: undefined,
   area_id: "",
   contact_number: "",
-  is_unreachable_by_phone: false,
   birth_date: "",
   sex: undefined,
   is_pwd: false,
@@ -190,7 +188,6 @@ export default function OnboardingPage() {
 
   const watchedValues = useWatch({ control });
   const hasChronicCondition = watchedValues.has_chronic_condition;
-  const isUnreachableByPhone = watchedValues.is_unreachable_by_phone;
 
   const submitMutation = useMutation({
     mutationFn: (body: HouseholdCreateSelf) =>
@@ -208,17 +205,15 @@ export default function OnboardingPage() {
   async function onSubmit(values: OnboardingFormValues) {
     setServerError(null);
     await submitMutation.mutateAsync({
-      street_address: values.street_address?.trim() || null,
+      street_address: values.street_address.trim(),
       waterway_proximity: values.waterway_proximity,
       area_id: values.area_id,
       latitude: location?.lat ?? null,
       longitude: location?.lng ?? null,
-      contact_number: values.is_unreachable_by_phone
-        ? null
-        : values.contact_number?.trim() || null,
-      is_unreachable_by_phone: values.is_unreachable_by_phone,
+      contact_number: values.contact_number.trim(),
+      is_unreachable_by_phone: false,
       head_member: {
-        birth_date: values.birth_date || null,
+        birth_date: values.birth_date,
         sex: values.sex ?? null,
         is_pwd: values.is_pwd,
         is_pregnant: values.is_pregnant,
@@ -233,11 +228,13 @@ export default function OnboardingPage() {
   }
 
   const completedSteps = {
-    location: Boolean(location && watchedValues.area_id),
+    location: Boolean(
+      location && watchedValues.area_id && watchedValues.street_address?.trim(),
+    ),
     waterway: Boolean(watchedValues.waterway_proximity),
     contact: Boolean(
-      (watchedValues.is_unreachable_by_phone || watchedValues.contact_number?.trim()) &&
-        Boolean(watchedValues.birth_date || watchedValues.sex),
+      watchedValues.contact_number?.trim() &&
+        Boolean(watchedValues.birth_date && watchedValues.sex),
     ),
   };
 
@@ -251,10 +248,6 @@ export default function OnboardingPage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <LogoLockup size={32} />
-            <span className="hidden h-5 w-px bg-neutral-200 sm:inline-block" />
-            <span className="hidden rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold tracking-wider text-emerald-800 uppercase sm:inline-block">
-              Resident Portal Setup
-            </span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -276,12 +269,11 @@ export default function OnboardingPage() {
 
             <Button
               type="button"
-              variant="outline"
               size="sm"
               onClick={() => void logout()}
-              className="rounded-xl border-neutral-200 text-neutral-700 hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+              className="rounded-xl bg-red-600 font-bold text-white shadow-xs hover:bg-red-700 active:bg-red-800"
             >
-              <LogOut className="size-3.5" />
+              <LogOut className="size-3.5 text-white" />
               <span>Sign out</span>
             </Button>
           </div>
@@ -560,16 +552,19 @@ export default function OnboardingPage() {
                   {/* Specific Street Address Input */}
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="street_address" className="text-xs font-bold text-neutral-800">
-                      House No. / Street / Subdivision{" "}
-                      <span className="font-normal text-neutral-400">(Optional)</span>
+                      House No. / Street / Subdivision <span className="text-red-600">*</span>
                     </Label>
                     <Input
                       id="street_address"
                       type="text"
+                      aria-invalid={!!errors.street_address}
                       className={formFieldClassName}
                       {...register("street_address")}
                       placeholder="Halimbawa: 12 Sampaguita St., Phase 2, Greenview"
                     />
+                    {errors.street_address ? (
+                      <p className="text-danger text-xs">{errors.street_address.message}</p>
+                    ) : null}
                   </div>
                 </CardContent>
               </Card>
@@ -594,20 +589,16 @@ export default function OnboardingPage() {
                   {/* Contact Number */}
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="contact_number" className="text-xs font-bold text-neutral-800">
-                      Contact Number {!isUnreachableByPhone ? <span className="text-red-600">*</span> : null}
+                      Contact Number <span className="text-red-600">*</span>
                     </Label>
                     <Input
                       id="contact_number"
                       type="tel"
                       inputMode="tel"
                       autoComplete="tel"
-                      disabled={isUnreachableByPhone}
                       aria-invalid={!!errors.contact_number}
                       placeholder="09XX XXX XXXX"
-                      className={cn(
-                        formFieldClassName,
-                        isUnreachableByPhone && "bg-neutral-100 text-neutral-400 cursor-not-allowed",
-                      )}
+                      className={formFieldClassName}
                       {...register("contact_number")}
                     />
                     {errors.contact_number ? (
@@ -615,66 +606,54 @@ export default function OnboardingPage() {
                     ) : null}
                   </div>
 
-                  {/* Unreachable by phone checkbox */}
-                  <div className="flex items-center gap-2 rounded-lg border border-neutral-200/80 bg-neutral-50/50 p-3">
-                    <Controller
-                      control={control}
-                      name="is_unreachable_by_phone"
-                      render={({ field }) => (
-                        <Checkbox
-                          id="is_unreachable_by_phone"
-                          className={formCheckboxClassName}
-                          checked={field.value}
-                          onCheckedChange={(checked) => {
-                            field.onChange(checked);
-                            if (checked) {
-                              setValue("contact_number", "", { shouldValidate: true });
-                            }
-                          }}
-                        />
-                      )}
-                    />
-                    <Label
-                      htmlFor="is_unreachable_by_phone"
-                      className="cursor-pointer text-xs font-medium text-neutral-700"
-                    >
-                      Wala akong regular na numero ng telepono (Unreachable by phone)
-                    </Label>
-                  </div>
-
                   {/* Birthday & Sex Grid */}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="birth_date" className="text-xs font-bold text-neutral-800">
-                        Birthday <span className="font-normal text-neutral-400">(Optional)</span>
+                        Birthday <span className="text-red-600">*</span>
                       </Label>
                       <Input
                         id="birth_date"
                         type="date"
+                        aria-invalid={!!errors.birth_date}
                         className={formFieldClassName}
                         {...register("birth_date")}
                       />
+                      {errors.birth_date ? (
+                        <p className="text-danger text-xs">{errors.birth_date.message}</p>
+                      ) : null}
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="sex" className="text-xs font-bold text-neutral-800">
-                        Kasarian (Sex) <span className="font-normal text-neutral-400">(Optional)</span>
+                        Kasarian (Sex) <span className="text-red-600">*</span>
                       </Label>
                       <Controller
                         control={control}
                         name="sex"
-                        render={({ field }) => (
-                          <Select
-                            value={field.value ?? ""}
-                            onValueChange={field.onChange}
-                          >
-                            <SelectTrigger id="sex" className={`${formFieldClassName} w-full`}>
-                              <SelectValue placeholder="Piliin ang kasarian" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="male">Male (Lalaki)</SelectItem>
-                              <SelectItem value="female">Female (Babae)</SelectItem>
-                            </SelectContent>
-                          </Select>
+                        render={({ field, fieldState }) => (
+                          <>
+                            <Select
+                              value={field.value ?? ""}
+                              onValueChange={field.onChange}
+                            >
+                              <SelectTrigger
+                                id="sex"
+                                aria-invalid={!!fieldState.error}
+                                className={`${formFieldClassName} w-full`}
+                              >
+                                <SelectValue placeholder="Piliin ang kasarian" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="male">Male (Lalaki)</SelectItem>
+                                <SelectItem value="female">Female (Babae)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {fieldState.error ? (
+                              <p className="text-danger text-xs">
+                                {fieldState.error.message}
+                              </p>
+                            ) : null}
+                          </>
                         )}
                       />
                     </div>
