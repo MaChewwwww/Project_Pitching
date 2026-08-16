@@ -24,6 +24,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api, toDisplayError } from "@/lib/api/client";
 import type { MemberOut, MemberUpdate } from "@/lib/api/registry-types";
@@ -236,19 +243,25 @@ export function HouseholdMemberDialog({
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="sex" className="text-xs font-bold text-neutral-800">
+                  <Label className="text-xs font-bold text-neutral-800">
                     Sex <span className="text-red-500">*</span>
                   </Label>
-                  <select
-                    id="sex"
+                  <Select
                     value={sex}
-                    onChange={(e) => setSex(e.target.value as "male" | "female" | "")}
-                    className="h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-sm font-medium focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    onValueChange={(val) => setSex(val as "male" | "female")}
                   >
-                    <option value="">Select Sex</option>
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                  </select>
+                    <SelectTrigger className="h-10 w-full rounded-xl border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-900 shadow-2xs focus-visible:border-emerald-600 focus-visible:ring-emerald-500/20">
+                      <SelectValue placeholder="Select Sex" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-neutral-200 bg-white shadow-xl">
+                      <SelectItem value="female" showCheckmark>
+                        Female
+                      </SelectItem>
+                      <SelectItem value="male" showCheckmark>
+                        Male
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-1">
@@ -265,7 +278,7 @@ export function HouseholdMemberDialog({
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="relationship" className="text-xs font-bold text-neutral-800">
+                  <Label className="text-xs font-bold text-neutral-800">
                     Relationship to Head <span className="text-red-500">*</span>
                   </Label>
                   {member?.is_head ? (
@@ -273,19 +286,21 @@ export function HouseholdMemberDialog({
                       Household Head
                     </div>
                   ) : (
-                    <select
-                      id="relationship"
+                    <Select
                       value={relationship}
-                      onChange={(e) => setRelationship(e.target.value)}
-                      className="h-10 w-full rounded-xl border border-neutral-200 bg-white px-3 text-sm font-medium focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                      onValueChange={(val) => setRelationship(val)}
                     >
-                      <option value="">Select Relationship</option>
-                      {RELATIONSHIPS.map((rel) => (
-                        <option key={rel} value={rel}>
-                          {rel}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="h-10 w-full rounded-xl border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-900 shadow-2xs focus-visible:border-emerald-600 focus-visible:ring-emerald-500/20">
+                        <SelectValue placeholder="Select Relationship" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-neutral-200 bg-white shadow-xl">
+                        {RELATIONSHIPS.map((rel) => (
+                          <SelectItem key={rel} value={rel} showCheckmark>
+                            {rel}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
                 </div>
               </div>
