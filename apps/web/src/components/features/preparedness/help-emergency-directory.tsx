@@ -108,71 +108,65 @@ export function HelpEmergencyDirectory({ hotlines }: HelpEmergencyDirectoryProps
 
   return (
     <div className="space-y-4 min-w-0">
-      {/* Header Row: Eyebrow + Title (No 'Hotlines') + Filter Select */}
-      <div className="flex flex-col gap-2.5">
+      {/* Header Row: In an emergency + Filter Select */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary-50 text-primary-700 border-primary-100/80 shadow-sm-card border">
-            <Phone aria-hidden className="size-5" strokeWidth={2} />
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary-50 text-primary-700 border-primary-100/80 shadow-sm-card border">
+            <Phone aria-hidden className="size-4.5" strokeWidth={2} />
           </span>
           <span className="text-overline font-bold tracking-wider text-primary-700">
             In an emergency
           </span>
         </div>
 
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <h3 className="text-h1 sm:text-display-md tracking-tight font-extrabold text-neutral-900">
-            Emergency
-          </h3>
-
-          {/* Custom Filter Dropdown matching announcements & donation drives pattern */}
-          <div className="shrink-0">
-            <Select
-              value={selectedCategory}
-              onValueChange={(val) => setSelectedCategory(val as FilterCategory)}
+        {/* Custom Filter Dropdown matching announcements & donation drives pattern */}
+        <div className="shrink-0">
+          <Select
+            value={selectedCategory}
+            onValueChange={(val) => setSelectedCategory(val as FilterCategory)}
+          >
+            <SelectTrigger className="inline-flex h-9 w-fit items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all cursor-pointer">
+              <Filter aria-hidden className="size-3.5 text-emerald-600 shrink-0" />
+              <SelectValue placeholder="Filter category">
+                {activeOption.label}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              align="end"
+              sideOffset={6}
+              className="z-50 w-60 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md"
             >
-              <SelectTrigger className="inline-flex h-9 w-fit items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all cursor-pointer">
-                <Filter aria-hidden className="size-3.5 text-emerald-600 shrink-0" />
-                <SelectValue placeholder="Filter category">
-                  {activeOption.label}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                align="end"
-                sideOffset={6}
-                className="z-50 w-60 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md"
-              >
-                {FILTER_CATEGORIES.map((option) => {
-                  const isSelected = selectedCategory === option.value;
-                  const count = counts[option.value];
-                  return (
-                    <SelectItem
-                      key={option.value}
-                      value={option.value}
+              {FILTER_CATEGORIES.map((option) => {
+                const isSelected = selectedCategory === option.value;
+                const count = counts[option.value];
+                return (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className={cn(
+                      "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer my-0.5",
+                      isSelected
+                        ? "bg-emerald-600 text-white font-bold focus:bg-emerald-600 focus:text-white"
+                        : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950",
+                    )}
+                  >
+                    <span>{option.label}</span>
+                    <span
                       className={cn(
-                        "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer my-0.5",
+                        "ml-2 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold",
                         isSelected
-                          ? "bg-emerald-600 text-white font-bold focus:bg-emerald-600 focus:text-white"
-                          : "text-neutral-700 hover:bg-emerald-50 hover:text-emerald-950 focus:bg-emerald-50 focus:text-emerald-950",
+                          ? "bg-white/20 text-white"
+                          : "bg-neutral-100 text-neutral-500",
                       )}
                     >
-                      <span>{option.label}</span>
-                      <span
-                        className={cn(
-                          "ml-2 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold",
-                          isSelected
-                            ? "bg-white/20 text-white"
-                            : "bg-neutral-100 text-neutral-500",
-                        )}
-                      >
-                        {count}
-                      </span>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
+                      {count}
+                    </span>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
