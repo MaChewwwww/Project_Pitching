@@ -309,8 +309,8 @@ function MapSelectionFlyTo({
 
 function createBoundaryLabelIcon() {
   return L.divIcon({
-    className: "san-jose-boundary-badge-container",
-    html: `<div class="bg-white text-slate-900 border border-slate-300 shadow-md px-3.5 py-1 rounded-full font-bold text-[11px] whitespace-nowrap flex items-center justify-center cursor-pointer hover:border-emerald-500 hover:text-emerald-700 transition-all hover:scale-105">Barangay San Jose Boundary</div>`,
+    className: "san-jose-boundary-badge-container pointer-events-none",
+    html: `<div class="bg-white text-slate-900 border border-slate-300 shadow-md px-3.5 py-1 rounded-full font-bold text-[11px] whitespace-nowrap flex items-center justify-center pointer-events-none">Barangay San Jose Boundary</div>`,
     iconSize: [210, 28],
     iconAnchor: [105, 52],
   });
@@ -443,7 +443,6 @@ export function AdminAssetWorkspaceMap({
   className,
 }: AdminAssetWorkspaceMapProps) {
   const [legendExpanded, setLegendExpanded] = React.useState(true);
-  const [showBoundaryModal, setShowBoundaryModal] = React.useState(false);
   const hazard = useHazardGeoJson(showHazard);
 
   const hasEvac = items.some((i) => i.category === "evacuation_center");
@@ -516,31 +515,8 @@ export function AdminAssetWorkspaceMap({
         <GeoJSON
           data={SAN_JOSE_OUTER_BOUNDARY_GEOJSON as GeoJSON.GeoJsonObject}
           pane="topBoundaryPane"
-          interactive={true}
-          style={() => ({
-            ...BOUNDARY_LINE_STYLE,
-            className: "cursor-pointer hover:stroke-emerald-400",
-          })}
-          onEachFeature={(_feature, layer) => {
-            layer.on({
-              mouseover: (e) => {
-                const l = e.target as L.Path;
-                l.setStyle({
-                  color: "#34d399",
-                  weight: 5.5,
-                  dashArray: "12, 6",
-                  opacity: 1,
-                });
-              },
-              mouseout: (e) => {
-                const l = e.target as L.Path;
-                l.setStyle(BOUNDARY_LINE_STYLE);
-              },
-              click: () => {
-                setShowBoundaryModal(true);
-              },
-            });
-          }}
+          interactive={false}
+          style={() => BOUNDARY_LINE_STYLE}
         />
 
         {/* Barangay San Jose Boundary Marker Badge */}
@@ -548,9 +524,6 @@ export function AdminAssetWorkspaceMap({
           position={[14.7615, 121.133]}
           icon={createBoundaryLabelIcon()}
           pane="topBoundaryPane"
-          eventHandlers={{
-            click: () => setShowBoundaryModal(true),
-          }}
         />
 
         {/* Acoustic Coverage Circles for Sirens */}
@@ -861,17 +834,8 @@ export function AdminAssetWorkspaceMap({
                 </p>
                 <ul className="flex flex-col gap-1.5">
                   <li className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowBoundaryModal(true)}
-                      className="inline-flex items-center gap-1.5 text-left text-emerald-300 hover:text-emerald-100 transition-colors group cursor-pointer"
-                      title="View boundary notes"
-                    >
-                      <span className="h-0.5 w-4 shrink-0 bg-emerald-400 border-b border-dashed border-emerald-300 group-hover:bg-emerald-200" />
-                      <span className="underline decoration-emerald-500/50 underline-offset-2 font-medium">
-                        San Jose Boundary
-                      </span>
-                    </button>
+                    <span className="w-5 border-b-[3px] border-dashed border-emerald-400 shrink-0" />
+                    <span className="text-emerald-100/90 text-xs">San Jose Boundary</span>
                   </li>
                   {showAreas && (
                     <li className="flex items-center gap-2">
@@ -1034,72 +998,6 @@ export function AdminAssetWorkspaceMap({
           </div>
         </div>
       )}
-
-      {/* -------------------------------------------------------------------- */}
-      {/* Barangay San Jose Boundary Overview Modal                            */}
-      {/* -------------------------------------------------------------------- */}
-      <Dialog open={showBoundaryModal} onOpenChange={setShowBoundaryModal}>
-        <DialogContent className="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl">
-          <DialogHeader className="border-b border-slate-100 bg-emerald-950 p-5 text-white">
-            <div className="flex items-center gap-2">
-              <Badge tone="onDark" outline className="border-emerald-500/50 bg-emerald-900/50 text-emerald-200">
-                Municipality of Rodriguez (Montalban), Rizal
-              </Badge>
-            </div>
-            <DialogTitle className="mt-2 flex items-center gap-2 text-xl font-bold text-white">
-              <Shield className="size-5 text-emerald-400 shrink-0" />
-              Barangay San Jose Boundary & GIS Assets
-            </DialogTitle>
-            <DialogDescription className="text-xs text-emerald-200/80">
-              Administrative boundary and spatial operational overview for disaster readiness and response.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex flex-col gap-4 p-5 text-sm">
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
-                  Jurisdiction
-                </p>
-                <p className="mt-1 font-bold text-slate-900">San Jose</p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
-                  Barangay Areas
-                </p>
-                <p className="mt-1 font-bold text-slate-900">6 Areas</p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
-                  Mapped Assets
-                </p>
-                <p className="mt-1 font-bold text-emerald-700">{items.length} Units</p>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3.5 text-xs text-emerald-950">
-              <p className="font-semibold text-emerald-900">
-                Official Disaster Risk & Operations Boundary
-              </p>
-              <p className="mt-1 leading-relaxed text-emerald-800">
-                All coordinates and facilities are tracked within the official PSGC
-                boundary for Barangay San Jose. Flood depth layers reflect verified 5-year return
-                period simulations produced by UP NOAH.
-              </p>
-            </div>
-
-            <div className="border-t border-slate-100 pt-3 text-right">
-              <button
-                type="button"
-                onClick={() => setShowBoundaryModal(false)}
-                className="rounded-lg bg-emerald-800 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition"
-              >
-                Close Overview
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

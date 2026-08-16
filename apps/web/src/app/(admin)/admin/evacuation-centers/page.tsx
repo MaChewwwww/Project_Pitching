@@ -501,7 +501,7 @@ export default function AdminEvacuationCentersPage() {
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
             <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
               <Layers className="size-3.5 text-emerald-400" aria-hidden />
-              GIS Overlays
+              Map Overlays
             </p>
             <div className="flex flex-col gap-2">
               <LayerCheckbox
