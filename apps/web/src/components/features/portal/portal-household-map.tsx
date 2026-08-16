@@ -62,32 +62,10 @@ export function PortalHouseholdMap({
         />
       </div>
 
-      {/* Map Controls & Legend Strip Footer */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 bg-white px-4 py-3 text-xs">
-        {/* Left: Hazard Color Legend */}
-        <div
-          className={cn(
-            "flex flex-wrap items-center gap-x-4 gap-y-1.5 transition-opacity",
-            !showHazardLayer && "opacity-40",
-          )}
-        >
-          <span className="font-bold text-neutral-500 uppercase tracking-wider text-[10px]">
-            Flood Hazard:
-          </span>
-          {HAZARD_LEVELS.map((level) => (
-            <div key={level.level} className="flex items-center gap-1.5 text-xs text-neutral-700">
-              <span
-                className="size-2.5 rounded-xs shrink-0 ring-1 ring-black/10"
-                style={{ backgroundColor: level.color }}
-              />
-              <span className="font-medium">{level.label}</span>
-              <span className="text-[10px] text-neutral-400">({level.depth})</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Right: Toggle Flood Hazard Checkbox */}
-        <label className="inline-flex cursor-pointer select-none items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50/80 px-2.5 py-1 text-xs font-bold text-neutral-800 shadow-2xs transition-colors hover:bg-emerald-50 hover:border-emerald-200">
+      {/* Map Controls & Legend Strip Footer (Single Row) */}
+      <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2 border-t border-neutral-100 bg-white px-3.5 py-2.5 text-xs">
+        {/* Toggle Checkbox */}
+        <label className="inline-flex cursor-pointer select-none items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1 text-xs font-bold text-neutral-800 shadow-2xs transition-colors hover:bg-emerald-50 hover:border-emerald-200 shrink-0">
           <input
             type="checkbox"
             checked={showHazardLayer}
@@ -99,6 +77,25 @@ export function PortalHouseholdMap({
             <span>Flood Hazard Layer</span>
           </span>
         </label>
+
+        {/* Hazard Color Legend (in same row, no redundant label) */}
+        <div
+          className={cn(
+            "flex flex-wrap items-center gap-x-3 gap-y-1 transition-opacity",
+            !showHazardLayer && "opacity-35",
+          )}
+        >
+          {HAZARD_LEVELS.map((level) => (
+            <div key={level.level} className="flex items-center gap-1.5 text-xs text-neutral-700">
+              <span
+                className="size-2.5 rounded-xs shrink-0 ring-1 ring-black/10"
+                style={{ backgroundColor: level.color }}
+              />
+              <span className="font-semibold text-neutral-800 text-[11px]">{level.label}</span>
+              <span className="text-[10px] text-neutral-400">({level.depth})</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

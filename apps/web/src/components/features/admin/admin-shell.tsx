@@ -7,6 +7,7 @@ import { ChevronDown, ChevronRight, ExternalLink, LogOut, Menu } from "lucide-re
 
 import { LogoLockup } from "@/components/common/logo";
 import { AdminBreadcrumbs } from "@/components/features/admin/admin-breadcrumbs";
+import { AdminNotificationsPopover } from "@/components/features/admin/admin-notifications-popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -246,23 +247,36 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         <ConsoleNav />
 
-        <div className="border-t border-white/10 p-3">
-          <Link
-            href="/"
-            target="_blank"
-            rel="noreferrer"
-            className="text-primary-200 flex items-center gap-2.5 rounded px-2.5 py-2 text-xs font-medium transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <ExternalLink aria-hidden className="size-3.5 shrink-0" />
-            View public site
-          </Link>
+        <div className="mt-auto border-t border-white/10 p-3 bg-primary-950/80">
+          <div className="grid grid-cols-2 gap-1 text-[11px]">
+            <Link
+              href="/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-semibold text-emerald-200 hover:bg-white/10 hover:text-white transition-colors"
+            >
+              <ExternalLink className="size-3" />
+              Public Site
+            </Link>
+            <button
+              type="button"
+              onClick={() => void logout()}
+              className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-semibold text-rose-300 hover:bg-rose-950/50 hover:text-rose-200 transition-colors cursor-pointer"
+            >
+              <LogOut className="size-3" />
+              Sign Out
+            </button>
+          </div>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 hidden h-14 items-center justify-between gap-4 border-b border-neutral-200 bg-white/95 px-6 backdrop-blur lg:flex xl:px-8">
           <AdminBreadcrumbs />
-          <ConsoleProfileMenu user={user} onLogout={logout} />
+          <div className="flex items-center gap-3">
+            <AdminNotificationsPopover />
+            <ConsoleProfileMenu user={user} onLogout={logout} />
+          </div>
         </header>
 
         <header className="bg-primary-950 sticky top-0 z-20 flex h-14 items-center justify-between gap-2 px-4 text-white lg:hidden">
@@ -287,11 +301,35 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   <span className="text-body-sm font-bold text-white">SAGIP-SJ</span>
                 </div>
                 <ConsoleNav onNavigate={() => setMobileNavOpen(false)} />
+                <div className="mt-auto border-t border-white/10 p-3 bg-primary-950/80">
+                  <div className="grid grid-cols-2 gap-1 text-[11px]">
+                    <Link
+                      href="/"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-semibold text-emerald-200 hover:bg-white/10 hover:text-white transition-colors"
+                    >
+                      <ExternalLink className="size-3" />
+                      Public Site
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => void logout()}
+                      className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-semibold text-rose-300 hover:bg-rose-950/50 hover:text-rose-200 transition-colors cursor-pointer"
+                    >
+                      <LogOut className="size-3" />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
               </SheetContent>
             </Sheet>
             <LogoLockup size={32} variant="mark" onDark />
           </div>
-          <ConsoleProfileMenu user={user} onLogout={logout} compact />
+          <div className="flex items-center gap-2">
+            <AdminNotificationsPopover compact />
+            <ConsoleProfileMenu user={user} onLogout={logout} compact />
+          </div>
         </header>
 
         <div className="border-b border-neutral-200 bg-white px-4 py-2 lg:hidden">
