@@ -28,6 +28,35 @@ async def test_admin_can_delete_an_activity_and_its_public_slug_disappears(admin
     assert public.status_code == 404
 
 
+async def test_published_article_creation_requires_media_before_publication(admin_client):
+    article = await admin_client.post(
+        "/api/v1/admin/announcements",
+        json={
+            "kind": "announcement",
+            "type": "general",
+            "title": "Cover required announcement",
+            "excerpt": "This should remain unpublished without media.",
+            "body_json": {"type": "doc", "content": []},
+            "is_barangay_wide": True,
+            "publication_status": "published",
+        },
+    )
+    assert article.status_code == 409
+
+    drive = await admin_client.post(
+        "/api/v1/admin/donation-drives",
+        json={
+            "title": "Cover required donation drive",
+            "excerpt": "This should remain unpublished without media.",
+            "body_json": {"type": "doc", "content": []},
+            "organizer_name": "Barangay San Jose Relief Desk",
+            "organizer_contact": "(02) 8555-0100",
+            "publication_status": "published",
+        },
+    )
+    assert drive.status_code == 409
+
+
 async def test_admin_guides_expose_real_publication_state_and_review_date(admin_client):
     listing = await admin_client.get("/api/v1/admin/guides")
     assert listing.status_code == 200

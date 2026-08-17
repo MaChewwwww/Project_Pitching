@@ -198,6 +198,11 @@ React Hook Form + Zod validation with local image items, preview visibility, and
 confirmation. The route page owns the server mutation and navigation; edit injects
 `ArticleImageManager` for persisted upload, cover, reorder, and remove operations.
 
+`RichTextEditor` must keep its Tiptap schema aligned with the API allow-list. StarterKit includes
+additional marks and nodes by default, so create and edit forms explicitly disable unsupported
+formatting; otherwise pasted strikethrough, code, hard breaks, or rules can reach the API as a
+valid editor document but fail server validation.
+
 Publication status is one of `draft`, `published`, or `archived`. The form mirrors the server's
 publication checks (for example, alert instructions and the required cover), but the API remains
 authoritative and enforces them server-side. After any admin mutation, invalidate the affected

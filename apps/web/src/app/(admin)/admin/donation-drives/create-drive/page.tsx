@@ -38,6 +38,24 @@ const defaults: DonationDriveFormValues = {
   event_id: null,
 };
 
+function donationDrivePayload(
+  values: DonationDriveFormValues,
+  publicationStatus: DonationDriveFormValues["publication_status"],
+) {
+  return {
+    ...values,
+    publication_status: publicationStatus,
+    organizer_name: values.organizer_name || null,
+    organizer_contact: values.organizer_contact || null,
+    drop_off_instructions: values.drop_off_instructions || null,
+    active_from: values.active_from ? new Date(values.active_from).toISOString() : null,
+    active_until: values.active_until
+      ? new Date(values.active_until).toISOString()
+      : null,
+    event_id: values.event_id || null,
+  };
+}
+
 export default function CreateDonationDrivePage() {
   useRequireRole("admin", "sk");
   const router = useRouter();
@@ -62,16 +80,14 @@ export default function CreateDonationDrivePage() {
       values: DonationDriveFormValues;
       imageItems: ImageFileItem[];
     }) => {
-      // 1. Create drive
-      const res = await api.post<{ id: string }>("/admin/donation-drives", {
-        ...values,
-        organizer_name: values.organizer_name || null,
-        organizer_contact: values.organizer_contact || null,
-        drop_off_instructions: values.drop_off_instructions || null,
-        active_from: values.active_from ? new Date(values.active_from).toISOString() : null,
-        active_until: values.active_until ? new Date(values.active_until).toISOString() : null,
-        event_id: values.event_id || null,
-      });
+      const requestedStatus = values.publication_status;
+      // A published article needs a cover, but media uploads need an article ID.
+      // Stage a publish request as a draft, upload media, then publish it.
+      const createStatus = requestedStatus === "published" ? "draft" : requestedStatus;
+      const res = await api.post<{ id: string }>(
+        "/admin/donation-drives",
+        donationDrivePayload(values, createStatus),
+      );
       const id = res.data.id;
 
       // 2. Upload images sequentially
@@ -96,10 +112,21 @@ export default function CreateDonationDrivePage() {
         }
       }
 
-      return res.data;
+      if (requestedStatus === "published") {
+        await api.patch(
+          `/admin/donation-drives/${id}`,
+          donationDrivePayload(values, "published"),
+        );
+      }
+
+      return { ...res.data, publication_status: requestedStatus };
     },
-    onSuccess: () => {
-      toast.success("Donation drive published successfully!");
+    onSuccess: (response) => {
+      toast.success(
+        response.publication_status === "published"
+          ? "Donation drive published successfully!"
+          : "Donation drive draft saved.",
+      );
       queryClient.invalidateQueries({ queryKey: ["admin", "donation-drives"] });
       router.push("/admin/donation-drives");
     },

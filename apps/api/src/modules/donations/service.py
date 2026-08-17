@@ -193,6 +193,8 @@ async def create_donation_drive(
     )
     session.add(drive)
     await session.flush()
+    if data.publication_status == "published":
+        _ensure_publishable([])
     await write_audit(
         session,
         actor_user_id=actor_id,

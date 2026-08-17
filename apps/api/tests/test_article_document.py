@@ -58,6 +58,21 @@ def test_accepts_the_editor_document_subset() -> None:
                 }
             ],
         },
+        {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Unsupported formatting",
+                            "marks": [{"type": "strike"}],
+                        }
+                    ],
+                }
+            ],
+        },
     ],
 )
 def test_rejects_nodes_and_links_outside_the_allow_list(document: dict[str, object]) -> None:

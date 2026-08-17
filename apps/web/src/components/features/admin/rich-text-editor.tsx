@@ -74,7 +74,19 @@ export function RichTextEditor({
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit.configure({ heading: { levels: [2, 3] } }),
+      // StarterKit enables more than the article API allow-list by default.
+      // Disable those schema extensions so pasted formatting (for example,
+      // strikethrough) cannot produce a document the server must reject.
+      StarterKit.configure({
+        code: false,
+        codeBlock: false,
+        hardBreak: false,
+        heading: { levels: [2, 3] },
+        horizontalRule: false,
+        link: false,
+        strike: false,
+        underline: false,
+      }),
       Link.configure({ openOnClick: false, protocols: ["http", "https"] }),
     ],
     content: value,
@@ -112,7 +124,12 @@ export function RichTextEditor({
     const hasSelection = from !== to;
 
     if (hasSelection) {
-      editor.chain().focus().extendMarkRange("link").setLink({ href: formattedUrl }).run();
+      editor
+        .chain()
+        .focus()
+        .extendMarkRange("link")
+        .setLink({ href: formattedUrl })
+        .run();
     } else {
       const displayText = linkText.trim() || formattedUrl;
       editor
@@ -131,7 +148,7 @@ export function RichTextEditor({
   };
 
   return (
-    <div className="focus-within:ring-emerald-600/30 overflow-hidden rounded-lg border border-emerald-200/80 bg-white focus-within:ring-2 shadow-2xs">
+    <div className="overflow-hidden rounded-lg border border-emerald-200/80 bg-white shadow-2xs focus-within:ring-2 focus-within:ring-emerald-600/30">
       <div className="flex flex-wrap gap-1 border-b border-neutral-200 bg-neutral-50 p-1.5">
         <ToolButton
           label="Bold"
@@ -182,7 +199,11 @@ export function RichTextEditor({
         >
           <Quote className="size-4" />
         </ToolButton>
-        <ToolButton label="Insert / Edit Link" active={editor.isActive("link")} onClick={openLinkDialog}>
+        <ToolButton
+          label="Insert / Edit Link"
+          active={editor.isActive("link")}
+          onClick={openLinkDialog}
+        >
           <Link2 className="size-4" />
         </ToolButton>
       </div>
@@ -190,9 +211,9 @@ export function RichTextEditor({
 
       {/* Custom Link Modal */}
       <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
-        <DialogContent className="sm:max-w-md rounded-2xl p-6 bg-white border border-neutral-200 shadow-xl">
+        <DialogContent className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-neutral-900 flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-neutral-900">
               <Link2 className="size-4 text-emerald-600" />
               <span>Insert / Edit Hyperlink</span>
             </DialogTitle>
@@ -217,26 +238,26 @@ export function RichTextEditor({
 
             <div className="space-y-1.5">
               <Label htmlFor="link-url" className="text-xs font-bold text-neutral-700">
-                Destination URL <span className="text-red-500 font-bold">*</span>
+                Destination URL <span className="font-bold text-red-500">*</span>
               </Label>
               <Input
                 id="link-url"
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
                 placeholder="https://example.com"
-                className="h-10 rounded-xl text-sm font-mono"
+                className="h-10 rounded-xl font-mono text-sm"
               />
             </div>
           </div>
 
-          <DialogFooter className="flex flex-row items-center justify-between sm:justify-between gap-2 pt-2 border-t border-neutral-100">
+          <DialogFooter className="flex flex-row items-center justify-between gap-2 border-t border-neutral-100 pt-2 sm:justify-between">
             {editor.isActive("link") ? (
               <Button
                 type="button"
                 variant="danger"
                 size="sm"
                 onClick={handleUnlink}
-                className="h-9 rounded-xl px-3 gap-1.5 text-xs font-semibold cursor-pointer"
+                className="h-9 cursor-pointer gap-1.5 rounded-xl px-3 text-xs font-semibold"
               >
                 <Unlink className="size-3.5" />
                 <span>Remove Link</span>
@@ -251,7 +272,7 @@ export function RichTextEditor({
                 variant="outline"
                 size="sm"
                 onClick={() => setLinkDialogOpen(false)}
-                className="h-9 rounded-xl text-xs font-semibold cursor-pointer"
+                className="h-9 cursor-pointer rounded-xl text-xs font-semibold"
               >
                 Cancel
               </Button>
@@ -259,7 +280,7 @@ export function RichTextEditor({
                 type="button"
                 size="sm"
                 onClick={handleApplyLink}
-                className="h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer px-4 shadow-sm"
+                className="h-9 cursor-pointer rounded-xl bg-emerald-600 px-4 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
               >
                 Apply Link
               </Button>

@@ -27,6 +27,18 @@ const defaults: AnnouncementFormValues = {
   publication_status: "published",
 };
 
+function announcementPayload(
+  values: AnnouncementFormValues,
+  publicationStatus: AnnouncementFormValues["publication_status"],
+) {
+  return {
+    ...values,
+    publication_status: publicationStatus,
+    instruction: values.instruction || null,
+    severity: values.severity || null,
+  };
+}
+
 export default function CreateAnnouncementPage() {
   useRequireRole("admin", "sk");
   const router = useRouter();
@@ -53,12 +65,14 @@ export default function CreateAnnouncementPage() {
       values: AnnouncementFormValues;
       imageItems: ImageFileItem[];
     }) => {
-      // 1. Create announcement
-      const res = await api.post<{ id: string }>("/admin/announcements", {
-        ...values,
-        instruction: values.instruction || null,
-        severity: values.severity || null,
-      });
+      const requestedStatus = values.publication_status;
+      // A published article needs a cover, but media uploads need an article ID.
+      // Stage a publish request as a draft, upload media, then publish it.
+      const createStatus = requestedStatus === "published" ? "draft" : requestedStatus;
+      const res = await api.post<{ id: string }>(
+        "/admin/announcements",
+        announcementPayload(values, createStatus),
+      );
       const id = res.data.id;
 
       // 2. Upload images sequentially
@@ -86,10 +100,21 @@ export default function CreateAnnouncementPage() {
         }
       }
 
-      return res.data;
+      if (requestedStatus === "published") {
+        await api.patch(
+          `/admin/announcements/${id}`,
+          announcementPayload(values, "published"),
+        );
+      }
+
+      return { ...res.data, publication_status: requestedStatus };
     },
-    onSuccess: () => {
-      toast.success("Announcement published successfully!");
+    onSuccess: (response) => {
+      toast.success(
+        response.publication_status === "published"
+          ? "Announcement published successfully!"
+          : "Announcement draft saved.",
+      );
       client.invalidateQueries({ queryKey: ["admin", "announcements"] });
       router.push("/admin/announcements");
     },
