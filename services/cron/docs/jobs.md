@@ -78,6 +78,12 @@ upstream gauge stays quiet.
 
 There is no public API; the FFWS publishes through a page meant for humans.
 
+The JSON endpoint must receive the `ymdhm` query parameter. It returns a station
+list with `wl: null` when that parameter is omitted, even though the HTTP
+request succeeds. PAGASA publishes ten-minute observation slots, so the adapter
+requests the latest completed slot. Reported levels may carry the display-only
+`(*)` marker; the adapter strips that marker before storing the numeric value.
+
 - Identify the user agent. Do not pretend to be a browser.
 - Never poll faster than every 10 minutes.
 - Back off on errors rather than retrying tightly.

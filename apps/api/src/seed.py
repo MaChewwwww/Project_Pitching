@@ -4,18 +4,18 @@ Reference data is loaded by migration, not at runtime (NFR-DAT-007); this module
 handles the *demo* dataset instead: synthetic content and households, everything
 marked or clearly identifiable as such (NFR-DAT-006, NFR-PRV-007).
 
-It exists so the public site reads identically the morning after the fixture→API
-swap as it did the night before — every row below is a direct transcription of
-`apps/web/src/lib/fixtures/*.ts`, same copy, same shape.
+It provides the curated demo content shown by the public site.
 
-**Idempotent.** Each section checks whether its table already has rows and skips
-if so, so `make seed` twice is harmless. This is not run automatically anywhere
-(AGENTS.md Section 1) — it is an explicit command, same as a migration but never
-confused with one: this is throwaway demo content, not schema.
+**Idempotent by default.** Each section checks whether its table already has rows
+and skips if so, so normal application startup is harmless. The explicit
+`--replace-public-content` option refreshes only public articles by deleting
+activities, announcements, donation notices, and their media before inserting
+this curated set. It is throwaway demo content, not schema.
 """
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import logging
 import random
@@ -23,7 +23,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from shutil import copyfile
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, select
 
 from src.core.config import settings
 from src.core.logging import configure_logging
@@ -38,14 +38,19 @@ from src.db.models_registry import Base  # noqa: F401
 from src.db.session import SessionLocal, engine
 from src.domain.article_document import plain_text_document, slug_base
 from src.modules.activities.models import Activity, ActivityImage
-from src.modules.alerts.models import Announcement, AnnouncementArea, AnnouncementImage
+from src.modules.alerts.models import Announcement, AnnouncementImage
 from src.modules.donations.models import DonationDrive, DonationDriveImage
 from src.modules.evacuation.models import EmergencyEvent, EvacCenter
-from src.modules.geo.models import Area, Facility, Hotline
+from src.modules.geo.models import Area, Facility, Hotline, Siren
 from src.modules.preparedness.models import Faq, Guide
 from src.modules.registry.models import Household, Member
 from src.modules.registry.reference import format_household_number
-from src.modules.safety.models import IncidentReport, RescueRequest, UnregisteredPerson
+from src.modules.safety.models import (
+    IncidentReport,
+    RescueRequest,
+    SafetyStatus,
+    UnregisteredPerson,
+)
 from src.modules.users.models import User, UserArea
 from src.modules.weather.models import FloodEvent, FloodEventArea, Forecast, Reading
 
@@ -734,7 +739,6 @@ FAQ_DEFS = [
         "Registration",
         4,
     ),
-
     # 2. Emergencies
     (
         "Saan ang pinakamalapit na evacuation center?",
@@ -776,7 +780,6 @@ FAQ_DEFS = [
         "Emergencies",
         9,
     ),
-
     # 3. Preparedness
     (
         "Ano ang dapat na laman ng aking Go Bag?",
@@ -802,7 +805,6 @@ FAQ_DEFS = [
         "Preparedness",
         12,
     ),
-
     # 4. Evacuation & Assistance
     (
         "Paano ko malalaman kung may bakanteng espasyo pa sa isang evacuation center?",
@@ -828,7 +830,6 @@ FAQ_DEFS = [
         "Evacuation & Assistance",
         15,
     ),
-
     # 5. Community
     (
         "Saan ko makikita ang mga paparating na aktibidad ng barangay?",
@@ -846,7 +847,6 @@ FAQ_DEFS = [
         "Community",
         17,
     ),
-
     # 6. Donations
     (
         "Paano ako makakapag-donate o makapagbibigay ng donasyon?",
@@ -856,7 +856,6 @@ FAQ_DEFS = [
         "Donations",
         18,
     ),
-
     # 7. Using the Website
     (
         "Kailangan ko ba ng account para magamit ang website?",
@@ -898,7 +897,6 @@ FAQ_DEFS = [
         "Using the Website",
         23,
     ),
-
     # 8. Alerts & Notifications
     (
         "Paano ako makakatanggap ng mga alerto mula sa website?",
@@ -924,7 +922,6 @@ FAQ_DEFS = [
         "Alerts & Notifications",
         26,
     ),
-
     # 9. Profile & Privacy
     (
         "Makikita ba ng lahat ang impormasyon ng aking pamilya?",
@@ -950,7 +947,6 @@ FAQ_DEFS = [
         "Profile & Privacy",
         29,
     ),
-
     # 10. Website Help
     (
         "Ano ang dapat kong gawin kung hindi gumagana ang isang pahina o feature?",
@@ -1005,49 +1001,35 @@ async def seed_faqs(session) -> None:
     log.info("seeded faqs", extra={"count": len(FAQ_DEFS)})
 
 
-# --- activities (fixtures/activities.ts) ---------------------------------------
+# --- activities ---------------------------------------------------------------
 
 ACTIVITY_DEFS = [
     (
-        "Barangay-wide Earthquake Drill",
-        "drill",
-        "A simultaneous Duck, Cover and Hold drill across all puroks, followed by an evacuation "
-        "walkthrough.",
-        4,
-        "All puroks — assembly at Phase 1B Covered Court, Kasiglahan Village",
-        None,
-    ),
-    (
-        "Basic First Aid and CPR Training",
-        "first_aid",
-        "Hands-on session run by the Philippine Red Cross. Limited to 40 participants.",
-        9,
-        "Barangay San Jose Hall, Session Room",
-        None,
-    ),
-    (
-        "Riverbank Clean-Up Drive",
+        "Operation Stripes: San Jose Tigers Youth in Action",
         "cleanup",
-        "Clearing debris from the drainage channels before the next heavy rainfall.",
-        13,
-        "Riverside Road, Purok 2 to Purok 6",
-        "Area 1",
-    ),
-    (
-        "Disaster Preparedness Seminar for Households",
-        "seminar",
-        "Go Bag preparation, evacuation routes, and how the barangay alert levels work.",
-        18,
-        "San Jose Elementary School, Covered Court",
+        "Youth volunteers cleared storm debris and waste in Pag-Asa Village, Kasiglahan Village, helping restore a cleaner and safer community after recent flooding.",
+        datetime(2026, 8, 1, 8, tzinfo=UTC),
+        datetime(2026, 8, 1, 12, tzinfo=UTC),
+        "Pag-Asa Village, Kasiglahan Village",
         None,
     ),
     (
-        "Tree Planting along the Riverbank",
-        "tree_planting",
-        "Bamboo and native species planting to slow erosion along the riverbank.",
-        24,
-        "Riverbank, Purok 6",
-        "Area 6",
+        "Project Kabuhay: Kabataan para sa Buhay at Hanapbuhay",
+        "ngo_program",
+        "A Linggo ng Kabataan 2026 workshop on perfume and coffee making that equipped young people with practical livelihood and entrepreneurship skills.",
+        datetime(2026, 8, 8, 9, tzinfo=UTC),
+        datetime(2026, 8, 8, 16, tzinfo=UTC),
+        "Barangay San Jose Covered Court",
+        None,
+    ),
+    (
+        "Training on Basic Life Support and Standard First Aid for Health Workers",
+        "first_aid",
+        "The Municipal Health Office and Philippine Red Cross – Rizal Chapter led a four-day training to strengthen health workers’ emergency and disaster-response skills.",
+        datetime(2026, 7, 21, 8, tzinfo=UTC),
+        datetime(2026, 7, 24, 17, tzinfo=UTC),
+        "Municipal Health Office",
+        None,
     ),
 ]
 
@@ -1056,7 +1038,7 @@ async def seed_activities(session, areas: dict[str, Area], users: dict[str, User
     if await _table_has_rows(session, Activity):
         return
     creator = users["Admin Demo"]
-    for title, type_, description, days_ahead, venue, area_name in ACTIVITY_DEFS:
+    for title, type_, description, starts_at, ends_at, venue, area_name in ACTIVITY_DEFS:
         session.add(
             Activity(
                 title=title,
@@ -1065,9 +1047,9 @@ async def seed_activities(session, areas: dict[str, Area], users: dict[str, User
                 excerpt=description,
                 body_json=plain_text_document(description),
                 publication_status="published",
-                published_at=_now(),
-                starts_at=_now() + timedelta(days=days_ahead),
-                ends_at=_now() + timedelta(days=days_ahead, hours=3),
+                published_at=starts_at,
+                starts_at=starts_at,
+                ends_at=ends_at,
                 venue=venue,
                 area_id=areas[area_name].id if area_name else None,
                 created_by_user_id=creator.id,
@@ -1076,124 +1058,43 @@ async def seed_activities(session, areas: dict[str, Area], users: dict[str, User
     log.info("seeded activities", extra={"count": len(ACTIVITY_DEFS)})
 
 
-# --- announcements (fixtures/announcements.ts) ---------------------------------
+# --- announcements ------------------------------------------------------------
 
 ANNOUNCEMENT_DEFS = [
-    (
-        "alert",
-        "flood_warning",
-        "emergency",
-        "Alert Level 2 — Evacuate riverside areas now",
-        "The river has risen past the Level 2 threshold and continues to climb. Residents in "
-        "Areas 1 and 2 must move to an evacuation centre now.",
-        # Both centres named here must be ones that actually exist and sit in the
-        # areas this announcement targets (Areas 1 and 2) — directing evacuees to
-        # a centre in another area, or to one no longer in the registry, is the
-        # kind of detail that gets someone hurt.
-        "Go to San Jose Litex Senior High School or Rodriguez Heights Elementary School now. "
-        "Bring your Go Bag, IDs, and medication.",
-        False,
-        -2,
-        10,
-        None,
-        ["Area 1", "Area 2"],
-        "Barangay Disaster Risk Reduction and Management Committee",
-    ),
-    (
-        "announcement",
-        "class_suspension",
-        "warning",
-        "Classes suspended in all levels tomorrow",
-        "Following the Alert Level 2 declaration, classes in all public and private schools are "
-        "suspended for tomorrow.",
-        None,
-        True,
-        -3,
-        20,
-        None,
-        [],
-        "Office of the Barangay Captain",
-    ),
     (
         "announcement",
         "road_closure",
         "warning",
-        "Riverside Road impassable to all vehicles",
-        "Riverside Road between Purok 2 and Purok 6 is impassable due to floodwater. Use the "
-        "Quirino Highway route instead.",
+        "Protective Measures: Concrete Barrier Installation",
+        "Concrete barriers along the shortcut to Phase 1B, Kasiglahan Village were repaired and reinforced to help protect motorists and pedestrians during adverse weather. The work was coordinated by Area 1 Alpha, the General Services Office, and the Barangay Disaster Risk Reduction and Management Office. Residents should report weather-related hazards and emergencies immediately through the appropriate hotlines.",
+        datetime(2026, 8, 12, 14, tzinfo=UTC),
+        "Barangay Disaster Risk Reduction and Management Committee",
         None,
-        False,
-        -5,
-        None,
-        None,
-        ["Area 1", "Area 2"],
-        "Barangay Public Safety Office",
-    ),
-    (
-        "announcement",
-        "utility_interruption",
-        "info",
-        "Scheduled water interruption, Saturday 8:00 AM to 4:00 PM",
-        "Manila Water will carry out pipeline maintenance affecting Areas 3, 4 and 5. Store "
-        "enough water for the day.",
-        None,
-        False,
-        -24,
-        None,
-        None,
-        ["Area 3", "Area 4", "Area 5"],
-        "Office of the Barangay Captain",
-    ),
-    (
-        "announcement",
-        "general",
-        "info",
-        "Household registration now open at the barangay hall",
-        "Barangay Health Workers are assisting residents with household registration every "
-        "weekday, 8:00 AM to 5:00 PM.",
-        None,
-        True,
-        -72,
-        None,
-        None,
-        [],
-        "Barangay Health Office",
-    ),
-    (
-        "announcement",
-        "general",
-        "info",
-        "Free first aid training — limited slots",
-        "The Philippine Red Cross will run a basic first aid and CPR session at the barangay "
-        "hall. Slots limited to 40.",
-        None,
-        True,
-        -120,
-        None,
-        None,
-        [],
-        "Sangguniang Kabataan",
     ),
     (
         "alert",
+        "class_suspension",
+        "info",
+        "Face-to-Face Classes Resume Across Montalban Public Schools",
+        "Face-to-face classes resumed on August 13, 2026 in all grade levels across Montalban public schools after schools used as evacuation centers were cleaned and restored. The reopening supports students’ safe return to learning following the recent calamity.",
+        datetime(2026, 8, 13, 8, tzinfo=UTC),
+        "Office of the Barangay Captain",
+        "Parents and students should follow their school’s announced schedule and continue to observe school safety guidelines.",
+    ),
+    (
+        "announcement",
         "heavy_rainfall",
         "warning",
-        "Alert Level 1 — Prepare to evacuate",
-        "Continuous heavy rainfall has pushed the river past the Level 1 threshold. This is a "
-        "preparation notice.",
-        "Prepare your Go Bag and identification documents. Move valuables and appliances to "
-        "higher ground.",
-        False,
-        -48,
-        None,
-        -48,
-        ["Area 1", "Area 2"],
+        "Habagat Advisory and Water Level Monitoring",
+        "The Southwest Monsoon continues to bring scattered rains and thunderstorms to CALABARZON, with possible flash floods and landslides in vulnerable and low-lying areas. The water level beneath San Jose Bridge remains low as of the latest monitoring, but residents should keep emergency kits ready, follow official weather advisories, review household evacuation plans, and exercise caution in hazard-prone areas.",
+        datetime(2026, 8, 14, 5, 40, tzinfo=UTC),
         "Barangay Disaster Risk Reduction and Management Committee",
+        None,
     ),
 ]
 
 
-async def seed_announcements(session, areas: dict[str, Area], users: dict[str, User]) -> None:
+async def seed_announcements(session, users: dict[str, User]) -> None:
     if await _table_has_rows(session, Announcement):
         return
     for (
@@ -1202,13 +1103,9 @@ async def seed_announcements(session, areas: dict[str, Area], users: dict[str, U
         severity,
         title,
         body,
-        instruction,
-        is_barangay_wide,
-        published_hours_ago,
-        expires_hours_ahead,
-        deactivated_hours_ago,
-        area_names,
+        published_at,
         issuer_name,
+        instruction,
     ) in ANNOUNCEMENT_DEFS:
         announcement = Announcement(
             kind=kind,
@@ -1218,240 +1115,169 @@ async def seed_announcements(session, areas: dict[str, Area], users: dict[str, U
             slug=slug_base(title),
             excerpt=body,
             body_json=plain_text_document(body),
-            publication_status="archived" if deactivated_hours_ago else "published",
+            publication_status="published",
+            is_barangay_wide=True,
+            published_at=published_at,
             instruction=instruction,
-            is_barangay_wide=is_barangay_wide,
-            published_at=_now() + timedelta(hours=published_hours_ago),
-            expires_at=_now() + timedelta(hours=expires_hours_ahead)
-            if expires_hours_ahead
-            else None,
-            deactivated_at=_now() + timedelta(hours=deactivated_hours_ago)
-            if deactivated_hours_ago
-            else None,
-            archived_at=_now() + timedelta(hours=deactivated_hours_ago)
-            if deactivated_hours_ago
-            else None,
             issued_by_user_id=users[issuer_name].id,
         )
         session.add(announcement)
-        await session.flush()
-        for area_name in area_names:
-            session.add(
-                AnnouncementArea(announcement_id=announcement.id, area_id=areas[area_name].id)
-            )
     log.info("seeded announcements", extra={"count": len(ANNOUNCEMENT_DEFS)})
 
 
-# --- donation drives (fixtures/donation-drives.ts) -----------------------------
+# --- donation drives ----------------------------------------------------------
 
 
 async def seed_donations(session, users: dict[str, User]) -> None:
     if await _table_has_rows(session, DonationDrive):
         return
 
-    event = EmergencyEvent(
-        name="Continuous Heavy Rainfall — Riverside Areas",
-        type="flood",
-        started_at=_now() - timedelta(days=3),
-        is_active=False,
-        declared_by_user_id=users["Barangay Disaster Risk Reduction and Management Committee"].id,
-    )
-    session.add(event)
-    await session.flush()
+    drives = [
+        (
+            datetime(2026, 8, 14, 8, tzinfo=UTC),
+            "Relief Drive for Habagat-Affected Families",
+            "relief-drive-for-habagat-affected-families",
+            "Rotaract Club of Rodriguez is collecting financial and in-kind support for families affected by Habagat in Montalban.",
+            "The Rotaract Club of Rodriguez is accepting financial and in-kind donations for families affected by the Southwest Monsoon (Habagat) in Montalban. Needed items include drinking water, canned goods and ready-to-eat food, hygiene supplies, clean clothes, and blankets. Financial donations may be sent through GCash or InstaPay to Vienn Nicole Ocampo, 09524597132. Scan the QR code in the accompanying poster for payment details.",
+            "Rotaract Club of Rodriguez",
+            "09616499215",
+            "Isabel Terraces, San Jose, Rodriguez, Rizal",
+        ),
+        (
+            datetime(2026, 8, 12, 8, tzinfo=UTC),
+            "Laban Kontra Bagyong Maymay Donation Drive",
+            "laban-kontra-bagyong-maymay-donation-drive",
+            "The Eagle Scouts Association of Montalban is collecting monetary and in-kind donations for people affected by Bagyong Maymay.",
+            "The Eagle Scouts Association of Montalban is calling for monetary and in-kind donations for people affected by Bagyong Maymay in evacuation areas across Montalban. Needed items include first-aid kits, biscuits, clothes, toothbrushes, toothpaste, shampoo, soap, sanitary napkins, and diapers. Monetary donations may be sent through GCash to Reniel N., 09305393812.",
+            "Eagle Scouts Association of Montalban",
+            "Reniel N. · 09305393812",
+            None,
+        ),
+        (
+            datetime(2026, 8, 13, 8, tzinfo=UTC),
+            "Upper Hills and Mountains Donation Drive",
+            "upper-hills-and-mountains-donation-drive",
+            "Upper Hills and Mountains is accepting donations for clothes, medicine, canned goods, money, and other essential relief items.",
+            "Upper Hills and Mountains is accepting donations of clothes, medicine, canned goods, money, and other essential relief items. For coordination, contact Reniel Noel directly. Monetary donations may be sent to Reniel N., 09305393812.",
+            "Upper Hills and Mountains",
+            "Reniel N. · 09305393812",
+            "Coordinate directly with Reniel Noel through the organization’s official social-media page.",
+        ),
+    ]
+    for (
+        published_at,
+        title,
+        slug,
+        excerpt,
+        body,
+        organizer_name,
+        organizer_contact,
+        drop_off_instructions,
+    ) in drives:
+        session.add(
+            DonationDrive(
+                title=title,
+                slug=slug,
+                excerpt=excerpt,
+                body_json=plain_text_document(body),
+                publication_status="published",
+                published_at=published_at,
+                organizer_name=organizer_name,
+                organizer_contact=organizer_contact,
+                drop_off_instructions=drop_off_instructions,
+                active_from=published_at,
+                created_by_user_id=users["Admin Demo"].id,
+            )
+        )
 
-    drive1 = DonationDrive(
-        event_id=event.id,
-        title="Relief Goods for Riverside Households",
-        slug="relief-goods-for-riverside-households",
-        excerpt=(
-            "Supporting the households in Areas 1 and 2 currently sheltering "
-            "at San Jose Elementary School."
-        ),
-        body_json=plain_text_document(
-            "Supporting the households in Areas 1 and 2 currently sheltering at San Jose Elementary School."
-        ),
-        publication_status="published",
-        published_at=_now() - timedelta(days=3),
-        active_from=_now() - timedelta(days=3),
-        created_by_user_id=users["Admin Demo"].id,
-    )
-    drive2 = DonationDrive(
-        title="Go Bag Supplies for Priority Households",
-        slug="go-bag-supplies-for-priority-households",
-        excerpt=(
-            "Building ready-to-issue Go Bags for households with seniors, "
-            "infants, or members who need help evacuating."
-        ),
-        body_json=plain_text_document(
-            "Building ready-to-issue Go Bags for households with seniors, infants, or members who need help evacuating."
-        ),
-        publication_status="published",
-        published_at=_now() - timedelta(days=11),
-        active_from=_now() - timedelta(days=11),
-        created_by_user_id=users["Admin Demo"].id,
-    )
-    session.add_all([drive1, drive2])
-    await session.flush()
-
-    log.info("seeded donation drives", extra={"count": 2})
+    log.info("seeded donation drives", extra={"count": len(drives)})
 
 
 # --- article cover media -------------------------------------------------------
 
-# These are generated fictional documentary photographs.  They are intentionally
-# stored with the demo seed rather than in the web app: public cards receive the
-# same `cover_image` DTO and Caddy-served upload URL as an officer-uploaded image.
-ARTICLE_COVER_DEFS = (
+# Each tuple is (model, image model, foreign-key field, article slug, filenames).
+# The first image is the card cover; the remaining images retain the user-supplied
+# article-gallery ordering.
+ARTICLE_MEDIA_DEFS = (
     (
         Announcement,
         AnnouncementImage,
         "announcement_id",
-        "alert-level-2-evacuate-riverside-areas-now",
-        "alert-level-2-evacuate.png",
-        "Adult residents carrying go-bags toward a covered evacuation centre during heavy rain.",
-        "Fictional demo image: community evacuation preparation during heavy rain.",
+        "protective-measures-concrete-barrier-installation",
+        ("barrier-installation-1.jpg", "barrier-installation-2.jpg", "barrier-installation-3.jpg"),
     ),
     (
         Announcement,
         AnnouncementImage,
         "announcement_id",
-        "classes-suspended-in-all-levels-tomorrow",
-        "classes-suspended.png",
-        "A school caretaker secures learning materials beside rain-soaked classroom windows.",
-        "Fictional demo image: a school prepares during persistent rain.",
+        "face-to-face-classes-resume-across-montalban-public-schools",
+        ("classes-resume-1.jpeg",),
     ),
     (
         Announcement,
         AnnouncementImage,
         "announcement_id",
-        "riverside-road-impassable-to-all-vehicles",
-        "riverside-road-closure.png",
-        "A community volunteer keeps traffic away from a rain-flooded neighborhood road.",
-        "Fictional demo image: a temporary road closure after heavy rain.",
-    ),
-    (
-        Announcement,
-        AnnouncementImage,
-        "announcement_id",
-        "scheduled-water-interruption-saturday-8-00-am-to-4-00-pm",
-        "water-interruption.png",
-        "A maintenance worker prepares water containers near a neighborhood utility access point.",
-        "Fictional demo image: water maintenance preparation.",
-    ),
-    (
-        Announcement,
-        AnnouncementImage,
-        "announcement_id",
-        "household-registration-now-open-at-the-barangay-hall",
-        "household-registration.png",
-        "A community health worker assists a resident at a registration desk.",
-        "Fictional demo image: household registration assistance.",
-    ),
-    (
-        Announcement,
-        AnnouncementImage,
-        "announcement_id",
-        "free-first-aid-training-limited-slots",
-        "free-first-aid-training.png",
-        "An adult volunteer demonstrates first aid at a community training session.",
-        "Fictional demo image: community first-aid training.",
-    ),
-    (
-        Announcement,
-        AnnouncementImage,
-        "announcement_id",
-        "alert-level-1-prepare-to-evacuate",
-        "alert-level-1-prepare.png",
-        "Residents pack an emergency go-bag beside a rain-streaked window.",
-        "Fictional demo image: a household prepares for heavy rain.",
+        "habagat-advisory-and-water-level-monitoring",
+        ("water-level-monitoring-1.jpg",),
     ),
     (
         Activity,
         ActivityImage,
         "activity_id",
-        "barangay-wide-earthquake-drill",
-        "earthquake-drill.png",
-        "Adult residents practise Duck, Cover and Hold during a community earthquake drill.",
-        "Fictional demo image: earthquake preparedness drill.",
+        "operation-stripes-san-jose-tigers-youth-in-action",
+        ("operation-stripes-1.jpg", "operation-stripes-2.jpg", "operation-stripes-3.jpg"),
     ),
     (
         Activity,
         ActivityImage,
         "activity_id",
-        "basic-first-aid-and-cpr-training",
-        "first-aid-cpr-training.png",
-        "An instructor demonstrates CPR on a practice mannequin at a barangay session.",
-        "Fictional demo image: CPR and first-aid training.",
+        "project-kabuhay-kabataan-para-sa-buhay-at-hanapbuhay",
+        ("project-kabuhay-1.jpeg", "project-kabuhay-2.jpeg"),
     ),
     (
         Activity,
         ActivityImage,
         "activity_id",
-        "riverbank-clean-up-drive",
-        "riverbank-cleanup.png",
-        "Adult volunteers collect debris beside a riverbank drainage channel.",
-        "Fictional demo image: riverbank clean-up activity.",
-    ),
-    (
-        Activity,
-        ActivityImage,
-        "activity_id",
-        "disaster-preparedness-seminar-for-households",
-        "preparedness-seminar.png",
-        "A facilitator leads residents through a preparedness discussion in a covered hall.",
-        "Fictional demo image: household preparedness seminar.",
-    ),
-    (
-        Activity,
-        ActivityImage,
-        "activity_id",
-        "tree-planting-along-the-riverbank",
-        "tree-planting.png",
-        "Adult volunteers plant native seedlings on a green riverbank.",
-        "Fictional demo image: riverbank tree planting.",
+        "training-on-basic-life-support-and-standard-first-aid-for-health-workers",
+        (
+            "bls-first-aid-1.jpeg",
+            "bls-first-aid-2.jpeg",
+            "bls-first-aid-3.jpeg",
+            "bls-first-aid-4.jpeg",
+        ),
     ),
     (
         DonationDrive,
         DonationDriveImage,
         "donation_drive_id",
-        "relief-goods-for-riverside-households",
-        "relief-goods.png",
-        "Volunteers organize relief packs and blankets inside a community hall.",
-        "Fictional demo image: relief goods preparation.",
+        "relief-drive-for-habagat-affected-families",
+        ("rotaract-relief-drive.jpg",),
     ),
     (
         DonationDrive,
         DonationDriveImage,
         "donation_drive_id",
-        "go-bag-supplies-for-priority-households",
-        "go-bag-supplies.png",
-        "Volunteers arrange essential go-bag supplies on a community table.",
-        "Fictional demo image: go-bag supply assembly.",
+        "laban-kontra-bagyong-maymay-donation-drive",
+        ("eagle-scouts-maymay-drive.jpg",),
+    ),
+    (
+        DonationDrive,
+        DonationDriveImage,
+        "donation_drive_id",
+        "upper-hills-and-mountains-donation-drive",
+        ("upper-hills-donation-drive.jpg",),
     ),
 )
 
 
 async def seed_article_cover_media(session) -> None:
-    """Attach bundled demo covers without touching officer-managed media.
-
-    Existing environments already contain seeded parent rows, so this runs even
-    when the main article seed functions correctly no-op.  It only inserts a
-    cover when that parent has no media at all; an officer's image always wins.
-    """
+    """Attach bundled gallery images when an article has no managed media."""
     source_dir = Path(__file__).parent / "seed_media" / "article-covers"
     upload_dir = Path(settings.upload_dir) / "article-covers"
     upload_dir.mkdir(parents=True, exist_ok=True)
 
     added = 0
-    for (
-        parent_model,
-        image_model,
-        parent_key,
-        slug,
-        filename,
-        _,
-        _,
-    ) in ARTICLE_COVER_DEFS:
+    for parent_model, image_model, parent_key, slug, filenames in ARTICLE_MEDIA_DEFS:
         parent = (
             await session.execute(select(parent_model).where(parent_model.slug == slug))
         ).scalar_one_or_none()
@@ -1465,90 +1291,157 @@ async def seed_article_cover_media(session) -> None:
         if has_media is not None:
             continue
 
-        source = source_dir / filename
-        target = upload_dir / filename
-        if not source.is_file():
-            raise RuntimeError(f"Missing bundled article cover: {source}")
-        if not target.exists():
-            copyfile(source, target)
-        session.add(
-            image_model(
-                **{parent_key: parent.id},
-                file_path=f"article-covers/{filename}",
-                sort_order=0,
-                is_cover=True,
+        for sort_order, filename in enumerate(filenames):
+            source = source_dir / filename
+            target = upload_dir / filename
+            if not source.is_file():
+                raise RuntimeError(f"Missing bundled article image: {source}")
+            if not target.exists():
+                copyfile(source, target)
+            session.add(
+                image_model(
+                    **{parent_key: parent.id},
+                    file_path=f"article-covers/{filename}",
+                    sort_order=sort_order,
+                    is_cover=sort_order == 0,
+                )
             )
-        )
-        added += 1
+            added += 1
     if added:
         log.info("seeded article cover media", extra={"count": added})
 
 
-# --- flood events (fixtures/flood-events.ts) -----------------------------------
+# --- researched flood history + demo scenario ---------------------------------
 
-
-def _get_flood_defs():
-    return [
-        (
-            "Typhoon Ondoy (Ketsana)",
-            datetime(2009, 9, 26, tzinfo=UTC),
-            datetime(2009, 9, 29, tzinfo=UTC),
-            21.5,
-            datetime(2009, 9, 26, 14, tzinfo=UTC),
-            1240,
-            "The reference event for the whole municipality. Water reached second-floor level "
-            "across most of the riverside puroks.",
-            ["Area 1", "Area 2", "Area 3", "Area 4"],
+# Sources and scope are recorded in apps/api/docs/migrations.md.  Historical
+# sources establish event dates and local/municipal impact, but do not provide
+# comparable Montalban-gauge peaks, Barangay San Jose displacement counts, or
+# mappings to the application's approximate Areas.  Those fields intentionally
+# remain NULL rather than turning the demo into fabricated historical data.
+HISTORICAL_FLOOD_DEFS = (
+    {
+        "name": "Typhoon Ondoy (Ketsana)",
+        "started_at": datetime(2009, 9, 26, tzinfo=UTC),
+        "ended_at": datetime(2009, 9, 27, tzinfo=UTC),
+        "notes": (
+            "Kasiglahan Village Phase 1-D, Barangay San Jose was documented as submerged "
+            "during Ondoy. Peak level, displaced-household count, and exact local-area "
+            "coverage were not recorded in the source."
         ),
-        (
-            "Typhoon Ulysses (Vamco)",
-            datetime(2020, 11, 11, tzinfo=UTC),
-            datetime(2020, 11, 14, tzinfo=UTC),
-            20.7,
-            datetime(2020, 11, 12, 4, tzinfo=UTC),
-            980,
-            "Comparable to Ondoy in river height. Earlier evacuation kept casualties lower despite "
-            "similar water levels.",
-            ["Area 1", "Area 2", "Area 3"],
+    },
+    {
+        "name": "Typhoon Ulysses (Vamco)",
+        "started_at": datetime(2020, 11, 12, tzinfo=UTC),
+        "ended_at": datetime(2020, 11, 14, tzinfo=UTC),
+        "notes": (
+            "A Rodriguez-wide update reported 3,363 families (15,591 people) still in "
+            "evacuation centres on 21 November 2020. This is a municipal shelter figure, "
+            "not a Barangay San Jose displacement count."
         ),
-        (
-            "2025 Habagat Flooding — Prior Event",
-            _now() - timedelta(days=45),
-            _now() - timedelta(days=42),
-            19.8,
-            _now() - timedelta(days=44, hours=10),
-            420,
-            "Heavy monsoon rains enhanced by offshore severe tropical storm. Auto-linked from declared Emergency Event.",
-            ["Area 1", "Area 2"],
+    },
+    {
+        "name": "Habagat and Tropical Storm Crising",
+        "started_at": datetime(2025, 7, 20, tzinfo=UTC),
+        "ended_at": datetime(2025, 7, 24, tzinfo=UTC),
+        "notes": (
+            "DSWD documented Rodriguez evacuations during the Wawa Dam critical-spilling "
+            "response. No Barangay San Jose-specific peak, displacement total, or exact "
+            "area coverage was found."
         ),
-    ]
+    },
+)
+
+DEMO_SCENARIO_NAME = "DEMO SIMULATION — Flood Response Exercise"
+DEMO_SCENARIO_NOTES = (
+    "DEMO SIMULATION — this active flood-response exercise and all linked people, "
+    "requests, incidents, sirens, and figures are fictional training data."
+)
 
 
-async def seed_flood_events(session, areas: dict[str, Area]) -> None:
-    if await _table_has_rows(session, FloodEvent):
-        return
-    defs = _get_flood_defs()
-    # Check if emergency_event exists for linking
-    ee_rows = (await session.execute(select(EmergencyEvent))).scalars().all()
-    ee_by_name = {ee.name: ee.id for ee in ee_rows}
+async def seed_emergency_events(session, users: dict[str, User]) -> dict[str, EmergencyEvent]:
+    """Seed a coherent closed history plus one clearly labelled active exercise.
 
-    for name, started_at, ended_at, peak, peak_at, displaced, notes, area_names in defs:
-        event = FloodEvent(
-            name=name,
-            emergency_event_id=ee_by_name.get(name),
-            started_at=started_at,
-            ended_at=ended_at,
-            peak_level_m=peak,
-            peak_at=peak_at,
-            households_displaced=displaced,
-            notes=notes,
+    Emergency events are operational records.  If an existing database contains
+    user-managed events, leave them completely alone instead of mixing a demo
+    scenario into a live response workspace.
+    """
+
+    names = [*(event["name"] for event in HISTORICAL_FLOOD_DEFS), DEMO_SCENARIO_NAME]
+    existing = (
+        (await session.execute(select(EmergencyEvent).where(EmergencyEvent.name.in_(names))))
+        .scalars()
+        .all()
+    )
+    existing_by_name = {event.name: event for event in existing}
+
+    if await _table_has_rows(session, EmergencyEvent):
+        if len(existing_by_name) != len(names):
+            log.warning("skipped demo emergency events because user-managed events exist")
+            return {}
+        return existing_by_name
+
+    declared_by = users["Barangay Disaster Risk Reduction and Management Committee"].id
+    events: dict[str, EmergencyEvent] = {}
+    for definition in HISTORICAL_FLOOD_DEFS:
+        event = EmergencyEvent(
+            name=definition["name"],
+            type="flood",
+            started_at=definition["started_at"],
+            ended_at=definition["ended_at"],
+            is_active=False,
+            declared_by_user_id=declared_by,
         )
         session.add(event)
-        await session.flush()
-        for area_name in area_names:
-            if area_name in areas:
-                session.add(FloodEventArea(flood_event_id=event.id, area_id=areas[area_name].id))
-    log.info("seeded flood events", extra={"count": len(defs)})
+        events[event.name] = event
+
+    scenario = EmergencyEvent(
+        name=DEMO_SCENARIO_NAME,
+        type="flood",
+        started_at=_now() - timedelta(hours=8),
+        is_active=True,
+        declared_by_user_id=declared_by,
+    )
+    session.add(scenario)
+    events[scenario.name] = scenario
+    await session.flush()
+    log.info("seeded emergency-event story", extra={"count": len(events), "active": 1})
+    return events
+
+
+async def seed_flood_events(
+    session, areas: dict[str, Area], events: dict[str, EmergencyEvent]
+) -> None:
+    if await _table_has_rows(session, FloodEvent):
+        return
+    if not events:
+        log.warning("skipped flood history because the demo emergency scenario was not seeded")
+        return
+
+    for definition in HISTORICAL_FLOOD_DEFS:
+        event = FloodEvent(
+            emergency_event_id=events[definition["name"]].id,
+            name=definition["name"],
+            started_at=definition["started_at"],
+            ended_at=definition["ended_at"],
+            notes=definition["notes"],
+        )
+        session.add(event)
+
+    scenario_event = events[DEMO_SCENARIO_NAME]
+    scenario_history = FloodEvent(
+        emergency_event_id=scenario_event.id,
+        name=DEMO_SCENARIO_NAME,
+        started_at=scenario_event.started_at,
+        peak_level_m=23.8,
+        peak_at=_now() - timedelta(hours=2),
+        households_displaced=58,
+        notes=DEMO_SCENARIO_NOTES,
+    )
+    session.add(scenario_history)
+    await session.flush()
+    for area_name in ("Area 1", "Area 2", "Area 4"):
+        session.add(FloodEventArea(flood_event_id=scenario_history.id, area_id=areas[area_name].id))
+    log.info("seeded flood history", extra={"historical": len(HISTORICAL_FLOOD_DEFS), "demo": 1})
 
 
 # --- weather readings ------------------------------------------------------------
@@ -1558,6 +1451,38 @@ async def seed_flood_events(session, areas: dict[str, Area]) -> None:
 # unrelated fixtures.
 
 PAGASA_STATION = "Montalban (Rodriguez) River Gauge"
+
+# Snapshot captured from the PAGASA FFWS Montalban station at the same 06:30 PHT
+# slot across five consecutive days. The timestamps are stored in UTC, matching
+# the physical schema; the current snapshot below is made relative to seed time
+# so a fresh demo database does not start with a stale river panel.
+PAGASA_RIVER_HISTORY = (
+    (
+        datetime(2026, 8, 12, 22, 30, tzinfo=UTC),
+        24.44,
+        {"ymdhm": "202608130630", "wl": "24.44(*)", "icon": "up"},
+    ),
+    (
+        datetime(2026, 8, 13, 22, 30, tzinfo=UTC),
+        24.44,
+        {"ymdhm": "202608140630", "wl": "24.44(*)", "icon": "up"},
+    ),
+    (
+        datetime(2026, 8, 14, 22, 30, tzinfo=UTC),
+        24.44,
+        {"ymdhm": "202608150630", "wl": "24.44(*)", "icon": "up"},
+    ),
+    (
+        datetime(2026, 8, 15, 22, 30, tzinfo=UTC),
+        22.58,
+        {"ymdhm": "202608160630", "wl": "22.58(*)", "icon": "down"},
+    ),
+    (
+        datetime(2026, 8, 16, 22, 30, tzinfo=UTC),
+        22.68,
+        {"ymdhm": "202608170630", "wl": "22.68(*)", "icon": "nochange"},
+    ),
+)
 
 
 async def seed_readings(session) -> None:
@@ -1579,8 +1504,24 @@ async def seed_readings(session) -> None:
             None,
         ),
         ("heat_index", 31.2, "°C", "open_meteo", now - timedelta(minutes=14), None, None),
-        ("river_level", 22.6, "m", "pagasa", now - timedelta(hours=1), PAGASA_STATION, None),
-        ("river_level", 23.1, "m", "pagasa", now - timedelta(minutes=22), PAGASA_STATION, None),
+        *[
+            ("river_level", value, "m", "pagasa", observed_at, PAGASA_STATION, raw)
+            for observed_at, value, raw in PAGASA_RIVER_HISTORY
+        ],
+        (
+            "river_level",
+            22.68,
+            "m",
+            "pagasa",
+            now - timedelta(minutes=14),
+            PAGASA_STATION,
+            {
+                "ymdhm": "202608170630",
+                "wl": "22.68(*)",
+                "icon": "nochange",
+                "seed_snapshot": True,
+            },
+        ),
         (
             "tcws_signal",
             0.0,
@@ -1625,336 +1566,557 @@ async def seed_readings(session) -> None:
     log.info("seeded readings and forecast", extra={"count": len(readings)})
 
 
-# --- households + members (synthetic, for real counts — no registry UI) -------
+# --- households + members -------------------------------------------------------
 
-FIRST_NAMES = [
-    "Juan",
-    "Maria",
-    "Jose",
-    "Ana",
-    "Pedro",
-    "Rosa",
-    "Carlos",
+HOUSEHOLD_TOTAL = 1_000
+PINNED_HOUSEHOLD_TOTAL = 850
+AREA_HOUSEHOLD_COUNTS = (167, 167, 167, 167, 166, 166)
+AREA_PINNED_COUNTS = (142, 142, 142, 142, 141, 141)
+HOUSEHOLD_SIZE_BUCKETS = ((120, 2), (280, 3), (340, 4), (180, 5), (80, 6))
+
+# 32 × 32 combinations give every seeded household a distinct fictional head.
+FIRST_NAMES = (
+    "Aira",
+    "Alden",
+    "Amihan",
+    "Angelo",
+    "Bea",
+    "Carlo",
+    "Carmela",
+    "Dante",
+    "Dina",
+    "Eduardo",
     "Elena",
-    "Miguel",
+    "Felix",
+    "Gemma",
+    "Hannah",
+    "Isabel",
+    "Jerome",
+    "Jessa",
+    "Karlo",
+    "Lara",
+    "Luis",
+    "Mae",
+    "Marco",
+    "Mika",
+    "Nico",
+    "Olivia",
+    "Paolo",
+    "Queenie",
+    "Ramon",
+    "Rina",
     "Sofia",
-]
-LAST_NAMES = [
-    "Santos",
-    "Reyes",
-    "Cruz",
+    "Tomas",
+    "Yna",
+)
+LAST_NAMES = (
+    "Abad",
     "Bautista",
-    "Garcia",
-    "Torres",
-    "Flores",
-    "Ramos",
-    "Mendoza",
     "Castillo",
-]
+    "Cruz",
+    "Dela Rosa",
+    "Domingo",
+    "Espiritu",
+    "Flores",
+    "Garcia",
+    "Hernandez",
+    "Ignacio",
+    "Javier",
+    "Lazaro",
+    "Mendoza",
+    "Navarro",
+    "Ortega",
+    "Pascual",
+    "Quevedo",
+    "Ramos",
+    "Reyes",
+    "Santos",
+    "Serrano",
+    "Torres",
+    "Valdez",
+    "Villanueva",
+    "Yap",
+    "Zamora",
+    "Aquino",
+    "Belen",
+    "Cabrera",
+    "De Guzman",
+    "Fajardo",
+)
 
 
-async def seed_households(session, areas: dict[str, Area]) -> None:
+def _synthetic_household_sizes() -> list[int]:
+    sizes = [size for count, size in HOUSEHOLD_SIZE_BUCKETS for _ in range(count)]
+    assert len(sizes) == HOUSEHOLD_TOTAL
+    assert sum(sizes) == 3_820
+    return sizes
+
+
+def _point_within(area: Area):
+    """Generate one point inside an approximate area polygon with PostGIS."""
+
+    # Area instances cross several explicit seed commits. Referencing their
+    # expired geometry attribute would trigger implicit async I/O; keep the
+    # geometry in the SQL expression instead.
+    area_geom = select(Area.geom).where(Area.id == area.id).scalar_subquery()
+    return func.ST_GeometryN(func.ST_GeneratePoints(area_geom, 1), 1)
+
+
+def _waterway_proximity(rng: random.Random, exposure: str | None) -> str:
+    value = rng.random()
+    if exposure == "high":
+        return "very_near" if value < 0.55 else ("near" if value < 0.90 else "far")
+    if exposure == "low":
+        return "far" if value < 0.60 else ("near" if value < 0.90 else "very_near")
+    return "near" if value < 0.55 else ("very_near" if value < 0.75 else "far")
+
+
+async def seed_households(session, areas: dict[str, Area], users: dict[str, User]) -> None:
     if await _table_has_rows(session, Household):
-        # Older demo databases were seeded before household pins were added.
-        # Backfill only clearly synthetic rows; never rewrite resident/BHW data.
-        await session.execute(
-            update(Household)
-            .where(
-                Household.reference_no.like("HH-SEED-%"),
-                Household.location.is_(None),
-            )
-            .values(
-                location=(
-                    select(func.ST_PointOnSurface(Area.geom))
-                    .where(Area.id == Household.area_id)
-                    .scalar_subquery()
-                )
-            )
-        )
         return
 
-    # `seed()` commits each reference-data phase. Refresh the instances carried
-    # from `seed_areas` before using their geometry in SQL expressions; otherwise
-    # an expired async ORM attribute attempts implicit I/O outside a greenlet.
     for area in areas.values():
-        await session.refresh(area, attribute_names=["geom"])
+        await session.refresh(area, attribute_names=["flood_exposure"])
 
-    rng = random.Random(2026)  # deterministic — reruns produce the same synthetic set
-    area_list = list(areas.values())
-    total = 0
+    rng = random.Random(20260817)
+    sizes = _synthetic_household_sizes()
+    bhw = users["BHW Demo"]
+    resident_head = users["Household Head Demo"]
+    today = _now().date()
+    sequence = 1
 
-    for i in range(1, 201):
-        area = area_list[i % len(area_list)]
-        head_name = f"{rng.choice(FIRST_NAMES)} {rng.choice(LAST_NAMES)}"
-        if area.flood_exposure == "high":
-            r = rng.random()
-            proximity = "very_near" if r < 0.55 else ("near" if r < 0.90 else "far")
-        elif area.flood_exposure == "low":
-            r = rng.random()
-            proximity = "far" if r < 0.60 else ("near" if r < 0.90 else "very_near")
-        else:
-            r = rng.random()
-            proximity = "near" if r < 0.55 else ("very_near" if r < 0.75 else "far")
+    for area_index, area_name in enumerate(areas):
+        area = areas[area_name]
+        for index_in_area in range(AREA_HOUSEHOLD_COUNTS[area_index]):
+            size = sizes[sequence - 1]
+            first_name = FIRST_NAMES[(sequence - 1) % len(FIRST_NAMES)]
+            last_name = LAST_NAMES[((sequence - 1) // len(FIRST_NAMES)) % len(LAST_NAMES)]
+            head_name = resident_head.full_name if sequence == 1 else f"{first_name} {last_name}"
+            is_pinned = index_in_area < AREA_PINNED_COUNTS[area_index]
+            head_is_senior = rng.random() < 0.14
+            head_age = rng.randint(60, 82) if head_is_senior else rng.randint(22, 59)
+            head_sex = "female" if rng.random() < 0.52 else "male"
 
-        household = Household(
-            reference_no=format_household_number(i),
-            head_name=head_name,
-            contact_number=None if rng.random() < 0.1 else f"09{rng.randint(100000000, 999999999)}",
-            is_unreachable_by_phone=rng.random() < 0.1,
-            area_id=area.id,
-            # Keep synthetic demo pins inside the seeded area polygon so the
-            # registry map and boundary resolver agree. This is a planning
-            # point, not a real household address.
-            location=func.ST_PointOnSurface(area.geom),
-            waterway_proximity=proximity,
-            source="bhw",
-        )
-        session.add(household)
-        await session.flush()
-
-        today_date = _now().date()
-        head_is_senior = rng.random() < 0.15
-        head_age = rng.randint(60, 80) if head_is_senior else rng.randint(22, 59)
-        head_birth = today_date - timedelta(days=head_age * 365 + rng.randint(0, 360))
-        session.add(
-            Member(
-                household_id=household.id,
-                full_name=head_name,
-                birth_date=head_birth,
-                is_head=True,
-                sex=rng.choice(["male", "female"]),
-                is_senior=head_is_senior,
+            is_verified = rng.random() < 0.72
+            household = Household(
+                reference_no=format_household_number(sequence),
+                head_name=head_name,
+                head_user_id=resident_head.id if sequence == 1 else None,
+                contact_number=(
+                    None if rng.random() < 0.08 else f"09{rng.randint(100000000, 999999999)}"
+                ),
+                is_unreachable_by_phone=rng.random() < 0.08,
+                area_id=area.id,
+                street_address=(f"Demo Block {sequence:04d}, {area.name}, Barangay San Jose"),
+                location=_point_within(area) if is_pinned else None,
+                waterway_proximity=_waterway_proximity(rng, area.flood_exposure),
+                source="bhw",
+                created_by_user_id=bhw.id,
+                verified_at=_now() - timedelta(days=rng.randint(7, 300)) if is_verified else None,
+                verified_by_user_id=bhw.id if is_verified else None,
             )
-        )
-        for _ in range(rng.randint(1, 4)):
-            is_ch = rng.random() < 0.3
-            is_snr = False if is_ch else (rng.random() < 0.1)
-            if is_ch:
-                # 40% infant/toddler (0-4), 60% child (5-17)
-                ch_age = rng.randint(0, 4) if rng.random() < 0.4 else rng.randint(5, 17)
-                m_birth = today_date - timedelta(days=ch_age * 365 + rng.randint(0, 360))
-            elif is_snr:
-                snr_age = rng.randint(60, 85)
-                m_birth = today_date - timedelta(days=snr_age * 365 + rng.randint(0, 360))
-            else:
-                ad_age = rng.randint(18, 59)
-                m_birth = today_date - timedelta(days=ad_age * 365 + rng.randint(0, 360))
+            session.add(household)
+            await session.flush()
 
             session.add(
                 Member(
                     household_id=household.id,
-                    full_name=f"{rng.choice(FIRST_NAMES)} {head_name.split()[-1]}",
-                    birth_date=m_birth,
-                    sex=rng.choice(["male", "female"]),
-                    is_child=is_ch,
-                    is_senior=is_snr,
-                    is_pwd=rng.random() < 0.05,
-                    is_pregnant=rng.random() < 0.03,
+                    full_name=head_name,
+                    birth_date=today - timedelta(days=head_age * 365 + rng.randint(0, 360)),
+                    sex=head_sex,
+                    relationship_to_head="self",
+                    is_head=True,
+                    is_senior=head_is_senior,
+                    is_pwd=rng.random() < 0.04,
                     has_chronic_condition=rng.random() < 0.08,
-                    is_bedridden=rng.random() < 0.02,
+                    is_bedridden=rng.random() < 0.015,
                 )
             )
-        total += 1
 
-    # Reserve the seeded range before the first real registration.
-    await session.execute(select(func.setval("household_reference_no_seq", total, True)))
-    log.info("seeded synthetic households", extra={"count": total})
+            for member_index in range(1, size):
+                is_child = rng.random() < 0.34
+                is_senior = not is_child and rng.random() < 0.08
+                age = (
+                    rng.randint(1, 17)
+                    if is_child
+                    else (rng.randint(60, 85) if is_senior else rng.randint(18, 59))
+                )
+                sex = "female" if rng.random() < 0.52 else "male"
+                session.add(
+                    Member(
+                        household_id=household.id,
+                        full_name=(
+                            f"{FIRST_NAMES[(sequence + member_index * 5) % len(FIRST_NAMES)]} "
+                            f"{last_name}"
+                        ),
+                        birth_date=today - timedelta(days=age * 365 + rng.randint(0, 360)),
+                        sex=sex,
+                        relationship_to_head=("child" if is_child else "relative"),
+                        is_child=is_child,
+                        is_senior=is_senior,
+                        is_pwd=rng.random() < 0.05,
+                        is_pregnant=(not is_child and sex == "female" and rng.random() < 0.025),
+                        is_lactating=(not is_child and sex == "female" and rng.random() < 0.015),
+                        has_chronic_condition=rng.random() < 0.08,
+                        is_bedridden=rng.random() < 0.02,
+                    )
+                )
+            sequence += 1
+
+    await session.execute(select(func.setval("household_reference_no_seq", HOUSEHOLD_TOTAL, True)))
+    log.info(
+        "seeded synthetic registry",
+        extra={"households": HOUSEHOLD_TOTAL, "members": 3_820, "pinned": PINNED_HOUSEHOLD_TOTAL},
+    )
 
 
-# --- safety (S6 demo wiring) -----------------------------------------------------
-# Against a second, *inactive* event, deliberately — the queue and the
-# unregistered-persons list read non-empty the moment an officer declares an
-# event, rather than the demo's first click landing on an empty screen.
+# --- simulated sirens + response operations -----------------------------------
+
+SIREN_DEFS = (
+    ("Area 1", "SAGIP-SJ Demo Simulation — Area 1 Siren", "sounding"),
+    ("Area 1", "SAGIP-SJ Demo Simulation — Area 1 Riverside Siren", "idle"),
+    ("Area 2", "SAGIP-SJ Demo Simulation — Area 2 Siren", "sounding"),
+    ("Area 2", "SAGIP-SJ Demo Simulation — Area 2 Hillside Siren", "idle"),
+    ("Area 3", "SAGIP-SJ Demo Simulation — Area 3 Siren", "idle"),
+    ("Area 3", "SAGIP-SJ Demo Simulation — Area 3 East Siren", "idle"),
+    ("Area 4", "SAGIP-SJ Demo Simulation — Area 4 Siren", "sounding"),
+    ("Area 5", "SAGIP-SJ Demo Simulation — Area 5 Siren", "idle"),
+    ("Area 6", "SAGIP-SJ Demo Simulation — Area 6 Siren", "idle"),
+)
+
+UNREGISTERED_DEFS = (
+    ("Arielle Panganiban", "safe", "Area 1", True, False, False),
+    ("Benito Mercado", "safe", "Area 2", True, True, False),
+    ("Clarita Sevilla", "safe", "Area 3", True, False, True),
+    ("Daisy Ramos", "safe", "Area 4", True, False, False),
+    ("Eldon Perez", "safe", "Area 5", True, False, False),
+    ("Faye Torres", "safe", "Area 6", True, False, False),
+    ("Gio Salcedo", "safe", "Area 1", True, False, False),
+    ("Helena Cruz", "safe", "Area 2", True, False, False),
+    ("Ike Valdez", "needs_rescue", "Area 3", True, False, True),
+    ("Jessa Villanueva", "needs_rescue", "Area 4", True, False, False),
+    ("Kian Domingo", "needs_rescue", "Area 5", False, True, False),
+    ("Liza Bautista", "needs_rescue", "Area 6", False, False, False),
+)
+
+RESCUE_STATUSES = (
+    "pending",
+    "pending",
+    "pending",
+    "verified",
+    "verified",
+    "verified",
+    "dispatched",
+    "dispatched",
+    "dispatched",
+    "dispatched",
+    "resolved",
+    "resolved",
+    "resolved",
+    "resolved",
+    "resolved",
+    "resolved",
+    "dismissed",
+    "dismissed",
+)
+INCIDENT_STATUSES = (
+    "pending",
+    "pending",
+    "pending",
+    "pending",
+    "verified",
+    "verified",
+    "verified",
+    "in_progress",
+    "in_progress",
+    "in_progress",
+    "resolved",
+    "resolved",
+    "resolved",
+    "dismissed",
+)
+INCIDENT_TYPES = (
+    "flooding",
+    "road_blockage",
+    "power_outage",
+    "fallen_tree",
+    "flooding",
+    "flooding",
+    "road_blockage",
+    "power_outage",
+    "fallen_tree",
+    "flooding",
+    "road_blockage",
+    "flooding",
+    "power_outage",
+    "other",
+)
 
 
-async def seed_safety(session, users: dict[str, User]) -> None:
-    if await _table_has_rows(session, RescueRequest):
+async def seed_sirens(session, areas: dict[str, Area]) -> None:
+    if await _table_has_rows(session, Siren):
+        return
+    now = _now()
+    for index, (area_name, name, status) in enumerate(SIREN_DEFS):
+        session.add(
+            Siren(
+                name=name,
+                area_id=areas[area_name].id,
+                location=_point_within(areas[area_name]),
+                status=status,
+                last_triggered_at=(
+                    now - timedelta(minutes=15 + index * 8) if status == "sounding" else None
+                ),
+            )
+        )
+    log.info("seeded simulated sirens", extra={"count": len(SIREN_DEFS), "sounding": 3})
+
+
+async def seed_operations(
+    session, areas: dict[str, Area], users: dict[str, User], events: dict[str, EmergencyEvent]
+) -> None:
+    """Seed only an all-empty operational workspace; never mix with user data."""
+
+    if any(
+        [
+            await _table_has_rows(session, SafetyStatus),
+            await _table_has_rows(session, UnregisteredPerson),
+            await _table_has_rows(session, RescueRequest),
+            await _table_has_rows(session, IncidentReport),
+        ]
+    ):
+        return
+    event = events.get(DEMO_SCENARIO_NAME)
+    if event is None:
+        log.warning("skipped demo operations because the active exercise was not seeded")
         return
 
-    event = EmergencyEvent(
-        name="2025 Habagat Flooding — Prior Event",
-        type="flood",
-        started_at=_now() - timedelta(days=45),
-        ended_at=_now() - timedelta(days=42),
-        is_active=False,
-        declared_by_user_id=users["Barangay Disaster Risk Reduction and Management Committee"].id,
+    bhw = users["BHW Demo"]
+    admin = users["Barangay Disaster Risk Reduction and Management Committee"]
+    now = _now()
+    households = (
+        (await session.execute(select(Household).order_by(Household.reference_no))).scalars().all()
     )
-    session.add(event)
-    await session.flush()
+    members = (
+        (await session.execute(select(Member).order_by(Member.household_id, Member.full_name)))
+        .scalars()
+        .all()
+    )
+    members_by_household: dict[object, list[Member]] = {}
+    for member in members:
+        members_by_household.setdefault(member.household_id, []).append(member)
 
-    bedridden_household = (
-        await session.execute(
-            select(Household)
-            .join(Member, Member.household_id == Household.id)
-            .where(Member.is_bedridden.is_(True), Household.contact_number.is_not(None))
-            .limit(1)
+    # 60 four-person households create 240 confidence-labelled bulk safe rows;
+    # the remaining assisted rows show individual field confirmation.
+    bulk_households = [
+        household for household in households if len(members_by_household[household.id]) == 4
+    ][:60]
+    bulk_member_ids = {
+        member.id for household in bulk_households for member in members_by_household[household.id]
+    }
+    remaining_members = [member for member in members if member.id not in bulk_member_ids]
+    remaining_members.sort(
+        key=lambda member: (
+            not (member.is_bedridden or member.is_pwd or member.has_chronic_condition),
+            member.full_name,
         )
-    ).scalar_one_or_none()
+    )
+    rescue_members = remaining_members[:12]
+    assisted_safe_members = remaining_members[12:192]
 
     session.add_all(
         [
-            UnregisteredPerson(
+            SafetyStatus(
                 event_id=event.id,
-                full_name="Rosario Manalastas",
-                contact_number="09171234567",
-                location=func.ST_SetSRID(func.ST_MakePoint(121.1339, 14.7318), 4326),
-                recorded_by_user_id=users["BHW Demo"].id,
-            ),
-            UnregisteredPerson(
+                member_id=member_id,
+                status="safe",
+                set_by_user_id=bhw.id,
+                set_method="household_bulk",
+                set_at=now - timedelta(hours=6),
+            )
+            for member_id in bulk_member_ids
+        ]
+        + [
+            SafetyStatus(
                 event_id=event.id,
-                full_name="Boy Santos (no phone)",
-                location_note="Sari-sari store beside the chapel, Purok 3",
-                recorded_by_user_id=users["BHW Demo"].id,
-            ),
+                member_id=member.id,
+                status="safe",
+                set_by_user_id=bhw.id,
+                set_method="assisted",
+                set_at=now - timedelta(hours=5, minutes=index % 55),
+            )
+            for index, member in enumerate(assisted_safe_members)
+        ]
+        + [
+            SafetyStatus(
+                event_id=event.id,
+                member_id=member.id,
+                status="needs_rescue",
+                set_by_user_id=bhw.id,
+                set_method="assisted",
+                set_at=now - timedelta(hours=2, minutes=index * 5),
+            )
+            for index, member in enumerate(rescue_members)
         ]
     )
 
-    rescue_requests = [
-        RescueRequest(
+    unregistered: list[tuple[UnregisteredPerson, str]] = []
+    for index, (name, status, area_name, has_pin, is_child, is_senior) in enumerate(
+        UNREGISTERED_DEFS
+    ):
+        person = UnregisteredPerson(
             event_id=event.id,
-            requester_name="Neighbor calling for the Reyes household",
-            contact_number=bedridden_household.contact_number if bedridden_household else None,
-            description=(
-                "Calling on behalf of a neighbor with a bedridden family member — "
-                "water is rising past their gate and they cannot carry him out alone."
+            full_name=name,
+            contact_number=f"0917{8300000 + index}" if index % 3 != 0 else None,
+            location=_point_within(areas[area_name]) if has_pin else None,
+            location_note=(
+                f"Demo field roster: {area_name} temporary help desk" if not has_pin else None
             ),
-            people_count=4,
-            location=func.ST_SetSRID(func.ST_MakePoint(121.1305, 14.7295), 4326),
-        ),
-        RescueRequest(
-            event_id=event.id,
-            requester_name="Anonymous caller",
-            description="Family stranded on their roof, no landmark given over the phone.",
-            location_note="Near the old basketball court along the riverbank",
-            people_count=3,
-        ),
-        RescueRequest(
-            event_id=event.id,
-            requester_name="Household head, registered resident",
-            contact_number="09201234567",
-            description="Water is knee-deep and still rising; requesting boat rescue.",
-            people_count=5,
-            location=func.ST_SetSRID(func.ST_MakePoint(121.1322, 14.7331), 4326),
-        ),
-    ]
-    session.add_all(rescue_requests)
+            recorded_by_user_id=bhw.id,
+            is_child=is_child,
+            is_senior=is_senior,
+            is_pwd=index in (1, 8),
+            is_pregnant=index == 9,
+            has_chronic_condition=index in (2, 8),
+            chronic_condition_note="Medication support requested" if index == 8 else None,
+            is_bedridden=index == 8,
+        )
+        session.add(person)
+        unregistered.append((person, status))
+    await session.flush()
+    session.add_all(
+        [
+            SafetyStatus(
+                event_id=event.id,
+                unregistered_person_id=person.id,
+                status=status,
+                set_by_user_id=bhw.id,
+                set_method="assisted",
+                set_at=now - timedelta(hours=4, minutes=index * 7),
+            )
+            for index, (person, status) in enumerate(unregistered)
+        ]
+    )
+
+    head_demo_household = next(
+        household
+        for household in households
+        if household.head_user_id == users["Household Head Demo"].id
+    )
+    registered_households = [head_demo_household] + [
+        household for household in households if household.id != head_demo_household.id
+    ][:7]
+    for index, status in enumerate(RESCUE_STATUSES):
+        household = registered_households[index] if index < len(registered_households) else None
+        walk_in = unregistered[index - len(registered_households)][0] if 8 <= index < 12 else None
+        requester_name = (
+            household.head_name
+            if household is not None
+            else (walk_in.full_name if walk_in is not None else f"Demo public caller {index + 1}")
+        )
+        session.add(
+            RescueRequest(
+                event_id=event.id,
+                household_id=household.id if household is not None else None,
+                submitted_by_user_id=(
+                    users["Household Head Demo"].id if household is head_demo_household else None
+                ),
+                requester_name=requester_name,
+                contact_number=(household.contact_number if household is not None else None),
+                location=(_point_within(areas[f"Area {(index % 6) + 1}"]) if index < 13 else None),
+                location_note=(
+                    None
+                    if index < 13
+                    else f"Demo field report near the Area {(index % 6) + 1} help desk"
+                ),
+                description=(
+                    "DEMO SIMULATION: floodwater access request logged for coordinated response."
+                ),
+                people_count=2 + (index % 4),
+                status=status,
+                priority=5 - (index % 3),
+                assigned_to_user_id=(admin.id if status in ("dispatched", "resolved") else None),
+                resolved_at=(
+                    now - timedelta(minutes=35 + index * 6)
+                    if status in ("resolved", "dismissed")
+                    else None
+                ),
+                resolution_note=(
+                    "DEMO SIMULATION: household reached and transport support confirmed."
+                    if status == "resolved"
+                    else (
+                        "DEMO SIMULATION: duplicate request closed after field verification."
+                        if status == "dismissed"
+                        else None
+                    )
+                ),
+                created_at=now - timedelta(hours=7, minutes=index * 12),
+                updated_at=now - timedelta(minutes=index * 4),
+            )
+        )
+
+    for index, status in enumerate(INCIDENT_STATUSES):
+        is_verified = status in ("verified", "in_progress", "resolved")
+        session.add(
+            IncidentReport(
+                event_id=event.id,
+                reported_by_user_id=(users["Household Head Demo"].id if index < 4 else None),
+                type=INCIDENT_TYPES[index],
+                description=(
+                    "DEMO SIMULATION: field report recorded for the flood-response exercise."
+                ),
+                location=(
+                    _point_within(areas[f"Area {((index + 2) % 6) + 1}"]) if index < 11 else None
+                ),
+                location_note=(
+                    None
+                    if index < 11
+                    else f"Demo report routed through Area {((index + 2) % 6) + 1} desk"
+                ),
+                status=status,
+                verified_by_user_id=admin.id if is_verified else None,
+                verified_at=now - timedelta(hours=4, minutes=index * 9) if is_verified else None,
+                resolved_at=(
+                    now - timedelta(hours=1, minutes=index * 4) if status == "resolved" else None
+                ),
+                resolution_note=(
+                    "DEMO SIMULATION: response team completed the documented action."
+                    if status == "resolved"
+                    else None
+                ),
+                dismissal_reason=(
+                    "DEMO SIMULATION: duplicate field report; no separate incident remained."
+                    if status == "dismissed"
+                    else None
+                ),
+                created_at=now - timedelta(hours=7, minutes=index * 13),
+                updated_at=now - timedelta(minutes=index * 5),
+            )
+        )
+
     log.info(
-        "seeded safety demo data",
+        "seeded demo operations",
         extra={
-            "unregistered": 2,
-            "rescue_requests": 3,
-            "matched_bedridden": bedridden_household is not None,
+            "registered_statuses": 432,
+            "unregistered": len(UNREGISTERED_DEFS),
+            "rescue_requests": len(RESCUE_STATUSES),
+            "incident_reports": len(INCIDENT_STATUSES),
         },
     )
 
 
-async def seed_incident_reports(session, users: dict[str, User]) -> None:
-    """Provide a deliberately varied operational queue for the admin demo."""
-    if await _table_has_rows(session, IncidentReport):
-        return
-
-    event = (
-        await session.execute(
-            select(EmergencyEvent)
-            .order_by(EmergencyEvent.is_active.desc(), EmergencyEvent.started_at.desc())
-            .limit(1)
-        )
-    ).scalar_one_or_none()
-    households = (
-        (
-            await session.execute(
-                select(Household).where(Household.head_user_id.is_not(None)).limit(3)
-            )
-        )
-        .scalars()
-        .all()
-    )
-    reporter_ids = [household.head_user_id for household in households]
-    admin = users["Barangay Disaster Risk Reduction and Management Committee"]
-    now = _now()
-
-    media_source = (
-        Path(__file__).parent / "seed_media" / "incident-reports" / "flooded-lane-obstruction.png"
-    )
-    media_target = Path(settings.upload_dir) / "incident-reports" / "flooded-lane-obstruction.png"
-    if media_source.exists() and not media_target.exists():
-        media_target.parent.mkdir(parents=True, exist_ok=True)
-        copyfile(media_source, media_target)
-
-    reports = [
-        IncidentReport(
-            event_id=event.id if event else None,
-            reported_by_user_id=reporter_ids[0] if reporter_ids else None,
-            type="flooding",
-            description=(
-                "Floodwater has entered the ground-floor homes near the lane. A fallen branch is "
-                "blocking the only passable exit."
-            ),
-            location=func.ST_SetSRID(func.ST_MakePoint(121.1335, 14.7374), 4326),
-            location_note="Near the covered court access road, Kasiglahan Village",
-            photo_path=(
-                "incident-reports/flooded-lane-obstruction.png" if media_source.exists() else None
-            ),
-        ),
-        IncidentReport(
-            event_id=None,
-            reported_by_user_id=reporter_ids[1] if len(reporter_ids) > 1 else None,
-            type="power_outage",
-            description=(
-                "Power has been out since early morning. The caller could not safely share a "
-                "map pin."
-            ),
-            location_note="Block 8, Phase 1A, ask for the blue sari-sari store",
-        ),
-        IncidentReport(
-            event_id=event.id if event else None,
-            reported_by_user_id=reporter_ids[2] if len(reporter_ids) > 2 else None,
-            type="fallen_tree",
-            description="A tree limb is resting on the roadside power line and needs assessment.",
-            location=func.ST_SetSRID(func.ST_MakePoint(121.1402, 14.7448), 4326),
-            status="verified",
-            verified_by_user_id=admin.id,
-            verified_at=now - timedelta(hours=2),
-        ),
-        IncidentReport(
-            event_id=event.id if event else None,
-            type="road_blockage",
-            description=(
-                "Construction debris and floodwater have closed one lane; residents are using a "
-                "narrow shoulder."
-            ),
-            location=func.ST_SetSRID(func.ST_MakePoint(121.1294, 14.7404), 4326),
-            status="in_progress",
-            verified_by_user_id=admin.id,
-            verified_at=now - timedelta(hours=5),
-        ),
-        IncidentReport(
-            event_id=event.id if event else None,
-            type="flooding",
-            description="Drainage overflow near the school gate was reported after heavy rain.",
-            location=func.ST_SetSRID(func.ST_MakePoint(121.1348, 14.7303), 4326),
-            status="resolved",
-            verified_by_user_id=admin.id,
-            verified_at=now - timedelta(days=1, hours=2),
-            resolved_at=now - timedelta(days=1),
-            resolution_note=(
-                "Barangay maintenance cleared the drain and the area was checked after rainfall."
-            ),
-        ),
-        IncidentReport(
-            event_id=None,
-            type="other",
-            description="Caller reported smoke near a vacant lot but could not confirm a source.",
-            location_note="Vacant lot behind the old tricycle terminal",
-            status="dismissed",
-            dismissal_reason="Follow-up found no active hazard at the described location.",
-        ),
-    ]
-    session.add_all(reports)
-    log.info("seeded incident-report demo data", extra={"incident_reports": len(reports)})
+async def clear_public_content(session) -> None:
+    """Remove public article content before an explicitly requested demo refresh."""
+    await session.execute(delete(ActivityImage))
+    await session.execute(delete(AnnouncementImage))
+    await session.execute(delete(DonationDriveImage))
+    await session.execute(delete(Activity))
+    await session.execute(delete(Announcement))
+    await session.execute(delete(DonationDrive))
+    log.info("cleared public article content for demo refresh")
 
 
-async def seed() -> None:
+async def seed(*, replace_public_content: bool = False) -> None:
     async with SessionLocal() as session:
         areas = await seed_areas(session)
         await session.commit()
@@ -1975,10 +2137,14 @@ async def seed() -> None:
         await seed_faqs(session)
         await session.commit()
 
+        if replace_public_content:
+            await clear_public_content(session)
+            await session.commit()
+
         await seed_activities(session, areas, users)
         await session.commit()
 
-        await seed_announcements(session, areas, users)
+        await seed_announcements(session, users)
         await session.commit()
 
         await seed_donations(session, users)
@@ -1987,19 +2153,22 @@ async def seed() -> None:
         await seed_article_cover_media(session)
         await session.commit()
 
-        await seed_flood_events(session, areas)
-        await session.commit()
-
         await seed_readings(session)
         await session.commit()
 
-        await seed_households(session, areas)
+        await seed_households(session, areas, users)
         await session.commit()
 
-        await seed_safety(session, users)
+        events = await seed_emergency_events(session, users)
         await session.commit()
 
-        await seed_incident_reports(session, users)
+        await seed_flood_events(session, areas, events)
+        await session.commit()
+
+        await seed_sirens(session, areas)
+        await session.commit()
+
+        await seed_operations(session, areas, users, events)
         await session.commit()
 
     await engine.dispose()
@@ -2007,8 +2176,15 @@ async def seed() -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Load SAGIP-SJ demo data.")
+    parser.add_argument(
+        "--replace-public-content",
+        action="store_true",
+        help="delete all activities, announcements, donation notices, and their media first",
+    )
+    args = parser.parse_args()
     configure_logging()
-    asyncio.run(seed())
+    asyncio.run(seed(replace_public_content=args.replace_public_content))
 
 
 if __name__ == "__main__":

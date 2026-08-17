@@ -33,6 +33,7 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/common/button";
+import { DetailCardSkeleton } from "@/components/common/portal-loading";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -144,23 +145,29 @@ export default function EvacuationCenterDetailPage() {
   const queryClient = useQueryClient();
   const centerId = params.id as string;
 
-  const [manifestTab, setManifestTab] = React.useState<"all" | "active" | "history">("all");
+  const [manifestTab, setManifestTab] = React.useState<"all" | "active" | "history">(
+    "all",
+  );
   const [selectedEventFilter, setSelectedEventFilter] = React.useState<string>("all");
-  const [searchTerm, setSearchTerm] = React.useState<string>("" );
+  const [searchTerm, setSearchTerm] = React.useState<string>("");
   const [showHazard, setShowHazard] = React.useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
   const [showCloseDialog, setShowCloseDialog] = React.useState(false);
-  const [checkoutTarget, setCheckoutTarget] = React.useState<EvacCheckinRecord | null>(null);
+  const [checkoutTarget, setCheckoutTarget] = React.useState<EvacCheckinRecord | null>(
+    null,
+  );
 
   /* 1. Query Center Details */
   const {
     data: center,
-    isLoading: isCenterLoading,
+    isFetching: isCenterFetching,
     isError: isCenterError,
   } = useQuery({
     queryKey: ["admin", "evacuation-centers", centerId],
     queryFn: () =>
-      api.get<EvacCenterDetail>(`/admin/evacuation-centers/${centerId}`).then((r) => r.data),
+      api
+        .get<EvacCenterDetail>(`/admin/evacuation-centers/${centerId}`)
+        .then((r) => r.data),
   });
 
   /* 2. Query All Check-In Records (Ground truth for metrics and history) */
@@ -193,7 +200,9 @@ export default function EvacuationCenterDetailPage() {
       toast.success(
         nextOpen ? "Evacuation center is now OPEN" : "Evacuation center is now CLOSED",
       );
-      queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers", centerId] });
+      queryClient.invalidateQueries({
+        queryKey: ["admin", "evacuation-centers", centerId],
+      });
       queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
       queryClient.invalidateQueries({ queryKey: ["public", "evacuation-centers"] });
     },
@@ -208,7 +217,9 @@ export default function EvacuationCenterDetailPage() {
       api.post(`/admin/evacuation-centers/check-ins/${checkinId}/check-out`),
     onSuccess: () => {
       toast.success("Evacuee marked as checked out");
-      queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers", centerId] });
+      queryClient.invalidateQueries({
+        queryKey: ["admin", "evacuation-centers", centerId],
+      });
       queryClient.invalidateQueries({
         queryKey: ["admin", "evacuation-centers", centerId, "check-ins"],
       });
@@ -241,7 +252,9 @@ export default function EvacuationCenterDetailPage() {
     mutationFn: () => api.post(`/admin/evacuation-centers/${centerId}/reactivate`),
     onSuccess: () => {
       toast.success("Evacuation center reactivated successfully");
-      queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers", centerId] });
+      queryClient.invalidateQueries({
+        queryKey: ["admin", "evacuation-centers", centerId],
+      });
       queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "facilities"] });
       queryClient.invalidateQueries({ queryKey: ["public", "evacuation-centers"] });
@@ -346,7 +359,8 @@ export default function EvacuationCenterDetailPage() {
       if (manifestTab === "history" && item.checked_out_at === null) return false;
 
       // 2. Event filter
-      if (selectedEventFilter !== "all" && item.event_id !== selectedEventFilter) return false;
+      if (selectedEventFilter !== "all" && item.event_id !== selectedEventFilter)
+        return false;
 
       // 3. Search query filter
       if (searchTerm.trim()) {
@@ -361,20 +375,8 @@ export default function EvacuationCenterDetailPage() {
     });
   }, [allCheckins, manifestTab, selectedEventFilter, searchTerm]);
 
-  if (isCenterLoading) {
-    return (
-      <div className="flex flex-col gap-6 animate-pulse py-8">
-        <div className="h-8 w-64 rounded-lg bg-slate-200" />
-        <div className="h-44 w-full rounded-3xl bg-slate-200" />
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="h-28 rounded-xl bg-slate-200" />
-          <div className="h-28 rounded-xl bg-slate-200" />
-          <div className="h-28 rounded-xl bg-slate-200" />
-          <div className="h-28 rounded-xl bg-slate-200" />
-        </div>
-      </div>
-    );
-  }
+  if (isCenterFetching)
+    return <DetailCardSkeleton label="Loading evacuation center details" rows={8} />;
 
   if (isCenterError || !center) {
     return (
@@ -383,7 +385,7 @@ export default function EvacuationCenterDetailPage() {
           <Building2 className="size-8" />
         </div>
         <h2 className="text-xl font-bold text-slate-900">Evacuation Center Not Found</h2>
-        <p className="text-sm text-slate-500 max-w-md">
+        <p className="max-w-md text-sm text-slate-500">
           The requested evacuation center record does not exist or may have been removed.
         </p>
         <Link href="/admin/evacuation-centers">
@@ -423,26 +425,26 @@ export default function EvacuationCenterDetailPage() {
       {/* Hero Header Card */}
       <div className="flex flex-col justify-between gap-5 rounded-3xl border border-emerald-200/90 bg-gradient-to-r from-emerald-100/80 via-emerald-50/50 to-white p-6 text-slate-900 shadow-sm transition-all lg:flex-row lg:items-center">
         <div className="flex items-start gap-4">
-          <div className="grid size-14 shrink-0 place-items-center rounded-2xl bg-emerald-600 text-white border border-emerald-500 shadow-sm">
+          <div className="grid size-14 shrink-0 place-items-center rounded-2xl border border-emerald-500 bg-emerald-600 text-white shadow-sm">
             <BedDouble className="size-7" />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+              <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
                 {center.facility.name}
               </h1>
               <span
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-xs font-bold shadow-2xs",
                   !center.is_active
-                    ? "bg-slate-100 text-slate-700 border border-slate-300"
+                    ? "border border-slate-300 bg-slate-100 text-slate-700"
                     : center.is_open
                       ? isFull
-                        ? "bg-rose-100 text-rose-800 border border-rose-300 font-bold"
+                        ? "border border-rose-300 bg-rose-100 font-bold text-rose-800"
                         : isNear
-                          ? "bg-amber-100 text-amber-800 border border-amber-300 font-bold"
-                          : "bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold"
-                      : "bg-slate-100 text-slate-700 border border-slate-300",
+                          ? "border border-amber-300 bg-amber-100 font-bold text-amber-800"
+                          : "border border-emerald-300 bg-emerald-100 font-bold text-emerald-800"
+                      : "border border-slate-300 bg-slate-100 text-slate-700",
                 )}
               >
                 {center.is_open ? (
@@ -459,8 +461,9 @@ export default function EvacuationCenterDetailPage() {
                 )}
               </span>
             </div>
-            <p className="mt-1 text-sm text-slate-600 font-medium">
-              {center.facility.address || "Barangay San Jose, Rodriguez (Montalban), Rizal"}
+            <p className="mt-1 text-sm font-medium text-slate-600">
+              {center.facility.address ||
+                "Barangay San Jose, Rodriguez (Montalban), Rizal"}
               {center.facility.area_name ? ` • Sector: ${center.facility.area_name}` : ""}
             </p>
           </div>
@@ -474,7 +477,7 @@ export default function EvacuationCenterDetailPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-1.5 rounded-xl border-slate-300 bg-white text-xs font-bold text-slate-800 hover:bg-slate-50 cursor-pointer shadow-2xs"
+                className="cursor-pointer gap-1.5 rounded-xl border-slate-300 bg-white text-xs font-bold text-slate-800 shadow-2xs hover:bg-slate-50"
               >
                 <Pencil className="size-3.5 text-slate-700" />
                 Edit Shelter
@@ -495,7 +498,7 @@ export default function EvacuationCenterDetailPage() {
             }}
             disabled={toggleOpenMutation.isPending}
             className={cn(
-              "gap-1.5 rounded-xl border text-xs font-bold cursor-pointer shadow-2xs",
+              "cursor-pointer gap-1.5 rounded-xl border text-xs font-bold shadow-2xs",
               center.is_open
                 ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
                 : "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100",
@@ -521,7 +524,7 @@ export default function EvacuationCenterDetailPage() {
               size="sm"
               onClick={() => setShowDeleteDialog(true)}
               disabled={deactivateMutation.isPending}
-              className="gap-1.5 rounded-xl border-rose-200 bg-rose-50 text-xs font-bold text-rose-700 hover:bg-rose-100 hover:border-rose-300 cursor-pointer shadow-2xs"
+              className="cursor-pointer gap-1.5 rounded-xl border-rose-200 bg-rose-50 text-xs font-bold text-rose-700 shadow-2xs hover:border-rose-300 hover:bg-rose-100"
             >
               <Trash2 className="size-3.5 text-rose-600" />
               Deactivate
@@ -532,7 +535,7 @@ export default function EvacuationCenterDetailPage() {
               size="sm"
               onClick={() => reactivateMutation.mutate()}
               disabled={reactivateMutation.isPending}
-              className="gap-1.5 rounded-xl border-emerald-300 bg-emerald-50 text-xs font-bold text-emerald-800 hover:bg-emerald-100 cursor-pointer shadow-2xs"
+              className="cursor-pointer gap-1.5 rounded-xl border-emerald-300 bg-emerald-50 text-xs font-bold text-emerald-800 shadow-2xs hover:bg-emerald-100"
             >
               <RotateCcw className="size-3.5 text-emerald-700" />
               Reactivate
@@ -555,11 +558,13 @@ export default function EvacuationCenterDetailPage() {
                 : "Accepting intakes"
               : "Intake closed / Standby"
           }
-          tone={center.is_open ? (isFull ? "rose" : isNear ? "amber" : "emerald") : "neutral"}
+          tone={
+            center.is_open ? (isFull ? "rose" : isNear ? "amber" : "emerald") : "neutral"
+          }
           badge={
             <span
               className={cn(
-                "rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider",
+                "rounded-full px-2 py-0.5 text-[9.5px] font-black tracking-wider uppercase",
                 !center.is_open
                   ? "bg-slate-100 text-slate-700"
                   : isFull
@@ -604,18 +609,18 @@ export default function EvacuationCenterDetailPage() {
         {/* Left Column: Shelter Load, Disaster Deployments & Evacuee Manifest (7 cols) */}
         <div className="flex flex-col gap-5 lg:col-span-7">
           {/* Card 1: Shelter Operational Load & Integration Notice */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col gap-4">
+          <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
                 <BedDouble className="size-4 text-emerald-700" />
                 Shelter Operational Status & Real-Time Load
               </h3>
               <span
                 className={cn(
-                  "rounded-full px-2.5 py-0.5 text-[10px] font-bold border",
+                  "rounded-full border px-2.5 py-0.5 text-[10px] font-bold",
                   center.is_open
-                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                    : "bg-slate-100 text-slate-700 border-slate-200",
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                    : "border-slate-200 bg-slate-100 text-slate-700",
                 )}
               >
                 {center.is_open ? "INTAKE ACTIVE" : "CLOSED STANDBY"}
@@ -626,69 +631,75 @@ export default function EvacuationCenterDetailPage() {
             {capacity ? (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                  <span className="text-xs font-bold tracking-wider text-slate-600 uppercase">
                     Real-Time Capacity Allocation
                   </span>
-                  <span className="text-xs font-black tabular-nums text-slate-900">
+                  <span className="text-xs font-black text-slate-900 tabular-nums">
                     {occupancy} of {capacity} Occupants ({pct}%)
                   </span>
                 </div>
-                <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 border border-slate-200">
+                <div className="h-3 w-full overflow-hidden rounded-full border border-slate-200 bg-slate-100">
                   <div
                     className={cn(
-                      "h-full transition-all duration-500 rounded-full",
-                      isFull
-                        ? "bg-rose-600"
-                        : isNear
-                          ? "bg-amber-500"
-                          : "bg-emerald-600",
+                      "h-full rounded-full transition-all duration-500",
+                      isFull ? "bg-rose-600" : isNear ? "bg-amber-500" : "bg-emerald-600",
                     )}
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-500 mt-1">
-                  <span>Remaining Intake Slots: <strong>{remainingSlots}</strong></span>
-                  <span>{isFull ? "⚠️ Facility at full threshold" : isNear ? "⚡ High capacity warning (>80%)" : "✅ Available space ready"}</span>
+                <div className="mt-1 flex items-center justify-between text-xs text-slate-500">
+                  <span>
+                    Remaining Intake Slots: <strong>{remainingSlots}</strong>
+                  </span>
+                  <span>
+                    {isFull
+                      ? "⚠️ Facility at full threshold"
+                      : isNear
+                        ? "⚡ High capacity warning (>80%)"
+                        : "✅ Available space ready"}
+                  </span>
                 </div>
               </div>
             ) : null}
 
             {/* Sync Information Notice */}
             <div className="flex items-start gap-3 rounded-xl border border-sky-200 bg-sky-50/60 p-3.5 text-xs text-sky-900">
-              <Info className="size-4 shrink-0 text-sky-700 mt-0.5" />
-              <div className="flex-1 min-w-0">
+              <Info className="mt-0.5 size-4 shrink-0 text-sky-700" />
+              <div className="min-w-0 flex-1">
                 <p className="font-bold text-sky-950">
                   Integrated Emergency Events Operations
                 </p>
-                <p className="mt-0.5 text-sky-800/90 leading-relaxed text-[11.5px]">
-                  Evacuee intakes, safety self-check-ins, and field triage are synchronized with active{" "}
+                <p className="mt-0.5 text-[11.5px] leading-relaxed text-sky-800/90">
+                  Evacuee intakes, safety self-check-ins, and field triage are
+                  synchronized with active{" "}
                   <Link
                     href="/admin/emergency-events?event=all&tab=map"
-                    className="font-bold underline text-sky-900 hover:text-sky-950 inline-flex items-center gap-1"
+                    className="inline-flex items-center gap-1 font-bold text-sky-900 underline hover:text-sky-950"
                   >
                     Emergency Events Operations
                     <ExternalLink className="size-3" />
                   </Link>
-                  . Changes logged here immediately reflect in municipal GIS and response command centers.
+                  . Changes logged here immediately reflect in municipal GIS and response
+                  command centers.
                 </p>
               </div>
             </div>
           </div>
 
           {/* Card 2: Disaster Deployments & Operation History */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col gap-4">
+          <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
                 <ShieldAlert className="size-4 text-emerald-700" />
                 Disaster Deployments & Operation History
               </h3>
-              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 font-mono text-[10.5px] font-bold text-slate-700 border border-slate-200">
+              <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 font-mono text-[10.5px] font-bold text-slate-700">
                 {uniqueEvents.length} Operations Served
               </span>
             </div>
 
             {uniqueEvents.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {uniqueEvents.map((ev) => {
                   const badge = getEventTypeBadge(ev.eventType);
                   const Icon = badge.icon;
@@ -697,7 +708,7 @@ export default function EvacuationCenterDetailPage() {
                     <div
                       key={ev.eventId}
                       className={cn(
-                        "rounded-xl border p-3.5 flex flex-col justify-between gap-2.5 text-xs transition-all shadow-2xs",
+                        "flex flex-col justify-between gap-2.5 rounded-xl border p-3.5 text-xs shadow-2xs transition-all",
                         ev.isActive
                           ? "border-emerald-300 bg-emerald-50/40"
                           : "border-slate-200 bg-slate-50/50 hover:bg-slate-50",
@@ -707,7 +718,7 @@ export default function EvacuationCenterDetailPage() {
                         <div className="flex items-center justify-between gap-2">
                           <span
                             className={cn(
-                              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold border",
+                              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9.5px] font-bold",
                               badge.classes,
                             )}
                           >
@@ -716,9 +727,9 @@ export default function EvacuationCenterDetailPage() {
                           </span>
                           <span
                             className={cn(
-                              "rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider",
+                              "rounded-full px-2 py-0.5 text-[9px] font-black tracking-wider uppercase",
                               ev.isActive
-                                ? "bg-emerald-600 text-white animate-pulse"
+                                ? "animate-pulse bg-emerald-600 text-white"
                                 : "bg-slate-200 text-slate-700",
                             )}
                           >
@@ -726,26 +737,33 @@ export default function EvacuationCenterDetailPage() {
                           </span>
                         </div>
 
-                        <h4 className="font-bold text-slate-900 mt-2 line-clamp-1">
+                        <h4 className="mt-2 line-clamp-1 font-bold text-slate-900">
                           {ev.eventName}
                         </h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          Latest activity: {new Date(ev.lastCheckin).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        <p className="mt-0.5 text-[11px] text-slate-500">
+                          Latest activity:{" "}
+                          {new Date(ev.lastCheckin).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
                         </p>
                       </div>
 
-                      <div className="border-t border-slate-200/80 pt-2 flex items-center justify-between">
+                      <div className="flex items-center justify-between border-t border-slate-200/80 pt-2">
                         <div className="flex items-center gap-1.5 font-bold text-slate-800">
                           <Users className="size-3 text-slate-500" />
                           <span>{ev.totalCheckins} Sheltered</span>
                           {ev.activeCount > 0 ? (
-                            <span className="text-[10px] text-emerald-700">({ev.activeCount} active)</span>
+                            <span className="text-[10px] text-emerald-700">
+                              ({ev.activeCount} active)
+                            </span>
                           ) : null}
                         </div>
 
                         <Link
                           href={`/admin/emergency-events?event=${ev.eventId}&tab=map`}
-                          className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-800 hover:text-sky-950 underline"
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-800 underline hover:text-sky-950"
                         >
                           Workspace
                           <ExternalLink className="size-2.5" />
@@ -757,37 +775,40 @@ export default function EvacuationCenterDetailPage() {
               </div>
             ) : (
               <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-4 text-xs text-slate-500">
-                <ShieldAlert className="size-5 text-slate-400 shrink-0" />
-                <p>No historical emergency disaster deployments recorded for this shelter yet.</p>
+                <ShieldAlert className="size-5 shrink-0 text-slate-400" />
+                <p>
+                  No historical emergency disaster deployments recorded for this shelter
+                  yet.
+                </p>
               </div>
             )}
           </div>
 
           {/* Card 3: Evacuee Intake & Departure Manifest Ledger */}
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden flex flex-col">
+          <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
             {/* Header with Title & Record Count */}
             <div className="flex items-center justify-between border-b border-slate-200 px-5 pt-4 pb-3">
-              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
                 <History className="size-4 text-emerald-700" />
                 Shelter Intake & Departure Manifest Ledger
               </h3>
-              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 font-mono text-[10.5px] font-bold text-slate-700 border border-slate-200">
+              <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 font-mono text-[10.5px] font-bold text-slate-700">
                 {filteredCheckins.length} / {allCheckins.length} Records
               </span>
             </div>
 
             {/* Filter Toolbar: Search, Event Select, and Status Tabs */}
-            <div className="p-4 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+            <div className="flex flex-col items-stretch justify-between gap-3 border-b border-slate-100 bg-slate-50/60 p-4 sm:flex-row sm:items-center">
               <div className="flex flex-wrap items-center gap-2">
                 {/* Search input */}
                 <div className="relative min-w-[200px] flex-1 sm:flex-initial">
-                  <Search className="absolute left-2.5 top-2.5 size-3.5 text-slate-400" />
+                  <Search className="absolute top-2.5 left-2.5 size-3.5 text-slate-400" />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search evacuee or officer…"
-                    className="w-full h-8 pl-8 pr-3 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="h-8 w-full rounded-lg border border-slate-300 bg-white pr-3 pl-8 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
                   />
                 </div>
 
@@ -797,9 +818,11 @@ export default function EvacuationCenterDetailPage() {
                     value={selectedEventFilter}
                     onChange={(e) => setSelectedEventFilter(e.target.value)}
                     aria-label="Filter by Emergency Operation"
-                    className="h-8 px-2.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium text-slate-700"
+                    className="h-8 rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-medium text-slate-700 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
                   >
-                    <option value="all">All Emergency Events ({allCheckins.length})</option>
+                    <option value="all">
+                      All Emergency Events ({allCheckins.length})
+                    </option>
                     {uniqueEvents.map((ev) => (
                       <option key={ev.eventId} value={ev.eventId}>
                         {ev.eventName} ({ev.totalCheckins})
@@ -810,12 +833,12 @@ export default function EvacuationCenterDetailPage() {
               </div>
 
               {/* Status Tabs */}
-              <div className="flex items-center gap-1 bg-slate-200/70 p-0.5 rounded-lg text-xs font-bold shrink-0">
+              <div className="flex shrink-0 items-center gap-1 rounded-lg bg-slate-200/70 p-0.5 text-xs font-bold">
                 <button
                   type="button"
                   onClick={() => setManifestTab("all")}
                   className={cn(
-                    "px-2.5 py-1 rounded-md transition-all cursor-pointer",
+                    "cursor-pointer rounded-md px-2.5 py-1 transition-all",
                     manifestTab === "all"
                       ? "bg-white text-slate-900 shadow-2xs"
                       : "text-slate-600 hover:text-slate-900",
@@ -827,7 +850,7 @@ export default function EvacuationCenterDetailPage() {
                   type="button"
                   onClick={() => setManifestTab("active")}
                   className={cn(
-                    "px-2.5 py-1 rounded-md transition-all cursor-pointer",
+                    "cursor-pointer rounded-md px-2.5 py-1 transition-all",
                     manifestTab === "active"
                       ? "bg-white text-emerald-800 shadow-2xs"
                       : "text-slate-600 hover:text-slate-900",
@@ -839,7 +862,7 @@ export default function EvacuationCenterDetailPage() {
                   type="button"
                   onClick={() => setManifestTab("history")}
                   className={cn(
-                    "px-2.5 py-1 rounded-md transition-all cursor-pointer",
+                    "cursor-pointer rounded-md px-2.5 py-1 transition-all",
                     manifestTab === "history"
                       ? "bg-white text-slate-900 shadow-2xs"
                       : "text-slate-600 hover:text-slate-900",
@@ -854,8 +877,10 @@ export default function EvacuationCenterDetailPage() {
             {filteredCheckins.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
                 <UserCheck className="size-8 text-slate-300" />
-                <p className="font-bold text-sm text-slate-700">No matching evacuee records found</p>
-                <p className="text-xs text-slate-500 max-w-sm">
+                <p className="text-sm font-bold text-slate-700">
+                  No matching evacuee records found
+                </p>
+                <p className="max-w-sm text-xs text-slate-500">
                   {searchTerm || selectedEventFilter !== "all"
                     ? "Try adjusting your search keywords or emergency event filters."
                     : "Evacuee arrivals and departures logged during emergency operations will appear here."}
@@ -864,7 +889,7 @@ export default function EvacuationCenterDetailPage() {
             ) : (
               <div className="divide-y divide-slate-100 overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
+                  <thead className="bg-slate-50 text-[10.5px] font-bold tracking-wider text-slate-500 uppercase">
                     <tr>
                       <th className="px-4 py-3">Evacuee Name</th>
                       <th className="px-4 py-3">Emergency Event</th>
@@ -876,15 +901,21 @@ export default function EvacuationCenterDetailPage() {
                   <tbody className="divide-y divide-slate-100">
                     {filteredCheckins.map((item) => {
                       const isCurrentlyActive = item.checked_out_at === null;
-                      const duration = formatStayDuration(item.checked_in_at, item.checked_out_at);
+                      const duration = formatStayDuration(
+                        item.checked_in_at,
+                        item.checked_out_at,
+                      );
 
                       return (
-                        <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
+                        <tr
+                          key={item.id}
+                          className="transition-colors hover:bg-slate-50/70"
+                        >
                           <td className="px-4 py-3 font-bold text-slate-900">
                             <div className="flex items-center gap-2">
                               <div
                                 className={cn(
-                                  "grid size-7 place-items-center rounded-full font-bold text-xs shrink-0",
+                                  "grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold",
                                   isCurrentlyActive
                                     ? "bg-emerald-100 text-emerald-800"
                                     : "bg-slate-100 text-slate-700",
@@ -893,9 +924,13 @@ export default function EvacuationCenterDetailPage() {
                                 <User className="size-3.5" />
                               </div>
                               <div className="min-w-0">
-                                <p className="font-bold text-slate-900 truncate">{item.person_name}</p>
+                                <p className="truncate font-bold text-slate-900">
+                                  {item.person_name}
+                                </p>
                                 <span className="inline-block text-[10px] font-semibold text-slate-500">
-                                  {item.member_id ? "Registered Resident" : "Transient / Walk-in"}
+                                  {item.member_id
+                                    ? "Registered Resident"
+                                    : "Transient / Walk-in"}
                                 </span>
                               </div>
                             </div>
@@ -905,15 +940,17 @@ export default function EvacuationCenterDetailPage() {
                             {item.event_id ? (
                               <Link
                                 href={`/admin/emergency-events?event=${item.event_id}&tab=map`}
-                                className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-800 hover:bg-sky-100 transition-colors"
+                                className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-800 transition-colors hover:bg-sky-100"
                               >
                                 <Siren className="size-2.5 text-sky-700" />
-                                <span className="truncate max-w-[130px]">
+                                <span className="max-w-[130px] truncate">
                                   {item.event_name || "Emergency Event"}
                                 </span>
                               </Link>
                             ) : (
-                              <span className="text-slate-400 font-mono text-[11px]">—</span>
+                              <span className="font-mono text-[11px] text-slate-400">
+                                —
+                              </span>
                             )}
                           </td>
 
@@ -929,7 +966,7 @@ export default function EvacuationCenterDetailPage() {
 
                           <td className="px-3 py-3">
                             {isCurrentlyActive ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-300 animate-pulse">
+                              <span className="inline-flex animate-pulse items-center gap-1 rounded-full border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
                                 <span className="size-1.5 rounded-full bg-emerald-600" />
                                 Sheltered
                               </span>
@@ -940,10 +977,13 @@ export default function EvacuationCenterDetailPage() {
                                 </span>
                                 <span className="text-[10px] text-slate-400">
                                   Out:{" "}
-                                  {new Date(item.checked_out_at!).toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                  })}
+                                  {new Date(item.checked_out_at!).toLocaleDateString(
+                                    "en-US",
+                                    {
+                                      month: "short",
+                                      day: "numeric",
+                                    },
+                                  )}
                                 </span>
                               </div>
                             )}
@@ -956,13 +996,15 @@ export default function EvacuationCenterDetailPage() {
                                 size="sm"
                                 onClick={() => setCheckoutTarget(item)}
                                 disabled={checkoutMutation.isPending}
-                                className="h-7 gap-1 rounded-lg text-[11px] font-bold border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 cursor-pointer shadow-2xs"
+                                className="h-7 cursor-pointer gap-1 rounded-lg border-amber-300 bg-amber-50 text-[11px] font-bold text-amber-800 shadow-2xs hover:bg-amber-100"
                               >
                                 <LogOut className="size-3" />
                                 Check Out
                               </Button>
                             ) : (
-                              <span className="text-slate-400 text-[11px] font-mono">Concluded</span>
+                              <span className="font-mono text-[11px] text-slate-400">
+                                Concluded
+                              </span>
                             )}
                           </td>
                         </tr>
@@ -978,8 +1020,8 @@ export default function EvacuationCenterDetailPage() {
         {/* Right Column: Spatial Location Map & Facility Dossier (5 cols) */}
         <div className="flex flex-col gap-5 lg:col-span-5">
           {/* Spatial Location Map Card (Matching Siren Map Frame Design) */}
-          <div className="rounded-2xl border border-emerald-900/60 bg-[#052e16] p-1 shadow-md overflow-hidden flex flex-col">
-            <div className="min-h-[420px] lg:min-h-[460px] w-full overflow-hidden rounded-xl bg-slate-950">
+          <div className="flex flex-col overflow-hidden rounded-2xl border border-emerald-900/60 bg-[#052e16] p-1 shadow-md">
+            <div className="min-h-[420px] w-full overflow-hidden rounded-xl bg-slate-950 lg:min-h-[460px]">
               <AdminAssetWorkspaceMap
                 items={[mapItem]}
                 selectedId={center.id}
@@ -991,38 +1033,38 @@ export default function EvacuationCenterDetailPage() {
               />
             </div>
             {/* Green Footer: Flood Hazard Checkbox & Attributions */}
-            <div className="flex items-center justify-between gap-3 bg-[#052e16] px-3.5 py-2.5 text-xs text-white rounded-b-xl border-t border-emerald-900/80">
-              <label className="flex items-center gap-2 text-xs font-bold text-white cursor-pointer select-none">
+            <div className="flex items-center justify-between gap-3 rounded-b-xl border-t border-emerald-900/80 bg-[#052e16] px-3.5 py-2.5 text-xs text-white">
+              <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-white select-none">
                 <input
                   type="checkbox"
                   checked={showHazard}
                   onChange={(e) => setShowHazard(e.target.checked)}
-                  className="size-4 rounded border-emerald-600 bg-emerald-900/80 text-emerald-500 focus:ring-emerald-400 focus:ring-offset-0 cursor-pointer accent-emerald-500"
+                  className="size-4 cursor-pointer rounded border-emerald-600 bg-emerald-900/80 text-emerald-500 accent-emerald-500 focus:ring-emerald-400 focus:ring-offset-0"
                 />
-                <span className="text-emerald-100 font-semibold text-[11.5px]">
+                <span className="text-[11.5px] font-semibold text-emerald-100">
                   Show Flood Hazard Overlay
                 </span>
               </label>
 
-              <div className="text-[10.5px] font-medium text-emerald-300/80 shrink-0">
+              <div className="shrink-0 text-[10.5px] font-medium text-emerald-300/80">
                 Leaflet · © OpenStreetMap
               </div>
             </div>
           </div>
 
           {/* Facility Details Dossier Card */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col gap-4">
+          <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
                 <Building2 className="size-4 text-emerald-700" />
                 Facility & Shelter Dossier
               </h3>
               <span
                 className={cn(
-                  "rounded-full px-2.5 py-0.5 text-[10px] font-bold border",
+                  "rounded-full border px-2.5 py-0.5 text-[10px] font-bold",
                   center.is_open
-                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                    : "bg-slate-100 text-slate-700 border-slate-200",
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                    : "border-slate-200 bg-slate-100 text-slate-700",
                 )}
               >
                 {center.is_open ? "Active Shelter" : "Standby Facility"}
@@ -1031,30 +1073,30 @@ export default function EvacuationCenterDetailPage() {
 
             <dl className="flex flex-col gap-3.5 text-xs">
               <div>
-                <dt className="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider">
+                <dt className="text-[10.5px] font-bold tracking-wider text-slate-400 uppercase">
                   Shelter Facility Name
                 </dt>
-                <dd className="font-bold text-slate-900 mt-0.5 text-sm">
+                <dd className="mt-0.5 text-sm font-bold text-slate-900">
                   {center.facility.name}
                 </dd>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-2">
                 <div>
-                  <dt className="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider">
+                  <dt className="text-[10.5px] font-bold tracking-wider text-slate-400 uppercase">
                     Assigned Sector
                   </dt>
-                  <dd className="font-semibold text-slate-800 mt-0.5">
+                  <dd className="mt-0.5 font-semibold text-slate-800">
                     {center.facility.area_name || "Barangay San Jose"}
                   </dd>
                 </div>
 
                 <div>
-                  <dt className="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider">
+                  <dt className="text-[10.5px] font-bold tracking-wider text-slate-400 uppercase">
                     Geocoded Position
                   </dt>
-                  <dd className="font-mono text-[11px] font-bold text-slate-700 mt-0.5 flex items-center gap-1">
-                    <MapPin className="size-3 text-emerald-600 shrink-0" />
+                  <dd className="mt-0.5 flex items-center gap-1 font-mono text-[11px] font-bold text-slate-700">
+                    <MapPin className="size-3 shrink-0 text-emerald-600" />
                     {center.facility.location.coordinates[1].toFixed(5)},{" "}
                     {center.facility.location.coordinates[0].toFixed(5)}
                   </dd>
@@ -1062,10 +1104,10 @@ export default function EvacuationCenterDetailPage() {
               </div>
 
               <div className="border-t border-slate-100 pt-3">
-                <dt className="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider">
+                <dt className="text-[10.5px] font-bold tracking-wider text-slate-400 uppercase">
                   Designated Contact Person & Hotline
                 </dt>
-                <dd className="font-semibold text-slate-800 mt-1 flex items-center gap-1.5">
+                <dd className="mt-1 flex items-center gap-1.5 font-semibold text-slate-800">
                   <User className="size-3.5 text-slate-400" />
                   {center.contact_person || "Designated Barangay Officer"}
                 </dd>
@@ -1073,7 +1115,7 @@ export default function EvacuationCenterDetailPage() {
                   <dd className="mt-1.5">
                     <a
                       href={toTelHref(center.contact_number)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50/70 px-2.5 py-1 font-mono text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-colors"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50/70 px-2.5 py-1 font-mono text-xs font-bold text-emerald-800 transition-colors hover:bg-emerald-100"
                     >
                       <Phone className="size-3 text-emerald-600" />
                       {center.contact_number}
@@ -1084,10 +1126,10 @@ export default function EvacuationCenterDetailPage() {
 
               {center.notes ? (
                 <div className="border-t border-slate-100 pt-3">
-                  <dt className="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider">
+                  <dt className="text-[10.5px] font-bold tracking-wider text-slate-400 uppercase">
                     Equipment & Intake Notes
                   </dt>
-                  <dd className="text-slate-600 mt-1 bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11.5px] leading-relaxed">
+                  <dd className="mt-1 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11.5px] leading-relaxed text-slate-600">
                     {center.notes}
                   </dd>
                 </div>
@@ -1098,24 +1140,29 @@ export default function EvacuationCenterDetailPage() {
       </div>
 
       {/* Individual Evacuee Check-Out Confirmation Modal */}
-      <AlertDialog open={Boolean(checkoutTarget)} onOpenChange={(open) => !open && setCheckoutTarget(null)}>
+      <AlertDialog
+        open={Boolean(checkoutTarget)}
+        onOpenChange={(open) => !open && setCheckoutTarget(null)}
+      >
         <AlertDialogContent className="max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
           <AlertDialogHeader className="flex flex-col gap-2 text-left">
             <div className="flex items-center gap-3">
-              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-800 border border-amber-200">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-amber-200 bg-amber-100 text-amber-800">
                 <LogOut className="size-5" />
               </div>
               <div className="min-w-0">
-                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                <AlertDialogTitle className="text-base leading-tight font-black text-slate-900">
                   Check Out Evacuee?
                 </AlertDialogTitle>
-                <p className="text-xs font-bold text-amber-800 truncate mt-0.5">
+                <p className="mt-0.5 truncate text-xs font-bold text-amber-800">
                   {checkoutTarget?.person_name}
                 </p>
               </div>
             </div>
-            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
-              Confirm departure for <strong>{checkoutTarget?.person_name}</strong> from {center.facility.name}. This will timestamp their check-out and free up shelter capacity in real time.
+            <AlertDialogDescription className="mt-2 text-xs leading-relaxed text-slate-600">
+              Confirm departure for <strong>{checkoutTarget?.person_name}</strong> from{" "}
+              {center.facility.name}. This will timestamp their check-out and free up
+              shelter capacity in real time.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
@@ -1124,7 +1171,7 @@ export default function EvacuationCenterDetailPage() {
               size="sm"
               onClick={() => setCheckoutTarget(null)}
               disabled={checkoutMutation.isPending}
-              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+              className="cursor-pointer rounded-xl border-slate-200 text-xs font-bold hover:bg-slate-100"
             >
               Cancel
             </Button>
@@ -1137,7 +1184,7 @@ export default function EvacuationCenterDetailPage() {
                 }
               }}
               disabled={checkoutMutation.isPending}
-              className="rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs cursor-pointer"
+              className="cursor-pointer rounded-xl bg-amber-600 text-xs font-bold text-white shadow-xs hover:bg-amber-700"
             >
               {checkoutMutation.isPending ? "Checking Out…" : "Confirm Check-Out"}
             </Button>
@@ -1150,20 +1197,23 @@ export default function EvacuationCenterDetailPage() {
         <AlertDialogContent className="max-w-md rounded-2xl border border-amber-200 bg-white p-6 shadow-2xl">
           <AlertDialogHeader className="flex flex-col gap-2 text-left">
             <div className="flex items-center gap-3">
-              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-800 border border-amber-200">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-amber-200 bg-amber-100 text-amber-800">
                 <PowerOff className="size-5" />
               </div>
               <div className="min-w-0">
-                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                <AlertDialogTitle className="text-base leading-tight font-black text-slate-900">
                   Close Evacuation Center?
                 </AlertDialogTitle>
-                <p className="text-xs font-bold text-amber-800 truncate mt-0.5">
+                <p className="mt-0.5 truncate text-xs font-bold text-amber-800">
                   {center.facility.name}
                 </p>
               </div>
             </div>
-            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
-              Are you sure you want to mark this evacuation center as <strong>CLOSED</strong>? This will switch the shelter operational state to Standby, and public hazard maps will display it as not currently accepting new evacuees.
+            <AlertDialogDescription className="mt-2 text-xs leading-relaxed text-slate-600">
+              Are you sure you want to mark this evacuation center as{" "}
+              <strong>CLOSED</strong>? This will switch the shelter operational state to
+              Standby, and public hazard maps will display it as not currently accepting
+              new evacuees.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
@@ -1172,7 +1222,7 @@ export default function EvacuationCenterDetailPage() {
               size="sm"
               onClick={() => setShowCloseDialog(false)}
               disabled={toggleOpenMutation.isPending}
-              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+              className="cursor-pointer rounded-xl border-slate-200 text-xs font-bold hover:bg-slate-100"
             >
               Cancel
             </Button>
@@ -1185,7 +1235,7 @@ export default function EvacuationCenterDetailPage() {
                 });
               }}
               disabled={toggleOpenMutation.isPending}
-              className="rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs cursor-pointer"
+              className="cursor-pointer rounded-xl bg-amber-600 text-xs font-bold text-white shadow-xs hover:bg-amber-700"
             >
               {toggleOpenMutation.isPending ? "Closing…" : "Confirm Close Shelter"}
             </Button>
@@ -1198,20 +1248,23 @@ export default function EvacuationCenterDetailPage() {
         <AlertDialogContent className="max-w-md rounded-2xl border border-rose-200 bg-white p-6 shadow-2xl">
           <AlertDialogHeader className="flex flex-col gap-2 text-left">
             <div className="flex items-center gap-3">
-              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-rose-100 text-rose-700 border border-rose-200">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-rose-200 bg-rose-100 text-rose-700">
                 <Trash2 className="size-5" />
               </div>
               <div className="min-w-0">
-                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                <AlertDialogTitle className="text-base leading-tight font-black text-slate-900">
                   Deactivate Evacuation Center?
                 </AlertDialogTitle>
-                <p className="text-xs font-bold text-rose-700 truncate mt-0.5">
+                <p className="mt-0.5 truncate text-xs font-bold text-rose-700">
                   {center.facility.name}
                 </p>
               </div>
             </div>
-            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
-              Are you sure you want to deactivate and soft-delete this evacuation center? All active evacuees must be checked out before deactivation. This will close intake and remove its live marker from public GIS shelter maps while retaining audit history.
+            <AlertDialogDescription className="mt-2 text-xs leading-relaxed text-slate-600">
+              Are you sure you want to deactivate and soft-delete this evacuation center?
+              All active evacuees must be checked out before deactivation. This will close
+              intake and remove its live marker from public GIS shelter maps while
+              retaining audit history.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
@@ -1220,7 +1273,7 @@ export default function EvacuationCenterDetailPage() {
               size="sm"
               onClick={() => setShowDeleteDialog(false)}
               disabled={deactivateMutation.isPending}
-              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+              className="cursor-pointer rounded-xl border-slate-200 text-xs font-bold hover:bg-slate-100"
             >
               Cancel
             </Button>
@@ -1229,7 +1282,7 @@ export default function EvacuationCenterDetailPage() {
               size="sm"
               onClick={() => deactivateMutation.mutate()}
               disabled={deactivateMutation.isPending}
-              className="rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs cursor-pointer"
+              className="cursor-pointer rounded-xl bg-rose-600 text-xs font-bold text-white shadow-xs hover:bg-rose-700"
             >
               {deactivateMutation.isPending ? "Deactivating…" : "Confirm Deactivate"}
             </Button>

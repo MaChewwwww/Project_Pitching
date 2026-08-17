@@ -11,7 +11,7 @@ import {
   type AnnouncementFormValues,
 } from "@/components/features/admin/announcement-form";
 import { ErrorState } from "@/components/common/error-state";
-import { ListSkeleton } from "@/components/common/skeletons";
+import { FormFieldsSkeleton } from "@/components/common/portal-loading";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import type { ArticleImage, ArticleDocument } from "@/lib/api/public-types";
@@ -43,7 +43,7 @@ export default function AdminAnnouncementEditorPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const queryKey = ["admin", "announcements", id];
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isFetching, isError, refetch } = useQuery({
     queryKey,
     queryFn: () =>
       api.get<AnnouncementEditor>(`/admin/announcements/${id}`).then((r) => r.data),
@@ -69,7 +69,8 @@ export default function AdminAnnouncementEditorPage() {
     },
   });
 
-  if (isLoading) return <ListSkeleton rows={4} />;
+  if (isFetching)
+    return <FormFieldsSkeleton label="Loading announcement editor" fields={8} />;
   if (isError || !data)
     return <ErrorState sectionName="This announcement" onRetry={() => refetch()} />;
 

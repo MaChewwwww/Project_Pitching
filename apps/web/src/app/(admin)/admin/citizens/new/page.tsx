@@ -13,7 +13,11 @@ import { RegistryMemberForm } from "@/components/features/admin/registry-member-
 import { SearchableHouseholdSelect } from "@/components/features/admin/searchable-household-select";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
-import type { HouseholdOut, MemberUpdate, RegistryMemberOut } from "@/lib/api/registry-types";
+import type {
+  HouseholdOut,
+  MemberUpdate,
+  RegistryMemberOut,
+} from "@/lib/api/registry-types";
 
 export default function AddHouseholdMemberPage() {
   useRequireRole("admin", "bhw");
@@ -23,14 +27,18 @@ export default function AddHouseholdMemberPage() {
 
   const [householdId, setHouseholdId] = React.useState(search.get("household_id") ?? "");
 
-  const households = useQuery({
-    queryKey: ["admin", "households", "citizen-create"],
+  const selectedHousehold = useQuery({
+    queryKey: ["admin", "households", householdId, "citizen-create-selection"],
     queryFn: () =>
-      api.get<{ items: HouseholdOut[] }>("/admin/households", { params: { size: 1000 } }).then((r) => r.data.items),
+      api
+        .get<HouseholdOut>(`/admin/households/${householdId}`)
+        .then((response) => response.data),
+    enabled: Boolean(householdId),
   });
 
   const create = useMutation({
-    mutationFn: (body: MemberUpdate) => api.post<RegistryMemberOut>(`/admin/households/${householdId}/members`, body),
+    mutationFn: (body: MemberUpdate) =>
+      api.post<RegistryMemberOut>(`/admin/households/${householdId}/members`, body),
     onSuccess: (response) => {
       toast.success("Household member added successfully");
       client.invalidateQueries({ queryKey: ["admin", "citizens"] });
@@ -42,8 +50,6 @@ export default function AddHouseholdMemberPage() {
       throw new Error(toDisplayError(error).detail);
     },
   });
-
-  const selected = households.data?.find((item) => item.id === householdId);
 
   return (
     <div className="flex flex-col gap-6 pb-10">
@@ -61,10 +67,11 @@ export default function AddHouseholdMemberPage() {
             <p className="text-sm font-bold text-neutral-900">
               Household Placement <span className="text-red-600">*</span>
             </p>
-            <p className="text-xs text-neutral-500">The citizen inherits this household’s area and location context.</p>
+            <p className="text-xs text-neutral-500">
+              The citizen inherits this household’s area and location context.
+            </p>
           </div>
           <SearchableHouseholdSelect
-            households={households.data ?? []}
             value={householdId}
             onChange={(val) => setHouseholdId(val)}
             placeholder="Search & Choose a Household"
@@ -72,7 +79,7 @@ export default function AddHouseholdMemberPage() {
         </CardContent>
       </Card>
 
-      {selected ? (
+      {selectedHousehold.data ? (
         <RegistryMemberForm
           submitLabel="Add Household Member"
           onSubmit={(values) => create.mutateAsync(values).then(() => undefined)}
@@ -81,9 +88,12 @@ export default function AddHouseholdMemberPage() {
       ) : (
         <div className="rounded-2xl border border-dashed border-emerald-200/80 bg-white p-12 text-center shadow-2xs">
           <UserRoundPlus className="mx-auto size-10 text-emerald-600" />
-          <p className="mt-3 text-base font-bold text-neutral-900">Choose a Household to Begin</p>
+          <p className="mt-3 text-base font-bold text-neutral-900">
+            Choose a Household to Begin
+          </p>
           <p className="mt-1 text-sm text-neutral-500">
-            A citizen must belong to a registered household before their profile can be saved.
+            A citizen must belong to a registered household before their profile can be
+            saved.
           </p>
         </div>
       )}

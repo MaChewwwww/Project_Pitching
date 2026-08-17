@@ -98,9 +98,8 @@ async def list_donation_drives(
     session: AsyncSession, *, page: int = 1, size: int = 20, status: str | None = None
 ) -> Page[PublicDonationDrive]:
     now = datetime.now(UTC)
-    stmt = (
-        select(DonationDrive)
-        .where(DonationDrive.publication_status.in_(("published", "archived")))
+    stmt = select(DonationDrive).where(
+        DonationDrive.publication_status.in_(("published", "archived"))
     )
     if status == "active":
         stmt = (

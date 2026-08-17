@@ -101,8 +101,10 @@ export function EmergencyAlertBanner({
             className={cn(
               "grid size-10 shrink-0 place-items-center rounded-xl shadow-xs",
               severity === "info"
-                ? "bg-amber-950/15 text-amber-950"
-                : "bg-white/20 text-white",
+                ? "bg-white text-amber-700 shadow-sm"
+                : severity === "warning"
+                  ? "bg-white text-orange-600 shadow-sm"
+                  : "bg-white text-red-600 shadow-sm",
             )}
           >
             <BannerIcon
@@ -114,7 +116,7 @@ export function EmergencyAlertBanner({
 
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-h4 min-w-0 truncate font-bold tracking-tight">
+              <span className="text-h4 min-w-0 truncate font-bold tracking-tight uppercase">
                 {title}
               </span>
               {!/level/i.test(title) ? (

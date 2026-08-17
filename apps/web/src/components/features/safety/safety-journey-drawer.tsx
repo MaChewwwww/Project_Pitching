@@ -18,12 +18,9 @@ import {
 
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
+import { TimelineSkeleton } from "@/components/common/portal-loading";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { api } from "@/lib/api/client";
 import { formatPhtDateTime } from "@/lib/format";
 import type { PersonSafetyJourneyOut } from "@/lib/api/safety-types";
@@ -44,7 +41,9 @@ export function SafetyJourneyDrawer({ subject, onClose }: SafetyJourneyDrawerPro
     queryKey: ["admin", "safety", "history", subject?.type, subject?.id],
     queryFn: () =>
       api
-        .get<PersonSafetyJourneyOut>(`/admin/safety/history/${subject!.type}/${subject!.id}`)
+        .get<PersonSafetyJourneyOut>(
+          `/admin/safety/history/${subject!.type}/${subject!.id}`,
+        )
         .then((res) => res.data),
     enabled: isOpen && Boolean(subject?.id),
   });
@@ -55,28 +54,34 @@ export function SafetyJourneyDrawer({ subject, onClose }: SafetyJourneyDrawerPro
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-md p-0 gap-0 flex flex-col h-full bg-slate-50 border-l border-slate-200 z-[2500]"
+        className="z-[2500] flex h-full w-full flex-col gap-0 border-l border-slate-200 bg-slate-50 p-0 sm:max-w-md"
         showCloseButton={false}
       >
         {/* Drawer Header */}
-        <div className="bg-white border-b border-slate-200 px-5 py-4 shrink-0 flex items-center justify-between">
-          <div className="flex flex-col min-w-0 pr-2">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+          <div className="flex min-w-0 flex-col pr-2">
             <div className="flex items-center gap-2">
-              <SheetTitle className="text-base font-black text-slate-900 leading-tight truncate">
+              <SheetTitle className="truncate text-base leading-tight font-black text-slate-900">
                 {data?.full_name ?? subject?.name ?? "Resident Safety Journey"}
               </SheetTitle>
               {data?.is_head && (
-                <span className="inline-flex items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9.5px] font-bold uppercase text-emerald-800 border border-emerald-200 shrink-0">
+                <span className="inline-flex shrink-0 items-center rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[9.5px] font-bold text-emerald-800 uppercase">
                   Head
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 mt-0.5 truncate">
-              <span>{subject?.type === "registered_member" ? "Registered Citizen" : "Unregistered Walk-In"}</span>
+            <div className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] font-semibold text-slate-500">
+              <span>
+                {subject?.type === "registered_member"
+                  ? "Registered Citizen"
+                  : "Unregistered Walk-In"}
+              </span>
               {data?.household_reference_no && (
                 <>
                   <span>·</span>
-                  <span className="font-bold text-slate-700">{data.household_reference_no}</span>
+                  <span className="font-bold text-slate-700">
+                    {data.household_reference_no}
+                  </span>
                 </>
               )}
               {data?.area_name && (
@@ -91,35 +96,43 @@ export function SafetyJourneyDrawer({ subject, onClose }: SafetyJourneyDrawerPro
             type="button"
             onClick={onClose}
             aria-label="Close drawer"
-            className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer shrink-0"
+            className="shrink-0 cursor-pointer rounded-xl p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
           >
             <X className="size-4" />
           </button>
         </div>
 
         {/* Drawer Body Scroll Area with Custom Scrollbar */}
-        <ScrollArea type="always" className="flex-1 min-h-0 h-full custom-scrollbar">
-          <div className="p-4 sm:p-5 flex flex-col gap-4">
-            {journeyQuery.isLoading ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-                <div className="size-8 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
-                <p className="text-xs font-semibold text-slate-500">Loading resident timeline…</p>
-              </div>
+        <ScrollArea type="always" className="custom-scrollbar h-full min-h-0 flex-1">
+          <div className="flex flex-col gap-4 p-4 sm:p-5">
+            {journeyQuery.isFetching ? (
+              <TimelineSkeleton label="Loading resident timeline" rows={4} />
             ) : journeyQuery.isError ? (
               <div className="rounded-2xl border border-rose-200 bg-rose-50/50 p-5 text-center">
-                <ShieldAlert className="size-8 text-rose-500 mx-auto mb-2" />
-                <h4 className="text-sm font-bold text-rose-900">Failed to load journey</h4>
-                <p className="text-xs text-rose-600 mt-1">Unable to retrieve historical safety records.</p>
-                <Button size="sm" variant="outline" className="mt-3 text-xs" onClick={() => journeyQuery.refetch()}>
+                <ShieldAlert className="mx-auto mb-2 size-8 text-rose-500" />
+                <h4 className="text-sm font-bold text-rose-900">
+                  Failed to load journey
+                </h4>
+                <p className="mt-1 text-xs text-rose-600">
+                  Unable to retrieve historical safety records.
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-3 text-xs"
+                  onClick={() => journeyQuery.refetch()}
+                >
                   Retry
                 </Button>
               </div>
             ) : data ? (
               <>
                 {/* Profile Summary Card */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs flex flex-col gap-3">
+                <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Current Status</span>
+                    <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                      Current Status
+                    </span>
                     {data.current_status === "safe" ? (
                       <Badge tone="success">Confirmed Safe</Badge>
                     ) : data.current_status === "needs_rescue" ? (
@@ -130,39 +143,54 @@ export function SafetyJourneyDrawer({ subject, onClose }: SafetyJourneyDrawerPro
                   </div>
 
                   {data.current_evac_center_name && (
-                    <div className="flex items-center gap-2 rounded-xl bg-emerald-50/80 border border-emerald-200/80 px-3 py-2 text-xs font-semibold text-emerald-900">
+                    <div className="flex items-center gap-2 rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-3 py-2 text-xs font-semibold text-emerald-900">
                       <Building2 className="size-4 shrink-0 text-emerald-700" />
-                      <span>Sheltered at: <strong className="text-emerald-950">{data.current_evac_center_name}</strong></span>
+                      <span>
+                        Sheltered at:{" "}
+                        <strong className="text-emerald-950">
+                          {data.current_evac_center_name}
+                        </strong>
+                      </span>
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-slate-100 text-xs">
+                  <div className="grid grid-cols-2 gap-2.5 border-t border-slate-100 pt-2 text-xs">
                     {data.household_reference_no && (
                       <div className="flex flex-col">
-                        <span className="text-[10.5px] text-slate-400 font-medium">Household Ref</span>
-                        <span className="font-bold text-slate-800">{data.household_reference_no}</span>
+                        <span className="text-[10.5px] font-medium text-slate-400">
+                          Household Ref
+                        </span>
+                        <span className="font-bold text-slate-800">
+                          {data.household_reference_no}
+                        </span>
                       </div>
                     )}
                     {data.area_name && (
                       <div className="flex flex-col">
-                        <span className="text-[10.5px] text-slate-400 font-medium">Area</span>
+                        <span className="text-[10.5px] font-medium text-slate-400">
+                          Area
+                        </span>
                         <span className="font-bold text-slate-800">{data.area_name}</span>
                       </div>
                     )}
                     {data.contact_number && (
-                      <div className="flex flex-col col-span-2">
-                        <span className="text-[10.5px] text-slate-400 font-medium">Contact Number</span>
-                        <span className="font-bold text-slate-800 flex items-center gap-1">
+                      <div className="col-span-2 flex flex-col">
+                        <span className="text-[10.5px] font-medium text-slate-400">
+                          Contact Number
+                        </span>
+                        <span className="flex items-center gap-1 font-bold text-slate-800">
                           <Phone className="size-3 text-slate-400" />
                           {data.contact_number}
                         </span>
                       </div>
                     )}
                     {data.address && (
-                      <div className="flex flex-col col-span-2">
-                        <span className="text-[10.5px] text-slate-400 font-medium">Location / Note</span>
-                        <span className="font-bold text-slate-800 flex items-start gap-1">
-                          <MapPin className="size-3 text-slate-400 shrink-0 mt-0.5" />
+                      <div className="col-span-2 flex flex-col">
+                        <span className="text-[10.5px] font-medium text-slate-400">
+                          Location / Note
+                        </span>
+                        <span className="flex items-start gap-1 font-bold text-slate-800">
+                          <MapPin className="mt-0.5 size-3 shrink-0 text-slate-400" />
                           {data.address}
                         </span>
                       </div>
@@ -171,11 +199,11 @@ export function SafetyJourneyDrawer({ subject, onClose }: SafetyJourneyDrawerPro
 
                   {/* Vulnerability Tags */}
                   {data.vulnerability_flags.length > 0 && (
-                    <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-1.5 border-t border-slate-100 pt-2">
                       {data.vulnerability_flags.map((flag) => (
                         <span
                           key={flag}
-                          className="inline-flex items-center gap-1 rounded-md bg-rose-50 border border-rose-200/80 px-2 py-0.5 text-[10px] font-bold text-rose-700 uppercase"
+                          className="inline-flex items-center gap-1 rounded-md border border-rose-200/80 bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700 uppercase"
                         >
                           <HeartPulse className="size-2.5" />
                           {flag.replace("is_", "").replace("has_", "").replace("_", " ")}
@@ -187,7 +215,7 @@ export function SafetyJourneyDrawer({ subject, onClose }: SafetyJourneyDrawerPro
 
                 {/* Event Timeline */}
                 <div className="flex flex-col gap-3">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <h4 className="flex items-center gap-1.5 text-xs font-black tracking-wider text-slate-500 uppercase">
                     <Clock className="size-3.5 text-slate-400" />
                     Emergency Audit Timeline ({data.timeline.length})
                   </h4>
@@ -197,21 +225,21 @@ export function SafetyJourneyDrawer({ subject, onClose }: SafetyJourneyDrawerPro
                       No status mutations recorded yet for this person.
                     </div>
                   ) : (
-                    <div className="relative pl-6 space-y-3.5 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                    <div className="relative space-y-3.5 pl-6 before:absolute before:top-2 before:bottom-2 before:left-2.5 before:w-0.5 before:bg-slate-200">
                       {data.timeline.map((entry, index) => {
                         const isLatest = index === 0;
                         return (
-                          <div key={entry.id || index} className="relative group">
+                          <div key={entry.id || index} className="group relative">
                             {/* Timeline dot */}
                             <div
-                              className={`absolute -left-6 top-1 grid size-5 place-items-center rounded-full border bg-white shadow-2xs ${
+                              className={`absolute top-1 -left-6 grid size-5 place-items-center rounded-full border bg-white shadow-2xs ${
                                 entry.status === "safe"
                                   ? "border-emerald-500 text-emerald-600"
                                   : entry.status === "needs_rescue"
-                                  ? "border-rose-500 text-rose-600 bg-rose-50"
-                                  : entry.type === "evac_checkin"
-                                  ? "border-sky-500 text-sky-600"
-                                  : "border-slate-300 text-slate-400"
+                                    ? "border-rose-500 bg-rose-50 text-rose-600"
+                                    : entry.type === "evac_checkin"
+                                      ? "border-sky-500 text-sky-600"
+                                      : "border-slate-300 text-slate-400"
                               }`}
                             >
                               {entry.status === "safe" ? (
@@ -230,19 +258,27 @@ export function SafetyJourneyDrawer({ subject, onClose }: SafetyJourneyDrawerPro
                             </div>
 
                             {/* Event Card */}
-                            <div className={`rounded-xl border p-3 bg-white shadow-2xs transition-all ${isLatest ? "border-emerald-200/90 ring-2 ring-emerald-500/10" : "border-slate-200"}`}>
+                            <div
+                              className={`rounded-xl border bg-white p-3 shadow-2xs transition-all ${isLatest ? "border-emerald-200/90 ring-2 ring-emerald-500/10" : "border-slate-200"}`}
+                            >
                               <div className="flex items-start justify-between gap-3">
-                                <span className="text-xs font-bold text-slate-900">{entry.title}</span>
-                                <span className="text-[10px] font-semibold text-slate-400 tabular-nums shrink-0 whitespace-nowrap text-right">
+                                <span className="text-xs font-bold text-slate-900">
+                                  {entry.title}
+                                </span>
+                                <span className="shrink-0 text-right text-[10px] font-semibold whitespace-nowrap text-slate-400 tabular-nums">
                                   {formatPhtDateTime(entry.timestamp)}
                                 </span>
                               </div>
-                              <p className="mt-1 text-[11.5px] text-slate-600 leading-snug">{entry.description}</p>
+                              <p className="mt-1 text-[11.5px] leading-snug text-slate-600">
+                                {entry.description}
+                              </p>
 
                               {entry.actor_name && (
-                                <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10.5px] text-slate-400">
+                                <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-1.5 text-[10.5px] text-slate-400">
                                   <span>Recorded by:</span>
-                                  <span className="font-semibold text-slate-700">{entry.actor_name}</span>
+                                  <span className="font-semibold text-slate-700">
+                                    {entry.actor_name}
+                                  </span>
                                 </div>
                               )}
                             </div>

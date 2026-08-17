@@ -16,8 +16,9 @@ Relative imports so this resolves identically from `apps/api` and from
 
 from __future__ import annotations
 
+import re
 import ssl
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 
 import httpx
 
@@ -27,6 +28,8 @@ FFWS_URL = "https://pasig-marikina-tullahanffws.pagasa.dost.gov.ph/water/map_lis
 
 # PHT is UTC+8 year-round — no DST in the Philippines.
 _PHT_OFFSET = timedelta(hours=8)
+_PHT = timezone(_PHT_OFFSET)
+_OBSERVATION_INTERVAL_MINUTES = 10
 
 USER_AGENT = (
     "SAGIP-SJ/0.1 (barangay disaster readiness prototype; polite poll, see tech_stack.md Sec.7)"
@@ -100,6 +103,35 @@ def _parse_ymdhm(value: str | None) -> datetime | None:
     return (naive - _PHT_OFFSET).replace(tzinfo=UTC)  # PHT -> UTC storage (NFR-DAT-003)
 
 
+def _pagasa_query_time(now: datetime | None = None) -> str:
+    """Return the latest complete PAGASA observation slot in PHT.
+
+    The FFWS endpoint returns an idle station list when `ymdhm` is omitted, and
+    its gauges publish on ten-minute slots. The current slot can still return
+    `nodata` while PAGASA is publishing it, so request one completed slot behind
+    the current time.
+    """
+    current = (now or datetime.now(UTC)).astimezone(_PHT) - timedelta(
+        minutes=_OBSERVATION_INTERVAL_MINUTES
+    )
+    minute = current.minute - (current.minute % _OBSERVATION_INTERVAL_MINUTES)
+    slot = current.replace(minute=minute, second=0, microsecond=0)
+    return slot.strftime("%Y%m%d%H%M")
+
+
+def _parse_water_level(value: object) -> float | None:
+    """Parse FFWS water levels, including the published `(*)` marker."""
+    if value is None:
+        return None
+
+    match = re.fullmatch(
+        r"\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*(?:\(\*\))?\s*", str(value)
+    )
+    if match is None:
+        raise ValueError(f"Invalid PAGASA water level: {value!r}")
+    return float(match.group(1))
+
+
 class PagasaSource:
     """Implements `DataSource` (FR-WX-008)."""
 
@@ -113,7 +145,7 @@ class PagasaSource:
         with httpx.Client(
             timeout=self.timeout, headers={"User-Agent": USER_AGENT}, verify=_ssl_context()
         ) as client:
-            response = client.get(FFWS_URL)
+            response = client.get(FFWS_URL, params={"ymdhm": _pagasa_query_time()})
             response.raise_for_status()
             return response.json()
 
@@ -131,7 +163,7 @@ class PagasaSource:
         if match is None:
             raise ValueError(f"Station '{self.station}' not found in FFWS response.")
 
-        wl = match.get("wl")
+        wl = _parse_water_level(match.get("wl"))
         if wl is None:
             return []
 
@@ -140,7 +172,7 @@ class PagasaSource:
             Reading(
                 source=self.name,
                 metric="river_level",
-                value=float(wl),
+                value=wl,
                 unit="m",
                 observed_at=observed_at,
                 station=self.station,

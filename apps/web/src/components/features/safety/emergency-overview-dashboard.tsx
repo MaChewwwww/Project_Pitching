@@ -36,6 +36,11 @@ import {
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import {
+  ChartSkeleton,
+  DetailCardSkeleton,
+  MetricGridSkeleton,
+} from "@/components/common/portal-loading";
 import { api } from "@/lib/api/client";
 import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -69,21 +74,38 @@ interface EmergencyOverviewDashboardProps {
 }
 
 const DEMOGRAPHIC_COLORS = {
-  seniors: "#8b5cf6",   // Violet (60+)
-  pwd: "#2563eb",       // Blue (PWD)
-  infants: "#06b6d4",   // Cyan (0-4)
-  minors: "#0284c7",    // Sky Blue (5-17)
-  pregnant: "#ec4899",  // Pink (Maternal/Pregnant)
+  seniors: "#8b5cf6", // Violet (60+)
+  pwd: "#2563eb", // Blue (PWD)
+  infants: "#06b6d4", // Cyan (0-4)
+  minors: "#0284c7", // Sky Blue (5-17)
+  pregnant: "#ec4899", // Pink (Maternal/Pregnant)
   lactating: "#f43f5e", // Rose (Lactating)
-  chronic: "#f59e0b",   // Amber (Chronic Condition)
-  mobility: "#e11d48",  // Red-Rose (Mobility-Limited)
+  chronic: "#f59e0b", // Amber (Chronic Condition)
+  mobility: "#e11d48", // Red-Rose (Mobility-Limited)
 };
 
 const PROXIMITY_COLORS = {
   very_near: "#ef4444", // High Risk Red
-  near: "#f59e0b",      // Moderate Amber
-  far: "#10b981",       // Safe Emerald
+  near: "#f59e0b", // Moderate Amber
+  far: "#10b981", // Safe Emerald
 };
+
+function OverviewLoadingSkeleton() {
+  return (
+    <div className="flex flex-col gap-4">
+      <DetailCardSkeleton label="Loading emergency command overview" rows={3} />
+      <MetricGridSkeleton
+        count={6}
+        label="Loading emergency metrics"
+        className="lg:grid-cols-6"
+      />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ChartSkeleton label="Loading area accountability chart" />
+        <ChartSkeleton label="Loading response capacity chart" />
+      </div>
+    </div>
+  );
+}
 
 /* -------------------------------------------------------------------------- */
 /* Main Emergency Overview Dashboard Component                                */
@@ -135,8 +157,14 @@ export function EmergencyOverviewDashboard({
 
   // Zero State: When viewing All Active Events and activeCount === 0
   const isStandbyMode = isAllActiveOverview && activeCount === 0;
+  const isOverviewFetching =
+    loading ||
+    accountedForQuery.isFetching ||
+    evacCentersQuery.isFetching ||
+    registrySummaryQuery.isFetching;
 
   if (isStandbyMode) {
+    if (isOverviewFetching) return <OverviewLoadingSkeleton />;
     return (
       <StandbyReadinessView
         events={events}
@@ -147,24 +175,15 @@ export function EmergencyOverviewDashboard({
     );
   }
 
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-4 animate-pulse">
-        <div className="h-44 rounded-3xl bg-slate-200" />
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-28 rounded-2xl bg-slate-200" />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  if (isOverviewFetching) return <OverviewLoadingSkeleton />;
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center flex flex-col items-center gap-3">
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center">
         <AlertTriangle className="size-8 text-rose-600" />
-        <p className="text-sm font-bold text-rose-900">Could not load emergency event telemetry.</p>
+        <p className="text-sm font-bold text-rose-900">
+          Could not load emergency event telemetry.
+        </p>
         <Button size="sm" variant="outline" onClick={onRetry}>
           Retry Connection
         </Button>
@@ -176,7 +195,9 @@ export function EmergencyOverviewDashboard({
     return (
       <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center shadow-xs">
         <Siren className="mx-auto size-10 text-slate-300" />
-        <h3 className="mt-3 text-base font-bold text-slate-800">No Emergency Event Selected</h3>
+        <h3 className="mt-3 text-base font-bold text-slate-800">
+          No Emergency Event Selected
+        </h3>
         <p className="mt-1 text-xs text-slate-500">
           Select an incident from the dropdown or declare a new emergency event.
         </p>
@@ -208,7 +229,8 @@ export function EmergencyOverviewDashboard({
   const safeConfirmed = regTotal?.safe_confirmed ?? 0;
   const safeBulk = regTotal?.safe_bulk ?? 0;
   const safeTotal = safeConfirmed + safeBulk;
-  const safePct = totalRegistered > 0 ? ((safeTotal / totalRegistered) * 100).toFixed(1) : "0.0";
+  const safePct =
+    totalRegistered > 0 ? ((safeTotal / totalRegistered) * 100).toFixed(1) : "0.0";
 
   const needsRescueCount =
     regTotal?.needs_rescue ??
@@ -216,8 +238,7 @@ export function EmergencyOverviewDashboard({
     0;
   // unaccounted comes directly from the API — never recalculate if we have it
   const unaccountedCount =
-    regTotal?.unaccounted ??
-    Math.max(0, totalRegistered - safeTotal - needsRescueCount);
+    regTotal?.unaccounted ?? Math.max(0, totalRegistered - safeTotal - needsRescueCount);
 
   const unregSafe = accountedData?.unregistered_safe ?? 0;
   const unregRescue = accountedData?.unregistered_needs_rescue ?? 0;
@@ -270,8 +291,19 @@ export function EmergencyOverviewDashboard({
       }
     }
 
-    const totalHighRisk = pwd + seniors + infants + pregnant + lactating + chronic + mobilityLimited;
-    return { pwd, seniors, infants, minors, pregnant, lactating, chronic, mobilityLimited, totalHighRisk };
+    const totalHighRisk =
+      pwd + seniors + infants + pregnant + lactating + chronic + mobilityLimited;
+    return {
+      pwd,
+      seniors,
+      infants,
+      minors,
+      pregnant,
+      lactating,
+      chronic,
+      mobilityLimited,
+      totalHighRisk,
+    };
   })();
 
   // Waterway proximity computation (FR-REG-062 — survey + spatial area mapping)
@@ -315,7 +347,10 @@ export function EmergencyOverviewDashboard({
     return { very_near, near, far, total: very_near + near + far };
   })();
 
-  const totalProx = proximityMetrics.total || (proximityMetrics.very_near + proximityMetrics.near + proximityMetrics.far) || 1;
+  const totalProx =
+    proximityMetrics.total ||
+    proximityMetrics.very_near + proximityMetrics.near + proximityMetrics.far ||
+    1;
   const veryNearPct = Math.round((proximityMetrics.very_near / totalProx) * 100);
   const nearPct = Math.round((proximityMetrics.near / totalProx) * 100);
   const farPct = Math.round((proximityMetrics.far / totalProx) * 100);
@@ -343,11 +378,20 @@ export function EmergencyOverviewDashboard({
 
     // Fallback from workspace households
     if (workspace?.households) {
-      const groups: Record<string, { name: string; safe: number; rescue: number; unaccounted: number; total: number }> = {};
+      const groups: Record<
+        string,
+        { name: string; safe: number; rescue: number; unaccounted: number; total: number }
+      > = {};
       for (const hh of workspace.households) {
         const areaName = hh.area_name || "Central";
         if (!groups[areaName]) {
-          groups[areaName] = { name: areaName, safe: 0, rescue: 0, unaccounted: 0, total: 0 };
+          groups[areaName] = {
+            name: areaName,
+            safe: 0,
+            rescue: 0,
+            unaccounted: 0,
+            total: 0,
+          };
         }
         groups[areaName].safe += hh.safe_count;
         groups[areaName].rescue += hh.needs_rescue_count;
@@ -372,17 +416,50 @@ export function EmergencyOverviewDashboard({
 
   // Demographic pie chart data
   const demographicChartData = [
-    { name: "Senior Citizens (60+)", value: vulnerabilityMetrics.seniors, color: DEMOGRAPHIC_COLORS.seniors },
-    { name: "Persons with Disability (PWD)", value: vulnerabilityMetrics.pwd, color: DEMOGRAPHIC_COLORS.pwd },
-    { name: "Infants & Toddlers (0-4)", value: vulnerabilityMetrics.infants, color: DEMOGRAPHIC_COLORS.infants },
-    { name: "Minors & Children (5-17)", value: vulnerabilityMetrics.minors, color: DEMOGRAPHIC_COLORS.minors },
-    { name: "Pregnant Mothers", value: vulnerabilityMetrics.pregnant, color: DEMOGRAPHIC_COLORS.pregnant },
-    { name: "Lactating Mothers", value: vulnerabilityMetrics.lactating, color: DEMOGRAPHIC_COLORS.lactating },
-    { name: "Chronic Condition", value: vulnerabilityMetrics.chronic, color: DEMOGRAPHIC_COLORS.chronic },
-    { name: "Mobility-Limited", value: vulnerabilityMetrics.mobilityLimited, color: DEMOGRAPHIC_COLORS.mobility },
+    {
+      name: "Senior Citizens (60+)",
+      value: vulnerabilityMetrics.seniors,
+      color: DEMOGRAPHIC_COLORS.seniors,
+    },
+    {
+      name: "Persons with Disability (PWD)",
+      value: vulnerabilityMetrics.pwd,
+      color: DEMOGRAPHIC_COLORS.pwd,
+    },
+    {
+      name: "Infants & Toddlers (0-4)",
+      value: vulnerabilityMetrics.infants,
+      color: DEMOGRAPHIC_COLORS.infants,
+    },
+    {
+      name: "Minors & Children (5-17)",
+      value: vulnerabilityMetrics.minors,
+      color: DEMOGRAPHIC_COLORS.minors,
+    },
+    {
+      name: "Pregnant Mothers",
+      value: vulnerabilityMetrics.pregnant,
+      color: DEMOGRAPHIC_COLORS.pregnant,
+    },
+    {
+      name: "Lactating Mothers",
+      value: vulnerabilityMetrics.lactating,
+      color: DEMOGRAPHIC_COLORS.lactating,
+    },
+    {
+      name: "Chronic Condition",
+      value: vulnerabilityMetrics.chronic,
+      color: DEMOGRAPHIC_COLORS.chronic,
+    },
+    {
+      name: "Mobility-Limited",
+      value: vulnerabilityMetrics.mobilityLimited,
+      color: DEMOGRAPHIC_COLORS.mobility,
+    },
   ].filter((d) => d.value > 0);
 
-  const totalDemographicSum = demographicChartData.reduce((acc, d) => acc + d.value, 0) || 1;
+  const totalDemographicSum =
+    demographicChartData.reduce((acc, d) => acc + d.value, 0) || 1;
   const enrichedDemographicChartData = demographicChartData.map((d) => ({
     ...d,
     pct: Math.round((d.value / totalDemographicSum) * 100),
@@ -410,7 +487,7 @@ export function EmergencyOverviewDashboard({
         fill="#0f172a"
         textAnchor={x > cx ? "start" : "end"}
         dominantBaseline="central"
-        className="text-[11px] font-black fill-slate-900"
+        className="fill-slate-900 text-[11px] font-black"
       >
         {item.pct}%
       </text>
@@ -470,7 +547,7 @@ export function EmergencyOverviewDashboard({
         fill="#0f172a"
         textAnchor={x > cx ? "start" : "end"}
         dominantBaseline="central"
-        className="text-[11px] font-black fill-slate-900"
+        className="fill-slate-900 text-[11px] font-black"
       >
         {item.pct}%
       </text>
@@ -484,13 +561,16 @@ export function EmergencyOverviewDashboard({
       {/* -------------------------------------------------------------------- */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {/* KPI 1: Total Registered Population in Scope */}
-        <Card radius="lg" className="border-slate-200/90 bg-white shadow-2xs hover:shadow-xs transition-all">
-          <CardContent className="p-4 flex flex-col justify-between h-full gap-2">
+        <Card
+          radius="lg"
+          className="border-slate-200/90 bg-white shadow-2xs transition-all hover:shadow-xs"
+        >
+          <CardContent className="flex h-full flex-col justify-between gap-2 p-4">
             <div className="flex items-center justify-between">
-              <span className="grid size-9 place-items-center rounded-xl bg-slate-100 text-slate-700 border border-slate-200">
+              <span className="grid size-9 place-items-center rounded-xl border border-slate-200 bg-slate-100 text-slate-700">
                 <Users className="size-4.5" />
               </span>
-              <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
+              <span className="text-[11px] font-extrabold tracking-wider text-slate-500 uppercase">
                 In Scope
               </span>
             </div>
@@ -499,21 +579,28 @@ export function EmergencyOverviewDashboard({
                 <span className="text-2xl font-black tracking-tight text-slate-950 tabular-nums">
                   {formatNumber(totalRegistered)}
                 </span>
-                <span className="text-xs text-slate-400 font-semibold">citizens</span>
+                <span className="text-xs font-semibold text-slate-400">citizens</span>
               </div>
-              <h4 className="text-xs font-bold text-slate-700 mt-0.5">Total Population</h4>
-              <p className="text-[11px] text-slate-400 font-medium truncate">
-                {totalHouseholds != null ? `${totalHouseholds} registered households` : "Households loading…"}
+              <h4 className="mt-0.5 text-xs font-bold text-slate-700">
+                Total Population
+              </h4>
+              <p className="truncate text-[11px] font-medium text-slate-400">
+                {totalHouseholds != null
+                  ? `${totalHouseholds} registered households`
+                  : "Households loading…"}
               </p>
             </div>
           </CardContent>
         </Card>
 
         {/* KPI 2: Confirmed Safe & Accountability Progress */}
-        <Card radius="lg" className="border-emerald-200/90 bg-emerald-50/40 shadow-2xs hover:shadow-xs transition-all">
-          <CardContent className="p-4 flex flex-col justify-between h-full gap-2">
+        <Card
+          radius="lg"
+          className="border-emerald-200/90 bg-emerald-50/40 shadow-2xs transition-all hover:shadow-xs"
+        >
+          <CardContent className="flex h-full flex-col justify-between gap-2 p-4">
             <div className="flex items-center justify-between">
-              <span className="grid size-9 place-items-center rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200">
+              <span className="grid size-9 place-items-center rounded-xl border border-emerald-200 bg-emerald-100 text-emerald-800">
                 <CheckCircle2 className="size-4.5 text-emerald-700" />
               </span>
               <Badge tone="success">{safePct}% Safe</Badge>
@@ -523,15 +610,20 @@ export function EmergencyOverviewDashboard({
                 <span className="text-2xl font-black tracking-tight text-emerald-950 tabular-nums">
                   {formatNumber(safeTotal)}
                 </span>
-                <span className="text-xs text-emerald-700 font-semibold">/ {totalRegistered}</span>
+                <span className="text-xs font-semibold text-emerald-700">
+                  / {totalRegistered}
+                </span>
               </div>
-              <h4 className="text-xs font-bold text-emerald-900 mt-0.5">Accounted Safe</h4>
-              <p className="text-[10px] text-emerald-800 font-medium truncate mt-0.5">
-                {formatNumber(safeConfirmed)} confirmed · {formatNumber(safeBulk)} bulk · {formatNumber(unaccountedCount)} unaccounted
+              <h4 className="mt-0.5 text-xs font-bold text-emerald-900">
+                Accounted Safe
+              </h4>
+              <p className="mt-0.5 truncate text-[10px] font-medium text-emerald-800">
+                {formatNumber(safeConfirmed)} confirmed · {formatNumber(safeBulk)} bulk ·{" "}
+                {formatNumber(unaccountedCount)} unaccounted
               </p>
-              <div className="w-full bg-emerald-200/70 rounded-full h-1.5 mt-1.5 overflow-hidden">
+              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-emerald-200/70">
                 <div
-                  className="bg-emerald-600 h-1.5 rounded-full transition-all duration-500"
+                  className="h-1.5 rounded-full bg-emerald-600 transition-all duration-500"
                   style={{ width: `${Math.min(100, Math.max(0, Number(safePct)))}%` }}
                 />
               </div>
@@ -543,20 +635,20 @@ export function EmergencyOverviewDashboard({
         <Card
           radius="lg"
           className={cn(
-            "shadow-2xs hover:shadow-xs transition-all",
+            "shadow-2xs transition-all hover:shadow-xs",
             needsRescueCount > 0
               ? "border-rose-300 bg-rose-50/70 ring-1 ring-rose-400/40"
               : "border-slate-200/90 bg-white",
           )}
         >
-          <CardContent className="p-4 flex flex-col justify-between h-full gap-2">
+          <CardContent className="flex h-full flex-col justify-between gap-2 p-4">
             <div className="flex items-center justify-between">
               <span
                 className={cn(
                   "grid size-9 place-items-center rounded-xl border",
                   needsRescueCount > 0
-                    ? "bg-rose-100 text-rose-700 border-rose-300 animate-pulse"
-                    : "bg-slate-100 text-slate-700 border-slate-200",
+                    ? "animate-pulse border-rose-300 bg-rose-100 text-rose-700"
+                    : "border-slate-200 bg-slate-100 text-slate-700",
                 )}
               >
                 <ShieldAlert className="size-4.5" />
@@ -567,26 +659,41 @@ export function EmergencyOverviewDashboard({
             </div>
             <div>
               <div className="flex items-baseline gap-1.5">
-                <span className={cn("text-2xl font-black tracking-tight tabular-nums", needsRescueCount > 0 ? "text-rose-950" : "text-slate-950")}>
+                <span
+                  className={cn(
+                    "text-2xl font-black tracking-tight tabular-nums",
+                    needsRescueCount > 0 ? "text-rose-950" : "text-slate-950",
+                  )}
+                >
                   {formatNumber(needsRescueCount)}
                 </span>
-                <span className="text-xs text-slate-400 font-semibold">marked</span>
+                <span className="text-xs font-semibold text-slate-400">marked</span>
               </div>
-              <h4 className={cn("text-xs font-bold mt-0.5", needsRescueCount > 0 ? "text-rose-900" : "text-slate-700")}>
+              <h4
+                className={cn(
+                  "mt-0.5 text-xs font-bold",
+                  needsRescueCount > 0 ? "text-rose-900" : "text-slate-700",
+                )}
+              >
                 Needs Rescue
               </h4>
-              <p className="text-[11px] text-slate-400 font-medium truncate">
-                {needsRescueCount > 0 ? "Requires emergency dispatch" : "Zero distress reported"}
+              <p className="truncate text-[11px] font-medium text-slate-400">
+                {needsRescueCount > 0
+                  ? "Requires emergency dispatch"
+                  : "Zero distress reported"}
               </p>
             </div>
           </CardContent>
         </Card>
 
         {/* KPI 4: Evacuation Shelter Occupancy */}
-        <Card radius="lg" className="border-teal-200/90 bg-teal-50/40 shadow-2xs hover:shadow-xs transition-all">
-          <CardContent className="p-4 flex flex-col justify-between h-full gap-2">
+        <Card
+          radius="lg"
+          className="border-teal-200/90 bg-teal-50/40 shadow-2xs transition-all hover:shadow-xs"
+        >
+          <CardContent className="flex h-full flex-col justify-between gap-2 p-4">
             <div className="flex items-center justify-between">
-              <span className="grid size-9 place-items-center rounded-xl bg-teal-100 text-teal-800 border border-teal-200">
+              <span className="grid size-9 place-items-center rounded-xl border border-teal-200 bg-teal-100 text-teal-800">
                 <Building2 className="size-4.5 text-teal-700" />
               </span>
               <Badge tone="info">{shelterOccupancyPct}% Full</Badge>
@@ -596,10 +703,14 @@ export function EmergencyOverviewDashboard({
                 <span className="text-2xl font-black tracking-tight text-teal-950 tabular-nums">
                   {formatNumber(totalShelterOccupancy)}
                 </span>
-                <span className="text-xs text-teal-700 font-semibold">/ {totalShelterCapacity} cap</span>
+                <span className="text-xs font-semibold text-teal-700">
+                  / {totalShelterCapacity} cap
+                </span>
               </div>
-              <h4 className="text-xs font-bold text-teal-900 mt-0.5">Sheltered Evacuees</h4>
-              <p className="text-[11px] text-teal-700/80 font-medium truncate">
+              <h4 className="mt-0.5 text-xs font-bold text-teal-900">
+                Sheltered Evacuees
+              </h4>
+              <p className="truncate text-[11px] font-medium text-teal-700/80">
                 Across {centers.length} evacuation shelters
               </p>
             </div>
@@ -607,13 +718,16 @@ export function EmergencyOverviewDashboard({
         </Card>
 
         {/* KPI 5: Vulnerable Demographics in Scope (Orange / Warm Amber Theme) */}
-        <Card radius="lg" className="border-amber-200/90 bg-amber-50/40 shadow-2xs hover:shadow-xs transition-all">
-          <CardContent className="p-4 flex flex-col justify-between h-full gap-2">
+        <Card
+          radius="lg"
+          className="border-amber-200/90 bg-amber-50/40 shadow-2xs transition-all hover:shadow-xs"
+        >
+          <CardContent className="flex h-full flex-col justify-between gap-2 p-4">
             <div className="flex items-center justify-between">
-              <span className="grid size-9 place-items-center rounded-xl bg-amber-100 text-amber-800 border border-amber-200">
+              <span className="grid size-9 place-items-center rounded-xl border border-amber-200 bg-amber-100 text-amber-800">
                 <HeartPulse className="size-4.5 text-amber-700" />
               </span>
-              <span className="text-[11px] font-extrabold text-amber-700 uppercase tracking-wider">
+              <span className="text-[11px] font-extrabold tracking-wider text-amber-700 uppercase">
                 Special Needs
               </span>
             </div>
@@ -622,21 +736,27 @@ export function EmergencyOverviewDashboard({
                 <span className="text-2xl font-black tracking-tight text-amber-950 tabular-nums">
                   {formatNumber(vulnerabilityMetrics.totalHighRisk)}
                 </span>
-                <span className="text-xs text-amber-700 font-semibold">high care</span>
+                <span className="text-xs font-semibold text-amber-700">high care</span>
               </div>
-              <h4 className="text-xs font-bold text-amber-900 mt-0.5">Vulnerable Citizens</h4>
-              <p className="text-[11px] text-amber-800/80 font-medium truncate">
-                {vulnerabilityMetrics.seniors} seniors · {vulnerabilityMetrics.pwd} PWD · {vulnerabilityMetrics.mobilityLimited} mobility-limited
+              <h4 className="mt-0.5 text-xs font-bold text-amber-900">
+                Vulnerable Citizens
+              </h4>
+              <p className="truncate text-[11px] font-medium text-amber-800/80">
+                {vulnerabilityMetrics.seniors} seniors · {vulnerabilityMetrics.pwd} PWD ·{" "}
+                {vulnerabilityMetrics.mobilityLimited} mobility-limited
               </p>
             </div>
           </CardContent>
         </Card>
 
         {/* KPI 6: Unregistered Walk-Ins & Reports (FR-SAF-013) */}
-        <Card radius="lg" className="border-slate-200/90 bg-white shadow-2xs hover:shadow-xs transition-all">
-          <CardContent className="p-4 flex flex-col justify-between h-full gap-2">
+        <Card
+          radius="lg"
+          className="border-slate-200/90 bg-white shadow-2xs transition-all hover:shadow-xs"
+        >
+          <CardContent className="flex h-full flex-col justify-between gap-2 p-4">
             <div className="flex items-center justify-between">
-              <span className="grid size-9 place-items-center rounded-xl bg-slate-100 text-slate-700 border border-slate-200">
+              <span className="grid size-9 place-items-center rounded-xl border border-slate-200 bg-slate-100 text-slate-700">
                 <Radio className="size-4.5" />
               </span>
               <Badge tone="neutral">FR-SAF-013</Badge>
@@ -646,10 +766,12 @@ export function EmergencyOverviewDashboard({
                 <span className="text-2xl font-black tracking-tight text-slate-950 tabular-nums">
                   {unregSafe + unregRescue}
                 </span>
-                <span className="text-xs text-slate-400 font-semibold">walk-ins</span>
+                <span className="text-xs font-semibold text-slate-400">walk-ins</span>
               </div>
-              <h4 className="text-xs font-bold text-slate-700 mt-0.5">Unregistered Tracked</h4>
-              <p className="text-[11px] text-slate-400 font-medium truncate">
+              <h4 className="mt-0.5 text-xs font-bold text-slate-700">
+                Unregistered Tracked
+              </h4>
+              <p className="truncate text-[11px] font-medium text-slate-400">
                 {unregSafe} safe · {unregRescue} needing rescue
               </p>
             </div>
@@ -662,15 +784,18 @@ export function EmergencyOverviewDashboard({
       {/* -------------------------------------------------------------------- */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Chart 1: Area-by-Area Safety & Accountability Comparison */}
-        <Card radius="lg" className="border-slate-200/90 bg-white shadow-xs overflow-hidden">
-          <CardContent className="p-5 flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
+        <Card
+          radius="lg"
+          className="overflow-hidden border-slate-200/90 bg-white shadow-xs"
+        >
+          <CardContent className="flex flex-col gap-4 p-5">
+            <div className="flex flex-col gap-2 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
                   <Activity className="size-4 text-emerald-600" />
                   Area Safety & Accountability Comparison
                 </h3>
-                <p className="text-xs text-slate-500 font-medium">
+                <p className="text-xs font-medium text-slate-500">
                   Headcount breakdown by Area in Barangay San Jose.
                 </p>
               </div>
@@ -678,7 +803,7 @@ export function EmergencyOverviewDashboard({
                 variant="outline"
                 size="sm"
                 onClick={() => onNavigateTab("accounted-for")}
-                className="h-8 text-xs font-bold text-emerald-700 border-emerald-200 hover:bg-emerald-50 rounded-xl"
+                className="h-8 rounded-xl border-emerald-200 text-xs font-bold text-emerald-700 hover:bg-emerald-50"
               >
                 <span>Full Ledger</span>
                 <ChevronRight className="size-3.5" />
@@ -687,8 +812,15 @@ export function EmergencyOverviewDashboard({
 
             <div className="h-72 w-full pt-2">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={areaChartData} margin={{ top: 10, right: 10, left: -20, bottom: 25 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <BarChart
+                  data={areaChartData}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 25 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#e2e8f0"
+                  />
                   <XAxis
                     dataKey="name"
                     tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }}
@@ -702,10 +834,18 @@ export function EmergencyOverviewDashboard({
                       if (!active || !payload || !payload.length) return null;
                       const data = payload[0].payload;
                       return (
-                        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-xl text-xs font-medium text-slate-800">
-                          <p className="font-extrabold text-slate-950 border-b border-slate-100 pb-1 mb-1.5 flex items-center justify-between gap-3">
+                        <div className="rounded-2xl border border-slate-200 bg-white p-3 text-xs font-medium text-slate-800 shadow-xl">
+                          <p className="mb-1.5 flex items-center justify-between gap-3 border-b border-slate-100 pb-1 font-extrabold text-slate-950">
                             <span>{data.fullName}</span>
-                            <Badge tone={data.safePct >= 80 ? "success" : data.safePct >= 50 ? "warning" : "danger"}>
+                            <Badge
+                              tone={
+                                data.safePct >= 80
+                                  ? "success"
+                                  : data.safePct >= 50
+                                    ? "warning"
+                                    : "danger"
+                              }
+                            >
                               {data.safePct}% Safe
                             </Badge>
                           </p>
@@ -738,7 +878,7 @@ export function EmergencyOverviewDashboard({
                               </span>
                               <span className="font-extrabold">{data.unaccounted}</span>
                             </div>
-                            <div className="border-t border-slate-100 pt-1 mt-0.5 flex items-center justify-between text-slate-900 font-bold">
+                            <div className="mt-0.5 flex items-center justify-between border-t border-slate-100 pt-1 font-bold text-slate-900">
                               <span>Total Registered:</span>
                               <span>{data.totalRegistered}</span>
                             </div>
@@ -752,10 +892,34 @@ export function EmergencyOverviewDashboard({
                     align="right"
                     wrapperStyle={{ paddingBottom: 10, fontSize: 11, fontWeight: 600 }}
                   />
-                  <Bar dataKey="confirmedSafe" name="Confirmed Safe" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="bulkSafe" name="Bulk Safe" stackId="a" fill="#14b8a6" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="needsRescue" name="Needs Rescue" stackId="a" fill="#f43f5e" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="unaccounted" name="Unaccounted" stackId="a" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="confirmedSafe"
+                    name="Confirmed Safe"
+                    stackId="a"
+                    fill="#10b981"
+                    radius={[0, 0, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="bulkSafe"
+                    name="Bulk Safe"
+                    stackId="a"
+                    fill="#14b8a6"
+                    radius={[0, 0, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="needsRescue"
+                    name="Needs Rescue"
+                    stackId="a"
+                    fill="#f43f5e"
+                    radius={[0, 0, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="unaccounted"
+                    name="Unaccounted"
+                    stackId="a"
+                    fill="#cbd5e1"
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -763,25 +927,28 @@ export function EmergencyOverviewDashboard({
         </Card>
 
         {/* Chart 2: Evacuation Centers Occupancy & Intake Meter */}
-        <Card radius="lg" className="border-slate-200/90 bg-white shadow-xs overflow-hidden">
-          <CardContent className="p-5 flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
+        <Card
+          radius="lg"
+          className="overflow-hidden border-slate-200/90 bg-white shadow-xs"
+        >
+          <CardContent className="flex flex-col gap-4 p-5">
+            <div className="flex flex-col gap-2 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
                   <Building2 className="size-4 text-teal-600" />
                   Evacuation Shelters Intake & Capacity Meter
                 </h3>
-                <p className="text-xs text-slate-500 font-medium">
+                <p className="text-xs font-medium text-slate-500">
                   Real-time occupancy vs intake capacity across all barangay centers.
                 </p>
               </div>
-              <span className="text-xs font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200 self-start sm:self-auto">
+              <span className="self-start rounded-lg border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-800 sm:self-auto">
                 {totalShelterOccupancy} / {totalShelterCapacity} Sheltered
               </span>
             </div>
 
             {/* List of Center Progress Bars */}
-            <div className="flex flex-col gap-3.5 py-1 max-h-72 overflow-y-auto custom-scrollbar pr-1.5">
+            <div className="custom-scrollbar flex max-h-72 flex-col gap-3.5 overflow-y-auto py-1 pr-1.5">
               {centers.map((c) => {
                 const occupancy = c.occupancy || 0;
                 const capacity = c.capacity || 100;
@@ -795,41 +962,54 @@ export function EmergencyOverviewDashboard({
                 return (
                   <div
                     key={c.id}
-                    className="rounded-2xl border border-slate-200/80 bg-slate-50/60 p-3.5 flex flex-col gap-2 hover:bg-slate-50 transition-colors"
+                    className="flex flex-col gap-2 rounded-2xl border border-slate-200/80 bg-slate-50/60 p-3.5 transition-colors hover:bg-slate-50"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 truncate">
                         <span
                           className={cn(
-                            "size-2 rounded-full shrink-0",
-                            isFull ? "bg-rose-500 animate-pulse" : isModerate ? "bg-amber-500" : "bg-emerald-500",
+                            "size-2 shrink-0 rounded-full",
+                            isFull
+                              ? "animate-pulse bg-rose-500"
+                              : isModerate
+                                ? "bg-amber-500"
+                                : "bg-emerald-500",
                           )}
                         />
-                        <h4 className="text-xs font-bold text-slate-900 truncate">{name}</h4>
+                        <h4 className="truncate text-xs font-bold text-slate-900">
+                          {name}
+                        </h4>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex shrink-0 items-center gap-2">
                         <span className="text-xs font-black text-slate-900 tabular-nums">
-                          {occupancy} <span className="text-slate-400 font-normal">/ {capacity}</span>
+                          {occupancy}{" "}
+                          <span className="font-normal text-slate-400">/ {capacity}</span>
                         </span>
-                        <Badge tone={isFull ? "danger" : isModerate ? "warning" : "success"}>
+                        <Badge
+                          tone={isFull ? "danger" : isModerate ? "warning" : "success"}
+                        >
                           {pct}%
                         </Badge>
                       </div>
                     </div>
 
-                    <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
                       <div
                         className={cn(
                           "h-2 rounded-full transition-all duration-500",
-                          isFull ? "bg-rose-600" : isModerate ? "bg-amber-500" : "bg-emerald-600",
+                          isFull
+                            ? "bg-rose-600"
+                            : isModerate
+                              ? "bg-amber-500"
+                              : "bg-emerald-600",
                         )}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                    <div className="flex items-center justify-between text-[11px] font-medium text-slate-500">
                       <span className="truncate">{address}</span>
-                      <span className="text-emerald-700 font-bold shrink-0">
+                      <span className="shrink-0 font-bold text-emerald-700">
                         {Math.max(0, capacity - occupancy)} slots remaining
                       </span>
                     </div>
@@ -841,30 +1021,33 @@ export function EmergencyOverviewDashboard({
         </Card>
 
         {/* Chart 3: Special Needs & Demographics Profile Distribution */}
-        <Card radius="lg" className="border-slate-200/90 bg-white shadow-xs overflow-hidden">
-          <CardContent className="p-5 flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
+        <Card
+          radius="lg"
+          className="overflow-hidden border-slate-200/90 bg-white shadow-xs"
+        >
+          <CardContent className="flex flex-col gap-4 p-5">
+            <div className="flex flex-col gap-2 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
                   <HeartPulse className="size-4 text-amber-600" />
                   Vulnerability & Special Needs Distribution
                 </h3>
-                <p className="text-xs text-slate-500 font-medium">
+                <p className="text-xs font-medium text-slate-500">
                   Demographic risk profile among residents across the affected areas.
                 </p>
               </div>
               <Badge tone="warning">Special Needs Profile</Badge>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+            <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-12">
               {/* Donut Chart with Centered Metric */}
-              <div className="relative h-56 sm:col-span-6 w-full flex items-center justify-center">
+              <div className="relative flex h-56 w-full items-center justify-center sm:col-span-6">
                 {/* Donut Center Total & Label (z-0 background layer) */}
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center z-0">
-                  <span className="text-xl sm:text-2xl font-black tracking-tight text-amber-950 tabular-nums leading-none">
+                <div className="pointer-events-none absolute inset-0 z-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-xl leading-none font-black tracking-tight text-amber-950 tabular-nums sm:text-2xl">
                     {formatNumber(vulnerabilityMetrics.totalHighRisk)}
                   </span>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-amber-700/80 mt-1">
+                  <span className="mt-1 text-[9px] font-black tracking-widest text-amber-700/80 uppercase">
                     High Care
                   </span>
                 </div>
@@ -884,7 +1067,12 @@ export function EmergencyOverviewDashboard({
                         labelLine={{ stroke: "#64748b", strokeWidth: 1.5 }}
                       >
                         {enrichedDemographicChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.color}
+                            stroke="#ffffff"
+                            strokeWidth={2}
+                          />
                         ))}
                       </Pie>
                       <Tooltip
@@ -893,9 +1081,12 @@ export function EmergencyOverviewDashboard({
                           if (!active || !payload || !payload.length) return null;
                           const data = payload[0];
                           return (
-                            <div className="rounded-xl border border-slate-200 bg-white/95 backdrop-blur-sm p-2.5 shadow-2xl text-xs font-semibold text-slate-900">
+                            <div className="rounded-xl border border-slate-200 bg-white/95 p-2.5 text-xs font-semibold text-slate-900 shadow-2xl backdrop-blur-sm">
                               <span className="flex items-center gap-2">
-                                <span className="size-2.5 rounded-full" style={{ backgroundColor: data.payload.color }} />
+                                <span
+                                  className="size-2.5 rounded-full"
+                                  style={{ backgroundColor: data.payload.color }}
+                                />
                                 {data.name}: <strong>{data.value}</strong>
                               </span>
                             </div>
@@ -908,17 +1099,22 @@ export function EmergencyOverviewDashboard({
               </div>
 
               {/* Legend & Stats Pills */}
-              <div className="sm:col-span-6 flex flex-col gap-1.5 max-h-56 overflow-y-auto custom-scrollbar pr-1">
+              <div className="custom-scrollbar flex max-h-56 flex-col gap-1.5 overflow-y-auto pr-1 sm:col-span-6">
                 {demographicChartData.map((item) => (
                   <div
                     key={item.name}
-                    className="flex items-center justify-between rounded-xl bg-slate-50 hover:bg-slate-100/80 px-3 py-1.5 text-xs font-semibold border border-slate-100 transition-colors"
+                    className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-slate-100/80"
                   >
                     <div className="flex items-center gap-2 truncate">
-                      <span className="size-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                      <span
+                        className="size-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                      />
                       <span className="truncate text-slate-700">{item.name}</span>
                     </div>
-                    <span className="font-extrabold text-slate-950 tabular-nums ml-2">{item.value}</span>
+                    <span className="ml-2 font-extrabold text-slate-950 tabular-nums">
+                      {item.value}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -927,30 +1123,33 @@ export function EmergencyOverviewDashboard({
         </Card>
 
         {/* Chart 4: Waterway Proximity Survey Profile (FR-REG-062) */}
-        <Card radius="lg" className="border-slate-200/90 bg-white shadow-xs overflow-hidden">
-          <CardContent className="p-5 flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
+        <Card
+          radius="lg"
+          className="overflow-hidden border-slate-200/90 bg-white shadow-xs"
+        >
+          <CardContent className="flex flex-col gap-4 p-5">
+            <div className="flex flex-col gap-2 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
                   <Waves className="size-4 text-sky-600" />
                   Waterway Proximity Survey Profile
                 </h3>
-                <p className="text-xs text-slate-500 font-medium">
+                <p className="text-xs font-medium text-slate-500">
                   Self-reported household onboarding survey metrics (FR-REG-062).
                 </p>
               </div>
               <Badge tone="neutral">Survey Data (FR-REG-062)</Badge>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+            <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-12">
               {/* Donut Chart with Center Total and Outside Callouts */}
-              <div className="relative h-56 sm:col-span-6 w-full flex items-center justify-center">
+              <div className="relative flex h-56 w-full items-center justify-center sm:col-span-6">
                 {/* Donut Center Total & Label (z-0 background layer) */}
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center z-0">
-                  <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-950 tabular-nums leading-none">
+                <div className="pointer-events-none absolute inset-0 z-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-xl leading-none font-black tracking-tight text-slate-950 tabular-nums sm:text-2xl">
                     {totalProx}
                   </span>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
+                  <span className="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
                     Households
                   </span>
                 </div>
@@ -970,7 +1169,12 @@ export function EmergencyOverviewDashboard({
                         labelLine={{ stroke: "#64748b", strokeWidth: 1.5 }}
                       >
                         {proximityChartData.map((entry, index) => (
-                          <Cell key={`cell-prox-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
+                          <Cell
+                            key={`cell-prox-${index}`}
+                            fill={entry.color}
+                            stroke="#ffffff"
+                            strokeWidth={2}
+                          />
                         ))}
                       </Pie>
                       <Tooltip
@@ -979,12 +1183,20 @@ export function EmergencyOverviewDashboard({
                           if (!active || !payload || !payload.length) return null;
                           const data = payload[0];
                           return (
-                            <div className="rounded-xl border border-slate-200 bg-white/95 backdrop-blur-sm p-2.5 shadow-2xl text-xs font-semibold text-slate-900">
+                            <div className="rounded-xl border border-slate-200 bg-white/95 p-2.5 text-xs font-semibold text-slate-900 shadow-2xl backdrop-blur-sm">
                               <span className="flex items-center gap-2">
-                                <span className="size-2.5 rounded-full" style={{ backgroundColor: data.payload.color }} />
-                                {data.name}: <strong>{data.value} households ({data.payload.pct}%)</strong>
+                                <span
+                                  className="size-2.5 rounded-full"
+                                  style={{ backgroundColor: data.payload.color }}
+                                />
+                                {data.name}:{" "}
+                                <strong>
+                                  {data.value} households ({data.payload.pct}%)
+                                </strong>
                               </span>
-                              <p className="text-[10px] text-slate-500 font-normal mt-0.5">{data.payload.desc}</p>
+                              <p className="mt-0.5 text-[10px] font-normal text-slate-500">
+                                {data.payload.desc}
+                              </p>
                             </div>
                           );
                         }}
@@ -995,7 +1207,7 @@ export function EmergencyOverviewDashboard({
               </div>
 
               {/* Legend & Stats Cards with Progress Bars */}
-              <div className="sm:col-span-6 flex flex-col gap-2.5">
+              <div className="flex flex-col gap-2.5 sm:col-span-6">
                 <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-2.5 text-xs">
                   <div className="flex items-center justify-between font-bold text-rose-950">
                     <span className="flex items-center gap-1.5">
@@ -1006,13 +1218,20 @@ export function EmergencyOverviewDashboard({
                       <span className="rounded-md bg-rose-200/80 px-1.5 py-0.5 text-[10px] font-bold text-rose-900">
                         High Risk
                       </span>
-                      <span className="tabular-nums font-black">{proximityMetrics.very_near} HH ({veryNearPct}%)</span>
+                      <span className="font-black tabular-nums">
+                        {proximityMetrics.very_near} HH ({veryNearPct}%)
+                      </span>
                     </div>
                   </div>
-                  <div className="w-full bg-rose-200/60 rounded-full h-1.5 mt-1.5 overflow-hidden">
-                    <div className="bg-rose-500 h-1.5 rounded-full" style={{ width: `${veryNearPct}%` }} />
+                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-rose-200/60">
+                    <div
+                      className="h-1.5 rounded-full bg-rose-500"
+                      style={{ width: `${veryNearPct}%` }}
+                    />
                   </div>
-                  <p className="text-[11px] text-rose-700/90 mt-1">Within 1 km of a river, creek, or waterway</p>
+                  <p className="mt-1 text-[11px] text-rose-700/90">
+                    Within 1 km of a river, creek, or waterway
+                  </p>
                 </div>
 
                 <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-2.5 text-xs">
@@ -1025,13 +1244,20 @@ export function EmergencyOverviewDashboard({
                       <span className="rounded-md bg-amber-200/80 px-1.5 py-0.5 text-[10px] font-bold text-amber-900">
                         Medium Risk
                       </span>
-                      <span className="tabular-nums font-black">{proximityMetrics.near} HH ({nearPct}%)</span>
+                      <span className="font-black tabular-nums">
+                        {proximityMetrics.near} HH ({nearPct}%)
+                      </span>
                     </div>
                   </div>
-                  <div className="w-full bg-amber-200/60 rounded-full h-1.5 mt-1.5 overflow-hidden">
-                    <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${nearPct}%` }} />
+                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-amber-200/60">
+                    <div
+                      className="h-1.5 rounded-full bg-amber-500"
+                      style={{ width: `${nearPct}%` }}
+                    />
                   </div>
-                  <p className="text-[11px] text-amber-700/90 mt-1">About 1 to 5 km from a waterway</p>
+                  <p className="mt-1 text-[11px] text-amber-700/90">
+                    About 1 to 5 km from a waterway
+                  </p>
                 </div>
 
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-2.5 text-xs">
@@ -1044,13 +1270,20 @@ export function EmergencyOverviewDashboard({
                       <span className="rounded-md bg-emerald-200/80 px-1.5 py-0.5 text-[10px] font-bold text-emerald-900">
                         Low Risk
                       </span>
-                      <span className="tabular-nums font-black">{proximityMetrics.far} HH ({farPct}%)</span>
+                      <span className="font-black tabular-nums">
+                        {proximityMetrics.far} HH ({farPct}%)
+                      </span>
                     </div>
                   </div>
-                  <div className="w-full bg-emerald-200/60 rounded-full h-1.5 mt-1.5 overflow-hidden">
-                    <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${farPct}%` }} />
+                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-emerald-200/60">
+                    <div
+                      className="h-1.5 rounded-full bg-emerald-500"
+                      style={{ width: `${farPct}%` }}
+                    />
                   </div>
-                  <p className="text-[11px] text-emerald-700/90 mt-1">More than 6 km from a waterway</p>
+                  <p className="mt-1 text-[11px] text-emerald-700/90">
+                    More than 6 km from a waterway
+                  </p>
                 </div>
               </div>
             </div>
@@ -1061,15 +1294,18 @@ export function EmergencyOverviewDashboard({
       {/* -------------------------------------------------------------------- */}
       {/* 4. Area-by-Area Accountability Summary Table Card                    */}
       {/* -------------------------------------------------------------------- */}
-      <Card radius="lg" className="border-slate-200/90 bg-white shadow-xs overflow-hidden">
-        <CardContent className="p-5 flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
+      <Card
+        radius="lg"
+        className="overflow-hidden border-slate-200/90 bg-white shadow-xs"
+      >
+        <CardContent className="flex flex-col gap-4 p-5">
+          <div className="flex flex-col gap-2 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
                 <Layers className="size-4 text-emerald-600" />
                 Area Accountability Register
               </h3>
-              <p className="text-xs text-slate-500 font-medium">
+              <p className="text-xs font-medium text-slate-500">
                 Granular status ledger across all 6 administrative areas in San Jose.
               </p>
             </div>
@@ -1077,7 +1313,7 @@ export function EmergencyOverviewDashboard({
               variant="outline"
               size="sm"
               onClick={() => onNavigateTab("accounted-for")}
-              className="h-8 text-xs font-bold text-emerald-700 border-emerald-200 hover:bg-emerald-50 rounded-xl"
+              className="h-8 rounded-xl border-emerald-200 text-xs font-bold text-emerald-700 hover:bg-emerald-50"
             >
               <span>View Full Safety Ledger</span>
               <ChevronRight className="size-3.5" />
@@ -1085,50 +1321,74 @@ export function EmergencyOverviewDashboard({
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full border-collapse text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-600 font-bold">
-                  <th className="py-3 px-4 rounded-l-xl">Area</th>
-                  <th className="py-3 px-3 text-center">Registered</th>
-                  <th className="py-3 px-3 text-center text-emerald-700">Safe (Confirmed)</th>
-                  <th className="py-3 px-3 text-center text-teal-700">Safe (Bulk)</th>
-                  <th className="py-3 px-3 text-center text-rose-700">Needs Rescue</th>
-                  <th className="py-3 px-3 text-center text-slate-500">Unaccounted</th>
-                  <th className="py-3 px-4 text-right rounded-r-xl">Accountability Progress</th>
+                <tr className="border-b border-slate-200 bg-slate-50/80 font-bold text-slate-600">
+                  <th className="rounded-l-xl px-4 py-3">Area</th>
+                  <th className="px-3 py-3 text-center">Registered</th>
+                  <th className="px-3 py-3 text-center text-emerald-700">
+                    Safe (Confirmed)
+                  </th>
+                  <th className="px-3 py-3 text-center text-teal-700">Safe (Bulk)</th>
+                  <th className="px-3 py-3 text-center text-rose-700">Needs Rescue</th>
+                  <th className="px-3 py-3 text-center text-slate-500">Unaccounted</th>
+                  <th className="rounded-r-xl px-4 py-3 text-right">
+                    Accountability Progress
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                 {areaChartData.map((a) => (
-                  <tr key={a.fullName} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 px-4 font-bold text-slate-950 flex items-center gap-2">
-                      <MapPin className="size-3.5 text-emerald-600 shrink-0" />
+                  <tr key={a.fullName} className="transition-colors hover:bg-slate-50/80">
+                    <td className="flex items-center gap-2 px-4 py-3 font-bold text-slate-950">
+                      <MapPin className="size-3.5 shrink-0 text-emerald-600" />
                       <span>{a.fullName}</span>
                     </td>
-                    <td className="py-3 px-3 text-center tabular-nums font-semibold">{a.totalRegistered}</td>
-                    <td className="py-3 px-3 text-center tabular-nums font-bold text-emerald-700">{a.confirmedSafe}</td>
-                    <td className="py-3 px-3 text-center tabular-nums font-semibold text-teal-700">{a.bulkSafe}</td>
-                    <td className="py-3 px-3 text-center tabular-nums font-bold text-rose-600">
+                    <td className="px-3 py-3 text-center font-semibold tabular-nums">
+                      {a.totalRegistered}
+                    </td>
+                    <td className="px-3 py-3 text-center font-bold text-emerald-700 tabular-nums">
+                      {a.confirmedSafe}
+                    </td>
+                    <td className="px-3 py-3 text-center font-semibold text-teal-700 tabular-nums">
+                      {a.bulkSafe}
+                    </td>
+                    <td className="px-3 py-3 text-center font-bold text-rose-600 tabular-nums">
                       {a.needsRescue > 0 ? (
-                        <span className="inline-flex items-center justify-center size-6 rounded-full bg-rose-100 text-rose-700 font-black">
+                        <span className="inline-flex size-6 items-center justify-center rounded-full bg-rose-100 font-black text-rose-700">
                           {a.needsRescue}
                         </span>
                       ) : (
                         <span className="text-slate-300">0</span>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-center tabular-nums text-slate-500">{a.unaccounted}</td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="px-3 py-3 text-center text-slate-500 tabular-nums">
+                      {a.unaccounted}
+                    </td>
+                    <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-3">
-                        <div className="w-24 bg-slate-200 rounded-full h-2 overflow-hidden hidden sm:block">
+                        <div className="hidden h-2 w-24 overflow-hidden rounded-full bg-slate-200 sm:block">
                           <div
                             className={cn(
                               "h-2 rounded-full",
-                              a.safePct >= 80 ? "bg-emerald-600" : a.safePct >= 50 ? "bg-amber-500" : "bg-rose-500",
+                              a.safePct >= 80
+                                ? "bg-emerald-600"
+                                : a.safePct >= 50
+                                  ? "bg-amber-500"
+                                  : "bg-rose-500",
                             )}
                             style={{ width: `${a.safePct}%` }}
                           />
                         </div>
-                        <Badge tone={a.safePct >= 80 ? "success" : a.safePct >= 50 ? "warning" : "danger"}>
+                        <Badge
+                          tone={
+                            a.safePct >= 80
+                              ? "success"
+                              : a.safePct >= 50
+                                ? "warning"
+                                : "danger"
+                          }
+                        >
                           {a.safePct}%
                         </Badge>
                       </div>
@@ -1168,29 +1428,30 @@ function StandbyReadinessView({
   return (
     <div className="flex flex-col gap-6">
       {/* Hero Readiness Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-primary-800/60 bg-gradient-to-br from-primary-900 via-primary-950 to-primary-950 p-6 sm:p-8 text-white shadow-xl">
-        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div className="flex flex-col gap-2.5 max-w-2xl">
+      <div className="border-primary-800/60 from-primary-900 via-primary-950 to-primary-950 relative overflow-hidden rounded-3xl border bg-gradient-to-br p-6 text-white shadow-xl sm:p-8">
+        <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex max-w-2xl flex-col gap-2.5">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/20 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-200">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/20 px-3 py-1 text-xs font-black tracking-wider text-emerald-200 uppercase">
                 <ShieldCheck className="size-3.5 text-emerald-300" />
                 Barangay Standby &amp; Readiness Mode
               </span>
               <Badge tone="success">No Active Emergencies</Badge>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+            <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
               San Jose is Currently Safe
             </h2>
-            <p className="text-xs sm:text-sm text-emerald-100/90 font-medium leading-relaxed">
-              All disaster monitoring systems and designated community evacuation centers stand ready for immediate deployment.
+            <p className="text-xs leading-relaxed font-medium text-emerald-100/90 sm:text-sm">
+              All disaster monitoring systems and designated community evacuation centers
+              stand ready for immediate deployment.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex shrink-0 items-center gap-3">
             <Button
               variant="secondary"
               onClick={() => onNavigateTab("events")}
-              className="h-11 rounded-2xl bg-white hover:bg-slate-100 text-emerald-950 font-black text-xs px-5 shadow-md gap-2"
+              className="h-11 gap-2 rounded-2xl bg-white px-5 text-xs font-black text-emerald-950 shadow-md hover:bg-slate-100"
             >
               <List className="size-4 text-emerald-700" />
               <span>View Incident Archives ({events.length})</span>
@@ -1202,16 +1463,18 @@ function StandbyReadinessView({
       {/* Standby Deck KPIs */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card radius="lg" className="border-slate-200/90 bg-white shadow-2xs">
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <span className="grid size-11 place-items-center rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <CardContent className="flex items-center gap-3.5 p-4">
+            <span className="grid size-11 place-items-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700">
               <Building2 className="size-5" />
             </span>
             <div>
               <span className="block text-2xl font-black text-slate-950 tabular-nums">
                 {evacCenters.length} Centers
               </span>
-              <h4 className="text-xs font-bold text-slate-700">Evacuation Centers Ready</h4>
-              <span className="text-[11px] text-slate-400 font-medium">
+              <h4 className="text-xs font-bold text-slate-700">
+                Evacuation Centers Ready
+              </h4>
+              <span className="text-[11px] font-medium text-slate-400">
                 {totalShelterCapacity} total intake capacity
               </span>
             </div>
@@ -1219,8 +1482,8 @@ function StandbyReadinessView({
         </Card>
 
         <Card radius="lg" className="border-slate-200/90 bg-white shadow-2xs">
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <span className="grid size-11 place-items-center rounded-2xl bg-teal-50 text-teal-700 border border-teal-200">
+          <CardContent className="flex items-center gap-3.5 p-4">
+            <span className="grid size-11 place-items-center rounded-2xl border border-teal-200 bg-teal-50 text-teal-700">
               <Users className="size-5" />
             </span>
             <div>
@@ -1228,16 +1491,18 @@ function StandbyReadinessView({
                 {totalCitizens != null ? formatNumber(totalCitizens) : "—"}
               </span>
               <h4 className="text-xs font-bold text-slate-700">Registered Citizens</h4>
-              <span className="text-[11px] text-slate-400 font-medium">
-                {totalHouseholds != null ? `${totalHouseholds} households mapped` : "Loading registry…"}
+              <span className="text-[11px] font-medium text-slate-400">
+                {totalHouseholds != null
+                  ? `${totalHouseholds} households mapped`
+                  : "Loading registry…"}
               </span>
             </div>
           </CardContent>
         </Card>
 
         <Card radius="lg" className="border-slate-200/90 bg-white shadow-2xs">
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <span className="grid size-11 place-items-center rounded-2xl bg-slate-100 text-slate-700 border border-slate-200">
+          <CardContent className="flex items-center gap-3.5 p-4">
+            <span className="grid size-11 place-items-center rounded-2xl border border-slate-200 bg-slate-100 text-slate-700">
               <List className="size-5" />
             </span>
             <div>
@@ -1245,7 +1510,9 @@ function StandbyReadinessView({
                 {events.length}
               </span>
               <h4 className="text-xs font-bold text-slate-700">Historical Incidents</h4>
-              <span className="text-[11px] text-slate-400 font-medium">Archived logs preserved</span>
+              <span className="text-[11px] font-medium text-slate-400">
+                Archived logs preserved
+              </span>
             </div>
           </CardContent>
         </Card>

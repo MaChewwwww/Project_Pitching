@@ -94,9 +94,7 @@ const MiniMapPreview = dynamic(
   () => import("./mini-map-preview").then((module) => module.MiniMapPreview),
   {
     ssr: false,
-    loading: () => (
-      <div className="h-48 w-full animate-pulse rounded-xl bg-slate-900" />
-    ),
+    loading: () => <div className="h-48 w-full animate-pulse rounded-xl bg-slate-900" />,
   },
 );
 
@@ -110,10 +108,10 @@ function LayerCheckbox({
   label: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-emerald-100/90 hover:text-white transition-colors">
+    <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-emerald-100/90 transition-colors hover:text-white">
       <input
         type="checkbox"
-        className="size-3.5 rounded border-emerald-700 bg-emerald-950 text-emerald-600 accent-emerald-500 cursor-pointer"
+        className="size-3.5 cursor-pointer rounded border-emerald-700 bg-emerald-950 text-emerald-600 accent-emerald-500"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />
@@ -175,22 +173,22 @@ function OperationalMetricCard({
   return (
     <div
       className={cn(
-        "flex flex-col justify-between rounded-2xl border p-3.5 sm:p-4 transition-all hover:shadow-xs",
+        "flex flex-col justify-between rounded-2xl border p-3.5 transition-all hover:shadow-xs sm:p-4",
         toneMap.card,
       )}
     >
       <div className="flex items-center justify-between gap-1.5">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
           <div
             className={cn(
-              "grid size-7 place-items-center rounded-lg shadow-2xs shrink-0",
+              "grid size-7 shrink-0 place-items-center rounded-lg shadow-2xs",
               toneMap.iconBox,
             )}
             aria-hidden
           >
             <Icon className="size-3.5" />
           </div>
-          <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 truncate">
+          <span className="truncate text-[11px] font-black tracking-wider text-slate-700 uppercase">
             {label}
           </span>
         </div>
@@ -198,18 +196,28 @@ function OperationalMetricCard({
       </div>
 
       <div className="mt-2.5 flex items-baseline justify-between gap-2">
-        <div className="flex items-baseline gap-1.5 shrink-0">
-          <span className={cn("text-2xl sm:text-3xl font-black tracking-tight tabular-nums", toneMap.value)}>
+        <div className="flex shrink-0 items-baseline gap-1.5">
+          <span
+            className={cn(
+              "text-2xl font-black tracking-tight tabular-nums sm:text-3xl",
+              toneMap.value,
+            )}
+          >
             {value}
           </span>
           {unit ? (
-            <span className="text-[10.5px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide">
+            <span className="text-[10.5px] font-bold tracking-wide text-slate-500 uppercase sm:text-xs">
               {unit}
             </span>
           ) : null}
         </div>
-        <div className="flex flex-col justify-center text-right min-w-0 flex-1 pl-1">
-          <span className={cn("text-[11px] leading-tight line-clamp-1 text-right", toneMap.sub)}>
+        <div className="flex min-w-0 flex-1 flex-col justify-center pl-1 text-right">
+          <span
+            className={cn(
+              "line-clamp-1 text-right text-[11px] leading-tight",
+              toneMap.sub,
+            )}
+          >
             {sub}
           </span>
         </div>
@@ -237,19 +245,10 @@ const incidentStatuses: IncidentStatus[] = [
   "dismissed",
 ];
 
-const SAN_JOSE_AREAS = [
-  "Area 1",
-  "Area 2",
-  "Area 3",
-  "Area 4",
-  "Area 5",
-  "Area 6",
-];
+const SAN_JOSE_AREAS = ["Area 1", "Area 2", "Area 3", "Area 4", "Area 5", "Area 6"];
 
 function label(val: string): string {
-  return val
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return val.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function formatTime(iso: string) {
@@ -263,9 +262,7 @@ function formatTime(iso: string) {
   });
 }
 
-function statusTone(
-  status: string,
-): "rose" | "amber" | "sky" | "emerald" | "slate" {
+function statusTone(status: string): "rose" | "amber" | "sky" | "emerald" | "slate" {
   switch (status) {
     case "pending":
       return "rose";
@@ -333,7 +330,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
     queryKey,
     queryFn: () =>
       api
-        .get<Page<ResponseItem>>(endpoint, { params: { size: 1000 } })
+        .get<Page<ResponseItem>>(endpoint, { params: { size: 100 } })
         .then((response) => response.data),
     refetchInterval: 60_000,
   });
@@ -439,8 +436,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
       const itemArea =
         ("location_area_name" in item && item.location_area_name) ||
         ("area_name" in item ? item.area_name : null);
-      const matchesArea =
-        mapArea === "all" || itemArea === mapArea;
+      const matchesArea = mapArea === "all" || itemArea === mapArea;
 
       const matchesPriority =
         mode !== "rescue" ||
@@ -465,10 +461,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
       title: titleOf(mode, item),
       status: label(item.status),
       location: item.location,
-      label:
-        mode === "rescue"
-          ? String(priority ?? "!")
-          : String(index + 1),
+      label: mode === "rescue" ? String(priority ?? "!") : String(index + 1),
       tone: statusTone(item.status),
       areaName: itemArea,
       priority,
@@ -507,8 +500,8 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
           const contact = "contact_number" in row ? row.contact_number : null;
 
           return (
-            <div className="flex items-start gap-3 min-w-56 max-w-sm">
-              <div className="relative mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 font-bold overflow-hidden">
+            <div className="flex max-w-sm min-w-56 items-start gap-3">
+              <div className="relative mt-0.5 flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-emerald-100 font-bold text-emerald-800">
                 {"photo_url" in row && row.photo_url ? (
                   <Image
                     src={row.photo_url}
@@ -524,14 +517,14 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 )}
               </div>
               <div className="min-w-0">
-                <p className="font-bold text-neutral-900 truncate">
+                <p className="truncate font-bold text-neutral-900">
                   {titleOf(mode, row)}
                 </p>
-                <p className="mt-0.5 text-xs text-neutral-500 line-clamp-1">
+                <p className="mt-0.5 line-clamp-1 text-xs text-neutral-500">
                   {row.description}
                 </p>
                 {contact ? (
-                  <p className="mt-0.5 text-[11px] font-mono text-emerald-700 flex items-center gap-1">
+                  <p className="mt-0.5 flex items-center gap-1 font-mono text-[11px] text-emerald-700">
                     <Phone className="size-2.5" />
                     {contact}
                   </p>
@@ -550,7 +543,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
             if (p === 1) {
               return (
                 <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-bold text-rose-800">
-                  <span className="size-1.5 rounded-full bg-rose-600 animate-pulse" />
+                  <span className="size-1.5 animate-pulse rounded-full bg-rose-600" />
                   P1 Critical
                 </span>
               );
@@ -585,11 +578,11 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
             ("location_area_name" in row && row.location_area_name) ||
             ("area_name" in row ? row.area_name : null);
           return (
-            <div className="min-w-44 max-w-xs text-xs">
+            <div className="max-w-xs min-w-44 text-xs">
               <p className="font-semibold text-neutral-800">
                 {itemArea || "Area Unknown"}
               </p>
-              <p className="mt-0.5 text-neutral-500 truncate">
+              <p className="mt-0.5 truncate text-neutral-500">
                 {row.location_note || "No specific landmark"}
               </p>
               <div className="mt-1 flex items-center gap-1">
@@ -634,7 +627,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
         render: (row) => (
           <div className="min-w-32 text-xs text-neutral-600">
             <p className="font-medium">{formatTime(row.created_at)}</p>
-            <p className="mt-0.5 text-[11px] text-neutral-400 truncate max-w-xs">
+            <p className="mt-0.5 max-w-xs truncate text-[11px] text-neutral-400">
               {row.event_name ? `Event: ${row.event_name}` : "General Intake"}
             </p>
           </div>
@@ -654,7 +647,9 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
     }) => api.patch(`${endpoint}/${id}`, body),
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey });
-      await client.invalidateQueries({ queryKey: ["admin", mode, "detail", inspectedId] });
+      await client.invalidateQueries({
+        queryKey: ["admin", mode, "detail", inspectedId],
+      });
       toast.success("Lifecycle status updated successfully.");
     },
     onError: (err) => {
@@ -733,9 +728,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
     mapPriority !== "all";
 
   const heading =
-    mode === "rescue"
-      ? "Rescue Operations Queue"
-      : "Community Incident Reports";
+    mode === "rescue" ? "Rescue Operations Queue" : "Community Incident Reports";
   const description =
     mode === "rescue"
       ? "Live rescue queue for triage, emergency dispatch, and responder mobilization across Barangay San Jose."
@@ -767,7 +760,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 onClick={handleManualRefresh}
                 title="Refresh now"
                 disabled={isManualRefreshing || isFetching}
-                className="flex size-5 items-center justify-center rounded-full text-emerald-700 hover:bg-emerald-200/80 hover:text-emerald-950 transition-colors cursor-pointer disabled:opacity-80"
+                className="flex size-5 cursor-pointer items-center justify-center rounded-full text-emerald-700 transition-colors hover:bg-emerald-200/80 hover:text-emerald-950 disabled:opacity-80"
               >
                 <RotateCcw
                   className={cn(
@@ -804,20 +797,20 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
           badge={
             mode === "rescue" ? (
               stats.p1Count > 0 ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-2xs animate-pulse">
+                <span className="inline-flex animate-pulse items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[9.5px] font-black tracking-wider text-white uppercase shadow-2xs">
                   P1 Critical
                 </span>
               ) : stats.p2Count > 0 ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-2xs">
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[9.5px] font-black tracking-wider text-white uppercase shadow-2xs">
                   P2 High
                 </span>
               ) : (
-                <span className="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-[9.5px] font-bold text-rose-800 border border-rose-200">
+                <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-100 px-2 py-0.5 text-[9.5px] font-bold text-rose-800">
                   Open
                 </span>
               )
             ) : (
-              <span className="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-[9.5px] font-bold text-rose-800 border border-rose-200">
+              <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-100 px-2 py-0.5 text-[9.5px] font-bold text-rose-800">
                 Active
               </span>
             )
@@ -832,7 +825,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
           unit="Queued"
           sub={stats.pending > 0 ? "Needs Triage & Validation" : "All Cases Verified"}
           badge={
-            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-amber-900 border border-amber-300">
+            <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[9.5px] font-bold tracking-wider text-amber-900 uppercase">
               Needs Triage
             </span>
           }
@@ -846,7 +839,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
           unit="Active"
           sub={stats.inProgress > 0 ? "Responders Deployed" : "No Active Deployments"}
           badge={
-            <span className="inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-sky-900 border border-sky-300">
+            <span className="inline-flex items-center rounded-full border border-sky-300 bg-sky-100 px-2 py-0.5 text-[9.5px] font-bold tracking-wider text-sky-900 uppercase">
               Mobilized
             </span>
           }
@@ -858,10 +851,15 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
           label="Resolved"
           value={stats.resolved}
           unit="Completed"
-          sub={stats.total > 0 ? `${Math.round((stats.resolved / stats.total) * 100)}% resolution rate` : "No resolved records"}
+          sub={
+            stats.total > 0
+              ? `${Math.round((stats.resolved / stats.total) * 100)}% resolution rate`
+              : "No resolved records"
+          }
           badge={
-            <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-300">
-              {stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0}% Closed
+            <span className="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black tracking-wider text-emerald-800 uppercase">
+              {stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0}%
+              Closed
             </span>
           }
           tone={stats.resolved > 0 ? "emerald" : "neutral"}
@@ -872,14 +870,18 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
           label="Spatial Coverage"
           value={stats.mapped}
           unit={`/ ${stats.total}`}
-          sub={stats.unmapped > 0 ? `${stats.unmapped} unmapped in queue` : "100% coordinates mapped"}
+          sub={
+            stats.unmapped > 0
+              ? `${stats.unmapped} unmapped in queue`
+              : "100% coordinates mapped"
+          }
           badge={
             stats.unmapped > 0 ? (
-              <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-amber-900 border border-amber-300">
+              <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[9.5px] font-bold tracking-wider text-amber-900 uppercase">
                 {stats.unmapped} Unmapped
               </span>
             ) : (
-              <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-emerald-800 border border-emerald-300">
+              <span className="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[9.5px] font-bold tracking-wider text-emerald-800 uppercase">
                 100% Pinned
               </span>
             )
@@ -893,8 +895,8 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
       {/* -------------------------------------------------------------------- */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
         {/* Column 1: Map Card */}
-        <div className="flex flex-1 flex-col min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
-          <div className="relative h-[480px] sm:h-[580px] lg:h-[640px] w-full overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
+          <div className="relative h-[480px] w-full overflow-hidden sm:h-[580px] lg:h-[640px]">
             <ResponseOperationsMap
               items={mapItems}
               selectedId={selectedMapId}
@@ -912,7 +914,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
         <div className="flex w-full flex-col gap-3 lg:w-72 lg:shrink-0">
           {/* Map Layers card */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
-            <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
+            <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-emerald-400 uppercase">
               <Layers className="size-3.5 text-emerald-400" aria-hidden />
               Map Layers
             </p>
@@ -932,8 +934,8 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
 
           {/* Map Filters card */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
-            <div className="mb-3 flex items-center justify-between h-6">
-              <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
+            <div className="mb-3 flex h-6 items-center justify-between">
+              <p className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-emerald-400 uppercase">
                 <Filter className="size-3.5 text-emerald-400" aria-hidden />
                 Map Filters
               </p>
@@ -946,8 +948,10 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   setMapPriority("all");
                 }}
                 className={cn(
-                  "inline-flex items-center gap-1 rounded bg-emerald-900/80 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-700/60 hover:bg-emerald-800 hover:text-white transition-all shadow-2xs cursor-pointer shrink-0",
-                  isMapFiltered ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none",
+                  "inline-flex shrink-0 cursor-pointer items-center gap-1 rounded border border-emerald-700/60 bg-emerald-900/80 px-2 py-0.5 text-[10px] font-bold text-emerald-300 shadow-2xs transition-all hover:bg-emerald-800 hover:text-white",
+                  isMapFiltered
+                    ? "visible opacity-100"
+                    : "pointer-events-none invisible opacity-0",
                 )}
                 aria-hidden={!isMapFiltered}
                 tabIndex={isMapFiltered ? 0 : -1}
@@ -1044,16 +1048,17 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
 
           {/* Spatial Coverage Helper Card */}
           {(() => {
-            const pct = stats.total > 0 ? Math.round((stats.mapped / stats.total) * 100) : 100;
+            const pct =
+              stats.total > 0 ? Math.round((stats.mapped / stats.total) * 100) : 100;
             const isAllMapped = stats.unmapped === 0;
             const isCritical = stats.unmapped > 2;
 
             const icon = isAllMapped ? (
-              <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
             ) : isCritical ? (
-              <AlertTriangle className="size-4 text-rose-400 shrink-0" />
+              <AlertTriangle className="size-4 shrink-0 text-rose-400" />
             ) : (
-              <AlertCircle className="size-4 text-amber-400 shrink-0" />
+              <AlertCircle className="size-4 shrink-0 text-amber-400" />
             );
 
             const titleColor = isAllMapped
@@ -1074,16 +1079,14 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 ? "bg-rose-400"
                 : "bg-amber-400";
 
-            const badgeText = isAllMapped
-              ? "100% Pinned"
-              : `${stats.unmapped} Unpinned`;
+            const badgeText = isAllMapped ? "100% Pinned" : `${stats.unmapped} Unpinned`;
 
             return (
               <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-3.5 text-white shadow-xl backdrop-blur-md">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="flex min-w-0 items-center gap-1.5">
                     {icon}
-                    <p className={cn("font-bold text-xs truncate", titleColor)}>
+                    <p className={cn("truncate text-xs font-bold", titleColor)}>
                       {isAllMapped
                         ? "All records mapped"
                         : `${stats.unmapped} ${stats.unmapped === 1 ? "record missing" : "records missing"} pin`}
@@ -1091,7 +1094,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   </div>
                   <span
                     className={cn(
-                      "inline-flex items-center rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider border shrink-0",
+                      "inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[9.5px] font-bold tracking-wider uppercase",
                       badgeBg,
                     )}
                   >
@@ -1099,7 +1102,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   </span>
                 </div>
 
-                <p className="mt-1.5 text-[11px] text-emerald-100/75 leading-relaxed">
+                <p className="mt-1.5 text-[11px] leading-relaxed text-emerald-100/75">
                   {isAllMapped
                     ? "Full spatial coverage on terrain. All items plotted."
                     : "Actionable in the table below. Add coordinates during dispatch triage."}
@@ -1109,13 +1112,16 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 <div className="mt-2.5 flex flex-col gap-1 border-t border-emerald-900/60 pt-2">
                   <div className="flex items-center justify-between text-[10px] font-semibold text-emerald-300/80">
                     <span>Spatial Resolution</span>
-                    <span className="tabular-nums font-bold text-emerald-100">
+                    <span className="font-bold text-emerald-100 tabular-nums">
                       {pct}% ({stats.mapped}/{stats.total})
                     </span>
                   </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-950 border border-emerald-900/80">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full border border-emerald-900/80 bg-slate-950">
                     <div
-                      className={cn("h-full rounded-full transition-all duration-500", barColor)}
+                      className={cn(
+                        "h-full rounded-full transition-all duration-500",
+                        barColor,
+                      )}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -1132,7 +1138,10 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
       <ResourceTable
         columns={columns}
         data={tableFilteredItems}
-        isLoading={isLoading}
+        isLoading={isLoading || isFetching}
+        loadingLabel={
+          mode === "rescue" ? "Loading rescue queue" : "Loading incident reports"
+        }
         isError={isError}
         onRetry={refetch}
         getRowKey={(row) => row.id}
@@ -1146,7 +1155,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
             {/* Status Filter */}
             <Select value={tableStatus} onValueChange={setTableStatus}>
               <SelectTrigger className="inline-flex h-9 w-fit min-w-[125px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                <SlidersHorizontal className="size-3 shrink-0 text-emerald-600" />
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent align="end" className="min-w-44">
@@ -1163,7 +1172,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
             {mode === "rescue" ? (
               <Select value={tablePriority} onValueChange={setTablePriority}>
                 <SelectTrigger className="inline-flex h-9 w-fit min-w-[125px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                  <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                  <SlidersHorizontal className="size-3 shrink-0 text-emerald-600" />
                   <SelectValue placeholder="All Priorities" />
                 </SelectTrigger>
                 <SelectContent align="end" className="min-w-44">
@@ -1178,7 +1187,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
             {/* Area Filter */}
             <Select value={tableArea} onValueChange={setTableArea}>
               <SelectTrigger className="inline-flex h-9 w-fit min-w-[120px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                <SlidersHorizontal className="size-3 shrink-0 text-emerald-600" />
                 <SelectValue placeholder="All Areas" />
               </SelectTrigger>
               <SelectContent align="end" className="min-w-40">
@@ -1196,7 +1205,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
           <Button
             onClick={() => setIsCreateOpen(true)}
             variant="primary"
-            className="h-9 gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700 shadow-2xs cursor-pointer shrink-0"
+            className="h-9 shrink-0 cursor-pointer gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white shadow-2xs hover:bg-emerald-700"
           >
             <Plus className="size-4" />
             {mode === "rescue" ? "Record Rescue Request" : "Report Incident"}
@@ -1207,7 +1216,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
             size="sm"
             variant="outline"
             onClick={() => setSelectedTableId(row.id)}
-            className="h-8 gap-1 rounded-lg border-neutral-300 px-2.5 text-xs font-bold hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-950 shadow-2xs"
+            className="h-8 gap-1 rounded-lg border-neutral-300 px-2.5 text-xs font-bold shadow-2xs hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-950"
           >
             <Eye className="size-3.5" />
             Triage & Review
@@ -1218,14 +1227,20 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
       {/* -------------------------------------------------------------------- */}
       {/* Record Inspection & Triage Modal Dialog (Decoupled from Map)         */}
       {/* -------------------------------------------------------------------- */}
-      <Dialog open={Boolean(selectedTableId)} onOpenChange={(open) => !open && setSelectedTableId(null)}>
-        <DialogContent showCloseButton={false} className="w-full sm:max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-white text-slate-900 rounded-2xl shadow-2xl">
-          <DialogHeader className="relative border-b border-neutral-100 bg-emerald-950 p-5 sm:p-6 text-white shrink-0">
+      <Dialog
+        open={Boolean(selectedTableId)}
+        onOpenChange={(open) => !open && setSelectedTableId(null)}
+      >
+        <DialogContent
+          showCloseButton={false}
+          className="flex max-h-[90vh] w-full flex-col gap-0 overflow-hidden rounded-2xl bg-white p-0 text-slate-900 shadow-2xl sm:max-w-2xl"
+        >
+          <DialogHeader className="relative shrink-0 border-b border-neutral-100 bg-emerald-950 p-5 text-white sm:p-6">
             {/* High-contrast close button */}
             <button
               type="button"
               onClick={() => setSelectedTableId(null)}
-              className="absolute top-4 right-4 flex size-7 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer border border-white/20 shadow-md"
+              className="absolute top-4 right-4 flex size-7 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 text-white shadow-md transition-colors hover:bg-white/20"
               title="Close dialog"
             >
               <X className="size-4 text-white" />
@@ -1246,26 +1261,32 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 </span>
               ) : null}
             </div>
-            <DialogTitle className="mt-2 text-xl font-black text-white pr-8">
+            <DialogTitle className="mt-2 pr-8 text-xl font-black text-white">
               {current ? titleOf(mode, current) : "Loading details…"}
             </DialogTitle>
-            <DialogDescription className="text-xs text-emerald-200/80 pr-8">
-              {current?.event_name ? `Associated with ${current.event_name}` : "General intake incident record"}
+            <DialogDescription className="pr-8 text-xs text-emerald-200/80">
+              {current?.event_name
+                ? `Associated with ${current.event_name}`
+                : "General intake incident record"}
             </DialogDescription>
           </DialogHeader>
 
           {current ? (
             <>
-              <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-sm custom-scrollbar">
+              <div className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-5 text-sm sm:p-6">
                 {/* Static Non-Interactable Mini Map Preview */}
                 {current.location ? (
                   <div className="relative">
                     <MiniMapPreview
                       latitude={current.location.coordinates[1]}
                       longitude={current.location.coordinates[0]}
-                      label={mode === "rescue" && "priority" in current ? String(current.priority ?? "●") : "●"}
+                      label={
+                        mode === "rescue" && "priority" in current
+                          ? String(current.priority ?? "●")
+                          : "●"
+                      }
                       tone={statusTone(current.status)}
-                      className="h-44 sm:h-52 w-full"
+                      className="h-44 w-full sm:h-52"
                     />
                     {/* Directions button overlaid on map top-right */}
                     <a
@@ -1273,16 +1294,17 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                       target="_blank"
                       rel="noopener noreferrer"
                       title="Open Google Maps Directions"
-                      className="absolute top-2 right-2 z-[1000] inline-flex items-center gap-1.5 rounded-lg bg-emerald-600/90 px-2.5 py-1 text-[11px] font-bold text-white shadow-lg hover:bg-emerald-600 transition backdrop-blur-sm border border-emerald-500/40 cursor-pointer"
+                      className="absolute top-2 right-2 z-[1000] inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-600/90 px-2.5 py-1 text-[11px] font-bold text-white shadow-lg backdrop-blur-sm transition hover:bg-emerald-600"
                     >
                       <Navigation className="size-3 text-white" />
                       Directions
                     </a>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50/80 p-4 text-center text-xs text-neutral-500 flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-300 bg-neutral-50/80 p-4 text-center text-xs text-neutral-500">
                     <MapPinOff className="size-4 text-neutral-400" />
-                    No GPS coordinates tagged for this record. Use landmarks for field response.
+                    No GPS coordinates tagged for this record. Use landmarks for field
+                    response.
                   </div>
                 )}
 
@@ -1290,7 +1312,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 {"photo_url" in current && current.photo_url ? (
                   <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-900 shadow-inner">
                     <div
-                      className="relative h-56 sm:h-64 w-full cursor-pointer group"
+                      className="group relative h-56 w-full cursor-pointer sm:h-64"
                       onClick={() => setLightboxPhoto(current.photo_url)}
                     >
                       <Image
@@ -1298,9 +1320,9 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                         alt="Incident attachment"
                         fill
                         unoptimized
-                        className="object-cover group-hover:scale-[1.01] transition-transform duration-200"
+                        className="object-cover transition-transform duration-200 group-hover:scale-[1.01]"
                       />
-                      <div className="absolute top-2.5 right-2.5 rounded-lg bg-emerald-950/85 border border-emerald-500/40 px-2.5 py-1 text-[11px] font-bold text-emerald-200 flex items-center gap-1.5 backdrop-blur-md shadow-lg group-hover:bg-emerald-900 transition-colors">
+                      <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-950/85 px-2.5 py-1 text-[11px] font-bold text-emerald-200 shadow-lg backdrop-blur-md transition-colors group-hover:bg-emerald-900">
                         <Maximize2 className="size-3.5 text-emerald-400" />
                         Expand Photo
                       </div>
@@ -1309,11 +1331,13 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 ) : null}
 
                 {/* Requester & Contact + Location Details — compact horizontal strip */}
-                <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 px-3.5 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-neutral-200 bg-neutral-50/60 px-3.5 py-2.5 text-xs">
                   {/* Name */}
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase shrink-0">By</span>
-                    <span className="font-bold text-neutral-900 truncate">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <span className="shrink-0 text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                      By
+                    </span>
+                    <span className="truncate font-bold text-neutral-900">
                       {"requester_name" in current
                         ? current.requester_name
                         : current.reported_by_name || "Anonymous Resident"}
@@ -1322,9 +1346,11 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
 
                   {/* Phone */}
                   {"contact_number" in current && current.contact_number ? (
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex shrink-0 items-center gap-1">
                       <Phone className="size-3 text-neutral-400" />
-                      <span className="font-mono text-neutral-700">{current.contact_number}</span>
+                      <span className="font-mono text-neutral-700">
+                        {current.contact_number}
+                      </span>
                       <button
                         type="button"
                         onClick={() => {
@@ -1336,33 +1362,37 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                         }}
                         title={copiedPhone ? "Copied!" : "Copy"}
                         className={cn(
-                          "flex size-5 items-center justify-center rounded border transition-all cursor-pointer",
+                          "flex size-5 cursor-pointer items-center justify-center rounded border transition-all",
                           copiedPhone
-                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                            : "bg-white text-neutral-500 border-neutral-200 hover:bg-neutral-100",
+                            ? "border-emerald-300 bg-emerald-100 text-emerald-800"
+                            : "border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-100",
                         )}
                       >
-                        {copiedPhone ? <Check className="size-2.5" /> : <Copy className="size-2.5" />}
+                        {copiedPhone ? (
+                          <Check className="size-2.5" />
+                        ) : (
+                          <Copy className="size-2.5" />
+                        )}
                       </button>
                       <a
                         href={`tel:${current.contact_number}`}
                         title="Call"
-                        className="flex size-5 items-center justify-center rounded bg-emerald-600 text-white hover:bg-emerald-700 transition cursor-pointer"
+                        className="flex size-5 cursor-pointer items-center justify-center rounded bg-emerald-600 text-white transition hover:bg-emerald-700"
                       >
                         <Phone className="size-2.5" />
                       </a>
                     </div>
                   ) : (
-                    <span className="text-neutral-400 italic shrink-0">No phone</span>
+                    <span className="shrink-0 text-neutral-400 italic">No phone</span>
                   )}
 
                   {/* Divider */}
-                  <span className="text-neutral-300 select-none shrink-0">|</span>
+                  <span className="shrink-0 text-neutral-300 select-none">|</span>
 
                   {/* Area */}
-                  <div className="flex items-center gap-1 min-w-0">
-                    <MapPin className="size-3 text-emerald-700 shrink-0" />
-                    <span className="font-bold text-neutral-900 truncate">
+                  <div className="flex min-w-0 items-center gap-1">
+                    <MapPin className="size-3 shrink-0 text-emerald-700" />
+                    <span className="truncate font-bold text-neutral-900">
                       {("location_area_name" in current && current.location_area_name) ||
                         current.area_name ||
                         "Area Unknown"}
@@ -1371,12 +1401,14 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
 
                   {/* Landmark */}
                   {current.location_note ? (
-                    <span className="text-neutral-500 truncate max-w-[200px]">{current.location_note}</span>
+                    <span className="max-w-[200px] truncate text-neutral-500">
+                      {current.location_note}
+                    </span>
                   ) : null}
 
                   {/* Unmapped pill (only if no GPS) */}
                   {!current.location ? (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-500 shrink-0">
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-500">
                       <MapPinOff className="size-3 text-neutral-400" />
                       Unmapped
                     </span>
@@ -1385,17 +1417,17 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
 
                 {/* Description */}
                 <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
-                  <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1">
+                  <p className="mb-1 text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
                     Report Description
                   </p>
-                  <p className="text-neutral-700 leading-relaxed text-xs">
+                  <p className="text-xs leading-relaxed text-neutral-700">
                     {current.description || "No specific details provided."}
                   </p>
                 </div>
               </div>
 
               {/* Fixed Lifecycle Triage Actions — Modal: all buttons in a single row */}
-              <div className="shrink-0 border-t border-neutral-100 bg-neutral-50/90 px-4 sm:px-6 py-3 flex flex-col gap-2 shadow-xs">
+              <div className="flex shrink-0 flex-col gap-2 border-t border-neutral-100 bg-neutral-50/90 px-4 py-3 shadow-xs sm:px-6">
                 <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
                   Operational Lifecycle Actions
                 </p>
@@ -1406,17 +1438,19 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   {current.status === "pending" ? (
                     <Button
                       variant="secondary"
-                      className="flex-1 bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold px-3 text-xs shadow-2xs cursor-pointer"
+                      className="flex-1 cursor-pointer border border-amber-300 bg-amber-100 px-3 text-xs font-bold text-amber-950 shadow-2xs hover:bg-amber-200"
                       onClick={() => updateStatus("verified")}
                     >
-                      <CheckCircle2 className="mr-1.5 size-3.5 text-amber-700 shrink-0" />
+                      <CheckCircle2 className="mr-1.5 size-3.5 shrink-0 text-amber-700" />
                       Verify Request
                     </Button>
                   ) : current.status === "verified" ? (
                     <Button
                       variant="primary"
-                      className="flex-1 bg-sky-600 text-white hover:bg-sky-700 font-bold px-3 text-xs shadow-2xs cursor-pointer"
-                      onClick={() => updateStatus(mode === "rescue" ? "dispatched" : "in_progress")}
+                      className="flex-1 cursor-pointer bg-sky-600 px-3 text-xs font-bold text-white shadow-2xs hover:bg-sky-700"
+                      onClick={() =>
+                        updateStatus(mode === "rescue" ? "dispatched" : "in_progress")
+                      }
                     >
                       <Truck className="mr-1.5 size-3.5 shrink-0" />
                       {mode === "rescue" ? "Dispatch Team" : "Mark In Progress"}
@@ -1427,7 +1461,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   {current.status !== "resolved" && current.status !== "dismissed" ? (
                     <Button
                       variant="primary"
-                      className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-3 text-xs shadow-2xs cursor-pointer"
+                      className="flex-1 cursor-pointer bg-emerald-600 px-3 text-xs font-bold text-white shadow-2xs hover:bg-emerald-700"
                       onClick={() => updateStatus("resolved")}
                     >
                       <CheckCircle2 className="mr-1.5 size-3.5 shrink-0" />
@@ -1439,10 +1473,10 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   {current.status !== "dismissed" && current.status !== "resolved" ? (
                     <Button
                       variant="outline"
-                      className="shrink-0 text-rose-700 border-rose-300 bg-rose-50/60 hover:bg-rose-100 font-bold px-4 text-xs shadow-2xs cursor-pointer"
+                      className="shrink-0 cursor-pointer border-rose-300 bg-rose-50/60 px-4 text-xs font-bold text-rose-700 shadow-2xs hover:bg-rose-100"
                       onClick={() => updateStatus("dismissed")}
                     >
-                      <XCircle className="mr-1.5 size-3.5 text-rose-600 shrink-0" />
+                      <XCircle className="mr-1.5 size-3.5 shrink-0 text-rose-600" />
                       Dismiss
                     </Button>
                   ) : null}
@@ -1460,18 +1494,21 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
       {/* -------------------------------------------------------------------- */}
       {/* Map Pin Inspection Drawer (Sheet for Map Selection)                  */}
       {/* -------------------------------------------------------------------- */}
-      <Sheet open={Boolean(selectedMapId)} onOpenChange={(open) => !open && setSelectedMapId(null)}>
+      <Sheet
+        open={Boolean(selectedMapId)}
+        onOpenChange={(open) => !open && setSelectedMapId(null)}
+      >
         <SheetContent
           side="right"
           showCloseButton={false}
-          className="w-full sm:max-w-md p-0 flex flex-col gap-0 bg-white text-slate-900 border-l border-neutral-200 shadow-2xl h-full overflow-hidden"
+          className="flex h-full w-full flex-col gap-0 overflow-hidden border-l border-neutral-200 bg-white p-0 text-slate-900 shadow-2xl sm:max-w-md"
         >
-          <SheetHeader className="relative border-b border-neutral-100 bg-emerald-950 p-5 sm:p-6 text-white shrink-0">
+          <SheetHeader className="relative shrink-0 border-b border-neutral-100 bg-emerald-950 p-5 text-white sm:p-6">
             {/* High-contrast close button */}
             <button
               type="button"
               onClick={() => setSelectedMapId(null)}
-              className="absolute top-4 right-4 flex size-7 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer border border-white/20 shadow-md"
+              className="absolute top-4 right-4 flex size-7 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 text-white shadow-md transition-colors hover:bg-white/20"
               title="Close drawer"
             >
               <X className="size-4 text-white" />
@@ -1492,26 +1529,32 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 </span>
               ) : null}
             </div>
-            <SheetTitle className="mt-2 text-xl font-black text-white pr-8">
+            <SheetTitle className="mt-2 pr-8 text-xl font-black text-white">
               {current ? titleOf(mode, current) : "Loading details…"}
             </SheetTitle>
-            <SheetDescription className="text-xs text-emerald-200/80 pr-8">
-              {current?.event_name ? `Associated with ${current.event_name}` : "Live terrain-pinned incident record"}
+            <SheetDescription className="pr-8 text-xs text-emerald-200/80">
+              {current?.event_name
+                ? `Associated with ${current.event_name}`
+                : "Live terrain-pinned incident record"}
             </SheetDescription>
           </SheetHeader>
 
           {current ? (
             <>
-              <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 flex flex-col gap-4 text-sm custom-scrollbar">
+              <div className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-5 text-sm sm:p-6">
                 {/* Mini Map Preview with Directions overlay */}
                 {current.location ? (
                   <div className="relative">
                     <MiniMapPreview
                       latitude={current.location.coordinates[1]}
                       longitude={current.location.coordinates[0]}
-                      label={mode === "rescue" && "priority" in current ? String(current.priority ?? "●") : "●"}
+                      label={
+                        mode === "rescue" && "priority" in current
+                          ? String(current.priority ?? "●")
+                          : "●"
+                      }
                       tone={statusTone(current.status)}
-                      className="h-44 sm:h-52 w-full"
+                      className="h-44 w-full sm:h-52"
                     />
                     {/* Directions button overlaid on map top-right */}
                     <a
@@ -1519,16 +1562,17 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                       target="_blank"
                       rel="noopener noreferrer"
                       title="Open Google Maps Directions"
-                      className="absolute top-2 right-2 z-[1000] inline-flex items-center gap-1.5 rounded-lg bg-emerald-600/90 px-2.5 py-1 text-[11px] font-bold text-white shadow-lg hover:bg-emerald-600 transition backdrop-blur-sm border border-emerald-500/40 cursor-pointer"
+                      className="absolute top-2 right-2 z-[1000] inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-600/90 px-2.5 py-1 text-[11px] font-bold text-white shadow-lg backdrop-blur-sm transition hover:bg-emerald-600"
                     >
                       <Navigation className="size-3 text-white" />
                       Directions
                     </a>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50/80 p-4 text-center text-xs text-neutral-500 flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-300 bg-neutral-50/80 p-4 text-center text-xs text-neutral-500">
                     <MapPinOff className="size-4 text-neutral-400" />
-                    No GPS coordinates tagged for this record. Use landmarks for field response.
+                    No GPS coordinates tagged for this record. Use landmarks for field
+                    response.
                   </div>
                 )}
 
@@ -1536,7 +1580,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 {"photo_url" in current && current.photo_url ? (
                   <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-900 shadow-inner">
                     <div
-                      className="relative h-56 sm:h-64 w-full cursor-pointer group"
+                      className="group relative h-56 w-full cursor-pointer sm:h-64"
                       onClick={() => setLightboxPhoto(current.photo_url)}
                     >
                       <Image
@@ -1544,9 +1588,9 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                         alt="Incident attachment"
                         fill
                         unoptimized
-                        className="object-cover group-hover:scale-[1.01] transition-transform duration-200"
+                        className="object-cover transition-transform duration-200 group-hover:scale-[1.01]"
                       />
-                      <div className="absolute top-2.5 right-2.5 rounded-lg bg-emerald-950/85 border border-emerald-500/40 px-2.5 py-1 text-[11px] font-bold text-emerald-200 flex items-center gap-1.5 backdrop-blur-md shadow-lg group-hover:bg-emerald-900 transition-colors">
+                      <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-950/85 px-2.5 py-1 text-[11px] font-bold text-emerald-200 shadow-lg backdrop-blur-md transition-colors group-hover:bg-emerald-900">
                         <Maximize2 className="size-3.5 text-emerald-400" />
                         Expand Photo
                       </div>
@@ -1555,11 +1599,13 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 ) : null}
 
                 {/* Requester & Contact + Location Details — compact horizontal strip */}
-                <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 px-3.5 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-neutral-200 bg-neutral-50/60 px-3.5 py-2.5 text-xs">
                   {/* Name */}
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase shrink-0">By</span>
-                    <span className="font-bold text-neutral-900 truncate">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <span className="shrink-0 text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                      By
+                    </span>
+                    <span className="truncate font-bold text-neutral-900">
                       {"requester_name" in current
                         ? current.requester_name
                         : current.reported_by_name || "Anonymous Resident"}
@@ -1568,9 +1614,11 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
 
                   {/* Phone */}
                   {"contact_number" in current && current.contact_number ? (
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex shrink-0 items-center gap-1">
                       <Phone className="size-3 text-neutral-400" />
-                      <span className="font-mono text-neutral-700">{current.contact_number}</span>
+                      <span className="font-mono text-neutral-700">
+                        {current.contact_number}
+                      </span>
                       <button
                         type="button"
                         onClick={() => {
@@ -1582,33 +1630,37 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                         }}
                         title={copiedPhone ? "Copied!" : "Copy"}
                         className={cn(
-                          "flex size-5 items-center justify-center rounded border transition-all cursor-pointer",
+                          "flex size-5 cursor-pointer items-center justify-center rounded border transition-all",
                           copiedPhone
-                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                            : "bg-white text-neutral-500 border-neutral-200 hover:bg-neutral-100",
+                            ? "border-emerald-300 bg-emerald-100 text-emerald-800"
+                            : "border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-100",
                         )}
                       >
-                        {copiedPhone ? <Check className="size-2.5" /> : <Copy className="size-2.5" />}
+                        {copiedPhone ? (
+                          <Check className="size-2.5" />
+                        ) : (
+                          <Copy className="size-2.5" />
+                        )}
                       </button>
                       <a
                         href={`tel:${current.contact_number}`}
                         title="Call"
-                        className="flex size-5 items-center justify-center rounded bg-emerald-600 text-white hover:bg-emerald-700 transition cursor-pointer"
+                        className="flex size-5 cursor-pointer items-center justify-center rounded bg-emerald-600 text-white transition hover:bg-emerald-700"
                       >
                         <Phone className="size-2.5" />
                       </a>
                     </div>
                   ) : (
-                    <span className="text-neutral-400 italic shrink-0">No phone</span>
+                    <span className="shrink-0 text-neutral-400 italic">No phone</span>
                   )}
 
                   {/* Divider */}
-                  <span className="text-neutral-300 select-none shrink-0">|</span>
+                  <span className="shrink-0 text-neutral-300 select-none">|</span>
 
                   {/* Area */}
-                  <div className="flex items-center gap-1 min-w-0">
-                    <MapPin className="size-3 text-emerald-700 shrink-0" />
-                    <span className="font-bold text-neutral-900 truncate">
+                  <div className="flex min-w-0 items-center gap-1">
+                    <MapPin className="size-3 shrink-0 text-emerald-700" />
+                    <span className="truncate font-bold text-neutral-900">
                       {("location_area_name" in current && current.location_area_name) ||
                         current.area_name ||
                         "Area Unknown"}
@@ -1617,12 +1669,14 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
 
                   {/* Landmark */}
                   {current.location_note ? (
-                    <span className="text-neutral-500 truncate max-w-[180px]">{current.location_note}</span>
+                    <span className="max-w-[180px] truncate text-neutral-500">
+                      {current.location_note}
+                    </span>
                   ) : null}
 
                   {/* Unmapped pill (only if no GPS) */}
                   {!current.location ? (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-500 shrink-0">
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-500">
                       <MapPinOff className="size-3 text-neutral-400" />
                       Unmapped
                     </span>
@@ -1631,17 +1685,17 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
 
                 {/* Description */}
                 <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
-                  <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mb-1">
+                  <p className="mb-1 text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
                     Report Description
                   </p>
-                  <p className="text-neutral-700 leading-relaxed text-xs">
+                  <p className="text-xs leading-relaxed text-neutral-700">
                     {current.description || "No specific details provided."}
                   </p>
                 </div>
               </div>
 
               {/* Fixed Lifecycle Triage Actions (2-Row Layout: Progression/Resolve on Row 1, Centered Dismiss on Row 2) */}
-              <div className="shrink-0 border-t border-neutral-100 bg-neutral-50/90 p-4 sm:p-5 flex flex-col gap-2.5 shadow-xs">
+              <div className="flex shrink-0 flex-col gap-2.5 border-t border-neutral-100 bg-neutral-50/90 p-4 shadow-xs sm:p-5">
                 <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
                   Operational Lifecycle Actions
                 </p>
@@ -1659,17 +1713,19 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   {current.status === "pending" ? (
                     <Button
                       variant="secondary"
-                      className="w-full bg-amber-100 text-amber-950 hover:bg-amber-200 border border-amber-300 font-bold px-3 text-xs shadow-2xs cursor-pointer"
+                      className="w-full cursor-pointer border border-amber-300 bg-amber-100 px-3 text-xs font-bold text-amber-950 shadow-2xs hover:bg-amber-200"
                       onClick={() => updateStatus("verified")}
                     >
-                      <CheckCircle2 className="mr-1.5 size-3.5 text-amber-700 shrink-0" />
+                      <CheckCircle2 className="mr-1.5 size-3.5 shrink-0 text-amber-700" />
                       Verify Request
                     </Button>
                   ) : current.status === "verified" ? (
                     <Button
                       variant="primary"
-                      className="w-full bg-sky-600 text-white hover:bg-sky-700 font-bold px-3 text-xs shadow-2xs cursor-pointer"
-                      onClick={() => updateStatus(mode === "rescue" ? "dispatched" : "in_progress")}
+                      className="w-full cursor-pointer bg-sky-600 px-3 text-xs font-bold text-white shadow-2xs hover:bg-sky-700"
+                      onClick={() =>
+                        updateStatus(mode === "rescue" ? "dispatched" : "in_progress")
+                      }
                     >
                       <Truck className="mr-1.5 size-3.5 shrink-0" />
                       {mode === "rescue" ? "Dispatch Team" : "Mark In Progress"}
@@ -1680,7 +1736,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   {current.status !== "resolved" && current.status !== "dismissed" ? (
                     <Button
                       variant="primary"
-                      className="w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-3 text-xs shadow-2xs cursor-pointer"
+                      className="w-full cursor-pointer bg-emerald-600 px-3 text-xs font-bold text-white shadow-2xs hover:bg-emerald-700"
                       onClick={() => updateStatus("resolved")}
                     >
                       <CheckCircle2 className="mr-1.5 size-3.5 shrink-0" />
@@ -1694,10 +1750,10 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                   <div className="flex justify-center pt-0.5">
                     <Button
                       variant="outline"
-                      className="w-full sm:w-auto min-w-[140px] text-rose-700 border-rose-300 bg-rose-50/60 hover:bg-rose-100 font-bold px-4 text-xs shadow-2xs cursor-pointer"
+                      className="w-full min-w-[140px] cursor-pointer border-rose-300 bg-rose-50/60 px-4 text-xs font-bold text-rose-700 shadow-2xs hover:bg-rose-100 sm:w-auto"
                       onClick={() => updateStatus("dismissed")}
                     >
-                      <XCircle className="mr-1.5 size-3.5 text-rose-600 shrink-0" />
+                      <XCircle className="mr-1.5 size-3.5 shrink-0 text-rose-600" />
                       Dismiss
                     </Button>
                   </div>
@@ -1726,14 +1782,14 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
       >
         <DialogContent
           showCloseButton={false}
-          className="max-w-md p-0 overflow-hidden bg-white text-slate-900 rounded-2xl shadow-2xl"
+          className="max-w-md overflow-hidden rounded-2xl bg-white p-0 text-slate-900 shadow-2xl"
         >
           <DialogHeader
             className={cn(
-              "relative border-b p-5 text-white shrink-0",
+              "relative shrink-0 border-b p-5 text-white",
               pendingResolutionStatus === "resolved"
-                ? "bg-emerald-950 border-emerald-900"
-                : "bg-rose-950 border-rose-900",
+                ? "border-emerald-900 bg-emerald-950"
+                : "border-rose-900 bg-rose-950",
             )}
           >
             <button
@@ -1742,13 +1798,13 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 setPendingResolutionStatus(null);
                 setResolutionNoteInput("");
               }}
-              className="absolute top-4 right-4 flex size-7 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer border border-white/20 shadow-md"
+              className="absolute top-4 right-4 flex size-7 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 text-white shadow-md transition-colors hover:bg-white/20"
               title="Close modal"
             >
               <X className="size-4 text-white" />
             </button>
 
-            <div className="flex items-center gap-2 text-[10.5px] font-bold tracking-widest uppercase pr-8">
+            <div className="flex items-center gap-2 pr-8 text-[10.5px] font-bold tracking-widest uppercase">
               {pendingResolutionStatus === "resolved" ? (
                 <>
                   <CheckCircle2 className="size-4 text-emerald-400" />
@@ -1761,12 +1817,12 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                 </>
               )}
             </div>
-            <DialogTitle className="mt-1 text-lg font-black text-white pr-8">
+            <DialogTitle className="mt-1 pr-8 text-lg font-black text-white">
               {pendingResolutionStatus === "resolved"
                 ? "Record Operational Resolution"
                 : "Record Dismissal Rationale"}
             </DialogTitle>
-            <DialogDescription className="text-xs text-white/80 pr-8">
+            <DialogDescription className="pr-8 text-xs text-white/80">
               {pendingResolutionStatus === "resolved"
                 ? "Document the actions taken, evacuation destination, or emergency resolution details."
                 : "Provide a reason for dismissing this record (e.g. duplicate, invalid call, test intake)."}
@@ -1778,11 +1834,13 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
               e.preventDefault();
               handleConfirmResolution();
             }}
-            className="p-5 flex flex-col gap-4 text-xs"
+            className="flex flex-col gap-4 p-5 text-xs"
           >
             <div className="flex flex-col gap-1.5">
               <label className="font-bold text-neutral-800">
-                {pendingResolutionStatus === "resolved" ? "Resolution Summary *" : "Dismissal Reason *"}
+                {pendingResolutionStatus === "resolved"
+                  ? "Resolution Summary *"
+                  : "Dismissal Reason *"}
               </label>
               <textarea
                 required
@@ -1795,7 +1853,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
                     ? "e.g. Safely evacuated 4 individuals to Kasiglahan Evacuation Center."
                     : "e.g. Verified with requester — duplicate request already dispatched."
                 }
-                className="w-full rounded-xl border border-neutral-300 p-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-emerald-600 focus:outline-hidden leading-relaxed shadow-2xs"
+                className="w-full rounded-xl border border-neutral-300 p-3 text-xs leading-relaxed text-neutral-900 shadow-2xs placeholder:text-neutral-400 focus:border-emerald-600 focus:outline-hidden"
               />
             </div>
 
@@ -1837,13 +1895,16 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
       {/* -------------------------------------------------------------------- */}
       {/* Lightbox Modal for Photo Attachments                                 */}
       {/* -------------------------------------------------------------------- */}
-      <Dialog open={Boolean(lightboxPhoto)} onOpenChange={(open) => !open && setLightboxPhoto(null)}>
+      <Dialog
+        open={Boolean(lightboxPhoto)}
+        onOpenChange={(open) => !open && setLightboxPhoto(null)}
+      >
         <DialogContent
           showCloseButton={false}
-          className="w-full max-w-4xl p-0 gap-0 bg-[#031d10] border border-emerald-500/40 text-white overflow-hidden rounded-2xl shadow-2xl"
+          className="w-full max-w-4xl gap-0 overflow-hidden rounded-2xl border border-emerald-500/40 bg-[#031d10] p-0 text-white shadow-2xl"
         >
           {/* Top Header */}
-          <div className="flex items-center justify-between px-5 py-3.5 bg-emerald-950/95 border-b border-emerald-800/60">
+          <div className="flex items-center justify-between border-b border-emerald-800/60 bg-emerald-950/95 px-5 py-3.5">
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-300">
               <Camera className="size-4 text-emerald-400" />
               <span>Incident Field Photo Capture</span>
@@ -1851,7 +1912,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
             <button
               type="button"
               onClick={() => setLightboxPhoto(null)}
-              className="flex size-7 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer border border-white/20 shadow-md"
+              className="flex size-7 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 text-white shadow-md transition-colors hover:bg-white/20"
               title="Close viewer"
             >
               <X className="size-4 text-white" />
@@ -1859,7 +1920,7 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
           </div>
 
           {/* Full Photo Container */}
-          <div className="relative h-[65vh] w-full bg-black/70 flex items-center justify-center p-2">
+          <div className="relative flex h-[65vh] w-full items-center justify-center bg-black/70 p-2">
             {lightboxPhoto ? (
               <Image
                 src={lightboxPhoto}
@@ -1870,8 +1931,6 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
               />
             ) : null}
           </div>
-
-
         </DialogContent>
       </Dialog>
 

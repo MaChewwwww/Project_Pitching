@@ -34,6 +34,7 @@ from src.modules.evacuation.models import EmergencyEvent, EvacCenter, EvacChecki
 from src.modules.evacuation.schemas import EvacCheckinCreate, PublicEmergencyEvent
 from src.modules.geo.models import Area, Facility  # join-only (AGENTS.md Section 5)
 from src.modules.geo.service import point_to_geojson
+from src.modules.notifications import service as notification_service
 from src.modules.registry import service as registry_service
 from src.modules.registry.models import Household, Member  # join-only
 from src.modules.safety.models import (
@@ -60,6 +61,8 @@ from src.modules.safety.schemas import (
     RescueRequestOut,
     RescueRequestPatch,
     RescueRequestPublicIn,
+    ResidentIncidentReportOut,
+    ResidentRescueRequestOut,
     ResponseTimelineEntry,
     SafetyCheckinLogItem,
     SafetyLedgerPageOut,
@@ -103,6 +106,17 @@ VULNERABILITY_FLAGS = (
     "has_chronic_condition",
     "is_bedridden",
 )
+
+# An infant flag is derived from a registered member's birth date. Walk-in
+# records intentionally do not collect a birth date, so only project the
+# vulnerability fields they actually store.
+UNREGISTERED_VULNERABILITY_FLAGS = tuple(
+    flag for flag in VULNERABILITY_FLAGS if flag != "is_infant"
+)
+
+
+def _unregistered_flags(person: UnregisteredPerson) -> list[str]:
+    return [flag for flag in UNREGISTERED_VULNERABILITY_FLAGS if getattr(person, flag, False)]
 
 
 def _member_flags(member: Member) -> list[str]:
@@ -637,10 +651,7 @@ async def _sync_unregistered_rescue(
             .first()
         )
 
-        flags: set[str] = set()
-        for flag in VULNERABILITY_FLAGS:
-            if getattr(person, flag, False):
-                flags.add(flag)
+        flags: set[str] = set(_unregistered_flags(person))
         priority, _ = triage_priority(flags=flags, people_count=1)
         desc = (
             f"Rescue flagged for unregistered walk-in {person.full_name} via emergency workspace."
@@ -1254,7 +1265,7 @@ async def emergency_workspace(
                 location=location,
                 status=status_row.status if status_row else "unaccounted",
                 status_set_at=status_row.set_at if status_row else None,
-                vulnerability_flags=[flag for flag in VULNERABILITY_FLAGS if getattr(person, flag)],
+                vulnerability_flags=_unregistered_flags(person),
                 evac_center_id=assignment[0] if assignment else None,
                 evac_center_name=assignment[1] if assignment else None,
             )
@@ -1309,6 +1320,109 @@ async def create_public_rescue_request(
     )
     await session.commit()
     return RescueRequestAck(id=row.id, received_at=row.created_at)
+
+
+async def create_authenticated_rescue_request(
+    session: AsyncSession,
+    *,
+    body: RescueRequestPublicIn,
+    actor: AuthenticatedUser,
+    source_ip: str | None,
+) -> RescueRequestAck:
+    """FR-SAF-022. This path is intentionally separate from the anonymous
+    route: it may resolve an event and household because the caller opted in.
+    """
+    active_events = await evacuation_service.list_active_events(session, limit=2)
+    if len(active_events) > 1:
+        raise ConflictError(
+            "Multiple emergency events are active. Select an event before asking for rescue."
+        )
+    event = active_events[0] if active_events else None
+    household = await registry_service.household_for_user_id(session, actor.id)
+    location = (
+        func.ST_SetSRID(func.ST_MakePoint(body.longitude, body.latitude), 4326)
+        if body.latitude is not None and body.longitude is not None
+        else None
+    )
+    row = RescueRequest(
+        event_id=event.id if event else None,
+        household_id=household.id if household else None,
+        submitted_by_user_id=actor.id,
+        requester_name=body.requester_name,
+        contact_number=body.contact_number,
+        location=location,
+        location_note=body.location_note,
+        description=body.description,
+        people_count=body.people_count,
+        source_ip=source_ip,
+    )
+    session.add(row)
+    await session.flush()
+    await write_audit(
+        session,
+        actor_user_id=actor.id,
+        action="rescue_request.create_authenticated",
+        entity_type="rescue_request",
+        entity_id=row.id,
+        ip=source_ip,
+    )
+    await session.commit()
+    return RescueRequestAck(id=row.id, received_at=row.created_at)
+
+
+async def _resident_rescue_out(
+    session: AsyncSession, row: RescueRequest
+) -> ResidentRescueRequestOut:
+    event = await session.get(EmergencyEvent, row.event_id) if row.event_id else None
+    return ResidentRescueRequestOut(
+        id=row.id,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+        event_id=row.event_id,
+        event_name=event.name if event else None,
+        requester_name=row.requester_name,
+        contact_number=row.contact_number,
+        location=point_to_geojson(row.location),
+        location_note=row.location_note,
+        description=row.description,
+        people_count=row.people_count,
+        status=row.status,
+        resolved_at=row.resolved_at,
+        resolution_note=row.resolution_note,
+    )
+
+
+async def list_resident_rescue_requests(
+    session: AsyncSession, *, user_id: uuid.UUID, page: int = 1, size: int = 20
+) -> Page[ResidentRescueRequestOut]:
+    stmt = select(RescueRequest).where(RescueRequest.submitted_by_user_id == user_id)
+    total = (await session.scalar(select(func.count()).select_from(stmt.subquery()))) or 0
+    rows = (
+        (
+            await session.execute(
+                stmt.order_by(RescueRequest.created_at.desc()).limit(size).offset((page - 1) * size)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return Page[ResidentRescueRequestOut](
+        items=[await _resident_rescue_out(session, row) for row in rows],
+        **page_meta(total, page, size),
+    )
+
+
+async def get_resident_rescue_request(
+    session: AsyncSession, *, request_id: uuid.UUID, user_id: uuid.UUID
+) -> ResidentRescueRequestOut:
+    row = await session.scalar(
+        select(RescueRequest).where(
+            RescueRequest.id == request_id, RescueRequest.submitted_by_user_id == user_id
+        )
+    )
+    if row is None:
+        raise NotFoundError("Rescue request not found.")
+    return await _resident_rescue_out(session, row)
 
 
 async def get_unregistered_or_404(
@@ -1385,61 +1499,90 @@ async def finalize_unregistered_conversion(
 async def unregistered_out(
     session: AsyncSession, person: UnregisteredPerson
 ) -> UnregisteredPersonOut:
-    status_row = (
-        await session.execute(
-            select(SafetyStatus)
-            .where(SafetyStatus.unregistered_person_id == person.id)
-            .order_by(
-                SafetyStatus.superseded_at.is_(None).desc(),
-                SafetyStatus.set_at.desc(),
+    return (await _unregistered_out_many(session, [person]))[0]
+
+
+async def _unregistered_out_many(
+    session: AsyncSession, people: list[UnregisteredPerson]
+) -> list[UnregisteredPersonOut]:
+    """Project walk-ins in batches; list views must not grow one query per person."""
+    if not people:
+        return []
+
+    person_ids = [person.id for person in people]
+    status_rows = (
+        (
+            await session.execute(
+                select(SafetyStatus)
+                .where(SafetyStatus.unregistered_person_id.in_(person_ids))
+                .order_by(
+                    SafetyStatus.unregistered_person_id,
+                    SafetyStatus.superseded_at.is_(None).desc(),
+                    SafetyStatus.set_at.desc(),
+                )
             )
-            .limit(1)
         )
-    ).scalar_one_or_none()
+        .scalars()
+        .all()
+    )
+    latest_status_by_person: dict[uuid.UUID, SafetyStatus] = {}
+    for status_row in status_rows:
+        if status_row.unregistered_person_id is not None:
+            latest_status_by_person.setdefault(status_row.unregistered_person_id, status_row)
 
-    recorded_name = None
-    if person.recorded_by_user_id is not None:
-        names = await _user_names(session, {person.recorded_by_user_id})
-        recorded_name = names.get(person.recorded_by_user_id)
-
-    assignment = (
+    recorded_names = await _user_names(
+        session, {person.recorded_by_user_id for person in people if person.recorded_by_user_id}
+    )
+    assignments = (
         await session.execute(
-            select(EvacCheckin.evac_center_id, Facility.name)
+            select(EvacCheckin.unregistered_person_id, EvacCheckin.evac_center_id, Facility.name)
             .join(EvacCenter, EvacCheckin.evac_center_id == EvacCenter.id)
             .join(Facility, EvacCenter.facility_id == Facility.id)
             .where(
-                EvacCheckin.unregistered_person_id == person.id,
+                EvacCheckin.unregistered_person_id.in_(person_ids),
                 EvacCheckin.checked_out_at.is_(None),
             )
         )
-    ).one_or_none()
+    ).all()
+    assignment_by_person = {
+        person_id: (center_id, center_name)
+        for person_id, center_id, center_name in assignments
+        if person_id is not None
+    }
 
-    return UnregisteredPersonOut(
-        id=person.id,
-        event_id=person.event_id,
-        created_at=person.created_at,
-        status_set_at=status_row.set_at if status_row else None,
-        full_name=person.full_name,
-        contact_number=person.contact_number,
-        location=point_to_geojson(person.location),
-        location_note=person.location_note,
-        # Converted rows have no current temporary status, so expose their
-        # last historical value while live totals continue to exclude them.
-        status=status_row.status if status_row else "unaccounted",
-        recorded_by_name=recorded_name,
-        converted_household_id=person.converted_household_id,
-        converted_member_id=person.converted_member_id,
-        is_child=person.is_child,
-        is_senior=person.is_senior,
-        is_pwd=person.is_pwd,
-        is_pregnant=person.is_pregnant,
-        is_lactating=person.is_lactating,
-        has_chronic_condition=person.has_chronic_condition,
-        chronic_condition_note=person.chronic_condition_note,
-        is_bedridden=person.is_bedridden,
-        evac_center_id=assignment[0] if assignment else None,
-        evac_center_name=assignment[1] if assignment else None,
-    )
+    items: list[UnregisteredPersonOut] = []
+    for person in people:
+        status_row = latest_status_by_person.get(person.id)
+        assignment = assignment_by_person.get(person.id)
+        items.append(
+            UnregisteredPersonOut(
+                id=person.id,
+                event_id=person.event_id,
+                created_at=person.created_at,
+                status_set_at=status_row.set_at if status_row else None,
+                full_name=person.full_name,
+                contact_number=person.contact_number,
+                location=point_to_geojson(person.location),
+                location_note=person.location_note,
+                # Converted rows have no current temporary status, so expose their
+                # last historical value while live totals continue to exclude them.
+                status=status_row.status if status_row else "unaccounted",
+                recorded_by_name=recorded_names.get(person.recorded_by_user_id),
+                converted_household_id=person.converted_household_id,
+                converted_member_id=person.converted_member_id,
+                is_child=person.is_child,
+                is_senior=person.is_senior,
+                is_pwd=person.is_pwd,
+                is_pregnant=person.is_pregnant,
+                is_lactating=person.is_lactating,
+                has_chronic_condition=person.has_chronic_condition,
+                chronic_condition_note=person.chronic_condition_note,
+                is_bedridden=person.is_bedridden,
+                evac_center_id=assignment[0] if assignment else None,
+                evac_center_name=assignment[1] if assignment else None,
+            )
+        )
+    return items
 
 
 async def list_unregistered(
@@ -1457,7 +1600,7 @@ async def list_unregistered(
         stmt = stmt.where(UnregisteredPerson.converted_member_id.is_(None))
     total = (await session.execute(select(func.count()).select_from(stmt.subquery()))).scalar_one()
     rows = (await session.execute(stmt.limit(size).offset((page - 1) * size))).scalars().all()
-    items = [await unregistered_out(session, row) for row in rows]
+    items = await _unregistered_out_many(session, rows)
     return Page[UnregisteredPersonOut](items=items, **page_meta(total, page, size))
 
 
@@ -1530,7 +1673,7 @@ async def update_unregistered(
         person.location_note = body.location_note
     if body.latitude is not None and body.longitude is not None:
         person.location = func.ST_SetSRID(func.ST_MakePoint(body.longitude, body.latitude), 4326)
-    for field in VULNERABILITY_FLAGS:
+    for field in UNREGISTERED_VULNERABILITY_FLAGS:
         value = getattr(body, field)
         if value is not None:
             setattr(person, field, value)
@@ -1616,51 +1759,116 @@ async def _ensure_triaged(session: AsyncSession, rows: list[RescueRequest]) -> N
 
 
 async def _rescue_request_out(session: AsyncSession, row: RescueRequest) -> RescueRequestOut:
-    household = await session.get(Household, row.household_id) if row.household_id else None
-    event = await session.get(EmergencyEvent, row.event_id) if row.event_id else None
-    area_name = None
-    if household is not None and household.area_id is not None:
-        area = await session.get(Area, household.area_id)
-        area_name = area.name if area else None
+    return (await _rescue_request_out_many(session, [row]))[0]
 
-    # A manual override's number no longer matches what these factors would
-    # explain, so don't show stale computed reasoning next to it.
-    factors: list[str] = []
-    if not row.priority_is_manual and row.household_id is not None:
-        flags = await _household_flags(session, row.household_id)
-        _priority, factors = triage_priority(flags=flags, people_count=row.people_count)
 
-    assigned_name = None
-    if row.assigned_to_user_id is not None:
-        names = await _user_names(session, {row.assigned_to_user_id})
-        assigned_name = names.get(row.assigned_to_user_id)
+async def _rescue_request_out_many(
+    session: AsyncSession, rows: list[RescueRequest]
+) -> list[RescueRequestOut]:
+    """Build queue rows with set-based read joins instead of one lookup per row."""
+    if not rows:
+        return []
 
-    return RescueRequestOut(
-        id=row.id,
-        created_at=row.created_at,
-        updated_at=row.updated_at,
-        event_id=row.event_id,
-        event_name=event.name if event else None,
-        event_type=event.type if event else None,
-        requester_name=row.requester_name,
-        contact_number=row.contact_number,
-        location=point_to_geojson(row.location),
-        location_note=row.location_note,
-        description=row.description,
-        people_count=row.people_count,
-        status=row.status,
-        priority=row.priority,
-        priority_factors=factors,
-        priority_is_manual=row.priority_is_manual,
-        is_registered=row.household_id is not None,
-        household_reference_no=household.reference_no if household else None,
-        area_name=area_name,
-        location_area_name=await _location_area_name(session, row.location),
-        assigned_to_user_id=row.assigned_to_user_id,
-        assigned_to_name=assigned_name,
-        resolved_at=row.resolved_at,
-        resolution_note=row.resolution_note,
+    household_ids = {row.household_id for row in rows if row.household_id is not None}
+    event_ids = {row.event_id for row in rows if row.event_id is not None}
+    user_ids = {row.assigned_to_user_id for row in rows if row.assigned_to_user_id is not None}
+
+    households = (
+        (await session.execute(select(Household).where(Household.id.in_(household_ids))))
+        .scalars()
+        .all()
+        if household_ids
+        else []
     )
+    household_by_id = {household.id: household for household in households}
+    events = (
+        (await session.execute(select(EmergencyEvent).where(EmergencyEvent.id.in_(event_ids))))
+        .scalars()
+        .all()
+        if event_ids
+        else []
+    )
+    event_by_id = {event.id: event for event in events}
+    area_ids = {household.area_id for household in households}
+    areas = (
+        (await session.execute(select(Area).where(Area.id.in_(area_ids)))).scalars().all()
+        if area_ids
+        else []
+    )
+    area_name_by_id = {area.id: area.name for area in areas}
+    assigned_names = await _user_names(session, user_ids)
+
+    members = (
+        (
+            await session.execute(
+                select(Member).where(
+                    Member.household_id.in_(household_ids), Member.deleted_at.is_(None)
+                )
+            )
+        )
+        .scalars()
+        .all()
+        if household_ids
+        else []
+    )
+    flags_by_household: dict[uuid.UUID, set[str]] = {}
+    for member in members:
+        flags_by_household.setdefault(member.household_id, set()).update(_member_flags(member))
+
+    request_ids_with_location = [row.id for row in rows if row.location is not None]
+    location_area_names = (
+        dict(
+            (
+                await session.execute(
+                    select(RescueRequest.id, Area.name)
+                    .join(Area, func.ST_Contains(Area.geom, RescueRequest.location))
+                    .where(RescueRequest.id.in_(request_ids_with_location))
+                )
+            ).all()
+        )
+        if request_ids_with_location
+        else {}
+    )
+
+    items: list[RescueRequestOut] = []
+    for row in rows:
+        household = household_by_id.get(row.household_id)
+        event = event_by_id.get(row.event_id)
+        factors: list[str] = []
+        if not row.priority_is_manual and row.household_id is not None:
+            _priority, factors = triage_priority(
+                flags=flags_by_household.get(row.household_id, set()),
+                people_count=row.people_count,
+            )
+        items.append(
+            RescueRequestOut(
+                id=row.id,
+                created_at=row.created_at,
+                updated_at=row.updated_at,
+                event_id=row.event_id,
+                event_name=event.name if event else None,
+                event_type=event.type if event else None,
+                requester_name=row.requester_name,
+                contact_number=row.contact_number,
+                location=point_to_geojson(row.location),
+                location_note=row.location_note,
+                description=row.description,
+                people_count=row.people_count,
+                status=row.status,
+                priority=row.priority,
+                priority_factors=factors,
+                priority_is_manual=row.priority_is_manual,
+                is_registered=row.household_id is not None,
+                household_reference_no=household.reference_no if household else None,
+                area_name=(area_name_by_id.get(household.area_id) if household else None),
+                location_area_name=location_area_names.get(row.id),
+                assigned_to_user_id=row.assigned_to_user_id,
+                assigned_to_name=assigned_names.get(row.assigned_to_user_id),
+                resolved_at=row.resolved_at,
+                resolution_note=row.resolution_note,
+            )
+        )
+    return items
 
 
 async def rescue_request_detail(
@@ -1706,7 +1914,7 @@ async def list_rescue_requests(
     stmt = _base_stmt().order_by(RescueRequest.priority.desc(), RescueRequest.created_at)
     total = (await session.execute(select(func.count()).select_from(stmt.subquery()))).scalar_one()
     rows = (await session.execute(stmt.limit(size).offset((page - 1) * size))).scalars().all()
-    items = [await _rescue_request_out(session, row) for row in rows]
+    items = await _rescue_request_out_many(session, rows)
     return Page[RescueRequestOut](items=items, **page_meta(total, page, size))
 
 
@@ -1765,6 +1973,17 @@ async def update_rescue_request(
         changes["event_id"] = str(row.event_id) if row.event_id else None
 
     await session.flush()
+    if "status" in changes and row.submitted_by_user_id is not None:
+        await notification_service.create_notification(
+            session,
+            user_id=row.submitted_by_user_id,
+            type="rescue_update",
+            title="Rescue request updated",
+            body=f"Your rescue request is now marked {row.status.replace('_', ' ')}.",
+            link_path="/portal/history",
+            source_type=f"rescue_status:{row.status}",
+            source_id=row.id,
+        )
     await write_audit(
         session,
         actor_user_id=actor.id,
@@ -1790,43 +2009,108 @@ async def open_rescue_count(session: AsyncSession) -> int:
 
 
 async def _incident_report_out(session: AsyncSession, row: IncidentReport) -> IncidentReportOut:
+    return (await _incident_report_out_many(session, [row]))[0]
+
+
+async def _incident_report_out_many(
+    session: AsyncSession, rows: list[IncidentReport]
+) -> list[IncidentReportOut]:
+    """Build incident queue rows from batched lookups for each related record."""
+    if not rows:
+        return []
+
+    event_ids = {row.event_id for row in rows if row.event_id is not None}
     user_ids = {
-        uid for uid in (row.reported_by_user_id, row.verified_by_user_id) if uid is not None
+        user_id
+        for row in rows
+        for user_id in (row.reported_by_user_id, row.verified_by_user_id)
+        if user_id is not None
     }
     names = await _user_names(session, user_ids)
-    event = await session.get(EmergencyEvent, row.event_id) if row.event_id else None
-    household = (
-        await session.scalar(
-            select(Household).where(Household.head_user_id == row.reported_by_user_id)
+    events = (
+        (await session.execute(select(EmergencyEvent).where(EmergencyEvent.id.in_(event_ids))))
+        .scalars()
+        .all()
+        if event_ids
+        else []
+    )
+    event_by_id = {event.id: event for event in events}
+    households = (
+        (
+            await session.execute(
+                select(Household).where(
+                    Household.head_user_id.in_(
+                        {
+                            row.reported_by_user_id
+                            for row in rows
+                            if row.reported_by_user_id is not None
+                        }
+                    )
+                )
+            )
         )
-        if row.reported_by_user_id
-        else None
+        .scalars()
+        .all()
+        if any(row.reported_by_user_id is not None for row in rows)
+        else []
     )
-    area = await session.get(Area, household.area_id) if household else None
-    return IncidentReportOut(
-        id=row.id,
-        created_at=row.created_at,
-        updated_at=row.updated_at,
-        event_id=row.event_id,
-        event_name=event.name if event else None,
-        event_type=event.type if event else None,
-        type=row.type,
-        description=row.description,
-        location=point_to_geojson(row.location),
-        location_note=row.location_note,
-        location_area_name=await _location_area_name(session, row.location),
-        photo_url=f"/uploads/{row.photo_path}" if row.photo_path else None,
-        status=row.status,
-        reported_by_name=(names.get(row.reported_by_user_id) if row.reported_by_user_id else None),
-        verified_by_name=(names.get(row.verified_by_user_id) if row.verified_by_user_id else None),
-        verified_at=row.verified_at,
-        dismissal_reason=row.dismissal_reason,
-        resolved_at=row.resolved_at,
-        resolution_note=row.resolution_note,
-        household_id=household.id if household else None,
-        household_reference_no=household.reference_no if household else None,
-        area_name=area.name if area else None,
+    household_by_head_user: dict[uuid.UUID, Household] = {}
+    for household in households:
+        if household.head_user_id is not None:
+            household_by_head_user.setdefault(household.head_user_id, household)
+    area_ids = {household.area_id for household in households}
+    areas = (
+        (await session.execute(select(Area).where(Area.id.in_(area_ids)))).scalars().all()
+        if area_ids
+        else []
     )
+    area_name_by_id = {area.id: area.name for area in areas}
+    report_ids_with_location = [row.id for row in rows if row.location is not None]
+    location_area_names = (
+        dict(
+            (
+                await session.execute(
+                    select(IncidentReport.id, Area.name)
+                    .join(Area, func.ST_Contains(Area.geom, IncidentReport.location))
+                    .where(IncidentReport.id.in_(report_ids_with_location))
+                )
+            ).all()
+        )
+        if report_ids_with_location
+        else {}
+    )
+
+    items: list[IncidentReportOut] = []
+    for row in rows:
+        event = event_by_id.get(row.event_id)
+        household = household_by_head_user.get(row.reported_by_user_id)
+        items.append(
+            IncidentReportOut(
+                id=row.id,
+                created_at=row.created_at,
+                updated_at=row.updated_at,
+                event_id=row.event_id,
+                event_name=event.name if event else None,
+                event_type=event.type if event else None,
+                type=row.type,
+                description=row.description,
+                location=point_to_geojson(row.location),
+                location_note=row.location_note,
+                location_area_name=location_area_names.get(row.id),
+                photo_url=f"/uploads/{row.photo_path}" if row.photo_path else None,
+                status=row.status,
+                reported_by_name=names.get(row.reported_by_user_id),
+                verified_by_name=names.get(row.verified_by_user_id),
+                verified_at=row.verified_at,
+                dismissal_reason=row.dismissal_reason,
+                resolved_at=row.resolved_at,
+                resolution_note=row.resolution_note,
+                household_id=household.id if household else None,
+                household_reference_no=household.reference_no if household else None,
+                area_name=(area_name_by_id.get(household.area_id) if household else None),
+            )
+        )
+    return items
 
 
 async def incident_report_detail(
@@ -1907,8 +2191,66 @@ async def list_incident_reports(
         stmt = stmt.where(IncidentReport.status == status)
     total = (await session.execute(select(func.count()).select_from(stmt.subquery()))).scalar_one()
     rows = (await session.execute(stmt.limit(size).offset((page - 1) * size))).scalars().all()
-    items = [await _incident_report_out(session, row) for row in rows]
+    items = await _incident_report_out_many(session, rows)
     return Page[IncidentReportOut](items=items, **page_meta(total, page, size))
+
+
+async def _resident_incident_out(
+    session: AsyncSession, row: IncidentReport
+) -> ResidentIncidentReportOut:
+    event = await session.get(EmergencyEvent, row.event_id) if row.event_id else None
+    return ResidentIncidentReportOut(
+        id=row.id,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+        event_id=row.event_id,
+        event_name=event.name if event else None,
+        type=row.type,
+        description=row.description,
+        location=point_to_geojson(row.location),
+        location_note=row.location_note,
+        photo_url=f"/uploads/{row.photo_path}" if row.photo_path else None,
+        status=row.status,
+        verified_at=row.verified_at,
+        dismissal_reason=row.dismissal_reason,
+        resolved_at=row.resolved_at,
+        resolution_note=row.resolution_note,
+    )
+
+
+async def list_resident_incident_reports(
+    session: AsyncSession, *, user_id: uuid.UUID, page: int = 1, size: int = 20
+) -> Page[ResidentIncidentReportOut]:
+    stmt = select(IncidentReport).where(IncidentReport.reported_by_user_id == user_id)
+    total = (await session.scalar(select(func.count()).select_from(stmt.subquery()))) or 0
+    rows = (
+        (
+            await session.execute(
+                stmt.order_by(IncidentReport.created_at.desc())
+                .limit(size)
+                .offset((page - 1) * size)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return Page[ResidentIncidentReportOut](
+        items=[await _resident_incident_out(session, row) for row in rows],
+        **page_meta(total, page, size),
+    )
+
+
+async def get_resident_incident_report(
+    session: AsyncSession, *, report_id: uuid.UUID, user_id: uuid.UUID
+) -> ResidentIncidentReportOut:
+    row = await session.scalar(
+        select(IncidentReport).where(
+            IncidentReport.id == report_id, IncidentReport.reported_by_user_id == user_id
+        )
+    )
+    if row is None:
+        raise NotFoundError("Incident report not found.")
+    return await _resident_incident_out(session, row)
 
 
 async def get_incident_report_or_404(session: AsyncSession, report_id: uuid.UUID) -> IncidentReport:
@@ -1956,6 +2298,17 @@ async def review_incident_report(
         changes["event_id"] = str(row.event_id) if row.event_id else None
 
     await session.flush()
+    if "status" in changes and row.reported_by_user_id is not None:
+        await notification_service.create_notification(
+            session,
+            user_id=row.reported_by_user_id,
+            type="incident_update",
+            title="Incident report updated",
+            body=f"Your incident report is now marked {row.status.replace('_', ' ')}.",
+            link_path="/portal/history",
+            source_type=f"incident_status:{row.status}",
+            source_id=row.id,
+        )
     await write_audit(
         session,
         actor_user_id=actor.id,
@@ -2114,7 +2467,7 @@ async def get_safety_ledger(
             )
         elif u_row:
             c_info = center_assignments.get(u_row.id)
-            flags: list[str] = [f for f in VULNERABILITY_FLAGS if getattr(u_row, f, False)]
+            flags = _unregistered_flags(u_row)
             items.append(
                 SafetyCheckinLogItem(
                     id=s_row.id,
@@ -2384,7 +2737,7 @@ async def get_person_safety_journey(
                     )
                 )
 
-        flags = [f for f in VULNERABILITY_FLAGS if getattr(person, f, False)]
+        flags = _unregistered_flags(person)
         timeline.sort(key=lambda t: t.timestamp, reverse=True)
 
         return PersonSafetyJourneyOut(

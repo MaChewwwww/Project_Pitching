@@ -263,10 +263,14 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
           ) : null}
 
           {user ? (
-            <Button asChild pill size="md" className="hidden sm:inline-flex">
+            <Button asChild pill size="md" className="group hidden sm:inline-flex">
               <Link href={accountHref}>
-                <ArrowRight aria-hidden className="size-4" />
                 {accountLabel}
+                <ArrowRight
+                  aria-hidden
+                  className="size-4.5 transition-transform duration-150 group-hover:translate-x-0.5"
+                  strokeWidth={2.5}
+                />
               </Link>
             </Button>
           ) : (
@@ -330,10 +334,14 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
                 <div className="mt-auto flex flex-col gap-2 border-t border-neutral-200 p-4">
                   <LanguageToggle fullWidth className="w-full sm:hidden" />
                   {user ? (
-                    <Button asChild pill size="lg" className="w-full">
+                    <Button asChild pill size="lg" className="group w-full">
                       <Link href={accountHref} onClick={() => setOpen(false)}>
-                        <ArrowRight aria-hidden className="size-4" />
                         {accountLabel}
+                        <ArrowRight
+                          aria-hidden
+                          className="size-4.5 transition-transform duration-150 group-hover:translate-x-0.5"
+                          strokeWidth={2.5}
+                        />
                       </Link>
                     </Button>
                   ) : (

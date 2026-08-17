@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { MetricGridSkeleton } from "@/components/common/portal-loading";
 import { cn } from "@/lib/utils";
 
 export interface AssetMetricCardProps {
@@ -58,22 +59,22 @@ export function AssetMetricCard({
   return (
     <div
       className={cn(
-        "flex flex-col justify-between rounded-2xl border p-3.5 sm:p-4 transition-all hover:shadow-xs",
+        "flex flex-col justify-between rounded-2xl border p-3.5 transition-all hover:shadow-xs sm:p-4",
         toneMap.card,
       )}
     >
       <div className="flex items-center justify-between gap-1.5">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
           <div
             className={cn(
-              "grid size-7 place-items-center rounded-lg shadow-2xs shrink-0",
+              "grid size-7 shrink-0 place-items-center rounded-lg shadow-2xs",
               toneMap.iconBox,
             )}
             aria-hidden
           >
             <Icon className="size-3.5" />
           </div>
-          <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 truncate">
+          <span className="truncate text-[11px] font-black tracking-wider text-slate-700 uppercase">
             {label}
           </span>
         </div>
@@ -81,23 +82,28 @@ export function AssetMetricCard({
       </div>
 
       <div className="mt-2.5 flex items-baseline justify-between gap-2">
-        <div className="flex items-baseline gap-1.5 shrink-0">
+        <div className="flex shrink-0 items-baseline gap-1.5">
           <span
             className={cn(
-              "text-2xl sm:text-3xl font-black tracking-tight tabular-nums",
+              "text-2xl font-black tracking-tight tabular-nums sm:text-3xl",
               toneMap.value,
             )}
           >
             {value}
           </span>
           {unit ? (
-            <span className="text-[10.5px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide">
+            <span className="text-[10.5px] font-bold tracking-wide text-slate-500 uppercase sm:text-xs">
               {unit}
             </span>
           ) : null}
         </div>
-        <div className="flex flex-col justify-center text-right min-w-0 flex-1 pl-1">
-          <span className={cn("text-[11px] leading-tight line-clamp-1 text-right", toneMap.sub)}>
+        <div className="flex min-w-0 flex-1 flex-col justify-center pl-1 text-right">
+          <span
+            className={cn(
+              "line-clamp-1 text-right text-[11px] leading-tight",
+              toneMap.sub,
+            )}
+          >
             {sub}
           </span>
         </div>
@@ -106,7 +112,25 @@ export function AssetMetricCard({
   );
 }
 
-export function AssetMetricStrip({ items }: { items: AssetMetricCardProps[] }) {
+export function AssetMetricStrip({
+  items,
+  isLoading = false,
+  loadingLabel = "Loading operational metrics",
+}: {
+  items: AssetMetricCardProps[];
+  isLoading?: boolean;
+  loadingLabel?: string;
+}) {
+  if (isLoading) {
+    return (
+      <MetricGridSkeleton
+        count={items.length}
+        label={loadingLabel}
+        className="lg:grid-cols-5"
+      />
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       {items.map((item, idx) => (

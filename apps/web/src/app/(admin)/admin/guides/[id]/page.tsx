@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { ErrorState } from "@/components/common/error-state";
-import { ListSkeleton } from "@/components/common/skeletons";
+import { FormFieldsSkeleton } from "@/components/common/portal-loading";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import {
   GuideEditor,
@@ -36,7 +36,7 @@ export default function EditGuidePage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const queryKey = ["admin", "guides", id];
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isFetching, isError, refetch } = useQuery({
     queryKey,
     queryFn: () =>
       api.get<Guide>(`/admin/guides/${id}`).then((response) => response.data),
@@ -53,7 +53,7 @@ export default function EditGuidePage() {
       throw toDisplayError(error);
     },
   });
-  if (isLoading) return <ListSkeleton rows={4} />;
+  if (isFetching) return <FormFieldsSkeleton label="Loading guide editor" fields={8} />;
   if (isError || !data)
     return <ErrorState sectionName="This Guide" onRetry={() => refetch()} />;
   const defaults: GuideEditorValues = {

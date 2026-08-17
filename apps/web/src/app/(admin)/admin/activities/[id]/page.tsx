@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { ErrorState } from "@/components/common/error-state";
-import { ListSkeleton } from "@/components/common/skeletons";
+import { FormFieldsSkeleton } from "@/components/common/portal-loading";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { ArticleImageManager } from "@/components/features/admin/article-image-manager";
 import {
@@ -43,7 +43,7 @@ export default function AdminActivityEditorPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const queryKey = ["admin", "activities", id];
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isFetching, isError, refetch } = useQuery({
     queryKey,
     queryFn: () => api.get<ActivityEditor>(`/admin/activities/${id}`).then((r) => r.data),
   });
@@ -69,7 +69,8 @@ export default function AdminActivityEditorPage() {
       throw toDisplayError(error);
     },
   });
-  if (isLoading) return <ListSkeleton rows={4} />;
+  if (isFetching)
+    return <FormFieldsSkeleton label="Loading activity editor" fields={8} />;
   if (isError || !data)
     return <ErrorState sectionName="This Activity" onRetry={() => refetch()} />;
   const defaultValues: ActivityFormValues = {

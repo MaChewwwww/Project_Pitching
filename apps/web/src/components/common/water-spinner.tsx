@@ -31,6 +31,8 @@ const SIZE = {
 
 export interface WaterSpinnerProps {
   size?: keyof typeof SIZE;
+  /** Authenticated portals use the quieter cycle; public fallbacks retain their original tempo. */
+  tempo?: "default" | "calm";
   /** Names what is loading. Read by screen readers; shown when `showLabel`. */
   label?: string;
   /** Renders the label as visible caption text under the spinner. */
@@ -40,6 +42,7 @@ export interface WaterSpinnerProps {
 
 export function WaterSpinner({
   size = "md",
+  tempo = "default",
   label = "Loading",
   showLabel = false,
   className,
@@ -52,6 +55,7 @@ export function WaterSpinner({
       <div
         aria-hidden
         className="ws-root"
+        data-tempo={tempo}
         style={{ "--ws-size": SIZE[size] } as React.CSSProperties}
       >
         <div className="ws-stage">

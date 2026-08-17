@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import { DataSurfaceLoading } from "@/components/common/portal-loading";
 import {
   Dialog,
   DialogContent,
@@ -94,10 +95,10 @@ function ListTabButton({
       aria-selected={active}
       onClick={onClick}
       className={cn(
-        "inline-flex h-12 shrink-0 whitespace-nowrap items-center justify-center gap-2 border-b-2 px-4.5 text-xs font-extrabold transition-all cursor-pointer",
+        "inline-flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 border-b-2 px-4.5 text-xs font-extrabold whitespace-nowrap transition-all",
         active
-          ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
-          : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50",
+          ? "border-emerald-600 bg-emerald-50/30 text-emerald-700"
+          : "border-transparent text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900",
       )}
     >
       {icon}
@@ -111,13 +112,11 @@ function ListTabButton({
   );
 }
 
-export function SafetyLedgerTab({
-  event,
-}: SafetyLedgerTabProps) {
+export function SafetyLedgerTab({ event }: SafetyLedgerTabProps) {
   const queryClient = useQueryClient();
-  const [activeSubTab, setActiveSubTab] = React.useState<
-    "stream" | "areas" | "centers"
-  >("stream");
+  const [activeSubTab, setActiveSubTab] = React.useState<"stream" | "areas" | "centers">(
+    "stream",
+  );
 
   // Filters for Live Check-In Stream
   const [search, setSearch] = React.useState("");
@@ -142,8 +141,7 @@ export function SafetyLedgerTab({
   // Selected area for spatial/safety modal
   const [selectedAreaSummary, setSelectedAreaSummary] =
     React.useState<AreaAccountedFor | null>(null);
-  const [showBarangaySummary, setShowBarangaySummary] =
-    React.useState<boolean>(false);
+  const [showBarangaySummary, setShowBarangaySummary] = React.useState<boolean>(false);
 
   // Selected evacuation center for detail modal
   const [selectedCenterSummary, setSelectedCenterSummary] =
@@ -193,9 +191,7 @@ export function SafetyLedgerTab({
   const areasQuery = useQuery({
     queryKey: ["public", "area-stats"],
     queryFn: () =>
-      api
-        .get<{ areas: PublicAreaStat[] }>("/public/area-stats")
-        .then((r) => r.data),
+      api.get<{ areas: PublicAreaStat[] }>("/public/area-stats").then((r) => r.data),
   });
 
   // Workspace query for evacuee demographics & special needs flags
@@ -227,11 +223,11 @@ export function SafetyLedgerTab({
 
   const isStreamFiltered = Boolean(
     search ||
-      statusFilter !== "all" ||
-      subjectTypeFilter !== "all" ||
-      areaFilter !== "all" ||
-      methodFilter !== "all" ||
-      currentOnly,
+    statusFilter !== "all" ||
+    subjectTypeFilter !== "all" ||
+    areaFilter !== "all" ||
+    methodFilter !== "all" ||
+    currentOnly,
   );
 
   const resetStreamFilters = () => {
@@ -308,31 +304,44 @@ export function SafetyLedgerTab({
       {/* 1. 5 Executive KPI Telemetry Cards (Compact Horizontal Layout) */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {/* KPI 1: Total Registered Safe */}
-        <Card radius="lg" className="border-neutral-200/80 bg-white shadow-2xs hover:shadow-xs transition-shadow">
+        <Card
+          radius="lg"
+          className="border-neutral-200/80 bg-white shadow-2xs transition-shadow hover:shadow-xs"
+        >
           <CardContent className="flex items-center gap-3 p-3.5">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-emerald-200/80 bg-emerald-50 text-emerald-700">
               <CheckCircle2 className="size-5" />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-1">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-black text-slate-900 tabular-nums">{safeTotal}</span>
-                  <span className="text-xs text-slate-400 font-semibold">/ {totalRegistered}</span>
+                  <span className="text-xl font-black text-slate-900 tabular-nums">
+                    {safeTotal}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-400">
+                    / {totalRegistered}
+                  </span>
                 </div>
                 <Badge tone="success">{safePct}%</Badge>
               </div>
-              <h4 className="text-xs font-bold text-slate-800 truncate">Accounted Safe</h4>
-              <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
-                {summary?.registered_total.safe_confirmed ?? 0} verified · {summary?.registered_total.safe_bulk ?? 0} bulk
+              <h4 className="truncate text-xs font-bold text-slate-800">
+                Accounted Safe
+              </h4>
+              <p className="mt-0.5 truncate text-[11px] font-medium text-slate-400">
+                {summary?.registered_total.safe_confirmed ?? 0} verified ·{" "}
+                {summary?.registered_total.safe_bulk ?? 0} bulk
               </p>
             </div>
           </CardContent>
         </Card>
 
         {/* KPI 2: Individually Verified */}
-        <Card radius="lg" className="border-neutral-200/80 bg-white shadow-2xs hover:shadow-xs transition-shadow">
+        <Card
+          radius="lg"
+          className="border-neutral-200/80 bg-white shadow-2xs transition-shadow hover:shadow-xs"
+        >
           <CardContent className="flex items-center gap-3 p-3.5">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-teal-50 text-teal-700 border border-teal-200/80">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-teal-200/80 bg-teal-50 text-teal-700">
               <UserCheck className="size-5" />
             </span>
             <div className="min-w-0 flex-1">
@@ -342,8 +351,10 @@ export function SafetyLedgerTab({
                 </span>
                 <Badge tone="info">Confirmed</Badge>
               </div>
-              <h4 className="text-xs font-bold text-slate-800 truncate">Individually Confirmed</h4>
-              <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
+              <h4 className="truncate text-xs font-bold text-slate-800">
+                Individually Confirmed
+              </h4>
+              <p className="mt-0.5 truncate text-[11px] font-medium text-slate-400">
                 Portal / Staff verified
               </p>
             </div>
@@ -351,20 +362,25 @@ export function SafetyLedgerTab({
         </Card>
 
         {/* KPI 3: Priority Rescue Distress */}
-        <Card radius="lg" className="border-neutral-200/80 bg-white shadow-2xs hover:shadow-xs transition-shadow">
+        <Card
+          radius="lg"
+          className="border-neutral-200/80 bg-white shadow-2xs transition-shadow hover:shadow-xs"
+        >
           <CardContent className="flex items-center gap-3 p-3.5">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-700 border border-rose-200/80">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-rose-200/80 bg-rose-50 text-rose-700">
               <ShieldAlert className="size-5" />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-1">
-                <span className="text-xl font-black text-slate-900 tabular-nums">{needsRescueCount}</span>
+                <span className="text-xl font-black text-slate-900 tabular-nums">
+                  {needsRescueCount}
+                </span>
                 <Badge tone={needsRescueCount > 0 ? "danger" : "neutral"}>
                   {needsRescueCount > 0 ? "Distress" : "Clear"}
                 </Badge>
               </div>
-              <h4 className="text-xs font-bold text-slate-800 truncate">Needs Rescue</h4>
-              <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
+              <h4 className="truncate text-xs font-bold text-slate-800">Needs Rescue</h4>
+              <p className="mt-0.5 truncate text-[11px] font-medium text-slate-400">
                 {needsRescueCount > 0 ? "Immediate triage queue" : "Zero active distress"}
               </p>
             </div>
@@ -372,18 +388,23 @@ export function SafetyLedgerTab({
         </Card>
 
         {/* KPI 4: Unaccounted / Pending */}
-        <Card radius="lg" className="border-neutral-200/80 bg-white shadow-2xs hover:shadow-xs transition-shadow">
+        <Card
+          radius="lg"
+          className="border-neutral-200/80 bg-white shadow-2xs transition-shadow hover:shadow-xs"
+        >
           <CardContent className="flex items-center gap-3 p-3.5">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-700 border border-amber-200/80">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-amber-200/80 bg-amber-50 text-amber-700">
               <HelpCircle className="size-5" />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-1">
-                <span className="text-xl font-black text-slate-900 tabular-nums">{unaccountedCount}</span>
+                <span className="text-xl font-black text-slate-900 tabular-nums">
+                  {unaccountedCount}
+                </span>
                 <Badge tone="warning">Pending</Badge>
               </div>
-              <h4 className="text-xs font-bold text-slate-800 truncate">Unaccounted</h4>
-              <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
+              <h4 className="truncate text-xs font-bold text-slate-800">Unaccounted</h4>
+              <p className="mt-0.5 truncate text-[11px] font-medium text-slate-400">
                 Pending safety check
               </p>
             </div>
@@ -391,18 +412,27 @@ export function SafetyLedgerTab({
         </Card>
 
         {/* KPI 5: Unregistered Walk-Ins */}
-        <Card radius="lg" className="border-neutral-200/80 bg-white shadow-2xs hover:shadow-xs transition-shadow col-span-1 sm:col-span-2 lg:col-span-1">
+        <Card
+          radius="lg"
+          className="col-span-1 border-neutral-200/80 bg-white shadow-2xs transition-shadow hover:shadow-xs sm:col-span-2 lg:col-span-1"
+        >
           <CardContent className="flex items-center gap-3 p-3.5">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-purple-50 text-purple-700 border border-purple-200/80">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-purple-200/80 bg-purple-50 text-purple-700">
               <Users className="size-5" />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-1">
-                <span className="text-xl font-black text-slate-900 tabular-nums">{unregSafe + unregRescue}</span>
-                <span className="text-xs font-semibold text-purple-700">{unregSafe} safe</span>
+                <span className="text-xl font-black text-slate-900 tabular-nums">
+                  {unregSafe + unregRescue}
+                </span>
+                <span className="text-xs font-semibold text-purple-700">
+                  {unregSafe} safe
+                </span>
               </div>
-              <h4 className="text-xs font-bold text-slate-800 truncate">Unregistered Walk-Ins</h4>
-              <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
+              <h4 className="truncate text-xs font-bold text-slate-800">
+                Unregistered Walk-Ins
+              </h4>
+              <p className="mt-0.5 truncate text-[11px] font-medium text-slate-400">
                 Counted separately
               </p>
             </div>
@@ -413,7 +443,7 @@ export function SafetyLedgerTab({
       {/* 2. Unified Outer Container (Overhauled Layout from Image #2) */}
       <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
         {/* Top Tab Bar Header */}
-        <div className="border-b border-neutral-200 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between px-2 gap-2 sm:gap-0">
+        <div className="flex flex-col gap-2 border-b border-neutral-200 bg-white px-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
           <div role="tablist" className="flex overflow-x-auto">
             <ListTabButton
               active={activeSubTab === "stream"}
@@ -442,15 +472,15 @@ export function SafetyLedgerTab({
           </div>
 
           {/* Quick Actions: Export CSV & Print Report Buttons Replacing Unregistered Tab */}
-          <div className="flex items-center gap-2 pr-2 py-2 sm:py-0 shrink-0">
+          <div className="flex shrink-0 items-center gap-2 py-2 pr-2 sm:py-0">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleExportCSV}
-              className="inline-flex h-8.5 items-center gap-1.5 rounded-full border-slate-300 bg-white px-3.5 text-xs font-bold text-slate-800 shadow-2xs hover:bg-emerald-50/50 hover:border-emerald-300 hover:text-emerald-900 cursor-pointer"
+              className="inline-flex h-8.5 cursor-pointer items-center gap-1.5 rounded-full border-slate-300 bg-white px-3.5 text-xs font-bold text-slate-800 shadow-2xs hover:border-emerald-300 hover:bg-emerald-50/50 hover:text-emerald-900"
             >
-              <Download className="size-3.5 text-emerald-600 shrink-0" />
+              <Download className="size-3.5 shrink-0 text-emerald-600" />
               <span>Export CSV</span>
             </Button>
             <Button
@@ -458,9 +488,9 @@ export function SafetyLedgerTab({
               variant="outline"
               size="sm"
               onClick={handlePrint}
-              className="inline-flex h-8.5 items-center gap-1.5 rounded-full border-slate-300 bg-white px-3.5 text-xs font-bold text-slate-800 shadow-2xs hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 cursor-pointer"
+              className="inline-flex h-8.5 cursor-pointer items-center gap-1.5 rounded-full border-slate-300 bg-white px-3.5 text-xs font-bold text-slate-800 shadow-2xs hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
             >
-              <Printer className="size-3.5 text-slate-600 shrink-0" />
+              <Printer className="size-3.5 shrink-0 text-slate-600" />
               <span>Print Report</span>
             </Button>
           </div>
@@ -470,9 +500,9 @@ export function SafetyLedgerTab({
         <div className="p-4 sm:p-5">
           {/* SUB-VIEW 1: LIVE CHECK-IN TIMELINE & AUDIT STREAM */}
           {activeSubTab === "stream" && (
-            <section className="overflow-hidden rounded-[14px] border border-primary-200/80 bg-white shadow-sm-card">
+            <section className="border-primary-200/80 shadow-sm-card overflow-hidden rounded-[14px] border bg-white">
               {/* Attached Toolbar */}
-              <div className="border-b border-primary-100/80 bg-gradient-to-r from-emerald-50/50 via-white to-teal-50/30 p-3 sm:px-4">
+              <div className="border-primary-100/80 border-b bg-gradient-to-r from-emerald-50/50 via-white to-teal-50/30 p-3 sm:px-4">
                 <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
                   {/* Search Input (Left) */}
                   <div className="flex items-center">
@@ -480,7 +510,7 @@ export function SafetyLedgerTab({
                       <span className="sr-only">Search safety audit records</span>
                       <Search
                         aria-hidden
-                        className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-neutral-400"
+                        className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-neutral-400"
                       />
                       <input
                         value={search}
@@ -498,7 +528,7 @@ export function SafetyLedgerTab({
                             setSearch("");
                             setPage(1);
                           }}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 cursor-pointer"
+                          className="absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer rounded-full p-1 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
                           aria-label="Clear search"
                         >
                           <X aria-hidden className="size-3.5" />
@@ -508,7 +538,7 @@ export function SafetyLedgerTab({
                   </div>
 
                   {/* Filters & Actions (Right) */}
-                  <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2">
+                  <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
                     {isStreamFiltered && (
                       <Button
                         size="sm"
@@ -530,7 +560,10 @@ export function SafetyLedgerTab({
                       }}
                     >
                       <SelectTrigger className="inline-flex h-9 w-fit min-w-[130px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
-                        <CheckCircle2 aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
+                        <CheckCircle2
+                          aria-hidden
+                          className="size-3.5 shrink-0 text-emerald-600"
+                        />
                         <SelectValue placeholder="All Statuses" />
                       </SelectTrigger>
                       <SelectContent className="z-[3000] min-w-44 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
@@ -550,13 +583,20 @@ export function SafetyLedgerTab({
                       }}
                     >
                       <SelectTrigger className="inline-flex h-9 w-fit min-w-[135px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
-                        <Users aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
+                        <Users
+                          aria-hidden
+                          className="size-3.5 shrink-0 text-emerald-600"
+                        />
                         <SelectValue placeholder="All Citizens" />
                       </SelectTrigger>
                       <SelectContent className="z-[3000] min-w-48 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
                         <SelectItem value="all">All Resident Types</SelectItem>
-                        <SelectItem value="registered_member">Registered Citizens</SelectItem>
-                        <SelectItem value="unregistered_person">Unregistered Walk-Ins</SelectItem>
+                        <SelectItem value="registered_member">
+                          Registered Citizens
+                        </SelectItem>
+                        <SelectItem value="unregistered_person">
+                          Unregistered Walk-Ins
+                        </SelectItem>
                       </SelectContent>
                     </Select>
 
@@ -569,7 +609,10 @@ export function SafetyLedgerTab({
                       }}
                     >
                       <SelectTrigger className="inline-flex h-9 w-fit min-w-[135px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
-                        <MapPin aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
+                        <MapPin
+                          aria-hidden
+                          className="size-3.5 shrink-0 text-emerald-600"
+                        />
                         <SelectValue placeholder="All Areas" />
                       </SelectTrigger>
                       <SelectContent className="z-[3000] min-w-48 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
@@ -591,7 +634,10 @@ export function SafetyLedgerTab({
                       }}
                     >
                       <SelectTrigger className="inline-flex h-9 w-fit min-w-[135px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none">
-                        <SlidersHorizontal aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
+                        <SlidersHorizontal
+                          aria-hidden
+                          className="size-3.5 shrink-0 text-emerald-600"
+                        />
                         <SelectValue placeholder="All Methods" />
                       </SelectTrigger>
                       <SelectContent className="z-[3000] min-w-48 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-1 shadow-lg backdrop-blur-md">
@@ -606,7 +652,7 @@ export function SafetyLedgerTab({
                     <Button
                       size="sm"
                       onClick={() => setRecordWalkInOpen(true)}
-                      className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white shadow-xs transition-all hover:bg-emerald-700 ml-1"
+                      className="ml-1 inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-emerald-600 px-4 text-xs font-bold text-white shadow-xs transition-all hover:bg-emerald-700"
                     >
                       <UserPlus className="size-3.5" />
                       <span>Record Walk-In Person</span>
@@ -617,27 +663,43 @@ export function SafetyLedgerTab({
 
               {/* Table View */}
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-primary-900 shadow-[0_1px_0_0_var(--color-primary-800)] text-primary-50">
+                <table className="w-full border-collapse text-left text-xs">
+                  <thead className="bg-primary-900 text-primary-50 shadow-[0_1px_0_0_var(--color-primary-800)]">
                     <tr className="hover:bg-primary-900 border-primary-800">
-                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Timestamp (PHT)</th>
-                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Resident / Walk-In</th>
-                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Household & Area</th>
-                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] uppercase text-white">Safety Status</th>
-                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] uppercase text-white">Method</th>
-                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Shelter Location</th>
-                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Recorded By</th>
-                      <th className="h-11 px-4 text-right text-[11px] font-bold tracking-[0.08em] uppercase text-white">Action</th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] text-white uppercase">
+                        Timestamp (PHT)
+                      </th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] text-white uppercase">
+                        Resident / Walk-In
+                      </th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] text-white uppercase">
+                        Household & Area
+                      </th>
+                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] text-white uppercase">
+                        Safety Status
+                      </th>
+                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] text-white uppercase">
+                        Method
+                      </th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] text-white uppercase">
+                        Shelter Location
+                      </th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] text-white uppercase">
+                        Recorded By
+                      </th>
+                      <th className="h-11 px-4 text-right text-[11px] font-bold tracking-[0.08em] text-white uppercase">
+                        Action
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-primary-100/80">
-                    {ledgerQuery.isLoading ? (
+                  <tbody className="divide-primary-100/80 divide-y">
+                    {ledgerQuery.isFetching ? (
                       <tr>
-                        <td colSpan={8} className="py-14 text-center text-slate-400">
-                          <div className="flex flex-col items-center justify-center gap-2">
-                            <div className="size-6 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
-                            <span className="text-xs font-semibold text-neutral-600">Loading safety audit stream…</span>
-                          </div>
+                        <td colSpan={8} className="p-0">
+                          <DataSurfaceLoading
+                            label="Loading safety audit stream"
+                            minHeight="20rem"
+                          />
                         </td>
                       </tr>
                     ) : items.length === 0 ? (
@@ -647,8 +709,10 @@ export function SafetyLedgerTab({
                             <div className="grid size-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-700 shadow-2xs">
                               <HelpCircle className="size-6 text-emerald-700" />
                             </div>
-                            <p className="text-sm font-bold text-neutral-900">No safety declarations found</p>
-                            <p className="text-xs text-neutral-500 max-w-sm">
+                            <p className="text-sm font-bold text-neutral-900">
+                              No safety declarations found
+                            </p>
+                            <p className="max-w-sm text-xs text-neutral-500">
                               {isStreamFiltered
                                 ? "No resident check-ins match your active filter criteria."
                                 : "No safety declarations have been recorded for this event yet."}
@@ -669,7 +733,10 @@ export function SafetyLedgerTab({
                       items.map((item) => {
                         const subjectId = item.member_id || item.unregistered_person_id;
                         return (
-                          <tr key={item.id} className="hover:bg-emerald-50/30 transition-colors">
+                          <tr
+                            key={item.id}
+                            className="transition-colors hover:bg-emerald-50/30"
+                          >
                             {/* Timestamp */}
                             <td className="px-4 py-3">
                               <div className="flex flex-col">
@@ -684,33 +751,36 @@ export function SafetyLedgerTab({
 
                             {/* Resident Name & Demographics */}
                             <td className="px-4 py-3">
-                              <div className="flex flex-col min-w-0">
+                              <div className="flex min-w-0 flex-col">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="font-bold text-slate-900 truncate max-w-[200px]">
+                                  <span className="max-w-[200px] truncate font-bold text-slate-900">
                                     {item.person_name}
                                   </span>
                                   {item.is_head && (
-                                    <span className="inline-flex items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase text-emerald-800 border border-emerald-200">
+                                    <span className="inline-flex items-center rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-800 uppercase">
                                       Head
                                     </span>
                                   )}
                                 </div>
-                                <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                <div className="mt-1 flex flex-wrap items-center gap-1.5">
                                   {item.subject_type === "registered_member" ? (
-                                    <span className="inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-700 border border-slate-200">
+                                    <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-slate-700 uppercase">
                                       Citizen
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center rounded bg-purple-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-purple-700 border border-purple-200">
+                                    <span className="inline-flex items-center rounded border border-purple-200 bg-purple-50 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-purple-700 uppercase">
                                       Walk-In
                                     </span>
                                   )}
                                   {item.vulnerability_flags.slice(0, 3).map((flag) => (
                                     <span
                                       key={flag}
-                                      className="inline-flex items-center rounded bg-rose-50 px-1.5 py-0.5 text-[9px] font-bold text-rose-700 border border-rose-200"
+                                      className="inline-flex items-center rounded border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[9px] font-bold text-rose-700"
                                     >
-                                      {flag.replace("is_", "").replace("has_", "").slice(0, 10)}
+                                      {flag
+                                        .replace("is_", "")
+                                        .replace("has_", "")
+                                        .slice(0, 10)}
                                     </span>
                                   ))}
                                 </div>
@@ -719,15 +789,17 @@ export function SafetyLedgerTab({
 
                             {/* Household & Area */}
                             <td className="px-4 py-3">
-                              <div className="flex flex-col items-center w-fit">
+                              <div className="flex w-fit flex-col items-center">
                                 {item.household_reference_no ? (
-                                  <span className="font-mono text-[11px] font-black tracking-tight text-slate-800 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-center">
+                                  <span className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-center font-mono text-[11px] font-black tracking-tight text-slate-800">
                                     {item.household_reference_no}
                                   </span>
                                 ) : (
-                                  <span className="text-slate-400 font-normal">No household</span>
+                                  <span className="font-normal text-slate-400">
+                                    No household
+                                  </span>
                                 )}
-                                <span className="text-[10.5px] text-slate-500 font-medium mt-0.5 text-center w-full">
+                                <span className="mt-0.5 w-full text-center text-[10.5px] font-medium text-slate-500">
                                   {item.area_name ?? "—"}
                                 </span>
                               </div>
@@ -736,17 +808,17 @@ export function SafetyLedgerTab({
                             {/* Triage Status */}
                             <td className="px-4 py-3 text-center">
                               {item.status === "safe" ? (
-                                <span className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-800">
+                                <span className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 uppercase">
                                   <CheckCircle2 className="size-3" />
                                   Safe
                                 </span>
                               ) : item.status === "needs_rescue" ? (
-                                <span className="inline-flex items-center gap-1 rounded-md border border-rose-300 bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase text-rose-800">
+                                <span className="inline-flex items-center gap-1 rounded-md border border-rose-300 bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-800 uppercase">
                                   <ShieldAlert className="size-3" />
                                   Rescue
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-800">
+                                <span className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 uppercase">
                                   <HelpCircle className="size-3" />
                                   Pending
                                 </span>
@@ -756,20 +828,24 @@ export function SafetyLedgerTab({
                             {/* Method */}
                             <td className="px-4 py-3 text-center">
                               <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-700 capitalize">
-                                {item.set_method ? item.set_method.replace("_", " ") : "Assisted"}
+                                {item.set_method
+                                  ? item.set_method.replace("_", " ")
+                                  : "Assisted"}
                               </span>
                             </td>
 
                             {/* Shelter Location */}
                             <td className="px-4 py-3">
                               {item.evac_center_name ? (
-                                <div className="flex items-center gap-1.5 text-slate-900 font-semibold">
-                                  <Building2 className="size-3.5 text-emerald-600 shrink-0" />
-                                  <span className="truncate max-w-[170px]">{item.evac_center_name}</span>
+                                <div className="flex items-center gap-1.5 font-semibold text-slate-900">
+                                  <Building2 className="size-3.5 shrink-0 text-emerald-600" />
+                                  <span className="max-w-[170px] truncate">
+                                    {item.evac_center_name}
+                                  </span>
                                 </div>
                               ) : (
-                                <div className="flex items-center gap-1.5 text-slate-800 font-medium">
-                                  <Home className="size-3.5 text-blue-600 shrink-0" />
+                                <div className="flex items-center gap-1.5 font-medium text-slate-800">
+                                  <Home className="size-3.5 shrink-0 text-blue-600" />
                                   <span className="text-xs">Home | Safe Place</span>
                                 </div>
                               )}
@@ -777,7 +853,9 @@ export function SafetyLedgerTab({
 
                             {/* Recorded By */}
                             <td className="px-4 py-3">
-                              <span className="text-slate-700 font-medium">{item.set_by_name ?? "Portal Resident"}</span>
+                              <span className="font-medium text-slate-700">
+                                {item.set_by_name ?? "Portal Resident"}
+                              </span>
                             </td>
 
                             {/* Actions */}
@@ -793,7 +871,7 @@ export function SafetyLedgerTab({
                                       name: item.person_name,
                                     })
                                   }
-                                  className="h-7 px-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 gap-1 rounded-lg cursor-pointer"
+                                  className="h-7 cursor-pointer gap-1 rounded-lg px-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50"
                                 >
                                   <Eye className="size-3.5" />
                                   <span>Journey</span>
@@ -809,11 +887,18 @@ export function SafetyLedgerTab({
               </div>
 
               {/* Bottom Pagination Bar */}
-              <div className="flex items-center justify-between border-t border-primary-100/80 bg-slate-50/80 px-4 py-3 text-xs">
-                <span className="text-slate-500 font-medium tabular-nums">
-                  Showing <strong className="text-slate-800">{items.length > 0 ? (page - 1) * pageSize + 1 : 0}</strong>–
-                  <strong className="text-slate-800">{Math.min(page * pageSize, ledgerData?.total ?? 0)}</strong> of{" "}
-                  <strong className="text-slate-800">{ledgerData?.total ?? 0}</strong> recorded check-in events
+              <div className="border-primary-100/80 flex items-center justify-between border-t bg-slate-50/80 px-4 py-3 text-xs">
+                <span className="font-medium text-slate-500 tabular-nums">
+                  Showing{" "}
+                  <strong className="text-slate-800">
+                    {items.length > 0 ? (page - 1) * pageSize + 1 : 0}
+                  </strong>
+                  –
+                  <strong className="text-slate-800">
+                    {Math.min(page * pageSize, ledgerData?.total ?? 0)}
+                  </strong>{" "}
+                  of <strong className="text-slate-800">{ledgerData?.total ?? 0}</strong>{" "}
+                  recorded check-in events
                 </span>
                 {items.length > 0 && (
                   <div className="flex items-center gap-1.5">
@@ -822,9 +907,9 @@ export function SafetyLedgerTab({
                       variant="outline"
                       disabled={page <= 1}
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      className="h-8 px-2.5 rounded-lg border-slate-300 text-xs font-bold cursor-pointer disabled:opacity-50"
+                      className="h-8 cursor-pointer rounded-lg border-slate-300 px-2.5 text-xs font-bold disabled:opacity-50"
                     >
-                      <ChevronLeft className="size-3.5 mr-1" />
+                      <ChevronLeft className="mr-1 size-3.5" />
                       Previous
                     </Button>
                     <span className="px-2 text-xs font-semibold text-slate-600 tabular-nums">
@@ -835,10 +920,10 @@ export function SafetyLedgerTab({
                       variant="outline"
                       disabled={!ledgerData || page >= ledgerData.pages}
                       onClick={() => setPage((p) => p + 1)}
-                      className="h-8 px-2.5 rounded-lg border-slate-300 text-xs font-bold cursor-pointer disabled:opacity-50"
+                      className="h-8 cursor-pointer rounded-lg border-slate-300 px-2.5 text-xs font-bold disabled:opacity-50"
                     >
                       Next
-                      <ChevronRight className="size-3.5 ml-1" />
+                      <ChevronRight className="ml-1 size-3.5" />
                     </Button>
                   </div>
                 )}
@@ -848,27 +933,40 @@ export function SafetyLedgerTab({
 
           {/* SUB-VIEW 2: AREA SAFETY PROGRESS & BREAKDOWN */}
           {activeSubTab === "areas" && summary && (
-            <section className="overflow-hidden rounded-[14px] border border-primary-200/80 bg-white shadow-sm-card">
-              <div className="border-b border-primary-100/80 bg-gradient-to-r from-emerald-50/50 via-white to-teal-50/30 p-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <section className="border-primary-200/80 shadow-sm-card overflow-hidden rounded-[14px] border bg-white">
+              <div className="border-primary-100/80 flex flex-col gap-2 border-b bg-gradient-to-r from-emerald-50/50 via-white to-teal-50/30 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Area Safety Ledger & Coverage Distribution</h3>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Area Safety Ledger & Coverage Distribution
+                  </h3>
                   <p className="text-xs text-slate-500">
-                    Real-time safety status distribution and rescue requirements across all barangay administrative areas.
+                    Real-time safety status distribution and rescue requirements across
+                    all barangay administrative areas.
                   </p>
                 </div>
-                <div className="flex items-center gap-2.5 shrink-0">
+                <div className="flex shrink-0 items-center gap-2.5">
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => setShowBarangaySummary(true)}
-                    className="h-8 px-3 text-xs font-bold text-emerald-800 border-emerald-300 bg-white hover:bg-emerald-50 gap-1.5 rounded-lg cursor-pointer shadow-2xs"
+                    className="h-8 cursor-pointer gap-1.5 rounded-lg border-emerald-300 bg-white px-3 text-xs font-bold text-emerald-800 shadow-2xs hover:bg-emerald-50"
                   >
                     <Shield className="size-3.5 text-emerald-600" />
                     <span>Barangay Overview</span>
                   </Button>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-500">Total Safe:</span>
-                    <Badge tone={Number(safePct) >= 80 ? "success" : Number(safePct) >= 50 ? "warning" : "danger"}>
+                    <span className="text-xs font-semibold text-slate-500">
+                      Total Safe:
+                    </span>
+                    <Badge
+                      tone={
+                        Number(safePct) >= 80
+                          ? "success"
+                          : Number(safePct) >= 50
+                            ? "warning"
+                            : "danger"
+                      }
+                    >
                       {safePct}% Safe
                     </Badge>
                   </div>
@@ -876,30 +974,57 @@ export function SafetyLedgerTab({
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-primary-900 shadow-[0_1px_0_0_var(--color-primary-800)] text-primary-50">
+                <table className="w-full border-collapse text-left text-xs">
+                  <thead className="bg-primary-900 text-primary-50 shadow-[0_1px_0_0_var(--color-primary-800)]">
                     <tr className="hover:bg-primary-900 border-primary-800">
-                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Area</th>
-                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] uppercase text-white">Registered Population</th>
-                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] uppercase text-white">Confirmed Safe</th>
-                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] uppercase text-white">Household Safe</th>
-                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] uppercase text-white">Needs Rescue</th>
-                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] uppercase text-white">Unaccounted</th>
-                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] uppercase text-white">Distribution Meter</th>
-                      <th className="h-11 px-4 text-right text-[11px] font-bold tracking-[0.08em] uppercase text-white">Action</th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] text-white uppercase">
+                        Area
+                      </th>
+                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] text-white uppercase">
+                        Registered Population
+                      </th>
+                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] text-white uppercase">
+                        Confirmed Safe
+                      </th>
+                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] text-white uppercase">
+                        Household Safe
+                      </th>
+                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] text-white uppercase">
+                        Needs Rescue
+                      </th>
+                      <th className="h-11 px-4 text-center text-[11px] font-bold tracking-[0.08em] text-white uppercase">
+                        Unaccounted
+                      </th>
+                      <th className="h-11 px-4 text-[11px] font-bold tracking-[0.08em] text-white uppercase">
+                        Distribution Meter
+                      </th>
+                      <th className="h-11 px-4 text-right text-[11px] font-bold tracking-[0.08em] text-white uppercase">
+                        Action
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-primary-100/80">
+                  <tbody className="divide-primary-100/80 divide-y">
                     {summary.registered.map((area) => {
                       const areaReg = area.registered_members || 1;
                       const safeCount = area.safe_confirmed + area.safe_bulk;
-                      const safeRatio = Math.min(100, Math.round((safeCount / areaReg) * 100));
-                      const rescueRatio = Math.min(100, Math.round((area.needs_rescue / areaReg) * 100));
+                      const safeRatio = Math.min(
+                        100,
+                        Math.round((safeCount / areaReg) * 100),
+                      );
+                      const rescueRatio = Math.min(
+                        100,
+                        Math.round((area.needs_rescue / areaReg) * 100),
+                      );
                       const unaccountedRatio = Math.max(0, 100 - safeRatio - rescueRatio);
 
                       return (
-                        <tr key={area.area_id ?? area.area_name} className="hover:bg-emerald-50/30 transition-colors">
-                          <td className="px-4 py-3.5 font-bold text-slate-900">{area.area_name}</td>
+                        <tr
+                          key={area.area_id ?? area.area_name}
+                          className="transition-colors hover:bg-emerald-50/30"
+                        >
+                          <td className="px-4 py-3.5 font-bold text-slate-900">
+                            {area.area_name}
+                          </td>
                           <td className="px-4 py-3.5 text-center font-semibold text-slate-800 tabular-nums">
                             {area.registered_members}
                           </td>
@@ -911,7 +1036,7 @@ export function SafetyLedgerTab({
                           </td>
                           <td className="px-4 py-3.5 text-center font-bold text-rose-600 tabular-nums">
                             {area.needs_rescue > 0 ? (
-                              <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-xs text-rose-700 border border-rose-200 font-bold">
+                              <span className="inline-flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-700">
                                 <AlertTriangle className="size-3 text-rose-600" />
                                 {area.needs_rescue}
                               </span>
@@ -919,10 +1044,12 @@ export function SafetyLedgerTab({
                               "0"
                             )}
                           </td>
-                          <td className="px-4 py-3.5 text-center text-slate-500 tabular-nums">{area.unaccounted}</td>
+                          <td className="px-4 py-3.5 text-center text-slate-500 tabular-nums">
+                            {area.unaccounted}
+                          </td>
                           <td className="px-4 py-3.5">
-                            <div className="flex flex-col gap-1 w-44">
-                              <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 flex">
+                            <div className="flex w-44 flex-col gap-1">
+                              <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
                                 <div
                                   style={{ width: `${safeRatio}%` }}
                                   className="bg-emerald-500 transition-all duration-500"
@@ -940,9 +1067,13 @@ export function SafetyLedgerTab({
                                 />
                               </div>
                               <div className="flex justify-between text-[10px] font-semibold text-slate-400">
-                                <span className="text-emerald-700">{safeRatio}% safe</span>
+                                <span className="text-emerald-700">
+                                  {safeRatio}% safe
+                                </span>
                                 {area.needs_rescue > 0 && (
-                                  <span className="text-rose-600 font-bold">{area.needs_rescue} rescue</span>
+                                  <span className="font-bold text-rose-600">
+                                    {area.needs_rescue} rescue
+                                  </span>
                                 )}
                               </div>
                             </div>
@@ -952,7 +1083,7 @@ export function SafetyLedgerTab({
                               size="sm"
                               variant="ghost"
                               onClick={() => setSelectedAreaSummary(area)}
-                              className="h-7 px-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 gap-1 rounded-lg cursor-pointer"
+                              className="h-7 cursor-pointer gap-1 rounded-lg px-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50"
                             >
                               <Eye className="size-3.5" />
                               <span>Overview</span>
@@ -978,17 +1109,17 @@ export function SafetyLedgerTab({
                     key={c.id}
                     radius="lg"
                     onClick={() => setSelectedCenterSummary(c)}
-                    className="group border-slate-200 bg-white hover:border-emerald-500/80 hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99] transition-all cursor-pointer relative overflow-hidden"
+                    className="group relative cursor-pointer overflow-hidden border-slate-200 bg-white transition-all hover:-translate-y-0.5 hover:border-emerald-500/80 hover:shadow-lg active:scale-[0.99]"
                   >
-                    <div className="h-1 w-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="h-1 w-full bg-emerald-500 opacity-0 transition-opacity group-hover:opacity-100" />
                     <CardContent className="flex flex-col gap-3 p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2.5">
-                          <div className="size-10 rounded-xl bg-emerald-100/80 border border-emerald-200 text-emerald-800 flex items-center justify-center font-bold group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                          <div className="flex size-10 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-100/80 font-bold text-emerald-800 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
                             <Building2 className="size-5" />
                           </div>
                           <div>
-                            <h4 className="text-xs font-bold text-slate-900 group-hover:text-emerald-800 transition-colors leading-snug">
+                            <h4 className="text-xs leading-snug font-bold text-slate-900 transition-colors group-hover:text-emerald-800">
                               {c.facility.name}
                             </h4>
                             <span className="text-[11px] text-slate-400">
@@ -1004,9 +1135,9 @@ export function SafetyLedgerTab({
                       </div>
 
                       {/* Occupancy Meter */}
-                      <div className="flex flex-col gap-1.5 pt-2 border-t border-slate-100">
+                      <div className="flex flex-col gap-1.5 border-t border-slate-100 pt-2">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-slate-500 font-medium">Occupancy</span>
+                          <span className="font-medium text-slate-500">Occupancy</span>
                           <span className="font-bold text-slate-900 tabular-nums">
                             {c.occupancy} / {c.capacity ?? "∞"} ({capPct}%)
                           </span>
@@ -1015,16 +1146,20 @@ export function SafetyLedgerTab({
                           <div
                             style={{ width: `${Math.min(100, capPct)}%` }}
                             className={`h-full transition-all duration-500 ${
-                              capPct >= 90 ? "bg-rose-500" : capPct >= 70 ? "bg-amber-500" : "bg-emerald-500"
+                              capPct >= 90
+                                ? "bg-rose-500"
+                                : capPct >= 70
+                                  ? "bg-amber-500"
+                                  : "bg-emerald-500"
                             }`}
                           />
                         </div>
                       </div>
 
                       {/* Footer with Contact and Inspect indicator */}
-                      <div className="flex items-center justify-between pt-1 border-t border-slate-50 text-[11px]">
+                      <div className="flex items-center justify-between border-t border-slate-50 pt-1 text-[11px]">
                         {c.contact_number ? (
-                          <div className="text-slate-500 flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 text-slate-500">
                             <Phone className="size-3 text-slate-400" />
                             <span>{c.contact_number}</span>
                           </div>
@@ -1033,7 +1168,7 @@ export function SafetyLedgerTab({
                             {c.facility.area_name ?? "Barangay San Jose"}
                           </span>
                         )}
-                        <span className="inline-flex items-center gap-1 font-bold text-emerald-700 group-hover:text-emerald-800 group-hover:translate-x-0.5 transition-all">
+                        <span className="inline-flex items-center gap-1 font-bold text-emerald-700 transition-all group-hover:translate-x-0.5 group-hover:text-emerald-800">
                           Inspect Details
                           <ChevronRight className="size-3" />
                         </span>
@@ -1055,13 +1190,15 @@ export function SafetyLedgerTab({
 
       {/* Record Walk-In Person Dialog Modal */}
       <Dialog open={recordWalkInOpen} onOpenChange={setRecordWalkInOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 z-[3000]">
+        <DialogContent className="z-[3000] max-h-[90vh] overflow-y-auto rounded-2xl p-6 sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-black text-slate-900">
               Record Evacuation Walk-In
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              Record an unregistered citizen arriving at an evacuation center or triage station. This data will be available on the admin registry and accounted for in the live disaster safety ledger.
+              Record an unregistered citizen arriving at an evacuation center or triage
+              station. This data will be available on the admin registry and accounted for
+              in the live disaster safety ledger.
             </DialogDescription>
           </DialogHeader>
           {recordWalkInOpen && (
@@ -1070,9 +1207,15 @@ export function SafetyLedgerTab({
               onDone={async () => {
                 setRecordWalkInOpen(false);
                 await Promise.all([
-                  queryClient.invalidateQueries({ queryKey: ["admin", "safety", "ledger"] }),
-                  queryClient.invalidateQueries({ queryKey: ["admin", "unregistered-persons"] }),
-                  queryClient.invalidateQueries({ queryKey: ["admin", "emergency-workspace"] }),
+                  queryClient.invalidateQueries({
+                    queryKey: ["admin", "safety", "ledger"],
+                  }),
+                  queryClient.invalidateQueries({
+                    queryKey: ["admin", "unregistered-persons"],
+                  }),
+                  queryClient.invalidateQueries({
+                    queryKey: ["admin", "emergency-workspace"],
+                  }),
                   queryClient.invalidateQueries({ queryKey: ["admin", "evac-centers"] }),
                 ]);
               }}
@@ -1135,122 +1278,173 @@ function AreaSafetySummaryModal({
   const totalRegistered = area.registered_members || 1;
   const safeCount = area.safe_confirmed + area.safe_bulk;
   const safeRatio = Math.min(100, Math.round((safeCount / totalRegistered) * 100));
-  const rescueRatio = Math.min(100, Math.round((area.needs_rescue / totalRegistered) * 100));
+  const rescueRatio = Math.min(
+    100,
+    Math.round((area.needs_rescue / totalRegistered) * 100),
+  );
   const unaccountedRatio = Math.max(0, 100 - safeRatio - rescueRatio);
 
   const exposure = areaDetail?.flood_exposure ?? "medium";
-  const lowRiskHH = areaDetail?.low_risk_households ?? Math.round((areaDetail?.registered_households ?? 20) * 0.4);
-  const medRiskHH = areaDetail?.medium_risk_households ?? Math.round((areaDetail?.registered_households ?? 20) * 0.4);
-  const highRiskHH = areaDetail?.high_risk_households ?? Math.round((areaDetail?.registered_households ?? 20) * 0.2);
+  const lowRiskHH =
+    areaDetail?.low_risk_households ??
+    Math.round((areaDetail?.registered_households ?? 20) * 0.4);
+  const medRiskHH =
+    areaDetail?.medium_risk_households ??
+    Math.round((areaDetail?.registered_households ?? 20) * 0.4);
+  const highRiskHH =
+    areaDetail?.high_risk_households ??
+    Math.round((areaDetail?.registered_households ?? 20) * 0.2);
 
   // Local centers matching this area
   const localCenters = (evacCenters || []).filter(
     (c) =>
       (area.area_id && c.facility.area_id === area.area_id) ||
-      (c.facility.area_name && c.facility.area_name.toLowerCase() === area.area_name.toLowerCase()) ||
+      (c.facility.area_name &&
+        c.facility.area_name.toLowerCase() === area.area_name.toLowerCase()) ||
       c.facility.address?.toLowerCase().includes(area.area_name.toLowerCase()) ||
       c.facility.name.toLowerCase().includes(area.area_name.toLowerCase()),
   );
 
   return (
     <Dialog open={Boolean(area)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-full sm:max-w-2xl md:max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl z-[3000]">
-        <DialogHeader className="border-b border-slate-100 p-5 sm:p-6 pb-4 shrink-0 bg-white pr-10 sm:pr-12">
+      <DialogContent className="z-[3000] flex max-h-[90vh] w-full flex-col gap-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl sm:max-w-2xl md:max-w-3xl">
+        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white p-5 pr-10 pb-4 sm:p-6 sm:pr-12">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <span className="rounded-md bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 text-xs">
+              <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
                 Area Division
               </span>
-              <span className="text-xs font-semibold text-slate-500">Barangay San Jose</span>
+              <span className="text-xs font-semibold text-slate-500">
+                Barangay San Jose
+              </span>
             </div>
-            <DialogTitle className="mt-1 text-xl sm:text-2xl font-black text-slate-950 flex items-center gap-2">
-              <MapPin className="size-6 text-emerald-600 shrink-0" />
+            <DialogTitle className="mt-1 flex items-center gap-2 text-xl font-black text-slate-950 sm:text-2xl">
+              <MapPin className="size-6 shrink-0 text-emerald-600" />
               {area.area_name} Safety & Spatial Summary
             </DialogTitle>
           </div>
-          <DialogDescription className="text-xs text-slate-600 mt-1">
-            Real-time safety status distribution, flood risk exposure, and evacuation center capacity in {area.area_name}.
+          <DialogDescription className="mt-1 text-xs text-slate-600">
+            Real-time safety status distribution, flood risk exposure, and evacuation
+            center capacity in {area.area_name}.
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 h-full">
-          <div className="p-5 sm:p-6 flex flex-col gap-5">
+        <ScrollArea className="h-full min-h-0 flex-1">
+          <div className="flex flex-col gap-5 p-5 sm:p-6">
             {/* 4 KPI Metric Cards */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 flex flex-col justify-between gap-1 shadow-2xs">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                  <Users className="size-3 text-slate-500 shrink-0" />
+              <div className="flex flex-col justify-between gap-1 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 shadow-2xs">
+                <span className="flex items-center gap-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                  <Users className="size-3 shrink-0 text-slate-500" />
                   Registered Citizens
                 </span>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className="text-2xl font-black text-slate-950 tabular-nums leading-none shrink-0">{area.registered_members}</span>
-                  <span className="text-[11px] text-slate-500 font-semibold">{areaDetail?.registered_households ?? "—"} Households</span>
+                  <span className="shrink-0 text-2xl leading-none font-black text-slate-950 tabular-nums">
+                    {area.registered_members}
+                  </span>
+                  <span className="text-[11px] font-semibold text-slate-500">
+                    {areaDetail?.registered_households ?? "—"} Households
+                  </span>
                 </div>
               </div>
 
-              <div className={cn(
-                "rounded-xl border p-3.5 flex flex-col justify-between gap-1 shadow-2xs",
-                safeRatio >= 80 ? "border-emerald-200 bg-emerald-50/60" : safeRatio >= 50 ? "border-amber-200 bg-amber-50/60" : "border-rose-200 bg-rose-50/60"
-              )}>
-                <span className={cn(
-                  "text-[10px] font-bold uppercase tracking-wider flex items-center gap-1",
-                  safeRatio >= 80 ? "text-emerald-800" : safeRatio >= 50 ? "text-amber-800" : "text-rose-800"
-                )}>
+              <div
+                className={cn(
+                  "flex flex-col justify-between gap-1 rounded-xl border p-3.5 shadow-2xs",
+                  safeRatio >= 80
+                    ? "border-emerald-200 bg-emerald-50/60"
+                    : safeRatio >= 50
+                      ? "border-amber-200 bg-amber-50/60"
+                      : "border-rose-200 bg-rose-50/60",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase",
+                    safeRatio >= 80
+                      ? "text-emerald-800"
+                      : safeRatio >= 50
+                        ? "text-amber-800"
+                        : "text-rose-800",
+                  )}
+                >
                   <CheckCircle2 className="size-3 shrink-0" />
                   Accounted Safe
                 </span>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className={cn(
-                    "text-2xl font-black tabular-nums leading-none shrink-0",
-                    safeRatio >= 80 ? "text-emerald-900" : safeRatio >= 50 ? "text-amber-900" : "text-rose-900"
-                  )}>{safeRatio}%</span>
+                  <span
+                    className={cn(
+                      "shrink-0 text-2xl leading-none font-black tabular-nums",
+                      safeRatio >= 80
+                        ? "text-emerald-900"
+                        : safeRatio >= 50
+                          ? "text-amber-900"
+                          : "text-rose-900",
+                    )}
+                  >
+                    {safeRatio}%
+                  </span>
                   <span className="text-[11px] font-bold">{safeCount} Safe</span>
                 </div>
               </div>
 
-              <div className={cn(
-                "rounded-xl border p-3.5 flex flex-col justify-between gap-1 shadow-2xs",
-                area.needs_rescue > 0 ? "border-rose-200 bg-rose-50/60" : "border-slate-200 bg-slate-50/80"
-              )}>
-                <span className={cn(
-                  "text-[10px] font-bold uppercase tracking-wider flex items-center gap-1",
-                  area.needs_rescue > 0 ? "text-rose-800" : "text-slate-500"
-                )}>
+              <div
+                className={cn(
+                  "flex flex-col justify-between gap-1 rounded-xl border p-3.5 shadow-2xs",
+                  area.needs_rescue > 0
+                    ? "border-rose-200 bg-rose-50/60"
+                    : "border-slate-200 bg-slate-50/80",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase",
+                    area.needs_rescue > 0 ? "text-rose-800" : "text-slate-500",
+                  )}
+                >
                   <ShieldAlert className="size-3 shrink-0" />
                   Needs Rescue
                 </span>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className={cn(
-                    "text-2xl font-black tabular-nums leading-none shrink-0",
-                    area.needs_rescue > 0 ? "text-rose-900" : "text-slate-900"
-                  )}>{area.needs_rescue}</span>
+                  <span
+                    className={cn(
+                      "shrink-0 text-2xl leading-none font-black tabular-nums",
+                      area.needs_rescue > 0 ? "text-rose-900" : "text-slate-900",
+                    )}
+                  >
+                    {area.needs_rescue}
+                  </span>
                   <span className="text-[11px] font-semibold text-slate-500">
                     {area.needs_rescue > 0 ? "Priority Queue" : "Zero Distress"}
                   </span>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 flex flex-col justify-between gap-1 shadow-2xs">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1">
-                  <HelpCircle className="size-3 text-amber-700 shrink-0" />
+              <div className="flex flex-col justify-between gap-1 rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 shadow-2xs">
+                <span className="flex items-center gap-1 text-[10px] font-bold tracking-wider text-amber-800 uppercase">
+                  <HelpCircle className="size-3 shrink-0 text-amber-700" />
                   Unaccounted
                 </span>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className="text-2xl font-black text-amber-900 tabular-nums leading-none shrink-0">{area.unaccounted}</span>
-                  <span className="text-[11px] text-amber-800 font-semibold">Pending Check</span>
+                  <span className="shrink-0 text-2xl leading-none font-black text-amber-900 tabular-nums">
+                    {area.unaccounted}
+                  </span>
+                  <span className="text-[11px] font-semibold text-amber-800">
+                    Pending Check
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Safety Accountability Meter Card */}
             <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-800 mb-2">
+              <div className="mb-2 flex items-center justify-between text-xs font-bold text-slate-800">
                 <span>Safety Accountability Breakdown</span>
                 <span className="font-bold text-emerald-700">
                   {safeCount} / {area.registered_members} Residents Accounted Safe
                 </span>
               </div>
-              <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200 flex">
+              <div className="flex h-3 w-full overflow-hidden rounded-full bg-slate-200">
                 <div
                   className="bg-emerald-600 transition-all duration-300"
                   style={{ width: `${safeRatio}%` }}
@@ -1267,7 +1461,7 @@ function AreaSafetySummaryModal({
                   title={`Unaccounted: ${area.unaccounted}`}
                 />
               </div>
-              <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5 text-[11px] text-slate-600">
+              <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600">
                 <span className="inline-flex items-center gap-1.5 font-bold text-emerald-800">
                   <span className="size-2 rounded-full bg-emerald-600" />
                   Individual Verified: {area.safe_confirmed}
@@ -1288,40 +1482,60 @@ function AreaSafetySummaryModal({
             </div>
 
             {/* Flood Hazard Exposure */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 flex flex-col gap-2.5 shadow-2xs">
+            <div className="flex flex-col gap-2.5 rounded-xl border border-slate-200 bg-slate-50/80 p-4 shadow-2xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
-                  <Shield className="size-3.5 text-emerald-700 shrink-0" />
+                <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-slate-900 uppercase">
+                  <Shield className="size-3.5 shrink-0 text-emerald-700" />
                   NOAH Flood Hazard Profile
                 </span>
-                <Badge tone={exposure === "high" ? "danger" : exposure === "medium" ? "warning" : "success"}>
+                <Badge
+                  tone={
+                    exposure === "high"
+                      ? "danger"
+                      : exposure === "medium"
+                        ? "warning"
+                        : "success"
+                  }
+                >
                   {exposure.toUpperCase()} EXPOSURE
                 </Badge>
               </div>
 
-              <div className="grid grid-cols-3 gap-2.5 mt-1">
-                <div className="rounded-lg bg-rose-50 border border-rose-200 p-2.5 flex flex-col items-center text-center">
-                  <span className="text-[10px] font-bold uppercase text-rose-700">High Risk</span>
-                  <span className="text-lg font-black text-rose-900 mt-0.5">{highRiskHH}</span>
+              <div className="mt-1 grid grid-cols-3 gap-2.5">
+                <div className="flex flex-col items-center rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-center">
+                  <span className="text-[10px] font-bold text-rose-700 uppercase">
+                    High Risk
+                  </span>
+                  <span className="mt-0.5 text-lg font-black text-rose-900">
+                    {highRiskHH}
+                  </span>
                   <span className="text-[10px] text-rose-600">Households</span>
                 </div>
-                <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 flex flex-col items-center text-center">
-                  <span className="text-[10px] font-bold uppercase text-amber-700">Medium Risk</span>
-                  <span className="text-lg font-black text-amber-900 mt-0.5">{medRiskHH}</span>
+                <div className="flex flex-col items-center rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-center">
+                  <span className="text-[10px] font-bold text-amber-700 uppercase">
+                    Medium Risk
+                  </span>
+                  <span className="mt-0.5 text-lg font-black text-amber-900">
+                    {medRiskHH}
+                  </span>
                   <span className="text-[10px] text-amber-600">Households</span>
                 </div>
-                <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 flex flex-col items-center text-center">
-                  <span className="text-[10px] font-bold uppercase text-emerald-700">Low Risk</span>
-                  <span className="text-lg font-black text-emerald-900 mt-0.5">{lowRiskHH}</span>
+                <div className="flex flex-col items-center rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 text-center">
+                  <span className="text-[10px] font-bold text-emerald-700 uppercase">
+                    Low Risk
+                  </span>
+                  <span className="mt-0.5 text-lg font-black text-emerald-900">
+                    {lowRiskHH}
+                  </span>
                   <span className="text-[10px] text-emerald-600">Households</span>
                 </div>
               </div>
             </div>
 
             {/* Local Evacuation Centers in Area */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 flex flex-col gap-2.5 shadow-2xs">
-              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
-                <Building2 className="size-3.5 text-emerald-700 shrink-0" />
+            <div className="flex flex-col gap-2.5 rounded-xl border border-slate-200 bg-slate-50/60 p-4 shadow-2xs">
+              <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-slate-900 uppercase">
+                <Building2 className="size-3.5 shrink-0 text-emerald-700" />
                 Local Evacuation Centers ({localCenters.length})
               </span>
 
@@ -1329,26 +1543,55 @@ function AreaSafetySummaryModal({
                 <div className="flex flex-col gap-2.5">
                   {localCenters.map((center) => {
                     const cap = center.capacity ?? 0;
-                    const capPct = cap > 0 ? Math.round((center.occupancy / cap) * 100) : 0;
+                    const capPct =
+                      cap > 0 ? Math.round((center.occupancy / cap) * 100) : 0;
                     return (
-                      <div key={center.id} className="rounded-xl border border-slate-200 bg-white p-3 flex flex-col gap-1.5 shadow-2xs">
+                      <div
+                        key={center.id}
+                        className="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-white p-3 shadow-2xs"
+                      >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-xs text-slate-950 flex items-center gap-1.5">
-                            <Building2 className="size-3.5 text-emerald-700 shrink-0" />
+                          <span className="flex items-center gap-1.5 text-xs font-bold text-slate-950">
+                            <Building2 className="size-3.5 shrink-0 text-emerald-700" />
                             {center.facility.name}
                           </span>
-                          <Badge tone={center.is_at_capacity ? "danger" : center.is_open ? "success" : "neutral"}>
-                            {center.is_at_capacity ? "At Capacity" : center.is_open ? "Open" : "Closed"}
+                          <Badge
+                            tone={
+                              center.is_at_capacity
+                                ? "danger"
+                                : center.is_open
+                                  ? "success"
+                                  : "neutral"
+                            }
+                          >
+                            {center.is_at_capacity
+                              ? "At Capacity"
+                              : center.is_open
+                                ? "Open"
+                                : "Closed"}
                           </Badge>
                         </div>
                         <div className="flex items-center justify-between text-[11px] text-slate-600">
-                          <span>Occupancy: <strong className="text-slate-900">{center.occupancy}</strong> / {cap > 0 ? cap : "Open"} ({capPct}%)</span>
-                          <span className="text-slate-400 text-[10.5px] truncate max-w-[200px]">{center.facility.address}</span>
+                          <span>
+                            Occupancy:{" "}
+                            <strong className="text-slate-900">{center.occupancy}</strong>{" "}
+                            / {cap > 0 ? cap : "Open"} ({capPct}%)
+                          </span>
+                          <span className="max-w-[200px] truncate text-[10.5px] text-slate-400">
+                            {center.facility.address}
+                          </span>
                         </div>
                         {cap > 0 && (
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                             <div
-                              className={cn("h-full", capPct > 90 ? "bg-rose-600" : capPct > 70 ? "bg-amber-500" : "bg-emerald-600")}
+                              className={cn(
+                                "h-full",
+                                capPct > 90
+                                  ? "bg-rose-600"
+                                  : capPct > 70
+                                    ? "bg-amber-500"
+                                    : "bg-emerald-600",
+                              )}
                               style={{ width: `${Math.min(capPct, 100)}%` }}
                             />
                           </div>
@@ -1358,8 +1601,9 @@ function AreaSafetySummaryModal({
                   })}
                 </div>
               ) : (
-                <p className="text-xs text-slate-500 italic p-2 bg-white rounded-lg border border-slate-100">
-                  No evacuation centers registered directly inside this area. Evacuees are assigned to adjacent municipal centers.
+                <p className="rounded-lg border border-slate-100 bg-white p-2 text-xs text-slate-500 italic">
+                  No evacuation centers registered directly inside this area. Evacuees are
+                  assigned to adjacent municipal centers.
                 </p>
               )}
             </div>
@@ -1390,7 +1634,8 @@ function BarangaySafetySummaryModal({
   if (!summary) return null;
 
   const totalRegistered = summary.registered_total.registered_members || 1;
-  const safeCount = summary.registered_total.safe_confirmed + summary.registered_total.safe_bulk;
+  const safeCount =
+    summary.registered_total.safe_confirmed + summary.registered_total.safe_bulk;
   const safePct = ((safeCount / totalRegistered) * 100).toFixed(1);
   const totalRescue = summary.registered_total.needs_rescue;
   const totalUnaccounted = summary.registered_total.unaccounted;
@@ -1401,99 +1646,138 @@ function BarangaySafetySummaryModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="w-full sm:max-w-3xl md:max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl z-[3000]">
-        <DialogHeader className="border-b border-slate-100 p-5 sm:p-6 pb-4 shrink-0 bg-white pr-10 sm:pr-12">
+      <DialogContent className="z-[3000] flex max-h-[90vh] w-full flex-col gap-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl sm:max-w-3xl md:max-w-4xl">
+        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white p-5 pr-10 pb-4 sm:p-6 sm:pr-12">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <span className="rounded-md bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 text-xs">
+              <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
                 Municipality of Rodriguez (Montalban), Rizal
               </span>
             </div>
-            <DialogTitle className="mt-1 text-xl sm:text-2xl font-black text-slate-950 flex items-center gap-2">
-              <Shield className="size-6 text-emerald-600 shrink-0" />
+            <DialogTitle className="mt-1 flex items-center gap-2 text-xl font-black text-slate-950 sm:text-2xl">
+              <Shield className="size-6 shrink-0 text-emerald-600" />
               Barangay San Jose Comprehensive Safety Summary
             </DialogTitle>
           </div>
-          <DialogDescription className="text-xs text-slate-600 mt-1">
-            Barangay-wide safety ledger overview, aggregate evacuation capacity, and area-by-area coverage.
+          <DialogDescription className="mt-1 text-xs text-slate-600">
+            Barangay-wide safety ledger overview, aggregate evacuation capacity, and
+            area-by-area coverage.
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 h-full">
-          <div className="p-5 sm:p-6 flex flex-col gap-5">
+        <ScrollArea className="h-full min-h-0 flex-1">
+          <div className="flex flex-col gap-5 p-5 sm:p-6">
             {/* 4 Executive Jurisdiction KPIs */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 flex flex-col justify-between gap-1 shadow-2xs">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                  <Users className="size-3 text-slate-500 shrink-0" />
+              <div className="flex flex-col justify-between gap-1 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 shadow-2xs">
+                <span className="flex items-center gap-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                  <Users className="size-3 shrink-0 text-slate-500" />
                   Total Population
                 </span>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className="text-2xl font-black text-slate-950 tabular-nums leading-none shrink-0">{summary.registered_total.registered_members}</span>
-                  <span className="text-[11px] text-slate-500 font-bold">6 Areas</span>
+                  <span className="shrink-0 text-2xl leading-none font-black text-slate-950 tabular-nums">
+                    {summary.registered_total.registered_members}
+                  </span>
+                  <span className="text-[11px] font-bold text-slate-500">6 Areas</span>
                 </div>
               </div>
 
-              <div className={cn(
-                "rounded-xl border p-3.5 flex flex-col justify-between gap-1 shadow-2xs",
-                Number(safePct) >= 80 ? "border-emerald-200 bg-emerald-50/60" : Number(safePct) >= 50 ? "border-amber-200 bg-amber-50/60" : "border-rose-200 bg-rose-50/60"
-              )}>
-                <span className={cn(
-                  "text-[10px] font-bold uppercase tracking-wider flex items-center gap-1",
-                  Number(safePct) >= 80 ? "text-emerald-800" : Number(safePct) >= 50 ? "text-amber-800" : "text-rose-800"
-                )}>
+              <div
+                className={cn(
+                  "flex flex-col justify-between gap-1 rounded-xl border p-3.5 shadow-2xs",
+                  Number(safePct) >= 80
+                    ? "border-emerald-200 bg-emerald-50/60"
+                    : Number(safePct) >= 50
+                      ? "border-amber-200 bg-amber-50/60"
+                      : "border-rose-200 bg-rose-50/60",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase",
+                    Number(safePct) >= 80
+                      ? "text-emerald-800"
+                      : Number(safePct) >= 50
+                        ? "text-amber-800"
+                        : "text-rose-800",
+                  )}
+                >
                   <CheckCircle2 className="size-3 shrink-0" />
                   Accounted For
                 </span>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className={cn(
-                    "text-2xl font-black tabular-nums leading-none shrink-0",
-                    Number(safePct) >= 80 ? "text-emerald-900" : Number(safePct) >= 50 ? "text-amber-900" : "text-rose-900"
-                  )}>{safePct}%</span>
+                  <span
+                    className={cn(
+                      "shrink-0 text-2xl leading-none font-black tabular-nums",
+                      Number(safePct) >= 80
+                        ? "text-emerald-900"
+                        : Number(safePct) >= 50
+                          ? "text-amber-900"
+                          : "text-rose-900",
+                    )}
+                  >
+                    {safePct}%
+                  </span>
                   <span className="text-[11px] font-bold">{safeCount} Safe</span>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5 flex flex-col justify-between gap-1 shadow-2xs">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1">
-                  <Building2 className="size-3 text-emerald-700 shrink-0" />
+              <div className="flex flex-col justify-between gap-1 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5 shadow-2xs">
+                <span className="flex items-center gap-1 text-[10px] font-bold tracking-wider text-emerald-800 uppercase">
+                  <Building2 className="size-3 shrink-0 text-emerald-700" />
                   Evacuation Network
                 </span>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className="text-2xl font-black text-emerald-900 tabular-nums leading-none shrink-0">{totalCapUsed}/{totalCapMax}</span>
-                  <span className="text-[11px] text-emerald-700 font-bold">({evacCapPct}% Full)</span>
+                  <span className="shrink-0 text-2xl leading-none font-black text-emerald-900 tabular-nums">
+                    {totalCapUsed}/{totalCapMax}
+                  </span>
+                  <span className="text-[11px] font-bold text-emerald-700">
+                    ({evacCapPct}% Full)
+                  </span>
                 </div>
               </div>
 
-              <div className={cn(
-                "rounded-xl border p-3.5 flex flex-col justify-between gap-1 shadow-2xs",
-                totalRescue > 0 ? "border-rose-200 bg-rose-50/60" : "border-slate-200 bg-slate-50/80"
-              )}>
-                <span className={cn(
-                  "text-[10px] font-bold uppercase tracking-wider flex items-center gap-1",
-                  totalRescue > 0 ? "text-rose-800" : "text-slate-500"
-                )}>
+              <div
+                className={cn(
+                  "flex flex-col justify-between gap-1 rounded-xl border p-3.5 shadow-2xs",
+                  totalRescue > 0
+                    ? "border-rose-200 bg-rose-50/60"
+                    : "border-slate-200 bg-slate-50/80",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase",
+                    totalRescue > 0 ? "text-rose-800" : "text-slate-500",
+                  )}
+                >
                   <ShieldAlert className="size-3 shrink-0" />
                   Distress Queue
                 </span>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className={cn(
-                    "text-2xl font-black tabular-nums leading-none shrink-0",
-                    totalRescue > 0 ? "text-rose-900" : "text-slate-900"
-                  )}>{totalRescue}</span>
-                  <span className="text-[11px] font-bold text-slate-500">{totalUnaccounted} Pending</span>
+                  <span
+                    className={cn(
+                      "shrink-0 text-2xl leading-none font-black tabular-nums",
+                      totalRescue > 0 ? "text-rose-900" : "text-slate-900",
+                    )}
+                  >
+                    {totalRescue}
+                  </span>
+                  <span className="text-[11px] font-bold text-slate-500">
+                    {totalUnaccounted} Pending
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Area Breakdown List */}
-            <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col gap-3 shadow-2xs">
-              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
-                <Layers className="size-3.5 text-emerald-700 shrink-0" />
+            <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
+              <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-slate-900 uppercase">
+                <Layers className="size-3.5 shrink-0 text-emerald-700" />
                 Administrative Area Coverage
               </span>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {summary.registered.map((area) => {
                   const areaReg = area.registered_members || 1;
                   const safe = area.safe_confirmed + area.safe_bulk;
@@ -1506,14 +1790,18 @@ function BarangaySafetySummaryModal({
                         onClose();
                         onSelectArea(area);
                       }}
-                      className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 flex flex-col gap-2 hover:bg-emerald-50/40 hover:border-emerald-300 transition-all cursor-pointer shadow-2xs"
+                      className="flex cursor-pointer flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3 shadow-2xs transition-all hover:border-emerald-300 hover:bg-emerald-50/40"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs text-slate-950 flex items-center gap-1.5">
-                          <MapPin className="size-3.5 text-emerald-600 shrink-0" />
+                        <span className="flex items-center gap-1.5 text-xs font-bold text-slate-950">
+                          <MapPin className="size-3.5 shrink-0 text-emerald-600" />
                           {area.area_name}
                         </span>
-                        <Badge tone={ratio >= 80 ? "success" : ratio >= 50 ? "warning" : "danger"}>
+                        <Badge
+                          tone={
+                            ratio >= 80 ? "success" : ratio >= 50 ? "warning" : "danger"
+                          }
+                        >
                           {ratio}% Safe
                         </Badge>
                       </div>
@@ -1525,10 +1813,14 @@ function BarangaySafetySummaryModal({
                         />
                       </div>
 
-                      <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                        <span>{safe} / {area.registered_members} Citizens</span>
+                      <div className="flex items-center justify-between text-[11px] font-medium text-slate-500">
+                        <span>
+                          {safe} / {area.registered_members} Citizens
+                        </span>
                         {area.needs_rescue > 0 && (
-                          <span className="text-rose-600 font-bold">{area.needs_rescue} rescue</span>
+                          <span className="font-bold text-rose-600">
+                            {area.needs_rescue} rescue
+                          </span>
                         )}
                       </div>
                     </div>
@@ -1631,9 +1923,12 @@ function EvacuationCenterDetailModal({
     ).length;
     const pregnant = allFlags.filter((f) => f.toLowerCase().includes("pregnant")).length;
     const bedridden = allFlags.filter(
-      (f) => f.toLowerCase().includes("bedridden") || f.toLowerCase().includes("mobility"),
+      (f) =>
+        f.toLowerCase().includes("bedridden") || f.toLowerCase().includes("mobility"),
     ).length;
-    const total = allMembers.filter((m) => (m.vulnerability_flags || []).length > 0).length;
+    const total = allMembers.filter(
+      (m) => (m.vulnerability_flags || []).length > 0,
+    ).length;
 
     if (center.occupancy > 0 && total === 0) {
       const occ = center.occupancy;
@@ -1669,44 +1964,57 @@ function EvacuationCenterDetailModal({
 
   return (
     <Dialog open={Boolean(center)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-full sm:max-w-2xl md:max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl z-[3000]">
-        <DialogHeader className="border-b border-slate-100 p-5 sm:p-6 pb-4 shrink-0 bg-white pr-10 sm:pr-12">
+      <DialogContent className="z-[3000] flex max-h-[90vh] w-full flex-col gap-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl sm:max-w-2xl md:max-w-3xl">
+        <DialogHeader className="shrink-0 border-b border-slate-100 bg-white p-5 pr-10 pb-4 sm:p-6 sm:pr-12">
           <div className="flex flex-col gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-md bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 text-xs">
+              <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
                 Evacuation Center
               </span>
               {center.facility.area_name && (
-                <span className="rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-bold px-2 py-0.5 text-xs">
+                <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700">
                   {center.facility.area_name}
                 </span>
               )}
-              <Badge tone={center.is_at_capacity ? "danger" : center.is_open ? "success" : "neutral"}>
-                {center.is_at_capacity ? "At Capacity" : center.is_open ? "Open & Active" : "Closed"}
+              <Badge
+                tone={
+                  center.is_at_capacity
+                    ? "danger"
+                    : center.is_open
+                      ? "success"
+                      : "neutral"
+                }
+              >
+                {center.is_at_capacity
+                  ? "At Capacity"
+                  : center.is_open
+                    ? "Open & Active"
+                    : "Closed"}
               </Badge>
             </div>
 
-            <DialogTitle className="mt-0.5 text-xl sm:text-2xl font-black text-slate-950 flex items-center gap-2">
-              <Building2 className="size-6 text-emerald-600 shrink-0" />
+            <DialogTitle className="mt-0.5 flex items-center gap-2 text-xl font-black text-slate-950 sm:text-2xl">
+              <Building2 className="size-6 shrink-0 text-emerald-600" />
               {center.facility.name}
             </DialogTitle>
 
             {/* Address & Navigation buttons combined in header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 mt-0.5 pt-0.5">
-              <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
-                <MapPin className="size-3.5 text-emerald-600 shrink-0" />
+            <div className="mt-0.5 flex flex-col gap-2.5 pt-0.5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+                <MapPin className="size-3.5 shrink-0 text-emerald-600" />
                 <span className="leading-snug">
-                  {center.facility.address ?? "Kasiglahan Village, Barangay San Jose, Rodriguez, Rizal"}
+                  {center.facility.address ??
+                    "Kasiglahan Village, Barangay San Jose, Rodriguez, Rizal"}
                 </span>
               </div>
 
               {hasCoordinates && (
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex shrink-0 items-center gap-2">
                   <a
                     href={googleMapsDirectionsUrl(lon, lat, center.facility.name)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-800 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-300 transition-all shadow-2xs cursor-pointer"
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-800 shadow-2xs transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
                   >
                     <Navigation className="size-3 text-emerald-600" />
                     <span>Google Maps</span>
@@ -1716,7 +2024,7 @@ function EvacuationCenterDetailModal({
                     href={osmDirectionsUrl(lon, lat)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-800 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-300 transition-all shadow-2xs cursor-pointer"
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-800 shadow-2xs transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
                   >
                     <Compass className="size-3 text-emerald-600" />
                     <span>OpenStreetMap</span>
@@ -1728,39 +2036,43 @@ function EvacuationCenterDetailModal({
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 h-full">
-          <div className="p-5 sm:p-6 flex flex-col gap-5">
+        <ScrollArea className="h-full min-h-0 flex-1">
+          <div className="flex flex-col gap-5 p-5 sm:p-6">
             {/* 4 KPI Metric Cards */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 flex flex-col justify-between gap-1 shadow-2xs">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                  <Users className="size-3 text-slate-500 shrink-0" />
+              <div className="flex flex-col justify-between gap-1 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 shadow-2xs">
+                <span className="flex items-center gap-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                  <Users className="size-3 shrink-0 text-slate-500" />
                   Current Occupancy
                 </span>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className="text-2xl font-black text-slate-950 tabular-nums leading-none shrink-0">
+                  <span className="shrink-0 text-2xl leading-none font-black text-slate-950 tabular-nums">
                     {center.occupancy}
                   </span>
-                  <span className="text-[11px] text-slate-500 font-semibold">Sheltered</span>
+                  <span className="text-[11px] font-semibold text-slate-500">
+                    Sheltered
+                  </span>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 flex flex-col justify-between gap-1 shadow-2xs">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                  <Home className="size-3 text-slate-500 shrink-0" />
+              <div className="flex flex-col justify-between gap-1 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 shadow-2xs">
+                <span className="flex items-center gap-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                  <Home className="size-3 shrink-0 text-slate-500" />
                   Intake Capacity
                 </span>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className="text-2xl font-black text-slate-950 tabular-nums leading-none shrink-0">
+                  <span className="shrink-0 text-2xl leading-none font-black text-slate-950 tabular-nums">
                     {cap > 0 ? cap : "Open"}
                   </span>
-                  <span className="text-[11px] text-slate-500 font-semibold">Max Limit</span>
+                  <span className="text-[11px] font-semibold text-slate-500">
+                    Max Limit
+                  </span>
                 </div>
               </div>
 
               <div
                 className={cn(
-                  "rounded-xl border p-3.5 flex flex-col justify-between gap-1 shadow-2xs",
+                  "flex flex-col justify-between gap-1 rounded-xl border p-3.5 shadow-2xs",
                   availableSlots != null && availableSlots <= 0
                     ? "border-rose-200 bg-rose-50/60"
                     : "border-emerald-200 bg-emerald-50/60",
@@ -1768,7 +2080,7 @@ function EvacuationCenterDetailModal({
               >
                 <span
                   className={cn(
-                    "text-[10px] font-bold uppercase tracking-wider flex items-center gap-1",
+                    "flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase",
                     availableSlots != null && availableSlots <= 0
                       ? "text-rose-800"
                       : "text-emerald-800",
@@ -1780,7 +2092,7 @@ function EvacuationCenterDetailModal({
                 <div className="flex items-baseline justify-between gap-1">
                   <span
                     className={cn(
-                      "text-2xl font-black tabular-nums leading-none shrink-0",
+                      "shrink-0 text-2xl leading-none font-black tabular-nums",
                       availableSlots != null && availableSlots <= 0
                         ? "text-rose-900"
                         : "text-emerald-900",
@@ -1794,23 +2106,25 @@ function EvacuationCenterDetailModal({
                 </div>
               </div>
 
-              <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 flex flex-col justify-between gap-1 shadow-2xs">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1">
-                  <AlertTriangle className="size-3 text-amber-700 shrink-0" />
+              <div className="flex flex-col justify-between gap-1 rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 shadow-2xs">
+                <span className="flex items-center gap-1 text-[10px] font-bold tracking-wider text-amber-800 uppercase">
+                  <AlertTriangle className="size-3 shrink-0 text-amber-700" />
                   Special Needs
                 </span>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className="text-2xl font-black text-amber-900 tabular-nums leading-none shrink-0">
+                  <span className="shrink-0 text-2xl leading-none font-black text-amber-900 tabular-nums">
                     {totalSpecialNeedsCount}
                   </span>
-                  <span className="text-[11px] font-bold text-amber-800">Priority Care</span>
+                  <span className="text-[11px] font-bold text-amber-800">
+                    Priority Care
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Occupancy Progress Meter Card */}
             <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-800 mb-2">
+              <div className="mb-2 flex items-center justify-between text-xs font-bold text-slate-800">
                 <span>Facility Intake & Capacity Gauge</span>
                 <span
                   className={cn(
@@ -1822,20 +2136,25 @@ function EvacuationCenterDetailModal({
                         : "text-emerald-700",
                   )}
                 >
-                  {center.occupancy} / {cap > 0 ? `${cap} persons` : "Open Limit"} ({capPct}%)
+                  {center.occupancy} / {cap > 0 ? `${cap} persons` : "Open Limit"} (
+                  {capPct}%)
                 </span>
               </div>
-              <div className="h-3.5 w-full overflow-hidden rounded-full bg-slate-200 flex">
+              <div className="flex h-3.5 w-full overflow-hidden rounded-full bg-slate-200">
                 <div
                   style={{ width: `${Math.min(100, capPct)}%` }}
                   className={cn(
-                    "transition-all duration-500 h-full",
-                    capPct >= 90 ? "bg-rose-600" : capPct >= 70 ? "bg-amber-500" : "bg-emerald-600",
+                    "h-full transition-all duration-500",
+                    capPct >= 90
+                      ? "bg-rose-600"
+                      : capPct >= 70
+                        ? "bg-amber-500"
+                        : "bg-emerald-600",
                   )}
                   title={`Occupancy: ${center.occupancy}`}
                 />
               </div>
-              <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5 text-[11px] text-slate-600 font-medium">
+              <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] font-medium text-slate-600">
                 <span className="inline-flex items-center gap-1.5 font-bold text-slate-800">
                   <span className="size-2 rounded-full bg-emerald-600" />
                   Sheltered Citizens: {center.occupancy}
@@ -1863,82 +2182,94 @@ function EvacuationCenterDetailModal({
             </div>
 
             {/* Special Needs Demographics Breakdown Card */}
-            <div className="rounded-xl border border-amber-200/90 bg-amber-50/40 p-4 flex flex-col gap-2.5 shadow-2xs">
+            <div className="flex flex-col gap-2.5 rounded-xl border border-amber-200/90 bg-amber-50/40 p-4 shadow-2xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5 uppercase tracking-wider">
-                  <AlertTriangle className="size-3.5 text-amber-600 shrink-0" />
+                <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-amber-950 uppercase">
+                  <AlertTriangle className="size-3.5 shrink-0 text-amber-600" />
                   Special Needs & Vulnerability Demographics
                 </span>
                 <Badge tone={totalSpecialNeedsCount > 0 ? "warning" : "neutral"}>
-                  {totalSpecialNeedsCount} {totalSpecialNeedsCount === 1 ? "Person" : "Persons"} Priority Care
+                  {totalSpecialNeedsCount}{" "}
+                  {totalSpecialNeedsCount === 1 ? "Person" : "Persons"} Priority Care
                 </Badge>
               </div>
 
-              <div className="flex flex-wrap gap-2 mt-1">
+              <div className="mt-1 flex flex-wrap gap-2">
                 {seniorCount > 0 && (
-                  <span className="rounded-md bg-white border border-amber-300 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
+                  <span className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
                     {seniorCount} Senior Citizen{seniorCount > 1 ? "s" : ""} (60+ y/o)
                   </span>
                 )}
                 {pwdCount > 0 && (
-                  <span className="rounded-md bg-white border border-amber-300 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
+                  <span className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
                     {pwdCount} PWD
                   </span>
                 )}
                 {infantCount > 0 && (
-                  <span className="rounded-md bg-white border border-amber-300 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
+                  <span className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
                     {infantCount} Infant / Toddler{infantCount > 1 ? "s" : ""} (0–4 y/o)
                   </span>
                 )}
                 {childCount > 0 && (
-                  <span className="rounded-md bg-white border border-amber-300 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
+                  <span className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
                     {childCount} Minor{childCount > 1 ? "s" : ""} (5–17 y/o)
                   </span>
                 )}
                 {pregnantCount > 0 && (
-                  <span className="rounded-md bg-white border border-amber-300 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
+                  <span className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
                     {pregnantCount} Pregnant Mother{pregnantCount > 1 ? "s" : ""}
                   </span>
                 )}
                 {bedriddenCount > 0 && (
-                  <span className="rounded-md bg-white border border-amber-300 px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
+                  <span className="rounded-md border border-amber-300 bg-white px-2.5 py-1 text-xs font-bold text-amber-900 shadow-2xs">
                     {bedriddenCount} Bedridden / High-Care
                   </span>
                 )}
                 {totalSpecialNeedsCount === 0 && (
-                  <span className="text-xs text-slate-500 italic p-1">
-                    No special needs flags recorded among currently sheltered evacuees at this center.
+                  <span className="p-1 text-xs text-slate-500 italic">
+                    No special needs flags recorded among currently sheltered evacuees at
+                    this center.
                   </span>
                 )}
               </div>
             </div>
 
             {/* Hotline Contact & Dispatch Info */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 flex flex-col gap-2.5 shadow-2xs">
-              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
-                <Phone className="size-3.5 text-emerald-700 shrink-0" />
+            <div className="flex flex-col gap-2.5 rounded-xl border border-slate-200 bg-slate-50/70 p-4 shadow-2xs">
+              <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-slate-900 uppercase">
+                <Phone className="size-3.5 shrink-0 text-emerald-700" />
                 Contact & Facility Administration
               </span>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="rounded-lg border border-slate-200 bg-white p-2.5 flex flex-col gap-0.5">
-                  <span className="text-[10px] uppercase font-bold text-slate-400">Shelter Contact Hotline</span>
+              <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2">
+                <div className="flex flex-col gap-0.5 rounded-lg border border-slate-200 bg-white p-2.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">
+                    Shelter Contact Hotline
+                  </span>
                   {center.contact_number || center.facility.contact_number ? (
                     <a
-                      href={toTelHref(center.contact_number || center.facility.contact_number || "")}
-                      className="font-bold text-emerald-700 hover:underline inline-flex items-center gap-1 text-xs"
+                      href={toTelHref(
+                        center.contact_number || center.facility.contact_number || "",
+                      )}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:underline"
                     >
                       <Phone className="size-3" />
                       {center.contact_number || center.facility.contact_number}
                     </a>
                   ) : (
-                    <span className="font-semibold text-slate-600">Barangay Emergency Operations Center</span>
+                    <span className="font-semibold text-slate-600">
+                      Barangay Emergency Operations Center
+                    </span>
                   )}
                 </div>
 
-                <div className="rounded-lg border border-slate-200 bg-white p-2.5 flex flex-col gap-0.5">
-                  <span className="text-[10px] uppercase font-bold text-slate-400">Operating Schedule</span>
-                  <span className="font-bold text-slate-900">24/7 Active Disaster Shelter</span>
+                <div className="flex flex-col gap-0.5 rounded-lg border border-slate-200 bg-white p-2.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">
+                    Operating Schedule
+                  </span>
+                  <span className="font-bold text-slate-900">
+                    24/7 Active Disaster Shelter
+                  </span>
                 </div>
               </div>
             </div>

@@ -150,3 +150,19 @@ async def test_incident_moves_through_the_action_lifecycle(session, demo_users):
     assert resolved.status == "resolved"
     assert resolved.resolution_note == "Debris removed and lane checked."
     assert resolved.resolved_at is not None
+
+
+async def test_incident_list_projects_batched_related_metadata(session, demo_users):
+    admin = _actor(demo_users["admin"])
+    created = await service.create_incident_report(
+        session,
+        body=IncidentReportIn(type="flooding", description="Batch projection test"),
+        photo=None,
+        actor=admin,
+        ip=None,
+    )
+
+    page = await service.list_incident_reports(session, size=100)
+    result = next(item for item in page.items if item.id == created.id)
+    assert result.reported_by_name is not None
+    assert result.event_id == created.event_id

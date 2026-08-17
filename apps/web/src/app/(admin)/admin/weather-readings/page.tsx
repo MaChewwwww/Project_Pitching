@@ -35,10 +35,10 @@ import {
   ReferenceLine,
 } from "recharts";
 
-
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import { ChartSkeleton, DetailCardSkeleton } from "@/components/common/portal-loading";
 import { Badge } from "@/components/common/badge";
 import { EmptyState } from "@/components/common/empty-state";
 import { ErrorState } from "@/components/common/error-state";
@@ -129,22 +129,17 @@ function OverviewPanel({
 }) {
   if (isLoading) {
     return (
-      <div
-        className="grid gap-4 xl:grid-cols-[1.45fr_0.85fr]"
-        aria-label="Loading weather data"
-      >
-        {["weather", "river"].map((key) => (
-          <Card key={key} className="min-h-[280px] animate-pulse bg-neutral-50">
-            <CardContent className="flex flex-col gap-5">
-              <div className="h-4 w-40 rounded bg-neutral-200" />
-              <div className="grid grid-cols-2 gap-3">
-                <div className="h-20 rounded-xl bg-neutral-200" />
-                <div className="h-20 rounded-xl bg-neutral-200" />
-              </div>
-              <div className="h-32 rounded-xl bg-neutral-200" />
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid gap-4 xl:grid-cols-[1.45fr_0.85fr]">
+        <DetailCardSkeleton
+          label="Loading weather conditions"
+          rows={5}
+          className="min-h-[280px]"
+        />
+        <DetailCardSkeleton
+          label="Loading river conditions"
+          rows={5}
+          className="min-h-[280px]"
+        />
       </div>
     );
   }
@@ -238,7 +233,9 @@ function ManualEntryPanel({
             <PenLine aria-hidden className="size-4" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-neutral-900">Record a field reading</h2>
+            <h2 className="text-base font-bold text-neutral-900">
+              Record a field reading
+            </h2>
             <p className="text-xs text-neutral-500">
               Use this when a gauge or automated fetch is unavailable.
             </p>
@@ -332,7 +329,7 @@ function ManualEntryPanel({
               className="text-xs font-bold tracking-wider text-neutral-600 uppercase"
             >
               Observed at
-              <span className="ml-1.5 text-[10px] font-medium normal-case text-neutral-400">
+              <span className="ml-1.5 text-[10px] font-medium text-neutral-400 normal-case">
                 blank = now
               </span>
             </Label>
@@ -435,7 +432,7 @@ function RiverHistoryChart({
 }) {
   const [hours, setHours] = React.useState<HistoryHours>(168);
 
-  const { data, isLoading, isError, isFetching, refetch } = useQuery({
+  const { data, isError, isFetching, refetch } = useQuery({
     queryKey: ["admin", "river-history", hours],
     queryFn: () =>
       api
@@ -490,7 +487,10 @@ function RiverHistoryChart({
   }, [thresholds]);
 
   const yDomain = React.useMemo<[number, number]>(() => {
-    const values = [...chartData.map((point) => point.v), ...thresholdRows.map((row) => row.value)];
+    const values = [
+      ...chartData.map((point) => point.v),
+      ...thresholdRows.map((row) => row.value),
+    ];
     if (values.length === 0) return [0, 1];
 
     const minimum = Math.min(...values);
@@ -510,11 +510,9 @@ function RiverHistoryChart({
         : [0, hours * 60 * 60 * 1000];
 
   const xFormatter = (ts: number) =>
-    hours <= 24
-      ? format(new Date(ts), "HH:mm")
-      : format(new Date(ts), "MMM d");
+    hours <= 24 ? format(new Date(ts), "HH:mm") : format(new Date(ts), "MMM d");
 
-  const isEmpty = !isLoading && !isError && chartData.length === 0;
+  const isEmpty = !isFetching && !isError && chartData.length === 0;
   const hasTrend = chartData.length > 1;
   const latestPoint = chartData.at(-1);
   const latestValue = latestPoint?.v ?? river?.reading?.value ?? null;
@@ -522,7 +520,7 @@ function RiverHistoryChart({
   const latestSource = latestPoint?.source ?? river?.reading?.source ?? null;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-[14px] border border-neutral-200 bg-white shadow-sm-card">
+    <div className="shadow-sm-card flex h-full flex-col overflow-hidden rounded-[14px] border border-neutral-200 bg-white">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-100 px-5 py-4">
         <div className="flex items-start gap-3">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-700 ring-1 ring-sky-100">
@@ -542,8 +540,16 @@ function RiverHistoryChart({
             size="sm"
             className="size-8 min-w-8 px-0 text-neutral-500 hover:bg-sky-50 hover:text-sky-700"
             disabled={isFetching}
-            aria-label={isFetching ? "Refreshing river level history" : "Refresh river level history"}
-            title={isFetching ? "Refreshing river level history" : "Refresh river level history"}
+            aria-label={
+              isFetching
+                ? "Refreshing river level history"
+                : "Refresh river level history"
+            }
+            title={
+              isFetching
+                ? "Refreshing river level history"
+                : "Refresh river level history"
+            }
             onClick={() => void refetch()}
           >
             <RefreshCw
@@ -551,13 +557,20 @@ function RiverHistoryChart({
               className={`size-3.5 ${isFetching ? "animate-spin motion-reduce:animate-none" : ""}`}
             />
           </Button>
-          <Select value={String(hours)} onValueChange={(value) => setHours(Number(value) as HistoryHours)}>
+          <Select
+            value={String(hours)}
+            onValueChange={(value) => setHours(Number(value) as HistoryHours)}
+          >
             <SelectTrigger className="h-8 w-34 border-neutral-200 bg-neutral-50 text-xs font-medium">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {HISTORY_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={String(option.value)} className="text-xs">
+                <SelectItem
+                  key={option.value}
+                  value={String(option.value)}
+                  className="text-xs"
+                >
                   {option.label}
                 </SelectItem>
               ))}
@@ -568,14 +581,16 @@ function RiverHistoryChart({
 
       <div className="grid grid-cols-[auto_1fr] gap-x-3 border-b border-neutral-100 bg-neutral-50/70 px-5 py-3">
         <div className="min-w-20 border-r border-neutral-200 pr-3">
-          <p className="text-[10px] font-bold tracking-[0.12em] text-neutral-500 uppercase">Latest level</p>
+          <p className="text-[10px] font-bold tracking-[0.12em] text-neutral-500 uppercase">
+            Latest level
+          </p>
           <p className="mt-0.5 text-xl font-black tracking-tight text-neutral-950">
             {latestValue != null ? `${latestValue.toFixed(2)} m` : "—"}
           </p>
         </div>
         <div className="min-w-0 self-center">
           <p className="text-xs font-semibold text-neutral-800">
-            {isLoading
+            {isFetching
               ? "Loading measurements…"
               : latestObservedAt
                 ? `Observed ${formatPhtDateTime(latestObservedAt)}`
@@ -590,27 +605,43 @@ function RiverHistoryChart({
       </div>
 
       <div className="h-64 px-3 pt-4 sm:px-4">
-        {isLoading ? (
-          <div className="h-full w-full animate-pulse rounded-lg bg-neutral-100" />
+        {isFetching ? (
+          <ChartSkeleton
+            label="Loading river level history"
+            className="h-full border-0 p-0 shadow-none"
+          />
         ) : isError ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
             <AlertCircle aria-hidden className="size-5 text-red-500" />
-            <p className="text-xs font-semibold text-neutral-700">River history could not be loaded.</p>
-            <Button type="button" variant="outline" size="sm" onClick={() => void refetch()}>
+            <p className="text-xs font-semibold text-neutral-700">
+              River history could not be loaded.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void refetch()}
+            >
               Try again
             </Button>
           </div>
         ) : isEmpty ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-8 text-center">
             <Waves aria-hidden className="size-7 text-neutral-300" />
-            <p className="text-sm font-semibold text-neutral-700">No measured levels in this period</p>
+            <p className="text-sm font-semibold text-neutral-700">
+              No measured levels in this period
+            </p>
             <p className="max-w-xs text-xs leading-5 text-neutral-500">
-              The chart plots DOST-PAGASA Montalban gauge reports and verified staff entries. It never fills gaps with estimates.
+              The chart plots DOST-PAGASA Montalban gauge reports and verified staff
+              entries. It never fills gaps with estimates.
             </p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 16, right: 8, left: -14, bottom: 4 }}>
+            <AreaChart
+              data={chartData}
+              margin={{ top: 16, right: 8, left: -14, bottom: 4 }}
+            >
               <defs>
                 <linearGradient id="riverHistoryGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#0284c7" stopOpacity={0.24} />
@@ -649,7 +680,9 @@ function RiverHistoryChart({
                   return (
                     <div className="min-w-38 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs shadow-lg">
                       <p className="font-bold text-neutral-950">{point.v.toFixed(2)} m</p>
-                      <p className="mt-0.5 text-neutral-600">{formatPhtDateTime(point.observedAt)}</p>
+                      <p className="mt-0.5 text-neutral-600">
+                        {formatPhtDateTime(point.observedAt)}
+                      </p>
                       <p className="mt-1 text-[10px] font-semibold tracking-wide text-sky-700 uppercase">
                         {RIVER_HISTORY_SOURCE_LABELS[point.source] ?? point.source}
                       </p>
@@ -692,16 +725,22 @@ function RiverHistoryChart({
         <div className="mx-5 mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
           <AlertCircle aria-hidden className="mt-0.5 size-3.5 shrink-0" />
           <p>
-            One distinct measurement is available here, so a trend cannot be shown yet. A new Montalban gauge report or verified staff entry will extend the line.
+            One distinct measurement is available here, so a trend cannot be shown yet. A
+            new Montalban gauge report or verified staff entry will extend the line.
           </p>
         </div>
       ) : null}
 
-      <div className="mt-auto border-t border-neutral-200 bg-neutral-50/70" aria-label="River level chart legend">
+      <div
+        className="mt-auto border-t border-neutral-200 bg-neutral-50/70"
+        aria-label="River level chart legend"
+      >
         <div className="grid grid-cols-3 divide-x divide-neutral-200">
           {thresholdRows.map((threshold) => (
             <div key={threshold.level} className="relative px-3 py-3 first:pl-5">
-              <span className={`absolute top-0 left-0 h-0.5 w-full ${threshold.surface}`} />
+              <span
+                className={`absolute top-0 left-0 h-0.5 w-full ${threshold.surface}`}
+              />
               <div className="flex items-center gap-2">
                 <span
                   aria-hidden
@@ -712,7 +751,9 @@ function RiverHistoryChart({
                   Level {threshold.level} · {threshold.label}
                 </p>
               </div>
-              <p className="mt-1 text-xs font-bold text-neutral-900">{threshold.value.toFixed(1)} m</p>
+              <p className="mt-1 text-xs font-bold text-neutral-900">
+                {threshold.value.toFixed(1)} m
+              </p>
             </div>
           ))}
         </div>
@@ -720,7 +761,6 @@ function RiverHistoryChart({
     </div>
   );
 }
-
 
 function PromptLevelBadge({ level }: { level: AlertPrompt["level"] }) {
   const tone = level === 3 ? "danger" : level === 2 ? "orange" : "warning";
@@ -744,7 +784,7 @@ function RiverAlertPanel({
   const queryClient = useQueryClient();
   const [promptFilter, setPromptFilter] = React.useState<PromptFilter>("all");
   const [currentPage, setCurrentPage] = React.useState(1);
-  const { data, isLoading, isError, refetch } = useQuery<AlertPrompt[]>({
+  const { data, isFetching, isError, refetch } = useQuery<AlertPrompt[]>({
     queryKey: ["admin", "alert-prompts"],
     queryFn: () =>
       api
@@ -803,15 +843,13 @@ function RiverAlertPanel({
     );
   }
 
-  if (isLoading) {
+  if (isFetching) {
     return (
-      <Card className="min-h-[260px] animate-pulse bg-neutral-50">
-        <CardContent className="flex flex-col gap-4">
-          <div className="h-4 w-48 rounded bg-neutral-200" />
-          <div className="h-16 rounded-xl bg-neutral-200" />
-          <div className="h-16 rounded-xl bg-neutral-200" />
-        </CardContent>
-      </Card>
+      <DetailCardSkeleton
+        label="Loading river alert review"
+        rows={4}
+        className="min-h-[260px]"
+      />
     );
   }
 
@@ -835,15 +873,13 @@ function RiverAlertPanel({
       );
     }
 
-    if (isLoading) {
+    if (isFetching) {
       return (
-        <Card className="min-h-[260px] animate-pulse bg-neutral-50">
-          <CardContent className="flex flex-col gap-4">
-            <div className="h-4 w-48 rounded bg-neutral-200" />
-            <div className="h-16 rounded-xl bg-neutral-200" />
-            <div className="h-16 rounded-xl bg-neutral-200" />
-          </CardContent>
-        </Card>
+        <DetailCardSkeleton
+          label="Loading river alert review"
+          rows={4}
+          className="min-h-[260px]"
+        />
       );
     }
 
@@ -872,7 +908,7 @@ function RiverAlertPanel({
     }
 
     return (
-      <div className="flex h-full flex-col overflow-hidden rounded-[14px] border border-neutral-200 bg-white shadow-sm-card">
+      <div className="shadow-sm-card flex h-full flex-col overflow-hidden rounded-[14px] border border-neutral-200 bg-white">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-100 bg-neutral-50/70 px-5 py-4">
           <div className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-xl border border-emerald-200/60 bg-emerald-50 text-emerald-700">
@@ -902,19 +938,32 @@ function RiverAlertPanel({
               <SelectContent align="end">
                 <SelectItem value="all" className="text-xs">
                   <span>All</span>
-                  <span className="tabular-nums text-neutral-500"> ({filterCounts.all})</span>
+                  <span className="text-neutral-500 tabular-nums">
+                    {" "}
+                    ({filterCounts.all})
+                  </span>
                 </SelectItem>
                 <SelectItem value="to-review" className="text-xs">
                   <span>To review</span>
-                  <span className="tabular-nums text-neutral-500"> ({filterCounts["to-review"]})</span>
+                  <span className="text-neutral-500 tabular-nums">
+                    {" "}
+                    ({filterCounts["to-review"]})
+                  </span>
                 </SelectItem>
                 <SelectItem value="acknowledged" className="text-xs">
                   <span>Acknowledged</span>
-                  <span className="tabular-nums text-neutral-500"> ({filterCounts.acknowledged})</span>
+                  <span className="text-neutral-500 tabular-nums">
+                    {" "}
+                    ({filterCounts.acknowledged})
+                  </span>
                 </SelectItem>
               </SelectContent>
             </Select>
-            <Button asChild size="sm" className="bg-emerald-700 shadow-sm hover:bg-emerald-800">
+            <Button
+              asChild
+              size="sm"
+              className="bg-emerald-700 shadow-sm hover:bg-emerald-800"
+            >
               <Link href="/admin/announcements/create-announcement?kind=alert">
                 Create alert
                 <ChevronRight aria-hidden className="size-4" />
@@ -998,9 +1047,13 @@ function RiverAlertPanel({
             <div className="flex min-h-48 flex-1 flex-col items-center justify-center px-6 text-center">
               <ClipboardCheck aria-hidden className="size-6 text-neutral-300" />
               <p className="mt-2 text-sm font-semibold text-neutral-800">
-                {promptFilter === "acknowledged" ? "No acknowledged prompts" : "No prompts to review"}
+                {promptFilter === "acknowledged"
+                  ? "No acknowledged prompts"
+                  : "No prompts to review"}
               </p>
-              <p className="mt-1 text-xs text-neutral-500">Try another review status to see recorded river-level crossings.</p>
+              <p className="mt-1 text-xs text-neutral-500">
+                Try another review status to see recorded river-level crossings.
+              </p>
             </div>
           ) : null}
         </div>
@@ -1008,7 +1061,12 @@ function RiverAlertPanel({
         {filteredPrompts.length > 0 ? (
           <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 bg-neutral-50/70 px-5 py-3">
             <p className="text-xs text-neutral-600">
-              Showing <span className="font-semibold text-neutral-900">{pageStart + 1}–{Math.min(pageStart + PROMPTS_PER_PAGE, filteredPrompts.length)}</span> of {filteredPrompts.length}
+              Showing{" "}
+              <span className="font-semibold text-neutral-900">
+                {pageStart + 1}–
+                {Math.min(pageStart + PROMPTS_PER_PAGE, filteredPrompts.length)}
+              </span>{" "}
+              of {filteredPrompts.length}
             </p>
             <div className="flex items-center gap-1.5">
               <Button
@@ -1080,7 +1138,7 @@ export default function AdminWeatherReadingsPage() {
 
   const {
     data: weather,
-    isLoading: weatherLoading,
+    isFetching: weatherFetching,
     isError: weatherError,
     refetch: refetchWeather,
   } = useQuery({
@@ -1092,7 +1150,7 @@ export default function AdminWeatherReadingsPage() {
   });
   const {
     data: river,
-    isLoading: riverLoading,
+    isFetching: riverFetching,
     isError: riverError,
     refetch: refetchRiver,
   } = useQuery({
@@ -1101,7 +1159,7 @@ export default function AdminWeatherReadingsPage() {
       api.get<PublicRiverLevel>("/public/river-level").then((response) => response.data),
   });
 
-  const isOverviewLoading = weatherLoading || riverLoading;
+  const isOverviewLoading = weatherFetching || riverFetching;
   const isOverviewError = weatherError || riverError;
 
   function selectTab(tab: string) {
@@ -1124,23 +1182,23 @@ export default function AdminWeatherReadingsPage() {
         description="Monitor the live weather feed, record field readings, and review threshold breaches before issuing public guidance."
       />
 
-      <Card className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm flex flex-col">
+      <Card className="flex flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
         <Tabs value={activeTab} onValueChange={selectTab} className="w-full">
           {/* Connected Underline Tab Bar */}
           <div className="border-b border-neutral-200 bg-white">
             <div
               role="tablist"
-              className="flex border-b border-neutral-200 bg-white overflow-x-auto scrollbar-none"
+              className="flex scrollbar-none overflow-x-auto border-b border-neutral-200 bg-white"
             >
               {/* Overview */}
               <button
                 role="tab"
                 aria-selected={activeTab === "overview"}
                 onClick={() => selectTab("overview")}
-                className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all cursor-pointer ${
+                className={`inline-flex h-13 min-w-[160px] flex-1 cursor-pointer items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${
                   activeTab === "overview"
-                    ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
-                    : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+                    ? "border-emerald-600 bg-emerald-50/30 text-emerald-700"
+                    : "border-transparent text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
                 }`}
               >
                 <Gauge aria-hidden className="size-4 shrink-0" />
@@ -1153,16 +1211,16 @@ export default function AdminWeatherReadingsPage() {
                   role="tab"
                   aria-selected={activeTab === "river-alert"}
                   onClick={() => selectTab("river-alert")}
-                  className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all cursor-pointer ${
+                  className={`inline-flex h-13 min-w-[160px] flex-1 cursor-pointer items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${
                     activeTab === "river-alert"
-                      ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
-                      : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+                      ? "border-emerald-600 bg-emerald-50/30 text-emerald-700"
+                      : "border-transparent text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
                   }`}
                 >
                   <Droplets aria-hidden className="size-4 shrink-0" />
                   River Alert
                   {pendingPromptCount > 0 ? (
-                    <span className="ml-1 rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 text-xs font-bold">
+                    <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
                       {pendingPromptCount}
                     </span>
                   ) : null}
@@ -1174,10 +1232,10 @@ export default function AdminWeatherReadingsPage() {
                 role="tab"
                 aria-selected={activeTab === "manual-entry"}
                 onClick={() => selectTab("manual-entry")}
-                className={`inline-flex h-13 flex-1 min-w-[160px] items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all cursor-pointer ${
+                className={`inline-flex h-13 min-w-[160px] flex-1 cursor-pointer items-center justify-center gap-2 border-b-2 px-5 text-sm font-extrabold transition-all ${
                   activeTab === "manual-entry"
-                    ? "border-emerald-600 text-emerald-700 bg-emerald-50/30"
-                    : "border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50"
+                    ? "border-emerald-600 bg-emerald-50/30 text-emerald-700"
+                    : "border-transparent text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
                 }`}
               >
                 <PenLine aria-hidden className="size-4 shrink-0" />
@@ -1187,7 +1245,7 @@ export default function AdminWeatherReadingsPage() {
           </div>
 
           {/* Tab content panel */}
-          <div className="bg-slate-50/50 p-5 sm:p-7 flex-1">
+          <div className="flex-1 bg-slate-50/50 p-5 sm:p-7">
             <TabsContent value="overview" className="mt-0">
               <OverviewPanel
                 weather={weather}
@@ -1207,7 +1265,11 @@ export default function AdminWeatherReadingsPage() {
 
             {canReview ? (
               <TabsContent value="river-alert" className="mt-0">
-                <RiverAlertPanel isAdmin={canReview} river={river} onRefresh={refreshFeed} />
+                <RiverAlertPanel
+                  isAdmin={canReview}
+                  river={river}
+                  onRefresh={refreshFeed}
+                />
               </TabsContent>
             ) : null}
           </div>

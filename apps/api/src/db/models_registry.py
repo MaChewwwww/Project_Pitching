@@ -16,6 +16,7 @@ from src.modules.config import models as config_models
 from src.modules.donations import models as donations_models
 from src.modules.evacuation import models as evacuation_models
 from src.modules.geo import models as geo_models
+from src.modules.notifications import models as notifications_models
 from src.modules.preparedness import models as preparedness_models
 from src.modules.registry import models as registry_models
 from src.modules.safety import models as safety_models
@@ -31,6 +32,7 @@ __all__ = [
     "donations_models",
     "evacuation_models",
     "geo_models",
+    "notifications_models",
     "preparedness_models",
     "registry_models",
     "safety_models",

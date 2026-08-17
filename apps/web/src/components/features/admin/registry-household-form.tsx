@@ -6,6 +6,13 @@ import dynamic from "next/dynamic";
 import { Button } from "@/components/common/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { HouseholdDetailOut, HouseholdUpdate } from "@/lib/api/registry-types";
 import type {
   LatLng,
@@ -110,14 +117,14 @@ export function RegistryHouseholdForm({
       {error ? (
         <p
           role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+          className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs sm:text-sm font-medium text-red-800"
         >
           {error}
         </p>
       ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <Label htmlFor="head_name">
+          <Label htmlFor="head_name" className="text-xs font-bold text-neutral-700">
             Head of household <span className="text-red-600">*</span>
           </Label>
           <Input
@@ -127,16 +134,19 @@ export function RegistryHouseholdForm({
             onChange={(event) =>
               setValues((v) => ({ ...v, head_name: event.target.value }))
             }
-            className="mt-1.5"
+            className="mt-1.5 rounded-xl border-neutral-200/90 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
           />
           {protectedHead ? (
-            <p className="mt-1 text-xs text-neutral-500">
+            <p className="mt-1 text-[11px] text-neutral-500">
               This head is linked to a resident account; the account owns the name.
             </p>
           ) : null}
         </div>
+
         <div>
-          <Label htmlFor="contact_number">Contact number</Label>
+          <Label htmlFor="contact_number" className="text-xs font-bold text-neutral-700">
+            Contact number
+          </Label>
           <Input
             id="contact_number"
             type="tel"
@@ -144,30 +154,39 @@ export function RegistryHouseholdForm({
             onChange={(event) =>
               setValues((v) => ({ ...v, contact_number: event.target.value }))
             }
-            className="mt-1.5"
+            placeholder="09XX XXX XXXX"
+            className="mt-1.5 rounded-xl border-neutral-200/90 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
           />
         </div>
+
         <div>
-          <Label htmlFor="area_id">
-            Area <span className="text-red-600">*</span>
+          <Label htmlFor="area_id" className="text-xs font-bold text-neutral-700">
+            Purok / Area <span className="text-red-600">*</span>
           </Label>
-          <select
-            id="area_id"
-            value={values.area_id}
-            onChange={(event) =>
-              setValues((v) => ({ ...v, area_id: event.target.value }))
-            }
-            className="mt-1.5 h-10 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
-          >
-            {areas.map((area) => (
-              <option key={area.id} value={area.id}>
-                {area.name}
-              </option>
-            ))}
-          </select>
+          <div className="mt-1.5">
+            <Select
+              value={values.area_id || undefined}
+              onValueChange={(val) => setValues((v) => ({ ...v, area_id: val }))}
+            >
+              <SelectTrigger
+                id="area_id"
+                className="h-10 w-full rounded-xl border-neutral-200/90 bg-white text-xs sm:text-sm font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+              >
+                <SelectValue placeholder="Select Area" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60 rounded-xl">
+                {areas.map((area) => (
+                  <SelectItem key={area.id} value={area.id}>
+                    {area.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+
         <div className="sm:col-span-2">
-          <label className="flex items-center gap-2 text-sm text-neutral-700">
+          <label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-neutral-700 cursor-pointer">
             <input
               type="checkbox"
               checked={values.is_unreachable_by_phone}
@@ -178,25 +197,31 @@ export function RegistryHouseholdForm({
                 }))
               }
               className="size-4 rounded border-neutral-300 accent-emerald-600"
-            />{" "}
-            No reliable phone number
+            />
+            <span>No reliable mobile phone number</span>
           </label>
         </div>
+
         <div className="sm:col-span-2">
-          <Label htmlFor="street_address">House no. / Street</Label>
+          <Label htmlFor="street_address" className="text-xs font-bold text-neutral-700">
+            House no. / Street Address
+          </Label>
           <Input
             id="street_address"
             value={values.street_address ?? ""}
             onChange={(event) =>
               setValues((v) => ({ ...v, street_address: event.target.value }))
             }
-            className="mt-1.5"
-            placeholder="Optional address context"
+            className="mt-1.5 rounded-xl border-neutral-200/90 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+            placeholder="e.g. Block 33 Lot 8b Kasiglahan Village"
           />
         </div>
+
         <div className="sm:col-span-2">
-          <Label>Pin household location</Label>
-          <div className="mt-1.5">
+          <Label className="text-xs font-bold text-neutral-700">
+            Pin Household Coordinates on Map
+          </Label>
+          <div className="mt-1.5 overflow-hidden rounded-2xl border border-neutral-200/90 shadow-2xs">
             <LocationPicker
               value={
                 values.latitude !== null && values.longitude !== null
@@ -218,42 +243,67 @@ export function RegistryHouseholdForm({
                 );
               }}
               onResolve={handleLocationResolved}
-              caption="Pin the home to confirm its area, then enter the specific address above."
+              caption="Drag and position the pin precisely over your rooftop."
             />
           </div>
           {locationMessage ? (
-            <p className="mt-2 text-xs text-neutral-500">{locationMessage}</p>
+            <p className="mt-2 text-xs font-medium text-emerald-800 bg-emerald-50 border border-emerald-200/80 p-2.5 rounded-xl">
+              {locationMessage}
+            </p>
           ) : null}
         </div>
-        <div>
-          <Label htmlFor="waterway_proximity">Waterway proximity</Label>
-          <select
-            id="waterway_proximity"
-            value={values.waterway_proximity ?? ""}
-            onChange={(event) =>
-              setValues((v) => ({
-                ...v,
-                waterway_proximity: (event.target.value ||
-                  null) as HouseholdUpdate["waterway_proximity"],
-              }))
-            }
-            className="mt-1.5 h-10 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
-          >
-            <option value="">Not recorded</option>
-            <option value="very_near">Very near</option>
-            <option value="near">Near</option>
-            <option value="far">Far</option>
-          </select>
+
+        <div className="sm:col-span-2">
+          <Label htmlFor="waterway_proximity" className="text-xs font-bold text-neutral-700">
+            Waterway Proximity Assessment
+          </Label>
+          <div className="mt-1.5">
+            <Select
+              value={values.waterway_proximity ?? "none"}
+              onValueChange={(val) =>
+                setValues((v) => ({
+                  ...v,
+                  waterway_proximity:
+                    val === "none" ? null : (val as HouseholdUpdate["waterway_proximity"]),
+                }))
+              }
+            >
+              <SelectTrigger
+                id="waterway_proximity"
+                className="h-10 w-full rounded-xl border-neutral-200/90 bg-white text-xs sm:text-sm font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
+              >
+                <SelectValue placeholder="Select Waterway Proximity" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="none">Not recorded</SelectItem>
+                <SelectItem value="very_near">Very near (Under 1 km)</SelectItem>
+                <SelectItem value="near">Near (1 – 5 km)</SelectItem>
+                <SelectItem value="far">Far (6 km or more)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
-      <div className="flex flex-wrap justify-end gap-2 border-t border-neutral-100 pt-4">
+
+      <div className="flex flex-wrap justify-end gap-2.5 border-t border-neutral-100 pt-4">
         {onCancel ? (
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onCancel}
+            className="h-9 rounded-full border-neutral-300 px-4 text-xs font-bold text-neutral-700 hover:bg-neutral-50"
+          >
             Cancel
           </Button>
         ) : null}
-        <Button type="submit" disabled={saving}>
-          {saving ? "Saving…" : "Save household"}
+        <Button
+          type="submit"
+          size="sm"
+          disabled={saving}
+          className="h-9 cursor-pointer gap-1.5 rounded-full border border-emerald-600/30 bg-emerald-700 px-4 text-xs font-bold text-white shadow-sm shadow-emerald-900/15 transition-all hover:bg-emerald-800 active:scale-[0.98]"
+        >
+          {saving ? "Saving Changes…" : "Save Household Details"}
         </Button>
       </div>
     </form>

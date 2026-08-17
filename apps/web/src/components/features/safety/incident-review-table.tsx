@@ -172,6 +172,7 @@ export function IncidentReviewTable({
         columns={columns}
         data={items}
         isLoading={isLoading}
+        loadingLabel="Loading incident reports"
         isError={isError}
         onRetry={onRetry}
         emptyTitle="No incident reports"

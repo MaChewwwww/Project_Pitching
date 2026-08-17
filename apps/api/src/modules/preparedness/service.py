@@ -9,22 +9,34 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.audit import write_audit
 from src.core.errors import NotFoundError
 from src.core.pagination import Page, page_meta
-from src.modules.preparedness.models import Faq, Guide
+from src.modules.preparedness.models import (
+    FamilyEmergencyPlan,
+    Faq,
+    GoBagItem,
+    GoBagProgress,
+    Guide,
+)
 from src.modules.preparedness.schemas import (
     AdminGuide,
+    FamilyEmergencyPlanIn,
+    FamilyEmergencyPlanOut,
     FaqIn,
+    GoBagItemOut,
+    GoBagOut,
+    GoBagUpdateIn,
     GuideIn,
     PublicFaq,
     PublicGuide,
     PublicGuideSummary,
     _excerpt,
 )
+from src.modules.registry.models import Household
 
 
 def _summary(g: Guide) -> PublicGuideSummary:
@@ -198,3 +210,123 @@ async def delete_faq(session: AsyncSession, faq_id: uuid.UUID, *, actor_id: uuid
         session, actor_user_id=actor_id, action="faq.delete", entity_type="faq", entity_id=faq_id
     )
     await session.commit()
+
+
+async def _household_or_404(session: AsyncSession, user_id: uuid.UUID) -> Household:
+    household = await session.scalar(select(Household).where(Household.head_user_id == user_id))
+    if household is None:
+        raise NotFoundError("Complete onboarding before managing household preparedness.")
+    return household
+
+
+async def get_go_bag(session: AsyncSession, *, user_id: uuid.UUID) -> GoBagOut:
+    household = await _household_or_404(session, user_id)
+    items = (
+        (await session.execute(select(GoBagItem).order_by(GoBagItem.sort_order))).scalars().all()
+    )
+    checked = set(
+        (
+            await session.execute(
+                select(GoBagProgress.go_bag_item_id).where(
+                    GoBagProgress.household_id == household.id, GoBagProgress.has_item.is_(True)
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return GoBagOut(
+        household_id=household.id,
+        checked_item_ids=list(checked),
+        items=[
+            GoBagItemOut(
+                **{
+                    **{
+                        "id": item.id,
+                        "name_fil": item.name_fil,
+                        "name_en": item.name_en,
+                        "category": item.category,
+                        "is_essential": item.is_essential,
+                        "sort_order": item.sort_order,
+                    },
+                    "has_item": item.id in checked,
+                }
+            )
+            for item in items
+        ],
+    )
+
+
+async def replace_go_bag(
+    session: AsyncSession, *, user_id: uuid.UUID, body: GoBagUpdateIn
+) -> GoBagOut:
+    household = await _household_or_404(session, user_id)
+    requested = set(body.checked_item_ids)
+    available = set((await session.execute(select(GoBagItem.id))).scalars().all())
+    if not requested.issubset(available):
+        raise NotFoundError("One or more go-bag items no longer exist.")
+    await session.execute(delete(GoBagProgress).where(GoBagProgress.household_id == household.id))
+    session.add_all(
+        [
+            GoBagProgress(household_id=household.id, go_bag_item_id=item_id, has_item=True)
+            for item_id in requested
+        ]
+    )
+    await write_audit(
+        session,
+        actor_user_id=user_id,
+        action="go_bag.replace",
+        entity_type="household",
+        entity_id=household.id,
+    )
+    await session.commit()
+    return await get_go_bag(session, user_id=user_id)
+
+
+async def get_family_emergency_plan(
+    session: AsyncSession, *, user_id: uuid.UUID
+) -> FamilyEmergencyPlanOut:
+    household = await _household_or_404(session, user_id)
+    plan = await session.scalar(
+        select(FamilyEmergencyPlan).where(FamilyEmergencyPlan.household_id == household.id)
+    )
+    if plan is None:
+        return FamilyEmergencyPlanOut(household_id=household.id)
+    return FamilyEmergencyPlanOut(
+        household_id=household.id,
+        meeting_point=plan.meeting_point,
+        out_of_area_contact=plan.out_of_area_contact,
+        notes=plan.notes,
+        updated_at=plan.updated_at,
+    )
+
+
+async def upsert_family_emergency_plan(
+    session: AsyncSession, *, user_id: uuid.UUID, body: FamilyEmergencyPlanIn
+) -> FamilyEmergencyPlanOut:
+    household = await _household_or_404(session, user_id)
+    plan = await session.scalar(
+        select(FamilyEmergencyPlan).where(FamilyEmergencyPlan.household_id == household.id)
+    )
+    if plan is None:
+        plan = FamilyEmergencyPlan(household_id=household.id, **body.model_dump())
+        session.add(plan)
+    else:
+        for key, value in body.model_dump().items():
+            setattr(plan, key, value)
+    await write_audit(
+        session,
+        actor_user_id=user_id,
+        action="family_plan.upsert",
+        entity_type="household",
+        entity_id=household.id,
+    )
+    await session.commit()
+    await session.refresh(plan)
+    return FamilyEmergencyPlanOut(
+        household_id=household.id,
+        meeting_point=plan.meeting_point,
+        out_of_area_contact=plan.out_of_area_contact,
+        notes=plan.notes,
+        updated_at=plan.updated_at,
+    )

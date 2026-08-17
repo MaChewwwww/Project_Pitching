@@ -18,7 +18,11 @@ from src.db.session import DbSessionDep
 from src.modules.preparedness import service
 from src.modules.preparedness.schemas import (
     AdminGuide,
+    FamilyEmergencyPlanIn,
+    FamilyEmergencyPlanOut,
     FaqIn,
+    GoBagOut,
+    GoBagUpdateIn,
     GuideIn,
     PublicFaq,
     PublicGuide,
@@ -27,6 +31,7 @@ from src.modules.preparedness.schemas import (
 
 public_router = APIRouter(tags=["preparedness"])
 admin_router = APIRouter(tags=["preparedness"])
+me_router = APIRouter(tags=["preparedness"])
 
 
 # --- public --------------------------------------------------------------------
@@ -50,6 +55,30 @@ async def public_guide(slug: str, session: DbSessionDep) -> PublicGuide:
 @public_router.get("/faqs", summary="Frequently asked questions")
 async def public_faqs(session: DbSessionDep) -> list[PublicFaq]:
     return await service.list_faqs(session)
+
+
+@me_router.get("/go-bag", summary="My household go-bag checklist")
+async def me_go_bag(session: DbSessionDep, user: CurrentUser) -> GoBagOut:
+    return await service.get_go_bag(session, user_id=user.id)
+
+
+@me_router.put("/go-bag", dependencies=[Depends(require_role("head"))])
+async def me_replace_go_bag(
+    body: GoBagUpdateIn, session: DbSessionDep, user: CurrentUser
+) -> GoBagOut:
+    return await service.replace_go_bag(session, user_id=user.id, body=body)
+
+
+@me_router.get("/family-emergency-plan", summary="My household family emergency plan")
+async def me_family_plan(session: DbSessionDep, user: CurrentUser) -> FamilyEmergencyPlanOut:
+    return await service.get_family_emergency_plan(session, user_id=user.id)
+
+
+@me_router.put("/family-emergency-plan", dependencies=[Depends(require_role("head"))])
+async def me_upsert_family_plan(
+    body: FamilyEmergencyPlanIn, session: DbSessionDep, user: CurrentUser
+) -> FamilyEmergencyPlanOut:
+    return await service.upsert_family_emergency_plan(session, user_id=user.id, body=body)
 
 
 # --- admin ----------------------------------------------------------------------

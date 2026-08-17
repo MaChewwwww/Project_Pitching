@@ -46,8 +46,10 @@ known-first-party = ["src"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "seeded_demo: assert the active, production-shaped demo seed baseline",
+]
 
 [tool.pyright]
 pythonpath = ["."]
 extraPaths = ["."]
-

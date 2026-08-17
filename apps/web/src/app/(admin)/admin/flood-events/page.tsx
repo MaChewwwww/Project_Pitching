@@ -175,7 +175,7 @@ export default function AdminFloodEventsPage() {
         action={
           <FloodEventEditorDialog
             areas={areasQuery.data ?? []}
-            areasLoading={areasQuery.isLoading}
+            areasLoading={areasQuery.isFetching}
             areasError={areasQuery.isError}
             onRetryAreas={() => areasQuery.refetch()}
             isSubmitting={createMutation.isPending}
@@ -199,13 +199,14 @@ export default function AdminFloodEventsPage() {
         <div className="space-y-5">
           <FloodHistoryInsights
             events={filteredEvents}
-            isLoading={eventsQuery.isLoading}
+            isLoading={eventsQuery.isLoading || eventsQuery.isFetching}
             summaryOnly
           />
           <ResourceTable
             columns={columns}
             data={filteredEvents}
-            isLoading={eventsQuery.isLoading}
+            isLoading={eventsQuery.isLoading || eventsQuery.isFetching}
+            loadingLabel="Loading flood history"
             isError={eventsQuery.isError}
             onRetry={() => eventsQuery.refetch()}
             emptyTitle="No flood events recorded yet"
@@ -276,7 +277,7 @@ export default function AdminFloodEventsPage() {
                 <FloodEventEditorDialog
                   event={event}
                   areas={areasQuery.data ?? []}
-                  areasLoading={areasQuery.isLoading}
+                  areasLoading={areasQuery.isFetching}
                   areasError={areasQuery.isError}
                   onRetryAreas={() => areasQuery.refetch()}
                   isSubmitting={updateMutation.isPending}
@@ -306,7 +307,7 @@ export default function AdminFloodEventsPage() {
         </div>
         <FloodHistoryInsights
           events={filteredEvents}
-          isLoading={eventsQuery.isLoading}
+          isLoading={eventsQuery.isLoading || eventsQuery.isFetching}
           hideSummary
         />
       </div>

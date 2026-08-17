@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 from factories import get_area, make_household
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from src.core.deps import AuthenticatedUser
 from src.core.errors import ConflictError, NotFoundError
@@ -19,6 +19,7 @@ from src.core.security import create_access_token
 from src.modules.evacuation import service
 from src.modules.evacuation.models import EmergencyEvent
 from src.modules.evacuation.schemas import EmergencyEventDeclare
+from src.modules.safety.models import UnregisteredPerson
 
 
 def _actor(user) -> AuthenticatedUser:
@@ -136,6 +137,13 @@ async def test_workspace_authorization_and_bhw_area_scope(client, session, demo_
         actor=admin,
         ip=None,
     )
+    walk_in = UnregisteredPerson(
+        event_id=event.id,
+        full_name="Workspace Walk-In",
+        location=func.ST_SetSRID(func.ST_MakePoint(121.1315, 14.7415), 4326),
+        is_child=True,
+    )
+    session.add(walk_in)
     await session.commit()
     path = f"/api/v1/admin/emergency-events/{event.id}/workspace"
 
@@ -149,6 +157,10 @@ async def test_workspace_authorization_and_bhw_area_scope(client, session, demo_
     assert str(hidden_household.id) in {
         row["household_id"] for row in admin_response.json()["households"]
     }
+    walk_in_pin = next(
+        row for row in admin_response.json()["unregistered_pins"] if row["id"] == str(walk_in.id)
+    )
+    assert walk_in_pin["vulnerability_flags"] == ["is_child"]
 
     bhw_response = await client.get(path, headers=auth("bhw"))
     assert bhw_response.status_code == 200
@@ -240,4 +252,3 @@ async def test_delete_event_removes_record(admin_client, session, demo_users):
     # Verify event is deleted
     get_res = await admin_client.get(f"/api/v1/admin/emergency-events/{event.id}")
     assert get_res.status_code == 404
-

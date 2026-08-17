@@ -552,6 +552,40 @@ export interface paths {
         patch: operations["update_my_household_api_v1_me_household_patch"];
         trace?: never;
     };
+    "/api/v1/me/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resident household dashboard read model */
+        get: operations["get_my_dashboard_api_v1_me_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resident household operational history */
+        get: operations["get_my_history_api_v1_me_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/household/members": {
         parameters: {
             query?: never;
@@ -585,6 +619,41 @@ export interface paths {
         head?: never;
         /** Update a member in the caller's household */
         patch: operations["update_my_member_api_v1_me_household_members__member_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/me/rescue-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My rescue requests */
+        get: operations["me_list_rescue_requests_api_v1_me_rescue_requests_get"];
+        put?: never;
+        /** Ask for rescue from an authenticated household (FR-SAF-022) */
+        post: operations["me_create_rescue_request_api_v1_me_rescue_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/rescue-requests/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My rescue request */
+        get: operations["me_get_rescue_request_api_v1_me_rescue_requests__request_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/me/safety": {
@@ -628,10 +697,149 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** My incident reports */
+        get: operations["me_list_incident_reports_api_v1_me_incident_reports_get"];
         put?: never;
         /** Report an incident (FR-SAF-015) */
         post: operations["me_create_incident_report_api_v1_me_incident_reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/incident-reports/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My incident report */
+        get: operations["me_get_incident_report_api_v1_me_incident_reports__report_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/evacuation-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get citizen active evacuation status and history */
+        get: operations["portal_evacuation_status_api_v1_me_evacuation_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/go-bag": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My household go-bag checklist */
+        get: operations["me_go_bag_api_v1_me_go_bag_get"];
+        /** Me Replace Go Bag */
+        put: operations["me_replace_go_bag_api_v1_me_go_bag_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/family-emergency-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My household family emergency plan */
+        get: operations["me_family_plan_api_v1_me_family_emergency_plan_get"];
+        /** Me Upsert Family Plan */
+        put: operations["me_upsert_family_plan_api_v1_me_family_emergency_plan_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Me Notifications */
+        get: operations["me_notifications_api_v1_me_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Me Notification Count */
+        get: operations["me_notification_count_api_v1_me_notifications_unread_count_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notifications/{notification_id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Me Mark Notification Read */
+        patch: operations["me_mark_notification_read_api_v1_me_notifications__notification_id__read_patch"];
+        trace?: never;
+    };
+    "/api/v1/me/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Me Mark All Notifications Read */
+        post: operations["me_mark_all_notifications_read_api_v1_me_notifications_read_all_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1388,23 +1596,6 @@ export interface paths {
         };
         /** List check-ins for an evacuation center */
         get: operations["admin_list_center_checkins_api_v1_admin_evacuation_centers__center_id__check_ins_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/portal/evacuation-status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get citizen active evacuation status and history */
-        get: operations["portal_evacuation_status_api_v1_admin_portal_evacuation_status_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2217,9 +2408,7 @@ export interface components {
             is_upcoming: boolean;
             cover_image?: components["schemas"]["ArticleImageOut"] | null;
             /** Body Json */
-            body_json: {
-                [key: string]: unknown;
-            };
+            body_json: Record<string, never>;
             /** Images */
             images: components["schemas"]["ArticleImageOut"][];
         };
@@ -2233,9 +2422,7 @@ export interface components {
              */
             excerpt: string;
             /** Body Json */
-            body_json?: {
-                [key: string]: unknown;
-            };
+            body_json?: Record<string, never>;
             /**
              * Type
              * @enum {string}
@@ -2306,9 +2493,7 @@ export interface components {
             is_active: boolean;
             cover_image?: components["schemas"]["ArticleImageOut"] | null;
             /** Body Json */
-            body_json: {
-                [key: string]: unknown;
-            };
+            body_json: Record<string, never>;
             /** Images */
             images: components["schemas"]["ArticleImageOut"][];
             /** Area Ids */
@@ -2668,9 +2853,7 @@ export interface components {
             is_active: boolean;
             cover_image?: components["schemas"]["ArticleImageOut"] | null;
             /** Body Json */
-            body_json: {
-                [key: string]: unknown;
-            };
+            body_json: Record<string, never>;
             /** Images */
             images: components["schemas"]["ArticleImageOut"][];
         };
@@ -2693,9 +2876,7 @@ export interface components {
              */
             excerpt: string;
             /** Body Json */
-            body_json?: {
-                [key: string]: unknown;
-            };
+            body_json?: Record<string, never>;
             /** Instruction */
             instruction?: string | null;
             /**
@@ -2912,9 +3093,7 @@ export interface components {
             archived_at: string | null;
             cover_image?: components["schemas"]["ArticleImageOut"] | null;
             /** Body Json */
-            body_json: {
-                [key: string]: unknown;
-            };
+            body_json: Record<string, never>;
             /** Images */
             images: components["schemas"]["ArticleImageOut"][];
         };
@@ -2928,9 +3107,7 @@ export interface components {
              */
             excerpt: string;
             /** Body Json */
-            body_json?: {
-                [key: string]: unknown;
-            };
+            body_json?: Record<string, never>;
             /** Event Id */
             event_id?: string | null;
             /** Organizer Name */
@@ -3299,6 +3476,31 @@ export interface components {
             /** Evac Center Id */
             evac_center_id?: string | null;
         };
+        /** FamilyEmergencyPlanIn */
+        FamilyEmergencyPlanIn: {
+            /** Meeting Point */
+            meeting_point?: string | null;
+            /** Out Of Area Contact */
+            out_of_area_contact?: string | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** FamilyEmergencyPlanOut */
+        FamilyEmergencyPlanOut: {
+            /** Meeting Point */
+            meeting_point?: string | null;
+            /** Out Of Area Contact */
+            out_of_area_contact?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Household Id
+             * Format: uuid
+             */
+            household_id: string;
+            /** Updated At */
+            updated_at?: string | null;
+        };
         /** FaqIn */
         FaqIn: {
             /** Question Fil */
@@ -3364,6 +3566,43 @@ export interface components {
                 number,
                 number
             ];
+        };
+        /** GoBagItemOut */
+        GoBagItemOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name Fil */
+            name_fil: string;
+            /** Name En */
+            name_en: string;
+            /** Category */
+            category: string;
+            /** Is Essential */
+            is_essential: boolean;
+            /** Sort Order */
+            sort_order: number;
+            /** Has Item */
+            has_item: boolean;
+        };
+        /** GoBagOut */
+        GoBagOut: {
+            /**
+             * Household Id
+             * Format: uuid
+             */
+            household_id: string;
+            /** Checked Item Ids */
+            checked_item_ids?: string[];
+            /** Items */
+            items?: components["schemas"]["GoBagItemOut"][];
+        };
+        /** GoBagUpdateIn */
+        GoBagUpdateIn: {
+            /** Checked Item Ids */
+            checked_item_ids?: string[];
         };
         /** GuideIn */
         GuideIn: {
@@ -4219,6 +4458,32 @@ export interface components {
             event: components["schemas"]["PublicEmergencyEvent"] | null;
             household: components["schemas"]["HouseholdSafetyOut"] | null;
         };
+        /** NotificationOut */
+        NotificationOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "alert" | "rescue_update" | "incident_update" | "system";
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+            /** Link Path */
+            link_path: string | null;
+            /** Read At */
+            read_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** Page[AdminFloodEvent] */
         Page_AdminFloodEvent_: {
             /** Items */
@@ -4262,6 +4527,19 @@ export interface components {
         Page_IncidentReportOut_: {
             /** Items */
             items: components["schemas"]["IncidentReportOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
+        };
+        /** Page[NotificationOut] */
+        Page_NotificationOut_: {
+            /** Items */
+            items: components["schemas"]["NotificationOut"][];
             /** Total */
             total: number;
             /** Page */
@@ -4366,6 +4644,32 @@ export interface components {
         Page_RescueRequestOut_: {
             /** Items */
             items: components["schemas"]["RescueRequestOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
+        };
+        /** Page[ResidentIncidentReportOut] */
+        Page_ResidentIncidentReportOut_: {
+            /** Items */
+            items: components["schemas"]["ResidentIncidentReportOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Pages */
+            pages: number;
+        };
+        /** Page[ResidentRescueRequestOut] */
+        Page_ResidentRescueRequestOut_: {
+            /** Items */
+            items: components["schemas"]["ResidentRescueRequestOut"][];
             /** Total */
             total: number;
             /** Page */
@@ -5230,9 +5534,7 @@ export interface components {
             /** Bhw Assisted Households */
             bhw_assisted_households: number;
             /** Areas */
-            areas: {
-                [key: string]: unknown;
-            }[];
+            areas: Record<string, never>[];
         };
         /**
          * RescueRequestAck
@@ -5430,6 +5732,106 @@ export interface components {
             description: string;
             /** People Count */
             people_count?: number | null;
+        };
+        /**
+         * ResidentDashboardOut
+         * @description Compact resident read model; every nested record belongs to the caller.
+         */
+        ResidentDashboardOut: {
+            household: components["schemas"]["HouseholdDetailOut"];
+            history: components["schemas"]["HouseholdActivityOut"];
+        };
+        /** ResidentIncidentReportOut */
+        ResidentIncidentReportOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Event Id */
+            event_id: string | null;
+            /** Event Name */
+            event_name: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "flooding" | "fire" | "fallen_tree" | "road_blockage" | "landslide" | "power_outage" | "other";
+            /** Description */
+            description: string;
+            location: components["schemas"]["GeoJsonPoint"] | null;
+            /** Location Note */
+            location_note: string | null;
+            /** Photo Url */
+            photo_url: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "verified" | "in_progress" | "resolved" | "dismissed";
+            /** Verified At */
+            verified_at: string | null;
+            /** Dismissal Reason */
+            dismissal_reason: string | null;
+            /** Resolved At */
+            resolved_at: string | null;
+            /** Resolution Note */
+            resolution_note: string | null;
+        };
+        /**
+         * ResidentRescueRequestOut
+         * @description Resident-safe request view — never exposes queue priority or assignment.
+         */
+        ResidentRescueRequestOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Event Id */
+            event_id: string | null;
+            /** Event Name */
+            event_name: string | null;
+            /** Requester Name */
+            requester_name: string;
+            /** Contact Number */
+            contact_number: string | null;
+            location: components["schemas"]["GeoJsonPoint"] | null;
+            /** Location Note */
+            location_note: string | null;
+            /** Description */
+            description: string;
+            /** People Count */
+            people_count: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "verified" | "dispatched" | "resolved" | "dismissed";
+            /** Resolved At */
+            resolved_at: string | null;
+            /** Resolution Note */
+            resolution_note: string | null;
         };
         /** ResponseTimelineEntry */
         ResponseTimelineEntry: {
@@ -5648,9 +6050,7 @@ export interface components {
              */
             created_at: string;
             /** Changes */
-            changes?: {
-                [key: string]: unknown;
-            } | null;
+            changes?: Record<string, never> | null;
         };
         /** SirenDrillResult */
         SirenDrillResult: {
@@ -6955,6 +7355,46 @@ export interface operations {
             };
         };
     };
+    get_my_dashboard_api_v1_me_dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResidentDashboardOut"];
+                };
+            };
+        };
+    };
+    get_my_history_api_v1_me_history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdActivityOut"];
+                };
+            };
+        };
+    };
     add_my_member_api_v1_me_household_members_post: {
         parameters: {
             query?: never;
@@ -7056,6 +7496,102 @@ export interface operations {
             };
         };
     };
+    me_list_rescue_requests_api_v1_me_rescue_requests_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ResidentRescueRequestOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    me_create_rescue_request_api_v1_me_rescue_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RescueRequestPublicIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RescueRequestAck"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    me_get_rescue_request_api_v1_me_rescue_requests__request_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResidentRescueRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     my_safety_api_v1_me_safety_get: {
         parameters: {
             query?: {
@@ -7120,6 +7656,38 @@ export interface operations {
             };
         };
     };
+    me_list_incident_reports_api_v1_me_incident_reports_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ResidentIncidentReportOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     me_create_incident_report_api_v1_me_incident_reports_post: {
         parameters: {
             query?: never;
@@ -7149,6 +7717,271 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    me_get_incident_report_api_v1_me_incident_reports__report_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResidentIncidentReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    portal_evacuation_status_api_v1_me_evacuation_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalEvacuationStatusOut"];
+                };
+            };
+        };
+    };
+    me_go_bag_api_v1_me_go_bag_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoBagOut"];
+                };
+            };
+        };
+    };
+    me_replace_go_bag_api_v1_me_go_bag_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoBagUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoBagOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    me_family_plan_api_v1_me_family_emergency_plan_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FamilyEmergencyPlanOut"];
+                };
+            };
+        };
+    };
+    me_upsert_family_plan_api_v1_me_family_emergency_plan_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FamilyEmergencyPlanIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FamilyEmergencyPlanOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    me_notifications_api_v1_me_notifications_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                unread_only?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_NotificationOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    me_notification_count_api_v1_me_notifications_unread_count_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
+                };
+            };
+        };
+    };
+    me_mark_notification_read_api_v1_me_notifications__notification_id__read_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    me_mark_all_notifications_read_api_v1_me_notifications_read_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
                 };
             };
         };
@@ -9315,26 +10148,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    portal_evacuation_status_api_v1_admin_portal_evacuation_status_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PortalEvacuationStatusOut"];
                 };
             };
         };

@@ -8,15 +8,11 @@ import dynamic from "next/dynamic";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  ArrowLeft,
-  CheckCircle2,
-  MapPin,
-  Trash2,
-} from "lucide-react";
+import { ArrowLeft, CheckCircle2, MapPin, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/common/button";
+import { FormFieldsSkeleton } from "@/components/common/portal-loading";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type {
@@ -66,10 +62,13 @@ export default function EditSirenPage() {
   const sirenId = params.id as string;
   const [autoAreaName, setAutoAreaName] = React.useState<string | null>(null);
 
-  const { data: siren, isLoading, isError } = useQuery({
+  const {
+    data: siren,
+    isFetching,
+    isError,
+  } = useQuery({
     queryKey: ["admin", "sirens", sirenId],
-    queryFn: () =>
-      api.get<SirenDetail>(`/admin/sirens/${sirenId}`).then((r) => r.data),
+    queryFn: () => api.get<SirenDetail>(`/admin/sirens/${sirenId}`).then((r) => r.data),
   });
 
   const { data: areas = [] } = useQuery({
@@ -103,9 +102,7 @@ export default function EditSirenPage() {
         area_id: siren.area_id ?? null,
       });
       const initialArea =
-        siren.area_name ||
-        areas.find((a) => a.id === siren.area_id)?.name ||
-        null;
+        siren.area_name || areas.find((a) => a.id === siren.area_id)?.name || null;
       setAutoAreaName(initialArea);
     }
   }, [siren, areas, reset]);
@@ -133,8 +130,7 @@ export default function EditSirenPage() {
   );
 
   const updateMutation = useMutation({
-    mutationFn: (values: FormValues) =>
-      api.patch(`/admin/sirens/${sirenId}`, values),
+    mutationFn: (values: FormValues) => api.patch(`/admin/sirens/${sirenId}`, values),
     onSuccess: () => {
       toast.success("Siren station updated successfully!");
       queryClient.invalidateQueries({ queryKey: ["admin", "sirens", sirenId] });
@@ -162,13 +158,8 @@ export default function EditSirenPage() {
     await updateMutation.mutateAsync(values);
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="size-8 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
-      </div>
-    );
-  }
+  if (isFetching)
+    return <FormFieldsSkeleton label="Loading siren unit editor" fields={7} />;
 
   if (isError || !siren) {
     return (
@@ -189,7 +180,7 @@ export default function EditSirenPage() {
       <div className="flex items-center justify-between border-b border-slate-200/80 pb-4">
         <Link
           href={`/admin/sirens/${sirenId}`}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 hover:text-emerald-950 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 transition-colors hover:text-emerald-950"
         >
           <ArrowLeft className="size-3.5" />
           Back to Siren Details
@@ -201,7 +192,8 @@ export default function EditSirenPage() {
           Edit Early Warning Siren Unit
         </h1>
         <p className="text-xs text-slate-500">
-          Update the station name or re-pin the acoustic propagation coordinates on the map.
+          Update the station name or re-pin the acoustic propagation coordinates on the
+          map.
         </p>
       </div>
 
@@ -211,7 +203,7 @@ export default function EditSirenPage() {
       >
         {/* Left Form Column */}
         <div className="flex flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-7">
-          <h3 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-3">
+          <h3 className="border-b border-slate-100 pb-3 text-sm font-bold text-slate-900">
             Siren Station Profile
           </h3>
 
@@ -232,20 +224,21 @@ export default function EditSirenPage() {
             )}
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 flex flex-col gap-2">
-            <span className="text-[10.5px] uppercase font-bold tracking-wider text-slate-500">
+          <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <span className="text-[10.5px] font-bold tracking-wider text-slate-500 uppercase">
               Assigned Area Division (Auto-Geocoded)
             </span>
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-slate-900">
                 {autoAreaName || "Auto-detecting Area…"}
               </span>
-              <span className="text-[11px] text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
                 Auto-assigned
               </span>
             </div>
             <p className="text-[11px] text-slate-500">
-              Area division is automatically assigned based on the pin location within official Barangay San Jose GIS boundaries.
+              Area division is automatically assigned based on the pin location within
+              official Barangay San Jose GIS boundaries.
             </p>
           </div>
 
@@ -262,7 +255,7 @@ export default function EditSirenPage() {
                   deleteMutation.mutate();
                 }
               }}
-              className="h-10 gap-1.5 border-rose-200 bg-rose-50 text-xs font-bold text-rose-700 hover:bg-rose-100 cursor-pointer"
+              className="h-10 cursor-pointer gap-1.5 border-rose-200 bg-rose-50 text-xs font-bold text-rose-700 hover:bg-rose-100"
             >
               <Trash2 className="size-3.5" />
               Delete Siren
@@ -270,7 +263,11 @@ export default function EditSirenPage() {
 
             <div className="flex items-center gap-3">
               <Link href={`/admin/sirens/${sirenId}`}>
-                <Button type="button" variant="outline" className="h-10 px-5 text-xs font-bold cursor-pointer">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 cursor-pointer px-5 text-xs font-bold"
+                >
                   Cancel
                 </Button>
               </Link>
@@ -278,7 +275,7 @@ export default function EditSirenPage() {
                 type="submit"
                 variant="primary"
                 disabled={isSubmitting}
-                className="h-10 bg-emerald-600 px-6 text-xs font-bold text-white hover:bg-emerald-700 shadow-md cursor-pointer"
+                className="h-10 cursor-pointer bg-emerald-600 px-6 text-xs font-bold text-white shadow-md hover:bg-emerald-700"
               >
                 {isSubmitting ? "Saving…" : "Save Changes"}
               </Button>
@@ -288,9 +285,9 @@ export default function EditSirenPage() {
 
         {/* Right Map Pinning Column (Strictly interactive placement) */}
         <div className="flex flex-col gap-5 lg:col-span-5">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col gap-3">
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
-              <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+              <h4 className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-slate-700 uppercase">
                 <MapPin className="size-3.5 text-emerald-700" />
                 Siren Pin Location *
               </h4>

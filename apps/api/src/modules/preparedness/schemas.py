@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 HazardType = Literal["flood", "earthquake", "typhoon", "fire", "landslide", "general", "food"]
 GuidePhase = Literal["before", "during", "after", "n/a"]
@@ -87,3 +87,34 @@ class FaqIn(BaseModel):
     category: str = "general"
     sort_order: int = 0
     is_published: bool = True
+
+
+class GoBagItemOut(BaseModel):
+    id: uuid.UUID
+    name_fil: str
+    name_en: str
+    category: str
+    is_essential: bool
+    sort_order: int
+    has_item: bool
+
+
+class GoBagOut(BaseModel):
+    household_id: uuid.UUID
+    checked_item_ids: list[uuid.UUID] = Field(default_factory=list)
+    items: list[GoBagItemOut] = Field(default_factory=list)
+
+
+class GoBagUpdateIn(BaseModel):
+    checked_item_ids: list[uuid.UUID] = Field(default_factory=list)
+
+
+class FamilyEmergencyPlanIn(BaseModel):
+    meeting_point: str | None = Field(default=None, max_length=300)
+    out_of_area_contact: str | None = Field(default=None, max_length=300)
+    notes: str | None = Field(default=None, max_length=2000)
+
+
+class FamilyEmergencyPlanOut(FamilyEmergencyPlanIn):
+    household_id: uuid.UUID
+    updated_at: datetime | None = None

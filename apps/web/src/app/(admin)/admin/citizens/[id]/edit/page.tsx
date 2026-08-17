@@ -5,6 +5,7 @@ import type { Route } from "next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { FormFieldsSkeleton } from "@/components/common/portal-loading";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { RegistryMemberForm } from "@/components/features/admin/registry-member-form";
 import { api, toDisplayError } from "@/lib/api/client";
@@ -19,7 +20,8 @@ export default function EditCitizenPage() {
 
   const citizen = useQuery({
     queryKey: ["admin", "citizen", id],
-    queryFn: () => api.get<RegistryMemberDetailOut>(`/admin/members/${id}`).then((r) => r.data),
+    queryFn: () =>
+      api.get<RegistryMemberDetailOut>(`/admin/members/${id}`).then((r) => r.data),
   });
 
   const save = useMutation({
@@ -36,9 +38,14 @@ export default function EditCitizenPage() {
     },
   });
 
-  if (citizen.isLoading) return <div className="min-h-64 animate-pulse rounded-2xl bg-white" />;
+  if (citizen.isFetching)
+    return <FormFieldsSkeleton label="Loading citizen editor" fields={8} />;
   if (!citizen.data)
-    return <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">Citizen could not be loaded.</div>;
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">
+        Citizen could not be loaded.
+      </div>
+    );
 
   const linkedHead = citizen.data.is_head && Boolean(citizen.data.household_head_user_id);
 

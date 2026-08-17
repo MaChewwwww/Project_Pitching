@@ -40,6 +40,8 @@ from src.modules.safety.schemas import (
     RescueRequestPatch,
     RescueRequestPublicIn,
     RescueRequestStatus,
+    ResidentIncidentReportOut,
+    ResidentRescueRequestOut,
     SafetyLedgerPageOut,
     SafetyStatusAdminIn,
     SafetyStatusSelfIn,
@@ -80,6 +82,38 @@ async def public_rescue_request(
 ) -> RescueRequestAck:
     return await service.create_public_rescue_request(
         session, body=body, source_ip=_client_ip(request)
+    )
+
+
+@me_router.post(
+    "/rescue-requests",
+    dependencies=[Depends(require_role("head"))],
+    status_code=201,
+    summary="Ask for rescue from an authenticated household (FR-SAF-022)",
+)
+async def me_create_rescue_request(
+    body: RescueRequestPublicIn, request: Request, session: DbSessionDep, user: CurrentUser
+) -> RescueRequestAck:
+    return await service.create_authenticated_rescue_request(
+        session, body=body, actor=user, source_ip=_client_ip(request)
+    )
+
+
+@me_router.get("/rescue-requests", summary="My rescue requests")
+async def me_list_rescue_requests(
+    session: DbSessionDep, user: CurrentUser, page: int = 1, size: int = 20
+) -> Page[ResidentRescueRequestOut]:
+    return await service.list_resident_rescue_requests(
+        session, user_id=user.id, page=page, size=size
+    )
+
+
+@me_router.get("/rescue-requests/{request_id}", summary="My rescue request")
+async def me_get_rescue_request(
+    request_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> ResidentRescueRequestOut:
+    return await service.get_resident_rescue_request(
+        session, request_id=request_id, user_id=user.id
     )
 
 
@@ -299,6 +333,22 @@ async def me_create_incident_report(
     return await service.create_incident_report(
         session, body=body, photo=photo, actor=user, ip=_client_ip(request)
     )
+
+
+@me_router.get("/incident-reports", summary="My incident reports")
+async def me_list_incident_reports(
+    session: DbSessionDep, user: CurrentUser, page: int = 1, size: int = 20
+) -> Page[ResidentIncidentReportOut]:
+    return await service.list_resident_incident_reports(
+        session, user_id=user.id, page=page, size=size
+    )
+
+
+@me_router.get("/incident-reports/{report_id}", summary="My incident report")
+async def me_get_incident_report(
+    report_id: uuid.UUID, session: DbSessionDep, user: CurrentUser
+) -> ResidentIncidentReportOut:
+    return await service.get_resident_incident_report(session, report_id=report_id, user_id=user.id)
 
 
 @admin_router.get(

@@ -39,46 +39,44 @@ import { cn } from "@/lib/utils";
 
 /** Emergency hotline directory (FR-SYS-014, FR-PUB-007). Admin and SK officer. */
 
-const TYPE_CONFIG: Record<
-  string,
-  { label: string; icon: typeof Phone; badge: string }
-> = {
-  barangay: {
-    label: "Barangay / BHERT",
-    icon: Building2,
-    badge: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  },
-  mdrrmo: {
-    label: "MDRRMO / Disaster",
-    icon: ShieldAlert,
-    badge: "bg-rose-100 text-rose-800 border-rose-200",
-  },
-  police: {
-    label: "Police (PNP)",
-    icon: ShieldAlert,
-    badge: "bg-blue-100 text-blue-800 border-blue-200",
-  },
-  fire: {
-    label: "Fire Station (BFP)",
-    icon: Flame,
-    badge: "bg-amber-100 text-amber-800 border-amber-200",
-  },
-  hospital: {
-    label: "Hospital / Medical",
-    icon: Stethoscope,
-    badge: "bg-teal-100 text-teal-800 border-teal-200",
-  },
-  ambulance: {
-    label: "Ambulance / Health",
-    icon: Ambulance,
-    badge: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  },
-  rescue: {
-    label: "Emergency / Rescue",
-    icon: LifeBuoy,
-    badge: "bg-purple-100 text-purple-800 border-purple-200",
-  },
-};
+const TYPE_CONFIG: Record<string, { label: string; icon: typeof Phone; badge: string }> =
+  {
+    barangay: {
+      label: "Barangay / BHERT",
+      icon: Building2,
+      badge: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    },
+    mdrrmo: {
+      label: "MDRRMO / Disaster",
+      icon: ShieldAlert,
+      badge: "bg-rose-100 text-rose-800 border-rose-200",
+    },
+    police: {
+      label: "Police (PNP)",
+      icon: ShieldAlert,
+      badge: "bg-blue-100 text-blue-800 border-blue-200",
+    },
+    fire: {
+      label: "Fire Station (BFP)",
+      icon: Flame,
+      badge: "bg-amber-100 text-amber-800 border-amber-200",
+    },
+    hospital: {
+      label: "Hospital / Medical",
+      icon: Stethoscope,
+      badge: "bg-teal-100 text-teal-800 border-teal-200",
+    },
+    ambulance: {
+      label: "Ambulance / Health",
+      icon: Ambulance,
+      badge: "bg-indigo-100 text-indigo-800 border-indigo-200",
+    },
+    rescue: {
+      label: "Emergency / Rescue",
+      icon: LifeBuoy,
+      badge: "bg-purple-100 text-purple-800 border-purple-200",
+    },
+  };
 
 function CopyNumberButton({ number }: { number: string }) {
   const [copied, setCopied] = React.useState(false);
@@ -100,13 +98,17 @@ function CopyNumberButton({ number }: { number: string }) {
       title={copied ? "Copied!" : `Copy ${number}`}
       aria-label={copied ? "Copied" : `Copy ${number}`}
       className={cn(
-        "grid size-6 place-items-center rounded-md transition-colors cursor-pointer shrink-0",
+        "grid size-6 shrink-0 cursor-pointer place-items-center rounded-md transition-colors",
         copied
-          ? "bg-emerald-100 text-emerald-700 border border-emerald-300"
-          : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-neutral-900 border border-neutral-200/80",
+          ? "border border-emerald-300 bg-emerald-100 text-emerald-700"
+          : "border border-neutral-200/80 bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-neutral-900",
       )}
     >
-      {copied ? <Check className="size-3 text-emerald-700" /> : <Copy className="size-3" />}
+      {copied ? (
+        <Check className="size-3 text-emerald-700" />
+      ) : (
+        <Copy className="size-3" />
+      )}
     </button>
   );
 }
@@ -115,7 +117,7 @@ export default function AdminHotlinesPage() {
   useRequireRole("admin", "sk");
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["admin", "hotlines"],
     queryFn: () => api.get<HotlineEntity[]>("/admin/hotlines").then((r) => r.data),
   });
@@ -187,11 +189,11 @@ export default function AdminHotlinesPage() {
 
         return (
           <div className="flex items-center gap-3">
-            <div className="grid size-9 place-items-center rounded-xl bg-neutral-100 text-neutral-700 border border-neutral-200/80 shrink-0">
+            <div className="grid size-9 shrink-0 place-items-center rounded-xl border border-neutral-200/80 bg-neutral-100 text-neutral-700">
               <Icon className="size-4.5" />
             </div>
             <div className="flex flex-col gap-0.5">
-              <span className="font-bold text-neutral-900 line-clamp-1">{row.label}</span>
+              <span className="line-clamp-1 font-bold text-neutral-900">{row.label}</span>
               <span className="text-[11px] font-medium text-neutral-500">
                 {config.label} • Order #{row.sort_order ?? 0}
               </span>
@@ -205,7 +207,7 @@ export default function AdminHotlinesPage() {
       header: "Callable Phone Number",
       render: (row) => (
         <div className="flex items-center gap-2">
-          <span className="font-mono text-xs font-bold text-neutral-900 tracking-tight">
+          <span className="font-mono text-xs font-bold tracking-tight text-neutral-900">
             {row.number}
           </span>
           <CopyNumberButton number={row.number} />
@@ -225,7 +227,7 @@ export default function AdminHotlinesPage() {
         return (
           <span
             className={cn(
-              "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide border",
+              "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold tracking-wide",
               config.badge,
             )}
           >
@@ -240,10 +242,10 @@ export default function AdminHotlinesPage() {
       render: (row) => (
         <span
           className={cn(
-            "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide border",
+            "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold tracking-wide",
             row.is_active
-              ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-              : "bg-neutral-100 text-neutral-600 border-neutral-200",
+              ? "border-emerald-200 bg-emerald-100 text-emerald-800"
+              : "border-neutral-200 bg-neutral-100 text-neutral-600",
           )}
         >
           {row.is_active ? "Active" : "Inactive"}
@@ -271,7 +273,7 @@ export default function AdminHotlinesPage() {
         {/* Card 1: Active Callable Lines */}
         <div className="flex flex-col justify-between rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-white via-emerald-50/20 to-teal-50/30 p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-900">
+            <span className="text-xs font-bold tracking-wider text-emerald-900 uppercase">
               Active Hotlines
             </span>
             <div className="grid size-9 place-items-center rounded-xl bg-emerald-100/80 text-emerald-700 shadow-2xs">
@@ -293,7 +295,7 @@ export default function AdminHotlinesPage() {
         {/* Card 2: Municipal & Disaster Response */}
         <div className="flex flex-col justify-between rounded-2xl border border-rose-200/80 bg-gradient-to-br from-white via-rose-50/20 to-orange-50/20 p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-rose-900">
+            <span className="text-xs font-bold tracking-wider text-rose-900 uppercase">
               Emergency & Municipal
             </span>
             <div className="grid size-9 place-items-center rounded-xl bg-rose-100 text-rose-700 shadow-2xs">
@@ -315,7 +317,7 @@ export default function AdminHotlinesPage() {
         {/* Card 3: Barangay & Area Lines */}
         <div className="flex flex-col justify-between rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white via-teal-50/20 to-emerald-50/30 p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-teal-900">
+            <span className="text-xs font-bold tracking-wider text-teal-900 uppercase">
               Barangay & Area Lines
             </span>
             <div className="grid size-9 place-items-center rounded-xl bg-teal-100 text-teal-700 shadow-2xs">
@@ -337,7 +339,7 @@ export default function AdminHotlinesPage() {
         {/* Card 4: Directory Total & Health */}
         <div className="flex flex-col justify-between rounded-2xl border border-neutral-200 bg-white p-4.5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-neutral-700">
+            <span className="text-xs font-bold tracking-wider text-neutral-700 uppercase">
               Directory Ledger
             </span>
             <div className="grid size-9 place-items-center rounded-xl bg-neutral-100 text-neutral-700 shadow-2xs">
@@ -346,13 +348,13 @@ export default function AdminHotlinesPage() {
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <div className="flex flex-col items-center justify-center rounded-lg border border-emerald-200/70 bg-emerald-50 px-2 py-1.5 text-emerald-900">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+              <span className="text-[10px] font-bold tracking-wider text-emerald-700 uppercase">
                 Active
               </span>
               <span className="text-base font-black">{metrics.active}</span>
             </div>
             <div className="flex flex-col items-center justify-center rounded-lg border border-neutral-200/70 bg-neutral-100 px-2 py-1.5 text-neutral-800">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-600">
+              <span className="text-[10px] font-bold tracking-wider text-neutral-600 uppercase">
                 Inactive
               </span>
               <span className="text-base font-black">{metrics.inactive}</span>
@@ -364,7 +366,8 @@ export default function AdminHotlinesPage() {
       <ResourceTable
         columns={columns}
         data={data}
-        isLoading={isLoading}
+        isLoading={isLoading || isFetching}
+        loadingLabel="Loading hotlines"
         isError={isError}
         onRetry={() => refetch()}
         searchPlaceholder="Search hotline label, phone number, category, or area..."
@@ -415,7 +418,7 @@ export default function AdminHotlinesPage() {
                 <Button
                   size="sm"
                   variant="warning"
-                  className="h-8 rounded-lg border border-amber-300/80 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 transition-colors px-2.5 gap-1.5 font-semibold text-xs cursor-pointer"
+                  className="h-8 cursor-pointer gap-1.5 rounded-lg border border-amber-300/80 bg-amber-50 px-2.5 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-100 hover:text-amber-800"
                   title="Edit hotline"
                   aria-label="Edit hotline"
                 >

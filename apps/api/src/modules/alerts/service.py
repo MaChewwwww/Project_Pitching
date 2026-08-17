@@ -28,6 +28,7 @@ from src.modules.alerts.schemas import (
     PublicAnnouncement,
 )
 from src.modules.geo.models import Area
+from src.modules.notifications import service as notification_service
 from src.modules.users.models import User
 
 
@@ -52,6 +53,36 @@ async def _images(session: AsyncSession, announcement_id: uuid.UUID) -> list[Ann
         .scalars()
         .all()
     )
+
+
+async def _notify_heads_of_published_alert(
+    session: AsyncSession, announcement: Announcement
+) -> None:
+    """Alerts remain human-published; this only fans out the completed action."""
+    if announcement.kind != "alert" or announcement.publication_status != "published":
+        return
+    head_ids = (
+        (
+            await session.execute(
+                select(User.id).where(
+                    User.role == "head", User.status == "active", User.deleted_at.is_(None)
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    for user_id in head_ids:
+        await notification_service.create_notification(
+            session,
+            user_id=user_id,
+            type="alert",
+            title=announcement.title,
+            body=announcement.instruction or announcement.excerpt,
+            link_path=f"/announcements/{announcement.slug}",
+            source_type="announcement_publish",
+            source_id=announcement.id,
+        )
 
 
 async def _area_names_by_announcement(
@@ -257,6 +288,7 @@ async def create_announcement(
     await _apply_areas(session, announcement, data.area_ids)
     if data.publication_status == "published":
         _ensure_publishable(announcement, [])
+    await _notify_heads_of_published_alert(session, announcement)
     await write_audit(
         session,
         actor_user_id=actor_id,
@@ -295,6 +327,7 @@ async def update_announcement(
         announcement.archived_at = now
     announcement.publication_status = data.publication_status
     await _apply_areas(session, announcement, data.area_ids)
+    await _notify_heads_of_published_alert(session, announcement)
     await write_audit(
         session,
         actor_user_id=actor_id,

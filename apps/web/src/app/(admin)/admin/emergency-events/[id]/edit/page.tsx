@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/common/button";
+import { FormFieldsSkeleton } from "@/components/common/portal-loading";
 import { api, toDisplayError } from "@/lib/api/client";
 import type {
   EmergencyEventDetailOut,
@@ -80,18 +81,25 @@ function EditEmergencyEventForm({ event }: { event: EmergencyEventDetailOut }) {
 
   const [name, setName] = React.useState(event.name);
   const [type, setType] = React.useState<EmergencyEventType>(event.type);
-  const [startedAt, setStartedAt] = React.useState(() => toLocalDatetimeString(event.started_at));
-  const [endedAt, setEndedAt] = React.useState(() => toLocalDatetimeString(event.ended_at));
+  const [startedAt, setStartedAt] = React.useState(() =>
+    toLocalDatetimeString(event.started_at),
+  );
+  const [endedAt, setEndedAt] = React.useState(() =>
+    toLocalDatetimeString(event.ended_at),
+  );
   const [isActive, setIsActive] = React.useState(event.is_active);
   const [errors, setErrors] = React.useState<{ name?: string }>({});
 
   const saveMutation = useMutation({
-    mutationFn: (body: EmergencyEventPatch) => api.patch(`/admin/emergency-events/${event.id}`, body),
+    mutationFn: (body: EmergencyEventPatch) =>
+      api.patch(`/admin/emergency-events/${event.id}`, body),
     onSuccess: () => {
       toast.success("Emergency event updated successfully");
       queryClient.invalidateQueries({ queryKey: ["admin", "emergency-event", event.id] });
       queryClient.invalidateQueries({ queryKey: ["admin", "emergency-events"] });
-      queryClient.invalidateQueries({ queryKey: ["admin", "emergency-workspace", event.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["admin", "emergency-workspace", event.id],
+      });
       router.push(`/admin/emergency-events/${event.id}` as Route);
     },
     onError: (error) => toast.error(toDisplayError(error).detail),
@@ -108,7 +116,11 @@ function EditEmergencyEventForm({ event }: { event: EmergencyEventDetailOut }) {
       name: name.trim(),
       type,
       started_at: startedAt ? new Date(startedAt).toISOString() : null,
-      ended_at: !isActive ? (endedAt ? new Date(endedAt).toISOString() : new Date().toISOString()) : null,
+      ended_at: !isActive
+        ? endedAt
+          ? new Date(endedAt).toISOString()
+          : new Date().toISOString()
+        : null,
       is_active: isActive,
     };
 
@@ -116,7 +128,10 @@ function EditEmergencyEventForm({ event }: { event: EmergencyEventDetailOut }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 shadow-sm space-y-6">
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-2xl space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7"
+    >
       {/* Name Input */}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-bold text-slate-900">
@@ -131,19 +146,23 @@ function EditEmergencyEventForm({ event }: { event: EmergencyEventDetailOut }) {
           }}
           placeholder="e.g. Typhoon Carina — Severe Flooding & Evacuation"
           className={cn(
-            "w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 shadow-2xs focus:outline-none focus:ring-2",
+            "w-full rounded-xl border px-3.5 py-2.5 text-xs font-medium text-slate-900 shadow-2xs focus:ring-2 focus:outline-none sm:text-sm",
             errors.name
-              ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/20 bg-rose-50/30"
-              : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/20 bg-white",
+              ? "border-rose-300 bg-rose-50/30 focus:border-rose-500 focus:ring-rose-500/20"
+              : "border-slate-200 bg-white focus:border-emerald-500 focus:ring-emerald-500/20",
           )}
         />
-        {errors.name && <span className="text-[11px] font-bold text-rose-600">{errors.name}</span>}
+        {errors.name && (
+          <span className="text-[11px] font-bold text-rose-600">{errors.name}</span>
+        )}
       </div>
 
       {/* Hazard Classification Grid */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-bold text-slate-900">Hazard / Incident Classification</label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+        <label className="text-xs font-bold text-slate-900">
+          Hazard / Incident Classification
+        </label>
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
           {types.map((t) => {
             const Icon = t.icon;
             const isSelected = type === t.value;
@@ -153,10 +172,10 @@ function EditEmergencyEventForm({ event }: { event: EmergencyEventDetailOut }) {
                 key={t.value}
                 onClick={() => setType(t.value)}
                 className={cn(
-                  "flex items-center gap-2 rounded-xl border p-3 text-xs font-bold transition-all text-left cursor-pointer",
+                  "flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-left text-xs font-bold transition-all",
                   isSelected
-                    ? cn(t.color, "ring-2 ring-emerald-600/30 border-current shadow-xs")
-                    : "border-slate-200 bg-slate-50/60 text-slate-700 hover:bg-slate-100 hover:border-slate-300",
+                    ? cn(t.color, "border-current shadow-xs ring-2 ring-emerald-600/30")
+                    : "border-slate-200 bg-slate-50/60 text-slate-700 hover:border-slate-300 hover:bg-slate-100",
                 )}
               >
                 <Icon className="size-4 shrink-0" />
@@ -168,10 +187,10 @@ function EditEmergencyEventForm({ event }: { event: EmergencyEventDetailOut }) {
       </div>
 
       {/* Status Switcher */}
-      <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
         <div>
           <p className="text-xs font-bold text-slate-900">Operational Emergency Status</p>
-          <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+          <p className="mt-0.5 text-[11px] font-medium text-slate-500">
             {isActive
               ? "Live incident — actively tracked in resident portal and command dashboard"
               : "Concluded archive — saved in historical records ledger"}
@@ -201,16 +220,16 @@ function EditEmergencyEventForm({ event }: { event: EmergencyEventDetailOut }) {
       </div>
 
       {/* Start Date & Time */}
-      <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 flex flex-col gap-2">
+      <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-            <Calendar className="size-3.5 text-emerald-600 shrink-0" />
+          <label className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+            <Calendar className="size-3.5 shrink-0 text-emerald-600" />
             Incident Start Date & Time
           </label>
           <button
             type="button"
             onClick={() => setStartedAt(toLocalDatetimeString(new Date()))}
-            className="text-[11px] font-bold text-emerald-700 hover:underline cursor-pointer flex items-center gap-1"
+            className="flex cursor-pointer items-center gap-1 text-[11px] font-bold text-emerald-700 hover:underline"
           >
             <RefreshCw className="size-3" />
             Set to Now
@@ -220,22 +239,22 @@ function EditEmergencyEventForm({ event }: { event: EmergencyEventDetailOut }) {
           type="datetime-local"
           value={startedAt}
           onChange={(e) => setStartedAt(e.target.value)}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 shadow-2xs focus:border-emerald-500 focus:outline-none"
         />
       </div>
 
       {/* Concluded Date & Time */}
       {!isActive ? (
-        <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 flex flex-col gap-2">
+        <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-              <Calendar className="size-3.5 text-rose-600 shrink-0" />
+            <label className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+              <Calendar className="size-3.5 shrink-0 text-rose-600" />
               Incident Concluded Date & Time
             </label>
             <button
               type="button"
               onClick={() => setEndedAt(toLocalDatetimeString(new Date()))}
-              className="text-[11px] font-bold text-rose-700 hover:underline cursor-pointer flex items-center gap-1"
+              className="flex cursor-pointer items-center gap-1 text-[11px] font-bold text-rose-700 hover:underline"
             >
               <RefreshCw className="size-3" />
               Set to Now
@@ -245,13 +264,13 @@ function EditEmergencyEventForm({ event }: { event: EmergencyEventDetailOut }) {
             type="datetime-local"
             value={endedAt}
             onChange={(e) => setEndedAt(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-rose-500 shadow-2xs"
+            className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 shadow-2xs focus:border-rose-500 focus:outline-none"
           />
         </div>
       ) : null}
 
       {/* Form Actions */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+      <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
         <Button
           type="button"
           variant="outline"
@@ -263,7 +282,7 @@ function EditEmergencyEventForm({ event }: { event: EmergencyEventDetailOut }) {
         <Button
           type="submit"
           disabled={saveMutation.isPending}
-          className="rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md gap-1.5"
+          className="gap-1.5 rounded-xl bg-emerald-700 text-xs font-bold text-white shadow-md hover:bg-emerald-800"
         >
           <Pencil className="size-3.5" />
           <span>{saveMutation.isPending ? "Saving Changes…" : "Save Changes"}</span>
@@ -279,12 +298,14 @@ export default function EditEmergencyEventPage() {
 
   const eventQuery = useQuery({
     queryKey: ["admin", "emergency-event", id],
-    queryFn: () => api.get<EmergencyEventDetailOut>(`/admin/emergency-events/${id}`).then((r) => r.data),
+    queryFn: () =>
+      api
+        .get<EmergencyEventDetailOut>(`/admin/emergency-events/${id}`)
+        .then((r) => r.data),
   });
 
-  if (eventQuery.isLoading) {
-    return <div className="min-h-64 animate-pulse rounded-2xl bg-white" />;
-  }
+  if (eventQuery.isFetching)
+    return <FormFieldsSkeleton label="Loading emergency event editor" fields={8} />;
 
   if (eventQuery.isError || !eventQuery.data) {
     return (
@@ -301,7 +322,7 @@ export default function EditEmergencyEventPage() {
           asChild
           variant="outline"
           size="sm"
-          className="size-9 p-0 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-100 shrink-0"
+          className="size-9 shrink-0 rounded-xl border-slate-200 p-0 text-slate-700 hover:bg-slate-100"
         >
           <Link href={`/admin/emergency-events/${id}` as Route}>
             <ArrowLeft className="size-4" />
@@ -309,17 +330,23 @@ export default function EditEmergencyEventPage() {
         </Button>
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-            <Link href="/admin/emergency-events?tab=events" className="hover:text-emerald-700 hover:underline">
+            <Link
+              href="/admin/emergency-events?tab=events"
+              className="hover:text-emerald-700 hover:underline"
+            >
               Emergency Events
             </Link>
             <span>/</span>
-            <Link href={`/admin/emergency-events/${id}` as Route} className="hover:text-emerald-700 hover:underline">
+            <Link
+              href={`/admin/emergency-events/${id}` as Route}
+              className="hover:text-emerald-700 hover:underline"
+            >
               {eventQuery.data.name}
             </Link>
             <span>/</span>
-            <span className="text-slate-900 font-bold">Edit Details</span>
+            <span className="font-bold text-slate-900">Edit Details</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight leading-tight mt-0.5">
+          <h1 className="mt-0.5 text-xl leading-tight font-black tracking-tight text-slate-950 sm:text-2xl">
             Edit Emergency Event
           </h1>
         </div>

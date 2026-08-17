@@ -40,7 +40,10 @@ import {
 } from "@/components/features/admin/asset-metric-strip";
 import { AdminAssetWorkspaceMap } from "@/components/features/map/admin-asset-workspace-map-dynamic";
 import { CreateEvacuationCenterDialog } from "@/components/features/admin/create-evacuation-center-dialog";
-import { EditEvacuationCenterDialog, type EvacCenterEditable } from "@/components/features/admin/edit-evacuation-center-dialog";
+import {
+  EditEvacuationCenterDialog,
+  type EvacCenterEditable,
+} from "@/components/features/admin/edit-evacuation-center-dialog";
 import { EvacuationCenterDetailsDialog } from "@/components/features/admin/evacuation-center-details-dialog";
 import {
   Select,
@@ -72,14 +75,7 @@ interface EvacCenter {
   is_active?: boolean;
 }
 
-const SAN_JOSE_AREAS = [
-  "Area 1",
-  "Area 2",
-  "Area 3",
-  "Area 4",
-  "Area 5",
-  "Area 6",
-];
+const SAN_JOSE_AREAS = ["Area 1", "Area 2", "Area 3", "Area 4", "Area 5", "Area 6"];
 
 function LayerCheckbox({
   checked,
@@ -91,10 +87,10 @@ function LayerCheckbox({
   label: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5 text-xs font-medium text-slate-300 hover:text-white transition-colors">
+    <label className="flex cursor-pointer items-center gap-2.5 text-xs font-medium text-slate-300 transition-colors hover:text-white">
       <input
         type="checkbox"
-        className="size-3.5 rounded border-slate-600 bg-slate-800 text-emerald-500 accent-emerald-500 cursor-pointer"
+        className="size-3.5 cursor-pointer rounded border-slate-600 bg-slate-800 text-emerald-500 accent-emerald-500"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />
@@ -116,10 +112,9 @@ export default function AdminEvacuationCentersPage() {
   const [areaFilter, setAreaFilter] = React.useState("all");
   const [occupancyTier, setOccupancyTier] = React.useState("all");
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["admin", "evacuation-centers"],
-    queryFn: () =>
-      api.get<EvacCenter[]>("/admin/evacuation-centers").then((r) => r.data),
+    queryFn: () => api.get<EvacCenter[]>("/admin/evacuation-centers").then((r) => r.data),
   });
 
   const [centerToDelete, setCenterToDelete] = React.useState<EvacCenter | null>(null);
@@ -150,8 +145,7 @@ export default function AdminEvacuationCentersPage() {
   });
 
   const deactivateMutation = useMutation({
-    mutationFn: (centerId: string) =>
-      api.delete(`/admin/evacuation-centers/${centerId}`),
+    mutationFn: (centerId: string) => api.delete(`/admin/evacuation-centers/${centerId}`),
     onSuccess: () => {
       toast.success("Evacuation center deactivated and archived");
       queryClient.invalidateQueries({ queryKey: ["admin", "evacuation-centers"] });
@@ -159,9 +153,7 @@ export default function AdminEvacuationCentersPage() {
       queryClient.invalidateQueries({ queryKey: ["public", "evacuation-centers"] });
     },
     onError: (err) => {
-      toast.error(
-        toDisplayError(err).detail || "Failed to deactivate evacuation center",
-      );
+      toast.error(toDisplayError(err).detail || "Failed to deactivate evacuation center");
     },
   });
 
@@ -175,9 +167,7 @@ export default function AdminEvacuationCentersPage() {
       queryClient.invalidateQueries({ queryKey: ["public", "evacuation-centers"] });
     },
     onError: (err) => {
-      toast.error(
-        toDisplayError(err).detail || "Failed to reactivate evacuation center",
-      );
+      toast.error(toDisplayError(err).detail || "Failed to reactivate evacuation center");
     },
   });
 
@@ -209,9 +199,7 @@ export default function AdminEvacuationCentersPage() {
       atCapacity,
       nearCapacity,
       pctOccupied:
-        totalCapacity > 0
-          ? Math.round((totalOccupancy / totalCapacity) * 100)
-          : 0,
+        totalCapacity > 0 ? Math.round((totalOccupancy / totalCapacity) * 100) : 0,
     };
   }, [allCenters]);
 
@@ -225,7 +213,7 @@ export default function AdminEvacuationCentersPage() {
       sub: stats.openCount > 0 ? "Ready to accept evacuees" : "No open shelters",
       tone: stats.openCount > 0 ? "emerald" : "amber",
       badge: (
-        <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-300">
+        <span className="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black tracking-wider text-emerald-800 uppercase">
           Ready
         </span>
       ),
@@ -264,7 +252,9 @@ export default function AdminEvacuationCentersPage() {
     },
   ];
 
-  const [deselectedCenterIds, setDeselectedCenterIds] = React.useState<Set<string>>(new Set());
+  const [deselectedCenterIds, setDeselectedCenterIds] = React.useState<Set<string>>(
+    new Set(),
+  );
 
   const toggleCenter = (id: string) => {
     setDeselectedCenterIds((prev) => {
@@ -309,7 +299,8 @@ export default function AdminEvacuationCentersPage() {
         const cap = center.capacity ?? 0;
         const occ = center.occupancy ?? 0;
         if (occupancyTier === "full" && (!cap || occ < cap)) return false;
-        if (occupancyTier === "near" && (!cap || occ / cap < 0.8 || occ >= cap)) return false;
+        if (occupancyTier === "near" && (!cap || occ / cap < 0.8 || occ >= cap))
+          return false;
         if (occupancyTier === "available" && cap > 0 && occ / cap >= 0.8) return false;
       }
 
@@ -322,9 +313,7 @@ export default function AdminEvacuationCentersPage() {
     return filteredCenters.map((center) => {
       const isFull = center.capacity && (center.occupancy ?? 0) >= center.capacity;
       const isNear =
-        center.capacity &&
-        (center.occupancy ?? 0) / center.capacity >= 0.8 &&
-        !isFull;
+        center.capacity && (center.occupancy ?? 0) / center.capacity >= 0.8 && !isFull;
 
       const tone = !center.is_open
         ? "slate"
@@ -363,13 +352,14 @@ export default function AdminEvacuationCentersPage() {
         <div className="flex flex-col gap-0.5 py-0.5">
           <Link
             href={`/admin/evacuation-centers/${row.id}`}
-            className="font-bold text-slate-900 hover:text-emerald-700 transition-colors flex items-center gap-1.5"
+            className="flex items-center gap-1.5 font-bold text-slate-900 transition-colors hover:text-emerald-700"
           >
-            <BedDouble className="size-4 text-emerald-700 shrink-0" />
+            <BedDouble className="size-4 shrink-0 text-emerald-700" />
             <span>{row.facility.name}</span>
           </Link>
           <span className="text-[11px] text-slate-500">
-            {row.facility.address || "San Jose Municipality, Rodriguez (Montalban), Rizal"}
+            {row.facility.address ||
+              "San Jose Municipality, Rodriguez (Montalban), Rizal"}
           </span>
         </div>
       ),
@@ -378,7 +368,7 @@ export default function AdminEvacuationCentersPage() {
       key: "area",
       header: "Assigned Area",
       render: (row: EvacCenter) => (
-        <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700 border border-slate-200">
+        <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
           {row.facility.area_name || "San Jose"}
         </span>
       ),
@@ -391,14 +381,14 @@ export default function AdminEvacuationCentersPage() {
           className={cn(
             "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold shadow-2xs",
             row.is_open
-              ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-              : "bg-slate-100 text-slate-600 border border-slate-300",
+              ? "border border-emerald-300 bg-emerald-100 text-emerald-800"
+              : "border border-slate-300 bg-slate-100 text-slate-600",
           )}
         >
           <span
             className={cn(
               "size-1.5 rounded-full",
-              row.is_open ? "bg-emerald-600 animate-pulse" : "bg-slate-400",
+              row.is_open ? "animate-pulse bg-emerald-600" : "bg-slate-400",
             )}
           />
           {row.is_open ? "Open" : "Closed"}
@@ -416,7 +406,7 @@ export default function AdminEvacuationCentersPage() {
         const isNear = cap > 0 && occ / cap >= 0.8 && !isFull;
 
         return (
-          <div className="flex flex-col gap-1 min-w-[140px] py-1">
+          <div className="flex min-w-[140px] flex-col gap-1 py-1">
             <div className="flex items-center justify-between text-xs font-bold text-slate-800">
               <span className="font-mono">
                 {occ} / {cap > 0 ? cap : "—"}
@@ -424,7 +414,11 @@ export default function AdminEvacuationCentersPage() {
               <span
                 className={cn(
                   "text-[11px]",
-                  isFull ? "text-rose-600 font-black" : isNear ? "text-amber-600 font-bold" : "text-emerald-700 font-semibold",
+                  isFull
+                    ? "font-black text-rose-600"
+                    : isNear
+                      ? "font-bold text-amber-600"
+                      : "font-semibold text-emerald-700",
                 )}
               >
                 {pct}% Full
@@ -469,12 +463,19 @@ export default function AdminEvacuationCentersPage() {
       />
 
       {/* 5 Top Operational Metric Cards */}
-      <AssetMetricStrip items={metricCards} />
+      <AssetMetricStrip
+        items={metricCards}
+        isLoading={isLoading || isFetching}
+        loadingLabel="Loading evacuation center metrics"
+      />
 
       {/* Main 2-Column GIS Workspace & Control Sidebar (Seamless Equal-Height on Desktop) */}
-      <div ref={mapSectionRef} className="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-5 lg:h-[620px] scroll-mt-6">
+      <div
+        ref={mapSectionRef}
+        className="flex scroll-mt-6 flex-col gap-4 lg:h-[620px] lg:flex-row lg:items-stretch lg:gap-5"
+      >
         {/* Column 1: Leaflet Interactive Map View */}
-        <div className="flex flex-1 flex-col min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl h-[480px] sm:h-[580px] lg:h-full">
+        <div className="flex h-[480px] min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl sm:h-[580px] lg:h-full">
           <div className="relative h-full w-full overflow-hidden">
             <AdminAssetWorkspaceMap
               items={mapItems}
@@ -488,10 +489,10 @@ export default function AdminEvacuationCentersPage() {
         </div>
 
         {/* Column 2: Filter and Capacity Sidebar */}
-        <div className="flex w-full flex-col gap-3 lg:w-72 lg:shrink-0 lg:h-full">
+        <div className="flex w-full flex-col gap-3 lg:h-full lg:w-72 lg:shrink-0">
           {/* Card 1: Map Overlays */}
           <div className="w-full shrink-0 rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
-            <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
+            <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-emerald-400 uppercase">
               <Layers className="size-3.5 text-emerald-400" aria-hidden />
               Map Overlays
             </p>
@@ -510,25 +511,23 @@ export default function AdminEvacuationCentersPage() {
           </div>
 
           {/* Card 2: Shelter Capacity & Filter Checklist with Custom Green Scrollbar */}
-          <div className="w-full flex-1 min-h-0 rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md flex flex-col">
-            <div className="mb-2.5 flex items-center justify-between shrink-0">
-              <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
+          <div className="flex min-h-0 w-full flex-1 flex-col rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
+            <div className="mb-2.5 flex shrink-0 items-center justify-between">
+              <p className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-emerald-400 uppercase">
                 <Users className="size-3.5 text-emerald-400" aria-hidden />
                 Capacity & Shelter Filters
               </p>
               <button
                 type="button"
                 onClick={toggleAllCenters}
-                className="text-[11px] font-bold text-emerald-400 hover:text-emerald-200 transition-colors cursor-pointer"
+                className="cursor-pointer text-[11px] font-bold text-emerald-400 transition-colors hover:text-emerald-200"
               >
-                {deselectedCenterIds.size === 0
-                  ? "Deselect All"
-                  : "Select All"}
+                {deselectedCenterIds.size === 0 ? "Deselect All" : "Select All"}
               </button>
             </div>
 
             {/* Scrollable Checklist with Custom Green Scrollbar */}
-            <div className="flex-1 min-h-0 flex flex-col gap-2 overflow-y-auto pr-1.5 pt-1 [scrollbar-width:thin] [scrollbar-color:#059669_#022c22] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-emerald-950/40 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-600/90 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-emerald-400">
+            <div className="flex min-h-0 flex-1 [scrollbar-width:thin] [scrollbar-color:#059669_#022c22] flex-col gap-2 overflow-y-auto pt-1 pr-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-600/90 hover:[&::-webkit-scrollbar-thumb]:bg-emerald-400 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-emerald-950/40">
               {allCenters.map((center) => {
                 const isSelected = !deselectedCenterIds.has(center.id);
                 const occ = center.occupancy ?? 0;
@@ -543,23 +542,23 @@ export default function AdminEvacuationCentersPage() {
                     type="button"
                     onClick={() => toggleCenter(center.id)}
                     className={cn(
-                      "flex flex-col gap-1.5 rounded-lg p-2.5 text-xs transition-all cursor-pointer border text-left shrink-0",
+                      "flex shrink-0 cursor-pointer flex-col gap-1.5 rounded-lg border p-2.5 text-left text-xs transition-all",
                       isSelected
                         ? "border-emerald-700/60 bg-white/10 text-white shadow-xs"
                         : "border-transparent text-emerald-200/50 hover:bg-white/5 hover:text-emerald-100",
                     )}
                   >
-                    <div className="flex items-center justify-between gap-2 min-w-0">
-                      <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex min-w-0 items-center justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
                         <input
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => {}}
-                          className="size-3.5 rounded border-slate-600 bg-slate-800 text-emerald-500 accent-emerald-500 cursor-pointer pointer-events-none shrink-0"
+                          className="pointer-events-none size-3.5 shrink-0 cursor-pointer rounded border-slate-600 bg-slate-800 text-emerald-500 accent-emerald-500"
                         />
                         <span
                           className={cn(
-                            "size-2 rounded-full shrink-0",
+                            "size-2 shrink-0 rounded-full",
                             !center.is_open
                               ? "bg-slate-400"
                               : isFull
@@ -569,18 +568,18 @@ export default function AdminEvacuationCentersPage() {
                                   : "bg-emerald-400",
                           )}
                         />
-                        <span className="truncate font-semibold text-[11.5px] text-white">
+                        <span className="truncate text-[11.5px] font-semibold text-white">
                           {center.facility.name}
                         </span>
                       </div>
-                      <span className="rounded-full bg-emerald-950/80 px-1.5 py-0.2 text-[9.5px] font-bold text-emerald-300 border border-emerald-800/80 shrink-0">
+                      <span className="py-0.2 shrink-0 rounded-full border border-emerald-800/80 bg-emerald-950/80 px-1.5 text-[9.5px] font-bold text-emerald-300">
                         {center.facility.area_name || "San Jose"}
                       </span>
                     </div>
 
                     {/* Capacity Bar & Ratio */}
                     <div className="flex flex-col gap-1 pl-5.5">
-                      <div className="flex items-center justify-between text-[10px] text-emerald-200/80 font-mono">
+                      <div className="flex items-center justify-between font-mono text-[10px] text-emerald-200/80">
                         <span>
                           {occ} / {cap > 0 ? cap : "—"} slots
                         </span>
@@ -588,7 +587,7 @@ export default function AdminEvacuationCentersPage() {
                           className={cn(
                             "font-bold",
                             isFull
-                              ? "text-rose-400 font-black"
+                              ? "font-black text-rose-400"
                               : isNear
                                 ? "text-amber-300"
                                 : "text-emerald-300",
@@ -597,7 +596,7 @@ export default function AdminEvacuationCentersPage() {
                           {pct}% Load
                         </span>
                       </div>
-                      <div className="h-1 w-full overflow-hidden rounded-full bg-emerald-950/90 border border-emerald-900/60">
+                      <div className="h-1 w-full overflow-hidden rounded-full border border-emerald-900/60 bg-emerald-950/90">
                         <div
                           className={cn(
                             "h-full rounded-full transition-all",
@@ -619,14 +618,14 @@ export default function AdminEvacuationCentersPage() {
             </div>
 
             {/* Bottom Overall Capacity Load Meter */}
-            <div className="mt-3 shrink-0 flex flex-col gap-1.5 border-t border-emerald-900/80 pt-3">
+            <div className="mt-3 flex shrink-0 flex-col gap-1.5 border-t border-emerald-900/80 pt-3">
               <div className="flex items-center justify-between text-[10.5px] font-bold text-emerald-300">
                 <span>Barangay Evac Load</span>
-                <span className="tabular-nums font-mono text-white">
+                <span className="font-mono text-white tabular-nums">
                   {stats.totalOccupancy} / {stats.totalCapacity} ({stats.pctOccupied}%)
                 </span>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-emerald-950/90 border border-emerald-900/60">
+              <div className="h-1.5 w-full overflow-hidden rounded-full border border-emerald-900/60 bg-emerald-950/90">
                 <div
                   className={cn(
                     "h-full rounded-full transition-all duration-500",
@@ -641,11 +640,12 @@ export default function AdminEvacuationCentersPage() {
       </div>
 
       {/* Evacuation Centers Management Table (Full Width) */}
-      <div className="flex flex-col gap-3 w-full">
+      <div className="flex w-full flex-col gap-3">
         <ResourceTable
           columns={columns}
           data={filteredCenters}
-          isLoading={isLoading}
+          isLoading={isLoading || isFetching}
+          loadingLabel="Loading evacuation centers"
           isError={isError}
           onRetry={refetch}
           getRowKey={(row) => row.id}
@@ -656,7 +656,7 @@ export default function AdminEvacuationCentersPage() {
               {/* Status Filter */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="inline-flex h-9 w-fit min-w-[130px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                  <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                  <SlidersHorizontal className="size-3 shrink-0 text-emerald-600" />
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent align="end" className="min-w-44">
@@ -669,7 +669,7 @@ export default function AdminEvacuationCentersPage() {
               {/* Area Filter */}
               <Select value={areaFilter} onValueChange={setAreaFilter}>
                 <SelectTrigger className="inline-flex h-9 w-fit min-w-[120px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                  <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                  <SlidersHorizontal className="size-3 shrink-0 text-emerald-600" />
                   <SelectValue placeholder="All Areas" />
                 </SelectTrigger>
                 <SelectContent align="end" className="min-w-40">
@@ -685,7 +685,7 @@ export default function AdminEvacuationCentersPage() {
               {/* Occupancy Tier Filter */}
               <Select value={occupancyTier} onValueChange={setOccupancyTier}>
                 <SelectTrigger className="inline-flex h-9 w-fit min-w-[140px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                  <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                  <SlidersHorizontal className="size-3 shrink-0 text-emerald-600" />
                   <SelectValue placeholder="All Occupancy" />
                 </SelectTrigger>
                 <SelectContent align="end" className="min-w-48">
@@ -709,7 +709,7 @@ export default function AdminEvacuationCentersPage() {
                 size="sm"
                 onClick={() => handleLocate(row.id)}
                 aria-label={`Locate ${row.facility.name}`}
-                className="h-8 w-8 p-0 border-slate-300 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shrink-0"
+                className="h-8 w-8 shrink-0 cursor-pointer border-slate-300 bg-white p-0 text-slate-800 hover:bg-slate-50"
                 title="Locate on Map"
               >
                 <Crosshair aria-hidden className="size-3.5 text-slate-700" />
@@ -722,9 +722,7 @@ export default function AdminEvacuationCentersPage() {
               />
 
               {/* 3. Edit Modal (Pencil icon) */}
-              <EditEvacuationCenterDialog
-                center={row as EvacCenterEditable}
-              />
+              <EditEvacuationCenterDialog center={row as EvacCenterEditable} />
 
               {/* 5. Toggle Open/Close State (Power icon) */}
               <Button
@@ -742,7 +740,7 @@ export default function AdminEvacuationCentersPage() {
                 }}
                 disabled={toggleOpenMutation.isPending}
                 className={cn(
-                  "h-8 w-8 p-0 border cursor-pointer shrink-0",
+                  "h-8 w-8 shrink-0 cursor-pointer border p-0",
                   row.is_open
                     ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
                     : "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
@@ -764,7 +762,7 @@ export default function AdminEvacuationCentersPage() {
                   size="sm"
                   onClick={() => setCenterToDelete(row)}
                   disabled={deactivateMutation.isPending}
-                  className="h-8 w-8 p-0 border-rose-300/80 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:border-rose-400 cursor-pointer shrink-0"
+                  className="h-8 w-8 shrink-0 cursor-pointer border-rose-300/80 bg-rose-50 p-0 text-rose-700 hover:border-rose-400 hover:bg-rose-100"
                   title="Deactivate / Delete Center"
                   aria-label={`Deactivate ${row.facility.name}`}
                 >
@@ -776,7 +774,7 @@ export default function AdminEvacuationCentersPage() {
                   size="sm"
                   onClick={() => reactivateMutation.mutate(row.id)}
                   disabled={reactivateMutation.isPending}
-                  className="h-8 w-8 p-0 border-emerald-300/80 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-400 cursor-pointer shrink-0"
+                  className="h-8 w-8 shrink-0 cursor-pointer border-emerald-300/80 bg-emerald-50 p-0 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-100"
                   title="Reactivate Shelter"
                   aria-label={`Reactivate ${row.facility.name}`}
                 >
@@ -789,7 +787,7 @@ export default function AdminEvacuationCentersPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 w-8 p-0 border-slate-300 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shrink-0"
+                  className="h-8 w-8 shrink-0 cursor-pointer border-slate-300 bg-white p-0 text-slate-800 hover:bg-slate-50"
                   title="View Full Details Page"
                   aria-label="View Full Details Page"
                 >
@@ -809,20 +807,23 @@ export default function AdminEvacuationCentersPage() {
         <AlertDialogContent className="max-w-md rounded-2xl border border-amber-200 bg-white p-6 shadow-2xl">
           <AlertDialogHeader className="flex flex-col gap-2 text-left">
             <div className="flex items-center gap-3">
-              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-800 border border-amber-200">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-amber-200 bg-amber-100 text-amber-800">
                 <PowerOff className="size-5" />
               </div>
               <div className="min-w-0">
-                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                <AlertDialogTitle className="text-base leading-tight font-black text-slate-900">
                   Close Evacuation Center?
                 </AlertDialogTitle>
-                <p className="text-xs font-bold text-amber-800 truncate mt-0.5">
+                <p className="mt-0.5 truncate text-xs font-bold text-amber-800">
                   {centerToClose?.facility.name}
                 </p>
               </div>
             </div>
-            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
-              Are you sure you want to mark this evacuation center as <strong>CLOSED</strong>? This will switch the shelter operational state to Standby, and public hazard maps will display it as not currently accepting new evacuees.
+            <AlertDialogDescription className="mt-2 text-xs leading-relaxed text-slate-600">
+              Are you sure you want to mark this evacuation center as{" "}
+              <strong>CLOSED</strong>? This will switch the shelter operational state to
+              Standby, and public hazard maps will display it as not currently accepting
+              new evacuees.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
@@ -831,7 +832,7 @@ export default function AdminEvacuationCentersPage() {
               size="sm"
               onClick={() => setCenterToClose(null)}
               disabled={toggleOpenMutation.isPending}
-              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+              className="cursor-pointer rounded-xl border-slate-200 text-xs font-bold hover:bg-slate-100"
             >
               Cancel
             </Button>
@@ -847,7 +848,7 @@ export default function AdminEvacuationCentersPage() {
                 }
               }}
               disabled={toggleOpenMutation.isPending}
-              className="rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs cursor-pointer"
+              className="cursor-pointer rounded-xl bg-amber-600 text-xs font-bold text-white shadow-xs hover:bg-amber-700"
             >
               {toggleOpenMutation.isPending ? "Closing…" : "Confirm Close Shelter"}
             </Button>
@@ -863,20 +864,23 @@ export default function AdminEvacuationCentersPage() {
         <AlertDialogContent className="max-w-md rounded-2xl border border-rose-200 bg-white p-6 shadow-2xl">
           <AlertDialogHeader className="flex flex-col gap-2 text-left">
             <div className="flex items-center gap-3">
-              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-rose-100 text-rose-700 border border-rose-200">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-rose-200 bg-rose-100 text-rose-700">
                 <Trash2 className="size-5" />
               </div>
               <div className="min-w-0">
-                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                <AlertDialogTitle className="text-base leading-tight font-black text-slate-900">
                   Deactivate Evacuation Center?
                 </AlertDialogTitle>
-                <p className="text-xs font-bold text-rose-700 truncate mt-0.5">
+                <p className="mt-0.5 truncate text-xs font-bold text-rose-700">
                   {centerToDelete?.facility.name}
                 </p>
               </div>
             </div>
-            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
-              Are you sure you want to deactivate and soft-delete this evacuation center? All active evacuees must be checked out before deactivation. This will close intake and remove its live marker from public GIS shelter maps while retaining audit history.
+            <AlertDialogDescription className="mt-2 text-xs leading-relaxed text-slate-600">
+              Are you sure you want to deactivate and soft-delete this evacuation center?
+              All active evacuees must be checked out before deactivation. This will close
+              intake and remove its live marker from public GIS shelter maps while
+              retaining audit history.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
@@ -885,7 +889,7 @@ export default function AdminEvacuationCentersPage() {
               size="sm"
               onClick={() => setCenterToDelete(null)}
               disabled={deactivateMutation.isPending}
-              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+              className="cursor-pointer rounded-xl border-slate-200 text-xs font-bold hover:bg-slate-100"
             >
               Cancel
             </Button>
@@ -900,7 +904,7 @@ export default function AdminEvacuationCentersPage() {
                 }
               }}
               disabled={deactivateMutation.isPending}
-              className="rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs cursor-pointer"
+              className="cursor-pointer rounded-xl bg-rose-600 text-xs font-bold text-white shadow-xs hover:bg-rose-700"
             >
               {deactivateMutation.isPending ? "Deactivating…" : "Confirm Deactivate"}
             </Button>
