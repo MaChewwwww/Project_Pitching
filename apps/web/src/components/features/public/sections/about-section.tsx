@@ -3,13 +3,15 @@ import Image from "next/image";
 import {
   Award,
   CheckCircle2,
+  CloudRain,
   Compass,
   Database,
   Eye,
   GraduationCap,
+  HeartPulse,
   Info,
   Layers,
-  LucideIcon,
+  MapPin,
   ShieldCheck,
   Smartphone,
   Sparkles,
@@ -17,9 +19,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { Badge } from "@/components/common/badge";
 import { Card, CardContent } from "@/components/common/card";
-import { LogoLockup } from "@/components/common/logo";
 import { Reveal } from "@/components/common/reveal";
 import { SectionHeader } from "@/components/common/section-header";
 import {
@@ -37,22 +37,18 @@ import { Section } from "./section";
 /**
  * Reusable Team Member Portrait Avatar Placeholder Component.
  * Supports a custom uploaded photo via avatarUrl, or renders a modern
- * stylized portrait placeholder frame with silhouette and initial badge.
+ * stylized portrait placeholder frame with silhouette and discipline badge.
  */
 function TeamAvatarPlaceholder({
   member,
-  size = "lg",
+  themeClass = "bg-primary-700",
 }: {
   member: TeamMember;
-  size?: "sm" | "lg";
+  themeClass?: string;
 }) {
   if (member.avatarUrl) {
     return (
-      <div
-        className={`relative overflow-hidden rounded-2xl border border-primary-200 shadow-sm-card ${
-          size === "lg" ? "size-28 md:size-32" : "size-12"
-        }`}
-      >
+      <div className="relative size-24 shrink-0 overflow-hidden rounded-2xl border border-primary-200 shadow-sm-card md:size-28">
         <Image
           src={member.avatarUrl}
           alt={member.name}
@@ -65,11 +61,7 @@ function TeamAvatarPlaceholder({
 
   // Modern stylized portrait frame with silhouette placeholder & initial badge
   return (
-    <div
-      className={`group relative flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-primary-200/80 bg-gradient-to-b from-primary-50 via-primary-100/50 to-neutral-100 shadow-2xs ${
-        size === "lg" ? "size-28 md:size-32" : "size-12"
-      }`}
-    >
+    <div className="group relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-neutral-200/80 bg-gradient-to-b from-neutral-50 via-neutral-100 to-neutral-200/70 shadow-2xs md:size-28">
       {/* Decorative ambient background */}
       <div
         aria-hidden
@@ -77,16 +69,14 @@ function TeamAvatarPlaceholder({
       />
 
       {/* Styled face silhouette */}
-      <div className="flex flex-col items-center justify-center text-primary-800/60 transition duration-300 group-hover:scale-105 group-hover:text-primary-900">
-        <User
-          aria-hidden
-          className={size === "lg" ? "size-14 md:size-16" : "size-6"}
-          strokeWidth={1.5}
-        />
+      <div className="flex flex-col items-center justify-center text-neutral-400 transition duration-300 group-hover:scale-105 group-hover:text-primary-800">
+        <User aria-hidden className="size-12 md:size-14" strokeWidth={1.5} />
       </div>
 
       {/* Initials badge overlay */}
-      <div className="absolute bottom-1.5 right-1.5 rounded-md border border-white bg-primary-800 px-1.5 py-0.5 text-[10px] font-black text-white shadow-2xs">
+      <div
+        className={`absolute bottom-1.5 right-1.5 rounded-lg ${themeClass} px-2 py-0.5 text-[11px] font-black text-white shadow-xs tabular`}
+      >
         {member.initials}
       </div>
     </div>
@@ -97,122 +87,121 @@ function TeamAvatarPlaceholder({
  * Dedicated About Section (FR-PUB-002, BR-0.2) for the `/about` route.
  *
  * Full-scale presentation featuring:
- * 1. Platform Identity & Logo Hero Lockup
- * 2. Mission & Vision Architecture with core operational pillars
- * 3. 3 UN Sustainable Development Goals (SDG 13, 11, 3) with official color schemes
- * 4. 5-Member Interdisciplinary Team with full academic degree titles and portrait slots
- * 5. Platform Tenets & Open Data Attributions
+ * 1. Platform Identity & Architecture Bento Hero
+ * 2. Strategic Directives: Dual Mission & Vision Bento Cards
+ * 3. 3 UN Sustainable Development Goals (SDG 13, 11, 3) with animated glowing icons
+ * 4. 5-Member Interdisciplinary Team with academic discipline colorways + Convergence Card
  */
 export function AboutSection() {
   return (
-    <Section id="about" tone="tint" className="relative">
-      <div className="flex flex-col gap-12 md:gap-16">
+    <Section id="about" tone="tint" className="relative overflow-hidden">
+      {/* Ambient background blur elements */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-32 right-0 size-[500px] rounded-full bg-primary-200/25 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-0 size-[500px] rounded-full bg-emerald-200/20 blur-3xl"
+      />
+
+      <div className="relative flex flex-col gap-12 md:gap-16">
         {/* ===================================================================
-            1. PLATFORM IDENTITY & LOGO HERO
+            1. PLATFORM OVERVIEW & ARCHITECTURE BENTO HERO
            =================================================================== */}
         <Reveal>
-          <div className="relative overflow-hidden rounded-3xl border border-primary-200/80 bg-gradient-to-br from-white via-primary-50/40 to-emerald-50/30 p-6 shadow-sm-card md:p-10">
-            {/* Ambient decorative glow */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -right-16 -top-16 size-80 rounded-full bg-primary-200/40 blur-3xl"
-            />
-
-            <div className="relative grid gap-8 lg:grid-cols-[1.2fr_1fr] items-center">
-              <div className="flex flex-col gap-5">
-                {/* Brand eyebrow with Logo */}
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-2.5 rounded-full border border-primary-200 bg-white px-3.5 py-1.5 shadow-2xs">
-                    <LogoLockup size={32} variant="mark" />
-                    <span className="text-caption font-extrabold tracking-tight text-primary-900">
-                      SAGIP-SJ
+          <div className="relative overflow-hidden rounded-3xl border border-neutral-200/90 bg-white/90 p-6 shadow-sm-card backdrop-blur-sm md:p-10">
+            <div className="relative grid gap-8 lg:grid-cols-12 lg:gap-10 items-center">
+              {/* Left Column (7 cols): Main Title, Pitch, and 3 Core Tenets */}
+              <div className="flex flex-col gap-6 lg:col-span-7">
+                <div className="flex flex-col gap-3.5">
+                  <h2 className="text-2xl font-extrabold tracking-tight text-neutral-900 sm:text-3xl md:text-4xl lg:text-[40px] lg:leading-[1.15]">
+                    System for Alert, Guidance, Incident Reporting &{" "}
+                    <span className="relative inline-block bg-gradient-to-r from-primary-700 via-primary-600 to-emerald-600 bg-clip-text text-transparent">
+                      Preparedness
+                      <span
+                        aria-hidden
+                        className="absolute -bottom-1 left-0 h-[3px] w-full rounded-full bg-primary-500/30"
+                      />
                     </span>
-                  </div>
-                  <Badge tone="primary" icon={Sparkles}>
-                    SK Project Pitching Competition
-                  </Badge>
-                  <Badge tone="neutral" icon={Users}>
-                    5-Person Interdisciplinary Cohort
-                  </Badge>
+                  </h2>
+
+                  <p className="text-body-lg text-neutral-600 leading-relaxed">
+                    {WHAT_IT_IS}
+                  </p>
                 </div>
 
-                {/* Main Headline */}
-                <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 sm:text-4xl md:text-5xl">
-                  System for Alert, Guidance, Incident Reporting &{" "}
-                  <span className="bg-gradient-to-r from-primary-700 via-primary-600 to-emerald-600 bg-clip-text text-transparent">
-                    Preparedness
-                  </span>
-                </h1>
-
-                {/* Comprehensive narrative */}
-                <p className="text-body-lg text-neutral-700 leading-relaxed max-w-2xl">
-                  {WHAT_IT_IS}
-                </p>
-
-                {/* Key architectural highlights */}
-                <div className="grid gap-3 pt-2 sm:grid-cols-3">
+                {/* 3 Architectural Tenet Cards */}
+                <div className="grid gap-3 sm:grid-cols-3">
                   {[
                     {
                       icon: Smartphone,
                       title: "Universal 3G Access",
-                      desc: "Zero-download web platform optimized for any low-cost mobile phone.",
+                      desc: "Zero app download barrier. Ultra-light web app designed for low-cost phones.",
                     },
                     {
                       icon: ShieldCheck,
                       title: "Human-in-the-Loop",
-                      desc: "Officer-validated announcements to eliminate false emergency alarms.",
+                      desc: "Officer-verified alerts prevent panic and ensure authentic directives.",
                     },
                     {
                       icon: Database,
                       title: "Persistent Registry",
-                      desc: "A living household database that survives recurring flood seasons.",
+                      desc: "Community vulnerability database that endures across recurring flood seasons.",
                     },
                   ].map((feat) => (
                     <div
                       key={feat.title}
-                      className="flex flex-col gap-1.5 rounded-xl border border-primary-100 bg-white/80 p-3.5 shadow-2xs"
+                      className="group flex flex-col gap-2 rounded-2xl border border-neutral-200/80 bg-neutral-50/70 p-4 transition-all duration-300 hover:border-primary-300 hover:bg-white hover:shadow-2xs"
                     >
-                      <feat.icon className="size-4 text-primary-700" />
-                      <p className="text-caption font-bold text-neutral-900">
-                        {feat.title}
-                      </p>
-                      <p className="text-[12px] text-neutral-600 leading-normal">
-                        {feat.desc}
-                      </p>
+                      <span className="grid size-8 place-items-center rounded-xl bg-primary-100 text-primary-800 border border-primary-200/80 shadow-2xs transition group-hover:bg-primary-700 group-hover:text-white">
+                        <feat.icon className="size-4" />
+                      </span>
+                      <div>
+                        <p className="text-caption font-bold text-neutral-900 leading-tight">
+                          {feat.title}
+                        </p>
+                        <p className="text-[11px] text-neutral-500 leading-relaxed mt-1">
+                          {feat.desc}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Right: Architectural Brand Emblem Box */}
-              <div className="flex flex-col gap-4 rounded-2xl border border-primary-200/90 bg-white/90 p-6 shadow-sm-card backdrop-blur-sm md:p-8">
-                <div className="flex items-center gap-3 border-b border-neutral-100 pb-4">
-                  <div className="grid size-12 place-items-center rounded-xl bg-primary-600 text-white shadow-2xs">
+              {/* Right Column (5 cols): Community DRRM Context & Synergy Box */}
+              <div className="flex flex-col gap-5 rounded-2xl border border-primary-200/90 bg-gradient-to-br from-primary-50/60 via-white to-emerald-50/40 p-6 shadow-sm-card md:p-8 lg:col-span-5">
+                <div className="flex items-center gap-3.5 border-b border-neutral-100 pb-4">
+                  <div className="grid size-12 place-items-center rounded-xl bg-primary-700 text-white shadow-xs">
                     <Layers className="size-6" />
                   </div>
                   <div>
-                    <h3 className="text-body font-extrabold text-neutral-900">
+                    <h3 className="text-base font-extrabold text-neutral-900">
                       Barangay San Jose Platform
                     </h3>
-                    <p className="text-caption text-neutral-500">
-                      Rodriguez (Montalban), Rizal
-                    </p>
+                    <div className="flex items-center gap-1.5 text-xs text-neutral-500 mt-0.5">
+                      <MapPin className="size-3.5 text-primary-600" />
+                      <span>Rodriguez (Montalban), Rizal</span>
+                    </div>
                   </div>
                 </div>
 
                 <p className="text-body-sm text-neutral-600 leading-relaxed">
-                  SAGIP-SJ bridges the critical gap between macro-level disaster warnings
-                  and localized sitio action. Built specifically around the river topography,
-                  flood markers, and community demographics of Barangay San Jose.
+                  SAGIP-SJ bridges the critical gap between macro-level meteorological warnings and localized sitio action. Built specifically around the river topography, flood markers, and community demographics of Barangay San Jose.
                 </p>
 
-                <div className="rounded-xl bg-primary-50 p-4 border border-primary-200/70">
-                  <div className="flex items-start gap-2.5">
-                    <Award className="size-4 text-primary-700 shrink-0 mt-0.5" />
-                    <div className="text-caption text-primary-900">
-                      <span className="font-bold">Interdisciplinary Design:</span>{" "}
-                      Engineered through cross-domain synergy across Information Technology,
-                      Political Science, Public Administration, and Nutrition & Dietetics.
+                {/* Academic & Interdisciplinary Synergy Box */}
+                <div className="rounded-xl border border-primary-200/80 bg-white/90 p-4 shadow-2xs">
+                  <div className="flex items-start gap-3">
+                    <Award className="size-5 text-primary-700 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-caption font-extrabold text-neutral-900">
+                        Interdisciplinary Innovation
+                      </p>
+                      <p className="text-[11px] text-neutral-600 leading-relaxed mt-0.5">
+                        Cross-domain synergy across Information Technology, Political Science, Public Administration, and Nutrition & Dietetics.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -222,104 +211,124 @@ export function AboutSection() {
         </Reveal>
 
         {/* ===================================================================
-            2. MISSION & VISION DUAL ARCHITECTURE
+            2. STRATEGIC DIRECTIVES: MISSION & VISION DUAL BENTO CARDS
            =================================================================== */}
-        <div className="flex flex-col gap-6">
-          <SectionHeader
-            align="center"
-            rule
-            icon={Compass}
-            eyebrow="Strategic Directives"
-            title="Our Mission &"
-            titleAccent="Vision"
-            description="Clear institutional mandates driving every system feature, alert threshold, and community workflow."
-            className="mx-auto max-w-3xl"
-          />
+        <div className="flex flex-col gap-6 md:gap-8">
+          <Reveal>
+            <SectionHeader
+              icon={Compass}
+              title="Our Mission &"
+              titleAccent="Vision"
+              description="Clear institutional mandates driving every system feature, alert threshold, and community workflow."
+            />
+          </Reveal>
 
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 items-stretch">
             {/* Mission Card */}
-            <Reveal delay={1}>
-              <div className="flex h-full flex-col justify-between rounded-3xl border border-primary-200/90 bg-white p-6 shadow-sm-card transition hover:border-primary-300 md:p-8">
-                <div className="flex flex-col gap-4">
+            <Reveal delay={1} className="h-full">
+              <div className="flex h-full flex-col justify-between rounded-3xl border border-primary-200/90 bg-gradient-to-br from-primary-50/40 via-white to-white p-6 shadow-sm-card transition hover:border-primary-300 hover:shadow-md-card md:p-8">
+                <div className="flex flex-col gap-5">
                   <div className="flex items-center gap-3">
-                    <span className="grid size-10 place-items-center rounded-xl bg-primary-100 text-primary-800 border border-primary-200">
-                      <Compass aria-hidden className="size-5" />
-                    </span>
-                    <div>
-                      <span className="text-overline font-extrabold uppercase tracking-wider text-primary-700">
-                        Institutional Directive
+                    <div className="relative flex size-10 shrink-0 items-center justify-center">
+                      <span
+                        aria-hidden
+                        className="absolute inset-0 rounded-xl bg-primary-500/30 blur-[6px] animate-pulse"
+                      />
+                      <span className="relative grid size-10 place-items-center rounded-xl bg-primary-700 text-white shadow-xs">
+                        <Compass aria-hidden className="size-5" />
                       </span>
-                      <h3 className="text-h3 font-bold text-neutral-900">
+                    </div>
+                    <div>
+                      <span className="rounded-md border border-primary-200 bg-primary-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-primary-800">
                         Our Mission
+                      </span>
+                      <h3 className="text-lg sm:text-xl font-extrabold text-neutral-900 mt-1">
+                        Proactive Disaster Management
                       </h3>
                     </div>
                   </div>
 
-                  <p className="text-body text-neutral-700 leading-relaxed border-l-2 border-primary-500 pl-3.5 my-1 font-medium italic">
+                  <p className="text-body text-neutral-700 leading-relaxed border-l-3 border-primary-500 pl-4 py-1 italic bg-primary-50/30 rounded-r-lg">
                     &ldquo;{MISSION}&rdquo;
                   </p>
 
-                  <div className="mt-3 flex flex-col gap-3">
-                    <p className="text-caption font-bold uppercase tracking-wider text-neutral-500">
+                  <div className="flex flex-col gap-3 pt-2">
+                    <p className="text-caption font-extrabold uppercase tracking-wider text-neutral-500">
                       Core Mission Pillars
                     </p>
-                    {MISSION_PILLARS.map((pillar) => (
-                      <div key={pillar.title} className="flex items-start gap-2.5">
-                        <CheckCircle2 className="size-4 text-primary-600 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-caption font-bold text-neutral-900">
-                            {pillar.title}
-                          </p>
-                          <p className="text-[12px] text-neutral-600">
-                            {pillar.description}
-                          </p>
+                    <div className="flex flex-col gap-2.5">
+                      {MISSION_PILLARS.map((pillar) => (
+                        <div
+                          key={pillar.title}
+                          className="flex items-start gap-3 rounded-xl border border-neutral-100 bg-white p-3 shadow-2xs"
+                        >
+                          <CheckCircle2 className="size-4 text-primary-600 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-caption font-bold text-neutral-900">
+                              {pillar.title}
+                            </p>
+                            <p className="text-[11px] text-neutral-500 leading-normal mt-0.5">
+                              {pillar.description}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
             </Reveal>
 
             {/* Vision Card */}
-            <Reveal delay={2}>
-              <div className="flex h-full flex-col justify-between rounded-3xl border border-emerald-200/90 bg-white p-6 shadow-sm-card transition hover:border-emerald-300 md:p-8">
-                <div className="flex flex-col gap-4">
+            <Reveal delay={2} className="h-full">
+              <div className="flex h-full flex-col justify-between rounded-3xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/40 via-white to-white p-6 shadow-sm-card transition hover:border-emerald-300 hover:shadow-md-card md:p-8">
+                <div className="flex flex-col gap-5">
                   <div className="flex items-center gap-3">
-                    <span className="grid size-10 place-items-center rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200">
-                      <Eye aria-hidden className="size-5" />
-                    </span>
-                    <div>
-                      <span className="text-overline font-extrabold uppercase tracking-wider text-emerald-700">
-                        Future Horizon
+                    <div className="relative flex size-10 shrink-0 items-center justify-center">
+                      <span
+                        aria-hidden
+                        className="absolute inset-0 rounded-xl bg-emerald-500/30 blur-[6px] animate-pulse"
+                      />
+                      <span className="relative grid size-10 place-items-center rounded-xl bg-emerald-700 text-white shadow-xs">
+                        <Eye aria-hidden className="size-5" />
                       </span>
-                      <h3 className="text-h3 font-bold text-neutral-900">
+                    </div>
+                    <div>
+                      <span className="rounded-md border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-800">
                         Our Vision
+                      </span>
+                      <h3 className="text-lg sm:text-xl font-extrabold text-neutral-900 mt-1">
+                        Zero-Overlooked Community Resilience
                       </h3>
                     </div>
                   </div>
 
-                  <p className="text-body text-neutral-700 leading-relaxed border-l-2 border-emerald-500 pl-3.5 my-1 font-medium italic">
+                  <p className="text-body text-neutral-700 leading-relaxed border-l-3 border-emerald-500 pl-4 py-1 italic bg-emerald-50/30 rounded-r-lg">
                     &ldquo;{VISION}&rdquo;
                   </p>
 
-                  <div className="mt-3 flex flex-col gap-3">
-                    <p className="text-caption font-bold uppercase tracking-wider text-neutral-500">
+                  <div className="flex flex-col gap-3 pt-2">
+                    <p className="text-caption font-extrabold uppercase tracking-wider text-neutral-500">
                       Key Vision Outcomes
                     </p>
-                    {VISION_PILLARS.map((pillar) => (
-                      <div key={pillar.title} className="flex items-start gap-2.5">
-                        <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-caption font-bold text-neutral-900">
-                            {pillar.title}
-                          </p>
-                          <p className="text-[12px] text-neutral-600">
-                            {pillar.description}
-                          </p>
+                    <div className="flex flex-col gap-2.5">
+                      {VISION_PILLARS.map((pillar) => (
+                        <div
+                          key={pillar.title}
+                          className="flex items-start gap-3 rounded-xl border border-neutral-100 bg-white p-3 shadow-2xs"
+                        >
+                          <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-caption font-bold text-neutral-900">
+                              {pillar.title}
+                            </p>
+                            <p className="text-[11px] text-neutral-500 leading-normal mt-0.5">
+                              {pillar.description}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -328,155 +337,271 @@ export function AboutSection() {
         </div>
 
         {/* ===================================================================
-            3. UN SUSTAINABLE DEVELOPMENT GOALS (SDGS)
+            3. UN SUSTAINABLE DEVELOPMENT GOALS (SDGS 13, 11, 3)
            =================================================================== */}
-        <div className="flex flex-col gap-6">
-          <SectionHeader
-            align="center"
-            rule
-            icon={Info}
-            eyebrow="Global Framework · Local Execution"
-            title="Sustainable Development"
-            titleAccent="Goals"
-            description="How SAGIP-SJ directly advances United Nations SDG commitments within Barangay San Jose's local disaster governance."
-            className="mx-auto max-w-3xl"
-          />
+        <div className="flex flex-col gap-6 md:gap-8">
+          <Reveal>
+            <SectionHeader
+              icon={Info}
+              title="Sustainable Development"
+              titleAccent="Goals"
+              description="How SAGIP-SJ directly advances United Nations SDG commitments within Barangay San Jose's local disaster governance."
+            />
+          </Reveal>
 
-          <div className="grid gap-6 md:grid-cols-3">
-            {SDG_ENTRIES.map((sdg, i) => (
-              <Reveal key={sdg.number} delay={(i as 0 | 1 | 2)}>
-                <Card
-                  radius="xl"
-                  className="h-full border border-neutral-200/90 shadow-sm-card transition hover:shadow-md-card flex flex-col justify-between"
-                >
-                  <CardContent className="flex flex-col gap-4 p-6">
-                    {/* SDG Header Row */}
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`grid size-12 place-items-center rounded-xl ${sdg.colorScheme.badgeBg} ${sdg.colorScheme.badgeText} text-base font-black shadow-2xs`}
-                      >
-                        SDG {sdg.number}
-                      </span>
-                      <span className="rounded-md border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-[11px] font-bold text-neutral-700">
-                        {sdg.tag}
-                      </span>
-                    </div>
+          <div className="grid gap-6 md:grid-cols-3 items-stretch">
+            {SDG_ENTRIES.map((sdg, i) => {
+              const is13 = sdg.number === 13;
+              const is11 = sdg.number === 11;
+              const themeColor = is13
+                ? {
+                    badgeBg: "bg-[#007DBC]",
+                    glowBg: "bg-sky-500/30",
+                    ringBorder: "border-sky-200 bg-sky-50",
+                    iconColor: "text-sky-600",
+                    tagClass: "border-sky-200 bg-sky-50 text-sky-800",
+                    bulletColor: "bg-sky-600",
+                    cardBorder: "hover:border-sky-300",
+                  }
+                : is11
+                  ? {
+                      badgeBg: "bg-[#FD9D24]",
+                      glowBg: "bg-amber-500/30",
+                      ringBorder: "border-amber-200 bg-amber-50",
+                      iconColor: "text-amber-600",
+                      tagClass: "border-amber-200 bg-amber-50 text-amber-800",
+                      bulletColor: "bg-amber-600",
+                      cardBorder: "hover:border-amber-300",
+                    }
+                  : {
+                      badgeBg: "bg-[#4C9F38]",
+                      glowBg: "bg-green-500/30",
+                      ringBorder: "border-green-200 bg-green-50",
+                      iconColor: "text-green-600",
+                      tagClass: "border-green-200 bg-green-50 text-green-800",
+                      bulletColor: "bg-green-600",
+                      cardBorder: "hover:border-green-300",
+                    };
 
-                    {/* Title & Description */}
-                    <div>
-                      <h3 className="text-h4 font-bold text-neutral-900">
-                        {sdg.title}
-                      </h3>
-                      <p className="mt-2 text-body-sm text-neutral-600 leading-relaxed">
-                        {sdg.description}
-                      </p>
-                    </div>
+              const SdgIcon = is13 ? CloudRain : is11 ? ShieldCheck : HeartPulse;
 
-                    {/* Actionable local highlights */}
-                    <div className="mt-2 rounded-xl border border-neutral-100 bg-neutral-50/70 p-3.5">
-                      <p className="text-caption font-bold text-neutral-800 mb-2">
-                        Local Implementation in San Jose:
-                      </p>
-                      <ul className="flex flex-col gap-2">
-                        {sdg.highlights.map((point) => (
-                          <li
-                            key={point}
-                            className="flex items-start gap-2 text-[12px] text-neutral-600"
+              return (
+                <Reveal key={sdg.number} delay={(i as 0 | 1 | 2)} className="h-full">
+                  <Card
+                    radius="xl"
+                    className={`h-full border border-neutral-200/90 shadow-sm-card transition-all duration-300 hover:-translate-y-1 hover:shadow-md-card flex flex-col justify-between ${themeColor.cardBorder}`}
+                  >
+                    <CardContent className="flex flex-col gap-4 p-6">
+                      {/* Top Header Row with Standardized Number Badge & Glowing Pulsing Icon */}
+                      <div className="flex items-center justify-between gap-3">
+                        <span
+                          className={`grid size-10 place-items-center rounded-xl ${themeColor.badgeBg} text-white text-base font-black shadow-xs tabular`}
+                        >
+                          {sdg.number}
+                        </span>
+
+                        {/* Animated Glowing & Pulsing Icon */}
+                        <div className="relative flex size-9 shrink-0 items-center justify-center">
+                          <span
+                            aria-hidden
+                            className={`absolute inset-0 rounded-full ${themeColor.glowBg} blur-[5px] animate-pulse`}
+                          />
+                          <span
+                            className={`relative grid size-9 place-items-center rounded-full border ${themeColor.ringBorder} shadow-2xs`}
                           >
-                            <div className="size-1.5 rounded-full bg-primary-600 shrink-0 mt-1.5" />
-                            <span>{point}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Reveal>
-            ))}
+                            <SdgIcon aria-hidden className={`size-4 ${themeColor.iconColor}`} />
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Title & Tag */}
+                      <div className="flex flex-col gap-1">
+                        <span
+                          className={`self-start rounded-md border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${themeColor.tagClass}`}
+                        >
+                          {sdg.tag}
+                        </span>
+                        <h3 className="text-lg font-bold text-neutral-900 mt-1 leading-snug">
+                          {sdg.title}
+                        </h3>
+                        <p className="mt-1 text-body-sm text-neutral-600 leading-relaxed">
+                          {sdg.description}
+                        </p>
+                      </div>
+
+                      {/* Actionable local highlights */}
+                      <div className="mt-2 rounded-xl border border-neutral-100 bg-neutral-50/80 p-3.5">
+                        <p className="text-caption font-bold text-neutral-800 mb-2">
+                          San Jose DRRM Implementation:
+                        </p>
+                        <ul className="flex flex-col gap-2">
+                          {sdg.highlights.map((point) => (
+                            <li
+                              key={point}
+                              className="flex items-start gap-2 text-[11px] text-neutral-600 leading-normal"
+                            >
+                              <div className={`size-1.5 rounded-full ${themeColor.bulletColor} shrink-0 mt-1.5`} />
+                              <span>{point}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Reveal>
+              );
+            })}
           </div>
         </div>
 
         {/* ===================================================================
-            4. THE PROJECT TEAM (5 INTERDISCIPLINARY MEMBERS)
+            4. THE INTERDISCIPLINARY PROJECT TEAM
            =================================================================== */}
-        <div className="flex flex-col gap-6">
-          <SectionHeader
-            align="center"
-            rule
-            icon={Users}
-            eyebrow="The Minds Behind SAGIP-SJ"
-            title="Interdisciplinary"
-            titleAccent="Project Team"
-            description="A 5-person cohort combining software development, public administration, disaster policy, and community nutrition for the SK Project Pitching Competition."
-            className="mx-auto max-w-3xl"
-          />
+        <div className="flex flex-col gap-6 md:gap-8">
+          <Reveal>
+            <SectionHeader
+              icon={Users}
+              title="Interdisciplinary"
+              titleAccent="Project Team"
+              description="A 5-person student cohort combining software engineering, public administration, disaster policy, and community nutrition for the SK Project Pitching Competition."
+            />
+          </Reveal>
 
-          {/* 5 Members Grid (3 on top row, 2 centered on bottom row) */}
+          {/* 5 Members + 1 Convergence Card in 3-Column Grid */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
-            {TEAM_MEMBERS.map((member, i) => (
-              <Reveal
-                key={member.id}
-                delay={((i % 3) as 0 | 1 | 2)}
-                className={i >= 3 ? "lg:col-span-1" : ""}
-              >
-                <div className="flex h-full flex-col justify-between rounded-3xl border border-neutral-200/90 bg-white p-6 shadow-sm-card transition duration-300 hover:border-primary-300 hover:shadow-md-card">
-                  <div className="flex flex-col gap-4">
-                    {/* Top row: Avatar & Program Tag */}
-                    <div className="flex items-start justify-between gap-4">
-                      {/* Portrait Face Placeholder with Initial Badge */}
-                      <TeamAvatarPlaceholder member={member} size="lg" />
+            {TEAM_MEMBERS.map((member, i) => {
+              const themeMap: Record<
+                string,
+                { avatarBg: string; tagClass: string; cardHover: string }
+              > = {
+                "member-1": {
+                  avatarBg: "bg-blue-600",
+                  tagClass: "border-blue-200 bg-blue-50 text-blue-800",
+                  cardHover: "hover:border-blue-300",
+                },
+                "member-2": {
+                  avatarBg: "bg-purple-600",
+                  tagClass: "border-purple-200 bg-purple-50 text-purple-800",
+                  cardHover: "hover:border-purple-300",
+                },
+                "member-3": {
+                  avatarBg: "bg-amber-600",
+                  tagClass: "border-amber-200 bg-amber-50 text-amber-800",
+                  cardHover: "hover:border-amber-300",
+                },
+                "member-4": {
+                  avatarBg: "bg-emerald-600",
+                  tagClass: "border-emerald-200 bg-emerald-50 text-emerald-800",
+                  cardHover: "hover:border-emerald-300",
+                },
+                "member-5": {
+                  avatarBg: "bg-sky-600",
+                  tagClass: "border-sky-200 bg-sky-50 text-sky-800",
+                  cardHover: "hover:border-sky-300",
+                },
+              };
 
-                      <div className="flex flex-col items-end gap-1.5">
-                        {/* Program Acronym Pill */}
-                        <span className="rounded-full border border-primary-200 bg-primary-100 px-3 py-1 text-caption font-extrabold text-primary-900 shadow-2xs">
-                          {member.programShort}
-                        </span>
-                        <span className="text-[11px] font-semibold text-neutral-500">
-                          {member.discipline}
-                        </span>
+              const theme = themeMap[member.id] ?? {
+                avatarBg: "bg-primary-700",
+                tagClass: "border-neutral-200 bg-neutral-50 text-neutral-700",
+                cardHover: "hover:border-primary-300",
+              };
+
+              return (
+                <Reveal key={member.id} delay={((i % 3) as 0 | 1 | 2)} className="h-full">
+                  <div
+                    className={`flex h-full flex-col justify-between rounded-3xl border border-neutral-200/90 bg-white p-6 shadow-sm-card transition-all duration-300 hover:-translate-y-1 hover:shadow-md-card ${theme.cardHover}`}
+                  >
+                    <div className="flex flex-col gap-4">
+                      {/* Top row: Avatar & Program Tag */}
+                      <div className="flex items-start justify-between gap-3">
+                        <TeamAvatarPlaceholder
+                          member={member}
+                          themeClass={theme.avatarBg}
+                        />
+
+                        <div className="flex flex-col items-end gap-1.5">
+                          <span
+                            className={`rounded-full border px-3 py-1 text-caption font-extrabold shadow-2xs ${theme.tagClass}`}
+                          >
+                            {member.programShort}
+                          </span>
+                          <span className="text-[11px] font-semibold text-neutral-500">
+                            {member.discipline}
+                          </span>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Member Details */}
-                    <div>
-                      <h3 className="text-h4 font-extrabold text-neutral-900">
-                        {member.name}
-                      </h3>
-                      <p className="text-body-sm font-bold text-primary-700 mt-0.5">
-                        {member.role}
-                      </p>
+                      {/* Member Info */}
+                      <div>
+                        <h3 className="text-h4 font-extrabold text-neutral-900">
+                          {member.name}
+                        </h3>
+                        <p className="text-body-sm font-bold text-primary-700 mt-0.5">
+                          {member.role}
+                        </p>
 
-                      {/* Full Academic Degree Title */}
-                      <div className="mt-2.5 flex items-start gap-1.5 rounded-lg bg-neutral-50 p-2 border border-neutral-100">
-                        <GraduationCap className="size-4 text-primary-600 shrink-0 mt-0.5" />
-                        <p className="text-caption font-semibold text-neutral-800 leading-snug">
-                          {member.program}
+                        {/* Full Academic Degree Title */}
+                        <div className="mt-2.5 flex items-start gap-2 rounded-xl bg-neutral-50 p-2.5 border border-neutral-100">
+                          <GraduationCap className="size-4 text-primary-700 shrink-0 mt-0.5" />
+                          <p className="text-caption font-semibold text-neutral-800 leading-snug">
+                            {member.program}
+                          </p>
+                        </div>
+
+                        {/* Research Contribution Focus */}
+                        <p className="mt-3 text-body-sm text-neutral-600 leading-relaxed">
+                          {member.focus}
                         </p>
                       </div>
+                    </div>
 
-                      {/* Discipline Contribution Narrative */}
-                      <p className="mt-3 text-body-sm text-neutral-600 leading-relaxed">
-                        {member.focus}
-                      </p>
+                    {/* Skills Pills */}
+                    <div className="mt-5 border-t border-neutral-100 pt-3.5">
+                      <div className="flex flex-wrap gap-1.5">
+                        {member.skills.map((skill) => (
+                          <span
+                            key={skill}
+                            className="rounded-md border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[10px] font-medium text-neutral-700"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
+                </Reveal>
+              );
+            })}
 
-                  {/* Skills / Key Tags */}
-                  <div className="mt-5 border-t border-neutral-100 pt-3.5">
-                    <div className="flex flex-wrap gap-1.5">
-                      {member.skills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="rounded-md border border-neutral-200 bg-white px-2 py-0.5 text-[11px] font-medium text-neutral-700"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
+            {/* 6th Slot: Interdisciplinary Convergence Spotlight Banner */}
+            <Reveal delay={2} className="h-full">
+              <div className="flex h-full flex-col justify-between rounded-3xl border border-primary-800 bg-gradient-to-br from-primary-900 via-primary-950 to-neutral-950 p-6 text-white shadow-md-card md:p-8">
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-2.5">
+                    <span className="grid size-10 place-items-center rounded-xl bg-primary-500/20 text-primary-300 border border-primary-400/30">
+                      <Sparkles className="size-5 text-primary-300" />
+                    </span>
+                    <span className="rounded-md border border-primary-400/30 bg-primary-800/60 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-primary-200">
+                      Collaborative Synergy
+                    </span>
                   </div>
+
+                  <h3 className="text-xl font-extrabold text-white leading-tight">
+                    4 Disciplines, 1 Unified Disaster Platform
+                  </h3>
+
+                  <p className="text-body-sm text-primary-100/80 leading-relaxed">
+                    Designed to bridge the gap between technical engineering, public administration, legal DRRM frameworks, and public health nutrition in local government calamity response.
+                  </p>
                 </div>
-              </Reveal>
-            ))}
+
+                <div className="mt-6 border-t border-primary-800/80 pt-4 flex items-center justify-between text-xs text-primary-300">
+                  <span className="font-bold">SK Project Pitching 2026</span>
+                  <span className="text-primary-400">San Jose, Rizal</span>
+                </div>
+              </div>
+            </Reveal>
           </div>
         </div>
       </div>

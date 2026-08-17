@@ -40,121 +40,180 @@ export function AboutBandSection() {
       />
 
       <div className="relative flex flex-col gap-6 md:gap-8">
-        {/* --- Top Row: Brand & Main Overview (Exact Original Title Design) --- */}
+        {/* --- Top Row: Brand & Main Overview + UN SDGs Panel --- */}
         <Reveal>
-          <div className="flex flex-col justify-between rounded-3xl border border-neutral-200/80 bg-white/90 p-6 shadow-sm-card backdrop-blur-sm md:p-8">
-            <div className="flex flex-col gap-4">
-              {/* Headline */}
-              <h2 className="text-2xl font-extrabold tracking-tight text-neutral-900 sm:text-3xl md:text-4xl">
-                About the{" "}
-                <span className="relative inline-block bg-gradient-to-r from-primary-700 via-primary-600 to-emerald-600 bg-clip-text text-transparent">
-                  SAGIP Platform
-                  <span
-                    aria-hidden
-                    className="absolute -bottom-1 left-0 h-[3px] w-full rounded-full bg-primary-500/30"
-                  />
-                </span>
-              </h2>
+          <div className="rounded-3xl border border-neutral-200/80 bg-white/90 p-6 shadow-sm-card backdrop-blur-sm md:p-8">
+            <div className="grid gap-6 lg:grid-cols-12 lg:gap-8 items-center">
+              {/* Left Column: Brand Title, Description, & CTA (7 cols on lg) */}
+              <div className="flex flex-col justify-between gap-6 lg:col-span-7">
+                <div className="flex flex-col gap-3.5">
+                  <h2 className="text-2xl font-extrabold tracking-tight text-neutral-900 sm:text-3xl md:text-4xl">
+                    About the{" "}
+                    <span className="relative inline-block bg-gradient-to-r from-primary-700 via-primary-600 to-emerald-600 bg-clip-text text-transparent">
+                      SAGIP Platform
+                      <span
+                        aria-hidden
+                        className="absolute -bottom-1 left-0 h-[3px] w-full rounded-full bg-primary-500/30"
+                      />
+                    </span>
+                  </h2>
 
-              {/* Description */}
-              <p className="text-body-lg text-neutral-600 leading-relaxed max-w-4xl">
-                {WHAT_IT_IS.split("\n\n")[0]}
-              </p>
-            </div>
+                  <p className="text-body-lg text-neutral-600 leading-relaxed max-w-2xl">
+                    {WHAT_IT_IS.split("\n\n")[0]}
+                  </p>
+                </div>
 
-            {/* Bottom CTA to dedicated about */}
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-neutral-100">
-              <Button asChild pill size="md" className="gap-2">
-                <Link href="/about">
-                  <span>Explore Full Story & Team</span>
-                  <ArrowRight aria-hidden className="size-4" />
-                </Link>
-              </Button>
-              <span className="text-caption text-neutral-500 font-medium">
-                5 disciplines · 3 SDGs · 1 unified platform
-              </span>
+                <div className="pt-2">
+                  <Button asChild pill size="md" className="gap-2">
+                    <Link href="/about">
+                      <span>Explore Full Story & Team</span>
+                      <ArrowRight aria-hidden className="size-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Right Column: Redesigned UN SDGs Panel (5 cols on lg) */}
+              <div className="flex flex-col gap-2.5 rounded-2xl border border-neutral-200/80 bg-neutral-50/70 p-4 lg:col-span-5">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-primary-700">
+                    UN Sustainable Development Goals
+                  </span>
+                  <span className="text-[11px] font-extrabold text-orange-600">
+                    3 Key Alignments
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  {SDG_ENTRIES.map((sdg) => {
+                    const iconColor =
+                      sdg.number === 13
+                        ? "text-sky-600"
+                        : sdg.number === 11
+                          ? "text-amber-600"
+                          : "text-green-600";
+                    const glowBg =
+                      sdg.number === 13
+                        ? "bg-sky-500/30"
+                        : sdg.number === 11
+                          ? "bg-amber-500/30"
+                          : "bg-green-500/30";
+                    const ringColor =
+                      sdg.number === 13
+                        ? "border-sky-200 bg-sky-50/80"
+                        : sdg.number === 11
+                          ? "border-amber-200 bg-amber-50/80"
+                          : "border-green-200 bg-green-50/80";
+
+                    return (
+                      <div
+                        key={sdg.number}
+                        className="group relative flex items-center justify-between gap-3.5 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-3 px-4 shadow-2xs transition-all duration-300 hover:-translate-y-0.5 hover:border-primary-300 hover:shadow-xs"
+                      >
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          {/* Standardized SDG Number Badge */}
+                          <span
+                            className={`grid size-8 shrink-0 place-items-center rounded-xl ${sdg.colorScheme.badgeBg} text-white font-black text-sm tabular shadow-xs ring-1 ring-black/5`}
+                          >
+                            {sdg.number}
+                          </span>
+
+                          {/* Title */}
+                          <p className="text-sm sm:text-base font-bold text-neutral-900 truncate transition group-hover:text-primary-800">
+                            {sdg.title}
+                          </p>
+                        </div>
+
+                        {/* Animated Glowing & Pulsing Icon */}
+                        <div className="relative flex size-8 shrink-0 items-center justify-center">
+                          {/* Pulsing ambient glow aura */}
+                          <span
+                            aria-hidden
+                            className={`absolute inset-0 rounded-full ${glowBg} blur-[5px] animate-pulse`}
+                          />
+                          {/* Icon Container Pill */}
+                          <span
+                            className={`relative grid size-8 place-items-center rounded-full border ${ringColor} shadow-2xs transition-transform duration-300 group-hover:scale-110`}
+                          >
+                            <sdg.icon
+                              aria-hidden
+                              className={`size-4 ${iconColor}`}
+                            />
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </Reveal>
 
-        {/* --- Overhauled Bottom Bento Grid (Maximizes Space & Flow) --- */}
+        {/* --- Bottom Row: Mission, Vision, & Interdisciplinary Team --- */}
         <div className="grid gap-6 lg:grid-cols-12 lg:gap-8 items-stretch">
-          {/* Left Column: Integrated Mission, Vision, & UN SDGs (5 cols on lg) */}
-          <div className="flex flex-col lg:col-span-5">
-            <Reveal delay={1} className="h-full">
-              <div className="flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-sm-card h-full">
-                <div className="flex flex-col gap-4">
-                  {/* Mission */}
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="grid size-7 place-items-center rounded-lg bg-primary-100 text-primary-800 border border-primary-200/80">
+          {/* Left Column: Two Styled Bento Cards for Mission & Vision (5 cols on lg) */}
+          <div className="flex flex-col gap-4 lg:col-span-5">
+            {/* Our Mission Card */}
+            <Reveal delay={1}>
+              <div className="group relative flex flex-col gap-3 rounded-2xl border border-primary-200/90 bg-gradient-to-br from-primary-50/50 via-white to-white p-5 sm:p-6 shadow-sm-card transition-all duration-300 hover:border-primary-300 hover:shadow-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    {/* Glowing animated icon */}
+                    <div className="relative flex size-8 shrink-0 items-center justify-center">
+                      <span
+                        aria-hidden
+                        className="absolute inset-0 rounded-xl bg-primary-500/30 blur-[5px] animate-pulse"
+                      />
+                      <span className="relative grid size-8 place-items-center rounded-xl bg-primary-700 text-white shadow-xs">
                         <Compass aria-hidden className="size-4" />
                       </span>
-                      <span className="text-overline font-extrabold uppercase tracking-wider text-primary-700">
-                        Our Mission
-                      </span>
                     </div>
-                    <h3 className="text-sm sm:text-base font-bold text-neutral-900 leading-snug">
-                      Proactive Disaster Management
-                    </h3>
-                    <p className="text-body-sm text-neutral-600 leading-relaxed">
-                      {MISSION}
-                    </p>
-                  </div>
-
-                  {/* Subtle Divider */}
-                  <hr className="border-neutral-100" />
-
-                  {/* Vision */}
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="grid size-7 place-items-center rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-200/80">
-                        <Eye aria-hidden className="size-4" />
-                      </span>
-                      <span className="text-overline font-extrabold uppercase tracking-wider text-emerald-700">
-                        Our Vision
-                      </span>
-                    </div>
-                    <h3 className="text-sm sm:text-base font-bold text-neutral-900 leading-snug">
-                      Zero-Overlooked Community Resilience
-                    </h3>
-                    <p className="text-body-sm text-neutral-600 leading-relaxed">
-                      {VISION}
-                    </p>
+                    <span className="rounded-md border border-primary-200 bg-primary-100/90 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-primary-800">
+                      Our Mission
+                    </span>
                   </div>
                 </div>
 
-                {/* 3 UN SDGs Alignment Strip */}
-                <div className="mt-5 pt-4 border-t border-neutral-100 flex flex-col gap-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-extrabold tracking-wider text-neutral-500 uppercase">
-                      UN SDG Alignments
-                    </span>
-                    <span className="text-[11px] font-bold text-primary-700">
-                      3 Key Targets
-                    </span>
-                  </div>
+                <div className="flex flex-col gap-1.5">
+                  <h3 className="text-sm sm:text-base font-bold text-neutral-900 leading-snug">
+                    Proactive Disaster Management
+                  </h3>
+                  <p className="text-body-sm text-neutral-600 leading-relaxed">
+                    {MISSION}
+                  </p>
+                </div>
+              </div>
+            </Reveal>
 
-                  <div className="grid grid-cols-3 gap-2">
-                    {SDG_ENTRIES.map((sdg) => (
-                      <div
-                        key={sdg.number}
-                        className="flex flex-col items-center justify-center rounded-xl border border-neutral-200/80 bg-neutral-50/70 p-2 text-center transition hover:bg-white hover:border-primary-300"
-                      >
-                        <span
-                          className={`grid size-6 place-items-center rounded-md ${sdg.colorScheme.badgeBg} ${sdg.colorScheme.badgeText} text-[10px] font-black shadow-2xs mb-1`}
-                        >
-                          {sdg.number}
-                        </span>
-                        <span className="text-[11px] font-bold text-neutral-900 line-clamp-1 leading-tight">
-                          {sdg.title.split(" ")[0]}
-                        </span>
-                        <span className="text-[9px] text-neutral-500 line-clamp-1 leading-tight">
-                          {sdg.number === 13 ? "Climate" : sdg.number === 11 ? "Cities" : "Health"}
-                        </span>
-                      </div>
-                    ))}
+            {/* Our Vision Card */}
+            <Reveal delay={2}>
+              <div className="group relative flex flex-col gap-3 rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/50 via-white to-white p-5 sm:p-6 shadow-sm-card transition-all duration-300 hover:border-emerald-300 hover:shadow-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    {/* Glowing animated icon */}
+                    <div className="relative flex size-8 shrink-0 items-center justify-center">
+                      <span
+                        aria-hidden
+                        className="absolute inset-0 rounded-xl bg-emerald-500/30 blur-[5px] animate-pulse"
+                      />
+                      <span className="relative grid size-8 place-items-center rounded-xl bg-emerald-700 text-white shadow-xs">
+                        <Eye aria-hidden className="size-4" />
+                      </span>
+                    </div>
+                    <span className="rounded-md border border-emerald-200 bg-emerald-100/90 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-800">
+                      Our Vision
+                    </span>
                   </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <h3 className="text-sm sm:text-base font-bold text-neutral-900 leading-snug">
+                    Zero-Overlooked Community Resilience
+                  </h3>
+                  <p className="text-body-sm text-neutral-600 leading-relaxed">
+                    {VISION}
+                  </p>
                 </div>
               </div>
             </Reveal>
@@ -165,80 +224,111 @@ export function AboutBandSection() {
             <Reveal delay={2} className="h-full">
               <div className="flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-sm-card h-full">
                 <div className="flex flex-col gap-4">
-                  {/* Header with Title & Badge */}
-                  <div className="flex items-center justify-between gap-2 border-b border-neutral-100 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="grid size-7 place-items-center rounded-lg bg-primary-100 text-primary-800 border border-primary-200/80">
+                  {/* Header with Title & Live Pulse Badge */}
+                  <div className="flex items-center justify-between gap-2 border-b border-neutral-100 pb-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <span className="grid size-8 place-items-center rounded-xl bg-primary-100 text-primary-800 border border-primary-200/80 shadow-2xs">
                         <Users aria-hidden className="size-4" />
                       </span>
                       <div>
                         <h3 className="text-sm sm:text-base font-bold text-neutral-900 leading-tight">
                           Interdisciplinary Project Team
                         </h3>
-                        <p className="text-[11px] text-neutral-500">
+                        <p className="text-[11px] text-neutral-500 mt-0.5">
                           SK Project Pitching Prototype
                         </p>
                       </div>
                     </div>
-                    <span className="shrink-0 rounded-md border border-primary-200 bg-primary-100/90 px-2 py-0.5 text-[11px] font-extrabold text-primary-900">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-[11px] font-bold text-primary-900">
+                      <span className="size-1.5 rounded-full bg-primary-600 animate-ping" />
                       5 Members
                     </span>
                   </div>
 
-                  {/* 5 Members Grid */}
+                  {/* 5 Members Grid with Themed Discipline Badges */}
                   <div className="grid gap-2.5 sm:grid-cols-2">
-                    {TEAM_MEMBERS.map((member) => (
-                      <div
-                        key={member.id}
-                        className="flex items-center justify-between gap-2.5 rounded-xl border border-neutral-200/70 bg-neutral-50/60 p-2.5 transition hover:bg-primary-50/40 hover:border-primary-300"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          {/* Stylized Initials Badge */}
-                          <div className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-primary-200/80 bg-gradient-to-b from-primary-100 to-neutral-100 text-primary-900 shadow-2xs font-extrabold text-xs">
-                            {member.initials}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-caption font-bold text-neutral-900 truncate leading-tight">
-                              {member.name}
-                            </p>
-                            <p className="text-[11px] text-neutral-500 truncate leading-tight mt-0.5">
-                              {member.role}
-                            </p>
-                          </div>
-                        </div>
+                    {TEAM_MEMBERS.map((member) => {
+                      const themeMap: Record<
+                        string,
+                        { avatarBg: string; tagClass: string }
+                      > = {
+                        "member-1": {
+                          avatarBg: "bg-blue-600",
+                          tagClass: "border-blue-200 bg-blue-50/90 text-blue-800",
+                        },
+                        "member-2": {
+                          avatarBg: "bg-purple-600",
+                          tagClass:
+                            "border-purple-200 bg-purple-50/90 text-purple-800",
+                        },
+                        "member-3": {
+                          avatarBg: "bg-amber-600",
+                          tagClass: "border-amber-200 bg-amber-50/90 text-amber-800",
+                        },
+                        "member-4": {
+                          avatarBg: "bg-emerald-600",
+                          tagClass:
+                            "border-emerald-200 bg-emerald-50/90 text-emerald-800",
+                        },
+                        "member-5": {
+                          avatarBg: "bg-sky-600",
+                          tagClass: "border-sky-200 bg-sky-50/90 text-sky-800",
+                        },
+                      };
 
-                        {/* Program Tag */}
-                        <span
-                          title={member.program}
-                          className="shrink-0 rounded-md border border-neutral-200 bg-white px-2 py-0.5 text-[10px] font-extrabold text-neutral-700 shadow-2xs"
+                      const theme = themeMap[member.id] ?? {
+                        avatarBg: "bg-primary-700",
+                        tagClass: "border-neutral-200 bg-neutral-50 text-neutral-700",
+                      };
+
+                      return (
+                        <div
+                          key={member.id}
+                          className="group relative flex items-center justify-between gap-2.5 rounded-xl border border-neutral-200/80 bg-neutral-50/60 p-2.5 px-3 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:border-primary-300 hover:shadow-2xs"
                         >
-                          {member.programShort}
-                        </span>
-                      </div>
-                    ))}
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            {/* Stylized Initials Badge */}
+                            <div
+                              className={`relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg ${theme.avatarBg} text-white shadow-xs font-extrabold text-xs tabular`}
+                            >
+                              {member.initials}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-caption font-bold text-neutral-900 truncate leading-tight transition group-hover:text-primary-800">
+                                {member.name}
+                              </p>
+                              <p className="text-[11px] text-neutral-500 truncate leading-tight mt-0.5">
+                                {member.role}
+                              </p>
+                            </div>
+                          </div>
 
-                    {/* 6th Slot: Discipline Integration Banner */}
-                    <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-primary-200 bg-primary-50/30 p-2.5 text-center">
-                      <GraduationCap aria-hidden className="size-4 text-primary-700 shrink-0" />
-                      <span className="text-[11px] font-bold text-primary-900 leading-tight">
-                        PolSci · PubAd · Nutrition · IT
+                          {/* Program Tag */}
+                          <span
+                            title={member.program}
+                            className={`shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-extrabold shadow-2xs ${theme.tagClass}`}
+                          >
+                            {member.programShort}
+                          </span>
+                        </div>
+                      );
+                    })}
+
+                    {/* 6th Slot: Discipline Integration Convergence Tile */}
+                    <div className="flex items-center gap-2.5 rounded-xl border border-primary-200/80 bg-gradient-to-r from-primary-50/80 to-emerald-50/80 p-2.5 px-3 shadow-2xs">
+                      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary-700 text-white shadow-xs">
+                        <GraduationCap aria-hidden className="size-4" />
                       </span>
+                      <div className="min-w-0">
+                        <p className="text-caption font-extrabold text-primary-950 truncate leading-tight">
+                          PolSci · PubAd · Nutrition · IT
+                        </p>
+                        <p className="text-[10px] font-medium text-primary-700 truncate mt-0.5">
+                          Interdisciplinary DRRM Integration
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                {/* Footer Link */}
-                <div className="mt-4 flex items-center justify-between border-t border-neutral-100 pt-3 text-caption text-neutral-500">
-                  <span className="font-medium text-xs">
-                    Combining policy, public health, nutrition & resilient tech
-                  </span>
-                  <Link
-                    href="/about"
-                    className="inline-flex items-center gap-1 font-bold text-primary-700 hover:text-primary-800 hover:underline text-xs shrink-0"
-                  >
-                    <span>Full Bios & Methodology</span>
-                    <ArrowRight aria-hidden className="size-3.5" />
-                  </Link>
                 </div>
               </div>
             </Reveal>

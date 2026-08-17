@@ -83,12 +83,12 @@ export const SDG_ENTRIES: SdgEntry[] = [
     description:
       "Strengthening resilience and adaptive capacity to climate-induced flash floods and river overflow along the Marikina River basin through live telemetry and geospatial hazard intelligence.",
     colorScheme: {
-      bg: "bg-emerald-500/10",
-      border: "border-emerald-500/30",
-      text: "text-emerald-700 dark:text-emerald-300",
-      badgeBg: "bg-[#3F7E44]",
+      bg: "bg-sky-500/10",
+      border: "border-sky-500/30",
+      text: "text-sky-700 dark:text-sky-300",
+      badgeBg: "bg-[#007DBC]",
       badgeText: "text-white",
-      glow: "from-emerald-500/20 to-transparent",
+      glow: "from-sky-500/20 to-transparent",
     },
     highlights: [
       "DOST-PAGASA river level telemetry integration",
@@ -108,7 +108,7 @@ export const SDG_ENTRIES: SdgEntry[] = [
       border: "border-amber-500/30",
       text: "text-amber-800 dark:text-amber-300",
       badgeBg: "bg-[#FD9D24]",
-      badgeText: "text-neutral-950 font-bold",
+      badgeText: "text-white",
       glow: "from-amber-500/20 to-transparent",
     },
     highlights: [
