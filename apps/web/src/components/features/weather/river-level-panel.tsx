@@ -40,6 +40,14 @@ const MEASUREMENT_THEME: Record<AlertLevel, { bg: string; unit: string; val: str
   },
 };
 
+const DISPLAY_STATION_NAMES: Record<string, string> = {
+  Montalban: "Montalban (Rodriguez) River Gauge",
+};
+
+function displayStationName(station: string) {
+  return DISPLAY_STATION_NAMES[station] ?? station;
+}
+
 function getRainfallAdvisory(weather?: PublicWeatherCurrent) {
   const hourlyRain = weather?.forecast
     .filter((point) => point.horizon === "hourly" && point.metric === "rainfall")
@@ -157,8 +165,11 @@ export function RiverLevelPanel({
               {reading.unit}
             </span>
             {reading.station ? (
-              <span className="text-caption ml-auto font-semibold text-neutral-500 max-sm:hidden">
-                {reading.station}
+              <span
+                className="text-caption ml-auto max-w-56 font-semibold text-neutral-500 max-sm:hidden"
+                title={displayStationName(reading.station)}
+              >
+                {displayStationName(reading.station)}
               </span>
             ) : null}
           </div>
