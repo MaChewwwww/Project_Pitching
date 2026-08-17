@@ -8,6 +8,20 @@ donations, activities, preparedness, and analytics for **Barangay San Jose, Rodr
 
 ---
 
+## Demo release state
+
+The functional demo is complete across the Public Information Site, Resident Portal, and Barangay
+Portal. The remaining public-content hold is the final **About/platform and team detail** supplied
+by the project team. The existing About route stays intentionally conservative until that source
+material is approved; do not substitute placeholder biographies, portraits, or claims.
+
+[`docs/demo-freeze.md`](./docs/demo-freeze.md) records the release boundary and
+[`apps/web/docs/structure.md`](./apps/web/docs/structure.md) maps the implemented route families.
+Individual requirement rows remain subject to their Definition of Done evidence and peer review in
+[`docs/frs_nfrs.md`](./docs/frs_nfrs.md).
+
+---
+
 ## Get it running
 
 **Target: under 30 minutes from a fresh clone** (NFR-MNT-008). Docker does almost all of it.

@@ -1253,11 +1253,33 @@
     animation-delay: 360ms;
   }
 
-  /* Portal-only loading shapes use the same gentle pace as card entrances.
+  /* Portal-only loading shapes drift in opacity instead of using the primitive's
+     pronounced pulse. The stagger keeps an entire metric grid from brightening
+     and dimming in lockstep, which read as a distracting flash during refetches.
      The primitive remains untouched because public streaming fallbacks retain
      their original animation contract. */
-  .portal-skeleton {
-    animation-duration: 2.4s;
+  @keyframes portal-skeleton-drift {
+    0%,
+    100% {
+      opacity: 0.72;
+    }
+    50% {
+      opacity: 0.92;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .portal-skeleton {
+      animation: portal-skeleton-drift 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite !important;
+    }
+
+    .portal-skeleton:nth-child(3n + 2) {
+      animation-delay: -0.7s !important;
+    }
+
+    .portal-skeleton:nth-child(3n) {
+      animation-delay: -1.4s !important;
+    }
   }
 
   /* Micro-interaction helper for cards and items */

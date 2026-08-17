@@ -3,7 +3,7 @@
 **Project:** `SAGIP-SJ` (System for Alert, Guidance, Incident Reporting, and Preparedness) — Barangay San Jose Disaster Readiness & Community Health Platform
 
 **Companion to:** `business-requirements.md`, `tech_stack.md`
-**Version:** 0.2 · **Date:** August 16, 2026
+**Version:** 0.3 · **Date:** August 17, 2026
 
 > **Scope.** Visual language, tokens, and the component inventory. Screen-by-screen layouts and user flows belong in a separate UI spec.
 
@@ -333,6 +333,10 @@ Authenticated portal entrances use the `slow` cadence with 90ms stagger steps. P
 remains `instant`; loading, emergency, and direct-manipulation feedback must never be delayed
 just to make a page feel calmer.
 
+Authenticated portal skeletons use a low-contrast 3.2-second opacity drift with staggered shapes,
+not a synchronized pulse. This keeps a loading grid perceptible without making the entire workspace
+flash during a refetch.
+
 ---
 
 ## 6. Iconography
@@ -659,13 +663,12 @@ The same tokens, deliberately different personalities.
 | Motion  | Scroll reveals, carousel            | Minimal — state changes only                                          |
 | Goal    | Reassure and inform                 | Get work done quickly                                                 |
 
-**Demo-freeze boundary, not a screen spec.** The August 16 demo freeze approves the Public
-Information Site and Barangay Portal presentation as the pitch baseline. The Resident Portal is
-still limited to its existing household, safety, and incident-report routes pending its full design
-pass; the About page also awaits its team-profile content and revision. Preserve the
-verified workflows; define future household editing, alerts, activities, volunteer, go-bag, and
-notification screens with stakeholders before drawing them. The cut assistance tracker must not
-return through the redesign.
+**Demo-release boundary, not a screen spec.** The Public Information Site, Resident Portal, and
+Barangay Portal presentation is the pitch baseline. The resident flow now includes household and
+member editing, map/history/weather context, safety, rescue, incidents, updates, and preparedness.
+Final About/platform and team detail still awaits approved source material. Preserve the verified
+workflows and do not invent team profiles, images, or additional screens. The cut assistance
+tracker must not return through the redesign.
 
 > For the comprehensive inventory of finished and implemented pages across Public, Resident Portal,
 > and Barangay Admin surfaces, see [`apps/web/docs/structure.md#core-routes--architectural-reference`](../apps/web/docs/structure.md#core-routes--architectural-reference).

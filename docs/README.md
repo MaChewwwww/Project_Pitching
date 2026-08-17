@@ -41,24 +41,27 @@ on one, check whether it has been resolved — and if you resolve it, update the
 | `design.md`                | Section 13                                                                          |
 | `tech_stack.md`            | Section 12                                                                          |
 
-## Demo freeze and approved next work
+## Demo release and remaining content
 
 The canonical docs distinguish two kinds of truth:
 
-- **Demo-frozen/current** statements describe `main` at commit `ce66a7e` on August 16, 2026.
-  The Public Information Site and Barangay Portal are the approved demo baseline.
-- **Planned/not frozen** statements describe the remaining Resident Portal pass and the About
-  page revision with team profiles. They are not represented as completed work.
+- **Demo-release/current** statements describe the completed Public Information Site, Resident
+  Portal, and Barangay Portal flows. The route inventory is in
+  [`apps/web/docs/structure.md`](../apps/web/docs/structure.md).
+- **Content awaiting approval** is limited to final About/platform and team detail. The route is
+  already live, but source material has not been supplied; it must not be replaced with invented
+  profiles, images, or claims.
 
-The article CMS and informational donation-drive schema are deployed in this snapshot; their
-physical definition belongs in `schema.md`. Do not describe a planned endpoint, column, team
-profile, or resident workflow as implemented.
+The article CMS, informational donation-drive schema, resident self-service workflows, and active
+flood-response exercise are deployed in this snapshot. Their physical definition belongs in
+[`schema.md`](./schema.md), implementation mechanics in local unit docs, and requirement evidence
+in [`frs_nfrs.md`](./frs_nfrs.md). Do not promote an individual row to `✅` without its Definition
+of Done evidence.
 
-[`demo-freeze.md`](./demo-freeze.md) records the exact boundary and how to resume work. The
-August stakeholder decision makes announcements, activities, and donation drives separate article
-modules with shared authoring/media behavior. Donation drives are informational posts only: no
-donor submission, targets/progress, receipt status, payment, distribution, or household assistance
-tracker.
+[`demo-freeze.md`](./demo-freeze.md) records the exact boundary. The August stakeholder decision
+makes announcements, activities, and donation drives separate article modules with shared
+authoring/media behavior. Donation drives are informational posts only: no donor submission,
+targets/progress, receipt status, payment, distribution, or household assistance tracker.
 
 ## Keeping these honest
 

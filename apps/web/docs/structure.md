@@ -9,7 +9,7 @@ its own layout and its own guard.
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | `(public)` | Landing (`/`), announcements, weather & river level, evacuation centres, hazard map, preparedness guides, activities, donation drives, help & FAQs, about | None                                      |
 | `(auth)`   | Login, register, password reset                                                                                                                           | None — but redirects if already signed in |
-| `(portal)` | Resident's own household, safety check-in, incident reporting, onboarding                                                                                 | Signed in                                 |
+| `(portal)` | Resident dashboard, onboarding, household, hazard/history/weather, safety, rescue, incident, updates, and preparedness                                    | Signed in                                 |
 | `(admin)`  | Barangay admin command center & operations console                                                                                                        | Signed in **and** role-checked            |
 
 > The guards here are **convenience, not security**. Every one of them is re-checked
@@ -34,7 +34,7 @@ The following inventory serves as the architectural and design pattern reference
 | `/weather`                                                     | Public weather-and-river reading surface with forecast context and a distinct authoritative river alert gauge                  | `WeatherPanel`, `RiverLevelPanel`, flood-history section                                                     |
 | `/hazard-map`, `/barangay-facilities`                          | Map-first public information views with their finalized, protected map configurations                                          | Isolated public `HazardMap` and `BarangayFacilitiesView`; do not alter their center, zoom, or default layers |
 | `/help`, `/rescue`                                             | Help is a searchable/readable support surface; rescue is a focused, unauthenticated action form with emergency contact context | Preparedness and rescue feature components, not admin operations components                                  |
-| `/about`                                                       | Informational route outside the demo-design freeze; team profile and its visual revision remain pending approved content       | Do not add placeholder team content                                                                          |
+| `/about`                                                       | Informational route with approved platform copy; final platform/team details await supplied content                            | Do not add placeholder team content                                                                          |
 
 ### 3. Authentication & Onboarding (`(auth)`)
 
@@ -42,12 +42,14 @@ The following inventory serves as the architectural and design pattern reference
   the underlying role guard remains an internal implementation detail.
 - `/register` — **Resident Registration**: Multi-step household setup and head of family onboarding.
 
-### 4. Resident Self-Service Portal (`(portal)`) — pending work
+### 4. Resident Self-Service Portal (`(portal)`) — demo release reference
 
-The routes exist for the resident dashboard, onboarding, household editing, safety check-in, and
-incident reporting, but this surface is not part of the finalized Public Site and Barangay Portal
-baseline. Its remaining visual and workflow work is required before the overall pitch demo is
-complete; do not cite it as a completed portal pattern yet.
+The resident experience is a complete authenticated demo flow: dashboard, onboarding, household
+and member editing, a household-centred hazard map, flood history, weather, safety check-in,
+authenticated rescue and incident tracking, updates, Go Bag, and a family emergency plan. Its
+calm default becomes emergency-led when an event is active. It is deliberately separate from both
+the editorial public site and the admin operations console; preserve that boundary when extending
+it.
 
 ### 5. Barangay Portal (`(admin)`) — final visual composition map
 
@@ -227,8 +229,8 @@ Two consequences worth knowing:
   of not blocking the rest of the page on it.
 
 `AboutBandSection` is synchronous, so it gets a boundary but no `Suspense` — there is nothing
-to wait for. The current `/about` route is intentionally outside the August 16 demo-design freeze:
-its team profile and visual revision are pending approved team content. Do not add placeholder
+to wait for. The current `/about` route is the only demo-release content dependency: its final
+platform/team detail and visual revision await approved team content. Do not add placeholder
 biographies or imagery as a substitute.
 
 ## Verifying in a headless or hidden browser pane

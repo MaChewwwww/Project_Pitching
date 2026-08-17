@@ -195,7 +195,7 @@ export function DataSurfaceLoading({
     <div
       aria-busy="true"
       className={cn(
-        "grid place-items-center rounded-2xl border border-neutral-200 bg-neutral-50/70 px-4 py-10",
+        "grid place-items-center rounded-2xl border border-neutral-200 bg-white px-4 py-10",
         className,
       )}
       style={{ minHeight }}

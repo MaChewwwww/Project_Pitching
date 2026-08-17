@@ -87,17 +87,25 @@ display stale river data.
 `src/seed.py` keeps researched history separate from the live-looking demo. The three closed
 historical `EmergencyEvent` / `FloodEvent` pairs use the following provenance and scope:
 
-| Seed record | What the source supports | Deliberately left `NULL` |
-| --- | --- | --- |
-| Typhoon Ondoy (Ketsana), 26 Sep 2009 | TAO-Pilipinas documents Kasiglahan Village Phase 1-D, Barangay San Jose as submerged. | Peak level/time, displaced-household count, approximate-area links |
-| Typhoon Ulysses (Vamco), 12–14 Nov 2020 | Sentinel Times reports 3,363 families / 15,591 people in Rodriguez evacuation centres; this is municipal, not Barangay San Jose. | Peak level/time, Barangay San Jose displacement count, approximate-area links |
-| Habagat and Tropical Storm Crising, 20–24 Jul 2025 | DSWD records the Wawa Dam critical-spilling response and evacuations in Rodriguez. | Peak level/time, Barangay San Jose displacement count, approximate-area links |
+| Seed record                                        | What the source supports                                                                                                         | Deliberately left `NULL`                                                      |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Typhoon Ondoy (Ketsana), 26 Sep 2009               | TAO-Pilipinas documents Kasiglahan Village Phase 1-D, Barangay San Jose as submerged.                                            | Peak level/time, displaced-household count, approximate-area links            |
+| Typhoon Ulysses (Vamco), 12–14 Nov 2020            | Sentinel Times reports 3,363 families / 15,591 people in Rodriguez evacuation centres; this is municipal, not Barangay San Jose. | Peak level/time, Barangay San Jose displacement count, approximate-area links |
+| Habagat and Tropical Storm Crising, 20–24 Jul 2025 | DSWD records the Wawa Dam critical-spilling response and evacuations in Rodriguez.                                               | Peak level/time, Barangay San Jose displacement count, approximate-area links |
 
 The active `DEMO SIMULATION — Flood Response Exercise` is the only open event. Its 23.8 m
 peak, 58 displaced households, linked Areas 1/2/4, people, household details, pins, sirens,
 rescue requests, and incident reports are fictional training data and say so in their notes.
 Historical `NULL` values are intentional: the public chart excludes unknown measurements rather
 than displaying them as zero. The seed creates no evacuation check-ins and no incident images.
+
+The scenario ledger is deliberately broad enough to exercise every operational workspace: 1,000
+synthetic BHW-assisted households / 3,820 members across six approximate areas; 850 distinct,
+contained household pins and 150 address-complete location-pending records; nine clearly labelled
+simulated sirens (three sounding); 420 registered safe rows plus 12 needing-rescue rows; 12 walk-in
+records (8 safe, 4 needing rescue); 18 rescue requests; and 14 incident reports. These counts are
+asserted by `tests/test_seed_integrity.py`; the database schema summary links back here from
+[`docs/schema.md`](../../../docs/schema.md#15-seed-data).
 
 The references above are retained here so a future seed edit can re-check its factual scope:
 [TAO-Pilipinas](https://www.tao-pilipinas.org/ypp_files/2011ypenews_augsep.pdf),
@@ -138,3 +146,18 @@ an environment with non-demo registry data.
 `0022_member_contact_number` adds the nullable contact field used by registered citizen profiles.
 Existing members remain valid with no contact number; new BHW member entries carry the optional
 value into the citizen directory.
+
+`0023_concurrent_emergency_operations` removes the singleton-active-event restriction, preserves
+the one-physical-place-per-person invariant across events, and adds the walk-in fields/conversion
+link needed by the event-scoped response workflow. `0024_incident_action_lifecycle` adds the
+resolution fields and database checks for the verified → in-progress → resolved lifecycle.
+
+`0025_operational_asset_lifecycle` and `0026_siren_soft_delete` complete the manual siren
+simulation lifecycle: active state, last trigger time, the `testing` status, area index, and
+recoverable removal. They do not add physical IoT integration.
+
+`0027_resident_portal_foundations` adds the authenticated rescue link, resident Go Bag catalogue
+and progress, one household family-emergency plan, and user-scoped notification records. It is the
+schema base for the completed Resident Portal flow; route ownership remains in
+[`modules.md`](./modules.md) and the physical columns in
+[`docs/schema.md`](../../../docs/schema.md).

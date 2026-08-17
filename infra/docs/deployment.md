@@ -4,13 +4,13 @@
 
 Two isolated **profiles**, `staging` and `demo`, each its own Compose project from the same
 `infra/compose.yml` — separate database, volumes, and ports (`docs/architecture.md` Section
-13.1). Either can run on a laptop or the VPS; a VPS deploy is simply the `demo` profile running
-on a server instead of localhost.
+13.1). Either can run on a laptop or the VPS. The deployed integration server currently runs the
+`staging` profile; `demo` remains the isolated profile for a fresh rehearsal or presentation reset.
 
-| Profile   | Purpose                            | Runs on                     | Data             | Secure context                         |
-| --------- | ---------------------------------- | --------------------------- | ---------------- | -------------------------------------- |
-| `staging` | Day-to-day dev and feature testing | Laptop, Compose             | Seeded synthetic | Yes — `localhost` is exempt            |
-| `demo`    | Curated, isolated, for the pitch   | Laptop or VPS, same Compose | Seeded synthetic | Only if sslip.io is enabled on the VPS |
+| Profile   | Purpose                                                                 | Runs on                     | Data             | Secure context           |
+| --------- | ----------------------------------------------------------------------- | --------------------------- | ---------------- | ------------------------ |
+| `staging` | Day-to-day development, integration testing, and current VPS deployment | Laptop or VPS, Compose      | Seeded synthetic | `localhost` or VPS HTTPS |
+| `demo`    | Curated, isolated rehearsal/presentation reset                          | Laptop or VPS, same Compose | Seeded synthetic | `localhost` or VPS HTTPS |
 
 The same `compose.yml` for both. The only differences are which `.env.<profile>` file is loaded,
 the Compose project name (`-p sagip-<profile>`), and whether `compose.override.yml` is applied.
@@ -38,21 +38,22 @@ The ones that actually change between a laptop and the VPS:
 `NEXT_PUBLIC_API_BASE_URL` is **inlined at build time**, not read at runtime. Changing it means
 rebuilding `web`, not restarting it.
 
-## First deploy
+## First staging deploy
 
-The VPS runs the `demo` profile — it's the one meant to be presented, and keeping the same
-profile name whether on a laptop or a server means "runs identically both places" is literally
-true, not just a design goal (`tech_stack.md` T-3).
+The VPS uses the `staging` profile and Compose project `sagip-staging`. It is the shared deployed
+integration environment; use the isolated `demo` profile only when a clean presentation reset is
+explicitly required. The commands below are the generic first-deploy path; the SSH maintenance
+runbook remains [`staging-maintenance`](../../.agents/skills/staging-maintenance/SKILL.md).
 
 ```bash
 git clone <repo> && cd Project_Pitching
-cp .env.demo.example .env.demo
-# edit .env.demo — at minimum JWT_SECRET, POSTGRES_PASSWORD, CORS_ORIGINS,
+cp .env.staging.example .env.staging
+# edit .env.staging — at minimum JWT_SECRET, POSTGRES_PASSWORD, CORS_ORIGINS,
 # NEXT_PUBLIC_API_BASE_URL, PROXY_PORT=80
-make up ENV=demo
+make up ENV=staging
 ```
 
-`make up ENV=demo` builds, waits for the database healthcheck, applies migrations, seeds (both
+`make up ENV=staging` builds, waits for the database healthcheck, applies migrations, seeds (both
 idempotent — safe to rerun), and starts everything.
 
 Startup order is enforced by healthcheck, not by `sleep`:
@@ -63,7 +64,7 @@ db → (healthy) → api (alembic upgrade head, then seed) → web → proxy
 ```
 
 Migrations and seeding run on API start rather than as a separate step — one less thing to
-forget, and `make up ENV=demo` alone leaves you with a fully working, presentable demo.
+forget, and `make up ENV=staging` alone leaves you with a fully working, presentable demo.
 
 Sizing: 2 vCPU / 4 GB is comfortable. 1 vCPU / 2 GB works if the budget is tight. A local
 Philippine provider may beat a cheaper EU one on latency, which matters more here than price
@@ -91,10 +92,11 @@ minutes. Then set `COOKIE_SECURE=true`.
 
 ## Demo day
 
-The `demo` profile always fetches live weather and river data, same as `staging` — `DEMO_MODE`
-/ FR-WX-016's scripted timeline was **not built**; the decision taken instead is documented in
-`tech_stack.md` Section 7's decision log. A live scrape failing mid-pitch is a real, accepted
-risk under that decision.
+The `demo` and `staging` profiles both retain scheduled weather and river retrieval. The seed also
+creates an explicitly labelled `DEMO SIMULATION — Flood Response Exercise` with fictional people,
+operations, sirens, and flood figures; it is not a time-based playback and must never be described
+as a real emergency. See [`apps/api/docs/migrations.md`](../../apps/api/docs/migrations.md#flood-history-demo-story)
+for the provenance and data boundary.
 
 What covers it: FR-WX-012 (last-known-good with visible age) and FR-WX-007 (manual entry) mean
 a PAGASA outage degrades to a stale-but-labelled number, never a blank panel. And for the
@@ -118,12 +120,12 @@ Before the pitch:
 - [ ] **Simulate typhoon** tried at least once against this exact deployment, and the resulting
       alert prompt acknowledged/published once so the flow is rehearsed, not just built
 
-## Updating a running deployment
+## Updating the deployed staging stack
 
 ```bash
-git pull
-make up ENV=demo          # rebuilds changed images, reapplies migrations, reseeds (idempotent)
+git pull --ff-only origin main
+make up ENV=staging       # rebuilds changed images, reapplies migrations, reseeds (idempotent)
 ```
 
-Take a backup first if the pull contains a migration (`make backup ENV=demo`). `down -v` deletes
-the database — `make clean ENV=demo` is the same thing, named honestly, scoped to one profile.
+Take a backup first if the pull contains a migration (`make backup ENV=staging`). `down -v` deletes
+the database — `make clean ENV=staging` is the same thing, named honestly, scoped to one profile.

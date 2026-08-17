@@ -2,7 +2,7 @@
 
 **Project:** Barangay San Jose Disaster Readiness & Community Health Platform
 **Companion to:** `business-requirements.md`
-**Version:** 0.2 · **Date:** August 16, 2026
+**Version:** 0.3 · **Date:** August 17, 2026
 
 > **Scope note.** This document lists _what tools we use and why_. How the system is structured — services, data model, API design, deployment topology — belongs in `architecture.md`.
 
@@ -130,6 +130,13 @@ Doing this without PostGIS means computing point-in-polygon in Python on every r
 | **PostgreSQL 16**      | Primary datastore                                                                                                                                                                                       |
 | **PostGIS 3.4**        | Spatial types, indexes, and functions                                                                                                                                                                   |
 | **Redis** _(optional)_ | Cache for weather and river readings. Skip initially — a `last_fetched_at` column and a short TTL in application code is enough at this scale. Add it only if the API starts hammering upstream sources |
+
+**Current demo cache boundary.** Redis is not deployed in the Compose stack. Weather and river
+snapshots are persisted by the scheduler and read from PostgreSQL; the public site uses ISR, and
+the authenticated portals use TanStack Query. These are distinct cache layers with different
+owners, documented in [`architecture.md`](./architecture.md) Sections 8–10 and
+[`apps/web/docs/data-and-state.md`](../apps/web/docs/data-and-state.md). Do not describe Redis as
+part of the demo until it is added to the stack and its invalidation contract is documented.
 
 File uploads (incident photos, BR-5.6) go to a Docker volume served by the reverse proxy. Object storage is unnecessary at this scale.
 

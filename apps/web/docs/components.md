@@ -1,8 +1,8 @@
 # Components
 
-The August 16 demo freeze preserves the public-site and Barangay Portal presentation patterns
-documented here. Resident Portal and About/team-profile work are the next intentional design
-changes; do not use that work to alter the frozen public or admin map and workspace defaults.
+The demo release preserves the public-site, Resident Portal, and Barangay Portal presentation
+patterns documented here. Final About/platform and team content is the only pending presentation
+work; do not use it to alter the frozen public or admin map and workspace defaults.
 
 Three layers, and the boundaries between them are the whole point.
 
@@ -427,7 +427,8 @@ an empty result, an error, or a mutation button.
 
 Portal entry helpers use 400ms entrances and 90ms staggers; hover transitions use 260ms and
 press feedback stays quick. The calm `WaterSpinner` tempo is portal-only, leaving public-site
-streaming fallbacks unchanged.
+streaming fallbacks unchanged. Portal skeletons override the primitive pulse with a low-contrast,
+3.2-second opacity drift and staggered phases, so a whole loading grid does not flash in lockstep.
 
 ## Animation lives in `globals.css`, not in a client component
 

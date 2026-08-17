@@ -2,7 +2,7 @@
 
 **Project:** `SAGIP-SJ` (System for Alert, Guidance, Incident Reporting, and Preparedness) — Barangay San Jose Disaster Readiness & Community Health Platform
 **Database:** PostgreSQL 16 + PostGIS 3.4
-**Version:** 0.2 · **Date:** August 16, 2026
+**Version:** 0.3 · **Date:** August 17, 2026
 
 **Companions:** [`architecture.md`](./architecture.md) · [`frs_nfrs.md`](./frs_nfrs.md) · [`tech_stack.md`](./tech_stack.md)
 
@@ -617,17 +617,17 @@ Scopes safety statuses, rescue requests, incident reports, and donation drives s
 
 ### `safety_status` (FR-SAF-001 … 007) — **implemented, migration `0008_safety_core`**
 
-| Column                   | Type        | Constraints                                       | Notes                                           |
-| ------------------------ | ----------- | ------------------------------------------------- | ----------------------------------------------- |
-| `id`                     | UUID        | PK                                                |                                                 |
-| `event_id`               | UUID        | NOT NULL FK → `emergency_event` ON DELETE CASCADE |                                                 |
-| `member_id`              | UUID        | FK → `member` ON DELETE CASCADE                   | Null for unregistered persons                   |
-| `unregistered_person_id` | UUID        | FK → `unregistered_person` ON DELETE CASCADE      | Null for registered members                     |
-| `status`                 | TEXT        | NOT NULL CHECK                                    | `safe` · `needs_rescue` · `unaccounted`         |
-| `set_by_user_id`         | UUID        | FK → `user` ON DELETE SET NULL                    | **Always the actor** — see deviation note below |
-| `set_method`             | TEXT        | NOT NULL CHECK                                    | `self` · `assisted` · `household_bulk`          |
+| Column                   | Type        | Constraints                                       | Notes                                                                                          |
+| ------------------------ | ----------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `id`                     | UUID        | PK                                                |                                                                                                |
+| `event_id`               | UUID        | NOT NULL FK → `emergency_event` ON DELETE CASCADE |                                                                                                |
+| `member_id`              | UUID        | FK → `member` ON DELETE CASCADE                   | Null for unregistered persons                                                                  |
+| `unregistered_person_id` | UUID        | FK → `unregistered_person` ON DELETE CASCADE      | Null for registered members                                                                    |
+| `status`                 | TEXT        | NOT NULL CHECK                                    | `safe` · `needs_rescue` · `unaccounted`                                                        |
+| `set_by_user_id`         | UUID        | FK → `user` ON DELETE SET NULL                    | **Always the actor** — see deviation note below                                                |
+| `set_method`             | TEXT        | NOT NULL CHECK                                    | `self` · `assisted` · `household_bulk`                                                         |
 | `set_at`                 | TIMESTAMPTZ | NOT NULL DEFAULT now()                            | Officer backfill may supply the field-recorded time; system entry remains separately auditable |
-| `superseded_at`          | TIMESTAMPTZ |                                                   | Corrections insert a new row (FR-SAF-006)       |
+| `superseded_at`          | TIMESTAMPTZ |                                                   | Corrections insert a new row (FR-SAF-006)                                                      |
 
 ```sql
 CREATE INDEX idx_safety_event_current ON safety_status(event_id, status) WHERE superseded_at IS NULL;
@@ -930,18 +930,28 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;      -- fuzzy name matching for duplicat
 
 ## 15. Seed Data
 
-Loaded by migration, not at runtime (NFR-DAT-007).
+Schema-reference data belongs in migrations; the current demo story is the idempotent runtime
+seed in `apps/api/src/seed.py`, run immediately after migration on API startup. It stops when a
+table already contains operator-managed data, so a restart does not blend synthetic operations
+with user-entered records. The implementation workflow and research provenance are in
+[`apps/api/docs/migrations.md`](../apps/api/docs/migrations.md#flood-history-demo-story).
 
-| Data            | Source                                                                                                              | Rows                |
-| --------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| PSGC hierarchy  | Team's PSGC library                                                                                                 | ~42,000             |
-| Barangay areas  | Approximate labelled polygons, migration `0011_area_boundaries`; replace when BRD OI-3 supplies official boundaries | 6                   |
-| Flood hazard    | `dataset/raw/Rizal_Flood_5year.shp` → `dataset/derived/san_jose_flood_5yr.geojson`                                  | 3 (5yr only, today) |
-| Hotlines        | Barangay                                                                                                            | ~8                  |
-| Facilities      | August 11 demo snapshot — 14 researched evacuation centres plus 7 synthetic service facilities                      | 21                  |
-| Go-bag items    | NDRRMC standard list                                                                                                | ~15                 |
-| Config defaults | This document Section 4                                                                                             | ~12                 |
-| Demo households | Generated, marked synthetic                                                                                         | ~200                |
+| Data                              | Source / boundary                                                                                                   | Rows                                                                                                       |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| PSGC hierarchy                    | Team's PSGC library                                                                                                 | ~42,000                                                                                                    |
+| Barangay areas                    | Approximate labelled polygons, migration `0011_area_boundaries`; replace when BRD OI-3 supplies official boundaries | 6                                                                                                          |
+| Flood hazard                      | `dataset/raw/Rizal_Flood_5year.shp` → `dataset/derived/san_jose_flood_5yr.geojson`                                  | 3 (5-year return period)                                                                                   |
+| Flood history                     | Three researched, closed event-linked records plus one clearly labelled active flood-response exercise              | 4                                                                                                          |
+| Hotlines                          | Preserved barangay directory seed                                                                                   | 20                                                                                                         |
+| Facilities and evacuation centres | Preserved researched reference definitions; not rewritten by the scenario seed                                      | Existing reference set                                                                                     |
+| Go-bag items                      | NDRRMC-oriented resident checklist seeded by migration `0027_resident_portal_foundations`                           | 6                                                                                                          |
+| Demo households                   | BHW-assisted synthetic registry, evenly distributed across six approximate areas                                    | 1,000 households / 3,820 members; 850 distinct contained pins and 150 intentional location-pending records |
+| Sirens and operations             | Clearly labelled demo exercise data only                                                                            | 9 sirens; 432 registered safety rows; 12 walk-ins; 18 rescue requests; 14 incident reports without images  |
+
+Historical flood fields remain `NULL` when a source does not support a value; the presentation
+layer excludes those unknown measures rather than treating them as zero. The active exercise's
+people, pins, sirens, rescue requests, incidents, 23.8 m peak, and 58 displaced households are
+fictional training data. No evacuation check-ins are seeded.
 
 ---
 

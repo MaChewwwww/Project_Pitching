@@ -1,7 +1,7 @@
 # System Architecture
 
 **Project:** `SAGIP-SJ` (System for Alert, Guidance, Incident Reporting, and Preparedness) — Barangay San Jose Disaster Readiness & Community Health Platform
-**Version:** 0.2 · **Date:** August 16, 2026
+**Version:** 0.3 · **Date:** August 17, 2026
 
 **Companions:** [`business-requirements.md`](./business-requirements.md) · [`frs_nfrs.md`](./frs_nfrs.md) · [`tech_stack.md`](./tech_stack.md) · [`design.md`](./design.md) · [`schema.md`](./schema.md)
 
@@ -386,17 +386,32 @@ GET  /public/sirens                     FR-MAP-014 — siren unit locations and 
 
 ```
 GET   /me/household                 implemented — null drives the onboarding redirect
+GET   /me/dashboard                 implemented — resident dashboard household/history read model
+GET   /me/history                   implemented — resident household operational timeline
 POST  /me/household                 implemented — FR-REG-001's onboarding step, creates the
                                      household + head member row (registration itself is
                                      POST /auth/register, which only creates the account)
 PATCH /me/household                 implemented — resident head edits their household (FR-REG-009)
 POST  /me/household/members
 PATCH /me/household/members/{id}
+DELETE /me/household/members/{id}
 POST  /me/safety-status            implemented — per member or whole household (FR-SAF-001..007)
 GET   /me/safety                   implemented — selected-event household safety state
+GET   /me/evacuation-status        implemented — resident evacuation state and history
+POST  /me/rescue-requests          implemented — authenticated household request (FR-SAF-022)
+GET   /me/rescue-requests          implemented — requester-only list (FR-SAF-023)
+GET   /me/rescue-requests/{id}     implemented — requester-only detail
 POST  /me/incident-reports          implemented — photo upload + report details (FR-SAF-015)
+GET   /me/incident-reports          implemented — reporter-only list (FR-SAF-024)
+GET   /me/incident-reports/{id}     implemented — reporter-only detail
 GET   /me/go-bag
 PUT   /me/go-bag
+GET   /me/family-emergency-plan
+PUT   /me/family-emergency-plan
+GET   /me/notifications
+GET   /me/notifications/unread-count
+PATCH /me/notifications/{id}/read
+POST  /me/notifications/read-all
 ```
 
 > `/me` now has safety check-in and incident reporting mounted alongside the initial
@@ -717,12 +732,13 @@ The human step in the middle is the architecture, not a formality.
 
 > **Only the public site benefits from server rendering.** Making the whole app SSR would add auth-on-the-server complexity for zero user-visible gain.
 
-**August 16 demo-freeze audit.** The Public Information Site and Barangay Portal are the approved
-demo baseline at `ce66a7e`, including the shared article-authoring and operational-workspace pass.
-The Resident Portal remains limited to its existing onboarding, household, safety, and
-incident-report routes pending its full workflow/design pass; the About page awaits its
-team-profile revision. This is a scope boundary, not permission to invent the remaining screens;
-`frs_nfrs.md` Section 2.1 owns that backlog.
+**August 17 demo-release audit.** The Public Information Site, Resident Portal, and Barangay
+Portal are the completed functional demo surfaces. The Resident Portal now contains the
+dashboard, onboarding, household/member management, household-centred maps and history, weather,
+safety, rescue, incident, updates, and preparedness flows documented above. Final About/platform
+and team detail remains a content dependency, not an invitation to add invented profiles or
+screens; [`frs_nfrs.md`](./frs_nfrs.md) Section 2.1 and
+[`demo-freeze.md`](./demo-freeze.md) own that boundary.
 
 ### 10.2 Structure
 
