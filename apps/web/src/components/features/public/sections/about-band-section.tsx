@@ -5,28 +5,26 @@ import {
   Compass,
   Eye,
   GraduationCap,
-  Sparkles,
   Users,
 } from "lucide-react";
 
 import { Button } from "@/components/common/button";
 import { Reveal } from "@/components/common/reveal";
-import { SectionHeader } from "@/components/common/section-header";
 import {
   MISSION,
   SDG_ENTRIES,
   TEAM_MEMBERS,
   VISION,
+  WHAT_IT_IS,
 } from "@/lib/content/about";
 import { Section } from "./section";
 
 /**
  * Redesigned About Band Section (FR-PUB-002, BR-0.2) for the landing page.
  *
- * Space-maximizing, cohesive layout following public page design patterns:
- * - Standard SectionHeader with title, titleAccent, eyebrow, and view action.
- * - Left column: Integrated Mission, Vision, and UN SDG alignments.
- * - Right column: 5-Member Interdisciplinary Team showcase with discipline tags.
+ * Space-maximizing layout:
+ * - Top Row: Preserved signature brand overview title card.
+ * - Bottom Row: Balanced 2-column bento grid (Left: Mission, Vision, SDGs; Right: 5-Member Team).
  */
 export function AboutBandSection() {
   return (
@@ -34,43 +32,54 @@ export function AboutBandSection() {
       {/* Subtle ambient background glow */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-24 right-0 size-96 rounded-full bg-primary-200/20 blur-3xl"
+        className="pointer-events-none absolute -top-24 right-0 size-96 rounded-full bg-primary-200/30 blur-3xl"
       />
       <div
         aria-hidden
         className="pointer-events-none absolute -bottom-24 left-0 size-96 rounded-full bg-emerald-200/20 blur-3xl"
       />
 
-      <div className="relative flex flex-col">
-        {/* --- Standard Public Section Header --- */}
+      <div className="relative flex flex-col gap-6 md:gap-8">
+        {/* --- Top Row: Brand & Main Overview (Exact Original Title Design) --- */}
         <Reveal>
-          <SectionHeader
-            icon={Sparkles}
-            eyebrow="Platform & Student Team"
-            title="About the"
-            titleAccent="SAGIP Platform"
-            description="A centralized disaster readiness and community health platform for Barangay San Jose — engineered for low-bandwidth mobile devices and grounded in proactive DRRM governance."
-            action={
-              <Button
-                asChild
-                variant="outline"
-                pill
-                size="md"
-                className="shrink-0 max-sm:px-3"
-              >
-                <Link href="/about" aria-label="Explore Full Story & Team">
-                  <span className="hidden sm:inline">Explore Full Story & Team</span>
-                  <span className="sm:hidden">Full Story</span>
+          <div className="flex flex-col justify-between rounded-3xl border border-neutral-200/80 bg-white/90 p-6 shadow-sm-card backdrop-blur-sm md:p-8">
+            <div className="flex flex-col gap-4">
+              {/* Headline */}
+              <h2 className="text-2xl font-extrabold tracking-tight text-neutral-900 sm:text-3xl md:text-4xl">
+                About the{" "}
+                <span className="relative inline-block bg-gradient-to-r from-primary-700 via-primary-600 to-emerald-600 bg-clip-text text-transparent">
+                  SAGIP Platform
+                  <span
+                    aria-hidden
+                    className="absolute -bottom-1 left-0 h-[3px] w-full rounded-full bg-primary-500/30"
+                  />
+                </span>
+              </h2>
+
+              {/* Description */}
+              <p className="text-body-lg text-neutral-600 leading-relaxed max-w-4xl">
+                {WHAT_IT_IS.split("\n\n")[0]}
+              </p>
+            </div>
+
+            {/* Bottom CTA to dedicated about */}
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-neutral-100">
+              <Button asChild pill size="md" className="gap-2">
+                <Link href="/about">
+                  <span>Explore Full Story & Team</span>
                   <ArrowRight aria-hidden className="size-4" />
                 </Link>
               </Button>
-            }
-          />
+              <span className="text-caption text-neutral-500 font-medium">
+                5 disciplines · 3 SDGs · 1 unified platform
+              </span>
+            </div>
+          </div>
         </Reveal>
 
-        {/* --- Bento Grid Layout --- */}
-        <div className="mt-8 grid gap-6 lg:grid-cols-12 lg:gap-8 items-stretch">
-          {/* Left Column: Mission, Vision, & UN SDGs (5 cols on lg) */}
+        {/* --- Overhauled Bottom Bento Grid (Maximizes Space & Flow) --- */}
+        <div className="grid gap-6 lg:grid-cols-12 lg:gap-8 items-stretch">
+          {/* Left Column: Integrated Mission, Vision, & UN SDGs (5 cols on lg) */}
           <div className="flex flex-col lg:col-span-5">
             <Reveal delay={1} className="h-full">
               <div className="flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-sm-card h-full">
