@@ -39,13 +39,13 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "relative overflow-hidden border-b border-neutral-200/80 bg-gradient-to-b from-primary-50/70 via-surface-tint to-white",
-        className
+        "from-primary-50/70 via-surface-tint relative overflow-hidden border-b border-neutral-200/80 bg-gradient-to-b to-white",
+        className,
       )}
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-20 -right-20 size-80 rounded-full bg-primary-200/30 blur-3xl"
+        className="bg-primary-200/30 pointer-events-none absolute -top-20 -right-20 size-80 rounded-full blur-3xl"
       />
       <div className="relative mx-auto max-w-[1440px] px-4 pt-5 pb-5 md:px-6 md:pt-6 md:pb-6">
         {breadcrumb && breadcrumb.length > 0 ? (
@@ -54,27 +54,35 @@ export function PageHeader({
               {breadcrumb.map((crumb, i) => {
                 const last = i === breadcrumb.length - 1;
                 const formattedLabel = toTitleCase(crumb.label);
-                const isHome = i === 0 && (crumb.label.toLowerCase() === "home" || crumb.href === "/");
+                const isHome =
+                  i === 0 && (crumb.label.toLowerCase() === "home" || crumb.href === "/");
 
                 return (
                   <li key={`${crumb.label}-${i}`} className="flex items-center gap-2">
                     {i > 0 ? (
-                      <ChevronRight aria-hidden className="size-4 shrink-0 text-slate-400" />
+                      <ChevronRight
+                        aria-hidden
+                        className="size-4 shrink-0 text-slate-400"
+                      />
                     ) : null}
                     {crumb.href && !last ? (
                       <Link
                         href={crumb.href}
-                        className="rounded-xs inline-flex items-center gap-1.5 font-medium text-slate-600 transition-colors hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="hover:text-primary-700 focus-visible:ring-ring inline-flex items-center gap-1.5 rounded-xs font-medium text-slate-600 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                       >
-                        {isHome ? <Home aria-hidden className="size-4 text-primary-600" /> : null}
+                        {isHome ? (
+                          <Home aria-hidden className="text-primary-600 size-4" />
+                        ) : null}
                         <span>{formattedLabel}</span>
                       </Link>
                     ) : (
                       <span
                         aria-current={last ? "page" : undefined}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-primary-200/80 bg-primary-50 px-2.5 py-0.5 font-bold text-primary-900"
+                        className="border-primary-200/80 bg-primary-50 text-primary-900 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 font-bold"
                       >
-                        {isHome ? <Home aria-hidden className="size-4 text-primary-600" /> : null}
+                        {isHome ? (
+                          <Home aria-hidden className="text-primary-600 size-4" />
+                        ) : null}
                         <span>{formattedLabel}</span>
                       </span>
                     )}
@@ -85,25 +93,27 @@ export function PageHeader({
           </nav>
         ) : null}
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex flex-col gap-2 w-full flex-1">
-            <h1 className="text-display-md sm:text-display-lg font-black tracking-tight text-neutral-900">
+        <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex w-full min-w-0 flex-1 flex-col gap-2">
+            <h1 className="text-display-md sm:text-display-lg min-w-0 font-black tracking-tight break-words text-neutral-900">
               {typeof title === "string" ? toTitleCase(title) : title}
               {titleAccent ? (
                 <>
                   {" "}
-                  <span className="relative inline-block bg-gradient-to-r from-primary-600 via-primary-700 to-emerald-600 bg-clip-text font-black text-transparent">
-                    {typeof titleAccent === "string" ? toTitleCase(titleAccent) : titleAccent}
+                  <span className="from-primary-600 via-primary-700 relative inline-block bg-gradient-to-r to-emerald-600 bg-clip-text font-black break-words text-transparent">
+                    {typeof titleAccent === "string"
+                      ? toTitleCase(titleAccent)
+                      : titleAccent}
                     <span
                       aria-hidden
-                      className="absolute -bottom-1.5 left-0 h-[3.5px] w-full rounded-full bg-gradient-to-r from-primary-500/60 via-primary-600/70 to-emerald-500/60"
+                      className="from-primary-500/60 via-primary-600/70 absolute -bottom-1.5 left-0 h-[3.5px] w-full rounded-full bg-gradient-to-r to-emerald-500/60"
                     />
                   </span>
                 </>
               ) : null}
             </h1>
             {description ? (
-              <p className="text-body-lg w-full max-w-none leading-relaxed text-neutral-600 pt-1">
+              <p className="text-body-lg w-full max-w-none pt-1 leading-relaxed break-words text-neutral-600">
                 {description}
               </p>
             ) : null}

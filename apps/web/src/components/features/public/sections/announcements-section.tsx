@@ -34,7 +34,13 @@ export async function AnnouncementsSection() {
         titleAccent="Advisories"
         description="Weather advisories, class suspensions, road closures and emergency notices — posted by the barangay office."
         action={
-          <Button asChild variant="outline" pill size="md" className="shrink-0 max-sm:px-3">
+          <Button
+            asChild
+            variant="outline"
+            pill
+            size="md"
+            className="shrink-0 max-sm:px-3"
+          >
             <Link href="/announcements" aria-label="View All">
               <span className="hidden sm:inline">View All</span>
               <ArrowRight aria-hidden className="size-4" />
@@ -43,9 +49,13 @@ export async function AnnouncementsSection() {
         }
       />
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+      <div className="mt-8 grid min-w-0 gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
         {announcements.map((announcement, index) => (
-          <Reveal key={announcement.id} delay={(index % 3) as 0 | 1 | 2}>
+          <Reveal
+            key={announcement.id}
+            delay={(index % 3) as 0 | 1 | 2}
+            className="min-w-0"
+          >
             <AnnouncementCard announcement={announcement} clamp />
           </Reveal>
         ))}

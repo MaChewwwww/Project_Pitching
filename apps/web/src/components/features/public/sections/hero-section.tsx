@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/common/button";
+import { HeroAnimatedTitle } from "../illustrations/hero-animated-title";
 import { FloodHeroVisual } from "../illustrations/flood-hero-visual";
 import { HeroRainOverlay } from "../illustrations/hero-rain-overlay";
 import { HERO } from "@/lib/content/site";
@@ -79,38 +80,13 @@ export async function HeroSection() {
             </span>
           </div>
 
-          {/* The diorama is the single 3D focal point; the headline stays semantic and calm. */}
-          <h1
-            className="hero-sleek-cascade font-display relative z-10 text-[2rem] leading-[1.08] font-extrabold tracking-[-0.04em] text-neutral-900 sm:text-5xl lg:text-[2.75rem] xl:text-[3.35rem] 2xl:text-6xl"
+          {/* The title keeps its real h1 semantics while carrying the liquid motion treatment. */}
+          <HeroAnimatedTitle
+            line1={HERO.titleLine1}
+            line2={HERO.titleLine2}
+            className="hero-sleek-cascade relative z-10"
             style={{ "--hi-delay": "90ms" } as React.CSSProperties}
-          >
-            <span className="block">{HERO.titleLine1}</span>
-            <span className="text-primary-600 relative inline-block">
-              {HERO.titleLine2}
-              <svg
-                viewBox="0 0 520 18"
-                preserveAspectRatio="none"
-                aria-hidden
-                className="absolute -bottom-2 left-0 h-3 w-full overflow-visible"
-              >
-                <path
-                  d="M4 11 C 138 4, 379 4, 516 10"
-                  fill="none"
-                  stroke="#2e9d62"
-                  strokeWidth="7"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M5 14 C 142 8, 372 8, 514 12"
-                  fill="none"
-                  stroke="#92d4ac"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  opacity="0.9"
-                />
-              </svg>
-            </span>
-          </h1>
+          />
 
           <p
             className="hero-sleek-cascade text-body-lg lg:text-body-lg relative z-10 max-w-xl leading-relaxed font-normal text-neutral-600 sm:text-xl xl:text-xl"

@@ -72,9 +72,9 @@ export default async function ActivitiesPage({
         />
 
         {activities.items.length > 0 ? (
-          <div className="grid gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
+          <div className="grid min-w-0 gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
             {activities.items.map((activity, i) => (
-              <Reveal key={activity.id} delay={(i % 2) as 0 | 1}>
+              <Reveal key={activity.id} delay={(i % 2) as 0 | 1} className="min-w-0">
                 <ActivityCard activity={activity} />
               </Reveal>
             ))}

@@ -37,9 +37,13 @@ export default async function WeatherPage() {
       />
 
       <div className="mx-auto flex max-w-[1440px] flex-col gap-6 px-4 pt-5 pb-8 md:gap-10 md:px-6 md:pt-6 md:pb-12">
-        <div className="grid gap-4 md:gap-6 lg:grid-cols-[2fr_1fr]">
-          <WeatherPanel weather={weather} />
-          <RiverLevelPanel river={river} weather={weather} />
+        <div className="grid min-w-0 gap-4 md:gap-6 lg:grid-cols-[2fr_1fr]">
+          <div className="min-w-0">
+            <WeatherPanel weather={weather} />
+          </div>
+          <div className="min-w-0">
+            <RiverLevelPanel river={river} weather={weather} />
+          </div>
         </div>
 
         <section>

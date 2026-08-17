@@ -38,9 +38,9 @@ export async function ActivitiesSection() {
         }
       />
 
-      <div className="mt-8 grid gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
+      <div className="mt-8 grid min-w-0 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
         {activities.slice(0, 3).map((activity, i) => (
-          <Reveal key={activity.id} delay={(i % 3) as 0 | 1 | 2}>
+          <Reveal key={activity.id} delay={(i % 3) as 0 | 1 | 2} className="min-w-0">
             <ActivityCard activity={activity} />
           </Reveal>
         ))}

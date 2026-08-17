@@ -45,9 +45,13 @@ export default async function AnnouncementsPage({
 
       <div className="mx-auto max-w-[1440px] px-4 pt-5 pb-8 md:px-6 md:pt-6 md:pb-12">
         {announcements.items.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
+          <div className="grid min-w-0 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
             {announcements.items.map((announcement, i) => (
-              <Reveal key={announcement.id} delay={(i % 3) as 0 | 1 | 2}>
+              <Reveal
+                key={announcement.id}
+                delay={(i % 3) as 0 | 1 | 2}
+                className="min-w-0"
+              >
                 <AnnouncementCard announcement={announcement} clamp />
               </Reveal>
             ))}

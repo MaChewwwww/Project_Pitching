@@ -49,9 +49,9 @@ export default async function DonationDrivesPage({
 
       <div className="mx-auto max-w-[1440px] px-4 pt-5 pb-8 md:px-6 md:pt-6 md:pb-12">
         {drives.items.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
+          <div className="grid min-w-0 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
             {drives.items.map((drive, i) => (
-              <Reveal key={drive.id} delay={(i % 3) as 0 | 1 | 2}>
+              <Reveal key={drive.id} delay={(i % 3) as 0 | 1 | 2} className="min-w-0">
                 <DriveCard drive={drive} clamp />
               </Reveal>
             ))}
@@ -72,14 +72,14 @@ export default async function DonationDrivesPage({
         />
 
         {/* Drop-Off Center Guidelines Card */}
-        <div className="mt-10 overflow-hidden rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/80 via-white to-neutral-50 p-6 md:p-8 shadow-xs">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-emerald-100 pb-5">
+        <div className="mt-10 overflow-hidden rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/80 via-white to-neutral-50 p-6 shadow-xs md:p-8">
+          <div className="flex flex-col gap-4 border-b border-emerald-100 pb-5 md:flex-row md:items-center md:justify-between">
             <div>
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-800">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-emerald-800 uppercase">
                 <MapPin className="size-4 text-emerald-600" />
                 Where to Bring In-Kind Goods
               </span>
-              <h3 className="mt-1 font-display text-lg font-bold text-neutral-900">
+              <h3 className="font-display mt-1 text-lg font-bold text-neutral-900">
                 Barangay San Jose Relief & Operations Center
               </h3>
               <p className="mt-1 text-sm text-neutral-600">{UTILITY_BAR.address}</p>
@@ -88,7 +88,7 @@ export default async function DonationDrivesPage({
             <div className="flex flex-wrap items-center gap-3">
               <a
                 href="tel:0285550100"
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2.5 text-xs font-bold shadow-sm transition-all"
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-emerald-800"
               >
                 <PhoneCall className="size-3.5" />
                 Call (02) 8555-0100
@@ -98,25 +98,31 @@ export default async function DonationDrivesPage({
 
           <div className="mt-5 grid gap-4 text-xs text-neutral-600 sm:grid-cols-2 md:grid-cols-3">
             <div className="space-y-1">
-              <span className="font-bold text-neutral-900 uppercase tracking-wide">
+              <span className="font-bold tracking-wide text-neutral-900 uppercase">
                 Operating Hours
               </span>
               <p>{UTILITY_BAR.officeHours}</p>
             </div>
 
             <div className="space-y-1">
-              <span className="font-bold text-neutral-900 uppercase tracking-wide">
+              <span className="font-bold tracking-wide text-neutral-900 uppercase">
                 Accepted In-Kind Goods
               </span>
-              <p>Non-perishable canned food, bottled water, hygiene kits, blankets, clothing.</p>
+              <p>
+                Non-perishable canned food, bottled water, hygiene kits, blankets,
+                clothing.
+              </p>
             </div>
 
             <div className="space-y-1">
-              <span className="flex items-center gap-1 font-bold text-neutral-900 uppercase tracking-wide">
+              <span className="flex items-center gap-1 font-bold tracking-wide text-neutral-900 uppercase">
                 <Info className="size-3 text-emerald-600" />
                 Transparency Policy
               </span>
-              <p>This platform lists official barangay drives. No cash donations or online payments handled.</p>
+              <p>
+                This platform lists official barangay drives. No cash donations or online
+                payments handled.
+              </p>
             </div>
           </div>
         </div>

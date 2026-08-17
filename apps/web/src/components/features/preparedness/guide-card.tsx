@@ -74,19 +74,21 @@ export function GuideCard({
 }) {
   const lang = useLanguage((s) => s.lang);
   const Icon = ICONS[guide.hazard_type];
-  const iconGradient = ICON_GRADIENT[guide.hazard_type] ?? "from-primary-600 to-primary-800";
-  const phaseStyle = PHASE_STYLE[guide.phase] ?? "bg-neutral-50 text-neutral-700 border-neutral-200";
+  const iconGradient =
+    ICON_GRADIENT[guide.hazard_type] ?? "from-primary-600 to-primary-800";
+  const phaseStyle =
+    PHASE_STYLE[guide.phase] ?? "bg-neutral-50 text-neutral-700 border-neutral-200";
 
   return (
     <Link
       href={`/guides/${guide.slug}`}
       className={cn(
-        "group focus-visible:ring-primary-600 block h-full rounded-[20px] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+        "group focus-visible:ring-primary-600 block h-full w-full min-w-0 rounded-[20px] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
         className,
       )}
       aria-label={`Read Preparedness Guide: ${pick(lang, guide.title_fil, guide.title_en)}`}
     >
-      <article className="relative flex h-full flex-col overflow-hidden rounded-[20px] border border-neutral-200/90 bg-white p-5 md:p-6 shadow-xs transition-all duration-300 hover:-translate-y-1.5 hover:border-primary-600 hover:shadow-xl hover:shadow-black/5">
+      <article className="hover:border-primary-600 relative flex h-full min-w-0 flex-col overflow-hidden rounded-[20px] border border-neutral-200/90 bg-white p-5 shadow-xs transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-black/5 md:p-6">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span
@@ -111,7 +113,7 @@ export function GuideCard({
           </span>
         </div>
 
-        <h3 className="font-display group-hover:text-primary-800 mt-4 text-lg font-bold leading-snug tracking-tight text-neutral-900 transition-colors">
+        <h3 className="font-display group-hover:text-primary-800 mt-4 text-lg leading-snug font-bold tracking-tight text-neutral-900 transition-colors">
           {pick(lang, guide.title_fil, guide.title_en)}
         </h3>
 
@@ -143,4 +145,3 @@ export function GuideCard({
     </Link>
   );
 }
-

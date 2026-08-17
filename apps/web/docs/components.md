@@ -436,6 +436,11 @@ streaming fallbacks unchanged. Portal skeletons override the primitive pulse wit
 remain safe inside `<Suspense fallback>` and cost no client JavaScript. A spinner or fallback must
 never become a client component merely to animate.
 
+`HeroAnimatedTitle` is the small client-side exception for the public landing hero: its real `h1`
+keeps the title accessible while pointer tilt adds depth, and the liquid gradient, light pass, and
+wave layers remain CSS-only. The infinite loops are enabled only when the user has not requested
+reduced motion; the public splash still controls when the surrounding entrance cascade begins.
+
 The live `FloodHeroDiorama` is the deliberate exception: its slider, capability checks, WebGL
 scene, visibility lifecycle, and direct manipulation require a narrow `"use client"` island.
 `three` is imported only by the `ssr: false` scene below that island. `HeroSectionSkeleton`, initial

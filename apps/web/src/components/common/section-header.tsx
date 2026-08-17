@@ -113,7 +113,7 @@ export function SectionHeader({
         <Heading
           className={cn(
             TITLE_CLASS[as],
-            "tracking-tight flex items-center gap-2.5 sm:gap-3.5 flex-wrap",
+            "flex min-w-0 flex-wrap items-center gap-2.5 tracking-tight sm:gap-3.5",
             centred && "justify-center",
             onDark ? "text-white" : "text-neutral-900",
           )}
@@ -121,26 +121,30 @@ export function SectionHeader({
           {!eyebrow && Icon ? (
             <span
               className={cn(
-                "flex size-9 sm:size-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl transition-all duration-300",
+                "flex size-9 shrink-0 items-center justify-center rounded-xl transition-all duration-300 sm:size-11 sm:rounded-2xl",
                 onDark
-                  ? "bg-white/10 text-primary-300 border border-white/20 ring-4 ring-white/5"
-                  : "bg-gradient-to-br from-primary-500/15 via-primary-600/10 to-emerald-600/5 text-primary-600 border border-primary-600/20 shadow-sm ring-4 ring-primary-500/10",
+                  ? "text-primary-300 border border-white/20 bg-white/10 ring-4 ring-white/5"
+                  : "from-primary-500/15 via-primary-600/10 text-primary-600 border-primary-600/20 ring-primary-500/10 border bg-gradient-to-br to-emerald-600/5 shadow-sm ring-4",
               )}
             >
-              <Icon aria-hidden className="size-4.5 sm:size-5.5 text-primary-600" strokeWidth={2.2} />
+              <Icon
+                aria-hidden
+                className="text-primary-600 size-4.5 sm:size-5.5"
+                strokeWidth={2.2}
+              />
             </span>
           ) : null}
-          <span className="font-extrabold">
+          <span className="min-w-0 font-extrabold break-words">
             {title}
             {titleAccent ? (
               <>
                 {" "}
                 <span
                   className={cn(
-                    "relative inline-block font-extrabold whitespace-nowrap",
+                    "relative inline-block font-extrabold break-words sm:whitespace-nowrap",
                     onDark
                       ? "text-primary-300"
-                      : "bg-gradient-to-r from-primary-600 via-primary-700 to-emerald-600 bg-clip-text text-transparent",
+                      : "from-primary-600 via-primary-700 bg-gradient-to-r to-emerald-600 bg-clip-text text-transparent",
                   )}
                 >
                   {titleAccent}
@@ -150,7 +154,7 @@ export function SectionHeader({
                       "absolute inset-x-0 -bottom-1 block h-[3.5px] rounded-full opacity-70",
                       onDark
                         ? "from-primary-400/80 via-primary-300/60 bg-gradient-to-r to-transparent"
-                        : "from-primary-500 via-emerald-500 bg-gradient-to-r to-primary-300/40",
+                        : "from-primary-500 to-primary-300/40 bg-gradient-to-r via-emerald-500",
                     )}
                   />
                 </span>
@@ -167,7 +171,7 @@ export function SectionHeader({
           className={cn(
             "text-body-lg max-w-none leading-relaxed",
             onDark ? "text-primary-100/85" : "text-neutral-600",
-            centred && "text-center mx-auto",
+            centred && "mx-auto text-center",
           )}
         >
           {description}

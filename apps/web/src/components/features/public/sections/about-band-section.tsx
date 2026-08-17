@@ -1,12 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Compass,
-  Eye,
-  GraduationCap,
-  Users,
-} from "lucide-react";
+import { ArrowRight, Compass, Eye, GraduationCap, Users } from "lucide-react";
 
 import { Button } from "@/components/common/button";
 import { Reveal } from "@/components/common/reveal";
@@ -32,7 +26,7 @@ export function AboutBandSection() {
       {/* Subtle ambient background glow */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-24 right-0 size-96 rounded-full bg-primary-200/30 blur-3xl"
+        className="bg-primary-200/30 pointer-events-none absolute -top-24 right-0 size-96 rounded-full blur-3xl"
       />
       <div
         aria-hidden
@@ -42,23 +36,23 @@ export function AboutBandSection() {
       <div className="relative flex flex-col gap-6 md:gap-8">
         {/* --- Top Row: Brand & Main Overview + UN SDGs Panel --- */}
         <Reveal>
-          <div className="rounded-3xl border border-neutral-200/80 bg-white/90 p-6 shadow-sm-card backdrop-blur-sm md:p-8">
-            <div className="grid gap-6 lg:grid-cols-12 lg:gap-8 items-center">
+          <div className="shadow-sm-card rounded-3xl border border-neutral-200/80 bg-white/90 p-6 backdrop-blur-sm md:p-8">
+            <div className="grid min-w-0 items-center gap-6 lg:grid-cols-12 lg:gap-8">
               {/* Left Column: Brand Title, Description, & CTA (7 cols on lg) */}
-              <div className="flex flex-col justify-between gap-6 lg:col-span-7">
+              <div className="flex min-w-0 flex-col justify-between gap-6 lg:col-span-7">
                 <div className="flex flex-col gap-3.5">
                   <h2 className="text-2xl font-extrabold tracking-tight text-neutral-900 sm:text-3xl md:text-4xl">
                     About the{" "}
-                    <span className="relative inline-block bg-gradient-to-r from-primary-700 via-primary-600 to-emerald-600 bg-clip-text text-transparent">
+                    <span className="from-primary-700 via-primary-600 relative inline-block bg-gradient-to-r to-emerald-600 bg-clip-text text-transparent">
                       SAGIP Platform
                       <span
                         aria-hidden
-                        className="absolute -bottom-1 left-0 h-[3px] w-full rounded-full bg-primary-500/30"
+                        className="bg-primary-500/30 absolute -bottom-1 left-0 h-[3px] w-full rounded-full"
                       />
                     </span>
                   </h2>
 
-                  <p className="text-body-lg text-neutral-600 leading-relaxed max-w-2xl">
+                  <p className="text-body-lg max-w-2xl leading-relaxed text-neutral-600">
                     {WHAT_IT_IS.split("\n\n")[0]}
                   </p>
                 </div>
@@ -74,12 +68,12 @@ export function AboutBandSection() {
               </div>
 
               {/* Right Column: Redesigned UN SDGs Panel (5 cols on lg) */}
-              <div className="flex flex-col gap-2.5 rounded-2xl border border-neutral-200/80 bg-neutral-50/70 p-4 lg:col-span-5">
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-primary-700">
+              <div className="flex min-w-0 flex-col gap-2.5 rounded-2xl border border-neutral-200/80 bg-neutral-50/70 p-4 lg:col-span-5">
+                <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-1">
+                  <span className="text-primary-700 min-w-0 text-[11px] font-extrabold tracking-wider uppercase">
                     UN Sustainable Development Goals
                   </span>
-                  <span className="text-[11px] font-extrabold text-orange-600">
+                  <span className="shrink-0 text-[11px] font-extrabold text-orange-600">
                     3 Key Alignments
                   </span>
                 </div>
@@ -108,18 +102,18 @@ export function AboutBandSection() {
                     return (
                       <div
                         key={sdg.number}
-                        className="group relative flex items-center justify-between gap-3.5 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-3 px-4 shadow-2xs transition-all duration-300 hover:-translate-y-0.5 hover:border-primary-300 hover:shadow-xs"
+                        className="group hover:border-primary-300 relative flex items-center justify-between gap-3.5 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-3 px-4 shadow-2xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xs"
                       >
-                        <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="flex min-w-0 items-center gap-3.5">
                           {/* Standardized SDG Number Badge */}
                           <span
-                            className={`grid size-8 shrink-0 place-items-center rounded-xl ${sdg.colorScheme.badgeBg} text-white font-black text-sm tabular shadow-xs ring-1 ring-black/5`}
+                            className={`grid size-8 shrink-0 place-items-center rounded-xl ${sdg.colorScheme.badgeBg} tabular text-sm font-black text-white shadow-xs ring-1 ring-black/5`}
                           >
                             {sdg.number}
                           </span>
 
                           {/* Title */}
-                          <p className="text-sm sm:text-base font-bold text-neutral-900 truncate transition group-hover:text-primary-800">
+                          <p className="group-hover:text-primary-800 truncate text-sm font-bold text-neutral-900 transition sm:text-base">
                             {sdg.title}
                           </p>
                         </div>
@@ -129,16 +123,13 @@ export function AboutBandSection() {
                           {/* Pulsing ambient glow aura */}
                           <span
                             aria-hidden
-                            className={`absolute inset-0 rounded-full ${glowBg} blur-[5px] animate-pulse`}
+                            className={`absolute inset-0 rounded-full ${glowBg} animate-pulse blur-[5px]`}
                           />
                           {/* Icon Container Pill */}
                           <span
                             className={`relative grid size-8 place-items-center rounded-full border ${ringColor} shadow-2xs transition-transform duration-300 group-hover:scale-110`}
                           >
-                            <sdg.icon
-                              aria-hidden
-                              className={`size-4 ${iconColor}`}
-                            />
+                            <sdg.icon aria-hidden className={`size-4 ${iconColor}`} />
                           </span>
                         </div>
                       </div>
@@ -151,35 +142,35 @@ export function AboutBandSection() {
         </Reveal>
 
         {/* --- Bottom Row: Mission, Vision, & Interdisciplinary Team --- */}
-        <div className="grid gap-6 lg:grid-cols-12 lg:gap-8 items-stretch">
+        <div className="grid min-w-0 items-stretch gap-6 lg:grid-cols-12 lg:gap-8">
           {/* Left Column: Two Styled Bento Cards for Mission & Vision (5 cols on lg) */}
-          <div className="flex flex-col gap-4 lg:col-span-5">
+          <div className="flex min-w-0 flex-col gap-4 lg:col-span-5">
             {/* Our Mission Card */}
             <Reveal delay={1}>
-              <div className="group relative flex flex-col gap-3 rounded-2xl border border-primary-200/90 bg-gradient-to-br from-primary-50/50 via-white to-white p-5 sm:p-6 shadow-sm-card transition-all duration-300 hover:border-primary-300 hover:shadow-xs">
+              <div className="group border-primary-200/90 from-primary-50/50 shadow-sm-card hover:border-primary-300 relative flex flex-col gap-3 rounded-2xl border bg-gradient-to-br via-white to-white p-5 transition-all duration-300 hover:shadow-xs sm:p-6">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5">
                     {/* Glowing animated icon */}
                     <div className="relative flex size-8 shrink-0 items-center justify-center">
                       <span
                         aria-hidden
-                        className="absolute inset-0 rounded-xl bg-primary-500/30 blur-[5px] animate-pulse"
+                        className="bg-primary-500/30 absolute inset-0 animate-pulse rounded-xl blur-[5px]"
                       />
-                      <span className="relative grid size-8 place-items-center rounded-xl bg-primary-700 text-white shadow-xs">
+                      <span className="bg-primary-700 relative grid size-8 place-items-center rounded-xl text-white shadow-xs">
                         <Compass aria-hidden className="size-4" />
                       </span>
                     </div>
-                    <span className="rounded-md border border-primary-200 bg-primary-100/90 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-primary-800">
+                    <span className="border-primary-200 bg-primary-100/90 text-primary-800 rounded-md border px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase">
                       Our Mission
                     </span>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <h3 className="text-sm sm:text-base font-bold text-neutral-900 leading-snug">
+                  <h3 className="text-sm leading-snug font-bold text-neutral-900 sm:text-base">
                     Proactive Disaster Management
                   </h3>
-                  <p className="text-body-sm text-neutral-600 leading-relaxed">
+                  <p className="text-body-sm leading-relaxed text-neutral-600">
                     {MISSION}
                   </p>
                 </div>
@@ -188,30 +179,30 @@ export function AboutBandSection() {
 
             {/* Our Vision Card */}
             <Reveal delay={2}>
-              <div className="group relative flex flex-col gap-3 rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/50 via-white to-white p-5 sm:p-6 shadow-sm-card transition-all duration-300 hover:border-emerald-300 hover:shadow-xs">
+              <div className="group shadow-sm-card relative flex flex-col gap-3 rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/50 via-white to-white p-5 transition-all duration-300 hover:border-emerald-300 hover:shadow-xs sm:p-6">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5">
                     {/* Glowing animated icon */}
                     <div className="relative flex size-8 shrink-0 items-center justify-center">
                       <span
                         aria-hidden
-                        className="absolute inset-0 rounded-xl bg-emerald-500/30 blur-[5px] animate-pulse"
+                        className="absolute inset-0 animate-pulse rounded-xl bg-emerald-500/30 blur-[5px]"
                       />
                       <span className="relative grid size-8 place-items-center rounded-xl bg-emerald-700 text-white shadow-xs">
                         <Eye aria-hidden className="size-4" />
                       </span>
                     </div>
-                    <span className="rounded-md border border-emerald-200 bg-emerald-100/90 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-800">
+                    <span className="rounded-md border border-emerald-200 bg-emerald-100/90 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-emerald-800 uppercase">
                       Our Vision
                     </span>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <h3 className="text-sm sm:text-base font-bold text-neutral-900 leading-snug">
+                  <h3 className="text-sm leading-snug font-bold text-neutral-900 sm:text-base">
                     Zero-Overlooked Community Resilience
                   </h3>
-                  <p className="text-body-sm text-neutral-600 leading-relaxed">
+                  <p className="text-body-sm leading-relaxed text-neutral-600">
                     {VISION}
                   </p>
                 </div>
@@ -220,33 +211,33 @@ export function AboutBandSection() {
           </div>
 
           {/* Right Column: Interdisciplinary Project Team (7 cols on lg) */}
-          <div className="flex flex-col lg:col-span-7">
+          <div className="flex min-w-0 flex-col lg:col-span-7">
             <Reveal delay={2} className="h-full">
-              <div className="flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-sm-card h-full">
+              <div className="shadow-sm-card flex h-full flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6">
                 <div className="flex flex-col gap-4">
                   {/* Header with Title & Live Pulse Badge */}
-                  <div className="flex items-center justify-between gap-2 border-b border-neutral-100 pb-3.5">
-                    <div className="flex items-center gap-2.5">
-                      <span className="grid size-8 place-items-center rounded-xl bg-primary-100 text-primary-800 border border-primary-200/80 shadow-2xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-100 pb-3.5">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span className="bg-primary-100 text-primary-800 border-primary-200/80 grid size-8 place-items-center rounded-xl border shadow-2xs">
                         <Users aria-hidden className="size-4" />
                       </span>
-                      <div>
-                        <h3 className="text-sm sm:text-base font-bold text-neutral-900 leading-tight">
+                      <div className="min-w-0">
+                        <h3 className="text-sm leading-tight font-bold text-neutral-900 sm:text-base">
                           Interdisciplinary Project Team
                         </h3>
-                        <p className="text-[11px] text-neutral-500 mt-0.5">
+                        <p className="mt-0.5 text-[11px] text-neutral-500">
                           SK Project Pitching Prototype
                         </p>
                       </div>
                     </div>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-[11px] font-bold text-primary-900">
-                      <span className="size-1.5 rounded-full bg-primary-600 animate-ping" />
+                    <span className="border-primary-200 bg-primary-50 text-primary-900 inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold">
+                      <span className="bg-primary-600 size-1.5 animate-ping rounded-full" />
                       5 Members
                     </span>
                   </div>
 
                   {/* 5 Members Grid with Themed Discipline Badges */}
-                  <div className="grid gap-2.5 sm:grid-cols-2">
+                  <div className="grid min-w-0 gap-2.5 sm:grid-cols-2">
                     {TEAM_MEMBERS.map((member) => {
                       const themeMap: Record<
                         string,
@@ -258,8 +249,7 @@ export function AboutBandSection() {
                         },
                         "member-2": {
                           avatarBg: "bg-purple-600",
-                          tagClass:
-                            "border-purple-200 bg-purple-50/90 text-purple-800",
+                          tagClass: "border-purple-200 bg-purple-50/90 text-purple-800",
                         },
                         "member-3": {
                           avatarBg: "bg-amber-600",
@@ -284,20 +274,20 @@ export function AboutBandSection() {
                       return (
                         <div
                           key={member.id}
-                          className="group relative flex items-center justify-between gap-2.5 rounded-xl border border-neutral-200/80 bg-neutral-50/60 p-2.5 px-3 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:border-primary-300 hover:shadow-2xs"
+                          className="group hover:border-primary-300 relative flex min-w-0 items-center justify-between gap-2.5 rounded-xl border border-neutral-200/80 bg-neutral-50/60 p-2.5 px-3 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xs"
                         >
-                          <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="flex min-w-0 items-center gap-2.5">
                             {/* Stylized Initials Badge */}
                             <div
-                              className={`relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg ${theme.avatarBg} text-white shadow-xs font-extrabold text-xs tabular`}
+                              className={`relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg ${theme.avatarBg} tabular text-xs font-extrabold text-white shadow-xs`}
                             >
                               {member.initials}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-caption font-bold text-neutral-900 truncate leading-tight transition group-hover:text-primary-800">
+                              <p className="text-caption group-hover:text-primary-800 truncate leading-tight font-bold text-neutral-900 transition">
                                 {member.name}
                               </p>
-                              <p className="text-[11px] text-neutral-500 truncate leading-tight mt-0.5">
+                              <p className="mt-0.5 truncate text-[11px] leading-tight text-neutral-500">
                                 {member.role}
                               </p>
                             </div>
@@ -315,15 +305,15 @@ export function AboutBandSection() {
                     })}
 
                     {/* 6th Slot: Discipline Integration Convergence Tile */}
-                    <div className="flex items-center gap-2.5 rounded-xl border border-primary-200/80 bg-gradient-to-r from-primary-50/80 to-emerald-50/80 p-2.5 px-3 shadow-2xs">
-                      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary-700 text-white shadow-xs">
+                    <div className="border-primary-200/80 from-primary-50/80 flex min-w-0 items-center gap-2.5 rounded-xl border bg-gradient-to-r to-emerald-50/80 p-2.5 px-3 shadow-2xs">
+                      <span className="bg-primary-700 grid size-8 shrink-0 place-items-center rounded-lg text-white shadow-xs">
                         <GraduationCap aria-hidden className="size-4" />
                       </span>
                       <div className="min-w-0">
-                        <p className="text-caption font-extrabold text-primary-950 truncate leading-tight">
+                        <p className="text-caption text-primary-950 truncate leading-tight font-extrabold">
                           PolSci · PubAd · Nutrition · IT
                         </p>
-                        <p className="text-[10px] font-medium text-primary-700 truncate mt-0.5">
+                        <p className="text-primary-700 mt-0.5 truncate text-[10px] font-medium">
                           Interdisciplinary DRRM Integration
                         </p>
                       </div>
@@ -338,4 +328,3 @@ export function AboutBandSection() {
     </Section>
   );
 }
-

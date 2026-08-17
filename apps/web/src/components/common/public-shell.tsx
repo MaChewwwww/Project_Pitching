@@ -27,7 +27,7 @@ export function PublicShell({
   primaryHotline,
 }: PublicShellProps) {
   return (
-    <div className="flex min-h-full w-full max-w-full flex-col overflow-x-clip">
+    <div className="flex min-h-full w-full max-w-full flex-col">
       <PageSplashLoader />
       <TopUtilityBar primaryHotline={primaryHotline} />
 
@@ -41,7 +41,7 @@ export function PublicShell({
         <PublicNavbar primaryHotline={primaryHotline} />
       </div>
 
-      <main id="main" className="flex-1 w-full max-w-full overflow-x-clip">
+      <main id="main" className="w-full max-w-full flex-1 overflow-x-clip">
         {children}
       </main>
 

@@ -128,7 +128,7 @@ function ConsoleNav({ onNavigate }: { onNavigate?: () => void }) {
   );
 
   return (
-    <nav className="flex-1 space-y-2 px-3 py-4">
+    <nav className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-4">
       <div className="space-y-1.5">
         {ADMIN_CATEGORIES.map((category) => {
           const items = category.items.filter(
@@ -231,7 +231,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-neutral-100">
-      <aside className="bg-primary-950 text-primary-50 hidden h-svh w-64 shrink-0 flex-col lg:sticky lg:top-0 lg:flex">
+      <aside className="bg-primary-950 text-primary-50 hidden h-svh w-64 shrink-0 flex-col lg:sticky lg:top-0 lg:flex lg:self-start">
         <div className="flex items-center gap-2.5 border-b border-white/10 px-4 py-4">
           <div className="flex min-w-0 items-center gap-2.5">
             <LogoLockup size={32} variant="mark" onDark />
@@ -248,13 +248,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         <ConsoleNav />
 
-        <div className="mt-auto border-t border-white/10 p-3 bg-primary-950/80">
+        <div className="bg-primary-950/80 mt-auto border-t border-white/10 p-3">
           <div className="grid grid-cols-2 gap-1 text-[11px]">
             <Link
               href="/"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-semibold text-emerald-200 hover:bg-white/10 hover:text-white transition-colors"
+              className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-semibold text-emerald-200 transition-colors hover:bg-white/10 hover:text-white"
             >
               <ExternalLink className="size-3" />
               Public Site
@@ -262,7 +262,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => void logout()}
-              className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-semibold text-rose-300 hover:bg-rose-950/50 hover:text-rose-200 transition-colors cursor-pointer"
+              className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-1.5 font-semibold text-rose-300 transition-colors hover:bg-rose-950/50 hover:text-rose-200"
             >
               <LogOut className="size-3" />
               Sign Out
@@ -302,13 +302,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   <span className="text-body-sm font-bold text-white">SAGIP-SJ</span>
                 </div>
                 <ConsoleNav onNavigate={() => setMobileNavOpen(false)} />
-                <div className="mt-auto border-t border-white/10 p-3 bg-primary-950/80">
+                <div className="bg-primary-950/80 mt-auto border-t border-white/10 p-3">
                   <div className="grid grid-cols-2 gap-1 text-[11px]">
                     <Link
                       href="/"
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-semibold text-emerald-200 hover:bg-white/10 hover:text-white transition-colors"
+                      className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-semibold text-emerald-200 transition-colors hover:bg-white/10 hover:text-white"
                     >
                       <ExternalLink className="size-3" />
                       Public Site
@@ -316,7 +316,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                     <button
                       type="button"
                       onClick={() => void logout()}
-                      className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-semibold text-rose-300 hover:bg-rose-950/50 hover:text-rose-200 transition-colors cursor-pointer"
+                      className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-1.5 font-semibold text-rose-300 transition-colors hover:bg-rose-950/50 hover:text-rose-200"
                     >
                       <LogOut className="size-3" />
                       Sign Out
@@ -339,7 +339,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         <main
           key={pathname}
-          className="min-w-0 flex-1 p-4 md:p-6 xl:p-8 animate-portal-enter"
+          className="animate-portal-enter min-w-0 flex-1 p-4 md:p-6 xl:p-8"
         >
           {children}
         </main>

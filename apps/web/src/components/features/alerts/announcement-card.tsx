@@ -36,20 +36,19 @@ export interface AnnouncementCardProps {
   variant?: AnnouncementCardVariant;
 }
 
-
 type CategoryMeta = { label: string; Icon: LucideIcon };
 
 const TYPE_MAP: Record<AnnouncementType, CategoryMeta> = {
-  general:              { label: "General",              Icon: Tag           },
-  class_suspension:     { label: "Class Suspension",     Icon: BookX         },
-  road_closure:         { label: "Road Closure",         Icon: TrafficCone   },
-  utility_interruption: { label: "Utility Interruption", Icon: Wrench        },
-  flood_warning:        { label: "Flood Warning",        Icon: Droplets      },
-  earthquake:           { label: "Earthquake",           Icon: Activity      },
-  typhoon:              { label: "Typhoon",              Icon: CloudLightning },
-  heavy_rainfall:       { label: "Heavy Rainfall",       Icon: CloudRain     },
-  heat_index:           { label: "Heat Index",           Icon: Thermometer   },
-  evacuation:           { label: "Evacuation",           Icon: DoorOpen      },
+  general: { label: "General", Icon: Tag },
+  class_suspension: { label: "Class Suspension", Icon: BookX },
+  road_closure: { label: "Road Closure", Icon: TrafficCone },
+  utility_interruption: { label: "Utility Interruption", Icon: Wrench },
+  flood_warning: { label: "Flood Warning", Icon: Droplets },
+  earthquake: { label: "Earthquake", Icon: Activity },
+  typhoon: { label: "Typhoon", Icon: CloudLightning },
+  heavy_rainfall: { label: "Heavy Rainfall", Icon: CloudRain },
+  heat_index: { label: "Heat Index", Icon: Thermometer },
+  evacuation: { label: "Evacuation", Icon: DoorOpen },
 };
 
 function ContinueMark({
@@ -67,10 +66,10 @@ function ContinueMark({
         kind === "announcement"
           ? "border-neutral-200 bg-neutral-50 text-neutral-600 group-hover:border-emerald-600 group-hover:bg-emerald-600 group-hover:text-white"
           : severity === "emergency"
-          ? "border-red-200 bg-red-50 text-red-600 group-hover:border-red-600 group-hover:bg-red-600 group-hover:text-white"
-          : severity === "warning"
-          ? "border-orange-200 bg-orange-50 text-orange-600 group-hover:border-orange-500 group-hover:bg-orange-500 group-hover:text-white"
-          : "border-amber-200 bg-amber-50 text-amber-600 group-hover:border-amber-500 group-hover:bg-amber-500 group-hover:text-white",
+            ? "border-red-200 bg-red-50 text-red-600 group-hover:border-red-600 group-hover:bg-red-600 group-hover:text-white"
+            : severity === "warning"
+              ? "border-orange-200 bg-orange-50 text-orange-600 group-hover:border-orange-500 group-hover:bg-orange-500 group-hover:text-white"
+              : "border-amber-200 bg-amber-50 text-amber-600 group-hover:border-amber-500 group-hover:bg-amber-500 group-hover:text-white",
       )}
     >
       <ArrowRight className="size-4" />
@@ -78,12 +77,7 @@ function ContinueMark({
   );
 }
 
-
-function StoryMeta({
-  announcement,
-}: {
-  announcement: PublicAnnouncement;
-}) {
+function StoryMeta({ announcement }: { announcement: PublicAnnouncement }) {
   const meta = TYPE_MAP[announcement.type] ?? { label: announcement.type, Icon: Tag };
   const { label: catLabel, Icon: CatIcon } = meta;
 
@@ -91,10 +85,10 @@ function StoryMeta({
     announcement.kind === "announcement"
       ? "text-emerald-600"
       : announcement.severity === "emergency"
-      ? "text-red-500"
-      : announcement.severity === "warning"
-      ? "text-orange-500"
-      : "text-amber-500";
+        ? "text-red-500"
+        : announcement.severity === "warning"
+          ? "text-orange-500"
+          : "text-amber-500";
 
   return (
     <div className="flex min-w-0 flex-col gap-1 text-xs font-medium text-neutral-500">
@@ -156,21 +150,21 @@ export function AnnouncementCard({
     <Link
       href={href}
       className={cn(
-        "group focus-visible:ring-primary-600 block h-full rounded-[20px] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+        "group focus-visible:ring-primary-600 block h-full w-full min-w-0 rounded-[20px] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
         className,
       )}
       aria-label={`Read ${isAlert ? "alert" : "announcement"}: ${announcement.title}`}
     >
       <article
         className={cn(
-          "relative flex h-full flex-col overflow-hidden rounded-[20px] border bg-white transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-black/5",
+          "relative flex h-full min-w-0 flex-col overflow-hidden rounded-[20px] border bg-white transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-black/5",
           announcement.kind === "announcement"
-            ? "border-neutral-200/80 hover:border-emerald-600 shadow-xs"
+            ? "border-neutral-200/80 shadow-xs hover:border-emerald-600"
             : announcement.severity === "emergency"
-            ? "border-red-200/90 hover:border-red-400 shadow-xs"
-            : announcement.severity === "warning"
-            ? "border-orange-200/90 hover:border-orange-400 shadow-xs"
-            : "border-yellow-200/90 hover:border-yellow-400 shadow-xs",
+              ? "border-red-200/90 shadow-xs hover:border-red-400"
+              : announcement.severity === "warning"
+                ? "border-orange-200/90 shadow-xs hover:border-orange-400"
+                : "border-yellow-200/90 shadow-xs hover:border-yellow-400",
         )}
       >
         {/* Cover Image Header (Symmetrical aspect ratio) */}
@@ -193,10 +187,10 @@ export function AnnouncementCard({
                 announcement.kind === "announcement"
                   ? "bg-gradient-to-br from-emerald-950 via-emerald-900 to-neutral-900"
                   : announcement.severity === "emergency"
-                  ? "bg-gradient-to-br from-red-950 via-rose-900 to-neutral-900"
-                  : announcement.severity === "warning"
-                  ? "bg-gradient-to-br from-amber-950 via-orange-900 to-neutral-900"
-                  : "bg-gradient-to-br from-amber-900 via-yellow-800 to-neutral-900",
+                    ? "bg-gradient-to-br from-red-950 via-rose-900 to-neutral-900"
+                    : announcement.severity === "warning"
+                      ? "bg-gradient-to-br from-amber-950 via-orange-900 to-neutral-900"
+                      : "bg-gradient-to-br from-amber-900 via-yellow-800 to-neutral-900",
               )}
             >
               <div
@@ -204,21 +198,21 @@ export function AnnouncementCard({
                 className="absolute -right-8 -bottom-10 size-44 rounded-full border-[20px] border-white/10"
               />
               <div className="relative z-10 flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-white/70">
+                <span className="text-[11px] font-bold tracking-wider text-white/70 uppercase">
                   Official Notice
                 </span>
                 {isAlert ? (
                   <TriangleAlert className="size-5 text-amber-400 opacity-80" />
                 ) : null}
               </div>
-              <div className="relative z-10 font-display text-sm font-semibold tracking-tight text-white/90">
+              <div className="font-display relative z-10 text-sm font-semibold tracking-tight text-white/90">
                 Barangay San Jose
               </div>
             </div>
           )}
 
           {/* Top Header Overlay: Badge (Left) & Date (Right) */}
-          <div className="absolute top-3 inset-x-3 z-10 flex items-center justify-between gap-2">
+          <div className="absolute inset-x-3 top-3 z-10 flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
             <span
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold shadow-md backdrop-blur-xs",
@@ -230,9 +224,9 @@ export function AnnouncementCard({
             </span>
 
             {announcement.published_at ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white shadow-xs backdrop-blur-sm">
+              <span className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white shadow-xs backdrop-blur-sm">
                 <CalendarClock aria-hidden className="size-3 shrink-0 text-white/80" />
-                <time dateTime={announcement.published_at}>
+                <time className="truncate" dateTime={announcement.published_at}>
                   {formatPhtDateTime(announcement.published_at)}
                 </time>
               </span>
@@ -241,17 +235,17 @@ export function AnnouncementCard({
         </div>
 
         {/* Card Body */}
-        <div className="flex flex-1 flex-col p-5">
+        <div className="flex min-w-0 flex-1 flex-col p-5">
           <h3
             className={cn(
-              "font-display text-lg font-bold leading-snug tracking-tight text-neutral-900 transition-colors line-clamp-2",
+              "font-display line-clamp-2 text-lg leading-snug font-bold tracking-tight text-neutral-900 transition-colors",
               announcement.kind === "announcement"
                 ? "group-hover:text-emerald-700"
                 : announcement.severity === "emergency"
-                ? "group-hover:text-red-600"
-                : announcement.severity === "warning"
-                ? "group-hover:text-orange-600"
-                : "group-hover:text-amber-700",
+                  ? "group-hover:text-red-600"
+                  : announcement.severity === "warning"
+                    ? "group-hover:text-orange-600"
+                    : "group-hover:text-amber-700",
             )}
           >
             {announcement.title}
@@ -270,32 +264,32 @@ export function AnnouncementCard({
           {isAlert && announcement.instruction ? (
             <div
               className={cn(
-                "mt-3.5 rounded-xl p-3 text-xs leading-relaxed shadow-xs border",
+                "mt-3.5 rounded-xl border p-3 text-xs leading-relaxed shadow-xs",
                 announcement.severity === "info"
                   ? "border-yellow-300 bg-yellow-50 text-yellow-950"
                   : announcement.severity === "warning"
-                  ? "border-orange-300 bg-orange-50 text-orange-950"
-                  : "border-red-300 bg-red-50 text-red-950"
+                    ? "border-orange-300 bg-orange-50 text-orange-950"
+                    : "border-red-300 bg-red-50 text-red-950",
               )}
             >
               <span
                 className={cn(
-                  "mb-0.5 block text-[10px] font-bold uppercase tracking-wider",
+                  "mb-0.5 block text-[10px] font-bold tracking-wider uppercase",
                   announcement.severity === "info"
                     ? "text-yellow-800"
                     : announcement.severity === "warning"
-                    ? "text-orange-800"
-                    : "text-red-700"
+                      ? "text-orange-800"
+                      : "text-red-700",
                 )}
               >
                 Immediate Guidance
               </span>
-              <p className="font-medium line-clamp-2">{announcement.instruction}</p>
+              <p className="line-clamp-2 font-medium">{announcement.instruction}</p>
             </div>
           ) : null}
 
           {/* Pinned Card Footer */}
-          <div className="mt-auto flex items-end justify-between gap-3 pt-5 border-t border-neutral-100">
+          <div className="mt-auto flex min-w-0 items-end justify-between gap-3 border-t border-neutral-100 pt-5">
             <StoryMeta announcement={announcement} />
             <ContinueMark kind={announcement.kind} severity={announcement.severity} />
           </div>

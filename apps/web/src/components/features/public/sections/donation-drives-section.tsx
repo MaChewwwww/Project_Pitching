@@ -46,9 +46,9 @@ export async function DonationDrivesSection() {
         />
       </Reveal>
 
-      <div className="mt-8 grid gap-4 md:grid-cols-2 md:gap-6">
+      <div className="mt-8 grid min-w-0 gap-4 md:grid-cols-2 md:gap-6">
         {drives.slice(0, 2).map((drive, i) => (
-          <Reveal key={drive.id} delay={(i % 2) as 0 | 1}>
+          <Reveal key={drive.id} delay={(i % 2) as 0 | 1} className="min-w-0">
             <DriveCard drive={drive} />
           </Reveal>
         ))}

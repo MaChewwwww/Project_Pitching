@@ -12,14 +12,7 @@ interface HotlineDirectoryTabsProps {
   hotlines: PublicHotline[];
 }
 
-type TabKey =
-  | "all"
-  | "emergency"
-  | "police"
-  | "fire"
-  | "healthcare"
-  | "bhert"
-  | "zonal";
+type TabKey = "all" | "emergency" | "police" | "fire" | "healthcare" | "bhert" | "zonal";
 
 export function HotlineDirectoryTabs({ hotlines }: HotlineDirectoryTabsProps) {
   const [activeTab, setActiveTab] = React.useState<TabKey>("all");
@@ -73,7 +66,9 @@ export function HotlineDirectoryTabs({ hotlines }: HotlineDirectoryTabsProps) {
     ).length;
     const police = hotlines.filter((h) => h.type === "police").length;
     const fire = hotlines.filter((h) => h.type === "fire").length;
-    const healthcare = hotlines.filter((h) => ["hospital", "ambulance"].includes(h.type)).length;
+    const healthcare = hotlines.filter((h) =>
+      ["hospital", "ambulance"].includes(h.type),
+    ).length;
     const bhert = hotlines.filter((h) => h.label.toLowerCase().includes("bhert")).length;
     const zonal = hotlines.filter(
       (h) =>
@@ -98,9 +93,9 @@ export function HotlineDirectoryTabs({ hotlines }: HotlineDirectoryTabsProps) {
   return (
     <div className="space-y-6">
       {/* Search & Category Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3.5">
+      <div className="flex min-w-0 flex-col items-stretch justify-between gap-3.5 sm:flex-row sm:items-center">
         {/* Category Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto p-1 rounded-2xl bg-neutral-100/90 border border-neutral-200/80 shadow-2xs max-w-full">
+        <div className="flex max-w-full min-w-0 items-center gap-1.5 overflow-x-auto rounded-2xl border border-neutral-200/80 bg-neutral-100/90 p-1 shadow-2xs">
           {tabs.map((tab) => {
             const isSelected = activeTab === tab.key;
             return (
@@ -109,16 +104,16 @@ export function HotlineDirectoryTabs({ hotlines }: HotlineDirectoryTabsProps) {
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  "flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition-all whitespace-nowrap cursor-pointer",
+                  "flex cursor-pointer items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all",
                   isSelected
                     ? "bg-white text-emerald-800 shadow-xs ring-1 ring-black/5"
-                    : "text-neutral-600 hover:text-neutral-900 hover:bg-white/60",
+                    : "text-neutral-600 hover:bg-white/60 hover:text-neutral-900",
                 )}
               >
                 <span>{tab.label}</span>
                 <span
                   className={cn(
-                    "rounded-full px-1.5 py-0.2 text-[10px] font-extrabold",
+                    "py-0.2 rounded-full px-1.5 text-[10px] font-extrabold",
                     isSelected
                       ? "bg-emerald-100 text-emerald-800"
                       : "bg-neutral-200/80 text-neutral-600",
@@ -132,13 +127,15 @@ export function HotlineDirectoryTabs({ hotlines }: HotlineDirectoryTabsProps) {
         </div>
 
         {/* Search Input */}
-        <div className="relative min-w-[240px] sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400 pointer-events-none" />
+        <div className="relative w-full min-w-0 sm:w-64">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-neutral-400" />
           <Input
             value={searchQuery}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setSearchQuery(e.target.value)
+            }
             placeholder="Search area or number..."
-            className="pl-9 h-9.5 text-xs bg-white rounded-xl border-neutral-200 shadow-2xs focus-visible:ring-emerald-500"
+            className="h-9.5 rounded-xl border-neutral-200 bg-white pl-9 text-xs shadow-2xs focus-visible:ring-emerald-500"
           />
         </div>
       </div>
@@ -147,9 +144,9 @@ export function HotlineDirectoryTabs({ hotlines }: HotlineDirectoryTabsProps) {
       {filteredHotlines.length > 0 ? (
         <HotlineList hotlines={filteredHotlines} />
       ) : (
-        <div className="rounded-2xl border border-dashed border-neutral-300 p-8 text-center bg-white">
+        <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-8 text-center">
           <p className="text-sm font-bold text-neutral-800">No matching hotlines found</p>
-          <p className="text-xs text-neutral-500 mt-1">
+          <p className="mt-1 text-xs text-neutral-500">
             Try searching for another area name or department.
           </p>
         </div>

@@ -21,11 +21,7 @@ export interface DriveCardProps {
   className?: string;
 }
 
-export function DriveCard({
-  drive,
-  clamp = false,
-  className,
-}: DriveCardProps) {
+export function DriveCard({ drive, clamp = false, className }: DriveCardProps) {
   const href = `/donation-drives/${drive.slug}` as Route;
   const summary = drive.excerpt;
 
@@ -55,17 +51,17 @@ export function DriveCard({
     <Link
       href={href}
       className={cn(
-        "group focus-visible:ring-primary-600 block h-full rounded-[20px] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+        "group focus-visible:ring-primary-600 block h-full w-full min-w-0 rounded-[20px] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
         className,
       )}
       aria-label={`Read donation drive: ${drive.title}`}
     >
       <article
         className={cn(
-          "relative flex h-full flex-col overflow-hidden rounded-[20px] border bg-white transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-black/5",
+          "relative flex h-full min-w-0 flex-col overflow-hidden rounded-[20px] border bg-white transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-black/5",
           isArchived || isPast
-            ? "border-neutral-200/80 hover:border-slate-400 shadow-xs"
-            : "border-emerald-200/80 hover:border-emerald-600 shadow-xs",
+            ? "border-neutral-200/80 shadow-xs hover:border-slate-400"
+            : "border-emerald-200/80 shadow-xs hover:border-emerald-600",
         )}
       >
         {/* Cover Image Header */}
@@ -88,19 +84,19 @@ export function DriveCard({
                 className="absolute -right-8 -bottom-10 size-44 rounded-full border-[20px] border-white/10"
               />
               <div className="relative z-10 flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-white/70">
+                <span className="text-[11px] font-bold tracking-wider text-white/70 uppercase">
                   Official Relief Notice
                 </span>
                 <HandHeart className="size-5 text-emerald-400 opacity-80" />
               </div>
-              <div className="relative z-10 font-display text-sm font-semibold tracking-tight text-white/90">
+              <div className="font-display relative z-10 text-sm font-semibold tracking-tight text-white/90">
                 Barangay San Jose
               </div>
             </div>
           )}
 
           {/* Top Header Overlay: Badge & Date */}
-          <div className="absolute top-3 inset-x-3 z-10 flex items-center justify-between gap-2">
+          <div className="absolute inset-x-3 top-3 z-10 flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
             <span
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold shadow-md backdrop-blur-xs",
@@ -112,9 +108,9 @@ export function DriveCard({
             </span>
 
             {drive.published_at ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white shadow-xs backdrop-blur-sm">
+              <span className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white shadow-xs backdrop-blur-sm">
                 <CalendarClock aria-hidden className="size-3 shrink-0 text-white/80" />
-                <time dateTime={drive.published_at}>
+                <time className="truncate" dateTime={drive.published_at}>
                   {formatPhtDateTime(drive.published_at)}
                 </time>
               </span>
@@ -123,8 +119,8 @@ export function DriveCard({
         </div>
 
         {/* Card Body */}
-        <div className="flex flex-1 flex-col p-5">
-          <h3 className="font-display text-lg font-bold leading-snug tracking-tight text-neutral-900 transition-colors line-clamp-2 group-hover:text-emerald-700">
+        <div className="flex min-w-0 flex-1 flex-col p-5">
+          <h3 className="font-display line-clamp-2 text-lg leading-snug font-bold tracking-tight text-neutral-900 transition-colors group-hover:text-emerald-700">
             {drive.title}
           </h3>
 
@@ -140,15 +136,15 @@ export function DriveCard({
           {/* Drop-off Callout */}
           {drive.drop_off_instructions ? (
             <div className="mt-3.5 rounded-xl border border-emerald-200/80 bg-emerald-50/60 p-3 text-xs leading-relaxed text-emerald-950 shadow-2xs">
-              <span className="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+              <span className="mb-0.5 block text-[10px] font-bold tracking-wider text-emerald-800 uppercase">
                 Drop-off Instructions
               </span>
-              <p className="font-medium line-clamp-2">{drive.drop_off_instructions}</p>
+              <p className="line-clamp-2 font-medium">{drive.drop_off_instructions}</p>
             </div>
           ) : null}
 
           {/* Pinned Card Footer */}
-          <div className="mt-auto flex items-end justify-between gap-3 pt-5 border-t border-neutral-100">
+          <div className="mt-auto flex items-end justify-between gap-3 border-t border-neutral-100 pt-5">
             <div className="flex min-w-0 flex-col gap-1 text-xs font-medium text-neutral-500">
               <span className="inline-flex items-center gap-1.5 truncate">
                 <User aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
@@ -160,7 +156,7 @@ export function DriveCard({
               {drive.event_name ? (
                 <span className="inline-flex items-center gap-1.5 truncate">
                   <Sparkles aria-hidden className="size-3.5 shrink-0 text-emerald-600" />
-                  <span className="truncate text-emerald-800 font-semibold">
+                  <span className="truncate font-semibold text-emerald-800">
                     {drive.event_name}
                   </span>
                 </span>

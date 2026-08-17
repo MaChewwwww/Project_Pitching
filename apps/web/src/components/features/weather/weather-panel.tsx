@@ -288,9 +288,9 @@ export function WeatherPanel({
           className,
         )}
       >
-        <CardContent className="flex h-full flex-col gap-4">
+        <CardContent className="flex h-full min-w-0 flex-col gap-4">
           {/* Metric Cards Grid */}
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-[0.82fr_0.82fr_1.18fr_1.18fr]">
+          <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-[0.82fr_0.82fr_1.18fr_1.18fr]">
             {standardReadings.map(({ reading, peak }) => {
               const meta = METRIC_META[reading.metric];
               const severity = metricSeverity(reading.metric, Number(reading.value));
@@ -469,8 +469,8 @@ export function WeatherPanel({
               </Select>
             </div>
 
-            <div className="-mx-1 scrollbar-none overflow-x-auto px-1 pt-2 sm:mx-0 sm:px-0">
-              <div className="flex h-36 min-w-[310px] items-end gap-1.5 sm:min-w-0 sm:gap-2">
+            <div className="-mx-1 min-w-0 scrollbar-none overflow-x-auto px-1 pt-2 sm:mx-0 sm:px-0">
+              <div className="flex h-36 min-w-0 items-end gap-1.5 sm:gap-2">
                 {forecastSeries.length === 0 ? (
                   <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-sky-200 bg-white/45 px-4 text-center">
                     <CloudRain aria-hidden className="size-5 text-sky-500" />

@@ -785,6 +785,56 @@
     }
   }
 
+  /* The landing title's signature treatment: a gentle floating lift, a moving
+     river gradient, a reflected light pass, and two counter-flowing wave
+     layers beneath the green phrase. All loops live behind the same reduced
+     motion gate as the rest of the public hero. */
+  .hero-title-float {
+    transform-style: preserve-3d;
+    transition: transform 500ms var(--ease-emphasized);
+  }
+
+  .hero-title-flow {
+    color: transparent;
+    background-image: linear-gradient(90deg, #17532f 0%, #1f8049 45%, #0d9488 68%, #196a3d 100%);
+    background-size: 300% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+  }
+
+  .hero-title-shimmer {
+    background: linear-gradient(105deg, transparent 25%, rgb(255 255 255 / 0.5) 48%, transparent 68%);
+    background-size: 220% 100%;
+    mix-blend-mode: overlay;
+    opacity: 0.8;
+  }
+
+  .hero-title-wave {
+    filter: drop-shadow(0 3px 8px rgb(31 128 73 / 0.35));
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-title-float {
+      animation: water-surface-float 5s ease-in-out infinite;
+    }
+
+    .hero-title-flow {
+      animation: liquid-river-flow 6s linear infinite;
+    }
+
+    .hero-title-shimmer {
+      animation: light-sweep 4s ease-in-out infinite;
+    }
+
+    .hero-title-wave-primary {
+      animation: wave-flow 6s linear infinite;
+    }
+
+    .hero-title-wave-secondary {
+      animation: wave-flow 8s linear infinite reverse;
+    }
+  }
+
   @keyframes liquid-water-fill {
     0% {
       opacity: 0;
@@ -1399,7 +1449,7 @@
 @layer base {
   html,
   body {
-    overflow-x: hidden;
+    overflow-x: clip;
     max-width: 100%;
   }
 }

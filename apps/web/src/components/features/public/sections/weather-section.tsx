@@ -48,9 +48,16 @@ export async function WeatherSection() {
         />
       </Reveal>
 
-      <Reveal delay={1} className="mt-8 grid gap-4 md:gap-6 lg:grid-cols-[2fr_1fr]">
-        <WeatherPanel weather={weather} />
-        <RiverLevelPanel river={river} weather={weather} />
+      <Reveal
+        delay={1}
+        className="mt-8 grid min-w-0 gap-4 md:gap-6 lg:grid-cols-[2fr_1fr]"
+      >
+        <div className="min-w-0">
+          <WeatherPanel weather={weather} />
+        </div>
+        <div className="min-w-0">
+          <RiverLevelPanel river={river} weather={weather} />
+        </div>
       </Reveal>
     </Section>
   );

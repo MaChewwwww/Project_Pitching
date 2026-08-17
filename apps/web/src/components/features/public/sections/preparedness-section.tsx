@@ -23,7 +23,13 @@ export async function PreparednessSection() {
         titleAccent="Guidelines"
         description="Short, practical guides for the hazards San Jose actually faces — written for this barangay, not adapted from national leaflets."
         action={
-          <Button asChild variant="outline" pill size="md" className="shrink-0 max-sm:px-3">
+          <Button
+            asChild
+            variant="outline"
+            pill
+            size="md"
+            className="shrink-0 max-sm:px-3"
+          >
             <Link href="/guides" aria-label="View All">
               <span className="hidden sm:inline">View All</span>
               <ArrowRight aria-hidden className="size-4" />
@@ -32,9 +38,9 @@ export async function PreparednessSection() {
         }
       />
 
-      <div className="mt-8 grid gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
+      <div className="mt-8 grid min-w-0 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
         {guides.slice(0, 3).map((guide, i) => (
-          <Reveal key={guide.id} delay={(i % 3) as 0 | 1 | 2}>
+          <Reveal key={guide.id} delay={(i % 3) as 0 | 1 | 2} className="min-w-0">
             <GuideCard guide={guide} />
           </Reveal>
         ))}
