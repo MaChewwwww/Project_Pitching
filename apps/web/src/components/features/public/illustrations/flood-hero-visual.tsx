@@ -260,14 +260,14 @@ export function FloodHeroVisual() {
       {sceneEntered ? (
         <>
           <div
-            className="bg-primary-950/85 absolute bottom-3 left-3 z-30 flex items-center overflow-hidden rounded-xl border border-white/25 shadow-xl backdrop-blur-md sm:bottom-4 sm:left-4"
+            className="bg-primary-950/90 absolute bottom-16 left-3 z-40 flex items-center overflow-hidden rounded-xl border border-white/25 shadow-xl backdrop-blur-md sm:bottom-4 sm:left-4"
             role="group"
             aria-label="Rotate the San Jose flood illustration"
           >
             <button
               type="button"
               onClick={() => setRotationOffset((current) => current - ROTATION_STEP)}
-              className="inline-flex size-11 items-center justify-center text-white transition-colors hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none focus-visible:ring-inset"
+              className="inline-flex size-10 sm:size-11 items-center justify-center text-white transition-colors hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none focus-visible:ring-inset"
               aria-label="Rotate illustration left"
             >
               <ChevronLeft aria-hidden className="size-5" />
@@ -276,7 +276,7 @@ export function FloodHeroVisual() {
             <button
               type="button"
               onClick={() => setRotationOffset((current) => current + ROTATION_STEP)}
-              className="inline-flex size-11 items-center justify-center text-white transition-colors hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none focus-visible:ring-inset"
+              className="inline-flex size-10 sm:size-11 items-center justify-center text-white transition-colors hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none focus-visible:ring-inset"
               aria-label="Rotate illustration right"
             >
               <ChevronRight aria-hidden className="size-5" />
@@ -284,7 +284,7 @@ export function FloodHeroVisual() {
           </div>
 
           <div
-            className="absolute top-1/2 left-3 z-30 w-11 -translate-y-1/2 text-white sm:left-4"
+            className="absolute top-[42%] sm:top-1/2 left-3 z-30 w-11 -translate-y-1/2 text-white sm:left-4"
             onPointerEnter={() => setSliderHovered(true)}
             onPointerLeave={() => setSliderHovered(false)}
           >

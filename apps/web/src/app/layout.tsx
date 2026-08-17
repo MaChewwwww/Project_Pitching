@@ -33,9 +33,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className="h-full antialiased"
+      className="h-full max-w-full overflow-x-hidden antialiased"
     >
-      <body className="flex min-h-full flex-col">
+      <body className="flex min-h-full max-w-full flex-col overflow-x-hidden text-neutral-900 bg-background">
         <Providers>{children}</Providers>
       </body>
     </html>

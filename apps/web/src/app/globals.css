@@ -1395,3 +1395,11 @@
     opacity: 0.92;
   }
 }
+
+@layer base {
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+}

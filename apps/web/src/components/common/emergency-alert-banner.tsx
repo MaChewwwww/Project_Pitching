@@ -86,7 +86,7 @@ export function EmergencyAlertBanner({
       aria-live="assertive"
       aria-atomic="true"
       className={cn(
-        "relative z-20 border-b opacity-100 shadow-md transition-all",
+        "relative z-20 w-full max-w-full overflow-hidden border-b opacity-100 shadow-md transition-all",
         severity === "info"
           ? "border-amber-500 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-amber-950"
           : severity === "warning"
@@ -94,7 +94,7 @@ export function EmergencyAlertBanner({
             : "border-red-800 bg-gradient-to-r from-red-700 via-red-600 to-rose-700 text-white",
       )}
     >
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-6">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-6">
         {/* Left / Center Content */}
         <div className="flex min-w-0 flex-1 items-center gap-3.5">
           <span

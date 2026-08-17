@@ -27,11 +27,11 @@ export function PublicShell({
   primaryHotline,
 }: PublicShellProps) {
   return (
-    <div className="flex min-h-full flex-col">
+    <div className="flex min-h-full w-full max-w-full flex-col overflow-x-clip">
       <PageSplashLoader />
       <TopUtilityBar primaryHotline={primaryHotline} />
 
-      <div className="sticky top-0 z-50">
+      <div className="sticky top-0 z-50 w-full max-w-full">
         <EmergencyAlertBanner
           alert={activeAlert}
           emergencyEvents={emergencyEvents}
@@ -41,7 +41,7 @@ export function PublicShell({
         <PublicNavbar primaryHotline={primaryHotline} />
       </div>
 
-      <main id="main" className="flex-1">
+      <main id="main" className="flex-1 w-full max-w-full overflow-x-clip">
         {children}
       </main>
 

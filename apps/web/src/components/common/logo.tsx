@@ -71,13 +71,13 @@ export function LogoLockup({
   className,
 }: LogoLockupProps) {
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
+    <span className={cn("inline-flex items-center gap-2 sm:gap-2.5 min-w-0", className)}>
       <Mark size={size} onDark={onDark} />
       {variant === "full" ? (
-        <span className="flex flex-col leading-none">
+        <span className="flex min-w-0 flex-col leading-none">
           <span
             className={cn(
-              "font-display bg-clip-text text-[18px] font-black tracking-tight text-transparent",
+              "font-display bg-clip-text text-[16px] sm:text-[18px] font-black tracking-tight text-transparent truncate",
               onDark
                 ? "via-primary-100 bg-gradient-to-r from-white to-emerald-300"
                 : "from-primary-900 via-primary-600 bg-gradient-to-r to-emerald-600",
@@ -87,7 +87,7 @@ export function LogoLockup({
           </span>
           <span
             className={cn(
-              "mt-0.5 text-[13.5px] leading-tight font-semibold tracking-tight",
+              "mt-0.5 text-[11px] sm:text-[13.5px] leading-tight font-semibold tracking-tight truncate",
               onDark ? "text-neutral-300" : "text-neutral-600",
             )}
           >

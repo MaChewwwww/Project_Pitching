@@ -33,7 +33,7 @@ export function Section({
   ...props
 }: SectionProps) {
   return (
-    <section className={cn(TONE[tone], !flush && "py-8 md:py-12", className)} {...props}>
+    <section className={cn(TONE[tone], !flush && "py-8 md:py-12", "w-full max-w-full overflow-hidden", className)} {...props}>
       <div className="mx-auto max-w-[1440px] px-4 md:px-6">{children}</div>
     </section>
   );

@@ -119,8 +119,8 @@ export function PublicNavbar({ primaryHotline }: PublicNavbarProps) {
     items.some((i) => isActive(i.href));
 
   return (
-    <header className="sticky top-0 z-40 border-b border-neutral-200/80 bg-white/95 backdrop-blur-md">
-      <div className="mx-auto flex h-15 max-w-[1440px] items-center gap-3 px-4 md:px-6 lg:h-18">
+    <header className="sticky top-0 z-40 w-full max-w-full border-b border-neutral-200/80 bg-white/95 backdrop-blur-md overflow-x-clip">
+      <div className="mx-auto flex h-15 w-full max-w-[1440px] items-center gap-2 sm:gap-3 px-4 md:px-6 lg:h-18">
         <Link
           href="/"
           aria-label="Go to the home page"

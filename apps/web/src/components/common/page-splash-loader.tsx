@@ -88,37 +88,37 @@ export function PageSplashLoader({
   return (
     <div
       aria-hidden="true"
-      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-100/90 via-emerald-50/70 to-teal-100/90 backdrop-blur-xl transition-all duration-500 ease-in-out select-none ${
+      className={`fixed inset-0 z-[99999] flex h-[100dvh] w-screen max-w-full flex-col items-center justify-center overflow-hidden p-4 bg-gradient-to-br from-emerald-100/90 via-emerald-50/70 to-teal-100/90 backdrop-blur-xl transition-all duration-500 ease-in-out select-none ${
         fading ? "pointer-events-none scale-105 opacity-0" : "scale-100 opacity-100"
       }`}
     >
       {/* Decorative Ambient Green Orbs */}
-      <div className="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full bg-emerald-300/40 blur-3xl" />
-      <div className="pointer-events-none absolute -right-32 -bottom-32 h-96 w-96 rounded-full bg-teal-300/40 blur-3xl" />
-      <div className="pointer-events-none absolute top-1/2 left-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-200/50 blur-[100px]" />
+      <div className="pointer-events-none absolute -top-32 -left-32 h-72 w-72 sm:h-96 sm:w-96 rounded-full bg-emerald-300/40 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 -bottom-32 h-72 w-72 sm:h-96 sm:w-96 rounded-full bg-teal-300/40 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/2 left-1/2 h-[350px] w-[350px] sm:h-[500px] sm:w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-200/50 blur-[80px]" />
 
-      <div className="relative z-10 flex flex-col items-center gap-6 rounded-3xl border border-emerald-200/80 bg-white/90 p-8 text-center shadow-2xl shadow-emerald-950/10 backdrop-blur-md sm:p-10">
+      <div className="relative z-10 mx-auto flex w-full max-w-[340px] sm:max-w-sm flex-col items-center gap-5 sm:gap-6 rounded-3xl border border-emerald-200/80 bg-white/95 p-6 sm:p-8 text-center shadow-2xl shadow-emerald-950/15 backdrop-blur-md">
         {/* Brand Icon Badge with Pulsing Green Glow */}
         <div className="relative flex items-center justify-center">
-          <div className="absolute -inset-6 animate-pulse rounded-full bg-emerald-500/25 blur-2xl" />
+          <div className="absolute -inset-5 sm:-inset-6 animate-pulse rounded-full bg-emerald-500/25 blur-xl" />
           <WaterSpinner size="lg" label={loadingLabel} />
         </div>
 
         {/* Brand Title & Subtitle */}
-        <div className="flex flex-col items-center gap-1.5 pt-1">
+        <div className="flex flex-col items-center gap-1 pt-1">
           <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 animate-ping rounded-full bg-emerald-600" />
+            <span className="h-2 w-2 sm:h-2.5 sm:w-2.5 animate-ping rounded-full bg-emerald-600" />
             <h1 className="text-xl font-extrabold tracking-tight text-neutral-900 sm:text-2xl">
               SAGIP <span className="text-emerald-700">San Jose</span>
             </h1>
           </div>
-          <p className="text-[11px] font-bold tracking-widest text-neutral-500 uppercase">
+          <p className="text-[10px] sm:text-[11px] font-bold tracking-widest text-neutral-500 uppercase">
             Disaster Readiness & Community Health
           </p>
         </div>
 
         {/* Smooth Loading Progress Bar */}
-        <div className="mt-1 h-1.5 w-52 overflow-hidden rounded-full border border-emerald-300/70 bg-emerald-100">
+        <div className="mt-1 h-1.5 w-44 sm:w-52 max-w-full overflow-hidden rounded-full border border-emerald-300/70 bg-emerald-100">
           <div
             className="animate-splash-progress h-full w-full origin-left rounded-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-400"
             style={{ animationDuration: `${Math.max(minDurationMs, 600)}ms` }}
