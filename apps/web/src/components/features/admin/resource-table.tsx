@@ -331,7 +331,6 @@ export function ResourceTable<T extends object>({
             />
             <input
               value={query}
-              disabled={isLoading}
               onChange={(event) => {
                 if (searchValue === undefined) setLocalQuery(event.target.value);
                 onSearchChange?.(event.target.value);
@@ -344,7 +343,6 @@ export function ResourceTable<T extends object>({
             {query ? (
               <button
                 type="button"
-                disabled={isLoading}
                 onClick={() => {
                   if (searchValue === undefined) setLocalQuery("");
                   onSearchChange?.("");
