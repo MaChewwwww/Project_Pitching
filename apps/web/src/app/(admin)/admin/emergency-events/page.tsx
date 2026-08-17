@@ -55,10 +55,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { api, toDisplayError } from "@/lib/api/client";
 import { formatPhtDateTime } from "@/lib/format";
-import type {
-  EmergencyEventOut,
-  EmergencyWorkspaceOut,
-} from "@/lib/api/safety-types";
+import type { EmergencyEventOut, EmergencyWorkspaceOut } from "@/lib/api/safety-types";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import { cn } from "@/lib/utils";
 
@@ -152,7 +149,10 @@ export default function AdminEmergencyEventsPage() {
   });
   const selectedId = searchParams.get("event") ?? "";
   const events = React.useMemo(() => eventsQuery.data ?? [], [eventsQuery.data]);
-  const activeEvents = React.useMemo(() => events.filter((event) => event.is_active), [events]);
+  const activeEvents = React.useMemo(
+    () => events.filter((event) => event.is_active),
+    [events],
+  );
   const activeCount = activeEvents.length;
 
   const isSpecificEventSelected = Boolean(
@@ -182,7 +182,10 @@ export default function AdminEmergencyEventsPage() {
       api
         .get<EmergencyWorkspaceOut>(`/admin/emergency-events/${selected!.id}/workspace`)
         .then((response) => response.data),
-    enabled: Boolean(selected && canSeePii && (tab === "map" || tab === "overview" || tab === "events")),
+    // The workspace contains every household roster and map pin. Overview uses
+    // its small aggregate endpoints instead; fetch this PII-heavy payload only
+    // when an officer opens the response map.
+    enabled: Boolean(selected && canSeePii && tab === "map"),
   });
 
   const effectiveWorkspaceData = React.useMemo(() => {
@@ -290,7 +293,8 @@ export default function AdminEmergencyEventsPage() {
   });
 
   const [editingEvent, setEditingEvent] = React.useState<EmergencyEventOut | null>(null);
-  const [backfillingEvent, setBackfillingEvent] = React.useState<EmergencyEventOut | null>(null);
+  const [backfillingEvent, setBackfillingEvent] =
+    React.useState<EmergencyEventOut | null>(null);
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/emergency-events/${id}`),
@@ -313,16 +317,16 @@ export default function AdminEmergencyEventsPage() {
       render: (row) => (
         <div className="flex min-w-56 items-center gap-3">
           <span
-            className={`grid size-9 place-items-center rounded-xl shadow-2xs shrink-0 ${
+            className={`grid size-9 shrink-0 place-items-center rounded-xl shadow-2xs ${
               row.type === "flood"
-                ? "bg-sky-100 text-sky-700 border border-sky-200"
+                ? "border border-sky-200 bg-sky-100 text-sky-700"
                 : row.type === "fire"
-                  ? "bg-rose-100 text-rose-700 border border-rose-200"
+                  ? "border border-rose-200 bg-rose-100 text-rose-700"
                   : row.type === "earthquake"
-                    ? "bg-amber-100 text-amber-700 border border-amber-200"
+                    ? "border border-amber-200 bg-amber-100 text-amber-700"
                     : row.type === "typhoon"
-                      ? "bg-teal-100 text-teal-700 border border-teal-200"
-                      : "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                      ? "border border-teal-200 bg-teal-100 text-teal-700"
+                      : "border border-emerald-200 bg-emerald-100 text-emerald-700"
             }`}
           >
             {row.type === "flood" ? (
@@ -337,15 +341,19 @@ export default function AdminEmergencyEventsPage() {
               <Siren className="size-4.5" />
             )}
           </span>
-          <div className="flex flex-col min-w-0">
+          <div className="flex min-w-0 flex-col">
             <Link
               href={`/admin/emergency-events/${row.id}` as Route}
-              className="font-bold text-neutral-900 hover:text-emerald-700 hover:underline truncate"
+              className="truncate font-bold text-neutral-900 hover:text-emerald-700 hover:underline"
             >
               {row.name}
             </Link>
-            <span className="text-[11px] text-neutral-500 flex items-center gap-1.5 mt-0.5">
-              <span>{new Date(row.started_at).toLocaleDateString("en-PH", { dateStyle: "medium" })}</span>
+            <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-neutral-500">
+              <span>
+                {new Date(row.started_at).toLocaleDateString("en-PH", {
+                  dateStyle: "medium",
+                })}
+              </span>
               {row.declared_by_name && (
                 <>
                   <span>·</span>
@@ -362,16 +370,16 @@ export default function AdminEmergencyEventsPage() {
       header: "Classification",
       render: (row) => (
         <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider border ${
+          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold tracking-wider uppercase ${
             row.type === "flood"
-              ? "bg-sky-50 text-sky-700 border-sky-200"
+              ? "border-sky-200 bg-sky-50 text-sky-700"
               : row.type === "fire"
-                ? "bg-rose-50 text-rose-700 border-rose-200"
+                ? "border-rose-200 bg-rose-50 text-rose-700"
                 : row.type === "typhoon"
-                  ? "bg-teal-50 text-teal-700 border-teal-200"
+                  ? "border-teal-200 bg-teal-50 text-teal-700"
                   : row.type === "earthquake"
-                    ? "bg-amber-50 text-amber-700 border-amber-200"
-                    : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    ? "border-amber-200 bg-amber-50 text-amber-700"
+                    : "border-emerald-200 bg-emerald-50 text-emerald-700"
           }`}
         >
           {row.type}
@@ -383,7 +391,7 @@ export default function AdminEmergencyEventsPage() {
       header: "Status",
       render: (row) =>
         row.is_active ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 px-2.5 py-0.5 text-xs font-black uppercase tracking-wide">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-xs font-black tracking-wide text-rose-700 uppercase">
             <span className="relative flex size-2 shrink-0">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-500 opacity-75" />
               <span className="relative inline-flex size-2 rounded-full bg-rose-600" />
@@ -391,8 +399,8 @@ export default function AdminEmergencyEventsPage() {
             Live Incident
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-600 px-2.5 py-0.5 text-xs font-semibold">
-            <span className="size-1.5 rounded-full bg-neutral-400 shrink-0" />
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold text-neutral-600">
+            <span className="size-1.5 shrink-0 rounded-full bg-neutral-400" />
             Concluded
           </span>
         ),
@@ -406,7 +414,11 @@ export default function AdminEmergencyEventsPage() {
             {formatDuration(row.started_at, row.ended_at)}
           </span>
           <span className="text-[11px] text-neutral-500">
-            {new Date(row.started_at).toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit", hour12: true })}
+            {new Date(row.started_at).toLocaleTimeString("en-PH", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })}
             {row.ended_at
               ? ` – ${new Date(row.ended_at).toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit", hour12: true })}`
               : " (Ongoing)"}
@@ -446,22 +458,31 @@ export default function AdminEmergencyEventsPage() {
         </div>
       ) : events.length === 0 ? (
         <div className="rounded-2xl border border-neutral-200 bg-white p-12 text-center shadow-sm">
-          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
+          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-700 shadow-sm">
             <Siren className="size-7" />
           </div>
-          <h2 className="text-lg font-bold text-neutral-900">No emergency events active</h2>
-          <p className="mt-1 max-w-sm mx-auto text-sm text-neutral-500">
-            Declare an emergency event to activate the live response workspace and area safety tracker.
+          <h2 className="text-lg font-bold text-neutral-900">
+            No emergency events active
+          </h2>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500">
+            Declare an emergency event to activate the live response workspace and area
+            safety tracker.
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm flex flex-col">
+        <div className="flex flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
           {/* 1. Active Event Context Bar with GREEN EMERALD THEME */}
           {selected ? (
-            <div className="relative overflow-hidden bg-gradient-to-r from-[#043d2e] via-[#064e3b] to-[#0a5c46] p-6 sm:p-7 text-white shadow-md border-b border-emerald-800/40">
+            <div className="relative overflow-hidden border-b border-emerald-800/40 bg-gradient-to-r from-[#043d2e] via-[#064e3b] to-[#0a5c46] p-6 text-white shadow-md sm:p-7">
               {/* Subtle background ambient blur */}
-              <div aria-hidden className="pointer-events-none absolute -right-20 -top-20 size-80 rounded-full bg-emerald-400/10 blur-3xl" />
-              <div aria-hidden className="pointer-events-none absolute -left-20 -bottom-20 size-80 rounded-full bg-teal-300/10 blur-3xl" />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -top-20 -right-20 size-80 rounded-full bg-emerald-400/10 blur-3xl"
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -bottom-20 -left-20 size-80 rounded-full bg-teal-300/10 blur-3xl"
+              />
 
               <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                 {/* Left Side Metadata */}
@@ -481,12 +502,12 @@ export default function AdminEmergencyEventsPage() {
                     {/* High-Contrast Badges & Date */}
                     <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
                       {isAllActiveOverview && activeEvents.length === 0 ? (
-                        <span className="inline-flex items-center gap-2 rounded-full bg-emerald-950/80 text-emerald-300 px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-700/60 shadow-xs">
-                          <span className="size-2 rounded-full bg-emerald-400 shrink-0" />
+                        <span className="inline-flex items-center gap-2 rounded-full border border-emerald-700/60 bg-emerald-950/80 px-3 py-0.5 text-[10px] font-extrabold tracking-wider text-emerald-300 uppercase shadow-xs">
+                          <span className="size-2 shrink-0 rounded-full bg-emerald-400" />
                           ALL CLEAR / STANDBY
                         </span>
                       ) : selected.is_active ? (
-                        <span className="inline-flex items-center gap-2 rounded-full bg-rose-600 text-white px-3 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm border border-rose-400/40">
+                        <span className="inline-flex items-center gap-2 rounded-full border border-rose-400/40 bg-rose-600 px-3 py-0.5 text-[10px] font-black tracking-wider text-white uppercase shadow-sm">
                           <span className="relative flex size-2 shrink-0">
                             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
                             <span className="relative inline-flex size-2 rounded-full bg-white" />
@@ -494,8 +515,8 @@ export default function AdminEmergencyEventsPage() {
                           LIVE EMERGENCY
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-2 rounded-full bg-neutral-800 text-neutral-300 px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border border-neutral-700">
-                          <span className="size-2 rounded-full bg-neutral-400 shrink-0" />
+                        <span className="inline-flex items-center gap-2 rounded-full border border-neutral-700 bg-neutral-800 px-3 py-0.5 text-[10px] font-extrabold tracking-wider text-neutral-300 uppercase">
+                          <span className="size-2 shrink-0 rounded-full bg-neutral-400" />
                           ARCHIVED / ENDED
                         </span>
                       )}
@@ -503,45 +524,54 @@ export default function AdminEmergencyEventsPage() {
                       {/* Dynamic Event Type Badge(s) */}
                       {isAllActiveOverview && activeEvents.length > 0 ? (
                         <div className="flex flex-wrap items-center gap-1.5">
-                          {Array.from(new Set(activeEvents.map((e) => e.type))).map((type) => (
-                            <span
-                              key={type}
-                              className={`inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border ${getEventTypeBadgeClass(type)}`}
-                            >
-                              {type}
-                            </span>
-                          ))}
+                          {Array.from(new Set(activeEvents.map((e) => e.type))).map(
+                            (type) => (
+                              <span
+                                key={type}
+                                className={`inline-flex items-center rounded-full border px-3 py-0.5 text-[10px] font-extrabold tracking-wider uppercase ${getEventTypeBadgeClass(type)}`}
+                              >
+                                {type}
+                              </span>
+                            ),
+                          )}
                         </div>
                       ) : isAllActiveOverview && activeEvents.length === 0 ? (
-                        <span className="inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-700 bg-emerald-900/60 text-emerald-200">
+                        <span className="inline-flex items-center rounded-full border border-emerald-700 bg-emerald-900/60 px-3 py-0.5 text-[10px] font-extrabold tracking-wider text-emerald-200 uppercase">
                           NORMAL STATUS
                         </span>
                       ) : (
-                        <span className={`inline-flex items-center rounded-full px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border ${getEventTypeBadgeClass(selected.type)}`}>
+                        <span
+                          className={`inline-flex items-center rounded-full border px-3 py-0.5 text-[10px] font-extrabold tracking-wider uppercase ${getEventTypeBadgeClass(selected.type)}`}
+                        >
                           {selected.type}
                         </span>
                       )}
 
                       {/* Declared Date & Elapsed Duration */}
                       {isAllActiveOverview && activeEvents.length === 0 ? (
-                        <div className="flex items-center gap-1.5 text-xs text-white/90 font-medium ml-1">
-                          <Clock className="size-3.5 text-white/80 shrink-0" />
+                        <div className="ml-1 flex items-center gap-1.5 text-xs font-medium text-white/90">
+                          <Clock className="size-3.5 shrink-0 text-white/80" />
                           <span>All Systems Normal · Ready for Dispatch</span>
                         </div>
                       ) : (
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-white/90 font-medium ml-1">
+                        <div className="ml-1 flex flex-wrap items-center gap-2 text-xs font-medium text-white/90 sm:gap-3">
                           <div className="flex items-center gap-1.5">
-                            <Calendar className="size-3.5 text-emerald-300 shrink-0" />
+                            <Calendar className="size-3.5 shrink-0 text-emerald-300" />
                             <span>
-                              Declared: <strong className="font-bold text-white">{formatPhtDateTime(selected.started_at)}</strong>
+                              Declared:{" "}
+                              <strong className="font-bold text-white">
+                                {formatPhtDateTime(selected.started_at)}
+                              </strong>
                             </span>
                           </div>
-                          <span className="text-emerald-400/50 hidden sm:inline">·</span>
+                          <span className="hidden text-emerald-400/50 sm:inline">·</span>
                           <div className="flex items-center gap-1.5">
-                            <Clock className="size-3.5 text-emerald-300 shrink-0" />
+                            <Clock className="size-3.5 shrink-0 text-emerald-300" />
                             <span>
                               {selected.is_active ? "Elapsed:" : "Duration:"}{" "}
-                              <strong className="font-bold text-emerald-200">{formatDuration(selected.started_at, selected.ended_at)}</strong>
+                              <strong className="font-bold text-emerald-200">
+                                {formatDuration(selected.started_at, selected.ended_at)}
+                              </strong>
                             </span>
                           </div>
                         </div>
@@ -549,7 +579,7 @@ export default function AdminEmergencyEventsPage() {
                     </div>
 
                     {/* Title */}
-                    <h2 className="text-2xl font-black text-white tracking-tight leading-none drop-shadow-xs">
+                    <h2 className="text-2xl leading-none font-black tracking-tight text-white drop-shadow-xs">
                       {isAllActiveOverview && activeEvents.length === 0
                         ? "No Active Emergencies Ongoing"
                         : isAllActiveOverview && activeEvents.length > 0
@@ -560,9 +590,7 @@ export default function AdminEmergencyEventsPage() {
                 </div>
 
                 {/* Right Side Actions & Searchable Dropdown */}
-                <div className="flex flex-wrap items-center gap-3 lg:justify-end shrink-0 pt-3 lg:pt-0 border-t border-emerald-800/40 lg:border-t-0">
-
-
+                <div className="flex shrink-0 flex-wrap items-center gap-3 border-t border-emerald-800/40 pt-3 lg:justify-end lg:border-t-0 lg:pt-0">
                   {/* Custom Searchable Categorized Dropdown */}
                   <EventSearchSelect
                     events={events}
@@ -582,7 +610,10 @@ export default function AdminEmergencyEventsPage() {
                       endMutation.mutate({ id: selected.id, ended_at: endedAt })
                     }
                     onConfirmAll={(endedAt) =>
-                      endAllMutation.mutate({ eventsToEnd: activeEvents, ended_at: endedAt })
+                      endAllMutation.mutate({
+                        eventsToEnd: activeEvents,
+                        ended_at: endedAt,
+                      })
                     }
                   />
                 </div>
@@ -594,17 +625,17 @@ export default function AdminEmergencyEventsPage() {
           <div className="border-b border-neutral-200 bg-white">
             <div
               role="tablist"
-              className="grid grid-cols-2 gap-2 p-2.5 sm:p-0 sm:gap-0 sm:flex sm:overflow-x-auto"
+              className="grid grid-cols-2 gap-2 p-2.5 sm:flex sm:gap-0 sm:overflow-x-auto sm:p-0"
             >
               {/* Tab 1: Overview Metrics */}
               <button
                 role="tab"
                 aria-selected={tab === "overview"}
                 onClick={() => setSelection(selectedId, "overview")}
-                className={`inline-flex h-11 sm:h-13 sm:flex-1 sm:min-w-[160px] items-center justify-center gap-2 border-b-2 px-3 sm:px-5 text-xs sm:text-sm font-extrabold transition-all cursor-pointer rounded-lg sm:rounded-none ${
+                className={`inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border-b-2 px-3 text-xs font-extrabold transition-all sm:h-13 sm:min-w-[160px] sm:flex-1 sm:rounded-none sm:px-5 sm:text-sm ${
                   tab === "overview"
-                    ? "border-emerald-600 text-emerald-700 bg-emerald-50/80 sm:bg-emerald-50/30"
-                    : "border-transparent bg-neutral-50/60 sm:bg-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 sm:hover:bg-neutral-50"
+                    ? "border-emerald-600 bg-emerald-50/80 text-emerald-700 sm:bg-emerald-50/30"
+                    : "border-transparent bg-neutral-50/60 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 sm:bg-transparent sm:hover:bg-neutral-50"
                 }`}
               >
                 <Activity aria-hidden className="size-4 shrink-0" />
@@ -616,16 +647,16 @@ export default function AdminEmergencyEventsPage() {
                 role="tab"
                 aria-selected={tab === "events"}
                 onClick={() => setSelection(selectedId, "events")}
-                className={`inline-flex h-11 sm:h-13 sm:flex-1 sm:min-w-[160px] items-center justify-center gap-2 border-b-2 px-3 sm:px-5 text-xs sm:text-sm font-extrabold transition-all cursor-pointer rounded-lg sm:rounded-none ${
+                className={`inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border-b-2 px-3 text-xs font-extrabold transition-all sm:h-13 sm:min-w-[160px] sm:flex-1 sm:rounded-none sm:px-5 sm:text-sm ${
                   tab === "events"
-                    ? "border-emerald-600 text-emerald-700 bg-emerald-50/80 sm:bg-emerald-50/30"
-                    : "border-transparent bg-neutral-50/60 sm:bg-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 sm:hover:bg-neutral-50"
+                    ? "border-emerald-600 bg-emerald-50/80 text-emerald-700 sm:bg-emerald-50/30"
+                    : "border-transparent bg-neutral-50/60 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 sm:bg-transparent sm:hover:bg-neutral-50"
                 }`}
               >
                 <Siren aria-hidden className="size-4 shrink-0" />
                 <span className="truncate">Emergency Events</span>
                 {events.length > 0 ? (
-                  <span className="ml-1 rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 text-xs font-bold leading-none">
+                  <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs leading-none font-bold text-emerald-800">
                     {events.length}
                   </span>
                 ) : null}
@@ -637,10 +668,10 @@ export default function AdminEmergencyEventsPage() {
                   role="tab"
                   aria-selected={tab === "map"}
                   onClick={() => setSelection(selectedId, "map")}
-                  className={`inline-flex h-11 sm:h-13 sm:flex-1 sm:min-w-[160px] items-center justify-center gap-2 border-b-2 px-3 sm:px-5 text-xs sm:text-sm font-extrabold transition-all cursor-pointer rounded-lg sm:rounded-none ${
+                  className={`inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border-b-2 px-3 text-xs font-extrabold transition-all sm:h-13 sm:min-w-[160px] sm:flex-1 sm:rounded-none sm:px-5 sm:text-sm ${
                     tab === "map"
-                      ? "border-emerald-600 text-emerald-700 bg-emerald-50/80 sm:bg-emerald-50/30"
-                      : "border-transparent bg-neutral-50/60 sm:bg-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 sm:hover:bg-neutral-50"
+                      ? "border-emerald-600 bg-emerald-50/80 text-emerald-700 sm:bg-emerald-50/30"
+                      : "border-transparent bg-neutral-50/60 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 sm:bg-transparent sm:hover:bg-neutral-50"
                   }`}
                 >
                   <Map aria-hidden className="size-4 shrink-0" />
@@ -653,10 +684,10 @@ export default function AdminEmergencyEventsPage() {
                 role="tab"
                 aria-selected={tab === "accounted-for"}
                 onClick={() => setSelection(selectedId, "accounted-for")}
-                className={`inline-flex h-11 sm:h-13 sm:flex-1 sm:min-w-[160px] items-center justify-center gap-2 border-b-2 px-3 sm:px-5 text-xs sm:text-sm font-extrabold transition-all cursor-pointer rounded-lg sm:rounded-none ${
+                className={`inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border-b-2 px-3 text-xs font-extrabold transition-all sm:h-13 sm:min-w-[160px] sm:flex-1 sm:rounded-none sm:px-5 sm:text-sm ${
                   tab === "accounted-for"
-                    ? "border-emerald-600 text-emerald-700 bg-emerald-50/80 sm:bg-emerald-50/30"
-                    : "border-transparent bg-neutral-50/60 sm:bg-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 sm:hover:bg-neutral-50"
+                    ? "border-emerald-600 bg-emerald-50/80 text-emerald-700 sm:bg-emerald-50/30"
+                    : "border-transparent bg-neutral-50/60 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 sm:bg-transparent sm:hover:bg-neutral-50"
                 } ${!canSeePii ? "col-span-2 sm:col-span-1" : ""}`}
               >
                 <CircleCheck aria-hidden className="size-4 shrink-0" />
@@ -676,8 +707,8 @@ export default function AdminEmergencyEventsPage() {
                 isAllActiveOverview={isAllActiveOverview}
                 workspace={effectiveWorkspaceData}
                 canSeePii={canSeePii}
-                loading={workspaceQuery.isLoading}
-                error={workspaceQuery.isError}
+                loading={false}
+                error={false}
                 onRetry={() => workspaceQuery.refetch()}
                 onNavigateTab={(targetTab) => {
                   setSelection(selectedId, targetTab);
@@ -689,11 +720,11 @@ export default function AdminEmergencyEventsPage() {
             {tab === "events" ? (
               <div className="flex flex-col gap-6">
                 {/* 1. High-Impact Summary KPI Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   {/* Card 1: Active Emergencies */}
-                  <div className="rounded-2xl border border-rose-200/90 bg-gradient-to-br from-white via-rose-50/30 to-rose-50/60 p-5 shadow-sm flex flex-col justify-between">
+                  <div className="flex flex-col justify-between rounded-2xl border border-rose-200/90 bg-gradient-to-br from-white via-rose-50/30 to-rose-50/60 p-5 shadow-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-rose-900 uppercase tracking-wider">
+                      <span className="text-xs font-bold tracking-wider text-rose-900 uppercase">
                         Live Emergencies
                       </span>
                       <div className="grid size-9 place-items-center rounded-xl bg-rose-100 text-rose-700">
@@ -701,10 +732,10 @@ export default function AdminEmergencyEventsPage() {
                       </div>
                     </div>
                     <div className="mt-3">
-                      <span className="text-3xl font-black text-slate-950 tracking-tight">
+                      <span className="text-3xl font-black tracking-tight text-slate-950">
                         {events.filter((e) => e.is_active).length}
                       </span>
-                      <p className="text-[11px] text-rose-700/90 font-semibold mt-0.5">
+                      <p className="mt-0.5 text-[11px] font-semibold text-rose-700/90">
                         {events.filter((e) => e.is_active).length > 0
                           ? "Active response workspaces ongoing"
                           : "All systems normal / standby"}
@@ -713,9 +744,9 @@ export default function AdminEmergencyEventsPage() {
                   </div>
 
                   {/* Card 2: Concluded Archives */}
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col justify-between">
+                  <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <span className="text-xs font-bold tracking-wider text-slate-600 uppercase">
                         Concluded Archives
                       </span>
                       <div className="grid size-9 place-items-center rounded-xl bg-slate-100 text-slate-700">
@@ -723,19 +754,19 @@ export default function AdminEmergencyEventsPage() {
                       </div>
                     </div>
                     <div className="mt-3">
-                      <span className="text-3xl font-black text-slate-950 tracking-tight">
+                      <span className="text-3xl font-black tracking-tight text-slate-950">
                         {events.filter((e) => !e.is_active).length}
                       </span>
-                      <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                      <p className="mt-0.5 text-[11px] font-medium text-slate-500">
                         Past disaster response logs retained
                       </p>
                     </div>
                   </div>
 
                   {/* Card 3: Total Recorded */}
-                  <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-white via-emerald-50/20 to-emerald-50/50 p-5 shadow-sm flex flex-col justify-between">
+                  <div className="flex flex-col justify-between rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-white via-emerald-50/20 to-emerald-50/50 p-5 shadow-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider">
+                      <span className="text-xs font-bold tracking-wider text-emerald-900 uppercase">
                         Total Incidents Logged
                       </span>
                       <div className="grid size-9 place-items-center rounded-xl bg-emerald-100 text-emerald-800">
@@ -743,36 +774,63 @@ export default function AdminEmergencyEventsPage() {
                       </div>
                     </div>
                     <div className="mt-3">
-                      <span className="text-3xl font-black text-slate-950 tracking-tight">
+                      <span className="text-3xl font-black tracking-tight text-slate-950">
                         {events.length}
                       </span>
-                      <p className="text-[11px] text-emerald-700 font-medium mt-0.5">
+                      <p className="mt-0.5 text-[11px] font-medium text-emerald-700">
                         Complete barangay incident ledger
                       </p>
                     </div>
                   </div>
 
                   {/* Card 4: Hazard Distribution */}
-                  <div className="rounded-2xl border border-slate-200 bg-white p-4.5 shadow-sm flex flex-col justify-between">
-                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4.5 shadow-sm">
+                    <span className="text-xs font-bold tracking-wider text-slate-700 uppercase">
                       Hazard Classification
                     </span>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      <div className="flex items-center justify-between rounded-lg bg-sky-50 px-2.5 py-1 text-xs text-sky-900 border border-sky-200/60 font-semibold">
-                        <span className="flex items-center gap-1.5"><Waves className="size-3 text-sky-600" /> Flood</span>
-                        <span className="font-bold">{events.filter((e) => e.type === "flood").length}</span>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <div className="flex items-center justify-between rounded-lg border border-sky-200/60 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-900">
+                        <span className="flex items-center gap-1.5">
+                          <Waves className="size-3 text-sky-600" /> Flood
+                        </span>
+                        <span className="font-bold">
+                          {events.filter((e) => e.type === "flood").length}
+                        </span>
                       </div>
-                      <div className="flex items-center justify-between rounded-lg bg-teal-50 px-2.5 py-1 text-xs text-teal-900 border border-teal-200/60 font-semibold">
-                        <span className="flex items-center gap-1.5"><Wind className="size-3 text-teal-600" /> Typhoon</span>
-                        <span className="font-bold">{events.filter((e) => e.type === "typhoon" || (e.type as string) === "severe_weather").length}</span>
+                      <div className="flex items-center justify-between rounded-lg border border-teal-200/60 bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-900">
+                        <span className="flex items-center gap-1.5">
+                          <Wind className="size-3 text-teal-600" /> Typhoon
+                        </span>
+                        <span className="font-bold">
+                          {
+                            events.filter(
+                              (e) =>
+                                e.type === "typhoon" ||
+                                (e.type as string) === "severe_weather",
+                            ).length
+                          }
+                        </span>
                       </div>
-                      <div className="flex items-center justify-between rounded-lg bg-rose-50 px-2.5 py-1 text-xs text-rose-900 border border-rose-200/60 font-semibold">
-                        <span className="flex items-center gap-1.5"><Flame className="size-3 text-rose-600" /> Fire</span>
-                        <span className="font-bold">{events.filter((e) => e.type === "fire").length}</span>
+                      <div className="flex items-center justify-between rounded-lg border border-rose-200/60 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-900">
+                        <span className="flex items-center gap-1.5">
+                          <Flame className="size-3 text-rose-600" /> Fire
+                        </span>
+                        <span className="font-bold">
+                          {events.filter((e) => e.type === "fire").length}
+                        </span>
                       </div>
-                      <div className="flex items-center justify-between rounded-lg bg-amber-50 px-2.5 py-1 text-xs text-amber-900 border border-amber-200/60 font-semibold">
-                        <span className="flex items-center gap-1.5"><AlertTriangle className="size-3 text-amber-600" /> Quake / Other</span>
-                        <span className="font-bold">{events.filter((e) => e.type === "earthquake" || e.type === "other").length}</span>
+                      <div className="flex items-center justify-between rounded-lg border border-amber-200/60 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">
+                        <span className="flex items-center gap-1.5">
+                          <AlertTriangle className="size-3 text-amber-600" /> Quake /
+                          Other
+                        </span>
+                        <span className="font-bold">
+                          {
+                            events.filter(
+                              (e) => e.type === "earthquake" || e.type === "other",
+                            ).length
+                          }
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -901,10 +959,7 @@ export default function AdminEmergencyEventsPage() {
 
             {/* Safety Ledger Tab */}
             {tab === "accounted-for" ? (
-              <SafetyLedgerTab
-                event={selected}
-                canSeePii={canSeePii}
-              />
+              <SafetyLedgerTab event={selected} canSeePii={canSeePii} />
             ) : null}
           </div>
         </div>
@@ -976,10 +1031,10 @@ function EventSearchSelect({
 
   const query = search.trim().toLowerCase();
   const filteredActive = activeEvents.filter(
-    (e) => e.name.toLowerCase().includes(query) || e.type.toLowerCase().includes(query)
+    (e) => e.name.toLowerCase().includes(query) || e.type.toLowerCase().includes(query),
   );
   const filteredEnded = endedEvents.filter(
-    (e) => e.name.toLowerCase().includes(query) || e.type.toLowerCase().includes(query)
+    (e) => e.name.toLowerCase().includes(query) || e.type.toLowerCase().includes(query),
   );
 
   return (
@@ -987,7 +1042,7 @@ function EventSearchSelect({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="h-10 rounded-xl border border-emerald-600/50 bg-emerald-950/80 px-3.5 text-xs font-bold text-white shadow-inner hover:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 flex items-center justify-between gap-3 min-w-[220px] max-w-[290px] cursor-pointer transition-all shrink-0 backdrop-blur-md"
+          className="flex h-10 max-w-[290px] min-w-[220px] shrink-0 cursor-pointer items-center justify-between gap-3 rounded-xl border border-emerald-600/50 bg-emerald-950/80 px-3.5 text-xs font-bold text-white shadow-inner backdrop-blur-md transition-all hover:bg-emerald-900 focus:ring-2 focus:ring-emerald-400/50 focus:outline-none"
         >
           <div className="flex items-center gap-2 truncate">
             {isAllActiveOverview ? (
@@ -998,7 +1053,7 @@ function EventSearchSelect({
                     <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
                   </span>
                 ) : (
-                  <span className="size-2 rounded-full bg-emerald-400/60 shrink-0" />
+                  <span className="size-2 shrink-0 rounded-full bg-emerald-400/60" />
                 )}
                 <span className="truncate font-black text-white">
                   {activeEvents.length > 0
@@ -1010,28 +1065,41 @@ function EventSearchSelect({
               <>
                 {selectedEvent.is_active ? (
                   <span className="relative flex size-2 shrink-0">
-                    <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${getEventDotColor(selectedEvent.type)} opacity-75`} />
-                    <span className={`relative inline-flex size-2 rounded-full ${getEventDotColor(selectedEvent.type)}`} />
+                    <span
+                      className={`absolute inline-flex h-full w-full animate-ping rounded-full ${getEventDotColor(selectedEvent.type)} opacity-75`}
+                    />
+                    <span
+                      className={`relative inline-flex size-2 rounded-full ${getEventDotColor(selectedEvent.type)}`}
+                    />
                   </span>
                 ) : (
-                  <span className="size-2 rounded-full bg-neutral-400 shrink-0" />
+                  <span className="size-2 shrink-0 rounded-full bg-neutral-400" />
                 )}
-                <span className="truncate font-black text-white">{selectedEvent.name}</span>
+                <span className="truncate font-black text-white">
+                  {selectedEvent.name}
+                </span>
                 {!selectedEvent.is_active ? (
-                  <span className="text-[10px] text-emerald-200/70 font-semibold shrink-0">(Ended)</span>
+                  <span className="shrink-0 text-[10px] font-semibold text-emerald-200/70">
+                    (Ended)
+                  </span>
                 ) : null}
               </>
             ) : (
-              <span className="text-emerald-200/70 font-semibold">Select event archive…</span>
+              <span className="font-semibold text-emerald-200/70">
+                Select event archive…
+              </span>
             )}
           </div>
           <ChevronDown className="size-4 shrink-0 text-emerald-300 opacity-90" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 sm:w-96 rounded-2xl bg-[#04281e] text-white border border-emerald-700/80 p-3 shadow-2xl z-[1500]">
+      <PopoverContent
+        align="end"
+        className="z-[1500] w-80 rounded-2xl border border-emerald-700/80 bg-[#04281e] p-3 text-white shadow-2xl sm:w-96"
+      >
         {/* Search Bar */}
-        <div className="flex items-center gap-2 rounded-xl bg-emerald-950/90 px-3 py-2 border border-emerald-800/80 mb-3 focus-within:border-emerald-400 focus-within:bg-emerald-950 transition-all">
-          <Search className="size-4 text-emerald-400 shrink-0" />
+        <div className="mb-3 flex items-center gap-2 rounded-xl border border-emerald-800/80 bg-emerald-950/90 px-3 py-2 transition-all focus-within:border-emerald-400 focus-within:bg-emerald-950">
+          <Search className="size-4 shrink-0 text-emerald-400" />
           <input
             type="text"
             placeholder="Search active or past events..."
@@ -1043,14 +1111,14 @@ function EventSearchSelect({
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="text-[10px] text-emerald-300/60 hover:text-white px-1 font-bold cursor-pointer"
+              className="cursor-pointer px-1 text-[10px] font-bold text-emerald-300/60 hover:text-white"
             >
               Clear
             </button>
           ) : null}
         </div>
 
-        <div className="max-h-72 overflow-y-auto space-y-3 pr-1.5 custom-scrollbar-dark">
+        <div className="custom-scrollbar-dark max-h-72 space-y-3 overflow-y-auto pr-1.5">
           {/* Active Events Section */}
           <div>
             <button
@@ -1059,10 +1127,11 @@ function EventSearchSelect({
                 onSelect("all");
                 setOpen(false);
               }}
-              className={`w-full px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-between transition-all cursor-pointer border ${isAllActiveOverview
-                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-2xs"
-                  : "text-emerald-400 hover:bg-emerald-900/50 border-transparent hover:border-emerald-800/40"
-                }`}
+              className={`flex w-full cursor-pointer items-center justify-between rounded-xl border px-2.5 py-1.5 text-[10px] font-black tracking-wider uppercase transition-all ${
+                isAllActiveOverview
+                  ? "border-emerald-500/40 bg-emerald-500/20 text-emerald-300 shadow-2xs"
+                  : "border-transparent text-emerald-400 hover:border-emerald-800/40 hover:bg-emerald-900/50"
+              }`}
             >
               <span className="flex items-center gap-2">
                 <span className="relative flex size-2 shrink-0">
@@ -1071,13 +1140,15 @@ function EventSearchSelect({
                 </span>
                 Active Emergency Events
               </span>
-              <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-extrabold text-emerald-200 border border-emerald-500/30">
+              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-extrabold text-emerald-200">
                 {filteredActive.length}
               </span>
             </button>
 
             {filteredActive.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-emerald-300/50 italic">No active events match search</div>
+              <div className="px-3 py-2 text-xs text-emerald-300/50 italic">
+                No active events match search
+              </div>
             ) : (
               <div className="mt-1 space-y-1">
                 {filteredActive.map((e) => {
@@ -1091,20 +1162,27 @@ function EventSearchSelect({
                         onSelect(e.id);
                         setOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-left transition-all cursor-pointer ${isSelected
-                          ? "bg-emerald-600 text-white font-bold shadow-sm"
-                          : "hover:bg-emerald-900/60 text-emerald-100"
-                        }`}
+                      className={`flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-medium transition-all ${
+                        isSelected
+                          ? "bg-emerald-600 font-bold text-white shadow-sm"
+                          : "text-emerald-100 hover:bg-emerald-900/60"
+                      }`}
                     >
                       <div className="flex items-center gap-2 truncate">
                         <span className="relative flex size-2 shrink-0">
-                          <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${dotColor} opacity-75`} />
-                          <span className={`relative inline-flex size-2 rounded-full ${isSelected ? "bg-white" : dotColor}`} />
+                          <span
+                            className={`absolute inline-flex h-full w-full animate-ping rounded-full ${dotColor} opacity-75`}
+                          />
+                          <span
+                            className={`relative inline-flex size-2 rounded-full ${isSelected ? "bg-white" : dotColor}`}
+                          />
                         </span>
                         <span className="truncate">{e.name}</span>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border ${getEventTypeBadgeClass(e.type, false)}`}>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span
+                          className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase ${getEventTypeBadgeClass(e.type, false)}`}
+                        >
                           {e.type}
                         </span>
                       </div>
@@ -1117,15 +1195,17 @@ function EventSearchSelect({
 
           {/* Past / Ended Events Section */}
           <div>
-            <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-300/70 flex items-center justify-between pt-2 border-t border-emerald-900/60">
+            <div className="flex items-center justify-between border-t border-emerald-900/60 px-2 py-1 pt-2 text-[10px] font-black tracking-wider text-emerald-300/70 uppercase">
               <span>📜 History / Past Events</span>
-              <span className="rounded-full bg-emerald-950 px-2 py-0.5 text-[10px] font-bold text-emerald-300/80 border border-emerald-800">
+              <span className="rounded-full border border-emerald-800 bg-emerald-950 px-2 py-0.5 text-[10px] font-bold text-emerald-300/80">
                 {filteredEnded.length}
               </span>
             </div>
 
             {filteredEnded.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-emerald-300/50 italic">No past events match search</div>
+              <div className="px-3 py-2 text-xs text-emerald-300/50 italic">
+                No past events match search
+              </div>
             ) : (
               <div className="mt-1 space-y-1">
                 {filteredEnded.map((e) => {
@@ -1138,20 +1218,25 @@ function EventSearchSelect({
                         onSelect(e.id);
                         setOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-left transition-all cursor-pointer ${isSelected
-                          ? "bg-emerald-950 text-white font-bold shadow-sm border border-emerald-700"
-                          : "hover:bg-emerald-900/40 text-emerald-200/80"
-                        }`}
+                      className={`flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-medium transition-all ${
+                        isSelected
+                          ? "border border-emerald-700 bg-emerald-950 font-bold text-white shadow-sm"
+                          : "text-emerald-200/80 hover:bg-emerald-900/40"
+                      }`}
                     >
                       <div className="flex items-center gap-2 truncate">
-                        <span className="size-2 rounded-full bg-neutral-500 shrink-0" />
+                        <span className="size-2 shrink-0 rounded-full bg-neutral-500" />
                         <span className="truncate">{e.name}</span>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-[10px] capitalize px-2 py-0.5 rounded-md border ${getEventTypeBadgeClass(e.type, false)}`}>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span
+                          className={`rounded-md border px-2 py-0.5 text-[10px] capitalize ${getEventTypeBadgeClass(e.type, false)}`}
+                        >
                           {e.type}
                         </span>
-                        <span className="text-[10px] text-emerald-300/50 font-medium">Ended</span>
+                        <span className="text-[10px] font-medium text-emerald-300/50">
+                          Ended
+                        </span>
                       </div>
                     </button>
                   );
@@ -1246,25 +1331,26 @@ function DeclareEventDialog({
       <DialogTrigger asChild>
         <Button
           size="sm"
-          className="h-10 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-md shadow-emerald-900/15 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] transition-all px-4 gap-2 border border-emerald-600/30 max-sm:w-full max-sm:justify-center cursor-pointer"
+          className="h-10 cursor-pointer gap-2 rounded-full border border-emerald-600/30 bg-emerald-700 px-4 font-bold text-white shadow-md shadow-emerald-900/15 transition-all hover:bg-emerald-800 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
         >
           <Plus aria-hidden className="size-4 stroke-[2.5]" />
           <span>Declare Event</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl p-6">
+      <DialogContent className="max-w-lg rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl">
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="grid size-11 place-items-center rounded-2xl bg-emerald-100 text-emerald-800 shrink-0 shadow-xs border border-emerald-200">
+              <div className="grid size-11 shrink-0 place-items-center rounded-2xl border border-emerald-200 bg-emerald-100 text-emerald-800 shadow-xs">
                 <Siren className="size-6 text-emerald-700" />
               </div>
               <div>
                 <DialogTitle className="text-lg font-black text-slate-950">
                   Declare Emergency Event
                 </DialogTitle>
-                <DialogDescription className="text-xs text-slate-500 font-medium mt-0.5">
-                  Activate live response operations, spatial tracking, and area safety ledgers.
+                <DialogDescription className="mt-0.5 text-xs font-medium text-slate-500">
+                  Activate live response operations, spatial tracking, and area safety
+                  ledgers.
                 </DialogDescription>
               </div>
             </div>
@@ -1273,7 +1359,7 @@ function DeclareEventDialog({
           <div className="flex flex-col gap-4">
             {/* Event Name */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-800 flex items-center justify-between">
+              <label className="flex items-center justify-between text-xs font-bold text-slate-800">
                 <span>
                   Event Name <span className="text-rose-500">*</span>
                 </span>
@@ -1287,10 +1373,10 @@ function DeclareEventDialog({
                 }}
                 placeholder="e.g. Typhoon Carina — Severe Flooding & Evacuation"
                 className={cn(
-                  "w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 shadow-2xs focus:outline-none focus:ring-2",
+                  "w-full rounded-xl border px-3.5 py-2.5 text-xs font-medium text-slate-900 shadow-2xs focus:ring-2 focus:outline-none sm:text-sm",
                   errors.name
-                    ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500/20 bg-rose-50/30"
-                    : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/20 bg-white",
+                    ? "border-rose-300 bg-rose-50/30 focus:border-rose-500 focus:ring-rose-500/20"
+                    : "border-slate-200 bg-white focus:border-emerald-500 focus:ring-emerald-500/20",
                 )}
               />
               {errors.name && (
@@ -1303,7 +1389,7 @@ function DeclareEventDialog({
               <label className="text-xs font-bold text-slate-800">
                 Incident / Hazard Classification
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {types.map((t) => {
                   const Icon = t.icon;
                   const isSelected = type === t.value;
@@ -1313,10 +1399,13 @@ function DeclareEventDialog({
                       key={t.value}
                       onClick={() => setType(t.value)}
                       className={cn(
-                        "flex items-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition-all text-left cursor-pointer",
+                        "flex cursor-pointer items-center gap-2 rounded-xl border p-2.5 text-left text-xs font-bold transition-all",
                         isSelected
-                          ? cn(t.color, "ring-2 ring-emerald-600/30 border-current shadow-xs")
-                          : "border-slate-200 bg-slate-50/60 text-slate-700 hover:bg-slate-100 hover:border-slate-300",
+                          ? cn(
+                              t.color,
+                              "border-current shadow-xs ring-2 ring-emerald-600/30",
+                            )
+                          : "border-slate-200 bg-slate-50/60 text-slate-700 hover:border-slate-300 hover:bg-slate-100",
                       )}
                     >
                       <Icon className="size-4 shrink-0" />
@@ -1328,16 +1417,16 @@ function DeclareEventDialog({
             </div>
 
             {/* Declared Start Date & Time with Backfill support */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 flex flex-col gap-2 shadow-2xs">
+            <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 shadow-2xs">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <Calendar className="size-3.5 text-emerald-600 shrink-0" />
+                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                  <Calendar className="size-3.5 shrink-0 text-emerald-600" />
                   Incident Start Date & Time
                 </label>
                 <button
                   type="button"
                   onClick={() => setStartedAt(toLocalDatetimeString())}
-                  className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline cursor-pointer flex items-center gap-1"
+                  className="flex cursor-pointer items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline"
                 >
                   <RefreshCw className="size-3" />
                   Set to Now
@@ -1348,19 +1437,20 @@ function DeclareEventDialog({
                 type="datetime-local"
                 value={startedAt}
                 onChange={(e) => setStartedAt(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
               />
 
-              <p className="text-[11px] text-slate-500 leading-snug flex items-start gap-1.5">
-                <Clock className="size-3 text-slate-400 shrink-0 mt-0.5" />
+              <p className="flex items-start gap-1.5 text-[11px] leading-snug text-slate-500">
+                <Clock className="mt-0.5 size-3 shrink-0 text-slate-400" />
                 <span>
-                  Defaults to current time. You can backdate this timestamp if documenting an incident retrospectively after a blackout or delayed report.
+                  Defaults to current time. You can backdate this timestamp if documenting
+                  an incident retrospectively after a blackout or delayed report.
                 </span>
               </p>
             </div>
           </div>
 
-          <DialogFooter className="border-t border-slate-100 pt-4 flex flex-col-reverse sm:flex-row gap-2 sm:gap-0">
+          <DialogFooter className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:gap-0">
             <Button
               type="button"
               variant="outline"
@@ -1372,7 +1462,7 @@ function DeclareEventDialog({
             <Button
               type="submit"
               disabled={isPending}
-              className="rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md gap-1.5"
+              className="gap-1.5 rounded-xl bg-emerald-700 text-xs font-bold text-white shadow-md hover:bg-emerald-800"
             >
               <Siren className="size-3.5" />
               <span>{isPending ? "Declaring…" : "Declare & Activate Event"}</span>
@@ -1430,10 +1520,10 @@ function EndEventDialog({
   if (!isEndingAll && !event.is_active) {
     return (
       <div
-        className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/15 bg-black/30 px-3.5 text-xs font-bold text-white/50 backdrop-blur-md select-none cursor-default shadow-xs"
+        className="inline-flex h-10 cursor-default items-center gap-2 rounded-xl border border-white/15 bg-black/30 px-3.5 text-xs font-bold text-white/50 shadow-xs backdrop-blur-md select-none"
         title="This event has already concluded and is archived in read-only mode"
       >
-        <span className="size-2 rounded-full bg-neutral-400/60 shrink-0" />
+        <span className="size-2 shrink-0 rounded-full bg-neutral-400/60" />
         <span>Event Concluded</span>
       </div>
     );
@@ -1445,19 +1535,19 @@ function EndEventDialog({
         <Button
           size="sm"
           variant="danger"
-          className="h-10 px-4 font-black text-xs bg-rose-600 hover:bg-rose-700 text-white shadow-md cursor-pointer shrink-0 transition-all active:scale-95 border border-rose-500/40 gap-1.5"
+          className="h-10 shrink-0 cursor-pointer gap-1.5 border border-rose-500/40 bg-rose-600 px-4 text-xs font-black text-white shadow-md transition-all hover:bg-rose-700 active:scale-95"
           disabled={!isEnabled}
         >
           <AlertTriangle className="size-3.5" />
           <span>{isEndingAll ? "End All Events" : "End Event"}</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg bg-white text-slate-900 border border-slate-200 rounded-2xl shadow-2xl p-6">
+      <DialogContent className="max-w-lg rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl">
         <div className="flex flex-col gap-5">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="grid size-11 place-items-center rounded-2xl bg-rose-100 text-rose-700 shrink-0 shadow-xs border border-rose-200">
-                <AlertTriangle className="size-6 text-rose-600 stroke-[2.5]" />
+              <div className="grid size-11 shrink-0 place-items-center rounded-2xl border border-rose-200 bg-rose-100 text-rose-700 shadow-xs">
+                <AlertTriangle className="size-6 stroke-[2.5] text-rose-600" />
               </div>
               <div>
                 <DialogTitle className="text-lg font-black text-slate-950">
@@ -1465,17 +1555,19 @@ function EndEventDialog({
                     ? `End All Active Emergency Events (${activeEvents.length})`
                     : "End Active Emergency Event"}
                 </DialogTitle>
-                <DialogDescription className="text-xs text-slate-500 font-medium mt-0.5">
-                  {isEndingAll ? "Mass Emergency Incident Closure" : "Emergency Incident Closure"}
+                <DialogDescription className="mt-0.5 text-xs font-medium text-slate-500">
+                  {isEndingAll
+                    ? "Mass Emergency Incident Closure"
+                    : "Emergency Incident Closure"}
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
 
           {/* Event Name Tag */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 flex items-center justify-between gap-2 shadow-2xs">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-900 truncate">
-              <Siren className="size-4 text-rose-600 shrink-0" />
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3 shadow-2xs">
+            <div className="flex items-center gap-2 truncate text-xs font-bold text-slate-900">
+              <Siren className="size-4 shrink-0 text-rose-600" />
               <span className="truncate">
                 {isEndingAll
                   ? `All Active Events: ${activeEvents.map((e) => e.name).join(", ")}`
@@ -1486,16 +1578,16 @@ function EndEventDialog({
           </div>
 
           {/* Concluded Date & Time with Backfill support */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 flex flex-col gap-2 shadow-2xs">
+          <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 shadow-2xs">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <Calendar className="size-3.5 text-rose-600 shrink-0" />
+              <label className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                <Calendar className="size-3.5 shrink-0 text-rose-600" />
                 Incident Concluded Date & Time
               </label>
               <button
                 type="button"
                 onClick={() => setEndedAt(toLocalDatetimeString())}
-                className="text-[11px] font-bold text-rose-700 hover:text-rose-800 hover:underline cursor-pointer flex items-center gap-1"
+                className="flex cursor-pointer items-center gap-1 text-[11px] font-bold text-rose-700 hover:text-rose-800 hover:underline"
               >
                 <RefreshCw className="size-3" />
                 Set to Now
@@ -1506,44 +1598,51 @@ function EndEventDialog({
               type="datetime-local"
               value={endedAt}
               onChange={(e) => setEndedAt(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 focus:outline-none"
             />
 
-            <p className="text-[11px] text-slate-500 leading-snug flex items-start gap-1.5">
-              <Clock className="size-3 text-slate-400 shrink-0 mt-0.5" />
+            <p className="flex items-start gap-1.5 text-[11px] leading-snug text-slate-500">
+              <Clock className="mt-0.5 size-3 shrink-0 text-slate-400" />
               <span>
-                Defaults to current time. You can backdate this timestamp if officially concluding an event retrospectively after power/connectivity restoration.
+                Defaults to current time. You can backdate this timestamp if officially
+                concluding an event retrospectively after power/connectivity restoration.
               </span>
             </p>
           </div>
 
           {/* Operational Impact Notice Box */}
-          <div className="rounded-xl border border-amber-200/90 bg-amber-50/50 p-3.5 flex flex-col gap-1.5 text-xs text-amber-950">
-            <span className="font-bold flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-amber-900">
-              <ShieldAlert className="size-3.5 text-amber-700 shrink-0" />
+          <div className="flex flex-col gap-1.5 rounded-xl border border-amber-200/90 bg-amber-50/50 p-3.5 text-xs text-amber-950">
+            <span className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-amber-900 uppercase">
+              <ShieldAlert className="size-3.5 shrink-0 text-amber-700" />
               Operational Impact
             </span>
-            <p className="text-xs text-slate-700 leading-relaxed">
+            <p className="text-xs leading-relaxed text-slate-700">
               {isEndingAll ? (
                 <>
-                  Concludes all <strong>{activeEvents.length} live incident(s)</strong>. Open evacuation center check-ins will be automatically checked out and center occupancy reset to zero.
+                  Concludes all <strong>{activeEvents.length} live incident(s)</strong>.
+                  Open evacuation center check-ins will be automatically checked out and
+                  center occupancy reset to zero.
                 </>
               ) : activeEvents.length > 1 ? (
                 <>
-                  {activeEvents.length - 1} other active emergency event(s) remain open in Barangay San Jose. Evacuation center occupancies will be maintained.
+                  {activeEvents.length - 1} other active emergency event(s) remain open in
+                  Barangay San Jose. Evacuation center occupancies will be maintained.
                 </>
               ) : (
                 <>
-                  This is the final active emergency event. Open evacuation center check-ins will be automatically checked out and center occupancy reset to zero.
+                  This is the final active emergency event. Open evacuation center
+                  check-ins will be automatically checked out and center occupancy reset
+                  to zero.
                 </>
               )}
             </p>
-            <p className="text-[11px] text-slate-500 font-medium">
-              Historical safety records, walk-ins, and safety ledgers remain permanently preserved in archives.
+            <p className="text-[11px] font-medium text-slate-500">
+              Historical safety records, walk-ins, and safety ledgers remain permanently
+              preserved in archives.
             </p>
           </div>
 
-          <DialogFooter className="border-t border-slate-100 pt-4 flex flex-col-reverse sm:flex-row gap-2 sm:gap-0">
+          <DialogFooter className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:gap-0">
             <Button
               type="button"
               variant="outline"
@@ -1557,10 +1656,16 @@ function EndEventDialog({
               variant="danger"
               disabled={pending}
               onClick={handleConfirm}
-              className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md gap-1.5"
+              className="gap-1.5 rounded-xl bg-rose-600 text-xs font-bold text-white shadow-md hover:bg-rose-700"
             >
               <AlertTriangle className="size-3.5" />
-              <span>{pending ? "Ending Event…" : isEndingAll ? "Confirm & End All Events" : "Confirm & End Event"}</span>
+              <span>
+                {pending
+                  ? "Ending Event…"
+                  : isEndingAll
+                    ? "Confirm & End All Events"
+                    : "Confirm & End Event"}
+              </span>
             </Button>
           </DialogFooter>
         </div>

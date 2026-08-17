@@ -15,8 +15,14 @@ import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-
 import {
   ResourceTable,
   type ResourceColumn,
-  type ResourceFilterChoice,
 } from "@/components/features/admin/resource-table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useRequireRole } from "@/lib/auth/use-require-role";
@@ -54,13 +60,40 @@ export default function RegisteredCitizensPage() {
   const client = useQueryClient();
 
   const canAdminister = user?.role === "admin" || user?.role === "superadmin";
+  const [page, setPage] = React.useState(1);
+  const [search, setSearch] = React.useState("");
+  const [directoryFilter, setDirectoryFilter] = React.useState("all");
+  const deferredSearch = React.useDeferredValue(search);
+  const directoryFilterParams = React.useMemo(() => {
+    if (directoryFilter.startsWith("area:")) {
+      return { area_id: directoryFilter.slice("area:".length) };
+    }
+    if (directoryFilter === "heads") return { head_only: true };
+    if (directoryFilter === "vulnerable") return { vulnerable: true };
+    return {};
+  }, [directoryFilter]);
 
   const list = useQuery({
-    queryKey: ["admin", "citizens"],
+    queryKey: [
+      "admin",
+      "citizens",
+      { page, query: deferredSearch, filter: directoryFilter },
+    ],
     queryFn: () =>
       api
-        .get<{ items: RegistryMemberOut[]; total: number }>("/admin/members", {
-          params: { size: 1000 },
+        .get<{
+          items: RegistryMemberOut[];
+          total: number;
+          page: number;
+          pages: number;
+          size: number;
+        }>("/admin/members", {
+          params: {
+            page,
+            size: 50,
+            query: deferredSearch || undefined,
+            ...directoryFilterParams,
+          },
         })
         .then((r) => r.data),
   });
@@ -182,37 +215,6 @@ export default function RegisteredCitizensPage() {
     },
   ];
 
-  const filters = (
-    rows: RegistryMemberOut[],
-  ): ResourceFilterChoice<RegistryMemberOut>[] => [
-    ...[...new Map(rows.map((row) => [row.area_id, row])).values()]
-      .sort((a, b) =>
-        a.area_name.localeCompare(b.area_name, undefined, { numeric: true }),
-      )
-      .map((area) => ({
-        value: `area:${area.area_id}`,
-        label: area.area_name,
-        matches: (row: RegistryMemberOut) => row.area_id === area.area_id,
-      })),
-    { value: "heads", label: "Household Heads", matches: (row) => row.is_head },
-    { value: "members", label: "Household Members", matches: (row) => !row.is_head },
-    {
-      value: "support",
-      label: "With Support Needs",
-      matches: (row) => supportLabels(row).length > 0,
-    },
-    {
-      value: "incomplete",
-      label: "Incomplete Profiles",
-      matches: (row) => !row.birth_date || !row.sex,
-    },
-    {
-      value: "no-contact",
-      label: "Missing Contact Number",
-      matches: (row) => !row.contact_number,
-    },
-  ];
-
   return (
     <div className="flex flex-col gap-6 pb-10">
       <AdminPageHeader
@@ -232,7 +234,7 @@ export default function RegisteredCitizensPage() {
         }
       />
 
-      <CitizenRegistrySummary summary={summary.data} citizens={list.data?.items} />
+      <CitizenRegistrySummary summary={summary.data} />
 
       <ResourceTable
         columns={columns}
@@ -242,8 +244,41 @@ export default function RegisteredCitizensPage() {
         onRetry={() => list.refetch()}
         getRowKey={(row) => row.id}
         searchPlaceholder="Search citizen, household number, head, or area"
-        filterChoices={filters}
-        filterAllLabel="All Citizens & Reviews"
+        searchValue={search}
+        onSearchChange={setSearch}
+        filterSlots={
+          <Select
+            value={directoryFilter}
+            onValueChange={(value) => {
+              setDirectoryFilter(value);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="h-9 w-[180px] rounded-full border-emerald-600/30 bg-white px-3.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 sm:w-[210px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="all">All citizens</SelectItem>
+              {(summary.data?.areas ?? []).map((area) => (
+                <SelectItem key={area.id} value={`area:${area.id}`}>
+                  {title(area.name)}
+                </SelectItem>
+              ))}
+              <SelectItem value="heads">Household heads</SelectItem>
+              <SelectItem value="vulnerable">Priority support needs</SelectItem>
+            </SelectContent>
+          </Select>
+        }
+        externalFilterActive={directoryFilter !== "all"}
+        onResetExternalFilters={() => setDirectoryFilter("all")}
+        serverPagination={{
+          page: list.data?.page ?? page,
+          pages: list.data?.pages ?? 1,
+          size: list.data?.size ?? 50,
+          total: list.data?.total ?? 0,
+          onPageChange: setPage,
+        }}
+        disableSorting
         emptyTitle="No registered citizens"
         emptyDescription="Citizen records appear after a household is registered."
         rowActions={(row) => (

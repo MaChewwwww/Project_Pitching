@@ -176,9 +176,7 @@ async def test_manual_priority_override_is_not_recomputed_on_next_triage(session
     assert row.priority == 5
 
 
-async def test_bhw_sees_unregistered_rescue_requests_queue_is_not_area_scoped(
-    bhw_client, session
-):
+async def test_bhw_sees_unregistered_rescue_requests_queue_is_not_area_scoped(bhw_client, session):
     """`rescue_request` has no `area_id` — the queue must not be scoped,
     or a BHW would never see the anonymous requests BR-5.9 exists to
     protect."""
@@ -191,3 +189,21 @@ async def test_bhw_sees_unregistered_rescue_requests_queue_is_not_area_scoped(
     assert response.status_code == 200
     ids = {item["id"] for item in response.json()["items"]}
     assert str(row.id) in ids
+
+
+async def test_rescue_list_projects_linked_rows_in_one_batch(session, demo_users):
+    area = await get_area(session)
+    household = await make_household(session, area=area, contact_number="09981112222")
+    row = RescueRequest(
+        household_id=household.id,
+        requester_name="Batch projection",
+        description="Tests the queue projection.",
+        priority=3,
+    )
+    session.add(row)
+    await session.flush()
+
+    page = await service.list_rescue_requests(session, size=100)
+    result = next(item for item in page.items if item.id == row.id)
+    assert result.household_reference_no == household.reference_no
+    assert result.area_name == area.name

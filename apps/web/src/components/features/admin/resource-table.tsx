@@ -58,6 +58,14 @@ export interface ResourceFilterChoice<T> {
   matches: (row: T) => boolean;
 }
 
+export interface ResourceTableServerPagination {
+  page: number;
+  pages: number;
+  size: number;
+  total: number;
+  onPageChange: (page: number) => void;
+}
+
 export interface ResourceTableProps<T> {
   columns: ResourceColumn<T>[];
   data: T[] | undefined;
@@ -78,6 +86,16 @@ export interface ResourceTableProps<T> {
   selectedRowKey?: string | null;
   onRowSelect?: (row: T) => void;
   searchPlaceholder?: string;
+  /** Controlled search input for an API-backed list. */
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  /** Keeps browser payloads bounded while the API owns paging and search. */
+  serverPagination?: ResourceTableServerPagination;
+  /** Use when the API does not expose a matching server-side sort contract. */
+  disableSorting?: boolean;
+  /** Lets an API-backed page include its own server-supported filter control. */
+  externalFilterActive?: boolean;
+  onResetExternalFilters?: () => void;
 }
 
 const PAGE_SIZE = 10;
@@ -142,12 +160,20 @@ export function ResourceTable<T extends object>({
   selectedRowKey,
   onRowSelect,
   searchPlaceholder = "Search this list",
+  searchValue,
+  onSearchChange,
+  serverPagination,
+  disableSorting = false,
+  externalFilterActive = false,
+  onResetExternalFilters,
 }: ResourceTableProps<T>) {
-  const [query, setQuery] = React.useState("");
+  const [localQuery, setLocalQuery] = React.useState("");
   const [filter, setFilter] = React.useState("");
   const [sortKey, setSortKey] = React.useState<string | null>(null);
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc");
   const [page, setPage] = React.useState(1);
+  const query = searchValue ?? localQuery;
+  const isServerBacked = Boolean(serverPagination);
 
   const customFilterChoices = React.useMemo(
     () => (filterChoices && data ? filterChoices(data) : []),
@@ -155,13 +181,14 @@ export function ResourceTable<T extends object>({
   );
 
   const filterColumn = React.useMemo(() => {
+    if (isServerBacked) return undefined;
     if (!data?.length) return undefined;
     return columns.find((column) => {
       if (column.filterable === false || !FILTER_KEYS.has(column.key)) return false;
       const values = new Set(data.flatMap((row) => columnFilterValues(column, row)));
       return values.size > 1 && values.size <= 8;
     });
-  }, [columns, data]);
+  }, [columns, data, isServerBacked]);
 
   const filterValues = React.useMemo(
     () =>
@@ -198,6 +225,7 @@ export function ResourceTable<T extends object>({
   }, [customFilterChoices, data, filterColumn]);
 
   const rows = React.useMemo(() => {
+    if (isServerBacked) return data ?? [];
     const lowered = query.trim().toLocaleLowerCase();
     const next = (data ?? []).filter((row) => {
       const record = row as Record<string, unknown>;
@@ -234,11 +262,17 @@ export function ResourceTable<T extends object>({
     query,
     sortDirection,
     sortKey,
+    isServerBacked,
   ]);
 
-  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-  const currentPage = Math.min(page, pages);
-  const pagedRows = rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pages =
+    serverPagination?.pages ?? Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const currentPage = serverPagination?.page ?? Math.min(page, pages);
+  const pagedRows = isServerBacked
+    ? rows
+    : rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const totalRows = serverPagination?.total ?? rows.length;
+  const pageSize = serverPagination?.size ?? PAGE_SIZE;
   const totalColSpan = columns.length + (rowActions ? 1 : 0);
 
   if (isLoading) return <ListSkeleton rows={5} />;
@@ -252,13 +286,16 @@ export function ResourceTable<T extends object>({
     );
   }
 
-  const isFiltered = Boolean(query || filter || sortKey);
+  const isFiltered = Boolean(query || filter || sortKey || externalFilterActive);
   const reset = () => {
-    setQuery("");
+    if (searchValue === undefined) setLocalQuery("");
+    onSearchChange?.("");
     setFilter("");
+    onResetExternalFilters?.();
     setSortKey(null);
     setSortDirection("asc");
-    setPage(1);
+    if (serverPagination) serverPagination.onPageChange(1);
+    else setPage(1);
   };
   // Ascending → descending → unsorted. The third click has to return the list
   // to the order the API sent, which is usually most-recent-first and therefore
@@ -273,7 +310,8 @@ export function ResourceTable<T extends object>({
       setSortKey(null);
       setSortDirection("asc");
     }
-    setPage(1);
+    if (serverPagination) serverPagination.onPageChange(1);
+    else setPage(1);
   };
 
   return (
@@ -289,8 +327,10 @@ export function ResourceTable<T extends object>({
             <input
               value={query}
               onChange={(event) => {
-                setQuery(event.target.value);
-                setPage(1);
+                if (searchValue === undefined) setLocalQuery(event.target.value);
+                onSearchChange?.(event.target.value);
+                if (serverPagination) serverPagination.onPageChange(1);
+                else setPage(1);
               }}
               placeholder={searchPlaceholder}
               className="h-9.5 w-full rounded-full border border-neutral-200/90 bg-white/95 pr-9 pl-9.5 text-xs shadow-2xs transition outline-none placeholder:text-neutral-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 sm:text-sm"
@@ -298,7 +338,12 @@ export function ResourceTable<T extends object>({
             {query ? (
               <button
                 type="button"
-                onClick={() => setQuery("")}
+                onClick={() => {
+                  if (searchValue === undefined) setLocalQuery("");
+                  onSearchChange?.("");
+                  if (serverPagination) serverPagination.onPageChange(1);
+                  else setPage(1);
+                }}
                 className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-full p-1 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
                 aria-label="Clear search"
               >
@@ -327,7 +372,8 @@ export function ResourceTable<T extends object>({
                 value={filter || "ALL_ITEMS"}
                 onValueChange={(val) => {
                   setFilter(val === "ALL_ITEMS" ? "" : val);
-                  setPage(1);
+                  if (serverPagination) serverPagination.onPageChange(1);
+                  else setPage(1);
                 }}
               >
                 <SelectTrigger className="inline-flex h-9 w-fit min-w-[130px] cursor-pointer items-center gap-2 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs transition-all hover:border-emerald-600 hover:bg-emerald-50/40 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none max-sm:ml-auto">
@@ -380,7 +426,7 @@ export function ResourceTable<T extends object>({
                           : "bg-neutral-100 text-neutral-600",
                       )}
                     >
-                      {filterValueCounts.__all__ ?? (data?.length ?? 0)}
+                      {filterValueCounts.__all__ ?? data?.length ?? 0}
                     </span>
                   </SelectItem>
                   {(customFilterChoices.length
@@ -436,7 +482,7 @@ export function ResourceTable<T extends object>({
                 key={getRowKey(row)}
                 onClick={() => onRowSelect?.(row)}
                 className={cn(
-                  "relative space-y-3 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-4 shadow-2xs portal-card-hover",
+                  "portal-card-hover relative space-y-3 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-4 shadow-2xs",
                   onRowSelect && "cursor-pointer",
                   selectedRowKey === getRowKey(row) && "ring-2 ring-emerald-500",
                 )}
@@ -489,7 +535,11 @@ export function ResourceTable<T extends object>({
           <div className="rounded-xl border border-dashed border-neutral-200 bg-white p-8 text-center">
             <div className="flex flex-col items-center justify-center gap-2 text-center text-slate-500">
               <div className="grid size-10 place-items-center rounded-full bg-slate-100 text-slate-400">
-                {isFiltered ? <SearchX className="size-5" /> : <Inbox className="size-5" />}
+                {isFiltered ? (
+                  <SearchX className="size-5" />
+                ) : (
+                  <Inbox className="size-5" />
+                )}
               </div>
               <p className="text-sm font-bold text-slate-800">
                 {isFiltered ? "No matching records" : emptyTitle}
@@ -531,40 +581,46 @@ export function ResourceTable<T extends object>({
                   }
                   className={cn("text-primary-50 h-11 px-4", column.className)}
                 >
-                  <button
-                    type="button"
-                    onClick={() => sort(column.key)}
-                    title={
-                      !sorted
-                        ? `Sort by ${column.header}, A to Z`
-                        : sortDirection === "asc"
-                          ? `Sort by ${column.header}, Z to A`
-                          : `Clear sorting on ${column.header}`
-                    }
-                    className="group focus-visible:ring-primary-200 inline-flex items-center gap-1.5 rounded text-[11px] font-bold tracking-[0.08em] uppercase transition-colors hover:text-white focus-visible:ring-2 focus-visible:outline-none"
-                  >
-                    {column.header}
-                    {sorted ? (
-                      sortDirection === "asc" ? (
-                        <ArrowUp
-                          aria-hidden
-                          className="size-3.5 text-white"
-                          strokeWidth={2.5}
-                        />
+                  {disableSorting ? (
+                    <span className="text-[11px] font-bold tracking-[0.08em] uppercase">
+                      {column.header}
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => sort(column.key)}
+                      title={
+                        !sorted
+                          ? `Sort by ${column.header}, A to Z`
+                          : sortDirection === "asc"
+                            ? `Sort by ${column.header}, Z to A`
+                            : `Clear sorting on ${column.header}`
+                      }
+                      className="group focus-visible:ring-primary-200 inline-flex items-center gap-1.5 rounded text-[11px] font-bold tracking-[0.08em] uppercase transition-colors hover:text-white focus-visible:ring-2 focus-visible:outline-none"
+                    >
+                      {column.header}
+                      {sorted ? (
+                        sortDirection === "asc" ? (
+                          <ArrowUp
+                            aria-hidden
+                            className="size-3.5 text-white"
+                            strokeWidth={2.5}
+                          />
+                        ) : (
+                          <ArrowDown
+                            aria-hidden
+                            className="size-3.5 text-white"
+                            strokeWidth={2.5}
+                          />
+                        )
                       ) : (
-                        <ArrowDown
+                        <ChevronsUpDown
                           aria-hidden
-                          className="size-3.5 text-white"
-                          strokeWidth={2.5}
+                          className="text-primary-400/70 group-hover:text-primary-200 size-3.5 transition-colors"
                         />
-                      )
-                    ) : (
-                      <ChevronsUpDown
-                        aria-hidden
-                        className="text-primary-400/70 group-hover:text-primary-200 size-3.5 transition-colors"
-                      />
-                    )}
-                  </button>
+                      )}
+                    </button>
+                  )}
                 </TableHead>
               );
             })}
@@ -610,13 +666,14 @@ export function ResourceTable<T extends object>({
             ))
           ) : (
             <TableRow className="hover:bg-transparent">
-              <TableCell
-                colSpan={totalColSpan}
-                className="h-44 text-center py-12"
-              >
+              <TableCell colSpan={totalColSpan} className="h-44 py-12 text-center">
                 <div className="flex flex-col items-center justify-center gap-2 text-center text-slate-500">
                   <div className="grid size-10 place-items-center rounded-full bg-slate-100 text-slate-400">
-                    {isFiltered ? <SearchX className="size-5" /> : <Inbox className="size-5" />}
+                    {isFiltered ? (
+                      <SearchX className="size-5" />
+                    ) : (
+                      <Inbox className="size-5" />
+                    )}
                   </div>
                   <p className="text-sm font-bold text-slate-800">
                     {isFiltered ? "No matching records" : emptyTitle}
@@ -624,7 +681,8 @@ export function ResourceTable<T extends object>({
                   <p className="max-w-sm text-xs text-slate-500">
                     {isFiltered
                       ? "No row matches the current search and filter criteria."
-                      : emptyDescription || "No records have been added to this list yet."}
+                      : emptyDescription ||
+                        "No records have been added to this list yet."}
                   </p>
                   {isFiltered && (
                     <Button
@@ -644,29 +702,37 @@ export function ResourceTable<T extends object>({
       </Table>
 
       <footer className="border-primary-100 bg-primary-50/60 text-primary-900/75 flex flex-wrap items-center justify-between gap-3 border-t px-3 py-2.5 text-sm sm:px-4">
-        <span className="tabular-nums text-xs sm:text-sm">
-          {rows.length === 0
+        <span className="text-xs tabular-nums sm:text-sm">
+          {totalRows === 0
             ? "Showing 0–0 of 0"
-            : `Showing ${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, rows.length)} of ${rows.length}`}
+            : `Showing ${(currentPage - 1) * pageSize + 1}–${Math.min((currentPage - 1) * pageSize + pagedRows.length, totalRows)} of ${totalRows}`}
         </span>
         <div className="flex items-center gap-2">
           <Button
             size="sm"
             variant="outline"
-            disabled={currentPage <= 1 || rows.length === 0}
-            onClick={() => setPage((value) => value - 1)}
+            disabled={currentPage <= 1 || totalRows === 0}
+            onClick={() =>
+              serverPagination
+                ? serverPagination.onPageChange(currentPage - 1)
+                : setPage((value) => value - 1)
+            }
           >
             <ChevronLeft aria-hidden className="size-4" />
             Previous
           </Button>
-          <span className="tabular-nums text-xs sm:text-sm">
-            Page {rows.length === 0 ? 1 : currentPage} of {pages}
+          <span className="text-xs tabular-nums sm:text-sm">
+            Page {totalRows === 0 ? 1 : currentPage} of {pages}
           </span>
           <Button
             size="sm"
             variant="outline"
-            disabled={currentPage >= pages || rows.length === 0}
-            onClick={() => setPage((value) => value + 1)}
+            disabled={currentPage >= pages || totalRows === 0}
+            onClick={() =>
+              serverPagination
+                ? serverPagination.onPageChange(currentPage + 1)
+                : setPage((value) => value + 1)
+            }
           >
             Next
             <ChevronRight aria-hidden className="size-4" />

@@ -5,8 +5,9 @@ from __future__ import annotations
 import uuid
 
 import pytest
-from factories import get_area
+from factories import get_area, make_household
 from pydantic import ValidationError
+from sqlalchemy import func
 
 from src.core.deps import AuthenticatedUser
 from src.modules.registry import service
@@ -178,9 +179,7 @@ async def test_citizen_summary_detail_and_empty_activity_are_area_scoped(session
     created = await service.create_household_bhw(
         session, user=actor, body=_body(area_id=area.id, contact_number=None)
     )
-    detail = await service.get_member(
-        session, member_id=created.members[0].id, user=actor
-    )
+    detail = await service.get_member(session, member_id=created.members[0].id, user=actor)
     summary = await service.get_member_summary(session, user=actor)
     activity = await service.get_member_activity(
         session, member_id=created.members[0].id, user=actor
@@ -197,7 +196,42 @@ async def test_citizen_summary_detail_and_empty_activity_are_area_scoped(session
     assert activity.household_reports == []
 
 
-async def test_adult_promotion_preserves_member_identity_and_derives_no_contact(session, demo_users):
+async def test_household_list_keeps_pinned_and_pending_locations(session, demo_users):
+    area = await get_area(session)
+    pinned = await make_household(
+        session,
+        area=area,
+        location=func.ST_SetSRID(func.ST_MakePoint(121.1315, 14.7415), 4326),
+    )
+    pending = await make_household(session, area=area, location=None)
+
+    page = await service.list_households(
+        session, user=_actor(demo_users["admin"]), page=1, size=2000
+    )
+    rows = {row.id: row for row in page.items}
+
+    assert rows[pinned.id].location == {"type": "Point", "coordinates": [121.1315, 14.7415]}
+    assert rows[pending.id].location is None
+
+
+async def test_registry_summary_groups_area_metrics_and_duplicate_flags(session, demo_users):
+    area = await get_area(session)
+    await make_household(session, area=area, head_name="Summary Duplicate", source="bhw")
+    await make_household(session, area=area, head_name="Summary Duplicate", source="self")
+
+    summary = await service.get_registry_summary(session, user=_actor(demo_users["admin"]))
+    area_summary = next(row for row in summary.areas if row["id"] == area.id)
+
+    assert summary.households >= 2
+    assert summary.citizens >= 2
+    assert summary.possible_duplicates >= 2
+    assert area_summary["households"] >= 2
+    assert area_summary["citizens"] >= 2
+
+
+async def test_adult_promotion_preserves_member_identity_and_derives_no_contact(
+    session, demo_users
+):
     area = await get_area(session)
     actor = _actor(demo_users["admin"])
     source = await service.create_household_bhw(

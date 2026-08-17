@@ -69,6 +69,8 @@ not real duplicates). 0.5 keeps genuinely identical or near-identical names
 while dropping most of that noise — still a rough heuristic, not a tuned
 model; FR-REG-010's frs_nfrs.md note says as much."""
 
+_LOCATION_NOT_LOADED = object()
+
 
 # --- read aggregates (unchanged) ----------------------------------------------
 
@@ -252,7 +254,13 @@ async def _household_out(
     area_name: str | None,
     has_possible_duplicate: bool,
     member_count: int,
+    location_geojson: str | None | object = _LOCATION_NOT_LOADED,
 ) -> HouseholdOut:
+    location = (
+        await _location_geojson(session, household.id)
+        if location_geojson is _LOCATION_NOT_LOADED
+        else point_to_geojson(location_geojson)
+    )
     return HouseholdOut(
         id=household.id,
         reference_no=household.reference_no,
@@ -264,7 +272,7 @@ async def _household_out(
         area_name=area_name,
         street_address=household.street_address,
         waterway_proximity=household.waterway_proximity,
-        location=await _location_geojson(session, household.id),
+        location=location,
         source=cast(Literal["self", "bhw"], household.source),
         verified_at=household.verified_at,
         has_possible_duplicate=has_possible_duplicate,
@@ -708,7 +716,13 @@ async def list_households(
     has_dup = _has_duplicate_subquery(Household.id, Household.area_id, Household.head_name)
 
     stmt = (
-        select(Household, Area.name, member_count_subq, has_dup)
+        select(
+            Household,
+            Area.name,
+            member_count_subq,
+            has_dup,
+            func.ST_AsGeoJSON(Household.location),
+        )
         .join(Area, Household.area_id == Area.id)
         .where(Household.deleted_at.is_(None))
         .order_by(Household.created_at.desc())
@@ -727,16 +741,18 @@ async def list_households(
     total = (await session.execute(select(func.count()).select_from(stmt.subquery()))).scalar_one()
     rows = (await session.execute(stmt.limit(size).offset((page - 1) * size))).all()
 
-    items = [
-        await _household_out(
-            session,
-            household,
-            area_name=area_name,
-            has_possible_duplicate=has_duplicate,
-            member_count=member_count,
+    items = []
+    for household, area_name, member_count, has_duplicate, location_geojson in rows:
+        items.append(
+            await _household_out(
+                session,
+                household,
+                area_name=area_name,
+                has_possible_duplicate=has_duplicate,
+                member_count=member_count,
+                location_geojson=location_geojson,
+            )
         )
-        for household, area_name, member_count, has_duplicate in rows
-    ]
     return Page[HouseholdOut](items=items, **page_meta(total, page, size))
 
 
@@ -770,67 +786,58 @@ async def get_household_detail(
 async def get_registry_summary(
     session: AsyncSession, *, user: AuthenticatedUser
 ) -> RegistrySummary:
-    base = select(Household).where(Household.deleted_at.is_(None))
-    base = apply_area_scope(base, user, Household.area_id)
-    rows = (await session.execute(base)).scalars().all()
-    household_ids = [row.id for row in rows]
-    member_total = 0
-    if household_ids:
-        member_total = (
-            await session.execute(
-                select(func.count(Member.id)).where(
-                    Member.household_id.in_(household_ids), Member.deleted_at.is_(None)
-                )
-            )
-        ).scalar_one()
-    possible_duplicates = 0
-    for row in rows:
-        if await session.scalar(
-            select(func.count())
-            .select_from(Household)
-            .where(
-                Household.id != row.id,
-                Household.deleted_at.is_(None),
-                Household.merged_into_id.is_(None),
-                Household.area_id == row.area_id,
-                func.similarity(Household.head_name, row.head_name)
-                > DUPLICATE_NAME_SIMILARITY_THRESHOLD,
-            )
-        ):
-            possible_duplicates += 1
-    counts = {}
-    for row in rows:
-        counts.setdefault(
-            row.area_id,
-            {"id": row.area_id, "name": None, "households": 0, "citizens": 0},
+    has_dup = _has_duplicate_subquery(Household.id, Household.area_id, Household.head_name)
+    household_stmt = (
+        select(
+            Household.area_id,
+            Area.name,
+            func.count(Household.id).label("households"),
+            func.count(Household.id)
+            .filter(Household.is_unreachable_by_phone.is_(True))
+            .label("unreachable_households"),
+            func.count(Household.id).filter(has_dup).label("possible_duplicates"),
+            func.count(Household.id).filter(Household.source == "self").label("self_registered"),
+            func.count(Household.id).filter(Household.source == "bhw").label("bhw_assisted"),
         )
-        counts[row.area_id]["households"] += 1
-        name = await session.scalar(select(Area.name).where(Area.id == row.area_id))
-        counts[row.area_id]["name"] = name
-    if household_ids:
-        member_rows = (
-            await session.execute(
-                select(Household.area_id, func.count(Member.id))
-                .join(Member, Member.household_id == Household.id)
-                .where(
-                    Household.id.in_(household_ids),
-                    Household.deleted_at.is_(None),
-                    Member.deleted_at.is_(None),
-                )
-                .group_by(Household.area_id)
-            )
-        ).all()
-        for area, count in member_rows:
-            counts[area]["citizens"] = count
+        .join(Area, Household.area_id == Area.id)
+        .where(Household.deleted_at.is_(None))
+        .group_by(Household.area_id, Area.name)
+        .order_by(Area.name)
+    )
+    household_stmt = apply_area_scope(household_stmt, user, Household.area_id)
+    household_rows = (await session.execute(household_stmt)).all()
+
+    member_stmt = (
+        select(Household.area_id, func.count(Member.id).label("citizens"))
+        .join(Member, Member.household_id == Household.id)
+        .where(Household.deleted_at.is_(None), Member.deleted_at.is_(None))
+        .group_by(Household.area_id)
+    )
+    member_stmt = apply_area_scope(member_stmt, user, Household.area_id)
+    member_counts = dict((await session.execute(member_stmt)).all())
+
+    counts = [
+        {
+            "id": row.area_id,
+            "name": row.name,
+            "households": row.households,
+            "citizens": member_counts.get(row.area_id, 0),
+        }
+        for row in household_rows
+    ]
+    household_total = sum(row.households for row in household_rows)
+    member_total = sum(member_counts.values())
     return RegistrySummary(
-        households=len(rows),
+        households=household_total,
         citizens=member_total,
-        average_household_size=round(member_total / len(rows), 1) if rows else None,
-        unreachable_households=sum(row.is_unreachable_by_phone for row in rows),
-        possible_duplicates=possible_duplicates,
-        self_registered_households=sum(row.source == "self" for row in rows),
-        bhw_assisted_households=sum(row.source == "bhw" for row in rows),
-        areas=list(counts.values()),
+        average_household_size=round(member_total / household_total, 1)
+        if household_total
+        else None,
+        unreachable_households=sum(row.unreachable_households for row in household_rows),
+        possible_duplicates=sum(row.possible_duplicates for row in household_rows),
+        self_registered_households=sum(row.self_registered for row in household_rows),
+        bhw_assisted_households=sum(row.bhw_assisted for row in household_rows),
+        areas=counts,
     )
 
 

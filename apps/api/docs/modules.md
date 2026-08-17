@@ -126,8 +126,9 @@ rows (`GET /admin/members`). The static `/admin/members/summary` route must rema
 member route. Citizen detail includes the full household snapshot; `/activity` separates person-linked
 safety and evacuation records from household-linked rescue requests and reports so the console never
 implies that contextual records belong to one person. Detail serializers include household context so the web console does not
-need a second PII join. The summary endpoint is area-scoped and derives counts at request time; no
-coverage totals are stored.
+need a second PII join. Directory geometry is selected with the household row, and the summary uses
+area-grouped aggregates; do not restore per-row follow-up queries when extending either projection.
+The summary endpoint is area-scoped and derives counts at request time; no coverage totals are stored.
 
 Household references are displayed and generated as `M-SJ-000-000` Household Numbers. The registry
 sequence remains database-backed and race-safe; the seed loader reserves its synthetic range before
@@ -168,7 +169,9 @@ Rescue requests and incident reports have a separate, admin-only operational wor
 list serializers enrich a pin with its containing area and linked event metadata; their detail
 routes project `audit_log` into a history timeline. Incident lifecycle writes are constrained in
 the service and again by database checks, so a resolved report cannot exist without a completion
-note. This workflow records the acting administrator rather than introducing an assignment role.
+note. Queue serializers batch their linked users, events, households, areas, and vulnerability flags;
+keep row-by-row lookups limited to a true single-record detail workflow. This workflow records the
+acting administrator rather than introducing an assignment role.
 
 Admin/BHW safety writes may carry the field-recorded status time for blackout recovery. It is
 stored on the append-only safety row (`set_at`); the normal database `created_at` timestamp is

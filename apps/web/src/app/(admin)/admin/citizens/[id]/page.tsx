@@ -52,7 +52,6 @@ import { useRequireRole } from "@/lib/auth/use-require-role";
 import type {
   HouseholdActivityItem,
   HouseholdDetailOut,
-  HouseholdOut,
   RegistryMemberActivityOut,
   RegistryMemberDetailOut,
 } from "@/lib/api/registry-types";
@@ -116,14 +115,6 @@ export default function CitizenDetailPage() {
       api
         .get<RegistryMemberActivityOut>(`/admin/members/${id}/activity`)
         .then((r) => r.data),
-  });
-
-  const households = useQuery({
-    queryKey: ["admin", "households", "transfer-options"],
-    queryFn: () =>
-      api
-        .get<{ items: HouseholdOut[] }>("/admin/households", { params: { size: 1000 } })
-        .then((r) => r.data.items),
   });
 
   const remove = useMutation({
@@ -251,7 +242,6 @@ export default function CitizenDetailPage() {
         <HouseholdTab
           citizen={row}
           household={household.data}
-          households={households.data ?? []}
           onMadeHead={() => makeHead.mutate()}
           makingHead={makeHead.isPending}
         />
@@ -347,13 +337,11 @@ function Overview({ citizen }: { citizen: RegistryMemberDetailOut }) {
 function HouseholdTab({
   citizen,
   household,
-  households,
   onMadeHead,
   makingHead,
 }: {
   citizen: RegistryMemberDetailOut;
   household?: HouseholdDetailOut;
-  households: HouseholdOut[];
   onMadeHead: () => void;
   makingHead: boolean;
 }) {
@@ -562,12 +550,10 @@ function HouseholdTab({
                   }
                 >
                   <SearchableHouseholdSelect
-                    households={households.filter(
-                      (item) => item.id !== citizen.household_id,
-                    )}
                     value={destination}
                     onChange={(val) => setDestination(val)}
                     placeholder="Search Destination Household"
+                    excludeHouseholdIds={[citizen.household_id]}
                   />
                   <Select value={relationship} onValueChange={setRelationship}>
                     <SelectTrigger className="h-10 w-full rounded-lg border-neutral-200 bg-white text-sm font-medium focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20">

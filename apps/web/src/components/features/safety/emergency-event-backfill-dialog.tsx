@@ -53,7 +53,8 @@ function toLocalDatetimeString(dateInput?: string | Date | null): string {
   return `${YYYY}-${MM}-${DD}T${hh}:${mm}`;
 }
 
-type BackfillTab = "household_safety" | "walkin_person" | "evac_center" | "incident_report";
+type BackfillTab =
+  "household_safety" | "walkin_person" | "evac_center" | "incident_report";
 
 function EmergencyEventBackfillContent({
   event,
@@ -70,10 +71,14 @@ function EmergencyEventBackfillContent({
   // Form states for Household Safety
   const [selectedHouseholdId, setSelectedHouseholdId] = React.useState<string>("");
   const [safetyStatus, setSafetyStatus] = React.useState<SafetyStatusValue>("safe");
-  const [safetyScope, setSafetyScope] = React.useState<"household" | "member">("household");
+  const [safetyScope, setSafetyScope] = React.useState<"household" | "member">(
+    "household",
+  );
   const [customMemberIds, setCustomMemberIds] = React.useState<string[]>([]);
   const [safetyEvacCenterId, setSafetyEvacCenterId] = React.useState<string>("");
-  const [safetySetAt, setSafetySetAt] = React.useState(() => toLocalDatetimeString(new Date()));
+  const [safetySetAt, setSafetySetAt] = React.useState(() =>
+    toLocalDatetimeString(new Date()),
+  );
   const [safetyNotes, setSafetyNotes] = React.useState("");
 
   // Form states for Walk-in
@@ -82,7 +87,9 @@ function EmergencyEventBackfillContent({
   const [walkinLocationNote, setWalkinLocationNote] = React.useState("");
   const [walkinStatus, setWalkinStatus] = React.useState<"safe" | "needs_rescue">("safe");
   const [walkinEvacCenterId, setWalkinEvacCenterId] = React.useState("");
-  const [walkinRecordedAt, setWalkinRecordedAt] = React.useState(() => toLocalDatetimeString(new Date()));
+  const [walkinRecordedAt, setWalkinRecordedAt] = React.useState(() =>
+    toLocalDatetimeString(new Date()),
+  );
   const [walkinFlags, setWalkinFlags] = React.useState({
     is_child: false,
     is_senior: false,
@@ -96,7 +103,9 @@ function EmergencyEventBackfillContent({
   // Form states for Evac Checkin
   const [evacCenterId, setEvacCenterId] = React.useState("");
   const [evacPersonName, setEvacPersonName] = React.useState("");
-  const [evacCheckinAt, setEvacCheckinAt] = React.useState(() => toLocalDatetimeString(event.started_at));
+  const [evacCheckinAt, setEvacCheckinAt] = React.useState(() =>
+    toLocalDatetimeString(event.started_at),
+  );
 
   // Form states for Incident Report
   const [incidentType, setIncidentType] = React.useState<IncidentType>("flooding");
@@ -105,14 +114,15 @@ function EmergencyEventBackfillContent({
 
   // Search filter for households
   const [hhSearch, setHhSearch] = React.useState("");
+  const deferredHouseholdSearch = React.useDeferredValue(hhSearch);
 
   // Fetch households
   const householdsQuery = useQuery({
-    queryKey: ["admin", "households", "backfill-list"],
+    queryKey: ["admin", "households", "backfill-list", deferredHouseholdSearch],
     queryFn: () =>
       api
         .get<{ items: HouseholdOut[] }>("/admin/households", {
-          params: { size: 1000 },
+          params: { size: 50, query: deferredHouseholdSearch.trim() || undefined },
         })
         .then((r) => r.data.items),
     enabled: activeTab === "household_safety",
@@ -122,21 +132,26 @@ function EmergencyEventBackfillContent({
   const householdDetailQuery = useQuery({
     queryKey: ["admin", "household", selectedHouseholdId],
     queryFn: () =>
-      api.get<HouseholdDetailOut>(`/admin/households/${selectedHouseholdId}`).then((r) => r.data),
+      api
+        .get<HouseholdDetailOut>(`/admin/households/${selectedHouseholdId}`)
+        .then((r) => r.data),
     enabled: Boolean(selectedHouseholdId),
   });
 
   // Fetch evacuation centers
   const evacCentersQuery = useQuery({
     queryKey: ["admin", "evacuation-centers", "backfill-list"],
-    queryFn: () => api.get<PublicEvacCenter[]>("/admin/evacuation-centers").then((r) => r.data),
+    queryFn: () =>
+      api.get<PublicEvacCenter[]>("/admin/evacuation-centers").then((r) => r.data),
   });
 
   const invalidateAll = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["admin", "emergency-events"] }),
       queryClient.invalidateQueries({ queryKey: ["admin", "emergency-event", event.id] }),
-      queryClient.invalidateQueries({ queryKey: ["admin", "emergency-workspace", event.id] }),
+      queryClient.invalidateQueries({
+        queryKey: ["admin", "emergency-workspace", event.id],
+      }),
       queryClient.invalidateQueries({ queryKey: ["admin", "safety", "ledger"] }),
       queryClient.invalidateQueries({ queryKey: ["admin", "rescue-requests"] }),
       queryClient.invalidateQueries({ queryKey: ["admin", "incident-reports"] }),
@@ -233,7 +248,8 @@ function EmergencyEventBackfillContent({
       formData.append("event_id", event.id);
       formData.append("type", incidentType);
       formData.append("description", incidentDesc.trim());
-      if (incidentLocation.trim()) formData.append("location_note", incidentLocation.trim());
+      if (incidentLocation.trim())
+        formData.append("location_note", incidentLocation.trim());
       return api.post("/admin/incident-reports", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -248,17 +264,7 @@ function EmergencyEventBackfillContent({
     onError: (error) => toast.error(toDisplayError(error).detail),
   });
 
-  const filteredHouseholds = React.useMemo(() => {
-    const list = householdsQuery.data ?? [];
-    if (!hhSearch.trim()) return list.slice(0, 50);
-    const q = hhSearch.toLowerCase();
-    return list.filter(
-      (h) =>
-        h.reference_no.toLowerCase().includes(q) ||
-        h.head_name?.toLowerCase().includes(q) ||
-        h.area_name?.toLowerCase().includes(q),
-    ).slice(0, 50);
-  }, [householdsQuery.data, hhSearch]);
+  const filteredHouseholds = householdsQuery.data ?? [];
 
   const isSubmitting =
     submitSafetyMutation.isPending ||
@@ -268,39 +274,45 @@ function EmergencyEventBackfillContent({
 
   return (
     <>
-      <DialogHeader className="shrink-0 pb-3 border-b border-slate-100">
+      <DialogHeader className="shrink-0 border-b border-slate-100 pb-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="grid size-11 place-items-center rounded-2xl bg-emerald-100 text-emerald-800 shrink-0 shadow-xs border border-emerald-200">
+            <div className="grid size-11 shrink-0 place-items-center rounded-2xl border border-emerald-200 bg-emerald-100 text-emerald-800 shadow-xs">
               <FileSpreadsheet className="size-5.5 text-emerald-700" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-black text-slate-950 flex flex-wrap items-center gap-2">
+              <DialogTitle className="flex flex-wrap items-center gap-2 text-lg font-black text-slate-950">
                 <span>Blackout Recovery & Data Backfill</span>
-                <Badge tone="info" className="text-[10px] uppercase font-bold">
+                <Badge tone="info" className="text-[10px] font-bold uppercase">
                   {event.name}
                 </Badge>
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500 font-medium mt-0.5">
-                Ingest offline field logs, paper manifests, and retrospective check-ins collected during power or internet blackouts.
+              <DialogDescription className="mt-0.5 text-xs font-medium text-slate-500">
+                Ingest offline field logs, paper manifests, and retrospective check-ins
+                collected during power or internet blackouts.
               </DialogDescription>
             </div>
           </div>
         </div>
 
         {/* Spacious 4-Tab Navigation Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-4">
+        <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
           <button
             type="button"
             onClick={() => setActiveTab("household_safety")}
             className={cn(
-              "px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border text-left cursor-pointer shadow-2xs",
+              "flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-left text-xs font-bold shadow-2xs transition-all",
               activeTab === "household_safety"
                 ? "border-emerald-600 bg-emerald-50/90 text-emerald-950 ring-2 ring-emerald-500/20"
                 : "border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100 hover:text-slate-900",
             )}
           >
-            <UserCheck className={cn("size-4 shrink-0", activeTab === "household_safety" ? "text-emerald-700" : "text-slate-400")} />
+            <UserCheck
+              className={cn(
+                "size-4 shrink-0",
+                activeTab === "household_safety" ? "text-emerald-700" : "text-slate-400",
+              )}
+            />
             <span className="truncate">1. Household Safety</span>
           </button>
 
@@ -308,13 +320,18 @@ function EmergencyEventBackfillContent({
             type="button"
             onClick={() => setActiveTab("walkin_person")}
             className={cn(
-              "px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border text-left cursor-pointer shadow-2xs",
+              "flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-left text-xs font-bold shadow-2xs transition-all",
               activeTab === "walkin_person"
                 ? "border-emerald-600 bg-emerald-50/90 text-emerald-950 ring-2 ring-emerald-500/20"
                 : "border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100 hover:text-slate-900",
             )}
           >
-            <UserPlus className={cn("size-4 shrink-0", activeTab === "walkin_person" ? "text-emerald-700" : "text-slate-400")} />
+            <UserPlus
+              className={cn(
+                "size-4 shrink-0",
+                activeTab === "walkin_person" ? "text-emerald-700" : "text-slate-400",
+              )}
+            />
             <span className="truncate">2. Walk-In Person</span>
           </button>
 
@@ -322,13 +339,18 @@ function EmergencyEventBackfillContent({
             type="button"
             onClick={() => setActiveTab("evac_center")}
             className={cn(
-              "px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border text-left cursor-pointer shadow-2xs",
+              "flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-left text-xs font-bold shadow-2xs transition-all",
               activeTab === "evac_center"
                 ? "border-emerald-600 bg-emerald-50/90 text-emerald-950 ring-2 ring-emerald-500/20"
                 : "border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100 hover:text-slate-900",
             )}
           >
-            <Building2 className={cn("size-4 shrink-0", activeTab === "evac_center" ? "text-emerald-700" : "text-slate-400")} />
+            <Building2
+              className={cn(
+                "size-4 shrink-0",
+                activeTab === "evac_center" ? "text-emerald-700" : "text-slate-400",
+              )}
+            />
             <span className="truncate">3. Evac Manifest</span>
           </button>
 
@@ -336,13 +358,18 @@ function EmergencyEventBackfillContent({
             type="button"
             onClick={() => setActiveTab("incident_report")}
             className={cn(
-              "px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border text-left cursor-pointer shadow-2xs",
+              "flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-left text-xs font-bold shadow-2xs transition-all",
               activeTab === "incident_report"
                 ? "border-emerald-600 bg-emerald-50/90 text-emerald-950 ring-2 ring-emerald-500/20"
                 : "border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100 hover:text-slate-900",
             )}
           >
-            <AlertTriangle className={cn("size-4 shrink-0", activeTab === "incident_report" ? "text-emerald-700" : "text-slate-400")} />
+            <AlertTriangle
+              className={cn(
+                "size-4 shrink-0",
+                activeTab === "incident_report" ? "text-emerald-700" : "text-slate-400",
+              )}
+            />
             <span className="truncate">4. Field Incident</span>
           </button>
         </div>
@@ -350,42 +377,48 @@ function EmergencyEventBackfillContent({
 
       {/* Tab 1: Household Safety */}
       {activeTab === "household_safety" ? (
-        <div className="flex-1 overflow-y-auto pr-1 py-4 space-y-4 custom-scrollbar">
-          <div className="rounded-xl bg-emerald-50/80 border border-emerald-200/90 p-3 text-xs text-emerald-950 flex items-start gap-2.5">
-            <ShieldAlert className="size-4 text-emerald-700 shrink-0 mt-0.5" />
+        <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto py-4 pr-1">
+          <div className="flex items-start gap-2.5 rounded-xl border border-emerald-200/90 bg-emerald-50/80 p-3 text-xs text-emerald-950">
+            <ShieldAlert className="mt-0.5 size-4 shrink-0 text-emerald-700" />
             <p className="leading-relaxed">
-              Record safety statuses collected from door-to-door BHW paper field rosters. The retroactive timestamp is preserved as the official verification time during the blackout.
+              Record safety statuses collected from door-to-door BHW paper field rosters.
+              The retroactive timestamp is preserved as the official verification time
+              during the blackout.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
             {/* Left Column: Household & Member Selection (7 cols) */}
-            <div className="lg:col-span-7 flex flex-col gap-3">
+            <div className="flex flex-col gap-3 lg:col-span-7">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-900">
                   Select Household from Registry <span className="text-rose-500">*</span>
                 </label>
-                <span className="text-[11px] text-slate-400 font-medium">
+                <span className="text-[11px] font-medium text-slate-400">
                   {filteredHouseholds.length} households shown
                 </span>
               </div>
 
               <div className="relative">
-                <Search className="absolute left-3 top-2.5 size-4 text-slate-400" />
+                <Search className="absolute top-2.5 left-3 size-4 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search household reference no, head name, or area..."
                   value={hhSearch}
                   onChange={(e) => setHhSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                  className="w-full rounded-xl border border-slate-200 py-2 pr-3 pl-9 text-xs text-slate-900 shadow-2xs focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
-              <div className="h-44 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100 bg-slate-50/50 custom-scrollbar">
+              <div className="custom-scrollbar h-44 divide-y divide-slate-100 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/50">
                 {householdsQuery.isLoading ? (
-                  <p className="p-4 text-center text-xs text-slate-400">Loading households list...</p>
+                  <p className="p-4 text-center text-xs text-slate-400">
+                    Loading households list...
+                  </p>
                 ) : filteredHouseholds.length === 0 ? (
-                  <p className="p-4 text-center text-xs text-slate-400 italic">No matching households found</p>
+                  <p className="p-4 text-center text-xs text-slate-400 italic">
+                    No matching households found
+                  </p>
                 ) : (
                   filteredHouseholds.map((h) => {
                     const isSelected = selectedHouseholdId === h.id;
@@ -398,19 +431,27 @@ function EmergencyEventBackfillContent({
                           setCustomMemberIds([]);
                         }}
                         className={cn(
-                          "w-full px-3.5 py-2.5 text-left text-xs flex items-center justify-between transition-colors cursor-pointer",
+                          "flex w-full cursor-pointer items-center justify-between px-3.5 py-2.5 text-left text-xs transition-colors",
                           isSelected
-                            ? "bg-emerald-700 text-white font-bold"
-                            : "hover:bg-slate-100 text-slate-800",
+                            ? "bg-emerald-700 font-bold text-white"
+                            : "text-slate-800 hover:bg-slate-100",
                         )}
                       >
                         <div className="min-w-0 pr-2">
-                          <span className="font-bold">{h.reference_no}</span> · <span>{h.head_name}</span>
-                          <span className={cn("ml-2 text-[11px]", isSelected ? "text-emerald-100" : "text-slate-500")}>
+                          <span className="font-bold">{h.reference_no}</span> ·{" "}
+                          <span>{h.head_name}</span>
+                          <span
+                            className={cn(
+                              "ml-2 text-[11px]",
+                              isSelected ? "text-emerald-100" : "text-slate-500",
+                            )}
+                          >
                             ({h.area_name})
                           </span>
                         </div>
-                        {isSelected && <CheckCircle2 className="size-4 text-white shrink-0" />}
+                        {isSelected && (
+                          <CheckCircle2 className="size-4 shrink-0 text-white" />
+                        )}
                       </button>
                     );
                   })
@@ -419,15 +460,17 @@ function EmergencyEventBackfillContent({
 
               {/* Scope & Members Selection */}
               {householdDetailQuery.data ? (
-                <div className="rounded-xl border border-slate-200 bg-white p-3.5 flex flex-col gap-3 shadow-2xs">
+                <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-900">Check-in Scope</span>
+                    <span className="text-xs font-bold text-slate-900">
+                      Check-in Scope
+                    </span>
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => setSafetyScope("household")}
                         className={cn(
-                          "px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer",
+                          "cursor-pointer rounded-lg px-2.5 py-1 text-xs font-bold transition-all",
                           safetyScope === "household"
                             ? "bg-emerald-600 text-white shadow-xs"
                             : "bg-slate-100 text-slate-700 hover:bg-slate-200",
@@ -439,7 +482,7 @@ function EmergencyEventBackfillContent({
                         type="button"
                         onClick={() => setSafetyScope("member")}
                         className={cn(
-                          "px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer",
+                          "cursor-pointer rounded-lg px-2.5 py-1 text-xs font-bold transition-all",
                           safetyScope === "member"
                             ? "bg-emerald-600 text-white shadow-xs"
                             : "bg-slate-100 text-slate-700 hover:bg-slate-200",
@@ -451,17 +494,17 @@ function EmergencyEventBackfillContent({
                   </div>
 
                   {safetyScope === "member" ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                    <div className="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {householdDetailQuery.data.members.map((m) => {
                         const isChecked = customMemberIds.includes(m.id);
                         return (
                           <label
                             key={m.id}
                             className={cn(
-                              "flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-colors",
+                              "flex cursor-pointer items-center gap-2 rounded-lg border p-2 text-xs transition-colors",
                               isChecked
-                                ? "bg-emerald-50 border-emerald-300 text-emerald-950 font-bold"
-                                : "bg-white border-slate-200 text-slate-700",
+                                ? "border-emerald-300 bg-emerald-50 font-bold text-emerald-950"
+                                : "border-slate-200 bg-white text-slate-700",
                             )}
                           >
                             <input
@@ -471,14 +514,16 @@ function EmergencyEventBackfillContent({
                                 if (e.target.checked) {
                                   setCustomMemberIds((prev) => [...prev, m.id]);
                                 } else {
-                                  setCustomMemberIds((prev) => prev.filter((id) => id !== m.id));
+                                  setCustomMemberIds((prev) =>
+                                    prev.filter((id) => id !== m.id),
+                                  );
                                 }
                               }}
                               className="rounded text-emerald-600 focus:ring-emerald-500"
                             />
                             <span className="truncate">{m.full_name}</span>
                             {m.is_head && (
-                              <span className="text-[10px] text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded font-bold">
+                              <span className="py-0.2 rounded bg-emerald-100 px-1.5 text-[10px] font-bold text-emerald-700">
                                 Head
                               </span>
                             )}
@@ -492,7 +537,7 @@ function EmergencyEventBackfillContent({
             </div>
 
             {/* Right Column: Status & Timestamp (5 cols) */}
-            <div className="lg:col-span-5 flex flex-col gap-3.5">
+            <div className="flex flex-col gap-3.5 lg:col-span-5">
               {/* Safety Status Toggle */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-slate-800">Safety Status</label>
@@ -501,10 +546,10 @@ function EmergencyEventBackfillContent({
                     type="button"
                     onClick={() => setSafetyStatus("safe")}
                     className={cn(
-                      "flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border text-xs font-bold cursor-pointer transition-all",
+                      "flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-xs font-bold transition-all",
                       safetyStatus === "safe"
-                        ? "bg-emerald-600 text-white border-emerald-700 shadow-sm"
-                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                        ? "border-emerald-700 bg-emerald-600 text-white shadow-sm"
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
                     )}
                   >
                     <CheckCircle2 className="size-4" />
@@ -514,10 +559,10 @@ function EmergencyEventBackfillContent({
                     type="button"
                     onClick={() => setSafetyStatus("needs_rescue")}
                     className={cn(
-                      "flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border text-xs font-bold cursor-pointer transition-all",
+                      "flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-xs font-bold transition-all",
                       safetyStatus === "needs_rescue"
-                        ? "bg-rose-600 text-white border-rose-700 shadow-sm"
-                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                        ? "border-rose-700 bg-rose-600 text-white shadow-sm"
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
                     )}
                   >
                     <AlertTriangle className="size-4" />
@@ -528,11 +573,13 @@ function EmergencyEventBackfillContent({
 
               {/* Shelter / Location */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-slate-800">Shelter / Location</label>
+                <label className="text-xs font-bold text-slate-800">
+                  Shelter / Location
+                </label>
                 <select
                   value={safetyEvacCenterId}
                   onChange={(e) => setSafetyEvacCenterId(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-900 shadow-2xs focus:border-emerald-500 focus:outline-none"
                 >
                   <option value="">Home / Relatives / Safe Location</option>
                   {(evacCentersQuery.data ?? []).map((c) => (
@@ -544,16 +591,16 @@ function EmergencyEventBackfillContent({
               </div>
 
               {/* Field Verification Date & Time */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 flex flex-col gap-2">
+              <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                    <Calendar className="size-3.5 text-emerald-600 shrink-0" />
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                    <Calendar className="size-3.5 shrink-0 text-emerald-600" />
                     Field Verification Date & Time
                   </label>
                   <button
                     type="button"
                     onClick={() => setSafetySetAt(toLocalDatetimeString(new Date()))}
-                    className="text-[11px] font-bold text-emerald-700 hover:underline cursor-pointer flex items-center gap-1"
+                    className="flex cursor-pointer items-center gap-1 text-[11px] font-bold text-emerald-700 hover:underline"
                   >
                     <RefreshCw className="size-3" />
                     Now
@@ -563,20 +610,24 @@ function EmergencyEventBackfillContent({
                   type="datetime-local"
                   value={safetySetAt}
                   onChange={(e) => setSafetySetAt(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs focus:border-emerald-500 focus:outline-none"
                 />
-                <span className="text-[10.5px] text-slate-500">Recorded as the official check-in timestamp.</span>
+                <span className="text-[10.5px] text-slate-500">
+                  Recorded as the official check-in timestamp.
+                </span>
               </div>
 
               {/* Surveyor / Paper Roster Notes */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-slate-900">Surveyor / Paper Roster Notes</label>
+                <label className="text-xs font-bold text-slate-900">
+                  Surveyor / Paper Roster Notes
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. Area 3 BHW Paper Roster #12"
                   value={safetyNotes}
                   onChange={(e) => setSafetyNotes(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-900 shadow-2xs focus:border-emerald-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -586,15 +637,17 @@ function EmergencyEventBackfillContent({
 
       {/* Tab 2: Walk-In Person */}
       {activeTab === "walkin_person" ? (
-        <div className="flex-1 overflow-y-auto pr-1 py-4 space-y-4 custom-scrollbar">
-          <div className="rounded-xl bg-emerald-50/80 border border-emerald-200/90 p-3 text-xs text-emerald-950 flex items-start gap-2.5">
-            <UserPlus className="size-4 text-emerald-700 shrink-0 mt-0.5" />
+        <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto py-4 pr-1">
+          <div className="flex items-start gap-2.5 rounded-xl border border-emerald-200/90 bg-emerald-50/80 p-3 text-xs text-emerald-950">
+            <UserPlus className="mt-0.5 size-4 shrink-0 text-emerald-700" />
             <p className="leading-relaxed">
-              Log unregistered individuals and transients assisted during the emergency blackout. They will appear in the safety ledger and walk-in queue for eventual registry conversion.
+              Log unregistered individuals and transients assisted during the emergency
+              blackout. They will appear in the safety ledger and walk-in queue for
+              eventual registry conversion.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             {/* Left Column: Personal Particulars */}
             <div className="flex flex-col gap-3.5">
               <div className="flex flex-col gap-1.5">
@@ -606,7 +659,7 @@ function EmergencyEventBackfillContent({
                   value={walkinName}
                   onChange={(e) => setWalkinName(e.target.value)}
                   placeholder="e.g. Maria Santos (Transient)"
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs font-medium"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-medium text-slate-900 shadow-2xs focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -617,27 +670,31 @@ function EmergencyEventBackfillContent({
                   value={walkinContact}
                   onChange={(e) => setWalkinContact(e.target.value)}
                   placeholder="09XX XXX XXXX"
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs font-medium"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-medium text-slate-900 shadow-2xs focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-slate-800">Where was this person found / assisted?</label>
+                <label className="text-xs font-bold text-slate-800">
+                  Where was this person found / assisted?
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. Near Kasiglahan Bridge, Phase 1"
                   value={walkinLocationNote}
                   onChange={(e) => setWalkinLocationNote(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs font-medium"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-900 shadow-2xs focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-slate-800">Evacuation Center Shelter</label>
+                <label className="text-xs font-bold text-slate-800">
+                  Evacuation Center Shelter
+                </label>
                 <select
                   value={walkinEvacCenterId}
                   onChange={(e) => setWalkinEvacCenterId(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-900 shadow-2xs focus:border-emerald-500 focus:outline-none"
                 >
                   <option value="">None / Temporary Shelter</option>
                   {(evacCentersQuery.data ?? []).map((c) => (
@@ -658,10 +715,10 @@ function EmergencyEventBackfillContent({
                     type="button"
                     onClick={() => setWalkinStatus("safe")}
                     className={cn(
-                      "py-2.5 px-3 rounded-xl border text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-1.5",
+                      "flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-xs font-bold transition-all",
                       walkinStatus === "safe"
                         ? "bg-emerald-600 text-white shadow-sm"
-                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
                     )}
                   >
                     <CheckCircle2 className="size-4" />
@@ -671,10 +728,10 @@ function EmergencyEventBackfillContent({
                     type="button"
                     onClick={() => setWalkinStatus("needs_rescue")}
                     className={cn(
-                      "py-2.5 px-3 rounded-xl border text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-1.5",
+                      "flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-xs font-bold transition-all",
                       walkinStatus === "needs_rescue"
                         ? "bg-rose-600 text-white shadow-sm"
-                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
                     )}
                   >
                     <AlertTriangle className="size-4" />
@@ -684,8 +741,10 @@ function EmergencyEventBackfillContent({
               </div>
 
               {/* Vulnerability Checklist */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 flex flex-col gap-2">
-                <label className="text-xs font-bold text-slate-900">Vulnerability Flags</label>
+              <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                <label className="text-xs font-bold text-slate-900">
+                  Vulnerability Flags
+                </label>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   {[
                     { key: "is_child", label: "Child (<18)" },
@@ -696,7 +755,7 @@ function EmergencyEventBackfillContent({
                     { key: "has_chronic_condition", label: "Chronic Illness" },
                     { key: "is_bedridden", label: "Mobility Limited" },
                   ].map(({ key, label }) => (
-                    <label key={key} className="flex items-center gap-2 cursor-pointer">
+                    <label key={key} className="flex cursor-pointer items-center gap-2">
                       <input
                         type="checkbox"
                         checked={walkinFlags[key as keyof typeof walkinFlags]}
@@ -712,16 +771,16 @@ function EmergencyEventBackfillContent({
               </div>
 
               {/* Timestamp */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 flex flex-col gap-2">
+              <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                    <Calendar className="size-3.5 text-emerald-600 shrink-0" />
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                    <Calendar className="size-3.5 shrink-0 text-emerald-600" />
                     Walk-in Date & Time
                   </label>
                   <button
                     type="button"
                     onClick={() => setWalkinRecordedAt(toLocalDatetimeString(new Date()))}
-                    className="text-[11px] font-bold text-emerald-700 hover:underline cursor-pointer flex items-center gap-1"
+                    className="flex cursor-pointer items-center gap-1 text-[11px] font-bold text-emerald-700 hover:underline"
                   >
                     <RefreshCw className="size-3" />
                     Now
@@ -731,7 +790,7 @@ function EmergencyEventBackfillContent({
                   type="datetime-local"
                   value={walkinRecordedAt}
                   onChange={(e) => setWalkinRecordedAt(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs focus:border-emerald-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -741,15 +800,16 @@ function EmergencyEventBackfillContent({
 
       {/* Tab 3: Evacuation Center Log */}
       {activeTab === "evac_center" ? (
-        <div className="flex-1 overflow-y-auto pr-1 py-4 space-y-4 custom-scrollbar">
-          <div className="rounded-xl bg-emerald-50/80 border border-emerald-200/90 p-3 text-xs text-emerald-950 flex items-start gap-2.5">
-            <Building2 className="size-4 text-emerald-700 shrink-0 mt-0.5" />
+        <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto py-4 pr-1">
+          <div className="flex items-start gap-2.5 rounded-xl border border-emerald-200/90 bg-emerald-50/80 p-3 text-xs text-emerald-950">
+            <Building2 className="mt-0.5 size-4 shrink-0 text-emerald-700" />
             <p className="leading-relaxed">
-              Log paper sign-in sheets from designated evacuation center marshals retroactively.
+              Log paper sign-in sheets from designated evacuation center marshals
+              retroactively.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <div className="flex flex-col gap-3.5">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-slate-800">
@@ -758,12 +818,13 @@ function EmergencyEventBackfillContent({
                 <select
                   value={evacCenterId}
                   onChange={(e) => setEvacCenterId(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 shadow-2xs focus:border-emerald-500 focus:outline-none"
                 >
                   <option value="">Select evacuation center...</option>
                   {(evacCentersQuery.data ?? []).map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.facility.name} — Area {c.facility.area_id} {c.capacity ? `(Cap: ${c.capacity})` : ""}
+                      {c.facility.name} — Area {c.facility.area_id}{" "}
+                      {c.capacity ? `(Cap: ${c.capacity})` : ""}
                     </option>
                   ))}
                 </select>
@@ -778,22 +839,22 @@ function EmergencyEventBackfillContent({
                   value={evacPersonName}
                   onChange={(e) => setEvacPersonName(e.target.value)}
                   placeholder="e.g. Juan Dela Cruz"
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs font-medium"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-medium text-slate-900 shadow-2xs focus:border-emerald-500 focus:outline-none"
                 />
               </div>
             </div>
 
             <div className="flex flex-col gap-3.5">
-              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 flex flex-col gap-2">
+              <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                    <Clock className="size-3.5 text-emerald-600 shrink-0" />
+                  <label className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                    <Clock className="size-3.5 shrink-0 text-emerald-600" />
                     Physical Arrival / Check-in Date & Time
                   </label>
                   <button
                     type="button"
                     onClick={() => setEvacCheckinAt(toLocalDatetimeString(new Date()))}
-                    className="text-[11px] font-bold text-emerald-700 hover:underline cursor-pointer flex items-center gap-1"
+                    className="flex cursor-pointer items-center gap-1 text-[11px] font-bold text-emerald-700 hover:underline"
                   >
                     <RefreshCw className="size-3" />
                     Now
@@ -803,9 +864,11 @@ function EmergencyEventBackfillContent({
                   type="datetime-local"
                   value={evacCheckinAt}
                   onChange={(e) => setEvacCheckinAt(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-2xs focus:border-emerald-500 focus:outline-none"
                 />
-                <span className="text-[11px] text-slate-500">Transcribe arrival time from the physical logbook.</span>
+                <span className="text-[11px] text-slate-500">
+                  Transcribe arrival time from the physical logbook.
+                </span>
               </div>
             </div>
           </div>
@@ -814,15 +877,16 @@ function EmergencyEventBackfillContent({
 
       {/* Tab 4: Incident Report */}
       {activeTab === "incident_report" ? (
-        <div className="flex-1 overflow-y-auto pr-1 py-4 space-y-4 custom-scrollbar">
-          <div className="rounded-xl bg-emerald-50/80 border border-emerald-200/90 p-3 text-xs text-emerald-950 flex items-start gap-2.5">
-            <AlertTriangle className="size-4 text-emerald-700 shrink-0 mt-0.5" />
+        <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto py-4 pr-1">
+          <div className="flex items-start gap-2.5 rounded-xl border border-emerald-200/90 bg-emerald-50/80 p-3 text-xs text-emerald-950">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-emerald-700" />
             <p className="leading-relaxed">
-              File retrospective damage, flooding, road blockages, and infrastructure hazard reports noted down on field logs.
+              File retrospective damage, flooding, road blockages, and infrastructure
+              hazard reports noted down on field logs.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             {/* Left: Hazard Classification */}
             <div className="flex flex-col gap-2">
               <label className="text-xs font-bold text-slate-800">
@@ -842,10 +906,10 @@ function EmergencyEventBackfillContent({
                     type="button"
                     onClick={() => setIncidentType(item.value as IncidentType)}
                     className={cn(
-                      "p-2.5 rounded-xl border text-xs font-bold text-left transition-all cursor-pointer",
+                      "cursor-pointer rounded-xl border p-2.5 text-left text-xs font-bold transition-all",
                       incidentType === item.value
-                        ? "bg-emerald-700 text-white border-emerald-800 shadow-xs"
-                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+                        ? "border-emerald-800 bg-emerald-700 text-white shadow-xs"
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
                     )}
                   >
                     {item.label}
@@ -858,25 +922,28 @@ function EmergencyEventBackfillContent({
             <div className="flex flex-col gap-3.5">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-slate-800">
-                  Incident Description & Field Notes <span className="text-rose-500">*</span>
+                  Incident Description & Field Notes{" "}
+                  <span className="text-rose-500">*</span>
                 </label>
                 <textarea
                   rows={3}
                   value={incidentDesc}
                   onChange={(e) => setIncidentDesc(e.target.value)}
                   placeholder="Describe the hazard, damages observed, or affected road segments..."
-                  className="w-full rounded-xl border border-slate-200 p-3 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs font-medium resize-none"
+                  className="w-full resize-none rounded-xl border border-slate-200 p-3 text-xs font-medium text-slate-900 shadow-2xs focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-slate-800">Specific Location / Landmark</label>
+                <label className="text-xs font-bold text-slate-800">
+                  Specific Location / Landmark
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. Kasiglahan Phase 1K, Block 12 near water tank"
                   value={incidentLocation}
                   onChange={(e) => setIncidentLocation(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-2xs font-medium"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-medium text-slate-900 shadow-2xs focus:border-emerald-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -885,12 +952,12 @@ function EmergencyEventBackfillContent({
       ) : null}
 
       {/* Footer */}
-      <DialogFooter className="shrink-0 pt-3 border-t border-slate-100 flex flex-col-reverse sm:flex-row gap-2 sm:gap-0 justify-between items-center">
+      <DialogFooter className="flex shrink-0 flex-col-reverse items-center justify-between gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:gap-0">
         <Button
           type="button"
           variant="outline"
           onClick={onClose}
-          className="rounded-xl border-slate-200 text-xs font-bold cursor-pointer"
+          className="cursor-pointer rounded-xl border-slate-200 text-xs font-bold"
         >
           Cancel
         </Button>
@@ -904,7 +971,7 @@ function EmergencyEventBackfillContent({
             else if (activeTab === "evac_center") submitEvacMutation.mutate();
             else if (activeTab === "incident_report") submitIncidentMutation.mutate();
           }}
-          className="rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md gap-1.5 cursor-pointer"
+          className="cursor-pointer gap-1.5 rounded-xl bg-emerald-700 text-xs font-bold text-white shadow-md hover:bg-emerald-800"
         >
           <Plus className="size-3.5" />
           <span>{isSubmitting ? "Backfilling Record…" : "Submit Backfilled Record"}</span>
@@ -927,7 +994,7 @@ export function EmergencyEventBackfillDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl lg:max-w-5xl w-full bg-white text-slate-900 border border-slate-200 rounded-3xl shadow-2xl p-6 sm:p-7 overflow-hidden max-h-[92vh] flex flex-col">
+      <DialogContent className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl sm:max-w-4xl sm:p-7 lg:max-w-5xl">
         {open ? (
           <EmergencyEventBackfillContent
             key={event.id}

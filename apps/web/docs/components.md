@@ -187,6 +187,11 @@ categorical filtering, sortable headings, pagination, empty/loading/error states
 stacked-card small-screen layout. A resource page supplies its columns and actions; it must not
 recreate those controls in a page.
 
+For a large directory, pass its controlled search value and `serverPagination` instead of loading
+the full registry into the browser. In that mode the API owns search and page boundaries, the footer
+uses the API total, and sortable headings are disabled unless the endpoint gains a matching sort
+contract. `/admin/households` and `/admin/citizens` are the reference consumers.
+
 Pages may supply `toolbarAction` for a contextual link or action. It stays in the shared search
 toolbar, aligned with the list controls rather than competing with the page header.
 
@@ -292,7 +297,8 @@ left column while the comparison charts form the right rail; the columns stack o
 ### Community registry workspace
 
 The registry uses two console routes, `/admin/households` and `/admin/citizens`, backed by the same
-area-scoped summary query. `RegistrySummaryRibbon` is a plain coverage surface rather than a
+area-scoped summary query. Their directories page and search on the server; the shared household
+picker only requests a short matching slice while it is open. `RegistrySummaryRibbon` is a plain coverage surface rather than a
 dashboard-only chart: every figure is derived from the active rows officers can access. Detail pages
 keep management beside the data, while `RegistryHouseholdForm` and `RegistryMemberForm` are shared
 with the resident head editor at `/portal/household/edit` so field validation and account-linked
@@ -332,8 +338,9 @@ operational history separate; do not place those three groups on one continuousl
 The registered-citizen route is the person-focused counterpart, not a second household dashboard.
 `CitizenRegistrySummary` uses one citizen-only area ring with direct labels, plus separate population
 and support-readiness cards. Its directory keeps household context visible but routes view actions to
-the citizen detail page. Counted filters combine areas, household role, support needs, incomplete
-profiles, and missing contact numbers in the shared table dropdown.
+the citizen detail page. The server-backed directory filter exposes areas, household heads, and
+priority support needs; other profile-readiness figures remain in the summary rather than filtering
+only the currently loaded page.
 
 Citizen detail persists `Overview`, `Household`, and `Safety & Activity` in the query string. The
 Household tab owns transfer, head assignment, and adult promotion; profile editing deliberately does
