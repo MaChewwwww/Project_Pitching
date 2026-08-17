@@ -25,9 +25,9 @@ export function RegistrationTermsDialog({
 }: RegistrationTermsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-primary-200 max-h-[min(86vh,44rem)] max-w-2xl gap-0 overflow-hidden bg-white p-0 shadow-2xl">
-        <div className="flex min-h-0 flex-col">
-          <DialogHeader className="border-primary-100 from-primary-50 shrink-0 border-b bg-gradient-to-br via-white to-emerald-50/70 px-5 py-5 pr-12 sm:px-7 sm:py-6">
+      <DialogContent className="border-primary-200 flex h-[min(86dvh,44rem)] max-h-[calc(100dvh-2rem)] max-w-2xl flex-col gap-0 overflow-hidden bg-white p-0 shadow-2xl">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <DialogHeader className="border-primary-100 from-primary-50 sticky top-0 z-10 shrink-0 border-b bg-gradient-to-br via-white to-emerald-50/70 px-5 py-5 pr-12 sm:px-7 sm:py-6">
             <div className="flex items-start gap-3">
               <span className="bg-primary-100 text-primary-700 border-primary-200 flex size-11 shrink-0 items-center justify-center rounded-2xl border">
                 <FileText aria-hidden className="size-5" strokeWidth={2.1} />
@@ -39,19 +39,15 @@ export function RegistrationTermsDialog({
                 <DialogDescription className="mt-1 text-xs leading-relaxed font-medium text-neutral-500">
                   Please review the terms for creating and using a resident account.
                 </DialogDescription>
-                <span className="text-primary-700 border-primary-200 mt-3 inline-flex items-center gap-1.5 rounded-full border bg-white px-2.5 py-1 text-[10px] font-bold tracking-[0.08em] uppercase">
-                  <ShieldCheck aria-hidden className="size-3.5" />
-                  Last updated August 10, 2026
-                </span>
               </div>
             </div>
           </DialogHeader>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7 sm:py-6">
+          <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7 sm:py-6">
             <div className="space-y-5 text-sm leading-relaxed text-neutral-600">
               <section className="border-primary-100 bg-primary-50/60 rounded-2xl border p-4 sm:p-5">
                 <h3 className="font-display text-primary-900 text-sm font-extrabold">
-                  Agreement to our legal terms
+                  Agreement To Our Legal Terms
                 </h3>
                 <p className="mt-2">
                   SAGIP-SJ is a disaster preparedness and emergency response platform for
@@ -62,7 +58,7 @@ export function RegistrationTermsDialog({
 
               <section>
                 <h3 className="font-display text-sm font-extrabold text-neutral-900">
-                  Using your account
+                  Using Your Account
                 </h3>
                 <ul className="marker:text-primary-500 mt-2 list-disc space-y-2 pl-5">
                   <li>Provide information that is accurate and belongs to you.</li>
@@ -83,7 +79,7 @@ export function RegistrationTermsDialog({
 
               <section>
                 <h3 className="font-display text-sm font-extrabold text-neutral-900">
-                  Household information and privacy
+                  Household Information And Privacy
                 </h3>
                 <p className="mt-2">
                   Registration begins your resident account. Household, member, location,
@@ -96,7 +92,7 @@ export function RegistrationTermsDialog({
 
               <section>
                 <h3 className="font-display text-sm font-extrabold text-neutral-900">
-                  Emergency information
+                  Emergency Information
                 </h3>
                 <p className="mt-2">
                   Portal notices, maps, and reports support official response work but do
@@ -108,7 +104,7 @@ export function RegistrationTermsDialog({
 
               <section className="border-t border-neutral-200 pt-5">
                 <h3 className="font-display text-sm font-extrabold text-neutral-900">
-                  Changes and ending access
+                  Changes And Ending Access
                 </h3>
                 <p className="mt-2">
                   These terms may be updated when the service or its legal requirements
@@ -125,7 +121,7 @@ export function RegistrationTermsDialog({
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-neutral-200 bg-white px-5 py-4 sm:flex-row sm:justify-end sm:px-7">
+          <div className="sticky bottom-0 z-10 flex shrink-0 flex-col-reverse gap-2 border-t border-neutral-200 bg-white px-5 py-4 sm:flex-row sm:justify-end sm:px-7">
             <Button
               type="button"
               variant="outline"
