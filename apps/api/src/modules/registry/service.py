@@ -454,6 +454,9 @@ def _has_duplicate_subquery(household_id_col, area_id_col, head_name_col):
             other.deleted_at.is_(None),
             other.merged_into_id.is_(None),
             other.area_id == area_id_col,
+            # `%` uses the documented GIN trigram index to discard clearly
+            # unrelated names before the stricter similarity test below.
+            other.head_name.op("%")(head_name_col),
             func.similarity(other.head_name, head_name_col) > DUPLICATE_NAME_SIMILARITY_THRESHOLD,
         )
         .correlate(Household)
