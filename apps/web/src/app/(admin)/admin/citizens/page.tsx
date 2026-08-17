@@ -234,12 +234,13 @@ export default function RegisteredCitizensPage() {
         }
       />
 
-      <CitizenRegistrySummary summary={summary.data} />
+      <CitizenRegistrySummary summary={summary.data} isLoading={summary.isFetching} />
 
       <ResourceTable
         columns={columns}
         data={list.data?.items}
-        isLoading={list.isLoading}
+        isLoading={list.isLoading || list.isFetching}
+        loadingLabel="Loading registered citizens"
         isError={list.isError}
         onRetry={() => list.refetch()}
         getRowKey={(row) => row.id}

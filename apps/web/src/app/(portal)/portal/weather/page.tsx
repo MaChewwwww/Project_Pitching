@@ -2,13 +2,10 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import {
-  CloudSun,
-  ExternalLink,
-  Phone,
-} from "lucide-react";
+import { CloudSun, ExternalLink, Phone } from "lucide-react";
 
 import { Button } from "@/components/common/button";
+import { DetailCardSkeleton } from "@/components/common/portal-loading";
 import { PortalPageHeader } from "@/components/features/portal/portal-page-header";
 import { WeatherPanel } from "@/components/features/weather/weather-panel";
 import { RiverLevelPanel } from "@/components/features/weather/river-level-panel";
@@ -43,7 +40,7 @@ export default function PortalWeatherPage() {
               asChild
               variant="outline"
               size="sm"
-              className="h-10 cursor-pointer gap-2 rounded-full border border-neutral-300/90 bg-white px-4 font-bold text-neutral-800 shadow-xs transition-all hover:bg-neutral-50 hover:border-neutral-400 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
+              className="h-10 cursor-pointer gap-2 rounded-full border border-neutral-300/90 bg-white px-4 font-bold text-neutral-800 shadow-xs transition-all hover:border-neutral-400 hover:bg-neutral-50 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
             >
               <Link href="/weather" target="_blank">
                 <ExternalLink aria-hidden className="size-3.5 text-neutral-600" />
@@ -55,10 +52,14 @@ export default function PortalWeatherPage() {
       />
 
       {/* ── Weather & River Gauge Grid ── */}
-      {weather.isLoading || river.isLoading ? (
-        <div className="grid animate-pulse gap-6 xl:grid-cols-[1.4fr_.6fr]">
-          <div className="h-96 rounded-3xl bg-slate-100" />
-          <div className="h-96 rounded-3xl bg-slate-100" />
+      {weather.isFetching || river.isFetching ? (
+        <div className="grid gap-6 xl:grid-cols-[1.4fr_.6fr]">
+          <DetailCardSkeleton
+            label="Loading weather forecast"
+            rows={6}
+            className="h-96"
+          />
+          <DetailCardSkeleton label="Loading river gauge" rows={6} className="h-96" />
         </div>
       ) : hasData ? (
         <div className="grid items-start gap-6 xl:grid-cols-[1.4fr_.6fr]">

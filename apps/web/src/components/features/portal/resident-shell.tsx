@@ -117,13 +117,13 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
   const initial = user?.full_name?.trim().charAt(0).toUpperCase() || "R";
 
   return (
-    <div className="min-h-screen bg-neutral-100 text-neutral-950 flex flex-col antialiased">
+    <div className="flex min-h-screen flex-col bg-neutral-100 text-neutral-950 antialiased">
       {/* ── Desktop Sidebar Navigation (≥lg) ── */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-emerald-950/20 bg-primary-950 text-white lg:flex">
+      <aside className="bg-primary-950 fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-emerald-950/20 text-white lg:flex">
         {/* Brand Lockup Header */}
         <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
           <Link href="/portal" className="group flex items-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-900/40 ring-4 ring-emerald-500/20 transition-transform group-hover:scale-105">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md ring-4 shadow-emerald-900/40 ring-emerald-500/20 transition-transform group-hover:scale-105">
               <Siren className="size-5" />
             </span>
             <div className="min-w-0">
@@ -138,7 +138,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Navigation Categories */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+        <div className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
           {NAV_GROUPS.map((group) => (
             <div key={group.title} className="space-y-1.5">
               <p className="px-3 text-[10px] font-bold tracking-[0.14em] text-emerald-400 uppercase">
@@ -155,11 +155,11 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
                       className={cn(
                         "group relative flex min-h-10 items-center justify-between gap-3 rounded-xl px-3 py-2 text-xs font-bold transition-all duration-150",
                         active
-                          ? "bg-white text-primary-950 shadow-sm"
+                          ? "text-primary-950 bg-white shadow-sm"
                           : "text-emerald-100/90 hover:bg-white/10 hover:text-white",
                       )}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex min-w-0 items-center gap-2.5">
                         <ItemIcon
                           className={cn(
                             "size-4 shrink-0 transition-colors",
@@ -177,7 +177,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
                             "flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black tabular-nums",
                             active
                               ? "bg-emerald-700 text-white"
-                              : "bg-red-500 text-white animate-pulse",
+                              : "animate-pulse bg-red-500 text-white",
                           )}
                         >
                           {unreadCount > 9 ? "9+" : unreadCount}
@@ -193,8 +193,8 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
           {/* Quick Emergency Rescue Action Box */}
           <div className="rounded-2xl border border-red-500/30 bg-gradient-to-br from-red-950/60 to-rose-950/40 p-3.5 shadow-xs">
             <div className="flex items-center gap-2 text-rose-300">
-              <LifeBuoy className="size-4 text-rose-400 animate-pulse" />
-              <span className="text-[11px] font-black uppercase tracking-wider">
+              <LifeBuoy className="size-4 animate-pulse text-rose-400" />
+              <span className="text-[11px] font-black tracking-wider uppercase">
                 Emergency Need?
               </span>
             </div>
@@ -204,7 +204,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
             <Button
               asChild
               size="sm"
-              className="mt-2.5 w-full rounded-xl bg-red-600 text-xs font-black text-white hover:bg-red-500 shadow-xs"
+              className="mt-2.5 w-full rounded-xl bg-red-600 text-xs font-black text-white shadow-xs hover:bg-red-500"
             >
               <Link href="/portal/rescue">
                 <LifeBuoy className="size-3.5" />
@@ -215,13 +215,13 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* User Account Footer */}
-        <div className="mt-auto border-t border-white/10 p-3 space-y-2 bg-primary-950/80">
-          <div className="flex items-center gap-2.5 rounded-xl bg-white/5 p-2 border border-white/10">
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-emerald-600 text-xs font-black text-white ring-2 ring-emerald-300/30 shadow-xs">
+        <div className="bg-primary-950/80 mt-auto space-y-2 border-t border-white/10 p-3">
+          <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 p-2">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-emerald-600 text-xs font-black text-white shadow-xs ring-2 ring-emerald-300/30">
               {initial}
             </span>
             <div className="min-w-0 flex-1">
-              <span className="block truncate text-xs font-bold text-white leading-tight">
+              <span className="block truncate text-xs leading-tight font-bold text-white">
                 {user?.full_name ?? "Resident Head"}
               </span>
               <span className="block truncate text-[10px] text-emerald-300/80">
@@ -235,7 +235,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
               href="/"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-semibold text-emerald-200 hover:bg-white/10 hover:text-white transition-colors"
+              className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-semibold text-emerald-200 transition-colors hover:bg-white/10 hover:text-white"
             >
               <ExternalLink className="size-3" />
               Public Site
@@ -243,7 +243,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => void logout()}
-              className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-semibold text-rose-300 hover:bg-rose-950/50 hover:text-rose-200 transition-colors"
+              className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-semibold text-rose-300 transition-colors hover:bg-rose-950/50 hover:text-rose-200"
             >
               <LogOut className="size-3" />
               Sign Out
@@ -255,16 +255,16 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
       {/* ── Main Content Area (Fluid width, maximizing widescreen layout) ── */}
       <div className="flex min-w-0 flex-1 flex-col pb-24 lg:pb-8 lg:pl-64">
         {/* ── Top Bar Header (Desktop & Mobile) ── */}
-        <header className="sticky top-0 z-20 flex h-14 sm:h-16 w-full items-center justify-between gap-4 border-b border-emerald-950/10 bg-[#f0f4f1]/90 px-4 sm:px-6 lg:px-8 xl:px-10 backdrop-blur-md">
+        <header className="sticky top-0 z-20 flex h-14 w-full items-center justify-between gap-4 border-b border-emerald-950/10 bg-[#f0f4f1]/90 px-4 backdrop-blur-md sm:h-16 sm:px-6 lg:px-8 xl:px-10">
           {/* Left: Mobile Brand or Dynamic Breadcrumbs on Desktop */}
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex min-w-0 items-center gap-3">
             {/* Mobile Logo Brand */}
             <Link href="/portal" className="flex items-center gap-2 lg:hidden">
               <span className="grid size-8 place-items-center rounded-xl bg-emerald-600 text-white shadow-xs">
                 <Siren className="size-4" />
               </span>
               <div className="flex flex-col">
-                <span className="text-xs font-black tracking-tight text-neutral-900 leading-none">
+                <span className="text-xs leading-none font-black tracking-tight text-neutral-900">
                   SAGIP-SJ
                 </span>
                 <span className="text-[9px] font-bold text-emerald-700 uppercase">
@@ -274,18 +274,18 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
             </Link>
 
             {/* Desktop Dynamic Breadcrumbs */}
-            <div className="hidden lg:flex min-w-0 items-center">
+            <div className="hidden min-w-0 items-center lg:flex">
               <PortalBreadcrumbs />
             </div>
           </div>
 
           {/* Right Action Affordances */}
-          <div className="ml-auto flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
             {/* Rescue Fast Link (Mobile only, desktop has dedicated sidebar action) */}
             <Button
               asChild
               size="sm"
-              className="rounded-xl border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-600 hover:text-white shadow-2xs transition-all text-xs h-9 px-3 lg:hidden"
+              className="h-9 rounded-xl border border-red-200 bg-red-50 px-3 text-xs font-bold text-red-700 shadow-2xs transition-all hover:bg-red-600 hover:text-white lg:hidden"
             >
               <Link href="/portal/rescue" className="flex items-center gap-1.5">
                 <LifeBuoy className="size-3.5 animate-pulse text-red-600 group-hover:text-white" />
@@ -297,7 +297,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
             <Link
               href="/portal/updates"
               aria-label="Updates & Notifications"
-              className="relative grid size-9 place-items-center rounded-xl border border-neutral-200/80 bg-white text-neutral-700 transition-colors hover:border-emerald-300 hover:bg-emerald-50/50 hover:text-emerald-900 shadow-2xs"
+              className="relative grid size-9 place-items-center rounded-xl border border-neutral-200/80 bg-white text-neutral-700 shadow-2xs transition-colors hover:border-emerald-300 hover:bg-emerald-50/50 hover:text-emerald-900"
             >
               <Bell className="size-4" />
               {unreadCount > 0 ? (
@@ -312,14 +312,14 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="group flex items-center gap-2.5 rounded-xl border border-neutral-200/90 bg-white px-2 py-1 text-left transition-colors hover:bg-neutral-50 hover:border-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 shadow-2xs"
+                  className="group flex items-center gap-2.5 rounded-xl border border-neutral-200/90 bg-white px-2 py-1 text-left shadow-2xs transition-colors hover:border-neutral-300 hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
                   aria-label="Open resident profile menu"
                 >
-                  <span className="grid size-8 shrink-0 place-items-center rounded-full bg-emerald-700 text-xs font-bold text-white ring-2 ring-emerald-100 shadow-2xs">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-full bg-emerald-700 text-xs font-bold text-white shadow-2xs ring-2 ring-emerald-100">
                     {initial}
                   </span>
-                  <div className="hidden sm:block min-w-0 pr-0.5">
-                    <span className="block max-w-40 truncate text-xs font-bold text-neutral-900 leading-tight">
+                  <div className="hidden min-w-0 pr-0.5 sm:block">
+                    <span className="block max-w-40 truncate text-xs leading-tight font-bold text-neutral-900">
                       {user?.full_name ?? "Resident Head"}
                     </span>
                     <span className="block text-[10px] font-bold tracking-wide text-emerald-700 uppercase">
@@ -347,19 +347,28 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild className="gap-2 rounded-xl text-xs font-semibold px-2.5 py-2">
+                <DropdownMenuItem
+                  asChild
+                  className="gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold"
+                >
                   <Link href="/portal/household">
                     <UsersRound className="size-4 text-emerald-700" />
                     Household Profile & Members
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild className="gap-2 rounded-xl text-xs font-semibold px-2.5 py-2">
+                <DropdownMenuItem
+                  asChild
+                  className="gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold"
+                >
                   <Link href="/portal/preparedness">
                     <Backpack className="size-4 text-emerald-700" />
                     Preparedness Hub
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild className="gap-2 rounded-xl text-xs font-semibold px-2.5 py-2">
+                <DropdownMenuItem
+                  asChild
+                  className="gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold"
+                >
                   <Link href="/" target="_blank" rel="noreferrer">
                     <ExternalLink className="size-4 text-neutral-500" />
                     View Public Site
@@ -368,7 +377,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   variant="destructive"
-                  className="gap-2 rounded-xl text-xs font-semibold px-2.5 py-2 cursor-pointer"
+                  className="cursor-pointer gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold"
                   onSelect={() => void logout()}
                 >
                   <LogOut className="size-4" />
@@ -384,28 +393,28 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
           <div
             role="alert"
             aria-live="assertive"
-            className="relative z-10 w-full overflow-hidden border-b border-red-900/40 bg-gradient-to-r from-red-950 via-rose-900 to-red-950 px-4 sm:px-6 lg:px-8 xl:px-10 py-3 text-white shadow-lg"
+            className="relative z-10 w-full overflow-hidden border-b border-red-900/40 bg-gradient-to-r from-red-950 via-rose-900 to-red-950 px-4 py-3 text-white shadow-lg sm:px-6 lg:px-8 xl:px-10"
           >
             {/* Ambient background glows */}
             <div
               aria-hidden
-              className="pointer-events-none absolute -right-12 -top-12 size-48 rounded-full bg-rose-500/20 blur-2xl"
+              className="pointer-events-none absolute -top-12 -right-12 size-48 rounded-full bg-rose-500/20 blur-2xl"
             />
             <div
               aria-hidden
-              className="pointer-events-none absolute -left-12 -bottom-12 size-48 rounded-full bg-red-600/20 blur-2xl"
+              className="pointer-events-none absolute -bottom-12 -left-12 size-48 rounded-full bg-red-600/20 blur-2xl"
             />
 
-            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               {/* Left Details */}
               <div className="flex min-w-0 items-center gap-3">
                 <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white text-red-600 shadow-md ring-4 ring-white/20">
-                  <Siren className="size-5 text-red-600 animate-pulse" />
+                  <Siren className="size-5 animate-pulse text-red-600" />
                 </span>
 
                 <div className="min-w-0 flex-1 space-y-0.5">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-300/40 bg-rose-500/30 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-rose-100 shadow-2xs backdrop-blur-xs">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-300/40 bg-rose-500/30 px-2.5 py-0.5 text-[10px] font-black tracking-wider text-rose-100 uppercase shadow-2xs backdrop-blur-xs">
                       <span className="relative flex size-2">
                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
                         <span className="relative inline-flex size-2 rounded-full bg-white" />
@@ -413,28 +422,29 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
                       <span>Active Emergency</span>
                     </span>
 
-                    <h2 className="text-sm sm:text-base font-extrabold tracking-tight text-white capitalize truncate">
+                    <h2 className="truncate text-sm font-extrabold tracking-tight text-white capitalize sm:text-base">
                       {activeEvents.length === 1
                         ? activeEvents[0].name
                         : `${activeEvents.length} Emergency Events Active`}
                     </h2>
 
-                    <span className="hidden xl:inline-block text-xs font-semibold text-rose-200/80">
+                    <span className="hidden text-xs font-semibold text-rose-200/80 xl:inline-block">
                       • Barangay San Jose Incident Operations
                     </span>
                   </div>
 
-                  <p className="text-xs text-rose-100/90 font-medium leading-tight line-clamp-1">
-                    Confirm your family&apos;s individual status so the BDRRMC knows who is safe and can prioritize rescue.
+                  <p className="line-clamp-1 text-xs leading-tight font-medium text-rose-100/90">
+                    Confirm your family&apos;s individual status so the BDRRMC knows who
+                    is safe and can prioritize rescue.
                   </p>
                 </div>
               </div>
 
               {/* Right CTA */}
-              <div className="flex items-center gap-2 shrink-0 max-sm:w-full">
+              <div className="flex shrink-0 items-center gap-2 max-sm:w-full">
                 <Link
                   href="/portal/safety"
-                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-black text-red-950 shadow-md transition-all duration-150 hover:bg-rose-50 hover:shadow-lg hover:scale-102 active:scale-98"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-black text-red-950 shadow-md transition-all duration-150 hover:scale-102 hover:bg-rose-50 hover:shadow-lg active:scale-98 sm:w-auto"
                 >
                   <ShieldCheck className="size-4 text-emerald-700" />
                   <span>Safety Check-in</span>
@@ -447,7 +457,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
         {/* ── Main Page Content (Fluid width, maximizing widescreen layout) ── */}
         <main
           key={pathname}
-          className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8 xl:p-10 space-y-6 sm:space-y-8 animate-portal-enter"
+          className="animate-portal-enter min-w-0 flex-1 space-y-6 p-4 sm:space-y-8 sm:p-6 lg:p-8 xl:p-10"
         >
           {children}
         </main>
@@ -455,7 +465,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Mobile Bottom Navigation Bar (<lg) ── */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 flex min-h-[68px] items-center justify-around border-t border-emerald-950/10 bg-[#f0f4f1]/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-md shadow-lg lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 flex min-h-[68px] items-center justify-around border-t border-emerald-950/10 bg-[#f0f4f1]/95 px-2 pb-[env(safe-area-inset-bottom)] shadow-lg backdrop-blur-md lg:hidden"
         aria-label="Resident Mobile Navigation"
       >
         {MOBILE_PRIMARY.map(({ href, label, icon: Icon, exact }) => {
@@ -467,11 +477,13 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
               className={cn(
                 "flex min-h-13 min-w-14 flex-col items-center justify-center gap-1 rounded-2xl px-2.5 py-1 text-[10.5px] font-bold transition-all",
                 active
-                  ? "text-emerald-800 bg-emerald-50/80 font-black shadow-2xs"
+                  ? "bg-emerald-50/80 font-black text-emerald-800 shadow-2xs"
                   : "text-neutral-500 hover:text-neutral-800",
               )}
             >
-              <Icon className={cn("size-5", active ? "text-emerald-700" : "text-neutral-500")} />
+              <Icon
+                className={cn("size-5", active ? "text-emerald-700" : "text-neutral-500")}
+              />
               <span>{label}</span>
             </Link>
           );
@@ -488,7 +500,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
           <div className="relative">
             <Menu className="size-5" />
             {unreadCount > 0 ? (
-              <span className="absolute -top-1 -right-1 size-2 rounded-full bg-red-500 animate-ping" />
+              <span className="absolute -top-1 -right-1 size-2 animate-ping rounded-full bg-red-500" />
             ) : null}
           </div>
           <span>More</span>
@@ -504,7 +516,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
           onClick={() => setMoreDrawerOpen(false)}
         >
           <div
-            className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-3xl border-t border-emerald-950/10 bg-white p-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl animate-in slide-in-from-bottom-5 duration-200"
+            className="animate-in slide-in-from-bottom-5 absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-3xl border-t border-emerald-950/10 bg-white p-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl duration-400"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between border-b border-neutral-100 pb-3">
@@ -570,7 +582,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
                     <span>Updates</span>
                   </div>
                   {unreadCount > 0 ? (
-                    <span className="rounded-full bg-red-500 px-1.5 py-0.2 text-[9px] font-black text-white">
+                    <span className="py-0.2 rounded-full bg-red-500 px-1.5 text-[9px] font-black text-white">
                       {unreadCount}
                     </span>
                   ) : null}
@@ -588,8 +600,8 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
               {/* Emergency Call Action */}
               <div className="rounded-2xl border border-red-500/30 bg-gradient-to-br from-red-50 to-rose-100/60 p-4">
                 <div className="flex items-center gap-2 text-red-800">
-                  <LifeBuoy className="size-4.5 text-red-600 animate-pulse" />
-                  <span className="text-xs font-black uppercase tracking-wider">
+                  <LifeBuoy className="size-4.5 animate-pulse text-red-600" />
+                  <span className="text-xs font-black tracking-wider uppercase">
                     Emergency Dispatch
                   </span>
                 </div>
@@ -598,7 +610,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
                 </p>
                 <Button
                   asChild
-                  className="mt-3 w-full rounded-xl bg-red-600 font-black text-white hover:bg-red-700 shadow-xs"
+                  className="mt-3 w-full rounded-xl bg-red-600 font-black text-white shadow-xs hover:bg-red-700"
                 >
                   <Link href="/portal/rescue" onClick={() => setMoreDrawerOpen(false)}>
                     Submit Rescue Request
@@ -626,7 +638,7 @@ export function ResidentShell({ children }: { children: React.ReactNode }) {
                   variant="outline"
                   size="sm"
                   onClick={() => void logout()}
-                  className="rounded-xl border-red-200 text-red-700 hover:bg-red-50 text-xs"
+                  className="rounded-xl border-red-200 text-xs text-red-700 hover:bg-red-50"
                 >
                   <LogOut className="size-3.5" />
                   Sign Out

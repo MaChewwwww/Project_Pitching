@@ -29,6 +29,10 @@ import {
 
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import {
+  DetailCardSkeleton,
+  MetricGridSkeleton,
+} from "@/components/common/portal-loading";
 import { PortalEvacuationStatusCard } from "@/components/features/portal/portal-evacuation-status-card";
 import {
   Dialog,
@@ -90,21 +94,21 @@ function formatStatusBadge(status: SafetyStatusValue) {
   switch (status) {
     case "safe":
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
           <CheckCircle2 className="size-2.5 text-emerald-700" />
           <span>Safe</span>
         </span>
       );
     case "needs_rescue":
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 border border-red-200 px-2 py-0.5 text-[10px] font-bold text-red-800 animate-pulse">
+        <span className="inline-flex animate-pulse items-center gap-1 rounded-full border border-red-200 bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-800">
           <AlertTriangle className="size-2.5 text-red-600" />
           <span>Needs Rescue</span>
         </span>
       );
     default:
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 border border-neutral-200 px-2 py-0.5 text-[10px] font-medium text-neutral-600">
+        <span className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-100 px-2 py-0.5 text-[10px] font-medium text-neutral-600">
           <span>Unaccounted</span>
         </span>
       );
@@ -152,13 +156,12 @@ export default function PortalSafetyPage() {
 
   const householdQuery = useQuery({
     queryKey: ["me", "household"],
-    queryFn: () =>
-      api.get<HouseholdDetailOut>("/me/household").then((r) => r.data),
+    queryFn: () => api.get<HouseholdDetailOut>("/me/household").then((r) => r.data),
   });
 
   const resolvedEventId = selectedEventId || activeEventsQuery.data?.[0]?.id || "";
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["me", "safety", resolvedEventId],
     queryFn: () =>
       api
@@ -226,7 +229,10 @@ export default function PortalSafetyPage() {
     if (chronic > 0) counts.push(`${chronic} Chronic Care`);
 
     if (counts.length === 0) return "Standard evacuation protocol";
-    return counts.slice(0, 2).join(" · ") + (counts.length > 2 ? ` +${counts.length - 2} more` : "");
+    return (
+      counts.slice(0, 2).join(" · ") +
+      (counts.length > 2 ? ` +${counts.length - 2} more` : "")
+    );
   }, [householdMembers]);
 
   const memberDetailsMap = React.useMemo(() => {
@@ -337,8 +343,7 @@ export default function PortalSafetyPage() {
       scope: "household",
       acknowledged_member_ids: members.map((m) => m.member_id),
       event_id: bulkEventId || resolvedEventId,
-      evac_center_id:
-        bulkCenterId === "none" || !bulkCenterId ? null : bulkCenterId,
+      evac_center_id: bulkCenterId === "none" || !bulkCenterId ? null : bulkCenterId,
     });
     setBulkDialogOpen(false);
   };
@@ -346,18 +351,25 @@ export default function PortalSafetyPage() {
   return (
     <div className="w-full">
       {/* ── Conditional Main Workspace States ── */}
-      {isLoading || activeEventsQuery.isLoading ? (
-        <div className="space-y-6 animate-pulse">
-          <div className="h-40 rounded-3xl bg-emerald-900/20" />
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div className="h-24 rounded-2xl bg-slate-100" />
-            <div className="h-24 rounded-2xl bg-slate-100" />
-            <div className="h-24 rounded-2xl bg-slate-100" />
-            <div className="h-24 rounded-2xl bg-slate-100" />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-7 h-80 rounded-3xl bg-slate-100" />
-            <div className="lg:col-span-5 h-80 rounded-3xl bg-slate-100" />
+      {isLoading ||
+      isFetching ||
+      activeEventsQuery.isFetching ||
+      centersQuery.isFetching ||
+      householdQuery.isFetching ? (
+        <div className="space-y-6">
+          <DetailCardSkeleton label="Loading safety check-in" rows={3} />
+          <MetricGridSkeleton label="Loading household safety status" />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <DetailCardSkeleton
+              label="Loading household safety ledger"
+              rows={6}
+              className="min-h-80 lg:col-span-7"
+            />
+            <DetailCardSkeleton
+              label="Loading evacuation choices"
+              rows={6}
+              className="min-h-80 lg:col-span-5"
+            />
           </div>
         </div>
       ) : isError || activeEventsQuery.isError ? (
@@ -367,16 +379,16 @@ export default function PortalSafetyPage() {
             <h3 className="text-base font-bold text-red-950">
               Could not load safety check-in status
             </h3>
-            <p className="text-xs text-red-700 max-w-md">
-              Check your network connection or try again. In an immediate emergency, contact the
-              barangay operations desk directly.
+            <p className="max-w-md text-xs text-red-700">
+              Check your network connection or try again. In an immediate emergency,
+              contact the barangay operations desk directly.
             </p>
             <Button
               size="sm"
               onClick={() => {
                 void Promise.all([refetch(), activeEventsQuery.refetch()]);
               }}
-              className="rounded-full font-bold bg-red-600 hover:bg-red-700 text-white px-5"
+              className="rounded-full bg-red-600 px-5 font-bold text-white hover:bg-red-700"
             >
               Try Again
             </Button>
@@ -384,22 +396,27 @@ export default function PortalSafetyPage() {
         </Card>
       ) : !data?.event ? (
         /* No Active Emergency Declaration State */
-        <div className="flex flex-col items-center justify-center rounded-3xl border border-neutral-200/90 bg-white p-8 sm:p-12 text-center shadow-xs space-y-4">
+        <div className="flex flex-col items-center justify-center space-y-4 rounded-3xl border border-neutral-200/90 bg-white p-8 text-center shadow-xs sm:p-12">
           <div className="grid size-16 place-items-center rounded-3xl bg-emerald-100 text-emerald-700 shadow-sm ring-8 ring-emerald-50">
             <ShieldCheck className="size-8 text-emerald-600" />
           </div>
-          <div className="space-y-1 max-w-md">
+          <div className="max-w-md space-y-1">
             <h3 className="text-lg font-black text-neutral-900">
               No Active Emergency Declaration
             </h3>
-            <p className="text-xs text-neutral-500 leading-relaxed">
-              Barangay San Jose has no active disaster response event underway. Safety check-in
-              controls and automated rescue queues activate immediately when a local disaster is
-              declared by the BDRRMC.
+            <p className="text-xs leading-relaxed text-neutral-500">
+              Barangay San Jose has no active disaster response event underway. Safety
+              check-in controls and automated rescue queues activate immediately when a
+              local disaster is declared by the BDRRMC.
             </p>
           </div>
-          <div className="pt-2 flex flex-wrap gap-2.5 justify-center">
-            <Button asChild variant="outline" size="sm" className="rounded-full font-bold">
+          <div className="flex flex-wrap justify-center gap-2.5 pt-2">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="rounded-full font-bold"
+            >
               <Link href="/portal">Back to Dashboard</Link>
             </Button>
             <Button
@@ -415,27 +432,27 @@ export default function PortalSafetyPage() {
         /* ── Unified Single Emergency Container Card ── */
         <div className="overflow-hidden rounded-3xl border border-neutral-200/90 bg-white shadow-xs">
           {/* ── 1. Hero Incident Header of Container ── */}
-          <div className="relative overflow-hidden bg-gradient-to-r from-[#032e23] via-[#054333] to-[#085a44] p-6 sm:p-7 text-white border-b border-emerald-950/20">
+          <div className="relative overflow-hidden border-b border-emerald-950/20 bg-gradient-to-r from-[#032e23] via-[#054333] to-[#085a44] p-6 text-white sm:p-7">
             {/* Ambient Background Light Orbs */}
             <div
               aria-hidden
-              className="pointer-events-none absolute -right-20 -top-20 size-80 rounded-full bg-emerald-400/10 blur-3xl"
+              className="pointer-events-none absolute -top-20 -right-20 size-80 rounded-full bg-emerald-400/10 blur-3xl"
             />
             <div
               aria-hidden
-              className="pointer-events-none absolute -left-20 -bottom-20 size-80 rounded-full bg-teal-300/10 blur-3xl"
+              className="pointer-events-none absolute -bottom-20 -left-20 size-80 rounded-full bg-teal-300/10 blur-3xl"
             />
 
             <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               {/* Left: Hazard Icon + Title + Timestamps */}
-              <div className="flex items-start sm:items-center gap-4 sm:gap-5">
+              <div className="flex items-start gap-4 sm:items-center sm:gap-5">
                 <div className="grid size-14 shrink-0 place-items-center rounded-2xl bg-white text-emerald-950 shadow-lg ring-4 ring-white/10">
                   {getHazardIcon(data.event.type)}
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-600 text-white px-3 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm border border-rose-400/40">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-400/40 bg-rose-600 px-3 py-0.5 text-[10px] font-black tracking-wider text-white uppercase shadow-sm">
                       <span className="relative flex size-2 shrink-0">
                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
                         <span className="relative inline-flex size-2 rounded-full bg-white" />
@@ -443,17 +460,17 @@ export default function PortalSafetyPage() {
                       LIVE OPERATION
                     </span>
 
-                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border border-white/20 bg-white/10 text-white">
+                    <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider text-white uppercase">
                       {data.event.type}
                     </span>
 
-                    <div className="flex items-center gap-1 text-xs text-emerald-100 font-bold ml-1">
-                      <Clock className="size-3.5 text-emerald-300 shrink-0" />
+                    <div className="ml-1 flex items-center gap-1 text-xs font-bold text-emerald-100">
+                      <Clock className="size-3.5 shrink-0 text-emerald-300" />
                       <span>Duration: {formatDuration(data.event.started_at, null)}</span>
                     </div>
                   </div>
 
-                  <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                  <h1 className="text-xl font-black tracking-tight text-white sm:text-2xl">
                     {data.event.name}
                   </h1>
 
@@ -471,17 +488,17 @@ export default function PortalSafetyPage() {
               </div>
 
               {/* Right: Multi-Incident Selector (if > 1) & Ask for Rescue Action */}
-              <div className="flex flex-wrap items-center gap-3 self-start lg:self-center shrink-0">
+              <div className="flex shrink-0 flex-wrap items-center gap-3 self-start lg:self-center">
                 {activeEvents.length > 1 ? (
                   <div className="flex flex-col gap-1 sm:min-w-56">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-200">
+                    <span className="text-[10px] font-black tracking-wider text-emerald-200 uppercase">
                       Switch Incident Context
                     </span>
                     <Select
                       value={resolvedEventId}
                       onValueChange={(val) => setSelectedEventId(val)}
                     >
-                      <SelectTrigger className="h-10 rounded-xl border-white/20 bg-white/10 text-white text-xs font-bold shadow-sm backdrop-blur-md hover:bg-white/20 focus-visible:ring-emerald-400">
+                      <SelectTrigger className="h-10 rounded-xl border-white/20 bg-white/10 text-xs font-bold text-white shadow-sm backdrop-blur-md hover:bg-white/20 focus-visible:ring-emerald-400">
                         <SelectValue placeholder="Select Incident" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-neutral-200 bg-white shadow-xl">
@@ -510,22 +527,22 @@ export default function PortalSafetyPage() {
           </div>
 
           {/* ── 2. Padded Body of Unified Container ── */}
-          <div className="p-5 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 bg-[#fafbfa]/60">
+          <div className="space-y-6 bg-[#fafbfa]/60 p-5 sm:space-y-8 sm:p-6 lg:p-8">
             {/* Real-Time Household Safety Metric Cards (4-Col Grid) */}
             <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
               {/* Metric 1: Overall Safety Status */}
               <div
                 className={cn(
-                  "flex flex-col justify-between rounded-2xl border p-4 shadow-2xs transition-all bg-white",
+                  "flex flex-col justify-between rounded-2xl border bg-white p-4 shadow-2xs transition-all",
                   rescueCount > 0
                     ? "border-red-300 bg-red-50/60"
                     : unaccountedCount > 0
-                    ? "border-amber-300 bg-amber-50/60"
-                    : "border-emerald-300 bg-emerald-50/60",
+                      ? "border-amber-300 bg-amber-50/60"
+                      : "border-emerald-300 bg-emerald-50/60",
                 )}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black tracking-wider uppercase text-neutral-500">
+                  <span className="text-[10px] font-black tracking-wider text-neutral-500 uppercase">
                     Household Status
                   </span>
                   {rescueCount > 0 ? (
@@ -538,21 +555,21 @@ export default function PortalSafetyPage() {
                 </div>
                 <p
                   className={cn(
-                    "mt-2 text-base sm:text-lg font-black",
+                    "mt-2 text-base font-black sm:text-lg",
                     rescueCount > 0
                       ? "text-red-950"
                       : unaccountedCount > 0
-                      ? "text-amber-950"
-                      : "text-emerald-950",
+                        ? "text-amber-950"
+                        : "text-emerald-950",
                   )}
                 >
                   {rescueCount > 0
                     ? "Rescue Needed"
                     : unaccountedCount > 0
-                    ? "Pending Check-In"
-                    : "All Accounted Safe"}
+                      ? "Pending Check-In"
+                      : "All Accounted Safe"}
                 </p>
-                <span className="text-[11px] text-neutral-500 mt-0.5">
+                <span className="mt-0.5 text-[11px] text-neutral-500">
                   {safeCount} of {members.length} member(s) confirmed safe
                 </span>
               </div>
@@ -560,14 +577,14 @@ export default function PortalSafetyPage() {
               {/* Metric 2: Combined Safety Check-In Progress & Rescue Ratio */}
               <div className="flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-2xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black tracking-wider uppercase text-neutral-500">
+                  <span className="text-[10px] font-black tracking-wider text-neutral-500 uppercase">
                     Safety Check-In
                   </span>
                   <span
                     className={cn(
                       "grid size-6 place-items-center rounded-lg text-xs font-black",
                       rescueCount > 0
-                        ? "bg-red-600 text-white animate-pulse"
+                        ? "animate-pulse bg-red-600 text-white"
                         : "bg-emerald-100 text-emerald-800",
                     )}
                   >
@@ -575,12 +592,12 @@ export default function PortalSafetyPage() {
                   </span>
                 </div>
                 <div className="mt-2">
-                  <p className="text-xl sm:text-2xl font-black text-neutral-900 tabular-nums">
+                  <p className="text-xl font-black text-neutral-900 tabular-nums sm:text-2xl">
                     {Math.round((safeCount / Math.max(1, members.length)) * 100)}%{" "}
                     <span className="text-xs font-semibold text-neutral-500">Safe</span>
                   </p>
                   {/* Combined Progress Bar: Green for Safe, Red for Rescue */}
-                  <div className="mt-1.5 flex h-1.5 w-full rounded-full bg-neutral-100 overflow-hidden">
+                  <div className="mt-1.5 flex h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
                     <div
                       className="h-full bg-emerald-600 transition-all duration-500"
                       style={{
@@ -595,9 +612,11 @@ export default function PortalSafetyPage() {
                     />
                   </div>
                 </div>
-                <span className="text-[11px] text-neutral-500 mt-0.5 truncate">
+                <span className="mt-0.5 truncate text-[11px] text-neutral-500">
                   {rescueCount > 0 ? (
-                    <span className="text-red-700 font-bold">{rescueCount} member(s) need rescue</span>
+                    <span className="font-bold text-red-700">
+                      {rescueCount} member(s) need rescue
+                    </span>
                   ) : unaccountedCount > 0 ? (
                     `${unaccountedCount} member(s) pending check-in`
                   ) : (
@@ -609,7 +628,7 @@ export default function PortalSafetyPage() {
               {/* Metric 3: Special Care Needs & Vulnerabilities */}
               <div className="flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-2xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black tracking-wider uppercase text-neutral-500">
+                  <span className="text-[10px] font-black tracking-wider text-neutral-500 uppercase">
                     Special Care Needs
                   </span>
                   <span
@@ -623,17 +642,21 @@ export default function PortalSafetyPage() {
                     {specialCareMembers.length}
                   </span>
                 </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-neutral-900 tabular-nums">
+                <p className="mt-2 text-xl font-black text-neutral-900 tabular-nums sm:text-2xl">
                   {specialCareMembers.length > 0 ? (
                     <>
                       {specialCareMembers.length}{" "}
-                      <span className="text-xs font-semibold text-neutral-500">priority member(s)</span>
+                      <span className="text-xs font-semibold text-neutral-500">
+                        priority member(s)
+                      </span>
                     </>
                   ) : (
-                    <span className="text-base sm:text-lg text-neutral-900">Standard</span>
+                    <span className="text-base text-neutral-900 sm:text-lg">
+                      Standard
+                    </span>
                   )}
                 </p>
-                <span className="text-[11px] text-neutral-500 mt-0.5 truncate">
+                <span className="mt-0.5 truncate text-[11px] text-neutral-500">
                   {specialCareSummary}
                 </span>
               </div>
@@ -641,41 +664,41 @@ export default function PortalSafetyPage() {
               {/* Metric 4: Household Flood Risk Category */}
               <div
                 className={cn(
-                  "flex flex-col justify-between rounded-2xl border p-4 shadow-2xs transition-all bg-white",
+                  "flex flex-col justify-between rounded-2xl border bg-white p-4 shadow-2xs transition-all",
                   floodRiskInfo.tone,
                 )}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black tracking-wider uppercase text-neutral-500">
+                  <span className="text-[10px] font-black tracking-wider text-neutral-500 uppercase">
                     Household Flood Risk
                   </span>
                   <Waves className={cn("size-4", floodRiskInfo.iconColor)} />
                 </div>
                 <div className="mt-2">
-                  <p className="text-base sm:text-lg font-black text-neutral-900 truncate">
+                  <p className="truncate text-base font-black text-neutral-900 sm:text-lg">
                     {floodRiskInfo.level}
                   </p>
                   <span
                     className={cn(
-                      "inline-flex items-center rounded-md border px-1.5 py-0.2 text-[9.5px] font-bold mt-1",
+                      "py-0.2 mt-1 inline-flex items-center rounded-md border px-1.5 text-[9.5px] font-bold",
                       floodRiskInfo.badge,
                     )}
                   >
                     {floodRiskInfo.distance}
                   </span>
                 </div>
-                <span className="text-[11px] text-neutral-500 mt-0.5 truncate">
+                <span className="mt-0.5 truncate text-[11px] text-neutral-500">
                   {userAreaName || "Barangay San Jose"} · UP NOAH Model
                 </span>
               </div>
             </div>
 
             {/* ── 3. Two-Column Operational Workspace (12-Col Grid) ── */}
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-start">
+            <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
               {/* ── LEFT COLUMN: Family Members Status Control (7 Cols) ── */}
-              <div className="xl:col-span-7 space-y-6 sm:space-y-8">
-                <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
-                  <CardContent className="p-5 sm:p-6 lg:p-7 space-y-6">
+              <div className="space-y-6 sm:space-y-8 xl:col-span-7">
+                <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+                  <CardContent className="space-y-6 p-5 sm:p-6 lg:p-7">
                     {/* Card Header with Batch Action */}
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 pb-4">
                       <div className="flex items-center gap-2.5">
@@ -687,13 +710,16 @@ export default function PortalSafetyPage() {
                             Family Members Status Control
                           </h2>
                           <p className="text-xs text-neutral-500">
-                            Tap &quot;Safe&quot; or &quot;Needs Rescue&quot; for each family member.
+                            Tap &quot;Safe&quot; or &quot;Needs Rescue&quot; for each
+                            family member.
                           </p>
                         </div>
                       </div>
 
-                      {unaccountedCount === 0 && rescueCount === 0 && members.length > 0 ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-200 px-3.5 py-1 text-xs font-bold text-emerald-800 shadow-2xs">
+                      {unaccountedCount === 0 &&
+                      rescueCount === 0 &&
+                      members.length > 0 ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-100 px-3.5 py-1 text-xs font-bold text-emerald-800 shadow-2xs">
                           <CheckCircle2 className="size-3.5 text-emerald-700" />
                           <span>All Members Safe</span>
                         </span>
@@ -777,24 +803,24 @@ export default function PortalSafetyPage() {
                           <div
                             key={member.member_id}
                             className={cn(
-                              "flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border p-4 sm:p-5 transition-all shadow-2xs bg-white",
+                              "flex flex-col justify-between gap-4 rounded-2xl border bg-white p-4 shadow-2xs transition-all sm:flex-row sm:items-center sm:p-5",
                               needsRescue
                                 ? "border-red-300 bg-red-50/40"
                                 : isSafe
-                                ? "border-emerald-200 bg-emerald-50/30"
-                                : "border-neutral-200/90 hover:border-neutral-300",
+                                  ? "border-emerald-200 bg-emerald-50/30"
+                                  : "border-neutral-200/90 hover:border-neutral-300",
                             )}
                           >
                             {/* Member Info & Special Needs Badges */}
-                            <div className="flex items-start sm:items-center gap-3 min-w-0">
+                            <div className="flex min-w-0 items-start gap-3 sm:items-center">
                               <span
                                 className={cn(
                                   "grid size-10 shrink-0 place-items-center rounded-xl text-xs font-bold text-white shadow-2xs",
                                   needsRescue
                                     ? "bg-red-600"
                                     : isSafe
-                                    ? "bg-emerald-700"
-                                    : "bg-neutral-600",
+                                      ? "bg-emerald-700"
+                                      : "bg-neutral-600",
                                 )}
                               >
                                 {member.full_name?.trim().charAt(0).toUpperCase() || "M"}
@@ -802,11 +828,11 @@ export default function PortalSafetyPage() {
 
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-bold text-neutral-900 truncate">
+                                  <span className="truncate text-sm font-bold text-neutral-900">
                                     {member.full_name}
                                   </span>
                                   {member.is_head ? (
-                                    <span className="rounded-full bg-emerald-100 border border-emerald-200/80 px-2 py-0.2 text-[9.5px] font-black text-emerald-800 uppercase">
+                                    <span className="py-0.2 rounded-full border border-emerald-200/80 bg-emerald-100 px-2 text-[9.5px] font-black text-emerald-800 uppercase">
                                       Head
                                     </span>
                                   ) : null}
@@ -818,7 +844,7 @@ export default function PortalSafetyPage() {
                                       <span
                                         key={badge.label}
                                         className={cn(
-                                          "inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                                          "inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase",
                                           badge.bg,
                                           badge.text,
                                           badge.border,
@@ -833,9 +859,9 @@ export default function PortalSafetyPage() {
                             </div>
 
                             {/* Action Area: Hide buttons when safe, or allow marking safe if in rescue, or show both if unaccounted */}
-                            <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                            <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
                               {isSafe ? (
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100/90 border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-900 shadow-2xs">
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-100/90 px-3 py-1.5 text-xs font-bold text-emerald-900 shadow-2xs">
                                   <CheckCircle2 className="size-3.5 text-emerald-700" />
                                   <span>Accounted Safe</span>
                                 </span>
@@ -909,13 +935,13 @@ export default function PortalSafetyPage() {
               </div>
 
               {/* ── RIGHT COLUMN: Shelter Logistics & Live Facilities Overview (5 Cols) ── */}
-              <div className="xl:col-span-5 space-y-6 sm:space-y-8">
+              <div className="space-y-6 sm:space-y-8 xl:col-span-5">
                 {/* Active Stay & Evacuation History Component */}
                 <PortalEvacuationStatusCard />
 
                 {/* Evacuation Centers Real-Time Directory Card (Max 3 items, Prioritizing Household Area, Expandable) */}
-                <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
-                  <CardContent className="p-5 sm:p-6 space-y-4">
+                <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+                  <CardContent className="space-y-4 p-5 sm:p-6">
                     <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
                       <div className="flex items-center gap-2.5">
                         <span className="grid size-8 place-items-center rounded-xl bg-sky-100 text-sky-700 shadow-2xs">
@@ -932,7 +958,7 @@ export default function PortalSafetyPage() {
                       </div>
 
                       {userAreaName ? (
-                        <span className="rounded-full bg-emerald-100 border border-emerald-200 px-2 py-0.5 text-[10px] font-black text-emerald-800 uppercase">
+                        <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-800 uppercase">
                           {userAreaName}
                         </span>
                       ) : null}
@@ -942,7 +968,10 @@ export default function PortalSafetyPage() {
                       {visibleCenters.length > 0 ? (
                         visibleCenters.map((center) => {
                           const pct = center.capacity
-                            ? Math.min(100, Math.round((center.occupancy / center.capacity) * 100))
+                            ? Math.min(
+                                100,
+                                Math.round((center.occupancy / center.capacity) * 100),
+                              )
                             : 0;
 
                           const isSameArea =
@@ -950,52 +979,61 @@ export default function PortalSafetyPage() {
                             (userAreaName && center.facility.area_name === userAreaName);
 
                           return (
-                            <div key={center.id} className="pt-3 first:pt-0 space-y-1.5">
+                            <div key={center.id} className="space-y-1.5 pt-3 first:pt-0">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-1.5">
-                                    <p className="text-xs font-bold text-neutral-900 truncate">
+                                    <p className="truncate text-xs font-bold text-neutral-900">
                                       {center.facility.name}
                                     </p>
                                     {isSameArea ? (
-                                      <span className="shrink-0 rounded-full bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.2 text-[9px] font-extrabold text-emerald-800">
+                                      <span className="py-0.2 shrink-0 rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 text-[9px] font-extrabold text-emerald-800">
                                         Your Area
                                       </span>
                                     ) : null}
                                   </div>
-                                  <p className="text-[10.5px] text-neutral-500 flex items-center gap-1">
+                                  <p className="flex items-center gap-1 text-[10.5px] text-neutral-500">
                                     <MapPin className="size-3 text-neutral-400" />
-                                    <span>{center.facility.area_name || "Barangay San Jose"}</span>
+                                    <span>
+                                      {center.facility.area_name || "Barangay San Jose"}
+                                    </span>
                                   </p>
                                 </div>
                                 <span
                                   className={cn(
-                                    "shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wide",
+                                    "shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-black tracking-wide uppercase",
                                     center.is_at_capacity
-                                      ? "bg-red-100 text-red-800 border border-red-200"
+                                      ? "border border-red-200 bg-red-100 text-red-800"
                                       : pct >= 80
-                                      ? "bg-amber-100 text-amber-800 border border-amber-200"
-                                      : "bg-emerald-100 text-emerald-800 border border-emerald-200",
+                                        ? "border border-amber-200 bg-amber-100 text-amber-800"
+                                        : "border border-emerald-200 bg-emerald-100 text-emerald-800",
                                   )}
                                 >
-                                  {center.is_at_capacity ? "Full" : pct >= 80 ? "Near Full" : "Open"}
+                                  {center.is_at_capacity
+                                    ? "Full"
+                                    : pct >= 80
+                                      ? "Near Full"
+                                      : "Open"}
                                 </span>
                               </div>
 
                               <div className="space-y-0.5">
-                                <div className="flex items-center justify-between text-[10px] text-neutral-500 font-medium">
-                                  <span>Occupancy: {center.occupancy} / {center.capacity ?? "∞"}</span>
+                                <div className="flex items-center justify-between text-[10px] font-medium text-neutral-500">
+                                  <span>
+                                    Occupancy: {center.occupancy} /{" "}
+                                    {center.capacity ?? "∞"}
+                                  </span>
                                   <span>{pct}%</span>
                                 </div>
-                                <div className="h-1.5 w-full rounded-full bg-neutral-100 overflow-hidden">
+                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
                                   <div
                                     className={cn(
                                       "h-full rounded-full transition-all duration-300",
                                       center.is_at_capacity
                                         ? "bg-red-600"
                                         : pct >= 80
-                                        ? "bg-amber-500"
-                                        : "bg-emerald-600",
+                                          ? "bg-amber-500"
+                                          : "bg-emerald-600",
                                     )}
                                     style={{ width: `${pct}%` }}
                                   />
@@ -1005,17 +1043,19 @@ export default function PortalSafetyPage() {
                           );
                         })
                       ) : (
-                        <p className="text-xs text-neutral-400 py-2">No evacuation centers registered.</p>
+                        <p className="py-2 text-xs text-neutral-400">
+                          No evacuation centers registered.
+                        </p>
                       )}
                     </div>
 
                     {/* Expand / Collapse Button if > 3 centers */}
                     {sortedCenters.length > 3 ? (
-                      <div className="pt-2 border-t border-neutral-100">
+                      <div className="border-t border-neutral-100 pt-2">
                         <button
                           type="button"
                           onClick={() => setShowAllCenters(!showAllCenters)}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-xl py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-50 transition-colors cursor-pointer"
+                          className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl py-1.5 text-xs font-bold text-emerald-800 transition-colors hover:bg-emerald-50"
                         >
                           {showAllCenters ? (
                             <>
@@ -1026,7 +1066,8 @@ export default function PortalSafetyPage() {
                             <>
                               <ChevronDown className="size-3.5" />
                               <span>
-                                View All {sortedCenters.length} Shelters ({sortedCenters.length - 3} more)
+                                View All {sortedCenters.length} Shelters (
+                                {sortedCenters.length - 3} more)
                               </span>
                             </>
                           )}
@@ -1037,22 +1078,22 @@ export default function PortalSafetyPage() {
                 </Card>
 
                 {/* 24/7 BDRRMC Emergency Operations Hotlines */}
-                <Card className="border-red-200 bg-gradient-to-br from-red-50/80 to-rose-50/40 shadow-xs overflow-hidden">
-                  <CardContent className="p-5 space-y-3.5">
-                    <div className="flex items-center gap-2.5 text-red-950 font-bold border-b border-red-100 pb-2.5">
+                <Card className="overflow-hidden border-red-200 bg-gradient-to-br from-red-50/80 to-rose-50/40 shadow-xs">
+                  <CardContent className="space-y-3.5 p-5">
+                    <div className="flex items-center gap-2.5 border-b border-red-100 pb-2.5 font-bold text-red-950">
                       <Phone className="size-4 text-red-600" />
-                      <span className="text-xs uppercase tracking-wider text-red-900 font-black">
+                      <span className="text-xs font-black tracking-wider text-red-900 uppercase">
                         24/7 San Jose Emergency Dispatch
                       </span>
                     </div>
 
                     <div className="space-y-2 text-xs text-neutral-700">
                       <p className="leading-relaxed">
-                        For life-threatening rescue, severe medical emergencies, or structural collapse,
-                        reach the command center directly:
+                        For life-threatening rescue, severe medical emergencies, or
+                        structural collapse, reach the command center directly:
                       </p>
-                      <div className="rounded-xl border border-red-200 bg-white p-3 space-y-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-red-700">
+                      <div className="space-y-1 rounded-xl border border-red-200 bg-white p-3">
+                        <span className="text-[10px] font-bold tracking-wider text-red-700 uppercase">
                           Disaster Operations Desk
                         </span>
                         <p className="font-mono text-sm font-black text-neutral-900">
@@ -1061,7 +1102,7 @@ export default function PortalSafetyPage() {
                       </div>
                     </div>
 
-                    <div className="pt-2 flex items-center justify-between border-t border-red-100">
+                    <div className="flex items-center justify-between border-t border-red-100 pt-2">
                       <Button
                         asChild
                         size="sm"
@@ -1123,41 +1164,47 @@ export default function PortalSafetyPage() {
             </div>
           </DialogHeader>
 
-          <div className="p-6 space-y-4 text-xs text-neutral-600">
+          <div className="space-y-4 p-6 text-xs text-neutral-600">
             {/* Rescue Warning Banner (Only on Needs Rescue) */}
             {memberActionDialog?.status === "needs_rescue" ? (
               <div className="flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50/80 p-3.5 text-xs text-rose-900 shadow-2xs">
-                <AlertTriangle className="size-4 text-rose-600 shrink-0 mt-0.5" />
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-rose-600" />
                 <div>
                   <p className="font-bold">Emergency Rescue Flag</p>
-                  <p className="text-[11px] text-rose-800 mt-0.5 leading-relaxed">
-                    This will flag the subject(s) in need of urgent assistance and dispatch an entry
-                    to the Rescue Queue for field responders.
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-rose-800">
+                    This will flag the subject(s) in need of urgent assistance and
+                    dispatch an entry to the Rescue Queue for field responders.
                   </p>
                 </div>
               </div>
             ) : null}
 
             {/* Target Subject Card with Current Status (Matches Barangay Admin Map Dialog) */}
-            <div className="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3.5 flex items-center justify-between text-xs shadow-2xs">
+            <div className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3.5 text-xs shadow-2xs">
               <span className="font-bold text-neutral-900">
                 {memberActionDialog?.memberName}
                 {memberActionDialog?.isHead ? " (Head)" : ""}
               </span>
-              {memberActionDialog ? formatStatusBadge(memberActionDialog.currentStatus) : null}
+              {memberActionDialog
+                ? formatStatusBadge(memberActionDialog.currentStatus)
+                : null}
             </div>
 
             {/* Active Emergency Event Selector */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-neutral-800 flex items-center gap-1.5">
-                <Siren className="size-3.5 text-emerald-600 shrink-0" />
-                <span>Active Emergency Event <span className="text-rose-500">*</span></span>
+              <Label className="flex items-center gap-1.5 text-xs font-bold text-neutral-800">
+                <Siren className="size-3.5 shrink-0 text-emerald-600" />
+                <span>
+                  Active Emergency Event <span className="text-rose-500">*</span>
+                </span>
               </Label>
               {activeEvents.length > 0 ? (
                 <Select
                   value={memberActionDialog?.eventId || resolvedEventId}
                   onValueChange={(val) =>
-                    setMemberActionDialog((prev) => (prev ? { ...prev, eventId: val } : null))
+                    setMemberActionDialog((prev) =>
+                      prev ? { ...prev, eventId: val } : null,
+                    )
                   }
                 >
                   <SelectTrigger className="h-10 w-full rounded-xl border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-900 shadow-2xs focus-visible:border-emerald-600 focus-visible:ring-emerald-500/20">
@@ -1166,9 +1213,9 @@ export default function PortalSafetyPage() {
                   <SelectContent className="rounded-xl border-neutral-200 bg-white shadow-xl">
                     {activeEvents.map((evt) => (
                       <SelectItem key={evt.id} value={evt.id} showCheckmark>
-                        <div className="flex items-center justify-between w-full gap-3">
+                        <div className="flex w-full items-center justify-between gap-3">
                           <span className="font-bold text-neutral-900">{evt.name}</span>
-                          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-300">
+                          <span className="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black tracking-wider text-emerald-800 uppercase">
                             {evt.type}
                           </span>
                         </div>
@@ -1177,32 +1224,35 @@ export default function PortalSafetyPage() {
                   </SelectContent>
                 </Select>
               ) : (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 font-medium">
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs font-medium text-amber-900">
                   No active emergency event is ongoing.
                 </div>
               )}
-              <p className="text-[11px] text-neutral-500 leading-tight">
-                Links this check-in directly to the selected incident record for downstream response analysis and post-disaster logs.
+              <p className="text-[11px] leading-tight text-neutral-500">
+                Links this check-in directly to the selected incident record for
+                downstream response analysis and post-disaster logs.
               </p>
             </div>
 
             {/* Optional Evacuation Center Selector (ONLY for Safe Status, NEVER for Rescue) */}
             {memberActionDialog?.status === "safe" ? (
-              <div className="space-y-1.5 animate-in fade-in-50 duration-150">
-                <Label className="text-xs font-bold text-neutral-800 flex items-center gap-1.5">
-                  <Building2 className="size-3.5 text-emerald-600 shrink-0" />
+              <div className="animate-in fade-in-50 space-y-1.5 duration-[260ms]">
+                <Label className="flex items-center gap-1.5 text-xs font-bold text-neutral-800">
+                  <Building2 className="size-3.5 shrink-0 text-emerald-600" />
                   <span>Optional Evacuation Center</span>
                 </Label>
                 <Select
                   value={memberActionDialog?.centerId || "none"}
                   onValueChange={(val) =>
-                    setMemberActionDialog((prev) => (prev ? { ...prev, centerId: val } : null))
+                    setMemberActionDialog((prev) =>
+                      prev ? { ...prev, centerId: val } : null,
+                    )
                   }
                 >
                   <SelectTrigger className="h-10 w-full rounded-xl border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-900 shadow-2xs focus-visible:border-emerald-600 focus-visible:ring-emerald-500/20">
                     <SelectValue placeholder="Will not go to the evacuation center" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-xl border-neutral-200 bg-white shadow-xl max-h-60">
+                  <SelectContent className="max-h-60 rounded-xl border-neutral-200 bg-white shadow-xl">
                     <SelectItem value="none" showCheckmark>
                       Will not go to the evacuation center
                     </SelectItem>
@@ -1213,9 +1263,9 @@ export default function PortalSafetyPage() {
                         disabled={Boolean(center.is_at_capacity)}
                         showCheckmark
                       >
-                        <span className="flex items-center justify-between gap-2 w-full">
+                        <span className="flex w-full items-center justify-between gap-2">
                           <span>{center.facility.name}</span>
-                          <span className="text-[10px] font-mono text-neutral-400">
+                          <span className="font-mono text-[10px] text-neutral-400">
                             ({center.occupancy}/{center.capacity ?? "∞"})
                             {center.is_at_capacity ? " [FULL]" : ""}
                           </span>
@@ -1224,14 +1274,14 @@ export default function PortalSafetyPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-[11px] text-neutral-500 leading-tight">
+                <p className="text-[11px] leading-tight text-neutral-500">
                   Leave blank to keep any existing physical assignment unchanged.
                 </p>
               </div>
             ) : null}
           </div>
 
-          <DialogFooter className="border-t border-neutral-100 bg-neutral-50/60 px-6 py-4 flex items-center justify-end gap-2.5">
+          <DialogFooter className="flex items-center justify-end gap-2.5 border-t border-neutral-100 bg-neutral-50/60 px-6 py-4">
             <Button
               type="button"
               variant="outline"
@@ -1247,8 +1297,8 @@ export default function PortalSafetyPage() {
               className={cn(
                 "h-10 cursor-pointer gap-2 rounded-full px-5 text-xs font-bold text-white shadow-md active:scale-[0.98]",
                 memberActionDialog?.status === "needs_rescue"
-                  ? "bg-rose-600 hover:bg-rose-700 shadow-rose-900/15"
-                  : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/15",
+                  ? "bg-rose-600 shadow-rose-900/15 hover:bg-rose-700"
+                  : "bg-emerald-600 shadow-emerald-900/15 hover:bg-emerald-700",
               )}
             >
               {memberActionDialog?.status === "needs_rescue" ? (
@@ -1286,16 +1336,22 @@ export default function PortalSafetyPage() {
             </div>
           </DialogHeader>
 
-          <div className="p-6 space-y-4 text-xs text-neutral-600">
+          <div className="space-y-4 p-6 text-xs text-neutral-600">
             <p className="leading-relaxed">
-              This confirms that every family member listed below is accounted for and in a safe
-              location:
+              This confirms that every family member listed below is accounted for and in
+              a safe location:
             </p>
 
-            <div className="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3 space-y-1.5 max-h-36 overflow-y-auto">
+            <div className="max-h-36 space-y-1.5 overflow-y-auto rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3">
               {members.map((m) => (
-                <div key={m.member_id} className="flex items-center justify-between font-semibold text-neutral-800 text-xs py-0.5">
-                  <span>{m.full_name}{m.is_head ? " (Head)" : ""}</span>
+                <div
+                  key={m.member_id}
+                  className="flex items-center justify-between py-0.5 text-xs font-semibold text-neutral-800"
+                >
+                  <span>
+                    {m.full_name}
+                    {m.is_head ? " (Head)" : ""}
+                  </span>
                   {formatStatusBadge(m.status)}
                 </div>
               ))}
@@ -1303,9 +1359,11 @@ export default function PortalSafetyPage() {
 
             {/* Active Emergency Event Selector */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-neutral-800 flex items-center gap-1.5">
-                <Siren className="size-3.5 text-emerald-600 shrink-0" />
-                <span>Active Emergency Event <span className="text-rose-500">*</span></span>
+              <Label className="flex items-center gap-1.5 text-xs font-bold text-neutral-800">
+                <Siren className="size-3.5 shrink-0 text-emerald-600" />
+                <span>
+                  Active Emergency Event <span className="text-rose-500">*</span>
+                </span>
               </Label>
               {activeEvents.length > 0 ? (
                 <Select
@@ -1318,9 +1376,9 @@ export default function PortalSafetyPage() {
                   <SelectContent className="rounded-xl border-neutral-200 bg-white shadow-xl">
                     {activeEvents.map((evt) => (
                       <SelectItem key={evt.id} value={evt.id} showCheckmark>
-                        <div className="flex items-center justify-between w-full gap-3">
+                        <div className="flex w-full items-center justify-between gap-3">
                           <span className="font-bold text-neutral-900">{evt.name}</span>
-                          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-300">
+                          <span className="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black tracking-wider text-emerald-800 uppercase">
                             {evt.type}
                           </span>
                         </div>
@@ -1329,7 +1387,7 @@ export default function PortalSafetyPage() {
                   </SelectContent>
                 </Select>
               ) : (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 font-medium">
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs font-medium text-amber-900">
                   No active emergency event is ongoing.
                 </div>
               )}
@@ -1337,18 +1395,15 @@ export default function PortalSafetyPage() {
 
             {/* Bulk Evacuation Center Selector */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-neutral-800 flex items-center gap-1.5">
-                <Building2 className="size-3.5 text-emerald-600 shrink-0" />
+              <Label className="flex items-center gap-1.5 text-xs font-bold text-neutral-800">
+                <Building2 className="size-3.5 shrink-0 text-emerald-600" />
                 <span>Optional Evacuation Center</span>
               </Label>
-              <Select
-                value={bulkCenterId}
-                onValueChange={(val) => setBulkCenterId(val)}
-              >
+              <Select value={bulkCenterId} onValueChange={(val) => setBulkCenterId(val)}>
                 <SelectTrigger className="h-10 w-full rounded-xl border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-900 shadow-2xs focus-visible:border-emerald-600 focus-visible:ring-emerald-500/20">
                   <SelectValue placeholder="Will not go to the evacuation center" />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl border-neutral-200 bg-white shadow-xl max-h-60">
+                <SelectContent className="max-h-60 rounded-xl border-neutral-200 bg-white shadow-xl">
                   <SelectItem value="none" showCheckmark>
                     Will not go to the evacuation center
                   </SelectItem>
@@ -1359,9 +1414,9 @@ export default function PortalSafetyPage() {
                       disabled={Boolean(center.is_at_capacity)}
                       showCheckmark
                     >
-                      <span className="flex items-center justify-between gap-2 w-full">
+                      <span className="flex w-full items-center justify-between gap-2">
                         <span>{center.facility.name}</span>
-                        <span className="text-[10px] font-mono text-neutral-400">
+                        <span className="font-mono text-[10px] text-neutral-400">
                           ({center.occupancy}/{center.capacity ?? "∞"})
                           {center.is_at_capacity ? " [FULL]" : ""}
                         </span>
@@ -1370,13 +1425,13 @@ export default function PortalSafetyPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-[11px] text-neutral-500 leading-tight">
+              <p className="text-[11px] leading-tight text-neutral-500">
                 Leave blank to keep any existing physical assignment unchanged.
               </p>
             </div>
           </div>
 
-          <DialogFooter className="border-t border-neutral-100 bg-neutral-50/60 px-6 py-4 flex items-center justify-end gap-2.5">
+          <DialogFooter className="flex items-center justify-end gap-2.5 border-t border-neutral-100 bg-neutral-50/60 px-6 py-4">
             <Button
               type="button"
               variant="outline"

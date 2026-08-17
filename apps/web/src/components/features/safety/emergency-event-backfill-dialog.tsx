@@ -411,9 +411,9 @@ function EmergencyEventBackfillContent({
               </div>
 
               <div className="custom-scrollbar h-44 divide-y divide-slate-100 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/50">
-                {householdsQuery.isLoading ? (
-                  <p className="p-4 text-center text-xs text-slate-400">
-                    Loading households list...
+                {householdsQuery.isFetching ? (
+                  <p role="status" className="p-4 text-center text-xs text-slate-400">
+                    Loading household options...
                   </p>
                 ) : filteredHouseholds.length === 0 ? (
                   <p className="p-4 text-center text-xs text-slate-400 italic">

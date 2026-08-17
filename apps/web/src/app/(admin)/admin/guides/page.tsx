@@ -39,7 +39,7 @@ interface Guide {
 export default function AdminGuidesPage() {
   useRequireRole("admin");
   const queryClient = useQueryClient();
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["admin", "guides"],
     queryFn: () => api.get<Guide[]>("/admin/guides").then((response) => response.data),
   });
@@ -159,7 +159,8 @@ export default function AdminGuidesPage() {
       <ResourceTable
         columns={columns}
         data={data}
-        isLoading={isLoading}
+        isLoading={isLoading || isFetching}
+        loadingLabel="Loading preparedness guides"
         isError={isError}
         onRetry={() => refetch()}
         searchPlaceholder="Search guide title, hazard, phase, or source..."

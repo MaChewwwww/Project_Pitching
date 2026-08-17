@@ -1,32 +1,27 @@
 "use client";
 
 import * as React from "react";
-import {
-  CheckCircle2,
-  HeartPulse,
-  PhoneOff,
-  UserCheck,
-  UsersRound,
-} from "lucide-react";
+import { CheckCircle2, HeartPulse, PhoneOff, UserCheck, UsersRound } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import { Card, CardContent } from "@/components/common/card";
+import { MetricGridSkeleton } from "@/components/common/portal-loading";
 import type { RegistryMemberOut, RegistryMemberSummary } from "@/lib/api/registry-types";
 
 const AGE_COLORS = {
-  infants: "#38bdf8",  // Sky Light (0-4)
+  infants: "#38bdf8", // Sky Light (0-4)
   children: "#0284c7", // Sky Blue (5-12)
-  teens: "#6366f1",    // Indigo (13-17)
-  adults: "#059669",   // Emerald (18-59)
-  seniors: "#7c3aed",  // Violet (60+)
+  teens: "#6366f1", // Indigo (13-17)
+  adults: "#059669", // Emerald (18-59)
+  seniors: "#7c3aed", // Violet (60+)
 };
 
 const SUPPORT_COLORS = {
-  pwd: "#2563eb",       // Blue
-  pregnant: "#ec4899",  // Pink
+  pwd: "#2563eb", // Blue
+  pregnant: "#ec4899", // Pink
   lactating: "#f43f5e", // Rose
-  chronic: "#f59e0b",   // Amber
-  mobility: "#dc2626",  // Red
+  chronic: "#f59e0b", // Amber
+  mobility: "#dc2626", // Red
 };
 
 function calculateAge(birthDate?: string | null): number | null {
@@ -44,9 +39,11 @@ function calculateAge(birthDate?: string | null): number | null {
 export function CitizenRegistrySummary({
   summary,
   citizens,
+  isLoading = false,
 }: {
   summary?: RegistryMemberSummary;
   citizens?: RegistryMemberOut[];
+  isLoading?: boolean;
 }) {
   // Compute 5 Age Brackets
   const ageGroupCounts = React.useMemo(() => {
@@ -118,14 +115,28 @@ export function CitizenRegistrySummary({
     };
   }, [citizens, summary]);
 
+  if (isLoading) {
+    return <MetricGridSkeleton count={4} label="Loading registered citizen metrics" />;
+  }
   if (!summary) return null;
 
   const totalCitizens = summary.citizens || 1;
-  const completePct = Math.min(100, Math.round((summary.complete_profiles / totalCitizens) * 100));
+  const completePct = Math.min(
+    100,
+    Math.round((summary.complete_profiles / totalCitizens) * 100),
+  );
 
   const ageData = [
-    { name: "Infants & Toddlers (0-4)", value: ageGroupCounts.infants, color: AGE_COLORS.infants },
-    { name: "Children (5-12)", value: ageGroupCounts.children, color: AGE_COLORS.children },
+    {
+      name: "Infants & Toddlers (0-4)",
+      value: ageGroupCounts.infants,
+      color: AGE_COLORS.infants,
+    },
+    {
+      name: "Children (5-12)",
+      value: ageGroupCounts.children,
+      color: AGE_COLORS.children,
+    },
     { name: "Teenagers (13-17)", value: ageGroupCounts.teens, color: AGE_COLORS.teens },
     { name: "Adults (18-59)", value: ageGroupCounts.adults, color: AGE_COLORS.adults },
     { name: "Seniors (60+)", value: ageGroupCounts.seniors, color: AGE_COLORS.seniors },
@@ -134,17 +145,32 @@ export function CitizenRegistrySummary({
   const supportData = [
     { name: "PWD", value: supportCounts.pwd, color: SUPPORT_COLORS.pwd },
     { name: "Pregnant", value: supportCounts.pregnant, color: SUPPORT_COLORS.pregnant },
-    { name: "Lactating", value: supportCounts.lactating, color: SUPPORT_COLORS.lactating },
-    { name: "Chronic Condition", value: supportCounts.chronic, color: SUPPORT_COLORS.chronic },
-    { name: "Mobility-Limited", value: supportCounts.mobility, color: SUPPORT_COLORS.mobility },
+    {
+      name: "Lactating",
+      value: supportCounts.lactating,
+      color: SUPPORT_COLORS.lactating,
+    },
+    {
+      name: "Chronic Condition",
+      value: supportCounts.chronic,
+      color: SUPPORT_COLORS.chronic,
+    },
+    {
+      name: "Mobility-Limited",
+      value: supportCounts.mobility,
+      color: SUPPORT_COLORS.mobility,
+    },
   ].filter((item) => item.value > 0);
 
   const totalSupportPersons = summary.with_support_needs;
 
   return (
-    <section aria-label="Registered citizen overview" className="grid gap-3 lg:grid-cols-[1fr_1.15fr_1.1fr]">
+    <section
+      aria-label="Registered citizen overview"
+      className="grid gap-3 lg:grid-cols-[1fr_1.15fr_1.1fr]"
+    >
       {/* CARD 1: Population & Registry Health */}
-      <Card className="overflow-hidden border-emerald-200/80 bg-gradient-to-br from-emerald-50/80 via-white to-white portal-card-hover">
+      <Card className="portal-card-hover overflow-hidden border-emerald-200/80 bg-gradient-to-br from-emerald-50/80 via-white to-white">
         <CardContent className="p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -171,7 +197,9 @@ export function CitizenRegistrySummary({
           {/* Heads vs Members Breakdown */}
           <div className="mt-3 grid grid-cols-2 divide-x divide-emerald-100 rounded-xl border border-emerald-100/80 bg-white/80 p-2.5">
             <div className="pr-2">
-              <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">Heads of Household</p>
+              <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
+                Heads of Household
+              </p>
               <p className="mt-0.5 text-base font-bold text-neutral-900 tabular-nums">
                 {summary.household_heads.toLocaleString()}{" "}
                 <span className="text-xs font-normal text-neutral-500">
@@ -180,7 +208,9 @@ export function CitizenRegistrySummary({
               </p>
             </div>
             <div className="pl-3">
-              <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">Members</p>
+              <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
+                Members
+              </p>
               <p className="mt-0.5 text-base font-bold text-neutral-900 tabular-nums">
                 {summary.household_members.toLocaleString()}{" "}
                 <span className="text-xs font-normal text-neutral-500">
@@ -209,7 +239,9 @@ export function CitizenRegistrySummary({
             {summary.no_contact_number > 0 ? (
               <p className="mt-1 flex items-center gap-1 text-[11px] text-amber-700">
                 <PhoneOff className="size-3 shrink-0 text-amber-600" />
-                <span>{summary.no_contact_number} citizens need contact phone numbers</span>
+                <span>
+                  {summary.no_contact_number} citizens need contact phone numbers
+                </span>
               </p>
             ) : null}
           </div>
@@ -217,7 +249,7 @@ export function CitizenRegistrySummary({
       </Card>
 
       {/* CARD 2: Age Demographics Breakdown */}
-      <Card className="overflow-hidden border-sky-200/80 bg-gradient-to-br from-white via-white to-sky-50/50 portal-card-hover">
+      <Card className="portal-card-hover overflow-hidden border-sky-200/80 bg-gradient-to-br from-white via-white to-sky-50/50">
         <CardContent className="p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -235,12 +267,20 @@ export function CitizenRegistrySummary({
           </div>
 
           <div className="mt-2 grid grid-cols-[130px_1fr] items-center gap-3 sm:gap-4">
-            <div className="relative h-36" role="img" aria-label="Age group breakdown chart">
+            <div
+              className="relative h-36"
+              role="img"
+              aria-label="Age group breakdown chart"
+            >
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Tooltip
                     formatter={(val) => [`${val ?? 0} Citizens`, "Count"]}
-                    contentStyle={{ borderRadius: "8px", fontSize: "12px", padding: "6px 10px" }}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                      padding: "6px 10px",
+                    }}
                   />
                   <Pie
                     data={ageData}
@@ -267,11 +307,14 @@ export function CitizenRegistrySummary({
 
             <div className="space-y-1.5 text-xs">
               <div className="flex items-center justify-between rounded-lg border border-neutral-100 bg-white/90 px-2 py-1 shadow-2xs">
-                <span className="flex items-center gap-1.5 font-semibold text-neutral-800 text-[11px]">
-                  <span className="size-2 rounded-full" style={{ backgroundColor: AGE_COLORS.infants }} />
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-neutral-800">
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: AGE_COLORS.infants }}
+                  />
                   Infants &amp; Toddlers (0-4)
                 </span>
-                <span className="font-bold tabular-nums text-neutral-900 text-[11px]">
+                <span className="text-[11px] font-bold text-neutral-900 tabular-nums">
                   {ageGroupCounts.infants}{" "}
                   <span className="text-[10px] font-normal text-neutral-500">
                     ({Math.round((ageGroupCounts.infants / totalCitizens) * 100)}%)
@@ -280,11 +323,14 @@ export function CitizenRegistrySummary({
               </div>
 
               <div className="flex items-center justify-between rounded-lg border border-neutral-100 bg-white/90 px-2 py-1 shadow-2xs">
-                <span className="flex items-center gap-1.5 font-semibold text-neutral-800 text-[11px]">
-                  <span className="size-2 rounded-full" style={{ backgroundColor: AGE_COLORS.children }} />
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-neutral-800">
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: AGE_COLORS.children }}
+                  />
                   Children (5-12)
                 </span>
-                <span className="font-bold tabular-nums text-neutral-900 text-[11px]">
+                <span className="text-[11px] font-bold text-neutral-900 tabular-nums">
                   {ageGroupCounts.children}{" "}
                   <span className="text-[10px] font-normal text-neutral-500">
                     ({Math.round((ageGroupCounts.children / totalCitizens) * 100)}%)
@@ -293,11 +339,14 @@ export function CitizenRegistrySummary({
               </div>
 
               <div className="flex items-center justify-between rounded-lg border border-neutral-100 bg-white/90 px-2 py-1 shadow-2xs">
-                <span className="flex items-center gap-1.5 font-semibold text-neutral-800 text-[11px]">
-                  <span className="size-2 rounded-full" style={{ backgroundColor: AGE_COLORS.teens }} />
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-neutral-800">
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: AGE_COLORS.teens }}
+                  />
                   Teenagers (13-17)
                 </span>
-                <span className="font-bold tabular-nums text-neutral-900 text-[11px]">
+                <span className="text-[11px] font-bold text-neutral-900 tabular-nums">
                   {ageGroupCounts.teens}{" "}
                   <span className="text-[10px] font-normal text-neutral-500">
                     ({Math.round((ageGroupCounts.teens / totalCitizens) * 100)}%)
@@ -306,11 +355,14 @@ export function CitizenRegistrySummary({
               </div>
 
               <div className="flex items-center justify-between rounded-lg border border-neutral-100 bg-white/90 px-2 py-1 shadow-2xs">
-                <span className="flex items-center gap-1.5 font-semibold text-neutral-800 text-[11px]">
-                  <span className="size-2 rounded-full" style={{ backgroundColor: AGE_COLORS.adults }} />
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-neutral-800">
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: AGE_COLORS.adults }}
+                  />
                   Adults (18-59)
                 </span>
-                <span className="font-bold tabular-nums text-neutral-900 text-[11px]">
+                <span className="text-[11px] font-bold text-neutral-900 tabular-nums">
                   {ageGroupCounts.adults}{" "}
                   <span className="text-[10px] font-normal text-neutral-500">
                     ({Math.round((ageGroupCounts.adults / totalCitizens) * 100)}%)
@@ -319,11 +371,14 @@ export function CitizenRegistrySummary({
               </div>
 
               <div className="flex items-center justify-between rounded-lg border border-neutral-100 bg-white/90 px-2 py-1 shadow-2xs">
-                <span className="flex items-center gap-1.5 font-semibold text-neutral-800 text-[11px]">
-                  <span className="size-2 rounded-full" style={{ backgroundColor: AGE_COLORS.seniors }} />
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-neutral-800">
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: AGE_COLORS.seniors }}
+                  />
                   Seniors (60+)
                 </span>
-                <span className="font-bold tabular-nums text-neutral-900 text-[11px]">
+                <span className="text-[11px] font-bold text-neutral-900 tabular-nums">
                   {ageGroupCounts.seniors}{" "}
                   <span className="text-[10px] font-normal text-neutral-500">
                     ({Math.round((ageGroupCounts.seniors / totalCitizens) * 100)}%)
@@ -336,7 +391,7 @@ export function CitizenRegistrySummary({
       </Card>
 
       {/* CARD 3: Citizens with Support Needs (Pie Chart) */}
-      <Card className="overflow-hidden border-violet-200/80 bg-gradient-to-br from-violet-50/70 via-white to-amber-50/30 portal-card-hover">
+      <Card className="portal-card-hover overflow-hidden border-violet-200/80 bg-gradient-to-br from-violet-50/70 via-white to-amber-50/30">
         <CardContent className="p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -344,7 +399,9 @@ export function CitizenRegistrySummary({
                 <HeartPulse aria-hidden className="size-4" />
               </span>
               <div>
-                <p className="text-sm font-bold text-neutral-950">Support &amp; Readiness</p>
+                <p className="text-sm font-bold text-neutral-950">
+                  Support &amp; Readiness
+                </p>
                 <p className="text-xs text-neutral-500">Vulnerability Needs</p>
               </div>
             </div>
@@ -354,15 +411,27 @@ export function CitizenRegistrySummary({
           </div>
 
           <div className="mt-2 grid grid-cols-[130px_1fr] items-center gap-3 sm:gap-4">
-            <div className="relative h-36" role="img" aria-label="Support needs distribution pie chart">
+            <div
+              className="relative h-36"
+              role="img"
+              aria-label="Support needs distribution pie chart"
+            >
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Tooltip
                     formatter={(val) => [`${val ?? 0} Records`, "Count"]}
-                    contentStyle={{ borderRadius: "8px", fontSize: "12px", padding: "6px 10px" }}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                      padding: "6px 10px",
+                    }}
                   />
                   <Pie
-                    data={supportData.length ? supportData : [{ name: "None", value: 1, color: "#e5e7eb" }]}
+                    data={
+                      supportData.length
+                        ? supportData
+                        : [{ name: "None", value: 1, color: "#e5e7eb" }]
+                    }
                     dataKey="value"
                     innerRadius={38}
                     outerRadius={58}
@@ -370,11 +439,12 @@ export function CitizenRegistrySummary({
                     stroke="#ffffff"
                     strokeWidth={2.5}
                   >
-                    {(supportData.length ? supportData : [{ name: "None", value: 1, color: "#e5e7eb" }]).map(
-                      (entry, index) => (
-                        <Cell key={`support-${index}`} fill={entry.color} />
-                      ),
-                    )}
+                    {(supportData.length
+                      ? supportData
+                      : [{ name: "None", value: 1, color: "#e5e7eb" }]
+                    ).map((entry, index) => (
+                      <Cell key={`support-${index}`} fill={entry.color} />
+                    ))}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
@@ -382,49 +452,76 @@ export function CitizenRegistrySummary({
                 <span className="text-lg font-bold text-violet-700 tabular-nums">
                   {totalSupportPersons}
                 </span>
-                <span className="text-[10px] font-semibold text-neutral-500">With Needs</span>
+                <span className="text-[10px] font-semibold text-neutral-500">
+                  With Needs
+                </span>
               </div>
             </div>
 
             <div className="space-y-1.5 text-xs">
               <div className="flex items-center justify-between text-[11px]">
                 <span className="flex items-center gap-1.5 font-semibold text-neutral-700">
-                  <span className="size-2 rounded-full" style={{ backgroundColor: SUPPORT_COLORS.pwd }} />
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: SUPPORT_COLORS.pwd }}
+                  />
                   PWD
                 </span>
-                <span className="font-bold tabular-nums text-neutral-900">{supportCounts.pwd}</span>
+                <span className="font-bold text-neutral-900 tabular-nums">
+                  {supportCounts.pwd}
+                </span>
               </div>
 
               <div className="flex items-center justify-between text-[11px]">
                 <span className="flex items-center gap-1.5 font-semibold text-neutral-700">
-                  <span className="size-2 rounded-full" style={{ backgroundColor: SUPPORT_COLORS.pregnant }} />
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: SUPPORT_COLORS.pregnant }}
+                  />
                   Pregnant
                 </span>
-                <span className="font-bold tabular-nums text-neutral-900">{supportCounts.pregnant}</span>
+                <span className="font-bold text-neutral-900 tabular-nums">
+                  {supportCounts.pregnant}
+                </span>
               </div>
 
               <div className="flex items-center justify-between text-[11px]">
                 <span className="flex items-center gap-1.5 font-semibold text-neutral-700">
-                  <span className="size-2 rounded-full" style={{ backgroundColor: SUPPORT_COLORS.lactating }} />
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: SUPPORT_COLORS.lactating }}
+                  />
                   Lactating
                 </span>
-                <span className="font-bold tabular-nums text-neutral-900">{supportCounts.lactating}</span>
+                <span className="font-bold text-neutral-900 tabular-nums">
+                  {supportCounts.lactating}
+                </span>
               </div>
 
               <div className="flex items-center justify-between text-[11px]">
                 <span className="flex items-center gap-1.5 font-semibold text-neutral-700">
-                  <span className="size-2 rounded-full" style={{ backgroundColor: SUPPORT_COLORS.chronic }} />
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: SUPPORT_COLORS.chronic }}
+                  />
                   Chronic Condition
                 </span>
-                <span className="font-bold tabular-nums text-neutral-900">{supportCounts.chronic}</span>
+                <span className="font-bold text-neutral-900 tabular-nums">
+                  {supportCounts.chronic}
+                </span>
               </div>
 
               <div className="flex items-center justify-between text-[11px]">
                 <span className="flex items-center gap-1.5 font-semibold text-neutral-700">
-                  <span className="size-2 rounded-full" style={{ backgroundColor: SUPPORT_COLORS.mobility }} />
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: SUPPORT_COLORS.mobility }}
+                  />
                   Mobility-Limited
                 </span>
-                <span className="font-bold tabular-nums text-neutral-900">{supportCounts.mobility}</span>
+                <span className="font-bold text-neutral-900 tabular-nums">
+                  {supportCounts.mobility}
+                </span>
               </div>
             </div>
           </div>

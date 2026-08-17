@@ -34,6 +34,7 @@ import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import { MapWorkspaceSkeleton } from "@/components/common/portal-loading";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
 import {
   ResourceTable,
@@ -445,7 +446,7 @@ export default function AdminEmergencyEventsPage() {
         }
       />
 
-      {eventsQuery.isLoading ? (
+      {eventsQuery.isFetching ? (
         <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm">
           <WorkspaceLoading label="Loading emergency events command center…" />
         </div>
@@ -841,7 +842,8 @@ export default function AdminEmergencyEventsPage() {
                   <ResourceTable
                     columns={columns}
                     data={events}
-                    isLoading={eventsQuery.isLoading}
+                    isLoading={eventsQuery.isLoading || eventsQuery.isFetching}
+                    loadingLabel="Loading emergency events"
                     isError={eventsQuery.isError}
                     onRetry={() => eventsQuery.refetch()}
                     searchPlaceholder="Search event name, hazard classification, or date..."
@@ -944,7 +946,7 @@ export default function AdminEmergencyEventsPage() {
             {/* Response Map Tab */}
             {tab === "map" && canSeePii ? (
               <div className="flex flex-col gap-4">
-                {workspaceQuery.isLoading ? (
+                {workspaceQuery.isFetching ? (
                   <WorkspaceLoading label="Loading spatial response map and household locations…" />
                 ) : workspaceQuery.isError ? (
                   <WorkspaceError
@@ -1675,14 +1677,7 @@ function EndEventDialog({
 }
 
 function WorkspaceLoading({ label }: { label: string }) {
-  return (
-    <Card radius="lg" className="border-neutral-200">
-      <CardContent className="animate-pulse py-12 text-center text-sm font-semibold text-neutral-500">
-        <RefreshCw className="mx-auto mb-2 size-6 animate-spin text-emerald-600" />
-        {label}
-      </CardContent>
-    </Card>
-  );
+  return <MapWorkspaceSkeleton label={label} />;
 }
 
 function WorkspaceError({ label, onRetry }: { label: string; onRetry: () => void }) {

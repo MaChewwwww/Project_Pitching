@@ -91,14 +91,7 @@ interface Area {
   name: string;
 }
 
-const SAN_JOSE_AREAS = [
-  "Area 1",
-  "Area 2",
-  "Area 3",
-  "Area 4",
-  "Area 5",
-  "Area 6",
-];
+const SAN_JOSE_AREAS = ["Area 1", "Area 2", "Area 3", "Area 4", "Area 5", "Area 6"];
 
 function LayerCheckbox({
   checked,
@@ -110,10 +103,10 @@ function LayerCheckbox({
   label: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5 text-xs font-medium text-slate-300 hover:text-white transition-colors">
+    <label className="flex cursor-pointer items-center gap-2.5 text-xs font-medium text-slate-300 transition-colors hover:text-white">
       <input
         type="checkbox"
-        className="size-3.5 rounded border-slate-600 bg-slate-800 text-emerald-500 accent-emerald-500 cursor-pointer"
+        className="size-3.5 cursor-pointer rounded border-slate-600 bg-slate-800 text-emerald-500 accent-emerald-500"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />
@@ -139,10 +132,10 @@ export default function AdminFacilitiesPage() {
   const [areaFilter, setAreaFilter] = React.useState("all");
   const [statusFilter, setStatusFilter] = React.useState("active");
 
-  const [facilityToDeactivate, setFacilityToDeactivate] =
-    React.useState<Facility | null>(null);
-  const [facilityToDelete, setFacilityToDelete] =
-    React.useState<Facility | null>(null);
+  const [facilityToDeactivate, setFacilityToDeactivate] = React.useState<Facility | null>(
+    null,
+  );
+  const [facilityToDelete, setFacilityToDelete] = React.useState<Facility | null>(null);
 
   const mapSectionRef = React.useRef<HTMLDivElement>(null);
 
@@ -154,6 +147,7 @@ export default function AdminFacilitiesPage() {
   const {
     data: facilities,
     isLoading,
+    isFetching,
     isError,
     refetch,
   } = useQuery({
@@ -275,7 +269,7 @@ export default function AdminFacilitiesPage() {
       sub: `${stats.inactiveCount} inactive/archived`,
       tone: "emerald",
       badge: (
-        <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-300">
+        <span className="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black tracking-wider text-emerald-800 uppercase">
           Ready
         </span>
       ),
@@ -411,10 +405,10 @@ export default function AdminFacilitiesPage() {
         const Icon = typeCfg.icon;
 
         return (
-          <div className="flex items-start gap-3 min-w-56 max-w-sm">
+          <div className="flex max-w-sm min-w-56 items-start gap-3">
             <div
               className={cn(
-                "relative mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg font-bold shadow-2xs overflow-hidden",
+                "relative mt-0.5 flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg font-bold shadow-2xs",
                 typeCfg.bg,
               )}
             >
@@ -433,13 +427,13 @@ export default function AdminFacilitiesPage() {
                   <button
                     type="button"
                     onClick={(e) => e.stopPropagation()}
-                    className="font-bold text-sm text-neutral-900 hover:text-emerald-700 hover:underline transition-colors truncate block text-left cursor-pointer"
+                    className="block cursor-pointer truncate text-left text-sm font-bold text-neutral-900 transition-colors hover:text-emerald-700 hover:underline"
                   >
                     {row.name}
                   </button>
                 }
               />
-              <p className="mt-0.5 text-xs text-neutral-500 line-clamp-1">
+              <p className="mt-0.5 line-clamp-1 text-xs text-neutral-500">
                 {row.address || "Barangay San Jose"}
               </p>
               {areaName(row) !== "—" ? (
@@ -463,11 +457,11 @@ export default function AdminFacilitiesPage() {
         return (
           <span
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold border",
+              "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-bold",
               typeCfg.badge,
             )}
           >
-            <span className={cn("size-1.5 rounded-full shrink-0", typeCfg.dot)} />
+            <span className={cn("size-1.5 shrink-0 rounded-full", typeCfg.dot)} />
             <Icon className="size-3.5 shrink-0" />
             <span>{typeCfg.singleLabel}</span>
           </span>
@@ -480,11 +474,11 @@ export default function AdminFacilitiesPage() {
       render: (row) => (
         <div className="flex items-center gap-1.5">
           {row.contact_number ? (
-            <span className="text-xs font-mono font-medium text-neutral-800">
+            <span className="font-mono text-xs font-medium text-neutral-800">
               {row.contact_number}
             </span>
           ) : (
-            <span className="text-xs text-neutral-400 font-mono">—</span>
+            <span className="font-mono text-xs text-neutral-400">—</span>
           )}
         </div>
       ),
@@ -527,13 +521,20 @@ export default function AdminFacilitiesPage() {
       />
 
       {/* Top 5 Metrics Strip */}
-      <AssetMetricStrip items={metricCards} />
+      <AssetMetricStrip
+        items={metricCards}
+        isLoading={isLoading || isFetching}
+        loadingLabel="Loading facility metrics"
+      />
 
       {/* Two-Column Map Workspace */}
-      <div ref={mapSectionRef} className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5 scroll-mt-6">
+      <div
+        ref={mapSectionRef}
+        className="flex scroll-mt-6 flex-col gap-4 lg:flex-row lg:items-start lg:gap-5"
+      >
         {/* Column 1: Map Canvas */}
-        <div className="flex flex-1 flex-col min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
-          <div className="relative h-[480px] sm:h-[580px] lg:h-[620px] w-full overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
+          <div className="relative h-[480px] w-full overflow-hidden sm:h-[580px] lg:h-[620px]">
             <AdminAssetWorkspaceMap
               items={mapItems}
               selectedId={selectedId}
@@ -551,7 +552,7 @@ export default function AdminFacilitiesPage() {
         <div className="flex w-full flex-col gap-3 lg:w-72 lg:shrink-0">
           {/* Card 1: Map Overlays (Switched Order: Boundaries ON TOP, Flood Hazard BELOW) */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
-            <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
+            <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-emerald-400 uppercase">
               <Layers className="size-3.5 text-emerald-400" aria-hidden />
               Map Overlays
             </p>
@@ -570,16 +571,16 @@ export default function AdminFacilitiesPage() {
           </div>
 
           {/* Card 2: Facilities per Type Filter (Matching Attached Image UI) */}
-          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md flex flex-col gap-2.5">
+          <div className="flex w-full flex-col gap-2.5 rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
             <div className="flex items-center justify-between gap-1">
-              <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+              <p className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-emerald-400 uppercase">
                 <Compass className="size-3.5 text-emerald-400" aria-hidden />
                 Facilities per Type
               </p>
               <button
                 type="button"
                 onClick={toggleAllTypes}
-                className="text-[11px] font-bold text-emerald-400 hover:text-emerald-200 transition-colors cursor-pointer"
+                className="cursor-pointer text-[11px] font-bold text-emerald-400 transition-colors hover:text-emerald-200"
               >
                 {selectedTypes.size === ALL_FACILITY_TYPES.length
                   ? "Deselect All"
@@ -600,27 +601,32 @@ export default function AdminFacilitiesPage() {
                     type="button"
                     onClick={() => toggleType(cfg.type)}
                     className={cn(
-                      "flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-all cursor-pointer border text-left",
+                      "flex cursor-pointer items-center justify-between rounded-lg border px-2.5 py-1.5 text-left text-xs transition-all",
                       isSelected
                         ? "border-emerald-700/60 bg-white/10 text-white shadow-xs"
                         : "border-transparent text-emerald-200/60 hover:bg-white/5 hover:text-white",
                     )}
                   >
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex min-w-0 items-center gap-2">
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => { }}
-                        className="size-3.5 rounded border-slate-600 bg-slate-800 text-emerald-500 accent-emerald-500 cursor-pointer pointer-events-none"
+                        onChange={() => {}}
+                        className="pointer-events-none size-3.5 cursor-pointer rounded border-slate-600 bg-slate-800 text-emerald-500 accent-emerald-500"
                       />
-                      <span className={cn("size-2 rounded-full shrink-0", cfg.dot)} />
-                      <Icon className={cn("size-3.5 shrink-0", isSelected ? "text-emerald-300" : "text-emerald-400/60")} />
-                      <span className="truncate font-semibold text-[11.5px]">
+                      <span className={cn("size-2 shrink-0 rounded-full", cfg.dot)} />
+                      <Icon
+                        className={cn(
+                          "size-3.5 shrink-0",
+                          isSelected ? "text-emerald-300" : "text-emerald-400/60",
+                        )}
+                      />
+                      <span className="truncate text-[11.5px] font-semibold">
                         {cfg.label}
                       </span>
                     </div>
 
-                    <span className="rounded-full bg-white/15 px-2 py-0.2 text-[10px] font-mono font-bold text-white shrink-0 ml-1">
+                    <span className="py-0.2 ml-1 shrink-0 rounded-full bg-white/15 px-2 font-mono text-[10px] font-bold text-white">
                       {count}
                     </span>
                   </button>
@@ -632,13 +638,17 @@ export default function AdminFacilitiesPage() {
           {/* Card 3: Distribution Breakdown Pie Chart */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
             {/* Donut Chart with Center Counter */}
-            <div className="relative h-44 w-full" role="img" aria-label="Facility distribution breakdown">
+            <div
+              className="relative h-44 w-full"
+              role="img"
+              aria-label="Facility distribution breakdown"
+            >
               {/* Background center counter (z-0) so tooltips render on top */}
               <div className="pointer-events-none absolute inset-0 z-0 flex flex-col items-center justify-center text-center">
                 <span className="text-xl font-black text-white tabular-nums">
                   {stats.total}
                 </span>
-                <span className="text-[9.5px] font-bold uppercase tracking-wider text-emerald-300/80">
+                <span className="text-[9.5px] font-bold tracking-wider text-emerald-300/80 uppercase">
                   Facilities
                 </span>
               </div>
@@ -679,11 +689,12 @@ export default function AdminFacilitiesPage() {
       </div>
 
       {/* Facilities Management Table (Full Width) */}
-      <div className="flex flex-col gap-3 w-full">
+      <div className="flex w-full flex-col gap-3">
         <ResourceTable
           columns={columns}
           data={filteredFacilities}
-          isLoading={isLoading}
+          isLoading={isLoading || isFetching}
+          loadingLabel="Loading barangay facilities"
           isError={isError}
           onRetry={refetch}
           getRowKey={(row) => row.id}
@@ -693,7 +704,7 @@ export default function AdminFacilitiesPage() {
             <div className="flex flex-wrap items-center gap-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="inline-flex h-9 w-fit min-w-[130px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                  <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                  <SlidersHorizontal className="size-3 shrink-0 text-emerald-600" />
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent align="end" className="min-w-44">
@@ -703,12 +714,9 @@ export default function AdminFacilitiesPage() {
                 </SelectContent>
               </Select>
 
-              <Select
-                value={typeDropdownFilter}
-                onValueChange={setTypeDropdownFilter}
-              >
+              <Select value={typeDropdownFilter} onValueChange={setTypeDropdownFilter}>
                 <SelectTrigger className="inline-flex h-9 w-fit min-w-[140px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                  <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                  <SlidersHorizontal className="size-3 shrink-0 text-emerald-600" />
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent align="end" className="min-w-48">
@@ -726,7 +734,7 @@ export default function AdminFacilitiesPage() {
 
               <Select value={areaFilter} onValueChange={setAreaFilter}>
                 <SelectTrigger className="inline-flex h-9 w-fit min-w-[120px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                  <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                  <SlidersHorizontal className="size-3 shrink-0 text-emerald-600" />
                   <SelectValue placeholder="All Areas" />
                 </SelectTrigger>
                 <SelectContent align="end" className="min-w-40">
@@ -752,7 +760,7 @@ export default function AdminFacilitiesPage() {
                 size="sm"
                 onClick={() => handleLocate(row.id)}
                 aria-label={`Locate ${row.name}`}
-                className="h-8 w-8 p-0 border-slate-300 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shrink-0"
+                className="h-8 w-8 shrink-0 cursor-pointer border-slate-300 bg-white p-0 text-slate-800 hover:bg-slate-50"
                 title="Locate on Map"
               >
                 <Crosshair aria-hidden className="size-3.5 text-slate-700" />
@@ -771,7 +779,7 @@ export default function AdminFacilitiesPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-8 p-0 border-emerald-600/30 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900 cursor-pointer shrink-0"
+                    className="h-8 w-8 shrink-0 cursor-pointer border-emerald-600/30 bg-emerald-50 p-0 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900"
                     title="View Facility Details"
                     aria-label={`View Details for ${row.name}`}
                   >
@@ -787,7 +795,7 @@ export default function AdminFacilitiesPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-8 p-0 border-amber-300/80 bg-amber-50 text-amber-800 hover:bg-amber-100 cursor-pointer shrink-0"
+                    className="h-8 w-8 shrink-0 cursor-pointer border-amber-300/80 bg-amber-50 p-0 text-amber-800 hover:bg-amber-100"
                     title="Edit Facility"
                     aria-label={`Edit ${row.name}`}
                   >
@@ -803,7 +811,7 @@ export default function AdminFacilitiesPage() {
                   size="sm"
                   onClick={() => setFacilityToDeactivate(row)}
                   disabled={deactivateMutation.isPending}
-                  className="h-8 gap-1.5 border-neutral-300 bg-neutral-100 px-2.5 text-xs font-bold text-neutral-800 hover:bg-neutral-200 hover:text-neutral-950 cursor-pointer"
+                  className="h-8 cursor-pointer gap-1.5 border-neutral-300 bg-neutral-100 px-2.5 text-xs font-bold text-neutral-800 hover:bg-neutral-200 hover:text-neutral-950"
                   title="Deactivate Facility"
                 >
                   <PowerOff className="size-3.5 text-neutral-600" />
@@ -815,7 +823,7 @@ export default function AdminFacilitiesPage() {
                   size="sm"
                   onClick={() => reactivateMutation.mutate(row.id)}
                   disabled={reactivateMutation.isPending}
-                  className="h-8 gap-1.5 border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 cursor-pointer"
+                  className="h-8 cursor-pointer gap-1.5 border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
                   title="Reactivate Facility"
                 >
                   <Power className="size-3.5 text-emerald-600" />
@@ -829,7 +837,7 @@ export default function AdminFacilitiesPage() {
                 size="sm"
                 onClick={() => setFacilityToDelete(row)}
                 disabled={deactivateMutation.isPending}
-                className="h-8 gap-1.5 border-rose-200 bg-rose-50/60 px-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 cursor-pointer"
+                className="h-8 cursor-pointer gap-1.5 border-rose-200 bg-rose-50/60 px-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100"
                 title="Delete Facility (Soft Delete)"
               >
                 <Trash2 className="size-3.5" />
@@ -848,20 +856,21 @@ export default function AdminFacilitiesPage() {
         <AlertDialogContent className="max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
           <AlertDialogHeader className="flex flex-col gap-2 text-left">
             <div className="flex items-center gap-3">
-              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-neutral-100 text-neutral-800 border border-neutral-200">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-neutral-200 bg-neutral-100 text-neutral-800">
                 <PowerOff className="size-5" />
               </div>
               <div className="min-w-0">
-                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                <AlertDialogTitle className="text-base leading-tight font-black text-slate-900">
                   Deactivate Facility?
                 </AlertDialogTitle>
-                <p className="text-xs font-bold text-slate-500 truncate mt-0.5">
+                <p className="mt-0.5 truncate text-xs font-bold text-slate-500">
                   {facilityToDeactivate?.name}
                 </p>
               </div>
             </div>
-            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
-              Placing this facility into an inactive state will remove its marker pin from public GIS maps while retaining its registry record for administration.
+            <AlertDialogDescription className="mt-2 text-xs leading-relaxed text-slate-600">
+              Placing this facility into an inactive state will remove its marker pin from
+              public GIS maps while retaining its registry record for administration.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
@@ -870,7 +879,7 @@ export default function AdminFacilitiesPage() {
               size="sm"
               onClick={() => setFacilityToDeactivate(null)}
               disabled={deactivateMutation.isPending}
-              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+              className="cursor-pointer rounded-xl border-slate-200 text-xs font-bold hover:bg-slate-100"
             >
               Cancel
             </Button>
@@ -885,7 +894,7 @@ export default function AdminFacilitiesPage() {
                 }
               }}
               disabled={deactivateMutation.isPending}
-              className="rounded-xl text-xs font-bold bg-neutral-900 hover:bg-neutral-800 text-white shadow-xs cursor-pointer"
+              className="cursor-pointer rounded-xl bg-neutral-900 text-xs font-bold text-white shadow-xs hover:bg-neutral-800"
             >
               {deactivateMutation.isPending ? "Deactivating…" : "Confirm Deactivate"}
             </Button>
@@ -901,20 +910,22 @@ export default function AdminFacilitiesPage() {
         <AlertDialogContent className="max-w-md rounded-2xl border border-rose-200 bg-white p-6 shadow-2xl">
           <AlertDialogHeader className="flex flex-col gap-2 text-left">
             <div className="flex items-center gap-3">
-              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-rose-100 text-rose-700 border border-rose-200">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-rose-200 bg-rose-100 text-rose-700">
                 <Trash2 className="size-5" />
               </div>
               <div className="min-w-0">
-                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                <AlertDialogTitle className="text-base leading-tight font-black text-slate-900">
                   Delete Facility Record?
                 </AlertDialogTitle>
-                <p className="text-xs font-bold text-rose-700 truncate mt-0.5">
+                <p className="mt-0.5 truncate text-xs font-bold text-rose-700">
                   {facilityToDelete?.name}
                 </p>
               </div>
             </div>
-            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
-              Are you sure you want to delete this facility record? This will archive the physical asset from GIS maps and emergency routing while keeping historical audit entries intact.
+            <AlertDialogDescription className="mt-2 text-xs leading-relaxed text-slate-600">
+              Are you sure you want to delete this facility record? This will archive the
+              physical asset from GIS maps and emergency routing while keeping historical
+              audit entries intact.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
@@ -923,7 +934,7 @@ export default function AdminFacilitiesPage() {
               size="sm"
               onClick={() => setFacilityToDelete(null)}
               disabled={deactivateMutation.isPending}
-              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+              className="cursor-pointer rounded-xl border-slate-200 text-xs font-bold hover:bg-slate-100"
             >
               Cancel
             </Button>
@@ -938,7 +949,7 @@ export default function AdminFacilitiesPage() {
                 }
               }}
               disabled={deactivateMutation.isPending}
-              className="rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs cursor-pointer"
+              className="cursor-pointer rounded-xl bg-rose-600 text-xs font-bold text-white shadow-xs hover:bg-rose-700"
             >
               {deactivateMutation.isPending ? "Deleting…" : "Confirm Delete"}
             </Button>

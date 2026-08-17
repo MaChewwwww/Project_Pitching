@@ -29,6 +29,11 @@ import {
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
 import { MeterBar } from "@/components/common/meter-bar";
+import {
+  DetailCardSkeleton,
+  MetricGridSkeleton,
+  TimelineSkeleton,
+} from "@/components/common/portal-loading";
 import { HouseholdSafetyLine } from "@/components/features/portal/household-safety-line";
 import { PortalHouseholdMap } from "@/components/features/portal/portal-household-map";
 import { api } from "@/lib/api/client";
@@ -115,28 +120,26 @@ export default function PortalDashboardPage() {
 
   const river = useQuery({
     queryKey: ["public", "river-level"],
-    queryFn: () =>
-      api.get<PublicRiverLevel>("/public/river-level").then((r) => r.data),
+    queryFn: () => api.get<PublicRiverLevel>("/public/river-level").then((r) => r.data),
   });
 
-  if (household.isLoading || !household.data) {
+  if (household.isFetching || !household.data) {
     return (
-      <div className="space-y-6 sm:space-y-8 animate-pulse">
-        <div className="h-48 rounded-3xl bg-emerald-100/40" />
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div className="h-32 rounded-3xl bg-slate-100" />
-          <div className="h-32 rounded-3xl bg-slate-100" />
-          <div className="h-32 rounded-3xl bg-slate-100" />
-          <div className="h-32 rounded-3xl bg-slate-100" />
-        </div>
+      <div className="space-y-6 sm:space-y-8">
+        <DetailCardSkeleton
+          label="Loading household dashboard"
+          rows={4}
+          className="min-h-48"
+        />
+        <MetricGridSkeleton label="Loading household readiness metrics" />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-8 space-y-6">
-            <div className="h-64 rounded-3xl bg-slate-100" />
-            <div className="h-80 rounded-3xl bg-slate-100" />
+          <div className="space-y-6 lg:col-span-8">
+            <DetailCardSkeleton label="Loading emergency readiness" rows={4} />
+            <TimelineSkeleton label="Loading household notices" rows={3} />
           </div>
-          <div className="lg:col-span-4 space-y-6">
-            <div className="h-64 rounded-3xl bg-slate-100" />
-            <div className="h-64 rounded-3xl bg-slate-100" />
+          <div className="space-y-6 lg:col-span-4">
+            <DetailCardSkeleton label="Loading weather watch" rows={3} />
+            <DetailCardSkeleton label="Loading evacuation information" rows={3} />
           </div>
         </div>
       </div>
@@ -191,7 +194,9 @@ export default function PortalDashboardPage() {
   // Safety counts
   const safetyMembersList = safety.data?.household?.members ?? [];
   const safeCount = safetyMembersList.filter((m) => m.status === "safe").length;
-  const needsRescueCount = safetyMembersList.filter((m) => m.status === "needs_rescue").length;
+  const needsRescueCount = safetyMembersList.filter(
+    (m) => m.status === "needs_rescue",
+  ).length;
 
   // Go-Bag calculations
   const goBagItems = goBag.data?.items ?? [];
@@ -207,8 +212,7 @@ export default function PortalDashboardPage() {
   // Family plan calculations
   const hasMeetingPoint = Boolean(familyPlan.data?.meeting_point?.trim());
   const hasOutOfAreaContact = Boolean(familyPlan.data?.out_of_area_contact?.trim());
-  const familyPlanPercent =
-    (hasMeetingPoint ? 50 : 0) + (hasOutOfAreaContact ? 50 : 0);
+  const familyPlanPercent = (hasMeetingPoint ? 50 : 0) + (hasOutOfAreaContact ? 50 : 0);
 
   // River telemetry
   const alertLevel = river.data?.alert_level ?? 0;
@@ -256,7 +260,7 @@ export default function PortalDashboardPage() {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* ── 1. Hero Greeting & Live Environmental Telemetry Banner ── */}
-      <section className="relative overflow-hidden rounded-3xl border border-emerald-900/15 bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-950 p-6 sm:p-8 text-white shadow-md">
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-900/15 bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-950 p-6 text-white shadow-md sm:p-8">
         {/* Background glow accents */}
         <div
           aria-hidden
@@ -269,7 +273,7 @@ export default function PortalDashboardPage() {
 
         <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           {/* Left: Resident Greeting & Credentials */}
-          <div className="space-y-3 min-w-0 flex-1">
+          <div className="min-w-0 flex-1 space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/20 px-3 py-0.5 text-xs font-bold text-white shadow-2xs backdrop-blur-md">
                 <Sparkles className="size-3 text-amber-300" />
@@ -284,11 +288,13 @@ export default function PortalDashboardPage() {
             </div>
 
             <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white">
+              <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl lg:text-4xl">
                 Mabuhay, <span className="text-amber-300">{firstName}!</span>
               </h1>
-              <p className="mt-1 max-w-2xl text-xs sm:text-sm leading-relaxed text-white/90 font-medium">
-                Welcome to your family readiness cockpit. Keep your emergency roster, 72-hour go-bag, and flood action plan ready for upcoming weather disturbances.
+              <p className="mt-1 max-w-2xl text-xs leading-relaxed font-medium text-white/90 sm:text-sm">
+                Welcome to your family readiness cockpit. Keep your emergency roster,
+                72-hour go-bag, and flood action plan ready for upcoming weather
+                disturbances.
               </p>
             </div>
 
@@ -330,24 +336,24 @@ export default function PortalDashboardPage() {
           </div>
 
           {/* Right: Real-time River & Weather Telemetry Capsule */}
-          <div className="flex flex-col gap-3 rounded-2xl border border-white/25 bg-black/20 p-4 backdrop-blur-md shadow-md lg:w-80 shrink-0">
-            <div className="flex items-center justify-between border-b border-white/15 pb-2.5 gap-2">
+          <div className="flex shrink-0 flex-col gap-3 rounded-2xl border border-white/25 bg-black/20 p-4 shadow-md backdrop-blur-md lg:w-80">
+            <div className="flex items-center justify-between gap-2 border-b border-white/15 pb-2.5">
               <div className="flex items-center gap-2">
                 <div className="grid size-7 place-items-center rounded-lg bg-white/20 text-white">
                   <Radio className="size-3.5 animate-pulse" />
                 </div>
-                <span className="text-xs font-black uppercase tracking-wider text-white">
+                <span className="text-xs font-black tracking-wider text-white uppercase">
                   Live Telemetry
                 </span>
               </div>
               <span
                 className={cn(
-                  "rounded-full px-2.5 py-0.5 text-[10.5px] font-black uppercase tracking-wider whitespace-nowrap shrink-0",
+                  "shrink-0 rounded-full px-2.5 py-0.5 text-[10.5px] font-black tracking-wider whitespace-nowrap uppercase",
                   alertLevel === 0
-                    ? "bg-emerald-500/30 text-white border border-emerald-300/50"
+                    ? "border border-emerald-300/50 bg-emerald-500/30 text-white"
                     : alertLevel === 1
-                      ? "bg-amber-400 text-amber-950 border border-amber-300 shadow-2xs"
-                      : "bg-red-500 text-white border border-red-300 shadow-2xs animate-pulse",
+                      ? "border border-amber-300 bg-amber-400 text-amber-950 shadow-2xs"
+                      : "animate-pulse border border-red-300 bg-red-500 text-white shadow-2xs",
                 )}
               >
                 {alertLevelName}
@@ -356,7 +362,7 @@ export default function PortalDashboardPage() {
 
             {/* River Metrics */}
             <div className="flex items-center justify-between text-xs">
-              <span className="flex items-center gap-1.5 text-white/90 font-medium">
+              <span className="flex items-center gap-1.5 font-medium text-white/90">
                 <Waves className="size-3.5 text-sky-300" />
                 <span>Montalban River:</span>
               </span>
@@ -376,8 +382,8 @@ export default function PortalDashboardPage() {
                 (r) => r.metric === "rainfall",
               );
               return (
-                <div className="flex items-center justify-between text-xs pt-0.5">
-                  <span className="flex items-center gap-1.5 text-white/90 font-medium">
+                <div className="flex items-center justify-between pt-0.5 text-xs">
+                  <span className="flex items-center gap-1.5 font-medium text-white/90">
                     <CloudSun className="size-3.5 text-amber-300" />
                     <span>Current Weather:</span>
                   </span>
@@ -386,7 +392,7 @@ export default function PortalDashboardPage() {
                       ? `${tempReading.value.toFixed(0)}°C`
                       : "30°C"}
                     {" • "}
-                    <span className="text-white/90 font-medium text-[11px]">
+                    <span className="text-[11px] font-medium text-white/90">
                       {rainReading?.value !== undefined && rainReading.value > 0
                         ? `${rainReading.value.toFixed(1)} mm/hr Rain`
                         : "Fair / Dry"}
@@ -399,7 +405,7 @@ export default function PortalDashboardPage() {
             {/* Bottom Link */}
             <Link
               href="/portal/weather"
-              className="mt-1 flex items-center justify-between rounded-xl border border-white/20 bg-white/15 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-white/25 transition-colors"
+              className="mt-1 flex items-center justify-between rounded-xl border border-white/20 bg-white/15 px-3 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-white/25"
             >
               <span>View River Gauge Charts</span>
               <ChevronRight className="size-3" />
@@ -409,10 +415,10 @@ export default function PortalDashboardPage() {
       </section>
 
       {/* ── 2. Five Key Operational Metrics Grid ── */}
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 sm:gap-4">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
         {/* Card 1: Household ID & Registered Area */}
-        <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden portal-card-hover">
-          <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
+        <Card className="portal-card-hover overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+          <CardContent className="flex h-full flex-col justify-between space-y-3 p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black tracking-wider text-neutral-400 uppercase">
                 Household Ref
@@ -422,10 +428,10 @@ export default function PortalDashboardPage() {
               </div>
             </div>
             <div>
-              <span className="font-mono text-base sm:text-lg font-black text-neutral-900 block truncate">
+              <span className="block truncate font-mono text-base font-black text-neutral-900 sm:text-lg">
                 {data.reference_no}
               </span>
-              <span className="text-xs font-bold text-emerald-700 truncate block mt-0.5">
+              <span className="mt-0.5 block truncate text-xs font-bold text-emerald-700">
                 {data.area_name ?? "San Jose Zone"}
               </span>
             </div>
@@ -433,8 +439,8 @@ export default function PortalDashboardPage() {
         </Card>
 
         {/* Card 2: Registered Family Members */}
-        <Card className="border-emerald-200/80 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 shadow-xs overflow-hidden portal-card-hover">
-          <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
+        <Card className="portal-card-hover overflow-hidden border-emerald-200/80 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 shadow-xs">
+          <CardContent className="flex h-full flex-col justify-between space-y-3 p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black tracking-wider text-emerald-800 uppercase">
                 Family Roster
@@ -445,14 +451,14 @@ export default function PortalDashboardPage() {
             </div>
             <div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-xl sm:text-2xl font-black text-emerald-950 tabular-nums">
+                <span className="text-xl font-black text-emerald-950 tabular-nums sm:text-2xl">
                   {members.length}
                 </span>
                 <span className="text-xs font-bold text-emerald-800">
                   Member{members.length === 1 ? "" : "s"}
                 </span>
               </div>
-              <span className="text-[11px] font-medium text-emerald-700 block mt-0.5 truncate">
+              <span className="mt-0.5 block truncate text-[11px] font-medium text-emerald-700">
                 Head: {firstName}
               </span>
             </div>
@@ -462,13 +468,13 @@ export default function PortalDashboardPage() {
         {/* Card 3: Special Needs / Care Flags */}
         <Card
           className={cn(
-            "shadow-xs overflow-hidden portal-card-hover",
+            "portal-card-hover overflow-hidden shadow-xs",
             specialNeedsCount > 0
               ? "border-purple-200/90 bg-gradient-to-br from-purple-50/60 to-pink-50/30 text-purple-950"
               : "border-neutral-200/90 bg-white",
           )}
         >
-          <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
+          <CardContent className="flex h-full flex-col justify-between space-y-3 p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span
                 className={cn(
@@ -493,7 +499,7 @@ export default function PortalDashboardPage() {
               <div className="flex items-baseline gap-1.5">
                 <span
                   className={cn(
-                    "text-xl sm:text-2xl font-black tabular-nums",
+                    "text-xl font-black tabular-nums sm:text-2xl",
                     specialNeedsCount > 0 ? "text-purple-950" : "text-neutral-900",
                   )}
                 >
@@ -510,8 +516,10 @@ export default function PortalDashboardPage() {
               </div>
               <span
                 className={cn(
-                  "text-[11px] font-medium block mt-0.5 truncate",
-                  specialNeedsCount > 0 ? "text-purple-800 font-bold" : "text-neutral-500",
+                  "mt-0.5 block truncate text-[11px] font-medium",
+                  specialNeedsCount > 0
+                    ? "font-bold text-purple-800"
+                    : "text-neutral-500",
                 )}
               >
                 {specialNeedsCount > 0
@@ -525,13 +533,13 @@ export default function PortalDashboardPage() {
         {/* Card 4: Waterway Proximity / Flood Risk */}
         <Card
           className={cn(
-            "shadow-xs overflow-hidden portal-card-hover",
+            "portal-card-hover overflow-hidden shadow-xs",
             currentProximity.tone,
           )}
         >
-          <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
+          <CardContent className="flex h-full flex-col justify-between space-y-3 p-4 sm:p-5">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black tracking-wider uppercase text-neutral-500">
+              <span className="text-[10px] font-black tracking-wider text-neutral-500 uppercase">
                 Flood Proximity
               </span>
               <div className="grid size-8 place-items-center rounded-xl bg-white/90 text-neutral-700 shadow-2xs">
@@ -539,12 +547,12 @@ export default function PortalDashboardPage() {
               </div>
             </div>
             <div>
-              <span className="text-xs sm:text-sm font-black text-neutral-900 block truncate">
+              <span className="block truncate text-xs font-black text-neutral-900 sm:text-sm">
                 {currentProximity.label}
               </span>
               <span
                 className={cn(
-                  "inline-flex items-center rounded-md border px-1.5 py-0.2 text-[9.5px] font-bold mt-1 shadow-2xs",
+                  "py-0.2 mt-1 inline-flex items-center rounded-md border px-1.5 text-[9.5px] font-bold shadow-2xs",
                   currentProximity.badge,
                 )}
               >
@@ -555,8 +563,8 @@ export default function PortalDashboardPage() {
         </Card>
 
         {/* Card 5: 72-Hour Go-Bag Readiness Status */}
-        <Card className="col-span-2 sm:col-span-1 border-sky-200/90 bg-gradient-to-br from-sky-50/50 to-blue-50/30 shadow-xs overflow-hidden portal-card-hover">
-          <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-3">
+        <Card className="portal-card-hover col-span-2 overflow-hidden border-sky-200/90 bg-gradient-to-br from-sky-50/50 to-blue-50/30 shadow-xs sm:col-span-1">
+          <CardContent className="flex h-full flex-col justify-between space-y-3 p-4 sm:p-5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black tracking-wider text-sky-800 uppercase">
                 Go-Bag Readiness
@@ -567,7 +575,7 @@ export default function PortalDashboardPage() {
             </div>
             <div className="space-y-1.5">
               <div className="flex items-baseline justify-between">
-                <span className="text-xl sm:text-2xl font-black text-sky-950 tabular-nums">
+                <span className="text-xl font-black text-sky-950 tabular-nums sm:text-2xl">
                   {goBagPercent}%
                 </span>
                 <span className="text-[10.5px] font-bold text-sky-700">
@@ -586,9 +594,9 @@ export default function PortalDashboardPage() {
       </section>
 
       {/* ── 3. Main 12-Column Responsive Dashboard Layout ── */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8 items-start">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-8">
         {/* ── LEFT COLUMN: Flood Hazard Map + Family Roster (8 cols) ── */}
-        <div className="lg:col-span-8 space-y-6 sm:space-y-8">
+        <div className="space-y-6 sm:space-y-8 lg:col-span-8">
           {/* Module A: Local Flood Hazard Map Preview */}
           <section className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200/80 pb-3">
@@ -597,11 +605,12 @@ export default function PortalDashboardPage() {
                   <Map className="size-4.5" />
                 </span>
                 <div>
-                  <h2 className="text-base sm:text-lg font-black text-neutral-900">
+                  <h2 className="text-base font-black text-neutral-900 sm:text-lg">
                     Local Flood Hazard Context
                   </h2>
-                  <p className="text-xs text-neutral-500 font-normal">
-                    Official UP NOAH flood hazard model centered on your residence in {data.area_name ?? "San Jose"}
+                  <p className="text-xs font-normal text-neutral-500">
+                    Official UP NOAH flood hazard model centered on your residence in{" "}
+                    {data.area_name ?? "San Jose"}
                   </p>
                 </div>
               </div>
@@ -610,11 +619,11 @@ export default function PortalDashboardPage() {
                 asChild
                 size="sm"
                 variant="outline"
-                className="h-9 rounded-full border-neutral-300 bg-white px-4 text-xs font-bold text-neutral-800 hover:bg-neutral-50 shadow-2xs"
+                className="h-9 rounded-full border-neutral-300 bg-white px-4 text-xs font-bold text-neutral-800 shadow-2xs hover:bg-neutral-50"
               >
                 <Link href="/portal/hazard-map">
                   <span>Open Full Hazard Map</span>
-                  <ExternalLink className="size-3.5 ml-1" />
+                  <ExternalLink className="ml-1 size-3.5" />
                 </Link>
               </Button>
             </div>
@@ -627,14 +636,14 @@ export default function PortalDashboardPage() {
                     <Building2 className="size-4 text-emerald-700" />
                     <span>
                       Nearest Evacuation Facility:{" "}
-                      <strong className="text-neutral-900 font-bold">
+                      <strong className="font-bold text-neutral-900">
                         Kasiglahan Village Elementary School / San Jose Covered Court
                       </strong>
                     </span>
                   </div>
                   <Link
                     href="/portal/hazard-map"
-                    className="font-bold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1"
+                    className="flex items-center gap-1 font-bold text-emerald-700 hover:text-emerald-800 hover:underline"
                   >
                     <span>View Evacuation Routes</span>
                     <ChevronRight className="size-3.5" />
@@ -652,10 +661,10 @@ export default function PortalDashboardPage() {
                   <UsersRound className="size-4.5" />
                 </span>
                 <div>
-                  <h2 className="text-base sm:text-lg font-black text-neutral-900">
+                  <h2 className="text-base font-black text-neutral-900 sm:text-lg">
                     Household Members Roster
                   </h2>
-                  <p className="text-xs text-neutral-500 font-normal">
+                  <p className="text-xs font-normal text-neutral-500">
                     Registered family members & individual safety check-in status
                   </p>
                 </div>
@@ -665,10 +674,10 @@ export default function PortalDashboardPage() {
                 {activeEvents.length > 0 ? (
                   <span
                     className={cn(
-                      "rounded-full px-3 py-1 text-xs font-bold border",
+                      "rounded-full border px-3 py-1 text-xs font-bold",
                       needsRescueCount > 0
-                        ? "bg-red-50 text-red-800 border-red-200 animate-pulse"
-                        : "bg-emerald-50 text-emerald-800 border-emerald-200",
+                        ? "animate-pulse border-red-200 bg-red-50 text-red-800"
+                        : "border-emerald-200 bg-emerald-50 text-emerald-800",
                     )}
                   >
                     {needsRescueCount > 0
@@ -680,11 +689,11 @@ export default function PortalDashboardPage() {
                   asChild
                   size="sm"
                   variant="outline"
-                  className="h-9 rounded-full border-neutral-300 bg-white px-4 text-xs font-bold text-neutral-800 hover:bg-neutral-50 shadow-2xs"
+                  className="h-9 rounded-full border-neutral-300 bg-white px-4 text-xs font-bold text-neutral-800 shadow-2xs hover:bg-neutral-50"
                 >
                   <Link href="/portal/household">
                     <span>Manage Roster</span>
-                    <ArrowRight className="size-3.5 ml-1" />
+                    <ArrowRight className="ml-1 size-3.5" />
                   </Link>
                 </Button>
               </div>
@@ -695,16 +704,16 @@ export default function PortalDashboardPage() {
         </div>
 
         {/* ── RIGHT COLUMN: Readiness Health + Broadcasts + Emergency Trigger (4 cols) ── */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="space-y-6 lg:col-span-4">
           {/* Module C: Family Preparedness Health Index Card */}
-          <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden portal-card-hover">
-            <CardContent className="p-5 sm:p-6 space-y-4">
+          <Card className="portal-card-hover overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+            <CardContent className="space-y-4 p-5 sm:p-6">
               <div className="flex items-center gap-2.5 border-b border-neutral-100 pb-3">
                 <span className="grid size-8 place-items-center rounded-xl bg-emerald-100 text-emerald-700 shadow-2xs">
                   <HeartPulse className="size-4.5" />
                 </span>
                 <div>
-                  <h3 className="text-xs font-black uppercase tracking-wider text-neutral-900">
+                  <h3 className="text-xs font-black tracking-wider text-neutral-900 uppercase">
                     Preparedness Health Index
                   </h3>
                   <span className="text-[11px] text-neutral-500">
@@ -728,8 +737,9 @@ export default function PortalDashboardPage() {
                   label="Go-bag pack meter"
                   className="h-1.5 rounded-full"
                 />
-                <span className="text-[10.5px] text-neutral-500 block pt-0.5">
-                  {essentialChecked} of {essentialTotal} essential survival supplies packed
+                <span className="block pt-0.5 text-[10.5px] text-neutral-500">
+                  {essentialChecked} of {essentialTotal} essential survival supplies
+                  packed
                 </span>
               </div>
 
@@ -742,14 +752,14 @@ export default function PortalDashboardPage() {
                   </span>
                   <span
                     className={cn(
-                      "font-bold text-xs",
+                      "text-xs font-bold",
                       familyPlanPercent === 100 ? "text-emerald-700" : "text-amber-700",
                     )}
                   >
                     {familyPlanPercent === 100 ? "Configured ✓" : "Incomplete"}
                   </span>
                 </div>
-                <span className="text-[10.5px] text-neutral-500 block">
+                <span className="block text-[10.5px] text-neutral-500">
                   {hasMeetingPoint
                     ? `Assembly: ${familyPlan.data?.meeting_point}`
                     : "No meeting point assigned yet"}
@@ -761,22 +771,22 @@ export default function PortalDashboardPage() {
                 asChild
                 variant="outline"
                 size="sm"
-                className="w-full rounded-full border-neutral-300 bg-white font-bold text-neutral-800 hover:bg-neutral-50 text-xs shadow-2xs"
+                className="w-full rounded-full border-neutral-300 bg-white text-xs font-bold text-neutral-800 shadow-2xs hover:bg-neutral-50"
               >
                 <Link href="/portal/preparedness">
                   <span>Open Preparedness Hub</span>
-                  <ArrowRight className="size-3 ml-1" />
+                  <ArrowRight className="ml-1 size-3" />
                 </Link>
               </Button>
             </CardContent>
           </Card>
 
           {/* Module D: Recent Official Notices & Activity Feed */}
-          <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden portal-card-hover">
-            <CardContent className="p-5 space-y-3.5">
+          <Card className="portal-card-hover overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+            <CardContent className="space-y-3.5 p-5">
               <div className="flex items-center justify-between border-b border-neutral-100 pb-2.5">
                 <div className="flex items-center gap-2">
-                  <div className="grid size-7 place-items-center rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                  <div className="grid size-7 place-items-center rounded-lg border border-emerald-200/60 bg-emerald-50 text-emerald-700">
                     <Bell className="size-3.5" />
                   </div>
                   <h3 className="text-xs font-bold text-neutral-900">
@@ -784,7 +794,7 @@ export default function PortalDashboardPage() {
                   </h3>
                 </div>
                 {unreadNoticesCount > 0 ? (
-                  <span className="text-[10px] font-black text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
+                  <span className="rounded-full border border-emerald-200/80 bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-800">
                     {unreadNoticesCount} Unread
                   </span>
                 ) : null}
@@ -799,31 +809,31 @@ export default function PortalDashboardPage() {
                       className="group block rounded-xl border border-neutral-200/80 bg-neutral-50/50 p-3 transition-colors hover:border-emerald-300 hover:bg-emerald-50/40"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-neutral-900 text-xs truncate group-hover:text-emerald-900">
+                        <span className="truncate text-xs font-bold text-neutral-900 group-hover:text-emerald-900">
                           {notice.title}
                         </span>
-                        <span className="text-[10px] text-neutral-400 shrink-0">
+                        <span className="shrink-0 text-[10px] text-neutral-400">
                           {new Intl.DateTimeFormat("en-PH", {
                             month: "short",
                             day: "numeric",
                           }).format(new Date(notice.created_at))}
                         </span>
                       </div>
-                      <p className="text-[11.5px] text-neutral-600 line-clamp-2 mt-1 leading-snug">
+                      <p className="mt-1 line-clamp-2 text-[11.5px] leading-snug text-neutral-600">
                         {notice.body}
                       </p>
                     </Link>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-neutral-500 py-2 text-center">
+                <p className="py-2 text-center text-xs text-neutral-500">
                   No active emergency broadcasts right now.
                 </p>
               )}
 
               <Link
                 href="/portal/updates"
-                className="block text-center text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline pt-1"
+                className="block pt-1 text-center text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline"
               >
                 View all notifications & logs →
               </Link>
@@ -831,7 +841,7 @@ export default function PortalDashboardPage() {
           </Card>
 
           {/* Module E: Direct Emergency Dispatch Callout */}
-          <div className="rounded-2xl border-2 border-red-300/90 bg-gradient-to-br from-red-50 via-rose-50/80 to-red-100/60 p-5 shadow-sm space-y-3">
+          <div className="space-y-3 rounded-2xl border-2 border-red-300/90 bg-gradient-to-br from-red-50 via-rose-50/80 to-red-100/60 p-5 shadow-sm">
             <div className="flex items-center gap-2 text-red-800">
               <LifeBuoy className="size-4 text-red-700" />
               <span className="text-[10px] font-black tracking-[0.14em] uppercase">
@@ -843,15 +853,16 @@ export default function PortalDashboardPage() {
                 Need Immediate Rescue or Medical Evacuation?
               </h4>
               <p className="mt-1 text-xs leading-relaxed text-neutral-600">
-                Submit an urgent GPS rescue dispatch ticket or dial the 24/7 BDRRMC command center.
+                Submit an urgent GPS rescue dispatch ticket or dial the 24/7 BDRRMC
+                command center.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
               <Button
                 asChild
                 size="sm"
-                className="w-full cursor-pointer gap-1.5 rounded-full bg-red-600 font-bold text-white shadow-xs hover:bg-red-700 text-xs active:scale-[0.98]"
+                className="w-full cursor-pointer gap-1.5 rounded-full bg-red-600 text-xs font-bold text-white shadow-xs hover:bg-red-700 active:scale-[0.98]"
               >
                 <Link href="/portal/rescue">
                   <LifeBuoy className="size-3.5" />
@@ -862,7 +873,7 @@ export default function PortalDashboardPage() {
                 asChild
                 variant="outline"
                 size="sm"
-                className="w-full cursor-pointer gap-1.5 rounded-full border-neutral-300 bg-white font-bold text-neutral-800 hover:bg-neutral-50 text-xs"
+                className="w-full cursor-pointer gap-1.5 rounded-full border-neutral-300 bg-white text-xs font-bold text-neutral-800 hover:bg-neutral-50"
               >
                 <Link href="/portal/report">
                   <FileWarning className="size-3.5 text-amber-700" />

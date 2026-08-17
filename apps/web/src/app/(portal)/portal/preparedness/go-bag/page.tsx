@@ -15,6 +15,7 @@ import {
 
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import { DetailCardSkeleton, TimelineSkeleton } from "@/components/common/portal-loading";
 import { MeterBar } from "@/components/common/meter-bar";
 import { PortalPageHeader } from "@/components/features/portal/portal-page-header";
 import { api } from "@/lib/api/client";
@@ -56,17 +57,21 @@ export default function PortalGoBagPage() {
     saveMutation.mutate(checked);
   };
 
-  if (query.isLoading || !query.data) {
+  if (query.isFetching || !query.data) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-32 rounded-3xl bg-emerald-100/40" />
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8 space-y-6">
-            <div className="h-36 rounded-3xl bg-slate-100" />
-            <div className="h-96 rounded-3xl bg-slate-100" />
+      <div className="space-y-6">
+        <DetailCardSkeleton label="Loading go-bag readiness" rows={3} />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="space-y-6 lg:col-span-8">
+            <DetailCardSkeleton label="Loading go-bag summary" rows={3} />
+            <TimelineSkeleton label="Loading go-bag checklist" rows={5} />
           </div>
-          <div className="lg:col-span-4 space-y-6">
-            <div className="h-72 rounded-3xl bg-slate-100" />
+          <div className="space-y-6 lg:col-span-4">
+            <DetailCardSkeleton
+              label="Loading go-bag guidance"
+              rows={5}
+              className="min-h-72"
+            />
           </div>
         </div>
       </div>
@@ -105,7 +110,7 @@ export default function PortalGoBagPage() {
               asChild
               variant="outline"
               size="sm"
-              className="h-10 cursor-pointer gap-2 rounded-full border border-neutral-300/90 bg-white px-4 font-bold text-neutral-800 shadow-xs transition-all hover:bg-neutral-50 hover:border-neutral-400 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
+              className="h-10 cursor-pointer gap-2 rounded-full border border-neutral-300/90 bg-white px-4 font-bold text-neutral-800 shadow-xs transition-all hover:border-neutral-400 hover:bg-neutral-50 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
             >
               <Link href="/guides">
                 <BookOpen aria-hidden className="size-3.5 text-neutral-600" />
@@ -117,23 +122,23 @@ export default function PortalGoBagPage() {
       />
 
       {/* ── 2-Column Responsive Layout ── */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         {/* ── LEFT COLUMN: Progress & Interactive Checklist (8 Cols) ── */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className="space-y-6 lg:col-span-8">
           {/* 1. Progress Bar Card */}
-          <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
-            <CardContent className="p-5 sm:p-6 space-y-4">
+          <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+            <CardContent className="space-y-4 p-5 sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">
+                  <span className="text-[10px] font-black tracking-wider text-emerald-800 uppercase">
                     Emergency Pack Status
                   </span>
-                  <h2 className="text-xl sm:text-2xl font-black text-neutral-900">
+                  <h2 className="text-xl font-black text-neutral-900 sm:text-2xl">
                     {completedCount} of {totalCount} Items Packed
                   </h2>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-emerald-50 border border-emerald-300/80 px-3.5 py-1 text-xs font-black text-emerald-800 shadow-2xs">
+                  <span className="rounded-full border border-emerald-300/80 bg-emerald-50 px-3.5 py-1 text-xs font-black text-emerald-800 shadow-2xs">
                     {percent}% Complete
                   </span>
                 </div>
@@ -146,7 +151,7 @@ export default function PortalGoBagPage() {
                 className="h-3 rounded-full"
               />
 
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs text-neutral-500 font-medium">
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs font-medium text-neutral-500">
                 <span className="flex items-center gap-1.5 text-neutral-700">
                   <PackageCheck className="size-4 text-emerald-600" />
                   <span>
@@ -171,10 +176,10 @@ export default function PortalGoBagPage() {
               type="button"
               onClick={() => setSelectedCategory("all")}
               className={cn(
-                "cursor-pointer rounded-full px-4 py-2 text-xs font-bold transition-all shadow-2xs",
+                "cursor-pointer rounded-full px-4 py-2 text-xs font-bold shadow-2xs transition-all",
                 selectedCategory === "all"
                   ? "bg-emerald-700 text-white shadow-sm ring-2 ring-emerald-600/30"
-                  : "bg-white text-neutral-700 border border-neutral-300/80 hover:bg-neutral-50 hover:border-neutral-400",
+                  : "border border-neutral-300/80 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50",
               )}
             >
               All Items ({totalCount})
@@ -188,10 +193,10 @@ export default function PortalGoBagPage() {
                   type="button"
                   onClick={() => setSelectedCategory(cat)}
                   className={cn(
-                    "cursor-pointer rounded-full px-4 py-2 text-xs font-bold transition-all shadow-2xs",
+                    "cursor-pointer rounded-full px-4 py-2 text-xs font-bold shadow-2xs transition-all",
                     isSelected
                       ? "bg-emerald-700 text-white shadow-sm ring-2 ring-emerald-600/30"
-                      : "bg-white text-neutral-700 border border-neutral-300/80 hover:bg-neutral-50 hover:border-neutral-400",
+                      : "border border-neutral-300/80 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50",
                   )}
                 >
                   {cat} ({countInCat})
@@ -211,13 +216,13 @@ export default function PortalGoBagPage() {
                   onClick={() => toggle(item.id)}
                   disabled={saveMutation.isPending}
                   className={cn(
-                    "group flex w-full cursor-pointer items-center justify-between gap-3.5 rounded-2xl border p-4 text-left transition-all duration-150 active:scale-[0.99]",
+                    "group flex w-full cursor-pointer items-center justify-between gap-3.5 rounded-2xl border p-4 text-left transition-all duration-[260ms] active:scale-[0.99] active:duration-150",
                     isChecked
                       ? "border-emerald-300 bg-emerald-50/60 shadow-2xs"
-                      : "border-neutral-200/90 bg-white hover:border-neutral-300 hover:bg-neutral-50/60 shadow-2xs",
+                      : "border-neutral-200/90 bg-white shadow-2xs hover:border-neutral-300 hover:bg-neutral-50/60",
                   )}
                 >
-                  <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="flex min-w-0 items-center gap-3.5">
                     <span
                       className={cn(
                         "grid size-8 shrink-0 place-items-center rounded-full border transition-all",
@@ -242,12 +247,12 @@ export default function PortalGoBagPage() {
                           {item.name_en}
                         </span>
                         {item.is_essential ? (
-                          <span className="rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-black uppercase text-red-700">
+                          <span className="rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-black text-red-700 uppercase">
                             Essential
                           </span>
                         ) : null}
                       </div>
-                      <span className="text-[11px] font-medium text-neutral-400 block mt-0.5">
+                      <span className="mt-0.5 block text-[11px] font-medium text-neutral-400">
                         {item.category}
                       </span>
                     </div>
@@ -257,7 +262,7 @@ export default function PortalGoBagPage() {
                     className={cn(
                       "shrink-0 rounded-full px-3 py-1 text-xs font-bold transition-colors",
                       isChecked
-                        ? "bg-emerald-200/80 text-emerald-900 font-black"
+                        ? "bg-emerald-200/80 font-black text-emerald-900"
                         : "bg-neutral-100 text-neutral-500 group-hover:bg-neutral-200/70",
                     )}
                   >
@@ -270,10 +275,10 @@ export default function PortalGoBagPage() {
         </div>
 
         {/* ── RIGHT COLUMN: Go-Bag Guidelines & Maintenance (4 Cols) ── */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="space-y-6 lg:col-span-4">
           {/* Card 1: Key Packing Rules */}
-          <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
-            <CardContent className="p-5 sm:p-6 space-y-4">
+          <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+            <CardContent className="space-y-4 p-5 sm:p-6">
               <div className="flex items-center gap-2.5 border-b border-neutral-100 pb-3">
                 <span className="grid size-9 place-items-center rounded-xl bg-emerald-100 text-emerald-700 shadow-2xs">
                   <ShieldCheck className="size-5" />
@@ -288,14 +293,15 @@ export default function PortalGoBagPage() {
                 </div>
               </div>
 
-              <div className="space-y-3 text-xs text-neutral-600 leading-relaxed">
+              <div className="space-y-3 text-xs leading-relaxed text-neutral-600">
                 <div className="flex items-start gap-2.5">
                   <span className="grid size-5 shrink-0 place-items-center rounded-full bg-emerald-100 text-[11px] font-black text-emerald-800">
                     1
                   </span>
                   <p>
-                    <strong className="text-neutral-900">1 Bag Per Person:</strong>{" "}
-                    Each household member should have a lightweight backpack tailored to their needs.
+                    <strong className="text-neutral-900">1 Bag Per Person:</strong> Each
+                    household member should have a lightweight backpack tailored to their
+                    needs.
                   </p>
                 </div>
                 <div className="flex items-start gap-2.5">
@@ -304,7 +310,8 @@ export default function PortalGoBagPage() {
                   </span>
                   <p>
                     <strong className="text-neutral-900">Waterproof Seal:</strong> Place
-                    government IDs, birth certificates, and medications in sealed Ziploc bags.
+                    government IDs, birth certificates, and medications in sealed Ziploc
+                    bags.
                   </p>
                 </div>
                 <div className="flex items-start gap-2.5">
@@ -312,8 +319,9 @@ export default function PortalGoBagPage() {
                     3
                   </span>
                   <p>
-                    <strong className="text-neutral-900">Accessible Placement:</strong> Store
-                    bags near the main doorway or exit route, never in locked cabinets.
+                    <strong className="text-neutral-900">Accessible Placement:</strong>{" "}
+                    Store bags near the main doorway or exit route, never in locked
+                    cabinets.
                   </p>
                 </div>
               </div>
@@ -322,15 +330,16 @@ export default function PortalGoBagPage() {
 
           {/* Card 2: Periodic Maintenance */}
           <Card className="border-emerald-200/70 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 shadow-2xs">
-            <CardContent className="p-5 space-y-3">
+            <CardContent className="space-y-3 p-5">
               <div className="flex items-center gap-2 text-emerald-900">
                 <RotateCw className="size-4 text-emerald-700" />
-                <span className="text-xs font-black uppercase tracking-wider">
+                <span className="text-xs font-black tracking-wider uppercase">
                   6-Month Inspection
                 </span>
               </div>
-              <p className="text-xs text-neutral-600 leading-relaxed">
-                Inspect canned food expiration dates, replace drinking water bottles, test flashlight batteries, and check seasonal clothing sizes every 6 months.
+              <p className="text-xs leading-relaxed text-neutral-600">
+                Inspect canned food expiration dates, replace drinking water bottles, test
+                flashlight batteries, and check seasonal clothing sizes every 6 months.
               </p>
             </CardContent>
           </Card>

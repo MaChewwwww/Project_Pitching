@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/common/button";
+import { DataSurfaceLoading } from "@/components/common/portal-loading";
 import { ErrorState } from "@/components/common/error-state";
-import { ListSkeleton } from "@/components/common/skeletons";
 import {
   Select,
   SelectContent,
@@ -70,6 +70,8 @@ export interface ResourceTableProps<T> {
   columns: ResourceColumn<T>[];
   data: T[] | undefined;
   isLoading: boolean;
+  /** Specific label announced while records are replaced during a fetch. */
+  loadingLabel?: string;
   isError: boolean;
   onRetry?: () => void;
   emptyTitle?: string;
@@ -147,6 +149,7 @@ export function ResourceTable<T extends object>({
   columns,
   data,
   isLoading,
+  loadingLabel = "Loading records",
   isError,
   onRetry,
   emptyTitle = "Nothing here yet",
@@ -275,7 +278,6 @@ export function ResourceTable<T extends object>({
   const pageSize = serverPagination?.size ?? PAGE_SIZE;
   const totalColSpan = columns.length + (rowActions ? 1 : 0);
 
-  if (isLoading) return <ListSkeleton rows={5} />;
   if (isError) {
     return (
       <ErrorState
@@ -315,7 +317,10 @@ export function ResourceTable<T extends object>({
   };
 
   return (
-    <section className="border-primary-200/80 shadow-sm-card overflow-hidden rounded-[14px] border bg-white">
+    <section
+      aria-busy={isLoading}
+      className="border-primary-200/80 shadow-sm-card overflow-hidden rounded-[14px] border bg-white"
+    >
       <div className="border-b border-neutral-100 bg-gradient-to-r from-emerald-50/50 via-white to-teal-50/30 p-3 sm:px-4">
         <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           <label className="relative block w-full min-w-0 sm:max-w-xs md:max-w-sm">
@@ -326,6 +331,7 @@ export function ResourceTable<T extends object>({
             />
             <input
               value={query}
+              disabled={isLoading}
               onChange={(event) => {
                 if (searchValue === undefined) setLocalQuery(event.target.value);
                 onSearchChange?.(event.target.value);
@@ -338,6 +344,7 @@ export function ResourceTable<T extends object>({
             {query ? (
               <button
                 type="button"
+                disabled={isLoading}
                 onClick={() => {
                   if (searchValue === undefined) setLocalQuery("");
                   onSearchChange?.("");
@@ -357,6 +364,7 @@ export function ResourceTable<T extends object>({
               <Button
                 size="sm"
                 variant="ghost"
+                disabled={isLoading}
                 onClick={reset}
                 className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-xs font-bold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
               >
@@ -472,273 +480,290 @@ export function ResourceTable<T extends object>({
         </div>
       </div>
 
-      <div className="space-y-3 bg-neutral-50/60 p-3 md:hidden">
-        {pagedRows.length > 0 ? (
-          pagedRows.map((row) => {
-            const firstCol = columns[0];
-            const remainingCols = columns.slice(1);
-            return (
-              <article
-                key={getRowKey(row)}
-                onClick={() => onRowSelect?.(row)}
-                className={cn(
-                  "portal-card-hover relative space-y-3 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-4 shadow-2xs",
-                  onRowSelect && "cursor-pointer",
-                  selectedRowKey === getRowKey(row) && "ring-2 ring-emerald-500",
-                )}
-              >
-                {/* Subtle top accent bar */}
-                <div className="absolute top-0 right-0 left-0 h-0.5 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-400" />
-
-                {/* Card Header: Primary Identifier Column */}
-                {firstCol ? (
-                  <div className="min-w-0 pr-2">
-                    <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
-                      {firstCol.header}
-                    </span>
-                    <h3 className="mt-0.5 text-sm leading-snug font-bold break-words text-neutral-900">
-                      {firstCol.render
-                        ? firstCol.render(row)
-                        : plainValue((row as Record<string, unknown>)[firstCol.key])}
-                    </h3>
-                  </div>
-                ) : null}
-
-                {/* Remaining attributes in 2-column key-value grid */}
-                {remainingCols.length > 0 ? (
-                  <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-neutral-100 pt-2.5">
-                    {remainingCols.map((column) => (
-                      <div key={column.key} className="min-w-0">
-                        <dt className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
-                          {column.header}
-                        </dt>
-                        <dd className="mt-0.5 text-xs font-semibold break-words text-neutral-700">
-                          {column.render
-                            ? column.render(row)
-                            : plainValue((row as Record<string, unknown>)[column.key])}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                ) : null}
-
-                {/* Card Action Footer */}
-                {rowActions ? (
-                  <div className="flex w-full flex-wrap items-center justify-center gap-2 border-t border-neutral-100 pt-2.5">
-                    {rowActions(row)}
-                  </div>
-                ) : null}
-              </article>
-            );
-          })
-        ) : (
-          <div className="rounded-xl border border-dashed border-neutral-200 bg-white p-8 text-center">
-            <div className="flex flex-col items-center justify-center gap-2 text-center text-slate-500">
-              <div className="grid size-10 place-items-center rounded-full bg-slate-100 text-slate-400">
-                {isFiltered ? (
-                  <SearchX className="size-5" />
-                ) : (
-                  <Inbox className="size-5" />
-                )}
-              </div>
-              <p className="text-sm font-bold text-slate-800">
-                {isFiltered ? "No matching records" : emptyTitle}
-              </p>
-              <p className="text-xs text-slate-500">
-                {isFiltered
-                  ? "No row matches the current search and filter criteria."
-                  : emptyDescription || "No records have been added to this list yet."}
-              </p>
-              {isFiltered && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={reset}
-                  className="mt-2 text-xs font-semibold"
-                >
-                  Clear search and filters
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <Table className="hidden md:table">
-        <TableHeader className="bg-primary-900 shadow-[0_1px_0_0_var(--color-primary-800)]">
-          <TableRow className="hover:bg-primary-900 border-primary-800">
-            {columns.map((column) => {
-              const sorted = sortKey === column.key;
-              return (
-                <TableHead
-                  key={column.key}
-                  aria-sort={
-                    sorted
-                      ? sortDirection === "asc"
-                        ? "ascending"
-                        : "descending"
-                      : "none"
-                  }
-                  className={cn("text-primary-50 h-11 px-4", column.className)}
-                >
-                  {disableSorting ? (
-                    <span className="text-[11px] font-bold tracking-[0.08em] uppercase">
-                      {column.header}
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => sort(column.key)}
-                      title={
-                        !sorted
-                          ? `Sort by ${column.header}, A to Z`
-                          : sortDirection === "asc"
-                            ? `Sort by ${column.header}, Z to A`
-                            : `Clear sorting on ${column.header}`
-                      }
-                      className="group focus-visible:ring-primary-200 inline-flex items-center gap-1.5 rounded text-[11px] font-bold tracking-[0.08em] uppercase transition-colors hover:text-white focus-visible:ring-2 focus-visible:outline-none"
-                    >
-                      {column.header}
-                      {sorted ? (
-                        sortDirection === "asc" ? (
-                          <ArrowUp
-                            aria-hidden
-                            className="size-3.5 text-white"
-                            strokeWidth={2.5}
-                          />
-                        ) : (
-                          <ArrowDown
-                            aria-hidden
-                            className="size-3.5 text-white"
-                            strokeWidth={2.5}
-                          />
-                        )
-                      ) : (
-                        <ChevronsUpDown
-                          aria-hidden
-                          className="text-primary-400/70 group-hover:text-primary-200 size-3.5 transition-colors"
-                        />
-                      )}
-                    </button>
-                  )}
-                </TableHead>
-              );
-            })}
-            {rowActions ? (
-              <TableHead className="text-primary-50 h-11 px-4 text-right text-[11px] font-bold tracking-[0.08em] uppercase">
-                Actions
-              </TableHead>
-            ) : null}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+      <div className="relative min-h-80">
+        <div
+          aria-hidden={isLoading || undefined}
+          className="space-y-3 bg-neutral-50/60 p-3 md:hidden"
+        >
           {pagedRows.length > 0 ? (
-            pagedRows.map((row, index) => (
-              <TableRow
-                key={getRowKey(row)}
-                onClick={() => onRowSelect?.(row)}
-                className={cn(
-                  "border-primary-100/80 hover:bg-primary-50/80 transition-colors duration-150",
-                  index % 2 === 1 && "bg-emerald-50/35",
-                  onRowSelect && "cursor-pointer",
-                  selectedRowKey === getRowKey(row) && "bg-emerald-100/70",
-                )}
-              >
-                {columns.map((column) => (
-                  <TableCell
-                    key={column.key}
-                    className={cn("px-4 py-3 text-neutral-700", column.className)}
-                  >
-                    {column.render
-                      ? column.render(row)
-                      : plainValue((row as Record<string, unknown>)[column.key])}
-                  </TableCell>
-                ))}
-                {rowActions ? (
-                  <TableCell
-                    className="px-4 py-3 text-right"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex justify-end gap-2">{rowActions(row)}</div>
-                  </TableCell>
-                ) : null}
-              </TableRow>
-            ))
+            pagedRows.map((row) => {
+              const firstCol = columns[0];
+              const remainingCols = columns.slice(1);
+              return (
+                <article
+                  key={getRowKey(row)}
+                  onClick={() => onRowSelect?.(row)}
+                  className={cn(
+                    "portal-card-hover relative space-y-3 overflow-hidden rounded-xl border border-neutral-200/90 bg-white p-4 shadow-2xs",
+                    onRowSelect && "cursor-pointer",
+                    selectedRowKey === getRowKey(row) && "ring-2 ring-emerald-500",
+                  )}
+                >
+                  {/* Subtle top accent bar */}
+                  <div className="absolute top-0 right-0 left-0 h-0.5 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-400" />
+
+                  {/* Card Header: Primary Identifier Column */}
+                  {firstCol ? (
+                    <div className="min-w-0 pr-2">
+                      <span className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                        {firstCol.header}
+                      </span>
+                      <h3 className="mt-0.5 text-sm leading-snug font-bold break-words text-neutral-900">
+                        {firstCol.render
+                          ? firstCol.render(row)
+                          : plainValue((row as Record<string, unknown>)[firstCol.key])}
+                      </h3>
+                    </div>
+                  ) : null}
+
+                  {/* Remaining attributes in 2-column key-value grid */}
+                  {remainingCols.length > 0 ? (
+                    <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-neutral-100 pt-2.5">
+                      {remainingCols.map((column) => (
+                        <div key={column.key} className="min-w-0">
+                          <dt className="text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
+                            {column.header}
+                          </dt>
+                          <dd className="mt-0.5 text-xs font-semibold break-words text-neutral-700">
+                            {column.render
+                              ? column.render(row)
+                              : plainValue((row as Record<string, unknown>)[column.key])}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : null}
+
+                  {/* Card Action Footer */}
+                  {rowActions ? (
+                    <div className="flex w-full flex-wrap items-center justify-center gap-2 border-t border-neutral-100 pt-2.5">
+                      {rowActions(row)}
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })
           ) : (
-            <TableRow className="hover:bg-transparent">
-              <TableCell colSpan={totalColSpan} className="h-44 py-12 text-center">
-                <div className="flex flex-col items-center justify-center gap-2 text-center text-slate-500">
-                  <div className="grid size-10 place-items-center rounded-full bg-slate-100 text-slate-400">
-                    {isFiltered ? (
-                      <SearchX className="size-5" />
-                    ) : (
-                      <Inbox className="size-5" />
-                    )}
-                  </div>
-                  <p className="text-sm font-bold text-slate-800">
-                    {isFiltered ? "No matching records" : emptyTitle}
-                  </p>
-                  <p className="max-w-sm text-xs text-slate-500">
-                    {isFiltered
-                      ? "No row matches the current search and filter criteria."
-                      : emptyDescription ||
-                        "No records have been added to this list yet."}
-                  </p>
-                  {isFiltered && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={reset}
-                      className="mt-2 text-xs font-semibold"
-                    >
-                      Clear search and filters
-                    </Button>
+            <div className="rounded-xl border border-dashed border-neutral-200 bg-white p-8 text-center">
+              <div className="flex flex-col items-center justify-center gap-2 text-center text-slate-500">
+                <div className="grid size-10 place-items-center rounded-full bg-slate-100 text-slate-400">
+                  {isFiltered ? (
+                    <SearchX className="size-5" />
+                  ) : (
+                    <Inbox className="size-5" />
                   )}
                 </div>
-              </TableCell>
-            </TableRow>
+                <p className="text-sm font-bold text-slate-800">
+                  {isFiltered ? "No matching records" : emptyTitle}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {isFiltered
+                    ? "No row matches the current search and filter criteria."
+                    : emptyDescription || "No records have been added to this list yet."}
+                </p>
+                {isFiltered && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={reset}
+                    className="mt-2 text-xs font-semibold"
+                  >
+                    Clear search and filters
+                  </Button>
+                )}
+              </div>
+            </div>
           )}
-        </TableBody>
-      </Table>
-
-      <footer className="border-primary-100 bg-primary-50/60 text-primary-900/75 flex flex-wrap items-center justify-between gap-3 border-t px-3 py-2.5 text-sm sm:px-4">
-        <span className="text-xs tabular-nums sm:text-sm">
-          {totalRows === 0
-            ? "Showing 0–0 of 0"
-            : `Showing ${(currentPage - 1) * pageSize + 1}–${Math.min((currentPage - 1) * pageSize + pagedRows.length, totalRows)} of ${totalRows}`}
-        </span>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={currentPage <= 1 || totalRows === 0}
-            onClick={() =>
-              serverPagination
-                ? serverPagination.onPageChange(currentPage - 1)
-                : setPage((value) => value - 1)
-            }
-          >
-            <ChevronLeft aria-hidden className="size-4" />
-            Previous
-          </Button>
-          <span className="text-xs tabular-nums sm:text-sm">
-            Page {totalRows === 0 ? 1 : currentPage} of {pages}
-          </span>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={currentPage >= pages || totalRows === 0}
-            onClick={() =>
-              serverPagination
-                ? serverPagination.onPageChange(currentPage + 1)
-                : setPage((value) => value + 1)
-            }
-          >
-            Next
-            <ChevronRight aria-hidden className="size-4" />
-          </Button>
         </div>
-      </footer>
+
+        <Table aria-hidden={isLoading || undefined} className="hidden md:table">
+          <TableHeader className="bg-primary-900 shadow-[0_1px_0_0_var(--color-primary-800)]">
+            <TableRow className="hover:bg-primary-900 border-primary-800">
+              {columns.map((column) => {
+                const sorted = sortKey === column.key;
+                return (
+                  <TableHead
+                    key={column.key}
+                    aria-sort={
+                      sorted
+                        ? sortDirection === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : "none"
+                    }
+                    className={cn("text-primary-50 h-11 px-4", column.className)}
+                  >
+                    {disableSorting ? (
+                      <span className="text-[11px] font-bold tracking-[0.08em] uppercase">
+                        {column.header}
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => sort(column.key)}
+                        title={
+                          !sorted
+                            ? `Sort by ${column.header}, A to Z`
+                            : sortDirection === "asc"
+                              ? `Sort by ${column.header}, Z to A`
+                              : `Clear sorting on ${column.header}`
+                        }
+                        className="group focus-visible:ring-primary-200 inline-flex items-center gap-1.5 rounded text-[11px] font-bold tracking-[0.08em] uppercase transition-colors hover:text-white focus-visible:ring-2 focus-visible:outline-none"
+                      >
+                        {column.header}
+                        {sorted ? (
+                          sortDirection === "asc" ? (
+                            <ArrowUp
+                              aria-hidden
+                              className="size-3.5 text-white"
+                              strokeWidth={2.5}
+                            />
+                          ) : (
+                            <ArrowDown
+                              aria-hidden
+                              className="size-3.5 text-white"
+                              strokeWidth={2.5}
+                            />
+                          )
+                        ) : (
+                          <ChevronsUpDown
+                            aria-hidden
+                            className="text-primary-400/70 group-hover:text-primary-200 size-3.5 transition-colors"
+                          />
+                        )}
+                      </button>
+                    )}
+                  </TableHead>
+                );
+              })}
+              {rowActions ? (
+                <TableHead className="text-primary-50 h-11 px-4 text-right text-[11px] font-bold tracking-[0.08em] uppercase">
+                  Actions
+                </TableHead>
+              ) : null}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pagedRows.length > 0 ? (
+              pagedRows.map((row, index) => (
+                <TableRow
+                  key={getRowKey(row)}
+                  onClick={() => onRowSelect?.(row)}
+                  className={cn(
+                    "border-primary-100/80 hover:bg-primary-50/80 transition-colors duration-[260ms]",
+                    index % 2 === 1 && "bg-emerald-50/35",
+                    onRowSelect && "cursor-pointer",
+                    selectedRowKey === getRowKey(row) && "bg-emerald-100/70",
+                  )}
+                >
+                  {columns.map((column) => (
+                    <TableCell
+                      key={column.key}
+                      className={cn("px-4 py-3 text-neutral-700", column.className)}
+                    >
+                      {column.render
+                        ? column.render(row)
+                        : plainValue((row as Record<string, unknown>)[column.key])}
+                    </TableCell>
+                  ))}
+                  {rowActions ? (
+                    <TableCell
+                      className="px-4 py-3 text-right"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex justify-end gap-2">{rowActions(row)}</div>
+                    </TableCell>
+                  ) : null}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={totalColSpan} className="h-44 py-12 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2 text-center text-slate-500">
+                    <div className="grid size-10 place-items-center rounded-full bg-slate-100 text-slate-400">
+                      {isFiltered ? (
+                        <SearchX className="size-5" />
+                      ) : (
+                        <Inbox className="size-5" />
+                      )}
+                    </div>
+                    <p className="text-sm font-bold text-slate-800">
+                      {isFiltered ? "No matching records" : emptyTitle}
+                    </p>
+                    <p className="max-w-sm text-xs text-slate-500">
+                      {isFiltered
+                        ? "No row matches the current search and filter criteria."
+                        : emptyDescription ||
+                          "No records have been added to this list yet."}
+                    </p>
+                    {isFiltered && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={reset}
+                        className="mt-2 text-xs font-semibold"
+                      >
+                        Clear search and filters
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+
+        <footer
+          aria-hidden={isLoading || undefined}
+          className="border-primary-100 bg-primary-50/60 text-primary-900/75 flex flex-wrap items-center justify-between gap-3 border-t px-3 py-2.5 text-sm sm:px-4"
+        >
+          <span className="text-xs tabular-nums sm:text-sm">
+            {totalRows === 0
+              ? "Showing 0–0 of 0"
+              : `Showing ${(currentPage - 1) * pageSize + 1}–${Math.min((currentPage - 1) * pageSize + pagedRows.length, totalRows)} of ${totalRows}`}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={currentPage <= 1 || totalRows === 0}
+              onClick={() =>
+                serverPagination
+                  ? serverPagination.onPageChange(currentPage - 1)
+                  : setPage((value) => value - 1)
+              }
+            >
+              <ChevronLeft aria-hidden className="size-4" />
+              Previous
+            </Button>
+            <span className="text-xs tabular-nums sm:text-sm">
+              Page {totalRows === 0 ? 1 : currentPage} of {pages}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={currentPage >= pages || totalRows === 0}
+              onClick={() =>
+                serverPagination
+                  ? serverPagination.onPageChange(currentPage + 1)
+                  : setPage((value) => value + 1)
+              }
+            >
+              Next
+              <ChevronRight aria-hidden className="size-4" />
+            </Button>
+          </div>
+        </footer>
+        {isLoading ? (
+          <div className="absolute inset-0 z-10">
+            <DataSurfaceLoading
+              label={loadingLabel}
+              minHeight="20rem"
+              className="h-full"
+            />
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 }

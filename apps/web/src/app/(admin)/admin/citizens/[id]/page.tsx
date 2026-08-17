@@ -27,6 +27,11 @@ import { toast } from "sonner";
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import {
+  DetailCardSkeleton,
+  MapWorkspaceSkeleton,
+  TimelineSkeleton,
+} from "@/components/common/portal-loading";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { SearchableHouseholdSelect } from "@/components/features/admin/searchable-household-select";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
@@ -60,7 +65,9 @@ const LocationPicker = dynamic(
   () => import("@/components/features/registry/location-picker"),
   {
     ssr: false,
-    loading: () => <div className="h-56 animate-pulse rounded-xl bg-neutral-100" />,
+    loading: () => (
+      <MapWorkspaceSkeleton label="Loading household location" minHeight="14rem" />
+    ),
   },
 );
 
@@ -138,8 +145,8 @@ export default function CitizenDetailPage() {
     onError: (error) => toast.error(toDisplayError(error).detail),
   });
 
-  if (citizen.isLoading)
-    return <div className="min-h-72 animate-pulse rounded-2xl bg-white" />;
+  if (citizen.isFetching)
+    return <DetailCardSkeleton label="Loading citizen details" rows={7} />;
   if (!citizen.data)
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">
@@ -242,11 +249,12 @@ export default function CitizenDetailPage() {
         <HouseholdTab
           citizen={row}
           household={household.data}
+          isLoading={household.isFetching}
           onMadeHead={() => makeHead.mutate()}
           makingHead={makeHead.isPending}
         />
       ) : (
-        <ActivityTab activity={activity.data} loading={activity.isLoading} />
+        <ActivityTab activity={activity.data} loading={activity.isFetching} />
       )}
     </div>
   );
@@ -337,11 +345,13 @@ function Overview({ citizen }: { citizen: RegistryMemberDetailOut }) {
 function HouseholdTab({
   citizen,
   household,
+  isLoading,
   onMadeHead,
   makingHead,
 }: {
   citizen: RegistryMemberDetailOut;
   household?: HouseholdDetailOut;
+  isLoading: boolean;
   onMadeHead: () => void;
   makingHead: boolean;
 }) {
@@ -376,6 +386,8 @@ function HouseholdTab({
   const point = household?.location
     ? { lat: household.location.coordinates[1], lng: household.location.coordinates[0] }
     : null;
+
+  if (isLoading) return <DetailCardSkeleton label="Loading household context" rows={6} />;
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
@@ -620,7 +632,7 @@ function ActivityTab({
   activity?: RegistryMemberActivityOut;
   loading: boolean;
 }) {
-  if (loading) return <div className="min-h-64 animate-pulse rounded-2xl bg-white" />;
+  if (loading) return <TimelineSkeleton label="Loading citizen activity" rows={4} />;
   return (
     <div className="space-y-4">
       <Card className="border-violet-200 bg-gradient-to-r from-violet-50 to-white">

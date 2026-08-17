@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/common/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/card";
+import { FormFieldsSkeleton } from "@/components/common/portal-loading";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, toDisplayError } from "@/lib/api/client";
@@ -39,19 +40,22 @@ function EditForm({ person }: { person: UnregisteredPersonOut }) {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      return api.patch<UnregisteredPersonOut>(`/admin/unregistered-persons/${person.id}`, {
-        full_name: fullName.trim(),
-        contact_number: contactNumber.trim() || null,
-        location_note: locationNote.trim() || null,
-        is_child: isChild || isInfant,
-        is_senior: isSenior,
-        is_pwd: isPwd,
-        is_pregnant: isPregnant,
-        is_lactating: isLactating,
-        has_chronic_condition: hasChronicCondition,
-        chronic_condition_note: chronicNote.trim() || null,
-        is_bedridden: isBedridden,
-      });
+      return api.patch<UnregisteredPersonOut>(
+        `/admin/unregistered-persons/${person.id}`,
+        {
+          full_name: fullName.trim(),
+          contact_number: contactNumber.trim() || null,
+          location_note: locationNote.trim() || null,
+          is_child: isChild || isInfant,
+          is_senior: isSenior,
+          is_pwd: isPwd,
+          is_pregnant: isPregnant,
+          is_lactating: isLactating,
+          has_chronic_condition: hasChronicCondition,
+          chronic_condition_note: chronicNote.trim() || null,
+          is_bedridden: isBedridden,
+        },
+      );
     },
     onSuccess: () => {
       toast.success("Walk-in person details updated successfully");
@@ -79,12 +83,12 @@ function EditForm({ person }: { person: UnregisteredPersonOut }) {
           <CardTitle className="text-lg font-black text-neutral-900">
             Edit Walk-In Person Details
           </CardTitle>
-          <p className="text-xs text-neutral-500 mt-0.5">
+          <p className="mt-0.5 text-xs text-neutral-500">
             Update name, contact information, location address, and support needs.
           </p>
         </CardHeader>
 
-        <CardContent className="p-6 flex flex-col gap-4">
+        <CardContent className="flex flex-col gap-4 p-6">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="full_name" className="text-xs font-bold text-neutral-800">
               Full Name <span className="text-rose-500">*</span>
@@ -99,7 +103,10 @@ function EditForm({ person }: { person: UnregisteredPersonOut }) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="contact_number" className="text-xs font-bold text-neutral-800">
+            <Label
+              htmlFor="contact_number"
+              className="text-xs font-bold text-neutral-800"
+            >
               Contact Number (Optional)
             </Label>
             <Input
@@ -125,12 +132,12 @@ function EditForm({ person }: { person: UnregisteredPersonOut }) {
           </div>
 
           {/* Special Needs Checklist */}
-          <fieldset className="rounded-xl border border-neutral-200 bg-slate-50/50 p-4 mt-2">
-            <legend className="px-1 text-xs font-bold uppercase tracking-wider text-neutral-800">
+          <fieldset className="mt-2 rounded-xl border border-neutral-200 bg-slate-50/50 p-4">
+            <legend className="px-1 text-xs font-bold tracking-wider text-neutral-800 uppercase">
               Special Needs & Demographics
             </legend>
-            <div className="grid grid-cols-2 gap-3 text-xs font-medium text-neutral-800 mt-2">
-              <label className="flex items-center gap-2 cursor-pointer">
+            <div className="mt-2 grid grid-cols-2 gap-3 text-xs font-medium text-neutral-800">
+              <label className="flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   checked={isInfant}
@@ -139,7 +146,7 @@ function EditForm({ person }: { person: UnregisteredPersonOut }) {
                 />
                 Infant / Toddler (0–4 y/o)
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   checked={isChild}
@@ -148,7 +155,7 @@ function EditForm({ person }: { person: UnregisteredPersonOut }) {
                 />
                 Minor (5–17 y/o)
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   checked={isSenior}
@@ -157,7 +164,7 @@ function EditForm({ person }: { person: UnregisteredPersonOut }) {
                 />
                 Senior Citizen (60+)
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   checked={isPwd}
@@ -166,7 +173,7 @@ function EditForm({ person }: { person: UnregisteredPersonOut }) {
                 />
                 PWD
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   checked={isPregnant}
@@ -175,7 +182,7 @@ function EditForm({ person }: { person: UnregisteredPersonOut }) {
                 />
                 Pregnant
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   checked={isLactating}
@@ -184,7 +191,7 @@ function EditForm({ person }: { person: UnregisteredPersonOut }) {
                 />
                 Lactating Mother
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   checked={hasChronicCondition}
@@ -193,7 +200,7 @@ function EditForm({ person }: { person: UnregisteredPersonOut }) {
                 />
                 Chronic Condition
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   checked={isBedridden}
@@ -205,7 +212,10 @@ function EditForm({ person }: { person: UnregisteredPersonOut }) {
             </div>
 
             <div className="mt-3.5">
-              <Label htmlFor="chronic_note" className="text-xs font-bold text-neutral-800">
+              <Label
+                htmlFor="chronic_note"
+                className="text-xs font-bold text-neutral-800"
+              >
                 Medical / Chronic Condition Note
               </Label>
               <Input
@@ -213,16 +223,18 @@ function EditForm({ person }: { person: UnregisteredPersonOut }) {
                 placeholder="e.g. Daily hypertension medication, dialysis twice weekly..."
                 value={chronicNote}
                 onChange={(e) => setChronicNote(e.target.value)}
-                className="h-9 mt-1 rounded-lg"
+                className="mt-1 h-9 rounded-lg"
               />
             </div>
           </fieldset>
 
-          <div className="flex items-center justify-end gap-3 mt-4">
+          <div className="mt-4 flex items-center justify-end gap-3">
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push(`/admin/unregistered-persons/${person.id}` as Route)}
+              onClick={() =>
+                router.push(`/admin/unregistered-persons/${person.id}` as Route)
+              }
               className="h-10 rounded-xl px-5 font-bold"
             >
               Cancel
@@ -230,9 +242,9 @@ function EditForm({ person }: { person: UnregisteredPersonOut }) {
             <Button
               type="submit"
               disabled={mutation.isPending}
-              className="h-10 rounded-xl bg-emerald-700 px-6 font-bold text-white shadow-sm hover:bg-emerald-800 cursor-pointer"
+              className="h-10 cursor-pointer rounded-xl bg-emerald-700 px-6 font-bold text-white shadow-sm hover:bg-emerald-800"
             >
-              <Save className="size-4 mr-1.5" />
+              <Save className="mr-1.5 size-4" />
               {mutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </div>
@@ -247,7 +259,7 @@ export default function EditUnregisteredPersonPage() {
   const params = useParams<{ id: string }>();
   const personId = params.id;
 
-  const { data: person, isLoading } = useQuery({
+  const { data: person, isFetching } = useQuery({
     queryKey: ["admin", "unregistered-persons", personId],
     queryFn: () =>
       api
@@ -256,14 +268,8 @@ export default function EditUnregisteredPersonPage() {
     enabled: Boolean(personId),
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
-        <div className="size-8 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
-        <p className="text-xs font-bold text-neutral-600">Loading walk-in details...</p>
-      </div>
-    );
-  }
+  if (isFetching)
+    return <FormFieldsSkeleton label="Loading walk-in person editor" fields={8} />;
 
   if (!person) {
     return (
@@ -274,12 +280,12 @@ export default function EditUnregisteredPersonPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl mx-auto">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
       {/* Top Breadcrumb */}
       <nav className="flex items-center gap-2 text-xs font-medium text-neutral-500">
         <Link
           href={`/admin/unregistered-persons/${personId}` as Route}
-          className="hover:text-emerald-700 transition-colors inline-flex items-center gap-1"
+          className="inline-flex items-center gap-1 transition-colors hover:text-emerald-700"
         >
           <ArrowLeft className="size-3.5" />
           Back to Profile

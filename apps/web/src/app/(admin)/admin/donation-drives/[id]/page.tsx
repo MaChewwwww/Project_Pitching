@@ -11,7 +11,7 @@ import {
   type DonationDriveFormValues,
 } from "@/components/features/admin/donation-drive-form";
 import { ErrorState } from "@/components/common/error-state";
-import { ListSkeleton } from "@/components/common/skeletons";
+import { FormFieldsSkeleton } from "@/components/common/portal-loading";
 import { api, toDisplayError } from "@/lib/api/client";
 import { useRequireRole } from "@/lib/auth/use-require-role";
 import type { ArticleDocument, ArticleImage } from "@/lib/api/public-types";
@@ -43,7 +43,7 @@ export default function AdminDonationDriveEditorPage() {
   const queryClient = useQueryClient();
   const queryKey = ["admin", "donation-drives", id];
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isFetching, isError, refetch } = useQuery({
     queryKey,
     queryFn: () =>
       api.get<DonationDriveEditor>(`/admin/donation-drives/${id}`).then((r) => r.data),
@@ -85,7 +85,8 @@ export default function AdminDonationDriveEditorPage() {
     },
   });
 
-  if (isLoading) return <ListSkeleton rows={4} />;
+  if (isFetching)
+    return <FormFieldsSkeleton label="Loading donation drive editor" fields={8} />;
   if (isError || !data)
     return <ErrorState sectionName="This donation drive" onRetry={() => refetch()} />;
 
@@ -97,13 +98,14 @@ export default function AdminDonationDriveEditorPage() {
     organizer_name: data.organizer_name ?? "Barangay San Jose Relief Desk",
     organizer_contact: data.organizer_contact ?? "(02) 8555-0100",
     drop_off_instructions: data.drop_off_instructions ?? "",
-    active_from: localDateTime(data.active_from) || localDateTime(new Date().toISOString()),
+    active_from:
+      localDateTime(data.active_from) || localDateTime(new Date().toISOString()),
     active_until: localDateTime(data.active_until),
     publication_status: data.archived_at
       ? "archived"
       : data.published_at
-      ? "published"
-      : "draft",
+        ? "published"
+        : "draft",
   };
 
   return (

@@ -16,6 +16,7 @@ import {
 
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import { TimelineSkeleton } from "@/components/common/portal-loading";
 import { PortalPageHeader } from "@/components/features/portal/portal-page-header";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
@@ -92,10 +93,7 @@ export default function PortalHistoryPage() {
     ["pending", "dispatched", "in_progress"].includes(i.status.toLowerCase()),
   ).length;
 
-  const statusToneMap: Record<
-    string,
-    { badge: string; dot: string; label: string }
-  > = {
+  const statusToneMap: Record<string, { badge: string; dot: string; label: string }> = {
     pending: {
       badge: "border-amber-300 bg-amber-50 text-amber-900 font-black",
       dot: "bg-amber-500",
@@ -128,7 +126,7 @@ export default function PortalHistoryPage() {
     },
   };
 
-  const isLoading = rescueQuery.isLoading || reportsQuery.isLoading;
+  const isLoading = rescueQuery.isFetching || reportsQuery.isFetching;
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -144,7 +142,7 @@ export default function PortalHistoryPage() {
               asChild
               variant="outline"
               size="sm"
-              className="h-10 cursor-pointer gap-2 rounded-full border border-neutral-300/90 bg-white px-4 font-bold text-neutral-800 shadow-xs transition-all hover:bg-neutral-50 hover:border-neutral-400 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
+              className="h-10 cursor-pointer gap-2 rounded-full border border-neutral-300/90 bg-white px-4 font-bold text-neutral-800 shadow-xs transition-all hover:border-neutral-400 hover:bg-neutral-50 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
             >
               <Link href="/portal/report">
                 <FileWarning aria-hidden className="size-3.5 text-neutral-600" />
@@ -158,39 +156,41 @@ export default function PortalHistoryPage() {
       {/* ── 1. Top Metrics Grid ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {/* Metric 1: Total Records */}
-        <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
-          <CardContent className="p-5 flex items-center gap-4">
+        <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+          <CardContent className="flex items-center gap-4 p-5">
             <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-emerald-100 text-emerald-700 shadow-2xs">
               <History className="size-6" />
             </span>
             <div className="min-w-0">
-              <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400">
+              <span className="text-[10px] font-black tracking-wider text-neutral-400 uppercase">
                 Total Logs
               </span>
               <h3 className="text-2xl font-black text-neutral-900 tabular-nums">
                 {combinedItems.length}
               </h3>
-              <p className="text-[11px] text-neutral-500 font-medium truncate">
-                {activeCount > 0 ? `${activeCount} active request(s)` : "All records archived"}
+              <p className="truncate text-[11px] font-medium text-neutral-500">
+                {activeCount > 0
+                  ? `${activeCount} active request(s)`
+                  : "All records archived"}
               </p>
             </div>
           </CardContent>
         </Card>
 
         {/* Metric 2: Rescue Requests */}
-        <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
-          <CardContent className="p-5 flex items-center gap-4">
+        <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+          <CardContent className="flex items-center gap-4 p-5">
             <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-red-100 text-red-700 shadow-2xs">
               <LifeBuoy className="size-6" />
             </span>
             <div className="min-w-0">
-              <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400">
+              <span className="text-[10px] font-black tracking-wider text-neutral-400 uppercase">
                 Rescue Requests
               </span>
               <h3 className="text-2xl font-black text-neutral-900 tabular-nums">
                 {rescueItems.length}
               </h3>
-              <p className="text-[11px] text-neutral-500 font-medium truncate">
+              <p className="truncate text-[11px] font-medium text-neutral-500">
                 Emergency life-safety dispatches
               </p>
             </div>
@@ -198,19 +198,19 @@ export default function PortalHistoryPage() {
         </Card>
 
         {/* Metric 3: Incident Reports */}
-        <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
-          <CardContent className="p-5 flex items-center gap-4">
+        <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+          <CardContent className="flex items-center gap-4 p-5">
             <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-800 shadow-2xs">
               <FileWarning className="size-6" />
             </span>
             <div className="min-w-0">
-              <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400">
+              <span className="text-[10px] font-black tracking-wider text-neutral-400 uppercase">
                 Incident Reports
               </span>
               <h3 className="text-2xl font-black text-neutral-900 tabular-nums">
                 {reportItems.length}
               </h3>
-              <p className="text-[11px] text-neutral-500 font-medium truncate">
+              <p className="truncate text-[11px] font-medium text-neutral-500">
                 {resolvedCount} resolved by operations
               </p>
             </div>
@@ -221,17 +221,17 @@ export default function PortalHistoryPage() {
       {/* ── 2. Unified Activity Feed Card Container ── */}
       <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-xs">
         {/* Container Header: Filters & Search */}
-        <div className="flex flex-col gap-3 border-b border-neutral-100 bg-neutral-50/70 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-b border-neutral-100 bg-neutral-50/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
           {/* Category Filter Pills */}
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setFilter("all")}
               className={cn(
-                "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold shadow-2xs transition-all",
                 filter === "all"
                   ? "bg-emerald-700 text-white shadow-xs ring-2 ring-emerald-600/30"
-                  : "border border-neutral-300/80 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400",
+                  : "border border-neutral-300/80 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50",
               )}
             >
               All Activity ({combinedItems.length})
@@ -240,10 +240,10 @@ export default function PortalHistoryPage() {
               type="button"
               onClick={() => setFilter("rescue")}
               className={cn(
-                "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold shadow-2xs transition-all",
                 filter === "rescue"
                   ? "bg-red-700 text-white shadow-xs ring-2 ring-red-600/30"
-                  : "border border-neutral-300/80 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400",
+                  : "border border-neutral-300/80 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50",
               )}
             >
               Rescue Requests ({rescueItems.length})
@@ -252,10 +252,10 @@ export default function PortalHistoryPage() {
               type="button"
               onClick={() => setFilter("incident")}
               className={cn(
-                "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold shadow-2xs transition-all",
                 filter === "incident"
                   ? "bg-amber-700 text-white shadow-xs ring-2 ring-amber-600/30"
-                  : "border border-neutral-300/80 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400",
+                  : "border border-neutral-300/80 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50",
               )}
             >
               Incident Reports ({reportItems.length})
@@ -264,23 +264,24 @@ export default function PortalHistoryPage() {
 
           {/* Quick Search */}
           <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400" />
+            <Search className="absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-neutral-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search records…"
-              className="w-full h-9 rounded-full border border-neutral-300 bg-white pl-8 pr-3 text-xs font-medium text-neutral-800 placeholder:text-neutral-400 focus:border-emerald-500 focus:outline-none shadow-2xs"
+              className="h-9 w-full rounded-full border border-neutral-300 bg-white pr-3 pl-8 text-xs font-medium text-neutral-800 shadow-2xs placeholder:text-neutral-400 focus:border-emerald-500 focus:outline-none"
             />
           </div>
         </div>
 
         {/* Container Body */}
         {isLoading ? (
-          <div className="p-6 space-y-4 animate-pulse">
-            <div className="h-32 rounded-2xl bg-slate-100" />
-            <div className="h-32 rounded-2xl bg-slate-100" />
-          </div>
+          <TimelineSkeleton
+            label="Loading household activity history"
+            rows={3}
+            className="p-5 sm:p-6"
+          />
         ) : rescueQuery.isError || reportsQuery.isError ? (
           <div className="flex flex-col items-center justify-center p-8 text-center sm:p-12">
             <History className="size-10 text-amber-700" />
@@ -288,7 +289,8 @@ export default function PortalHistoryPage() {
               Activity history is temporarily unavailable
             </h3>
             <p className="mt-1 max-w-md text-xs leading-relaxed text-neutral-600">
-              Your records have not been lost. Please try refreshing or check back in a few moments.
+              Your records have not been lost. Please try refreshing or check back in a
+              few moments.
             </p>
           </div>
         ) : filteredItems.length > 0 ? (
@@ -301,7 +303,7 @@ export default function PortalHistoryPage() {
               return (
                 <div
                   key={`${item.kind}-${item.id}`}
-                  className="p-5 sm:p-6 space-y-4 hover:bg-neutral-50/40 transition-colors"
+                  className="space-y-4 p-5 transition-colors hover:bg-neutral-50/40 sm:p-6"
                 >
                   {/* Item Header: Icon, Type, Subtitle, Date, Status */}
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -322,11 +324,11 @@ export default function PortalHistoryPage() {
                       </span>
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-sm sm:text-base font-bold text-neutral-900 capitalize">
+                          <h3 className="text-sm font-bold text-neutral-900 capitalize sm:text-base">
                             {item.title}
                           </h3>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-neutral-400 font-medium mt-0.5">
+                        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] font-medium text-neutral-400">
                           <span className="text-neutral-500">{item.subtitle}</span>
                           <span>•</span>
                           <span className="flex items-center gap-1">
@@ -342,7 +344,7 @@ export default function PortalHistoryPage() {
 
                     <span
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-wider shadow-2xs",
+                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-black tracking-wider uppercase shadow-2xs",
                         tone.badge,
                       )}
                     >
@@ -353,10 +355,10 @@ export default function PortalHistoryPage() {
 
                   {/* Description Box */}
                   <div className="space-y-1">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400">
+                    <span className="text-[10px] font-black tracking-wider text-neutral-400 uppercase">
                       Reported Details
                     </span>
-                    <p className="rounded-xl border border-neutral-200/70 bg-neutral-50/70 p-3.5 text-xs sm:text-sm leading-relaxed text-neutral-800 font-normal">
+                    <p className="rounded-xl border border-neutral-200/70 bg-neutral-50/70 p-3.5 text-xs leading-relaxed font-normal text-neutral-800 sm:text-sm">
                       {item.description}
                     </p>
                   </div>
@@ -367,16 +369,16 @@ export default function PortalHistoryPage() {
                       <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-emerald-600 text-white shadow-xs">
                         <MessageSquare className="size-4" />
                       </span>
-                      <div className="space-y-0.5 min-w-0">
+                      <div className="min-w-0 space-y-0.5">
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-black uppercase tracking-wider text-emerald-900">
+                          <span className="text-[11px] font-black tracking-wider text-emerald-900 uppercase">
                             Barangay Operations Resolution
                           </span>
-                          <span className="rounded-md bg-emerald-200/80 px-1.5 py-0.2 text-[10px] font-black text-emerald-950 uppercase">
+                          <span className="py-0.2 rounded-md bg-emerald-200/80 px-1.5 text-[10px] font-black text-emerald-950 uppercase">
                             Official Note
                           </span>
                         </div>
-                        <p className="text-xs sm:text-[13px] leading-relaxed text-emerald-900 font-medium">
+                        <p className="text-xs leading-relaxed font-medium text-emerald-900 sm:text-[13px]">
                           {item.resolution_note}
                         </p>
                       </div>
@@ -398,15 +400,15 @@ export default function PortalHistoryPage() {
           </div>
         ) : (
           /* Empty State */
-          <div className="flex flex-col items-center justify-center p-8 sm:p-14 text-center space-y-4">
+          <div className="flex flex-col items-center justify-center space-y-4 p-8 text-center sm:p-14">
             <div className="grid size-14 place-items-center rounded-2xl bg-neutral-100 text-neutral-500 shadow-2xs">
               <ClipboardList className="size-7 text-neutral-600" />
             </div>
-            <div className="space-y-1 max-w-md">
+            <div className="max-w-md space-y-1">
               <h3 className="text-base font-bold text-neutral-900">
                 {searchQuery ? "No Matching Records Found" : "No Household Activity Yet"}
               </h3>
-              <p className="text-xs text-neutral-500 leading-relaxed">
+              <p className="text-xs leading-relaxed text-neutral-500">
                 {searchQuery
                   ? "Try searching with different keywords or clear your search term."
                   : "When your household submits an incident report or emergency rescue request, all logs and responder notes will appear here."}

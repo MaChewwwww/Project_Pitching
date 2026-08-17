@@ -12,6 +12,7 @@ import { AlertCircle, Check, Droplets, Home, MapPin, Users } from "lucide-react"
 
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import { FormFieldsSkeleton } from "@/components/common/portal-loading";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { HouseholdMemberRepeater } from "@/components/features/admin/household-member-repeater";
 import type { PointResolution } from "@/components/features/registry/location-picker";
@@ -1019,15 +1020,13 @@ export default function NewHouseholdPage() {
         .then((response) => response.data),
     enabled: Boolean(unregisteredId),
   });
-  if (unregisteredId && personQuery.isLoading) {
+  if (unregisteredId && personQuery.isFetching)
     return (
-      <Card>
-        <CardContent className="py-12 text-center text-sm text-neutral-500">
-          Loading emergency record…
-        </CardContent>
-      </Card>
+      <FormFieldsSkeleton
+        label="Loading emergency record for household registration"
+        fields={8}
+      />
     );
-  }
   if (unregisteredId && personQuery.isError) {
     return (
       <Card>

@@ -10,14 +10,16 @@ const STATUS_MAP = {
     label: "Confirmed Safe",
     badge: "bg-emerald-100 text-emerald-800 border-emerald-300",
     ring: "ring-emerald-500/20 bg-emerald-600 text-white",
-    cardBorder: "border-emerald-200 bg-gradient-to-br from-white via-white to-emerald-50/30",
+    cardBorder:
+      "border-emerald-200 bg-gradient-to-br from-white via-white to-emerald-50/30",
     icon: ShieldCheck,
   },
   needs_rescue: {
     label: "Needs Rescue",
     badge: "bg-red-100 text-red-800 border-red-300 animate-pulse",
     ring: "ring-red-500/30 bg-red-600 text-white animate-pulse",
-    cardBorder: "border-red-300 bg-gradient-to-br from-white via-white to-red-50/40 shadow-xs",
+    cardBorder:
+      "border-red-300 bg-gradient-to-br from-white via-white to-red-50/40 shadow-xs",
     icon: ShieldAlert,
   },
   unaccounted: {
@@ -65,13 +67,13 @@ export function HouseholdSafetyLine({
           <div
             key={member.id}
             className={cn(
-              "group relative flex flex-col justify-between rounded-2xl border p-4 transition-all duration-200 hover:shadow-xs",
+              "group relative flex flex-col justify-between rounded-2xl border p-4 transition-all duration-[260ms] hover:shadow-xs",
               meta.cardBorder,
             )}
           >
             {/* Top row: Avatar + Identity + Status */}
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3 min-w-0">
+              <div className="flex min-w-0 items-start gap-3">
                 <span
                   className={cn(
                     "grid size-10 shrink-0 place-items-center rounded-xl font-bold shadow-xs ring-4 transition-transform group-hover:scale-105",
@@ -86,12 +88,12 @@ export function HouseholdSafetyLine({
                       {member.full_name}
                     </span>
                     {member.is_head ? (
-                      <span className="rounded-full bg-emerald-100 border border-emerald-200/80 px-2 py-0.2 text-[10px] font-black text-emerald-800 uppercase">
+                      <span className="py-0.2 rounded-full border border-emerald-200/80 bg-emerald-100 px-2 text-[10px] font-black text-emerald-800 uppercase">
                         Head
                       </span>
                     ) : null}
                   </div>
-                  <span className="block truncate text-xs text-neutral-500 font-medium">
+                  <span className="block truncate text-xs font-medium text-neutral-500">
                     {member.relationship_to_head ||
                       (member.is_head ? "Household Head" : "Family Member")}
                     {age !== null ? ` • ${age} yrs old` : ""}
@@ -141,7 +143,7 @@ export function HouseholdSafetyLine({
 
             {/* Bottom row: Safety Status Badge */}
             <div className="mt-3.5 flex items-center justify-between border-t border-neutral-100 pt-2.5">
-              <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400">
+              <span className="text-[10px] font-black tracking-wider text-neutral-400 uppercase">
                 Safety Status
               </span>
               <span

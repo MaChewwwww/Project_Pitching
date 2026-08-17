@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 import { Card, CardContent } from "@/components/common/card";
+import { MetricGridSkeleton } from "@/components/common/portal-loading";
 import type { RegistrySummary } from "@/lib/api/registry-types";
 
 type FloodRiskCounts = {
@@ -33,7 +34,7 @@ function Metric({
   tone: string;
 }) {
   return (
-    <div className={`rounded-2xl border p-4 portal-card-hover ${tone}`}>
+    <div className={`portal-card-hover rounded-2xl border p-4 ${tone}`}>
       <div className="flex items-start justify-between gap-3">
         <p className="text-[10px] font-bold tracking-[0.12em] text-neutral-500 uppercase">
           {label}
@@ -86,7 +87,7 @@ export function RegistrySummaryRibbon({ summary }: { summary?: RegistrySummary }
         />
       </div>
 
-      <Card className="overflow-hidden border-emerald-200/80 bg-gradient-to-br from-white via-white to-emerald-50/50 portal-card-hover">
+      <Card className="portal-card-hover overflow-hidden border-emerald-200/80 bg-gradient-to-br from-white via-white to-emerald-50/50">
         <CardContent className="p-4 sm:p-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
@@ -151,10 +152,21 @@ function areaLabel(value: string): string {
 export function HouseholdRegistrySummary({
   summary,
   riskCounts,
+  isLoading = false,
 }: {
   summary?: RegistrySummary;
   riskCounts?: FloodRiskCounts;
+  isLoading?: boolean;
 }) {
+  if (isLoading) {
+    return (
+      <MetricGridSkeleton
+        count={3}
+        label="Loading household registry metrics"
+        className="lg:grid-cols-3"
+      />
+    );
+  }
   if (!summary) return null;
 
   const average = summary.average_household_size?.toFixed(1) ?? "—";
@@ -184,8 +196,8 @@ export function HouseholdRegistrySummary({
     <section aria-label="Household registry overview">
       <div className="grid items-stretch gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,0.85fr)]">
         {/* Card 1: Households & Registered Citizens */}
-        <Card className="flex flex-col justify-between overflow-hidden border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white h-full shadow-2xs">
-          <CardContent className="p-3 sm:p-4 flex flex-1 flex-col justify-between gap-3">
+        <Card className="flex h-full flex-col justify-between overflow-hidden border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white shadow-2xs">
+          <CardContent className="flex flex-1 flex-col justify-between gap-3 p-3 sm:p-4">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="flex items-center gap-2 text-sm font-bold text-neutral-950">
@@ -271,8 +283,8 @@ export function HouseholdRegistrySummary({
         </Card>
 
         {/* Card 2: Population by Area */}
-        <Card className="order-2 flex flex-col justify-between overflow-hidden border-sky-200/80 bg-gradient-to-br from-white via-white to-sky-50/45 h-full shadow-2xs">
-          <CardContent className="p-3 sm:p-4 flex flex-1 flex-col justify-between gap-3">
+        <Card className="order-2 flex h-full flex-col justify-between overflow-hidden border-sky-200/80 bg-gradient-to-br from-white via-white to-sky-50/45 shadow-2xs">
+          <CardContent className="flex flex-1 flex-col justify-between gap-3 p-3 sm:p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="flex items-center gap-2 text-sm font-bold text-neutral-950">
@@ -388,8 +400,8 @@ export function HouseholdRegistrySummary({
         </Card>
 
         {/* Card 3: Review Queue & Follow Up */}
-        <Card className="order-3 flex flex-col justify-between overflow-hidden border-violet-200/80 bg-gradient-to-br from-violet-50/70 via-white to-amber-50/40 h-full shadow-2xs">
-          <CardContent className="p-3 sm:p-4 flex flex-1 flex-col justify-between gap-3">
+        <Card className="order-3 flex h-full flex-col justify-between overflow-hidden border-violet-200/80 bg-gradient-to-br from-violet-50/70 via-white to-amber-50/40 shadow-2xs">
+          <CardContent className="flex flex-1 flex-col justify-between gap-3 p-3 sm:p-4">
             <div className="flex items-start gap-3">
               <span className="flex size-8 items-center justify-center rounded-xl bg-violet-600 text-white shadow-sm">
                 <ClipboardCheck aria-hidden className="size-4" />

@@ -6,6 +6,11 @@ import { AlertCircle } from "lucide-react";
 
 import { Card, CardContent } from "@/components/common/card";
 import { Button } from "@/components/common/button";
+import {
+  DetailCardSkeleton,
+  MapWorkspaceSkeleton,
+  MetricGridSkeleton,
+} from "@/components/common/portal-loading";
 import { PortalHazardMapView } from "@/components/features/portal/portal-hazard-map-view";
 import { api } from "@/lib/api/client";
 import type {
@@ -27,9 +32,7 @@ export default function PortalHazardMapPage() {
     queryKey: ["public", "area-boundaries"],
     queryFn: () =>
       api
-        .get<{ type: string; features: AreaBoundaryFeature[] }>(
-          "/public/area-boundaries",
-        )
+        .get<{ type: string; features: AreaBoundaryFeature[] }>("/public/area-boundaries")
         .then((r) => r.data?.features ?? []),
   });
 
@@ -51,34 +54,18 @@ export default function PortalHazardMapPage() {
 
   const riverQuery = useQuery({
     queryKey: ["public", "river-level"],
-    queryFn: () =>
-      api.get<PublicRiverLevel>("/public/river-level").then((r) => r.data),
+    queryFn: () => api.get<PublicRiverLevel>("/public/river-level").then((r) => r.data),
   });
 
   const isLoading =
-    householdQuery.isLoading ||
-    areaBoundariesQuery.isLoading ||
-    facilitiesQuery.isLoading;
+    householdQuery.isFetching ||
+    areaBoundariesQuery.isFetching ||
+    facilitiesQuery.isFetching ||
+    sirensQuery.isFetching ||
+    riverQuery.isFetching;
 
   const isError =
-    householdQuery.isError ||
-    areaBoundariesQuery.isError ||
-    facilitiesQuery.isError;
-
-  if (isLoading || !householdQuery.data) {
-    return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-32 rounded-3xl bg-emerald-100/40" />
-        <div className="h-[600px] rounded-3xl bg-slate-900/40" />
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <div className="h-28 rounded-2xl bg-slate-100" />
-          <div className="h-28 rounded-2xl bg-slate-100" />
-          <div className="h-28 rounded-2xl bg-slate-100" />
-          <div className="h-28 rounded-2xl bg-slate-100" />
-        </div>
-      </div>
-    );
-  }
+    householdQuery.isError || areaBoundariesQuery.isError || facilitiesQuery.isError;
 
   if (isError) {
     return (
@@ -88,8 +75,9 @@ export default function PortalHazardMapPage() {
           <h3 className="text-base font-bold text-red-950">
             Could not load flood hazard map
           </h3>
-          <p className="text-xs text-red-700 max-w-md">
-            There was an issue fetching the flood simulation or geographic data. Please try again.
+          <p className="max-w-md text-xs text-red-700">
+            There was an issue fetching the flood simulation or geographic data. Please
+            try again.
           </p>
           <Button
             size="sm"
@@ -100,12 +88,22 @@ export default function PortalHazardMapPage() {
                 facilitiesQuery.refetch(),
               ]);
             }}
-            className="rounded-full font-bold bg-red-600 hover:bg-red-700 text-white px-5"
+            className="rounded-full bg-red-600 px-5 font-bold text-white hover:bg-red-700"
           >
             Try Again
           </Button>
         </CardContent>
       </Card>
+    );
+  }
+
+  if (isLoading || !householdQuery.data) {
+    return (
+      <div className="space-y-6">
+        <DetailCardSkeleton label="Loading household flood map" rows={3} />
+        <MapWorkspaceSkeleton label="Loading flood hazard map" minHeight="37.5rem" />
+        <MetricGridSkeleton label="Loading nearby response assets" />
+      </div>
     );
   }
 

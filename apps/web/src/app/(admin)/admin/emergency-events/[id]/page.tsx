@@ -33,7 +33,7 @@ import {
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
-import { Card, CardContent } from "@/components/common/card";
+import { MapWorkspaceSkeleton } from "@/components/common/portal-loading";
 import { EditEventDialog } from "@/components/features/safety/edit-event-dialog";
 import { EmergencyEventBackfillDialog } from "@/components/features/safety/emergency-event-backfill-dialog";
 import { SafetyJourneyDrawer } from "@/components/features/safety/safety-journey-drawer";
@@ -218,7 +218,7 @@ export default function EmergencyEventDetailPage() {
     );
   }, [ledgerQuery.data?.items, ledgerSearch]);
 
-  if (eventQuery.isLoading) {
+  if (eventQuery.isFetching) {
     return (
       <div className="flex flex-col gap-6">
         <AdminPageHeader
@@ -597,7 +597,7 @@ export default function EmergencyEventDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
-                  {ledgerQuery.isLoading ? (
+                  {ledgerQuery.isFetching ? (
                     <tr>
                       <td
                         colSpan={8}
@@ -1050,7 +1050,7 @@ export default function EmergencyEventDetailPage() {
               </div>
             </div>
 
-            {workspaceQuery.isLoading ? (
+            {workspaceQuery.isFetching ? (
               <WorkspaceLoading label="Loading spatial map..." />
             ) : workspaceQuery.data ? (
               <EmergencyResponseMap data={workspaceQuery.data} />
@@ -1205,12 +1205,5 @@ export default function EmergencyEventDetailPage() {
 }
 
 function WorkspaceLoading({ label }: { label: string }) {
-  return (
-    <Card radius="lg" className="border-neutral-200">
-      <CardContent className="animate-pulse py-12 text-center text-sm font-semibold text-neutral-500">
-        <RefreshCw className="mx-auto mb-2 size-6 animate-spin text-emerald-600" />
-        {label}
-      </CardContent>
-    </Card>
-  );
+  return <MapWorkspaceSkeleton label={label} />;
 }

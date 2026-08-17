@@ -833,6 +833,12 @@
     perspective: 340px;
   }
 
+  /* Portal workspaces stay visible while an officer waits. Slow the loop there
+     without changing the public site's established loading rhythm. */
+  .ws-root[data-tempo="calm"] {
+    --ws-dur: 3.2s;
+  }
+
   .ws-stage {
     position: absolute;
     inset: 0;
@@ -1219,45 +1225,59 @@
   }
 
   .animate-portal-enter {
-    animation: portal-enter 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: portal-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .animate-portal-fade {
-    animation: portal-fade 0.22s ease-out both;
+    animation: portal-fade 0.36s ease-out both;
   }
 
   .animate-portal-scale {
-    animation: portal-scale-in 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: portal-scale-in 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .animate-portal-slide-right {
-    animation: portal-slide-right 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: portal-slide-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .animate-delay-1 {
-    animation-delay: 50ms;
+    animation-delay: 90ms;
   }
   .animate-delay-2 {
-    animation-delay: 100ms;
+    animation-delay: 180ms;
   }
   .animate-delay-3 {
-    animation-delay: 150ms;
+    animation-delay: 270ms;
   }
   .animate-delay-4 {
-    animation-delay: 200ms;
+    animation-delay: 360ms;
+  }
+
+  /* Portal-only loading shapes use the same gentle pace as card entrances.
+     The primitive remains untouched because public streaming fallbacks retain
+     their original animation contract. */
+  .portal-skeleton {
+    animation-duration: 2.4s;
   }
 
   /* Micro-interaction helper for cards and items */
   .portal-card-hover {
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+    transition:
+      transform 0.26s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.26s cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 0.26s ease;
   }
   .portal-card-hover:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+    box-shadow:
+      0 10px 25px -5px rgba(0, 0, 0, 0.05),
+      0 8px 10px -6px rgba(0, 0, 0, 0.03);
   }
 
   .portal-interactive {
-    transition: transform 0.12s ease, opacity 0.12s ease;
+    transition:
+      transform 0.12s ease,
+      opacity 0.12s ease;
   }
   .portal-interactive:active {
     transform: scale(0.98);

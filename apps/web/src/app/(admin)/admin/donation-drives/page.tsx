@@ -5,14 +5,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  CheckCircle2,
-  Gift,
-  Layers,
-  Pencil,
-  Plus,
-  Radio,
-} from "lucide-react";
+import { CheckCircle2, Gift, Layers, Pencil, Plus, Radio } from "lucide-react";
 
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { Button } from "@/components/common/button";
@@ -49,7 +42,7 @@ export default function AdminDonationDrivesPage() {
   useRequireRole("admin", "sk");
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["admin", "donation-drives"],
     queryFn: () => api.get<DonationDrive[]>("/admin/donation-drives").then((r) => r.data),
   });
@@ -68,7 +61,9 @@ export default function AdminDonationDrivesPage() {
   const metrics = React.useMemo(() => {
     const list = data ?? [];
     const total = list.length;
-    const published = list.filter((d) => Boolean(d.published_at) && !d.archived_at).length;
+    const published = list.filter(
+      (d) => Boolean(d.published_at) && !d.archived_at,
+    ).length;
     const drafts = list.filter((d) => !d.published_at && !d.archived_at).length;
     const archived = list.filter((d) => Boolean(d.archived_at)).length;
     const emergencyLinked = list.filter((d) => Boolean(d.event_id)).length;
@@ -90,7 +85,7 @@ export default function AdminDonationDrivesPage() {
       header: "Title",
       render: (row) => (
         <div className="flex flex-col gap-0.5">
-          <span className="font-bold text-neutral-900 line-clamp-1">{row.title}</span>
+          <span className="line-clamp-1 font-bold text-neutral-900">{row.title}</span>
           {row.event_name ? (
             <span className="text-[11px] font-semibold text-emerald-700">
               Event: {row.event_name}
@@ -112,8 +107,8 @@ export default function AdminDonationDrivesPage() {
               isArchived
                 ? "bg-neutral-100 text-neutral-700"
                 : isPublished
-                ? "bg-emerald-100 text-emerald-800"
-                : "bg-amber-100 text-amber-800",
+                  ? "bg-emerald-100 text-emerald-800"
+                  : "bg-amber-100 text-amber-800",
             )}
           >
             {isArchived ? "Archived" : isPublished ? "Published" : "Draft"}
@@ -145,7 +140,7 @@ export default function AdminDonationDrivesPage() {
       key: "organizer_name",
       header: "Organizer",
       render: (row) => (
-        <span className="text-xs text-neutral-700 font-medium">
+        <span className="text-xs font-medium text-neutral-700">
           {row.organizer_name || "Barangay San Jose"}
         </span>
       ),
@@ -161,7 +156,7 @@ export default function AdminDonationDrivesPage() {
           <Button
             asChild
             size="sm"
-            className="h-10 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-md shadow-emerald-900/15 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] transition-all px-4 gap-2 border border-emerald-600/30 max-sm:w-full max-sm:justify-center cursor-pointer"
+            className="h-10 cursor-pointer gap-2 rounded-full border border-emerald-600/30 bg-emerald-700 px-4 font-bold text-white shadow-md shadow-emerald-900/15 transition-all hover:bg-emerald-800 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
           >
             <Link href={"/admin/donation-drives/create-drive" as Route}>
               <Plus aria-hidden className="size-4 stroke-[2.5]" />
@@ -176,7 +171,7 @@ export default function AdminDonationDrivesPage() {
         {/* Card 1: Active In-Kind Drives */}
         <div className="flex flex-col justify-between rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-white via-emerald-50/20 to-teal-50/30 p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-900">
+            <span className="text-xs font-bold tracking-wider text-emerald-900 uppercase">
               Active Relief Drives
             </span>
             <div className="grid size-9 place-items-center rounded-xl bg-emerald-100/80 text-emerald-700 shadow-2xs">
@@ -187,7 +182,9 @@ export default function AdminDonationDrivesPage() {
             <span className="text-3xl font-black tracking-tight text-neutral-900">
               {metrics.published}
             </span>
-            <span className="text-xs font-semibold text-emerald-700">active campaigns</span>
+            <span className="text-xs font-semibold text-emerald-700">
+              active campaigns
+            </span>
           </div>
           <div className="mt-3 flex items-center justify-between border-t border-emerald-100/80 pt-2.5 text-xs">
             <span className="font-medium text-neutral-600">Open to Public:</span>
@@ -200,7 +197,7 @@ export default function AdminDonationDrivesPage() {
         {/* Card 2: Disaster Response Linked */}
         <div className="flex flex-col justify-between rounded-2xl border border-rose-200/80 bg-gradient-to-br from-white via-rose-50/20 to-orange-50/20 p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-rose-900">
+            <span className="text-xs font-bold tracking-wider text-rose-900 uppercase">
               Disaster-Linked Drives
             </span>
             <div className="grid size-9 place-items-center rounded-xl bg-rose-100 text-rose-700 shadow-2xs">
@@ -211,7 +208,9 @@ export default function AdminDonationDrivesPage() {
             <span className="text-3xl font-black tracking-tight text-neutral-900">
               {metrics.emergencyLinked}
             </span>
-            <span className="text-xs font-semibold text-rose-700">emergency campaigns</span>
+            <span className="text-xs font-semibold text-rose-700">
+              emergency campaigns
+            </span>
           </div>
           <div className="mt-3 flex items-center justify-between border-t border-rose-100/80 pt-2.5 text-xs">
             <span className="font-medium text-neutral-600">General Standalone:</span>
@@ -224,7 +223,7 @@ export default function AdminDonationDrivesPage() {
         {/* Card 3: Total Recorded Drives */}
         <div className="flex flex-col justify-between rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white via-teal-50/20 to-emerald-50/30 p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-teal-900">
+            <span className="text-xs font-bold tracking-wider text-teal-900 uppercase">
               Total Recorded
             </span>
             <div className="grid size-9 place-items-center rounded-xl bg-teal-100 text-teal-700 shadow-2xs">
@@ -246,7 +245,7 @@ export default function AdminDonationDrivesPage() {
         {/* Card 4: Publication Status Pipeline */}
         <div className="flex flex-col justify-between rounded-2xl border border-neutral-200 bg-white p-4.5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-neutral-700">
+            <span className="text-xs font-bold tracking-wider text-neutral-700 uppercase">
               Campaign Status
             </span>
             <div className="grid size-9 place-items-center rounded-xl bg-neutral-100 text-neutral-700 shadow-2xs">
@@ -255,19 +254,19 @@ export default function AdminDonationDrivesPage() {
           </div>
           <div className="mt-2 grid grid-cols-3 gap-1.5">
             <div className="flex flex-col items-center justify-center rounded-lg border border-emerald-200/70 bg-emerald-50 px-2 py-1.5 text-emerald-900">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+              <span className="text-[10px] font-bold tracking-wider text-emerald-700 uppercase">
                 Live
               </span>
               <span className="text-base font-black">{metrics.published}</span>
             </div>
             <div className="flex flex-col items-center justify-center rounded-lg border border-amber-200/70 bg-amber-50 px-2 py-1.5 text-amber-900">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">
+              <span className="text-[10px] font-bold tracking-wider text-amber-700 uppercase">
                 Draft
               </span>
               <span className="text-base font-black">{metrics.drafts}</span>
             </div>
             <div className="flex flex-col items-center justify-center rounded-lg border border-neutral-200/70 bg-neutral-100 px-2 py-1.5 text-neutral-800">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-600">
+              <span className="text-[10px] font-bold tracking-wider text-neutral-600 uppercase">
                 Archive
               </span>
               <span className="text-base font-black">{metrics.archived}</span>
@@ -279,7 +278,8 @@ export default function AdminDonationDrivesPage() {
       <ResourceTable
         columns={columns}
         data={data}
-        isLoading={isLoading}
+        isLoading={isLoading || isFetching}
+        loadingLabel="Loading donation drives"
         isError={isError}
         onRetry={() => refetch()}
         searchPlaceholder="Search campaign title, linked event, organizer, or location..."
@@ -321,7 +321,7 @@ export default function AdminDonationDrivesPage() {
               asChild
               size="sm"
               variant="warning"
-              className="h-8 rounded-lg border border-amber-300/80 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 transition-colors px-2.5 gap-1.5 font-semibold text-xs cursor-pointer"
+              className="h-8 cursor-pointer gap-1.5 rounded-lg border border-amber-300/80 bg-amber-50 px-2.5 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-100 hover:text-amber-800"
               title="Edit donation drive"
               aria-label="Edit donation drive"
             >

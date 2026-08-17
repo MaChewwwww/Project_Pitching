@@ -1138,7 +1138,10 @@ export function ResponseOperationsWorkspace({ mode }: { mode: Mode }) {
       <ResourceTable
         columns={columns}
         data={tableFilteredItems}
-        isLoading={isLoading}
+        isLoading={isLoading || isFetching}
+        loadingLabel={
+          mode === "rescue" ? "Loading rescue queue" : "Loading incident reports"
+        }
         isError={isError}
         onRetry={refetch}
         getRowKey={(row) => row.id}

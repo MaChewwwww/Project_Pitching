@@ -24,6 +24,7 @@ import {
 
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import { MapWorkspaceSkeleton } from "@/components/common/portal-loading";
 import { LogoLockup } from "@/components/common/logo";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -53,11 +54,7 @@ const LocationPicker = dynamic(
   () => import("@/components/features/registry/location-picker"),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-72 w-full items-center justify-center rounded-xl bg-neutral-100 text-xs text-neutral-500">
-        Loading map picker…
-      </div>
-    ),
+    loading: () => <MapWorkspaceSkeleton label="Loading map picker" minHeight="18rem" />,
   },
 );
 
@@ -81,10 +78,7 @@ const onboardingSchema = z.object({
       message: "Kailangang piliin ang kalapitan sa daanan ng tubig",
     }),
   area_id: z.string().min(1, "Pumili ng inyong area / purok sa San Jose"),
-  contact_number: z
-    .string()
-    .trim()
-    .min(1, "Ilagay ang inyong contact number"),
+  contact_number: z.string().trim().min(1, "Ilagay ang inyong contact number"),
   birth_date: z.string().min(1, "Ilagay ang inyong kaarawan (Birthday)"),
   sex: z
     .enum(["male", "female"], {
@@ -148,7 +142,8 @@ const WATERWAY_OPTIONS = [
     risk: "Low Risk Classification",
     badgeTone: "bg-emerald-100 text-emerald-700 border-emerald-200",
     cardTone: "border-emerald-200/80 bg-emerald-50/30 hover:bg-emerald-50/70",
-    selectedTone: "border-emerald-500 bg-emerald-50/90 ring-2 ring-emerald-500/20 shadow-xs",
+    selectedTone:
+      "border-emerald-500 bg-emerald-50/90 ring-2 ring-emerald-500/20 shadow-xs",
   },
 ] as const;
 
@@ -234,7 +229,7 @@ export default function OnboardingPage() {
     waterway: Boolean(watchedValues.waterway_proximity),
     contact: Boolean(
       watchedValues.contact_number?.trim() &&
-        Boolean(watchedValues.birth_date && watchedValues.sex),
+      Boolean(watchedValues.birth_date && watchedValues.sex),
     ),
   };
 
@@ -242,7 +237,7 @@ export default function OnboardingPage() {
     areas?.find((a) => a.id === watchedValues.area_id)?.name ?? null;
 
   return (
-    <div className="min-h-screen bg-[#f7faf7] text-neutral-950 flex flex-col">
+    <div className="flex min-h-screen flex-col bg-[#f7faf7] text-neutral-950">
       {/* ── Top Navigation Header with Brand & Sign Out ── */}
       <header className="sticky top-0 z-40 border-b border-emerald-950/10 bg-white/90 px-4 py-3 backdrop-blur-md lg:px-8">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
@@ -257,10 +252,10 @@ export default function OnboardingPage() {
                   {user.full_name?.trim().charAt(0).toUpperCase() || "U"}
                 </span>
                 <div className="text-left">
-                  <span className="block max-w-36 truncate font-bold text-neutral-800 leading-none">
+                  <span className="block max-w-36 truncate leading-none font-bold text-neutral-800">
                     {user.full_name}
                   </span>
-                  <span className="block max-w-36 truncate text-[10px] text-neutral-500 leading-tight">
+                  <span className="block max-w-36 truncate text-[10px] leading-tight text-neutral-500">
                     {user.email}
                   </span>
                 </div>
@@ -281,7 +276,7 @@ export default function OnboardingPage() {
       </header>
 
       {/* ── Main Content Container ── */}
-      <main className="mx-auto flex-1 w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
         <div className="space-y-6">
           {/* ── Hero Banner ── */}
           <section className="relative overflow-hidden rounded-2xl border border-emerald-950/10 bg-gradient-to-br from-white via-emerald-50/30 to-teal-50/20 p-6 shadow-xs sm:rounded-3xl sm:p-8">
@@ -297,14 +292,14 @@ export default function OnboardingPage() {
               <h1 className="text-2xl font-black tracking-tight text-neutral-900 sm:text-3xl">
                 Complete Your <span className="text-emerald-700">Registration</span>
               </h1>
-              <p className="max-w-3xl text-xs sm:text-sm leading-relaxed text-neutral-600">
+              <p className="max-w-3xl text-xs leading-relaxed text-neutral-600 sm:text-sm">
                 Pin your home location on the map to automatically detect your area and
-                flood hazard waterway proximity. These details help Barangay San Jose coordinate
-                emergency alerts, evacuation support, and family readiness.
+                flood hazard waterway proximity. These details help Barangay San Jose
+                coordinate emergency alerts, evacuation support, and family readiness.
               </p>
 
               {/* Progress Step Pills */}
-              <div className="mt-2 flex flex-wrap items-center gap-2 pt-2 border-t border-emerald-950/5">
+              <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-emerald-950/5 pt-2">
                 {[
                   {
                     id: "location",
@@ -332,7 +327,7 @@ export default function OnboardingPage() {
                     )}
                   >
                     {step.complete ? (
-                      <Check className="size-3.5 text-emerald-700 stroke-[3]" />
+                      <Check className="size-3.5 stroke-[3] text-emerald-700" />
                     ) : (
                       <span className="size-2 rounded-full bg-neutral-300" />
                     )}
@@ -384,25 +379,25 @@ export default function OnboardingPage() {
                   {/* PSGC Hierarchy Display */}
                   <div className="grid grid-cols-2 gap-2.5 rounded-xl border border-emerald-200/70 bg-emerald-50/40 p-3.5 text-xs">
                     <div>
-                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+                      <span className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
                         Region
                       </span>
                       <p className="font-bold text-neutral-800">IV-A (CALABARZON)</p>
                     </div>
                     <div>
-                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+                      <span className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
                         Province
                       </span>
                       <p className="font-bold text-neutral-800">Rizal</p>
                     </div>
                     <div>
-                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+                      <span className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
                         City / Municipality
                       </span>
                       <p className="font-bold text-neutral-800">Rodriguez (Montalban)</p>
                     </div>
                     <div>
-                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+                      <span className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase">
                         Barangay
                       </span>
                       <p className="font-bold text-emerald-800">San Jose</p>
@@ -412,13 +407,14 @@ export default function OnboardingPage() {
                   {/* Interactive Map Picker */}
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-neutral-800 uppercase tracking-wider">
+                      <Label className="text-xs font-bold tracking-wider text-neutral-800 uppercase">
                         Pin Household Location <span className="text-red-600">*</span>
                       </Label>
                       {location ? (
                         <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
                           <CheckCircle2 className="size-3.5" />
-                          Pin placed ({location.lat.toFixed(4)}, {location.lng.toFixed(4)})
+                          Pin placed ({location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+                          )
                         </span>
                       ) : null}
                     </div>
@@ -461,14 +457,10 @@ export default function OnboardingPage() {
                         setIsAutoDetectedArea(true);
 
                         if (resolution.waterway_proximity) {
-                          setValue(
-                            "waterway_proximity",
-                            resolution.waterway_proximity,
-                            {
-                              shouldDirty: true,
-                              shouldValidate: true,
-                            },
-                          );
+                          setValue("waterway_proximity", resolution.waterway_proximity, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
                           setIsAutoDetectedProximity(true);
                         } else {
                           setIsAutoDetectedProximity(false);
@@ -494,9 +486,9 @@ export default function OnboardingPage() {
                         )}
                       >
                         {locationHintIsError ? (
-                          <AlertCircle className="size-4 shrink-0 text-red-600 mt-0.5" />
+                          <AlertCircle className="mt-0.5 size-4 shrink-0 text-red-600" />
                         ) : (
-                          <Info className="size-4 shrink-0 text-sky-600 mt-0.5" />
+                          <Info className="mt-0.5 size-4 shrink-0 text-sky-600" />
                         )}
                         <span>{locationHint}</span>
                       </div>
@@ -506,11 +498,14 @@ export default function OnboardingPage() {
                   {/* Area Selection with Auto-detection Indicator */}
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="area_id" className="text-xs font-bold text-neutral-800">
+                      <Label
+                        htmlFor="area_id"
+                        className="text-xs font-bold text-neutral-800"
+                      >
                         Area / Purok <span className="text-red-600">*</span>
                       </Label>
                       {isAutoDetectedArea && selectedAreaName ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-300 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
                           <Zap className="size-3 text-emerald-600" />
                           Auto-detected
                         </span>
@@ -551,8 +546,12 @@ export default function OnboardingPage() {
 
                   {/* Specific Street Address Input */}
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="street_address" className="text-xs font-bold text-neutral-800">
-                      House No. / Street / Subdivision <span className="text-red-600">*</span>
+                    <Label
+                      htmlFor="street_address"
+                      className="text-xs font-bold text-neutral-800"
+                    >
+                      House No. / Street / Subdivision{" "}
+                      <span className="text-red-600">*</span>
                     </Label>
                     <Input
                       id="street_address"
@@ -563,7 +562,9 @@ export default function OnboardingPage() {
                       placeholder="Halimbawa: 12 Sampaguita St., Phase 2, Greenview"
                     />
                     {errors.street_address ? (
-                      <p className="text-danger text-xs">{errors.street_address.message}</p>
+                      <p className="text-danger text-xs">
+                        {errors.street_address.message}
+                      </p>
                     ) : null}
                   </div>
                 </CardContent>
@@ -581,14 +582,18 @@ export default function OnboardingPage() {
                         Contact and Personal Details
                       </h2>
                       <p className="mt-0.5 text-xs text-neutral-500">
-                        Required for urgent barangay emergency notifications and verification.
+                        Required for urgent barangay emergency notifications and
+                        verification.
                       </p>
                     </div>
                   </div>
 
                   {/* Contact Number */}
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="contact_number" className="text-xs font-bold text-neutral-800">
+                    <Label
+                      htmlFor="contact_number"
+                      className="text-xs font-bold text-neutral-800"
+                    >
                       Contact Number <span className="text-red-600">*</span>
                     </Label>
                     <Input
@@ -602,14 +607,19 @@ export default function OnboardingPage() {
                       {...register("contact_number")}
                     />
                     {errors.contact_number ? (
-                      <p className="text-danger text-xs">{errors.contact_number.message}</p>
+                      <p className="text-danger text-xs">
+                        {errors.contact_number.message}
+                      </p>
                     ) : null}
                   </div>
 
                   {/* Birthday & Sex Grid */}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="birth_date" className="text-xs font-bold text-neutral-800">
+                      <Label
+                        htmlFor="birth_date"
+                        className="text-xs font-bold text-neutral-800"
+                      >
                         Birthday <span className="text-red-600">*</span>
                       </Label>
                       <Input
@@ -687,7 +697,7 @@ export default function OnboardingPage() {
 
                   {isAutoDetectedProximity ? (
                     <div className="flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
-                      <Zap className="size-3.5 text-emerald-600 shrink-0" />
+                      <Zap className="size-3.5 shrink-0 text-emerald-600" />
                       <span>Auto-detected from official hazard flood map</span>
                     </div>
                   ) : null}
@@ -703,9 +713,11 @@ export default function OnboardingPage() {
                             <label
                               key={opt.value}
                               className={cn(
-                                "flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-all duration-150",
+                                "flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-all duration-[260ms] active:duration-150",
                                 opt.cardTone,
-                                selected ? opt.selectedTone : "border-neutral-200 bg-white hover:bg-neutral-50/80",
+                                selected
+                                  ? opt.selectedTone
+                                  : "border-neutral-200 bg-white hover:bg-neutral-50/80",
                               )}
                             >
                               <input
@@ -719,7 +731,7 @@ export default function OnboardingPage() {
                                 }}
                                 className="mt-1 size-4 shrink-0 cursor-pointer accent-emerald-600"
                               />
-                              <div className="flex flex-col gap-1 min-w-0 flex-1">
+                              <div className="flex min-w-0 flex-1 flex-col gap-1">
                                 <div className="flex flex-wrap items-center justify-between gap-1">
                                   <span className="text-xs font-bold text-neutral-900">
                                     {opt.label}
@@ -777,7 +789,10 @@ export default function OnboardingPage() {
                         ["is_pwd", "Person With Disability (PWD)"],
                         ["is_pregnant", "Pregnant (Buntis)"],
                         ["is_lactating", "Lactating Mother (Nagpapasuso)"],
-                        ["has_chronic_condition", "Chronic Condition / Maintenance Medicine"],
+                        [
+                          "has_chronic_condition",
+                          "Chronic Condition / Maintenance Medicine",
+                        ],
                         ["is_bedridden", "Bedridden or Mobility-Limited"],
                       ] as const
                     ).map(([name, label]) => (
@@ -803,15 +818,18 @@ export default function OnboardingPage() {
                   </fieldset>
 
                   {hasChronicCondition ? (
-                    <div className="flex flex-col gap-1.5 pt-2 border-t border-neutral-100">
-                      <Label htmlFor="chronic_condition_note" className="text-xs font-bold text-neutral-800">
+                    <div className="flex flex-col gap-1.5 border-t border-neutral-100 pt-2">
+                      <Label
+                        htmlFor="chronic_condition_note"
+                        className="text-xs font-bold text-neutral-800"
+                      >
                         Condition or Medication Note{" "}
                         <span className="font-normal text-neutral-400">(Optional)</span>
                       </Label>
                       <Textarea
                         id="chronic_condition_note"
                         placeholder="Halimbawa: Hypertension (Maintenance), Diabetes..."
-                        className="text-xs min-h-[70px] rounded-lg border-emerald-200/80"
+                        className="min-h-[70px] rounded-lg border-emerald-200/80 text-xs"
                         {...register("chronic_condition_note")}
                       />
                     </div>
@@ -824,15 +842,16 @@ export default function OnboardingPage() {
                 <CardContent className="space-y-4 p-5 sm:p-6">
                   <div className="space-y-1">
                     <h3 className="text-sm font-bold text-white">Ready to activate?</h3>
-                    <p className="text-xs text-emerald-200 leading-relaxed">
-                      You can register more family members and view evacuation centers once inside your portal.
+                    <p className="text-xs leading-relaxed text-emerald-200">
+                      You can register more family members and view evacuation centers
+                      once inside your portal.
                     </p>
                   </div>
 
                   <Button
                     type="submit"
                     disabled={isSubmitting || submitMutation.isPending}
-                    className="w-full h-11 rounded-xl bg-white font-bold text-emerald-950 shadow-md hover:bg-emerald-50 hover:text-emerald-900 text-sm transition-all"
+                    className="h-11 w-full rounded-xl bg-white text-sm font-bold text-emerald-950 shadow-md transition-all hover:bg-emerald-50 hover:text-emerald-900"
                   >
                     {isSubmitting || submitMutation.isPending
                       ? "Saving household profile…"
@@ -847,4 +866,3 @@ export default function OnboardingPage() {
     </div>
   );
 }
-

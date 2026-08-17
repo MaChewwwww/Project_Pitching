@@ -68,7 +68,7 @@ export default function AdminHouseholdsPage() {
     return {};
   }, [directoryFilter]);
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: [
       "admin",
       "households",
@@ -92,7 +92,7 @@ export default function AdminHouseholdsPage() {
         })
         .then((r) => r.data),
   });
-  const { data: summary } = useQuery({
+  const { data: summary, isFetching: summaryFetching } = useQuery({
     queryKey: ["admin", "registry-summary"],
     queryFn: () =>
       api.get<RegistrySummary>("/admin/households/summary").then((r) => r.data),
@@ -256,12 +256,17 @@ export default function AdminHouseholdsPage() {
         }
       />
 
-      <HouseholdRegistrySummary summary={summary} riskCounts={riskCounts} />
+      <HouseholdRegistrySummary
+        summary={summary}
+        riskCounts={riskCounts}
+        isLoading={summaryFetching}
+      />
 
       <ResourceTable
         columns={columns}
         data={data?.items}
-        isLoading={isLoading}
+        isLoading={isLoading || isFetching}
+        loadingLabel="Loading households"
         isError={isError}
         onRetry={() => refetch()}
         emptyTitle="No households registered yet"

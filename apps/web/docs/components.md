@@ -412,6 +412,23 @@ The splash only fades once the session and portal gate checks are ready, so a sl
 remain visible longer without exposing an incomplete shell. The loader dispatches the same
 `splash-ready` event as the public shell so shared entrance reveals keep one lifecycle.
 
+### Authenticated portal data loading
+
+`common/portal-loading.tsx` owns the authenticated portals' data-loading language. Use a
+shape-matched skeleton for metrics, details, fields, timelines, charts, and map containers. Use
+`DataSurfaceLoading` for a table or large operational workspace; it centres the shared
+`WaterSpinner` and announces a concrete label.
+
+`ResourceTable` retains its toolbar and frame while fetching, then replaces its desktop rows and
+mobile cards with `DataSurfaceLoading`. Pass `loadingLabel` from each directory. Query-backed
+portal regions use `isFetching`, not just their first `isLoading`, so paging, filtering, and an
+explicit refresh have the same clear state. Do not use a loader for a disabled dependent query,
+an empty result, an error, or a mutation button.
+
+Portal entry helpers use 400ms entrances and 90ms staggers; hover transitions use 260ms and
+press feedback stays quick. The calm `WaterSpinner` tempo is portal-only, leaving public-site
+streaming fallbacks unchanged.
+
 ## Animation lives in `globals.css`, not in a client component
 
 `WaterSpinner` and the hero illustrations are animated entirely by CSS classes defined in

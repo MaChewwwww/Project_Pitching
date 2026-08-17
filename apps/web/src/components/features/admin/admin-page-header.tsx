@@ -45,7 +45,7 @@ export function AdminPageHeader({
   return (
     <header
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-emerald-950/10 bg-gradient-to-br from-white via-emerald-50/20 to-teal-50/30 p-5 sm:p-6 shadow-sm transition-all duration-200",
+        "relative overflow-hidden rounded-2xl border border-emerald-950/10 bg-gradient-to-br from-white via-emerald-50/20 to-teal-50/30 p-5 shadow-sm transition-all duration-[260ms] sm:p-6",
         className,
       )}
     >
@@ -56,18 +56,18 @@ export function AdminPageHeader({
       />
 
       <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 min-w-0 items-start gap-3.5">
+        <div className="flex min-w-0 flex-1 items-start gap-3.5">
           {Icon ? (
-            <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-700/20 ring-4 ring-emerald-500/10 transition-transform duration-200 hover:scale-105">
+            <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md ring-4 shadow-emerald-700/20 ring-emerald-500/10 transition-transform duration-200 hover:scale-105">
               <Icon aria-hidden className="size-5" />
             </span>
           ) : null}
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl font-sans">
+          <div className="min-w-0 flex-1">
+            <h1 className="font-sans text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">
               {title}
             </h1>
             {description ? (
-              <p className="mt-1 text-xs sm:text-sm leading-relaxed text-neutral-600 font-normal">
+              <p className="mt-1 text-xs leading-relaxed font-normal text-neutral-600 sm:text-sm">
                 {description}
               </p>
             ) : null}
@@ -75,7 +75,7 @@ export function AdminPageHeader({
         </div>
 
         {action ? (
-          <div className="flex shrink-0 items-center gap-2 max-sm:w-full max-sm:pt-2 max-sm:border-t max-sm:border-neutral-200/50">
+          <div className="flex shrink-0 items-center gap-2 max-sm:w-full max-sm:border-t max-sm:border-neutral-200/50 max-sm:pt-2">
             {action}
           </div>
         ) : null}

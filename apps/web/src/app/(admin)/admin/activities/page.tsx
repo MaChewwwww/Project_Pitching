@@ -34,7 +34,7 @@ interface Activity {
 export default function AdminActivitiesPage() {
   useRequireRole("admin", "sk");
   const queryClient = useQueryClient();
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["admin", "activities"],
     queryFn: () => api.get<Activity[]>("/admin/activities").then((r) => r.data),
   });
@@ -151,7 +151,8 @@ export default function AdminActivitiesPage() {
       <ResourceTable
         columns={columns}
         data={data}
-        isLoading={isLoading}
+        isLoading={isLoading || isFetching}
+        loadingLabel="Loading activities"
         isError={isError}
         onRetry={() => refetch()}
         searchPlaceholder="Search activity title, type, venue, or area..."

@@ -2,15 +2,7 @@
 
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  CheckCircle2,
-  Eye,
-  Globe,
-  HelpCircle,
-  Layers,
-  Pencil,
-  Plus,
-} from "lucide-react";
+import { CheckCircle2, Eye, Globe, HelpCircle, Layers, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -102,14 +94,14 @@ function FaqDetailDialog({ faq }: { faq: FaqItem }) {
       <DialogTrigger asChild>
         <Button
           size="sm"
-          className="h-8 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900 font-semibold text-xs px-2.5 gap-1.5 shadow-2xs transition-colors cursor-pointer"
+          className="h-8 cursor-pointer gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 text-xs font-semibold text-emerald-800 shadow-2xs transition-colors hover:bg-emerald-100 hover:text-emerald-900"
         >
-          <Eye className="size-3.5 text-emerald-600 shrink-0" />
+          <Eye className="size-3.5 shrink-0 text-emerald-600" />
           <span>View</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[85vh] flex flex-col p-0 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl sm:max-w-xl">
-        <DialogHeader className="p-6 pb-4 border-b border-neutral-100 bg-neutral-50/70 shrink-0">
+      <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white p-0 shadow-2xl sm:max-w-xl">
+        <DialogHeader className="shrink-0 border-b border-neutral-100 bg-neutral-50/70 p-6 pb-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <span className="grid size-9 place-items-center rounded-xl bg-emerald-100 text-emerald-800">
@@ -130,33 +122,33 @@ function FaqDetailDialog({ faq }: { faq: FaqItem }) {
           </div>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-5 custom-scrollbar">
+        <div className="custom-scrollbar min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
           {/* English Version */}
-          <div className="rounded-xl border border-neutral-200/80 bg-neutral-50/40 p-4 space-y-2">
+          <div className="space-y-2 rounded-xl border border-neutral-200/80 bg-neutral-50/40 p-4">
             <div className="flex items-center gap-2">
-              <span className="rounded-md bg-neutral-200 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-neutral-700">
+              <span className="rounded-md bg-neutral-200 px-2 py-0.5 text-[11px] font-bold tracking-wider text-neutral-700 uppercase">
                 English (EN)
               </span>
             </div>
-            <h4 className="text-sm font-bold text-neutral-900 leading-snug">
+            <h4 className="text-sm leading-snug font-bold text-neutral-900">
               {faq.question_en}
             </h4>
-            <p className="text-xs leading-relaxed text-neutral-600 whitespace-pre-wrap">
+            <p className="text-xs leading-relaxed whitespace-pre-wrap text-neutral-600">
               {faq.answer_en}
             </p>
           </div>
 
           {/* Filipino Version */}
-          <div className="rounded-xl border border-emerald-200/60 bg-emerald-50/20 p-4 space-y-2">
+          <div className="space-y-2 rounded-xl border border-emerald-200/60 bg-emerald-50/20 p-4">
             <div className="flex items-center gap-2">
-              <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+              <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-bold tracking-wider text-emerald-800 uppercase">
                 Filipino (FIL)
               </span>
             </div>
-            <h4 className="text-sm font-bold text-emerald-950 leading-snug">
+            <h4 className="text-sm leading-snug font-bold text-emerald-950">
               {faq.question_fil}
             </h4>
-            <p className="text-xs leading-relaxed text-emerald-900/80 whitespace-pre-wrap">
+            <p className="text-xs leading-relaxed whitespace-pre-wrap text-emerald-900/80">
               {faq.answer_fil}
             </p>
           </div>
@@ -240,16 +232,16 @@ function FaqFormDialog({
         {trigger ?? (
           <Button
             size="sm"
-            className="h-10 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-md shadow-emerald-900/15 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] transition-all px-4 gap-2 border border-emerald-600/30 max-sm:w-full max-sm:justify-center cursor-pointer"
+            className="h-10 cursor-pointer gap-2 rounded-full border border-emerald-600/30 bg-emerald-700 px-4 font-bold text-white shadow-md shadow-emerald-900/15 transition-all hover:bg-emerald-800 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
           >
             <Plus aria-hidden className="size-4 stroke-[2.5]" />
             <span>Add FAQ</span>
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl sm:max-w-2xl">
-        <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
-          <DialogHeader className="p-6 pb-4 border-b border-neutral-100 bg-neutral-50/70 shrink-0">
+      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white p-0 shadow-2xl sm:max-w-2xl">
+        <form onSubmit={handleSubmit} className="flex h-full flex-col overflow-hidden">
+          <DialogHeader className="shrink-0 border-b border-neutral-100 bg-neutral-50/70 p-6 pb-4">
             <div className="flex items-center gap-2.5">
               <span className="grid size-9 place-items-center rounded-xl bg-emerald-100 text-emerald-800">
                 {faq ? <Pencil className="size-4.5" /> : <Plus className="size-4.5" />}
@@ -259,24 +251,25 @@ function FaqFormDialog({
                   {faq ? "Edit FAQ Question" : "Add FAQ Question"}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-neutral-500">
-                  Provide both English and Filipino translations for the public knowledge base.
+                  Provide both English and Filipino translations for the public knowledge
+                  base.
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-5 custom-scrollbar">
+          <div className="custom-scrollbar min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
             {/* Top row: Category, Order & Published Switch */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 items-end">
+            <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-3">
               <div className="space-y-1.5 sm:col-span-1">
                 <Label className="text-xs font-bold text-neutral-700">
-                  Category <span className="text-rose-500 font-bold">*</span>
+                  Category <span className="font-bold text-rose-500">*</span>
                 </Label>
                 <Select
                   value={form.category}
                   onValueChange={(val) => setForm((prev) => ({ ...prev, category: val }))}
                 >
-                  <SelectTrigger className="h-9 text-xs rounded-xl bg-white border-neutral-200">
+                  <SelectTrigger className="h-9 rounded-xl border-neutral-200 bg-white text-xs">
                     <SelectValue placeholder="Select Category" />
                   </SelectTrigger>
                   <SelectContent className="z-[3000] rounded-xl border-neutral-200">
@@ -291,20 +284,26 @@ function FaqFormDialog({
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-neutral-700">
-                  Sort Order <span className="text-rose-500 font-bold">*</span>
+                  Sort Order <span className="font-bold text-rose-500">*</span>
                 </Label>
                 <Input
                   type="number"
                   value={form.sort_order}
                   onChange={(e) =>
-                    setForm((prev) => ({ ...prev, sort_order: Number(e.target.value) || 0 }))
+                    setForm((prev) => ({
+                      ...prev,
+                      sort_order: Number(e.target.value) || 0,
+                    }))
                   }
-                  className="h-9 text-xs rounded-xl bg-white border-neutral-200"
+                  className="h-9 rounded-xl border-neutral-200 bg-white text-xs"
                 />
               </div>
 
-              <div className="flex items-center justify-between sm:justify-start gap-3 h-9 px-3 rounded-xl border border-neutral-200/80 bg-neutral-50/50">
-                <Label htmlFor="published-toggle" className="text-xs font-bold text-neutral-700 cursor-pointer">
+              <div className="flex h-9 items-center justify-between gap-3 rounded-xl border border-neutral-200/80 bg-neutral-50/50 px-3 sm:justify-start">
+                <Label
+                  htmlFor="published-toggle"
+                  className="cursor-pointer text-xs font-bold text-neutral-700"
+                >
                   Published
                 </Label>
                 <Switch
@@ -318,15 +317,15 @@ function FaqFormDialog({
             </div>
 
             {/* English Section */}
-            <div className="rounded-xl border border-neutral-200 p-4 space-y-3 bg-neutral-50/30">
+            <div className="space-y-3 rounded-xl border border-neutral-200 bg-neutral-50/30 p-4">
               <div className="flex items-center gap-2">
-                <span className="rounded bg-neutral-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
+                <span className="rounded bg-neutral-200 px-2 py-0.5 text-[10px] font-bold tracking-wider text-neutral-700 uppercase">
                   English Translation
                 </span>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-neutral-700">
-                  Question (EN) <span className="text-rose-500 font-bold">*</span>
+                  Question (EN) <span className="font-bold text-rose-500">*</span>
                 </Label>
                 <Input
                   value={form.question_en}
@@ -334,12 +333,12 @@ function FaqFormDialog({
                     setForm((prev) => ({ ...prev, question_en: e.target.value }))
                   }
                   placeholder="e.g. How do I register my household?"
-                  className="h-9 text-xs rounded-xl bg-white border-neutral-200"
+                  className="h-9 rounded-xl border-neutral-200 bg-white text-xs"
                 />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-neutral-700">
-                  Answer (EN) <span className="text-rose-500 font-bold">*</span>
+                  Answer (EN) <span className="font-bold text-rose-500">*</span>
                 </Label>
                 <Textarea
                   value={form.answer_en}
@@ -348,21 +347,21 @@ function FaqFormDialog({
                   }
                   placeholder="Provide clear, concise guidance..."
                   rows={3}
-                  className="text-xs rounded-xl bg-white border-neutral-200"
+                  className="rounded-xl border-neutral-200 bg-white text-xs"
                 />
               </div>
             </div>
 
             {/* Filipino Section */}
-            <div className="rounded-xl border border-emerald-200/70 p-4 space-y-3 bg-emerald-50/20">
+            <div className="space-y-3 rounded-xl border border-emerald-200/70 bg-emerald-50/20 p-4">
               <div className="flex items-center gap-2">
-                <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+                <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold tracking-wider text-emerald-800 uppercase">
                   Filipino Translation
                 </span>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-emerald-950">
-                  Tanong (FIL) <span className="text-rose-500 font-bold">*</span>
+                  Tanong (FIL) <span className="font-bold text-rose-500">*</span>
                 </Label>
                 <Input
                   value={form.question_fil}
@@ -370,12 +369,12 @@ function FaqFormDialog({
                     setForm((prev) => ({ ...prev, question_fil: e.target.value }))
                   }
                   placeholder="hal. Paano ko mairehistro ang aking sambahayan?"
-                  className="h-9 text-xs rounded-xl bg-white border-neutral-200"
+                  className="h-9 rounded-xl border-neutral-200 bg-white text-xs"
                 />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-emerald-950">
-                  Kasagutan (FIL) <span className="text-rose-500 font-bold">*</span>
+                  Kasagutan (FIL) <span className="font-bold text-rose-500">*</span>
                 </Label>
                 <Textarea
                   value={form.answer_fil}
@@ -384,20 +383,20 @@ function FaqFormDialog({
                   }
                   placeholder="Magbigay ng malinaw na paliwanag sa Tagalog..."
                   rows={3}
-                  className="text-xs rounded-xl bg-white border-neutral-200"
+                  className="rounded-xl border-neutral-200 bg-white text-xs"
                 />
               </div>
             </div>
           </div>
 
-          <DialogFooter className="p-4 px-6 border-t border-neutral-100 bg-neutral-50/70 shrink-0 flex items-center justify-end gap-2.5">
+          <DialogFooter className="flex shrink-0 items-center justify-end gap-2.5 border-t border-neutral-100 bg-neutral-50/70 p-4 px-6">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setOpen(false)}
               disabled={isSubmitting}
-              className="h-10 rounded-full border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-semibold px-5 shadow-2xs transition-all cursor-pointer"
+              className="h-10 cursor-pointer rounded-full border-neutral-300 bg-white px-5 font-semibold text-neutral-700 shadow-2xs transition-all hover:bg-neutral-100"
             >
               Cancel
             </Button>
@@ -405,7 +404,7 @@ function FaqFormDialog({
               type="submit"
               size="sm"
               disabled={isSubmitting}
-              className="h-10 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold shadow-md shadow-emerald-900/15 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98] transition-all px-6 gap-2 border border-emerald-600/30 cursor-pointer"
+              className="h-10 cursor-pointer gap-2 rounded-full border border-emerald-600/30 bg-emerald-700 px-6 font-bold text-white shadow-md shadow-emerald-900/15 transition-all hover:bg-emerald-800 hover:shadow-lg hover:shadow-emerald-900/25 active:scale-[0.98]"
             >
               {isSubmitting ? (
                 <span>Saving...</span>
@@ -432,7 +431,7 @@ export default function AdminFaqsPage() {
   useRequireRole("admin");
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["admin", "faqs"],
     queryFn: () => api.get<FaqItem[]>("/admin/faqs").then((r) => r.data),
   });
@@ -505,16 +504,14 @@ export default function AdminFaqsPage() {
       key: "question_en",
       header: "Question & Answer (English / Filipino)",
       render: (row) => (
-        <div className="flex flex-col gap-1 py-1 max-w-xl">
-          <span className="text-xs font-bold text-neutral-900 line-clamp-1">
+        <div className="flex max-w-xl flex-col gap-1 py-1">
+          <span className="line-clamp-1 text-xs font-bold text-neutral-900">
             {row.question_en}
           </span>
-          <span className="text-[11px] font-medium text-emerald-800/80 line-clamp-1">
+          <span className="line-clamp-1 text-[11px] font-medium text-emerald-800/80">
             FIL: {row.question_fil}
           </span>
-          <p className="text-[11px] text-neutral-500 line-clamp-1">
-            {row.answer_en}
-          </p>
+          <p className="line-clamp-1 text-[11px] text-neutral-500">{row.answer_en}</p>
         </div>
       ),
     },
@@ -552,7 +549,7 @@ export default function AdminFaqsPage() {
         {/* Card 1: Total FAQs */}
         <div className="flex flex-col justify-between rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-white via-emerald-50/20 to-teal-50/30 p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-900">
+            <span className="text-xs font-bold tracking-wider text-emerald-900 uppercase">
               Total FAQ Questions
             </span>
             <div className="grid size-9 place-items-center rounded-xl bg-emerald-100 text-emerald-700 shadow-2xs">
@@ -574,7 +571,7 @@ export default function AdminFaqsPage() {
         {/* Card 2: Categories */}
         <div className="flex flex-col justify-between rounded-2xl border border-teal-200/80 bg-gradient-to-br from-white via-teal-50/20 to-emerald-50/30 p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-teal-900">
+            <span className="text-xs font-bold tracking-wider text-teal-900 uppercase">
               Topic Categories
             </span>
             <div className="grid size-9 place-items-center rounded-xl bg-teal-100 text-teal-700 shadow-2xs">
@@ -596,7 +593,7 @@ export default function AdminFaqsPage() {
         {/* Card 3: Published Live */}
         <div className="flex flex-col justify-between rounded-2xl border border-blue-200/80 bg-gradient-to-br from-white via-blue-50/20 to-sky-50/30 p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-900">
+            <span className="text-xs font-bold tracking-wider text-blue-900 uppercase">
               Published Status
             </span>
             <div className="grid size-9 place-items-center rounded-xl bg-blue-100 text-blue-700 shadow-2xs">
@@ -611,14 +608,16 @@ export default function AdminFaqsPage() {
           </div>
           <div className="mt-3 flex items-center justify-between border-t border-blue-100/80 pt-2.5 text-xs">
             <span className="font-medium text-neutral-600">Drafts / Review:</span>
-            <span className="font-bold text-neutral-800">{metrics.drafts} unpublished</span>
+            <span className="font-bold text-neutral-800">
+              {metrics.drafts} unpublished
+            </span>
           </div>
         </div>
 
         {/* Card 4: Bilingual */}
         <div className="flex flex-col justify-between rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-neutral-700">
+            <span className="text-xs font-bold tracking-wider text-neutral-700 uppercase">
               Bilingual Support
             </span>
             <div className="grid size-9 place-items-center rounded-xl bg-neutral-100 text-neutral-700 shadow-2xs">
@@ -641,7 +640,8 @@ export default function AdminFaqsPage() {
       <ResourceTable
         columns={columns}
         data={data}
-        isLoading={isLoading}
+        isLoading={isLoading || isFetching}
+        loadingLabel="Loading frequently asked questions"
         isError={isError}
         onRetry={() => refetch()}
         searchPlaceholder="Search question, keyword, answer, or category..."
@@ -715,9 +715,9 @@ export default function AdminFaqsPage() {
               trigger={
                 <Button
                   size="sm"
-                  className="h-8 rounded-lg border border-amber-300/90 bg-amber-50 text-amber-900 hover:bg-amber-100 hover:text-amber-950 font-semibold text-xs px-2.5 gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  className="h-8 cursor-pointer gap-1.5 rounded-lg border border-amber-300/90 bg-amber-50 px-2.5 text-xs font-semibold text-amber-900 shadow-2xs transition-colors hover:bg-amber-100 hover:text-amber-950"
                 >
-                  <Pencil className="size-3.5 text-amber-700 shrink-0" />
+                  <Pencil className="size-3.5 shrink-0 text-amber-700" />
                   <span>Edit</span>
                 </Button>
               }

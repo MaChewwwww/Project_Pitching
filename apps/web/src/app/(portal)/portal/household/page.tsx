@@ -20,6 +20,7 @@ import {
 
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import { DetailCardSkeleton, TimelineSkeleton } from "@/components/common/portal-loading";
 import { HouseholdMemberDialog } from "@/components/features/portal/household-member-dialog";
 import { PortalHouseholdMap } from "@/components/features/portal/portal-household-map";
 import { PortalPageHeader } from "@/components/features/portal/portal-page-header";
@@ -60,17 +61,21 @@ export default function PortalHouseholdPage() {
     setMemberDialogOpen(true);
   };
 
-  if (household.isLoading || !household.data) {
+  if (household.isFetching || !household.data) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-32 rounded-3xl bg-emerald-100/40" />
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-7 space-y-6">
-            <div className="h-64 rounded-3xl bg-slate-100" />
-            <div className="h-72 rounded-3xl bg-slate-100" />
+      <div className="space-y-6">
+        <DetailCardSkeleton label="Loading household profile" rows={3} />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="space-y-6 lg:col-span-7">
+            <DetailCardSkeleton label="Loading household details" rows={6} />
+            <TimelineSkeleton label="Loading household members" rows={3} />
           </div>
-          <div className="lg:col-span-5 space-y-6">
-            <div className="h-96 rounded-3xl bg-slate-100" />
+          <div className="space-y-6 lg:col-span-5">
+            <DetailCardSkeleton
+              label="Loading location details"
+              rows={6}
+              className="min-h-96"
+            />
           </div>
         </div>
       </div>
@@ -129,7 +134,7 @@ export default function PortalHouseholdPage() {
               asChild
               variant="outline"
               size="sm"
-              className="h-10 cursor-pointer gap-2 rounded-full border border-neutral-300/90 bg-white px-4 font-bold text-neutral-800 shadow-xs transition-all hover:bg-neutral-50 hover:border-neutral-400 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
+              className="h-10 cursor-pointer gap-2 rounded-full border border-neutral-300/90 bg-white px-4 font-bold text-neutral-800 shadow-xs transition-all hover:border-neutral-400 hover:bg-neutral-50 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
             >
               <Link href="/portal/household/edit">
                 <Pencil aria-hidden className="size-3.5 text-neutral-600" />
@@ -141,12 +146,12 @@ export default function PortalHouseholdPage() {
       />
 
       {/* ── 2-Column Responsive Layout on Desktop ── */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-start">
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
         {/* ── LEFT COLUMN: Household Profile & Members Roster (7 Cols) ── */}
-        <div className="xl:col-span-7 space-y-6 sm:space-y-8">
+        <div className="space-y-6 sm:space-y-8 xl:col-span-7">
           {/* 1. Household Profile Overview Card */}
-          <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
-            <CardContent className="p-5 sm:p-6 lg:p-7 space-y-5">
+          <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+            <CardContent className="space-y-5 p-5 sm:p-6 lg:p-7">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 pb-4">
                 <div className="flex items-center gap-2.5">
                   <span className="grid size-8 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
@@ -156,7 +161,7 @@ export default function PortalHouseholdPage() {
                     Household Information
                   </h2>
                 </div>
-                <span className="inline-flex items-center gap-1.5 font-mono text-xs font-black text-emerald-900 bg-emerald-50 border border-emerald-200/90 px-3 py-1 rounded-full shadow-2xs">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/90 bg-emerald-50 px-3 py-1 font-mono text-xs font-black text-emerald-900 shadow-2xs">
                   <Sparkles className="size-3 text-emerald-600" />
                   <span>Reference #{data.reference_no}</span>
                 </span>
@@ -185,7 +190,7 @@ export default function PortalHouseholdPage() {
                   </span>
                   <p className="text-sm font-bold text-neutral-900">
                     {data.is_unreachable_by_phone ? (
-                      <span className="text-amber-700 font-semibold text-xs">
+                      <span className="text-xs font-semibold text-amber-700">
                         Marked unreachable by phone
                       </span>
                     ) : (
@@ -216,7 +221,7 @@ export default function PortalHouseholdPage() {
               {/* Waterway Proximity Risk Callout */}
               <div
                 className={cn(
-                  "flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border p-4",
+                  "flex flex-col justify-between gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center",
                   proximity.tone,
                 )}
               >
@@ -225,16 +230,18 @@ export default function PortalHouseholdPage() {
                     <Droplets className="size-4.5" />
                   </div>
                   <div>
-                    <span className="text-[10.5px] font-black uppercase tracking-wider text-neutral-500">
+                    <span className="text-[10.5px] font-black tracking-wider text-neutral-500 uppercase">
                       Waterway Proximity Assessment
                     </span>
-                    <p className="text-sm font-bold text-neutral-900">{proximity.label}</p>
+                    <p className="text-sm font-bold text-neutral-900">
+                      {proximity.label}
+                    </p>
                     <p className="text-xs text-neutral-600">{proximity.risk}</p>
                   </div>
                 </div>
                 <span
                   className={cn(
-                    "self-start sm:self-auto rounded-full border px-3 py-1 text-xs font-black",
+                    "self-start rounded-full border px-3 py-1 text-xs font-black sm:self-auto",
                     proximity.badge,
                   )}
                 >
@@ -252,10 +259,10 @@ export default function PortalHouseholdPage() {
                   <UsersRound className="size-4" />
                 </span>
                 <div>
-                  <h2 className="text-base sm:text-lg font-black text-neutral-900">
+                  <h2 className="text-base font-black text-neutral-900 sm:text-lg">
                     Registered Household Members ({members.length})
                   </h2>
-                  <p className="text-xs text-neutral-500 font-normal">
+                  <p className="text-xs font-normal text-neutral-500">
                     Profiles, support flags, and age groups linked to this household
                   </p>
                 </div>
@@ -274,8 +281,7 @@ export default function PortalHouseholdPage() {
 
             <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
               {members.map((member) => {
-                const initial =
-                  member.full_name?.trim().charAt(0).toUpperCase() || "M";
+                const initial = member.full_name?.trim().charAt(0).toUpperCase() || "M";
 
                 const age = computeAge(member.birth_date);
                 const isSenior = age !== null && age >= 60;
@@ -284,12 +290,12 @@ export default function PortalHouseholdPage() {
                 return (
                   <div
                     key={member.id}
-                    className="flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-2xs hover:shadow-xs transition-all"
+                    className="flex flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-2xs transition-all hover:shadow-xs"
                   >
                     <div>
                       {/* Avatar + Name + Relationship Header */}
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex min-w-0 items-center gap-3">
                           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-emerald-700 text-xs font-bold text-white shadow-xs">
                             {initial}
                           </span>
@@ -297,7 +303,7 @@ export default function PortalHouseholdPage() {
                             <span className="block truncate text-sm font-bold text-neutral-900">
                               {member.full_name}
                             </span>
-                            <span className="block truncate text-xs text-neutral-500 font-medium">
+                            <span className="block truncate text-xs font-medium text-neutral-500">
                               {member.relationship_to_head ||
                                 (member.is_head ? "Household Head" : "Family Member")}
                             </span>
@@ -305,7 +311,7 @@ export default function PortalHouseholdPage() {
                         </div>
 
                         {member.is_head ? (
-                          <span className="rounded-full bg-emerald-100 border border-emerald-200/80 px-2 py-0.2 text-[10px] font-black text-emerald-800 uppercase">
+                          <span className="py-0.2 rounded-full border border-emerald-200/80 bg-emerald-100 px-2 text-[10px] font-black text-emerald-800 uppercase">
                             Head
                           </span>
                         ) : null}
@@ -379,7 +385,7 @@ export default function PortalHouseholdPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => handleOpenEditMember(member)}
-                        className="w-full rounded-xl text-xs font-bold border-neutral-200 text-neutral-700 hover:bg-neutral-50 cursor-pointer"
+                        className="w-full cursor-pointer rounded-xl border-neutral-200 text-xs font-bold text-neutral-700 hover:bg-neutral-50"
                       >
                         <Edit className="size-3.5" />
                         <span>Edit Profile</span>
@@ -393,7 +399,7 @@ export default function PortalHouseholdPage() {
         </div>
 
         {/* ── RIGHT COLUMN: Geographic Hazard Map & Data Sources (5 Cols) ── */}
-        <div className="xl:col-span-5 space-y-6 sm:space-y-8">
+        <div className="space-y-6 sm:space-y-8 xl:col-span-5">
           {/* 1. Geographic Location & Flood Map Section */}
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-3 border-b border-neutral-200/80 pb-3">
@@ -405,7 +411,7 @@ export default function PortalHouseholdPage() {
                   <h2 className="text-base font-bold text-neutral-900">
                     Household Location & Hazard Overlay
                   </h2>
-                  <p className="text-xs text-neutral-500 font-normal">
+                  <p className="text-xs font-normal text-neutral-500">
                     5-Year UP NOAH Inundation Overlay
                   </p>
                 </div>
@@ -427,16 +433,16 @@ export default function PortalHouseholdPage() {
           </section>
 
           {/* 2. Official Data Sources & Mapping Reference Card (Admin Portal Pattern) */}
-          <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
-            <CardContent className="p-5 space-y-3.5 text-xs text-neutral-600">
-              <div className="flex items-center gap-2 text-neutral-900 font-bold border-b border-neutral-100 pb-2.5">
+          <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+            <CardContent className="space-y-3.5 p-5 text-xs text-neutral-600">
+              <div className="flex items-center gap-2 border-b border-neutral-100 pb-2.5 font-bold text-neutral-900">
                 <Database className="size-4 text-emerald-700" />
                 <span>Official Mapping & Hazard Reference</span>
               </div>
 
               <div className="space-y-2 text-[11.5px] leading-relaxed">
                 <div className="flex items-start gap-2">
-                  <Shield className="size-3.5 text-emerald-700 shrink-0 mt-0.5" />
+                  <Shield className="mt-0.5 size-3.5 shrink-0 text-emerald-700" />
                   <div>
                     <span className="font-bold text-neutral-900">Jurisdiction: </span>
                     Barangay San Jose, Municipality of Rodriguez (Montalban), Rizal
@@ -444,15 +450,18 @@ export default function PortalHouseholdPage() {
                 </div>
 
                 <div className="flex items-start gap-2">
-                  <Droplets className="size-3.5 text-sky-600 shrink-0 mt-0.5" />
+                  <Droplets className="mt-0.5 size-3.5 shrink-0 text-sky-600" />
                   <div>
-                    <span className="font-bold text-neutral-900">Flood Inundation Data: </span>
-                    UP NOAH / Disaster Risk and Exposure Assessment for Mitigation (DREAM/LiPAD) under ODC-ODbL.
+                    <span className="font-bold text-neutral-900">
+                      Flood Inundation Data:{" "}
+                    </span>
+                    UP NOAH / Disaster Risk and Exposure Assessment for Mitigation
+                    (DREAM/LiPAD) under ODC-ODbL.
                   </div>
                 </div>
 
                 <div className="flex items-start gap-2">
-                  <MapPin className="size-3.5 text-amber-600 shrink-0 mt-0.5" />
+                  <MapPin className="mt-0.5 size-3.5 shrink-0 text-amber-600" />
                   <div>
                     <span className="font-bold text-neutral-900">Cartography: </span>
                     Leaflet · © OpenStreetMap contributors · CARTO Voyager Vector Tiles.
@@ -460,8 +469,10 @@ export default function PortalHouseholdPage() {
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-neutral-100 flex items-center justify-between text-[11px]">
-                <span className="text-neutral-400 font-medium">BDRRMC Spatial Analytics</span>
+              <div className="flex items-center justify-between border-t border-neutral-100 pt-2 text-[11px]">
+                <span className="font-medium text-neutral-400">
+                  BDRRMC Spatial Analytics
+                </span>
                 <Link
                   href="/hazard-map"
                   target="_blank"

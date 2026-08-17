@@ -84,14 +84,7 @@ interface Area {
   name: string;
 }
 
-const SAN_JOSE_AREAS = [
-  "Area 1",
-  "Area 2",
-  "Area 3",
-  "Area 4",
-  "Area 5",
-  "Area 6",
-];
+const SAN_JOSE_AREAS = ["Area 1", "Area 2", "Area 3", "Area 4", "Area 5", "Area 6"];
 
 function LayerCheckbox({
   checked,
@@ -103,10 +96,10 @@ function LayerCheckbox({
   label: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5 text-xs font-medium text-slate-300 hover:text-white transition-colors">
+    <label className="flex cursor-pointer items-center gap-2.5 text-xs font-medium text-slate-300 transition-colors hover:text-white">
       <input
         type="checkbox"
-        className="size-3.5 rounded border-slate-600 bg-slate-800 text-emerald-500 accent-emerald-500 cursor-pointer"
+        className="size-3.5 cursor-pointer rounded border-slate-600 bg-slate-800 text-emerald-500 accent-emerald-500"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />
@@ -131,7 +124,13 @@ export default function AdminSirensPage() {
   const [sirenToDisable, setSirenToDisable] = React.useState<Siren | null>(null);
   const [sirenToDelete, setSirenToDelete] = React.useState<Siren | null>(null);
 
-  const { data: sirens, isLoading, isError, refetch } = useQuery({
+  const {
+    data: sirens,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["admin", "sirens"],
     queryFn: () => api.get<Siren[]>("/admin/sirens").then((r) => r.data),
   });
@@ -184,7 +183,8 @@ export default function AdminSirensPage() {
   });
 
   const triggerAllDrillMutation = useMutation({
-    mutationFn: () => api.post<{ ok: boolean; affected_count: number }>("/admin/sirens/drill/trigger"),
+    mutationFn: () =>
+      api.post<{ ok: boolean; affected_count: number }>("/admin/sirens/drill/trigger"),
     onSuccess: (res) => {
       sirenAudio.start();
       toast.warning(
@@ -202,7 +202,8 @@ export default function AdminSirensPage() {
   });
 
   const silenceAllDrillMutation = useMutation({
-    mutationFn: () => api.post<{ ok: boolean; affected_count: number }>("/admin/sirens/drill/silence"),
+    mutationFn: () =>
+      api.post<{ ok: boolean; affected_count: number }>("/admin/sirens/drill/silence"),
     onSuccess: (res) => {
       sirenAudio.stop();
       toast.success(
@@ -289,7 +290,7 @@ export default function AdminSirensPage() {
       sub: "Acoustic early warning stations",
       tone: "emerald",
       badge: (
-        <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-300">
+        <span className="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[9.5px] font-black tracking-wider text-emerald-800 uppercase">
           Ready
         </span>
       ),
@@ -300,13 +301,11 @@ export default function AdminSirensPage() {
       value: stats.soundingCount,
       unit: "units",
       sub:
-        stats.soundingCount > 0
-          ? "Broadcasting acoustic alarm"
-          : "All siren units idle",
+        stats.soundingCount > 0 ? "Broadcasting acoustic alarm" : "All siren units idle",
       tone: stats.soundingCount > 0 ? "rose" : "neutral",
       badge:
         stats.soundingCount > 0 ? (
-          <span className="inline-flex items-center rounded-full bg-rose-600 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-2xs animate-pulse">
+          <span className="inline-flex animate-pulse items-center rounded-full bg-rose-600 px-2 py-0.5 text-[9.5px] font-black tracking-wider text-white uppercase shadow-2xs">
             Active Alarm
           </span>
         ) : null,
@@ -402,12 +401,12 @@ export default function AdminSirensPage() {
         const isSounding = row.is_active && row.status === "sounding";
         const isTesting = row.is_active && row.status === "testing";
         return (
-          <div className="flex items-center gap-3 min-w-48 max-w-sm">
+          <div className="flex max-w-sm min-w-48 items-center gap-3">
             <div
               className={cn(
-                "relative flex size-8 shrink-0 items-center justify-center rounded-lg font-bold shadow-2xs overflow-hidden transition-all",
+                "relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg font-bold shadow-2xs transition-all",
                 isSounding
-                  ? "bg-rose-600 text-white animate-pulse"
+                  ? "animate-pulse bg-rose-600 text-white"
                   : "bg-emerald-100 text-emerald-800",
               )}
             >
@@ -417,11 +416,11 @@ export default function AdminSirensPage() {
               <Link
                 href={`/admin/sirens/${row.id}`}
                 onClick={(e) => e.stopPropagation()}
-                className="font-bold text-sm text-neutral-900 hover:text-emerald-700 hover:underline transition-colors truncate block"
+                className="block truncate text-sm font-bold text-neutral-900 transition-colors hover:text-emerald-700 hover:underline"
               >
                 {row.name}
               </Link>
-              <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
                 {areaName(row) !== "—" ? (
                   <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700">
                     <MapPin className="size-2.5" />
@@ -434,7 +433,7 @@ export default function AdminSirensPage() {
                     !row.is_active
                       ? "border-slate-200 bg-slate-100 text-slate-600"
                       : isSounding
-                        ? "border-rose-300 bg-rose-100 text-rose-800 animate-pulse"
+                        ? "animate-pulse border-rose-300 bg-rose-100 text-rose-800"
                         : isTesting
                           ? "border-amber-300 bg-amber-100 text-amber-800"
                           : "border-emerald-200 bg-emerald-50 text-emerald-800",
@@ -442,7 +441,7 @@ export default function AdminSirensPage() {
                 >
                   {isSounding ? (
                     <>
-                      <Volume2 className="size-2.5 text-rose-600 animate-bounce" />
+                      <Volume2 className="size-2.5 animate-bounce text-rose-600" />
                       Sounding
                     </>
                   ) : isTesting ? (
@@ -469,15 +468,15 @@ export default function AdminSirensPage() {
       key: "last_triggered_at",
       header: "Last Activation",
       render: (row) => (
-        <span className="text-xs font-mono text-neutral-600">
+        <span className="font-mono text-xs text-neutral-600">
           {row.last_triggered_at
             ? new Date(row.last_triggered_at).toLocaleString("en-US", {
-              month: "short",
-              day: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-              hour12: true,
-            })
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+              })
             : "No activations yet"}
         </span>
       ),
@@ -494,13 +493,20 @@ export default function AdminSirensPage() {
       />
 
       {/* Top 5 Metrics Strip */}
-      <AssetMetricStrip items={metricCards} />
+      <AssetMetricStrip
+        items={metricCards}
+        isLoading={isLoading || isFetching}
+        loadingLabel="Loading siren metrics"
+      />
 
       {/* Two-Column Map Workspace */}
-      <div ref={mapSectionRef} className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5 scroll-mt-6">
+      <div
+        ref={mapSectionRef}
+        className="flex scroll-mt-6 flex-col gap-4 lg:flex-row lg:items-start lg:gap-5"
+      >
         {/* Column 1: Map Canvas */}
-        <div className="flex flex-1 flex-col min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
-          <div className="relative h-[480px] sm:h-[580px] lg:h-[620px] w-full overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
+          <div className="relative h-[480px] w-full overflow-hidden sm:h-[580px] lg:h-[620px]">
             <AdminAssetWorkspaceMap
               items={mapItems}
               selectedId={selectedId}
@@ -518,7 +524,7 @@ export default function AdminSirensPage() {
         <div className="flex w-full flex-col gap-3 lg:w-72 lg:shrink-0">
           {/* Map Layers Card */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
-            <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
+            <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-emerald-400 uppercase">
               <Layers className="size-3.5 text-emerald-400" aria-hidden />
               Map Overlays
             </p>
@@ -542,37 +548,43 @@ export default function AdminSirensPage() {
           </div>
 
           {/* Quick Simulation Drill Panel */}
-          <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md flex flex-col gap-2.5">
+          <div className="flex w-full flex-col gap-2.5 rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
             <div className="flex items-center justify-between gap-2">
-              <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
+              <p className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-emerald-400 uppercase">
                 <Radio
                   className={cn(
                     "size-3.5",
-                    stats.soundingCount > 0 ? "text-rose-400 animate-pulse" : "text-emerald-400",
+                    stats.soundingCount > 0
+                      ? "animate-pulse text-rose-400"
+                      : "text-emerald-400",
                   )}
                 />
                 Simulation
               </p>
               <span
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider whitespace-nowrap shadow-2xs",
+                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black tracking-wider whitespace-nowrap uppercase shadow-2xs",
                   stats.soundingCount > 0
-                    ? "bg-rose-900/90 text-white border border-rose-600 animate-pulse"
-                    : "bg-emerald-950 text-white border border-emerald-700/80",
+                    ? "animate-pulse border border-rose-600 bg-rose-900/90 text-white"
+                    : "border border-emerald-700/80 bg-emerald-950 text-white",
                 )}
               >
                 <span
                   className={cn(
                     "size-1.5 rounded-full",
-                    stats.soundingCount > 0 ? "bg-rose-400 animate-ping" : "bg-emerald-400",
+                    stats.soundingCount > 0
+                      ? "animate-ping bg-rose-400"
+                      : "bg-emerald-400",
                   )}
                 />
                 {stats.soundingCount > 0 ? "Drill Sounding" : "Drill Standby"}
               </span>
             </div>
 
-            <p className="text-xs text-white/90 leading-relaxed">
-              Conducts a full barangay-wide auditory drill across all {stats.activeCount} active stations. Recorded audit entries are classified as <strong className="text-white font-bold">Drill</strong>.
+            <p className="text-xs leading-relaxed text-white/90">
+              Conducts a full barangay-wide auditory drill across all {stats.activeCount}{" "}
+              active stations. Recorded audit entries are classified as{" "}
+              <strong className="font-bold text-white">Drill</strong>.
             </p>
 
             <div className="mt-1 flex flex-col gap-2">
@@ -582,7 +594,7 @@ export default function AdminSirensPage() {
                   size="sm"
                   disabled={silenceAllDrillMutation.isPending}
                   onClick={() => silenceAllDrillMutation.mutate()}
-                  className="h-9 justify-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-xs font-bold text-white shadow-md cursor-pointer animate-pulse"
+                  className="h-9 animate-pulse cursor-pointer justify-center gap-1.5 bg-rose-600 text-xs font-bold text-white shadow-md hover:bg-rose-700"
                 >
                   <VolumeX className="size-3.5" />
                   {silenceAllDrillMutation.isPending
@@ -595,7 +607,7 @@ export default function AdminSirensPage() {
                   size="sm"
                   disabled={triggerAllDrillMutation.isPending || stats.activeCount === 0}
                   onClick={() => triggerAllDrillMutation.mutate()}
-                  className="h-9 justify-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-xs font-black text-slate-950 border border-amber-400 shadow-md cursor-pointer disabled:bg-slate-800 disabled:text-slate-500 disabled:border-slate-700"
+                  className="h-9 cursor-pointer justify-center gap-1.5 border border-amber-400 bg-amber-500 text-xs font-black text-slate-950 shadow-md hover:bg-amber-400 disabled:border-slate-700 disabled:bg-slate-800 disabled:text-slate-500"
                 >
                   <Radio className="size-3.5 text-slate-950" />
                   {triggerAllDrillMutation.isPending
@@ -615,7 +627,7 @@ export default function AdminSirensPage() {
                     className: "border-blue-300 bg-blue-50 text-blue-950 font-medium",
                   });
                 }}
-                className="h-8 justify-center gap-1.5 border-blue-400 bg-blue-600 text-xs font-bold text-white hover:bg-blue-500 shadow-xs cursor-pointer"
+                className="h-8 cursor-pointer justify-center gap-1.5 border-blue-400 bg-blue-600 text-xs font-bold text-white shadow-xs hover:bg-blue-500"
               >
                 <Activity className="size-3.5 text-white" />
                 Play 3s Diagnostic Chime
@@ -625,8 +637,8 @@ export default function AdminSirensPage() {
 
           {/* Filters Card */}
           <div className="w-full rounded-xl border border-emerald-900/80 bg-[#052e16]/95 p-4 text-white shadow-xl backdrop-blur-md">
-            <div className="mb-3 flex items-center justify-between h-6">
-              <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
+            <div className="mb-3 flex h-6 items-center justify-between">
+              <p className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-emerald-400 uppercase">
                 <Filter className="size-3.5 text-emerald-400" aria-hidden />
                 Siren Filters
               </p>
@@ -637,7 +649,7 @@ export default function AdminSirensPage() {
                     setStatusFilter("all");
                     setAreaFilter("all");
                   }}
-                  className="inline-flex items-center gap-1 rounded bg-emerald-900/80 px-2 py-0.5 text-[10px] font-bold text-white border border-emerald-700/60 hover:bg-emerald-800 transition-all shadow-2xs cursor-pointer"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded border border-emerald-700/60 bg-emerald-900/80 px-2 py-0.5 text-[10px] font-bold text-white shadow-2xs transition-all hover:bg-emerald-800"
                 >
                   <RotateCcw className="size-2.5" />
                   Reset
@@ -647,9 +659,7 @@ export default function AdminSirensPage() {
 
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1">
-                <label className="text-[10.5px] font-bold text-white">
-                  Status
-                </label>
+                <label className="text-[10.5px] font-bold text-white">Status</label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="h-9 w-full rounded-lg border-neutral-300 bg-white text-xs font-semibold text-neutral-900 shadow-xs">
                     <SelectValue />
@@ -688,13 +698,14 @@ export default function AdminSirensPage() {
       </div>
 
       {/* 2-Column Lower Section: Column 1 (Siren Unit List) | Column 2 (Past Latest Events / History) */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 items-start">
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
         {/* Column 1: Siren Management Table */}
         <div className="flex flex-col gap-3 xl:col-span-7">
           <ResourceTable
             columns={columns}
             data={filteredSirens}
-            isLoading={isLoading}
+            isLoading={isLoading || isFetching}
+            loadingLabel="Loading siren units"
             isError={isError}
             onRetry={refetch}
             getRowKey={(row) => row.id}
@@ -704,7 +715,7 @@ export default function AdminSirensPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="inline-flex h-9 w-fit min-w-[130px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                    <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                    <SlidersHorizontal className="size-3 shrink-0 text-emerald-600" />
                     <SelectValue placeholder="All Statuses" />
                   </SelectTrigger>
                   <SelectContent align="end" className="min-w-44">
@@ -718,7 +729,7 @@ export default function AdminSirensPage() {
 
                 <Select value={areaFilter} onValueChange={setAreaFilter}>
                   <SelectTrigger className="inline-flex h-9 w-fit min-w-[120px] cursor-pointer items-center gap-1.5 rounded-full border border-emerald-600/30 bg-white px-3.5 py-1.5 text-xs font-bold text-neutral-900 shadow-2xs hover:border-emerald-600 hover:bg-emerald-50/40">
-                    <SlidersHorizontal className="size-3 text-emerald-600 shrink-0" />
+                    <SlidersHorizontal className="size-3 shrink-0 text-emerald-600" />
                     <SelectValue placeholder="All Areas" />
                   </SelectTrigger>
                   <SelectContent align="end" className="min-w-40">
@@ -744,7 +755,7 @@ export default function AdminSirensPage() {
                   size="sm"
                   onClick={() => handleLocate(row.id)}
                   aria-label={`Locate ${row.name}`}
-                  className="h-8 w-8 p-0 border-slate-300 bg-white text-slate-800 hover:bg-slate-50 cursor-pointer shrink-0"
+                  className="h-8 w-8 shrink-0 cursor-pointer border-slate-300 bg-white p-0 text-slate-800 hover:bg-slate-50"
                   title="Locate on Map"
                 >
                   <Crosshair aria-hidden className="size-3.5 text-slate-700" />
@@ -755,7 +766,7 @@ export default function AdminSirensPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-8 p-0 border-emerald-600/30 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900 cursor-pointer shrink-0"
+                    className="h-8 w-8 shrink-0 cursor-pointer border-emerald-600/30 bg-emerald-50 p-0 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900"
                     title="View Siren Telemetry & History"
                     aria-label={`View Details for ${row.name}`}
                   >
@@ -775,10 +786,10 @@ export default function AdminSirensPage() {
                     }
                     disabled={triggerMutation.isPending || silenceMutation.isPending}
                     className={cn(
-                      "h-8 gap-1.5 text-xs font-bold shadow-2xs px-2.5 cursor-pointer",
+                      "h-8 cursor-pointer gap-1.5 px-2.5 text-xs font-bold shadow-2xs",
                       row.status === "sounding"
                         ? "bg-rose-600 text-white hover:bg-rose-700"
-                        : "border-amber-400/90 bg-amber-50 text-amber-900 hover:bg-amber-100 hover:border-amber-500",
+                        : "border-amber-400/90 bg-amber-50 text-amber-900 hover:border-amber-500 hover:bg-amber-100",
                     )}
                   >
                     {row.status === "sounding" ? (
@@ -798,7 +809,7 @@ export default function AdminSirensPage() {
                     variant="outline"
                     size="sm"
                     disabled
-                    className="h-8 gap-1.5 border-slate-200 bg-slate-50 px-2.5 text-xs font-semibold text-slate-400 cursor-not-allowed"
+                    className="h-8 cursor-not-allowed gap-1.5 border-slate-200 bg-slate-50 px-2.5 text-xs font-semibold text-slate-400"
                     title="Cannot trigger disabled siren"
                   >
                     <Volume2 className="size-3.5 text-slate-400" />
@@ -813,7 +824,7 @@ export default function AdminSirensPage() {
                     size="sm"
                     onClick={() => setSirenToDisable(row)}
                     disabled={deactivateMutation.isPending}
-                    className="h-8 gap-1.5 border-neutral-300 bg-neutral-100 px-2.5 text-xs font-bold text-neutral-800 hover:bg-neutral-200 hover:text-neutral-950 cursor-pointer"
+                    className="h-8 cursor-pointer gap-1.5 border-neutral-300 bg-neutral-100 px-2.5 text-xs font-bold text-neutral-800 hover:bg-neutral-200 hover:text-neutral-950"
                     title="Disable Siren"
                   >
                     <PowerOff className="size-3.5 text-neutral-600" />
@@ -825,7 +836,7 @@ export default function AdminSirensPage() {
                     size="sm"
                     onClick={() => reactivateMutation.mutate(row.id)}
                     disabled={reactivateMutation.isPending}
-                    className="h-8 gap-1.5 border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 cursor-pointer"
+                    className="h-8 cursor-pointer gap-1.5 border-emerald-300 bg-emerald-50 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
                     title="Reactivate Siren"
                   >
                     <Power className="size-3.5 text-emerald-600" />
@@ -840,7 +851,7 @@ export default function AdminSirensPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8 gap-1.5 border-amber-300/80 bg-amber-50 px-2.5 text-xs font-bold text-amber-800 hover:bg-amber-100 cursor-pointer"
+                      className="h-8 cursor-pointer gap-1.5 border-amber-300/80 bg-amber-50 px-2.5 text-xs font-bold text-amber-800 hover:bg-amber-100"
                       title="Edit Siren"
                     >
                       <Pencil className="size-3.5" />
@@ -855,7 +866,7 @@ export default function AdminSirensPage() {
                   size="sm"
                   onClick={() => setSirenToDelete(row)}
                   disabled={deleteMutation.isPending}
-                  className="h-8 gap-1.5 border-rose-200 bg-rose-50/60 px-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 cursor-pointer"
+                  className="h-8 cursor-pointer gap-1.5 border-rose-200 bg-rose-50/60 px-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100"
                   title="Delete Siren Station (Soft Delete)"
                 >
                   <Trash2 className="size-3.5" />
@@ -874,28 +885,25 @@ export default function AdminSirensPage() {
                 <History className="size-4" />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-slate-900 leading-tight">
+                <h3 className="text-sm leading-tight font-bold text-slate-900">
                   Past Latest Events
                 </h3>
-                <p className="text-[11px] text-slate-500 font-medium">
+                <p className="text-[11px] font-medium text-slate-500">
                   Live audit trail of siren triggers, drills, and station status changes
                 </p>
               </div>
             </div>
-            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 font-mono text-[10.5px] font-bold text-slate-700 border border-slate-200 shrink-0">
+            <span className="shrink-0 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 font-mono text-[10.5px] font-bold text-slate-700">
               {audits.length} Events
             </span>
           </div>
 
           {/* Scrollable Audit Feed */}
-          <div className="flex max-h-[560px] flex-col gap-2.5 overflow-y-auto pr-1.5 custom-scrollbar">
+          <div className="custom-scrollbar flex max-h-[560px] flex-col gap-2.5 overflow-y-auto pr-1.5">
             {isAuditsLoading ? (
               <div className="flex flex-col gap-2 py-4">
                 {[1, 2, 3].map((n) => (
-                  <div
-                    key={n}
-                    className="h-16 animate-pulse rounded-xl bg-slate-100"
-                  />
+                  <div key={n} className="h-16 animate-pulse rounded-xl bg-slate-100" />
                 ))}
               </div>
             ) : audits.length > 0 ? (
@@ -917,7 +925,7 @@ export default function AdminSirensPage() {
                   <div
                     key={log.id}
                     className={cn(
-                      "flex items-start gap-3 rounded-xl border p-3 text-xs transition-all shadow-2xs",
+                      "flex items-start gap-3 rounded-xl border p-3 text-xs shadow-2xs transition-all",
                       isDrill
                         ? "border-sky-200 bg-sky-50/40"
                         : isSilence
@@ -933,7 +941,7 @@ export default function AdminSirensPage() {
                   >
                     <div
                       className={cn(
-                        "grid size-7.5 shrink-0 place-items-center rounded-lg font-bold shadow-2xs mt-0.5",
+                        "mt-0.5 grid size-7.5 shrink-0 place-items-center rounded-lg font-bold shadow-2xs",
                         isDrill
                           ? "bg-sky-100 text-sky-700"
                           : isSilence
@@ -960,7 +968,7 @@ export default function AdminSirensPage() {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-1">
-                        <p className="font-bold text-slate-900 truncate text-xs">
+                        <p className="truncate text-xs font-bold text-slate-900">
                           {isDrill
                             ? isSilence
                               ? "Drill Concluded & Silenced"
@@ -979,16 +987,16 @@ export default function AdminSirensPage() {
                         </p>
                         <span
                           className={cn(
-                            "shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider",
+                            "shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black tracking-wider uppercase",
                             isDrill
-                              ? "bg-sky-100 text-sky-800 border border-sky-300"
+                              ? "border border-sky-300 bg-sky-100 text-sky-800"
                               : isSilence
-                                ? "bg-slate-100 text-slate-700 border border-slate-300"
+                                ? "border border-slate-300 bg-slate-100 text-slate-700"
                                 : isCreate || isReactivate
-                                  ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                                  ? "border border-emerald-300 bg-emerald-100 text-emerald-800"
                                   : isDeactivate
-                                    ? "bg-neutral-100 text-neutral-800 border border-neutral-300"
-                                    : "bg-rose-100 text-rose-800 border border-rose-300",
+                                    ? "border border-neutral-300 bg-neutral-100 text-neutral-800"
+                                    : "border border-rose-300 bg-rose-100 text-rose-800",
                           )}
                         >
                           {log.classification || (isDrill ? "Drill" : "Operational")}
@@ -996,7 +1004,7 @@ export default function AdminSirensPage() {
                       </div>
 
                       <div className="mt-1 flex items-center justify-between gap-1 text-[11px] text-slate-500">
-                        <span className="font-medium truncate text-slate-700">
+                        <span className="truncate font-medium text-slate-700">
                           {stationName}
                         </span>
                         <span className="shrink-0 font-mono text-[10.5px] text-slate-400">
@@ -1019,8 +1027,9 @@ export default function AdminSirensPage() {
                 <p className="text-xs font-bold text-slate-700">
                   No Past Events Recorded Yet
                 </p>
-                <p className="text-[11px] text-slate-500 max-w-xs leading-relaxed">
-                  Trigger a siren test chime, run a drill simulation, or deploy stations to view real-time audit records here.
+                <p className="max-w-xs text-[11px] leading-relaxed text-slate-500">
+                  Trigger a siren test chime, run a drill simulation, or deploy stations
+                  to view real-time audit records here.
                 </p>
               </div>
             )}
@@ -1036,20 +1045,22 @@ export default function AdminSirensPage() {
         <AlertDialogContent className="max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
           <AlertDialogHeader className="flex flex-col gap-2 text-left">
             <div className="flex items-center gap-3">
-              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-neutral-100 text-neutral-800 border border-neutral-200">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-neutral-200 bg-neutral-100 text-neutral-800">
                 <PowerOff className="size-5" />
               </div>
               <div className="min-w-0">
-                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                <AlertDialogTitle className="text-base leading-tight font-black text-slate-900">
                   Disable Siren Station?
                 </AlertDialogTitle>
-                <p className="text-xs font-bold text-slate-500 truncate mt-0.5">
+                <p className="mt-0.5 truncate text-xs font-bold text-slate-500">
                   {sirenToDisable?.name}
                 </p>
               </div>
             </div>
-            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
-              Placing this siren station into standby disabled state will temporarily deactivate its acoustic broadcasting and disarm emergency simulation triggers until reactivated.
+            <AlertDialogDescription className="mt-2 text-xs leading-relaxed text-slate-600">
+              Placing this siren station into standby disabled state will temporarily
+              deactivate its acoustic broadcasting and disarm emergency simulation
+              triggers until reactivated.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
@@ -1058,7 +1069,7 @@ export default function AdminSirensPage() {
               size="sm"
               onClick={() => setSirenToDisable(null)}
               disabled={deactivateMutation.isPending}
-              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+              className="cursor-pointer rounded-xl border-slate-200 text-xs font-bold hover:bg-slate-100"
             >
               Cancel
             </Button>
@@ -1073,7 +1084,7 @@ export default function AdminSirensPage() {
                 }
               }}
               disabled={deactivateMutation.isPending}
-              className="rounded-xl text-xs font-bold bg-neutral-900 hover:bg-neutral-800 text-white shadow-xs cursor-pointer"
+              className="cursor-pointer rounded-xl bg-neutral-900 text-xs font-bold text-white shadow-xs hover:bg-neutral-800"
             >
               {deactivateMutation.isPending ? "Disabling…" : "Confirm Disable"}
             </Button>
@@ -1089,20 +1100,22 @@ export default function AdminSirensPage() {
         <AlertDialogContent className="max-w-md rounded-2xl border border-rose-200 bg-white p-6 shadow-2xl">
           <AlertDialogHeader className="flex flex-col gap-2 text-left">
             <div className="flex items-center gap-3">
-              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-rose-100 text-rose-700 border border-rose-200">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-rose-200 bg-rose-100 text-rose-700">
                 <Trash2 className="size-5" />
               </div>
               <div className="min-w-0">
-                <AlertDialogTitle className="text-base font-black text-slate-900 leading-tight">
+                <AlertDialogTitle className="text-base leading-tight font-black text-slate-900">
                   Delete Siren Station?
                 </AlertDialogTitle>
-                <p className="text-xs font-bold text-rose-700 truncate mt-0.5">
+                <p className="mt-0.5 truncate text-xs font-bold text-rose-700">
                   {sirenToDelete?.name}
                 </p>
               </div>
             </div>
-            <AlertDialogDescription className="text-xs text-slate-600 leading-relaxed mt-2">
-              Are you sure you want to delete this siren station? This will remove the unit from active GIS map views and operational monitoring while preserving all historical audit logs and simulation records.
+            <AlertDialogDescription className="mt-2 text-xs leading-relaxed text-slate-600">
+              Are you sure you want to delete this siren station? This will remove the
+              unit from active GIS map views and operational monitoring while preserving
+              all historical audit logs and simulation records.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
@@ -1111,7 +1124,7 @@ export default function AdminSirensPage() {
               size="sm"
               onClick={() => setSirenToDelete(null)}
               disabled={deleteMutation.isPending}
-              className="rounded-xl text-xs font-bold border-slate-200 hover:bg-slate-100 cursor-pointer"
+              className="cursor-pointer rounded-xl border-slate-200 text-xs font-bold hover:bg-slate-100"
             >
               Cancel
             </Button>
@@ -1126,7 +1139,7 @@ export default function AdminSirensPage() {
                 }
               }}
               disabled={deleteMutation.isPending}
-              className="rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs cursor-pointer"
+              className="cursor-pointer rounded-xl bg-rose-600 text-xs font-bold text-white shadow-xs hover:bg-rose-700"
             >
               {deleteMutation.isPending ? "Deleting…" : "Confirm Delete"}
             </Button>

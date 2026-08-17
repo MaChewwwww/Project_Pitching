@@ -28,6 +28,7 @@ import {
 import { Badge } from "@/components/common/badge";
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import { DetailCardSkeleton, TimelineSkeleton } from "@/components/common/portal-loading";
 import { ConfirmDeleteButton } from "@/components/features/admin/confirm-delete-button";
 import { AdminPageHeader } from "@/components/features/admin/admin-page-header";
 import { api, toDisplayError } from "@/lib/api/client";
@@ -163,12 +164,8 @@ export default function HouseholdDetailPage() {
     onError: (error) => toast.error(toDisplayError(error).detail),
   });
 
-  if (householdQuery.isLoading)
-    return (
-      <div className="flex min-h-64 items-center justify-center text-sm text-neutral-500">
-        Loading household…
-      </div>
-    );
+  if (householdQuery.isFetching)
+    return <DetailCardSkeleton label="Loading household details" rows={8} />;
   if (!householdQuery.data)
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">
@@ -588,10 +585,8 @@ export default function HouseholdDetailPage() {
         </Card>
       </section>
 
-      {activeTab === "operations" && activityQuery.isLoading ? (
-        <p className="rounded-xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-          Loading linked operational records…
-        </p>
+      {activeTab === "operations" && activityQuery.isFetching ? (
+        <TimelineSkeleton label="Loading linked operational records" rows={4} />
       ) : null}
       {activeTab === "operations" && activityQuery.isError ? (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">

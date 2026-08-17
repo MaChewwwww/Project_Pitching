@@ -19,6 +19,7 @@ import {
 
 import { Button } from "@/components/common/button";
 import { Card, CardContent } from "@/components/common/card";
+import { TimelineSkeleton } from "@/components/common/portal-loading";
 import { PortalPageHeader } from "@/components/features/portal/portal-page-header";
 import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
@@ -80,7 +81,7 @@ export default function PortalUpdatesPage() {
                 size="sm"
                 onClick={() => readAll.mutate()}
                 disabled={readAll.isPending}
-                className="h-10 cursor-pointer gap-2 rounded-full border border-neutral-300/90 bg-white px-4 font-bold text-neutral-800 shadow-xs transition-all hover:bg-neutral-50 hover:border-neutral-400 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
+                className="h-10 cursor-pointer gap-2 rounded-full border border-neutral-300/90 bg-white px-4 font-bold text-neutral-800 shadow-xs transition-all hover:border-neutral-400 hover:bg-neutral-50 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
               >
                 <CheckCheck aria-hidden className="size-3.5 text-neutral-600" />
                 <span>{readAll.isPending ? "Marking…" : "Mark all as read"}</span>
@@ -90,7 +91,7 @@ export default function PortalUpdatesPage() {
                 asChild
                 variant="outline"
                 size="sm"
-                className="h-10 cursor-pointer gap-2 rounded-full border border-neutral-300/90 bg-white px-4 font-bold text-neutral-800 shadow-xs transition-all hover:bg-neutral-50 hover:border-neutral-400 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
+                className="h-10 cursor-pointer gap-2 rounded-full border border-neutral-300/90 bg-white px-4 font-bold text-neutral-800 shadow-xs transition-all hover:border-neutral-400 hover:bg-neutral-50 active:scale-[0.98] max-sm:w-full max-sm:justify-center"
               >
                 <Link href="/portal/weather">
                   <Waves aria-hidden className="size-3.5 text-neutral-600" />
@@ -103,22 +104,22 @@ export default function PortalUpdatesPage() {
       />
 
       {/* ── 12-Column Responsive Layout ── */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8 items-start">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-8">
         {/* ── PRIMARY LEFT COLUMN: Unified Notices Container (7-8 cols) ── */}
         <div className="lg:col-span-7 xl:col-span-8">
           <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-xs">
             {/* 1. Container Header: Filters & Search Toolbar */}
-            <div className="flex flex-col gap-3 border-b border-neutral-100 bg-neutral-50/70 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 border-b border-neutral-100 bg-neutral-50/70 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
               {/* Filter Pills */}
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setFilter("all")}
                   className={cn(
-                    "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                    "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold shadow-2xs transition-all",
                     filter === "all"
                       ? "bg-emerald-700 text-white shadow-xs ring-2 ring-emerald-600/30"
-                      : "border border-neutral-300/80 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400",
+                      : "border border-neutral-300/80 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50",
                   )}
                 >
                   All Notices ({allItems.length})
@@ -127,10 +128,10 @@ export default function PortalUpdatesPage() {
                   type="button"
                   onClick={() => setFilter("unread")}
                   className={cn(
-                    "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs",
+                    "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold shadow-2xs transition-all",
                     filter === "unread"
                       ? "bg-emerald-700 text-white shadow-xs ring-2 ring-emerald-600/30"
-                      : "border border-neutral-300/80 bg-white text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400",
+                      : "border border-neutral-300/80 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50",
                   )}
                 >
                   Unread ({unreadCount})
@@ -139,23 +140,24 @@ export default function PortalUpdatesPage() {
 
               {/* Quick Search */}
               <div className="relative w-full sm:w-60">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400" />
+                <Search className="absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-neutral-400" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search notices…"
-                  className="w-full h-9 rounded-full border border-neutral-300 bg-white pl-8 pr-3 text-xs font-medium text-neutral-800 placeholder:text-neutral-400 focus:border-emerald-500 focus:outline-none shadow-2xs"
+                  className="h-9 w-full rounded-full border border-neutral-300 bg-white pr-3 pl-8 text-xs font-medium text-neutral-800 shadow-2xs placeholder:text-neutral-400 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
             </div>
 
             {/* 2. Container Body: Notifications Timeline */}
-            {notices.isLoading ? (
-              <div className="p-6 space-y-3 animate-pulse">
-                <div className="h-24 rounded-2xl bg-slate-100" />
-                <div className="h-24 rounded-2xl bg-slate-100" />
-              </div>
+            {notices.isFetching ? (
+              <TimelineSkeleton
+                label="Loading resident notices"
+                rows={3}
+                className="p-5 sm:p-6"
+              />
             ) : notices.isError ? (
               <div className="flex flex-col items-center justify-center p-8 text-center sm:p-12">
                 <AlertTriangle className="size-10 text-amber-700" />
@@ -163,7 +165,8 @@ export default function PortalUpdatesPage() {
                   Notices are temporarily unavailable
                 </h3>
                 <p className="mt-1 max-w-md text-xs leading-relaxed text-neutral-600">
-                  Please try again shortly. For urgent situations, submit a direct rescue ticket or call the barangay hotline.
+                  Please try again shortly. For urgent situations, submit a direct rescue
+                  ticket or call the barangay hotline.
                 </p>
                 <Button
                   asChild
@@ -186,7 +189,7 @@ export default function PortalUpdatesPage() {
                     <div
                       key={notice.id}
                       className={cn(
-                        "p-4 sm:p-5 transition-colors hover:bg-neutral-50/60",
+                        "p-4 transition-colors hover:bg-neutral-50/60 sm:p-5",
                         isUnread && "bg-emerald-50/25",
                       )}
                     >
@@ -219,7 +222,7 @@ export default function PortalUpdatesPage() {
                                 {notice.title}
                               </h3>
                               {isUnread ? (
-                                <span className="inline-flex items-center rounded-full bg-emerald-100 border border-emerald-300 px-2 py-0.2 text-[10px] font-black uppercase text-emerald-800">
+                                <span className="py-0.2 inline-flex items-center rounded-full border border-emerald-300 bg-emerald-100 px-2 text-[10px] font-black text-emerald-800 uppercase">
                                   New
                                 </span>
                               ) : null}
@@ -234,7 +237,7 @@ export default function PortalUpdatesPage() {
                             </span>
                           </div>
 
-                          <p className="text-xs sm:text-[13px] leading-relaxed text-neutral-600">
+                          <p className="text-xs leading-relaxed text-neutral-600 sm:text-[13px]">
                             {notice.body}
                           </p>
 
@@ -244,7 +247,7 @@ export default function PortalUpdatesPage() {
                                 asChild
                                 variant="outline"
                                 size="sm"
-                                className="h-8 rounded-full border-neutral-300 bg-white px-3.5 text-xs font-bold text-emerald-800 hover:bg-emerald-50 hover:border-emerald-400 shadow-2xs"
+                                className="h-8 rounded-full border-neutral-300 bg-white px-3.5 text-xs font-bold text-emerald-800 shadow-2xs hover:border-emerald-400 hover:bg-emerald-50"
                               >
                                 <Link href={(notice.link_path ?? "/portal") as never}>
                                   <span>View Details & Actions</span>
@@ -261,15 +264,17 @@ export default function PortalUpdatesPage() {
               </div>
             ) : (
               /* Empty State */
-              <div className="flex flex-col items-center justify-center p-8 sm:p-14 text-center space-y-3">
+              <div className="flex flex-col items-center justify-center space-y-3 p-8 text-center sm:p-14">
                 <div className="grid size-14 place-items-center rounded-2xl bg-neutral-100 text-neutral-500 shadow-2xs">
                   <Bell className="size-7 text-neutral-600" />
                 </div>
-                <div className="space-y-1 max-w-md">
+                <div className="max-w-md space-y-1">
                   <h3 className="text-base font-bold text-neutral-900">
-                    {filter === "unread" ? "You're All Caught Up!" : "No Updates in Inbox"}
+                    {filter === "unread"
+                      ? "You're All Caught Up!"
+                      : "No Updates in Inbox"}
                   </h3>
-                  <p className="text-xs text-neutral-500 leading-relaxed">
+                  <p className="text-xs leading-relaxed text-neutral-500">
                     {filter === "unread"
                       ? "There are no unread disaster advisories or ticket updates. Check back during active weather events."
                       : "Emergency alerts, flood warnings, and resolution notes from Barangay San Jose officers will appear here."}
@@ -291,16 +296,16 @@ export default function PortalUpdatesPage() {
         </div>
 
         {/* ── SECONDARY RIGHT COLUMN: Inbox Stats, Danger Banner, Channels Guide (4-5 cols) ── */}
-        <div className="lg:col-span-5 xl:col-span-4 space-y-6">
+        <div className="space-y-6 lg:col-span-5 xl:col-span-4">
           {/* Card 1: Inbox Status Card */}
-          <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
-            <CardContent className="p-5 space-y-3.5">
+          <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+            <CardContent className="space-y-3.5 p-5">
               <div className="flex items-center gap-2.5 border-b border-neutral-100 pb-3">
                 <span className="grid size-8 place-items-center rounded-xl bg-emerald-100 text-emerald-700 shadow-2xs">
                   <Bell className="size-4.5" />
                 </span>
                 <div>
-                  <h3 className="text-xs font-black uppercase tracking-wider text-neutral-900">
+                  <h3 className="text-xs font-black tracking-wider text-neutral-900 uppercase">
                     Inbox Summary
                   </h3>
                   <span className="text-[11px] text-neutral-500">
@@ -311,7 +316,7 @@ export default function PortalUpdatesPage() {
 
               <div className="grid grid-cols-2 gap-2 text-center">
                 <div className="rounded-xl border border-neutral-200/80 bg-neutral-50/50 p-3">
-                  <span className="text-[10px] font-black uppercase text-neutral-400 block">
+                  <span className="block text-[10px] font-black text-neutral-400 uppercase">
                     Total
                   </span>
                   <span className="text-xl font-black text-neutral-900 tabular-nums">
@@ -319,7 +324,7 @@ export default function PortalUpdatesPage() {
                   </span>
                 </div>
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
-                  <span className="text-[10px] font-black uppercase text-emerald-800 block">
+                  <span className="block text-[10px] font-black text-emerald-800 uppercase">
                     Unread
                   </span>
                   <span className="text-xl font-black text-emerald-900 tabular-nums">
@@ -342,12 +347,13 @@ export default function PortalUpdatesPage() {
               Do not wait for an inbox update during flash floods.
             </h4>
             <p className="mt-1 text-xs leading-relaxed text-neutral-600">
-              If water is entering your home or family members need immediate medical or boat assistance, submit a direct rescue ticket.
+              If water is entering your home or family members need immediate medical or
+              boat assistance, submit a direct rescue ticket.
             </p>
             <Button
               asChild
               size="sm"
-              className="mt-3.5 w-full cursor-pointer gap-2 rounded-xl bg-red-600 font-bold text-white shadow-xs hover:bg-red-700 text-xs active:scale-[0.98]"
+              className="mt-3.5 w-full cursor-pointer gap-2 rounded-xl bg-red-600 text-xs font-bold text-white shadow-xs hover:bg-red-700 active:scale-[0.98]"
             >
               <Link href="/portal/rescue">
                 <LifeBuoy className="size-3.5" />
@@ -357,34 +363,37 @@ export default function PortalUpdatesPage() {
           </div>
 
           {/* Card 3: Advisory Channels Guide */}
-          <Card className="border-neutral-200/90 bg-white shadow-xs overflow-hidden">
-            <CardContent className="p-5 space-y-3">
+          <Card className="overflow-hidden border-neutral-200/90 bg-white shadow-xs">
+            <CardContent className="space-y-3 p-5">
               <div className="flex items-center gap-2 border-b border-neutral-100 pb-2.5">
                 <span className="grid size-7 place-items-center rounded-lg bg-emerald-100 text-emerald-700">
                   <Radio className="size-4" />
                 </span>
-                <h3 className="text-xs font-black uppercase tracking-wider text-emerald-950">
+                <h3 className="text-xs font-black tracking-wider text-emerald-950 uppercase">
                   Community Alert Channels
                 </h3>
               </div>
 
-              <div className="space-y-2.5 text-xs text-neutral-600 leading-relaxed">
+              <div className="space-y-2.5 text-xs leading-relaxed text-neutral-600">
                 <div className="flex items-start gap-2">
-                  <span className="text-emerald-700 font-bold">•</span>
+                  <span className="font-bold text-emerald-700">•</span>
                   <p>
-                    <strong className="text-neutral-900">In-App Notices:</strong> Direct updates for safety check-ins and incident resolution.
+                    <strong className="text-neutral-900">In-App Notices:</strong> Direct
+                    updates for safety check-ins and incident resolution.
                   </p>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="text-emerald-700 font-bold">•</span>
+                  <span className="font-bold text-emerald-700">•</span>
                   <p>
-                    <strong className="text-neutral-900">River Sirens:</strong> Physical sirens trigger at 15.0m Warning and 16.5m Evacuation water levels.
+                    <strong className="text-neutral-900">River Sirens:</strong> Physical
+                    sirens trigger at 15.0m Warning and 16.5m Evacuation water levels.
                   </p>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="text-emerald-700 font-bold">•</span>
+                  <span className="font-bold text-emerald-700">•</span>
                   <p>
-                    <strong className="text-neutral-900">BDRRMC Desk:</strong> Active staff monitoring Phase 1 to Phase 4 areas 24/7.
+                    <strong className="text-neutral-900">BDRRMC Desk:</strong> Active
+                    staff monitoring Phase 1 to Phase 4 areas 24/7.
                   </p>
                 </div>
               </div>

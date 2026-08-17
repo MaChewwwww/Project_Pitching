@@ -50,7 +50,7 @@ export default function PortalPreparednessPage() {
   const hasPlanMeeting = Boolean(plan.data?.meeting_point?.trim());
   const hasPlanContact = Boolean(plan.data?.out_of_area_contact?.trim());
   const planComplete = hasPlanMeeting && hasPlanContact;
-  const readinessLoading = goBag.isLoading || plan.isLoading;
+  const readinessLoading = goBag.isFetching || plan.isFetching;
   const readinessUnavailable = goBag.isError || plan.isError;
 
   return (
