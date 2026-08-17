@@ -147,6 +147,74 @@ Matches the **official Philippine hazard map convention** used by UP NOAH, LiPAD
 | Unaccounted for               | `#6B7772`                                                           |
 | Needs rescue                  | `#B91C1C` + pulse animation                                         |
 
+#### Hero flood-diorama materials (FR-PUB-001)
+
+These colours describe physical materials in the illustrative landing scene; they are not hazard
+levels or live river status. Calm water is visibly blue. As the demonstration slider rises, the
+water interpolates toward muddy blue-grey, but it never uses the official hazard ramp above.
+
+| Material           | Colour                         |
+| ------------------ | ------------------------------ |
+| Forest backdrop    | `#17532F`                      |
+| Floodplain terrain | `#2E9D62`                      |
+| Raised terrain     | `#5BB983`                      |
+| Calm river         | `#3A8DCA`                      |
+| High floodwater    | `#747F7B`                      |
+| Steel bridge       | `#315F7D`                      |
+| Road / concrete    | `#6B7772`                      |
+| Clay roof accent   | `#C46D4F`                      |
+| Diorama plinth     | `#246B4A` top / `#1B5B3D` edge |
+
+The scene sits on a muted model-green plinth with visible side depth. It must remain clearly lighter
+and less forest-like than the `#17532F` container, while remaining darker than the floodplain terrain,
+so the civic miniature has a distinct silhouette. The central river and a visible inner drainage
+canal form one connected waterway; the canal clearly feeds the river beneath the bridge corridor.
+At the calm default, independent opaque blue river and canal volumes remain visibly above the
+riverbed. They are unconditional scene geometry, not the zero state of a transparent overflow mesh.
+Their tops stay at the illustrated level while their bodies extend downward, so the calm channel
+cannot disappear into the model base or transparent draw sorting. Their material still uses the same
+scenario interpolation as the overflow: blue at calm and muddy blue-grey at maximum level.
+
+A lowered raised-neighbourhood terrace keeps the homes above the demonstration flood without reading
+as a separate tower of terrain. One continuous perimeter/access road wraps that neighbourhood and
+connects the riverside road to the bridge without a broken apron or dead end. It is a three-sided U:
+a rear segment directly beneath and overlapping the bridge landing, an outer-side segment, and a front
+segment that meets the downhill riverside connector. All three corners overlap visibly. Keep the U
+visually slender relative to the bridge deck and keep trees outside its footprint. The landing has no
+secondary low blue railing; tall blue-steel trusses continue across the riverside/commercial approach
+and the main river span. Its far landing still meets a graded junction while the parallel through-road
+remains low enough to flood first.
+Open-sided riverside market stalls remain small and visually separate from the inland low district,
+which uses two-storey commercial buildings instead of low houses. Homes appear only on visibly
+raised terrain. Large river rocks, riprap, reeds, retaining walls, crates, and restrained vegetation
+provide scale without turning the civic miniature into a game scene. Tree trunks and canopies stay
+beyond the road curbs so the perimeter loop, graded connector, and far-bank lanes remain legible.
+
+Above the permanent calm channel, floodwater is one continuous, procedurally generated overflow
+volume spanning the river, canal connection, and bank-overflow footprint. It is driven directly by
+the illustrative level; it is not a fluid or physics simulation. Do not compose the flood from
+separate bank spill meshes: their intersections produce visible seams as the level rises. Give the
+rendered water shallow downward depth so its outer edge meets the terrain instead of appearing as a
+floating sheet. The lower far-bank road
+floods first, then the near-bank market road and stalls, then the ground floors of the low commercial
+buildings. The bridge deck, its high approach, and raised homes stay dry.
+
+The diorama siren is visual-only. Its illustrated horn and beacon are red on a matte-black support
+mast; at illustrative high water, the beacon activates with several broad radiating warning waves
+whose outer radius reads across the miniature. It never starts audio and has no physical-hardware
+integration. Under reduced motion, remove beacon rotation and wave expansion but keep the high-water
+red beacon steadily lit. The native
+range control is a vertical 44px interaction target with only the river icon visible at rest; a
+thumb-following state tooltip appears on hover, focus, or drag and says `Demo only`. Its screen-reader
+description must always state that this is not the live river reading. The exact lowest level renders
+zero rain; after the slider leaves calm, density, streak length, speed, and opacity increase
+nonlinearly with the illustrative level. Keep the orthographic camera fixed and framed close enough
+for miniature details to read without clipping rotation extremes; users rotate but do not zoom.
+
+After scene readiness, the one-shot demonstration waits 600ms, rises for six seconds, holds at
+maximum for three seconds, and returns to calm over four seconds. It never loops; direct slider input
+cancels it, and reduced motion skips it.
+
 ### 3.5 Chart palette (M10)
 
 Ordered for categorical series. Colour-blind safe and distinguishable in greyscale.
@@ -502,12 +570,13 @@ These are the app's actual vocabulary. Each is built from primitives above.
 
 #### Maps
 
-| Component        | Description                                                                                                           |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `HazardMap`      | Leaflet + OSM. Hazard polygon layers, facility pins, layer toggles, legend, attribution                               |
-| `LocationPicker` | **Draggable pin, primary path.** GPS button appears only when `window.isSecureContext` is true (tech_stack Section 9) |
-| `ZoneMap3D`      | React Three Fiber. Extruded area polygons coloured by risk. Orbit controls, click-to-select, `Suspense` fallback      |
-| `MapLegend`      | Shared legend, driven by the domain palettes in Section 3.4                                                           |
+| Component          | Description                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HazardMap`        | Leaflet + OSM. Hazard polygon layers, facility pins, layer toggles, legend, attribution                                                                                                                                                                                                                                                                                                                                               |
+| `LocationPicker`   | **Draggable pin, primary path.** GPS button appears only when `window.isSecureContext` is true (tech_stack Section 9)                                                                                                                                                                                                                                                                                                                 |
+| `ZoneMap3D`        | React Three Fiber. Extruded area polygons coloured by risk. Orbit controls, click-to-select, `Suspense` fallback                                                                                                                                                                                                                                                                                                                      |
+| `FloodHeroDiorama` | Illustrative civic miniature on a muted green plinth: solid calm-blue river and connected drainage canal, lowered raised neighbourhood with a continuous perimeter road, full-length blue truss bridge, far-bank road, riverside stalls, low two-storey commercial strip, raised homes, broad visual high-water siren waves, horizontal inspection, and a vertical flood-scenario control. It is not the hazard map or a live reading |
+| `MapLegend`        | Shared legend, driven by the domain palettes in Section 3.4                                                                                                                                                                                                                                                                                                                                                                           |
 
 **Protected public map views.** These three configurations were finalized on August 11, 2026.
 Do not change their center, zoom, or hazard-layer default while building portal/admin maps.
@@ -750,15 +819,26 @@ workspaces use their own task-specific lists rather than pretending they are gen
 
 BR-0.16 requires the public site to be usable on cheap phones over congested connections. That is a design constraint, not just an engineering one.
 
-| Concern             | Rule                                                                                                                                                                                                                                                                    |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **3D map**          | `ZoneMap3D` is **desktop and tablet only** by default. Below `md`, or where `navigator.hardwareConcurrency ≤ 4`, render a static image or the 2D Leaflet map instead. Provide an explicit "View 3D map" opt-in. R3F on a low-end Android will drain battery and stutter |
-| Public landing hero | The 3D illustration ships as an optimised static image below `md`, not a live scene                                                                                                                                                                                     |
-| Images              | `next/image`, AVIF/WebP, explicit dimensions to prevent layout shift                                                                                                                                                                                                    |
-| Fonts               | Two families maximum, `display: swap`, latin subset only                                                                                                                                                                                                                |
-| Maps                | Hazard GeoJSON pre-simplified (tech_stack Section 6). Load tiles lazily; never on first paint of the landing page                                                                                                                                                       |
-| Charts              | Import Recharts dynamically — it is heavy and only the analytics page needs it                                                                                                                                                                                          |
-| Bundle              | Route-level code splitting. Public landing page should be usable well before the portal bundle loads                                                                                                                                                                    |
+| Concern             | Rule                                                                                                                                                                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **3D surfaces**     | WebGL 3D is the default at every viewport size. Width and processor count select only the rendering budget; there is no alternate mobile scene. SSR, loading, missing WebGL, and scene failures reserve an empty green visual container (FR-MAP-012)          |
+| Public landing hero | After splash and WebGL readiness, the scene pops up once; reduced motion appears instantly. Its flood scenario then runs calm → high → calm once, never loops, and manual input cancels it. Offscreen and hidden-tab scenes pause. Three.js remains on-demand |
+| Images              | `next/image`, AVIF/WebP, explicit dimensions to prevent layout shift                                                                                                                                                                                          |
+| Fonts               | Two families maximum, `display: swap`, latin subset only                                                                                                                                                                                                      |
+| Maps                | Hazard GeoJSON pre-simplified (tech_stack Section 6). Load tiles lazily; never on first paint of the landing page                                                                                                                                             |
+| Charts              | Import Recharts dynamically — it is heavy and only the analytics page needs it                                                                                                                                                                                |
+| Bundle              | Route-level code splitting. Public landing page should be usable well before the portal bundle loads                                                                                                                                                          |
+
+The landing diorama uses these fixed quality tiers:
+
+| Tier       | Selection                                         | Rendering budget                                                                                                   |
+| ---------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `full`     | Capable desktop with more than four logical cores | DPR up to 1.5, shadows, contact shadows, up to 200 rain instances, and lightweight splash rings                    |
+| `balanced` | Tablet or desktop with four or fewer cores        | DPR 1, reduced shadows, approximately 132 rain instances, and fewer environmental details                          |
+| `lean`     | WebGL-capable viewport below `md`                 | The same scene and controls at DPR 1, no contact shadows, approximately 80 rain instances, and fewer minor details |
+
+The server, Suspense, initial-loading, WebGL-unavailable, and scene-error paths leave the visual half
+as an empty green container. They do not render an alternate SVG, bitmap, or mobile composition.
 
 **Unreliable connections.** A BHW filling a long household form in an alley can lose signal mid-form. The form keeps its in-memory values when a submit fails so the officer can retry, but the product does not persist or restore local household drafts.
 
@@ -831,6 +911,10 @@ Filipino is primary, English secondary (BR-0.19).
 
 Although physical IoT siren hardware procurement is out of scope (BR-4.11), a **Visual Siren Simulation & Pin Triggering feature** is built into the interactive map and alert surfaces:
 
+> `FloodHeroDiorama` does not use this map-trigger workflow. Its high-water siren is visual-only,
+> driven by the illustrative slider, and never initializes audio or connects to hardware. Under
+> reduced motion it remains steadily lit instead of rotating or pulsing.
+
 - **`SirenMarker` Component:**
   - **Idle State:** Pin icon with a subtle beacon ring.
   - **Sounding State:** Expanding radial soundwave animation (`animate-ping` + translucent red/amber ripple rings), accompanied by visual pulse vibration feedback on the pin container.
@@ -862,14 +946,14 @@ Aligns with the build order in BRD 8.
 
 ## 13. Open Design Decisions
 
-| #          | Item                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Owner                                 |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| ~~D-OI-1~~ | **Resolved: `SAGIP-SJ`** — System for Alert, Guidance, Incident Reporting, and Preparedness (BRD Section 11, D-13). Confirmed by the team's own concept paper, which names the platform outright                                                                                                                                                                                                                                                                    | Resolved                              |
-| D-OI-2     | **Logo design** — mark + wordmark, per Section 2                                                                                                                                                                                                                                                                                                                                                                                                                    | Whoever on the team has design skills |
-| D-OI-3     | Confirm **Plus Jakarta Sans + Inter**, or substitute                                                                                                                                                                                                                                                                                                                                                                                                                | Whole team                            |
-| ~~D-OI-4~~ | **Resolved: moot.** Nutrition-assessment data is cut from scope (BRD D-15, closes OI-2) — there is no status to colour                                                                                                                                                                                                                                                                                                                                              | Resolved                              |
-| ~~D-OI-5~~ | **Resolved: the 3D scene is a hero element on the public landing page.** Section 1's fourth principle already licences it — "the 3D map is the one place to be showy". Section 9.6 still binds: it is desktop and tablet only (≥`md` **and** `hardwareConcurrency > 4`), dynamic-imported so `three` never enters the landing bundle (NFR-PERF-007), and every device below the gate gets an inline-SVG isometric illustration plus an explicit "View in 3D" opt-in | Resolved                              |
-| D-OI-7     | **Which tables use which mobile variant** (Section 9.4) — decide per table as each screen is designed                                                                                                                                                                                                                                                                                                                                                               | IT lead                               |
-| ~~D-OI-8~~ | **Resolved: local BHW household drafts retired from scope** — the form starts fresh per operator workflow; full offline sync with conflict resolution remains out of scope                                                                                                                                                                                                                                                                                          | Resolved                              |
-| D-OI-9     | **Print stylesheet** for exported reports (BR-10.7) — the barangay will print for MDRRMO submission. Low effort, easy to forget                                                                                                                                                                                                                                                                                                                                     | IT lead                               |
-| D-OI-6     | **Barangay seal usage** — whether the official seal appears, and any LGU brand rules that constrain the palette                                                                                                                                                                                                                                                                                                                                                     | PubAd lead, via barangay              |
+| #          | Item                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Owner                                 |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| ~~D-OI-1~~ | **Resolved: `SAGIP-SJ`** — System for Alert, Guidance, Incident Reporting, and Preparedness (BRD Section 11, D-13). Confirmed by the team's own concept paper, which names the platform outright                                                                                                                                                                                                                                                                                | Resolved                              |
+| D-OI-2     | **Logo design** — mark + wordmark, per Section 2                                                                                                                                                                                                                                                                                                                                                                                                                                | Whoever on the team has design skills |
+| D-OI-3     | Confirm **Plus Jakarta Sans + Inter**, or substitute                                                                                                                                                                                                                                                                                                                                                                                                                            | Whole team                            |
+| ~~D-OI-4~~ | **Resolved: moot.** Nutrition-assessment data is cut from scope (BRD D-15, closes OI-2) — there is no status to colour                                                                                                                                                                                                                                                                                                                                                          | Resolved                              |
+| ~~D-OI-5~~ | **Resolved: the 3D scene is a hero element on the public landing page.** Section 1's fourth principle already licences it — "the 3D map is the one place to be showy". Every WebGL-capable viewport loads the same dynamically imported scene and controls; viewport width and `hardwareConcurrency` only choose a quality budget. SSR, loading, missing WebGL, and scene errors reserve an empty container, so `three` stays outside the initial landing bundle (NFR-PERF-007) | Resolved                              |
+| D-OI-7     | **Which tables use which mobile variant** (Section 9.4) — decide per table as each screen is designed                                                                                                                                                                                                                                                                                                                                                                           | IT lead                               |
+| ~~D-OI-8~~ | **Resolved: local BHW household drafts retired from scope** — the form starts fresh per operator workflow; full offline sync with conflict resolution remains out of scope                                                                                                                                                                                                                                                                                                      | Resolved                              |
+| D-OI-9     | **Print stylesheet** for exported reports (BR-10.7) — the barangay will print for MDRRMO submission. Low effort, easy to forget                                                                                                                                                                                                                                                                                                                                                 | IT lead                               |
+| D-OI-6     | **Barangay seal usage** — whether the official seal appears, and any LGU brand rules that constrain the palette                                                                                                                                                                                                                                                                                                                                                                 | PubAd lead, via barangay              |

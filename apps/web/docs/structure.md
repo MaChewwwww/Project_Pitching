@@ -156,18 +156,20 @@ auth-on-the-server complexity for zero user-visible gain.
 
 ## Client-only components
 
-Three need `dynamic(..., { ssr: false })`, for different reasons:
+These boundaries need `dynamic(..., { ssr: false })`, for different reasons:
 
 | Component                        | Reason                                                                             |
 | -------------------------------- | ---------------------------------------------------------------------------------- |
 | `HazardMap` (Leaflet)            | Touches `window` at import time                                                    |
 | `EmergencyResponseMap` (Leaflet) | Private event workspace; dynamically imported so admin SSR never evaluates Leaflet |
-| `ZoneMap3D` (React Three Fiber)  | Same, **plus** gated on viewport ≥ `md` and `hardwareConcurrency > 4`              |
+| `ZoneMap3D` (React Three Fiber)  | Same, plus a WebGL capability boundary                                             |
+| `FloodHeroDiorama` (R3F)         | Same scene is default on every WebGL viewport; width and core count select quality |
 | Recharts                         | Heavy. It must never reach the landing bundle (NFR-PERF-007)                       |
 
-The 3D map's gate is a product decision, not an optimisation. On a low-end Android it stutters
-and drains battery, so below `md` it renders a static image or the 2D map, with an explicit
-"View 3D map" opt-in (`design.md` Section 9.6).
+The 3D capability boundary is a product decision. Every WebGL-capable viewport loads the same scene
+and controls by default. Width and core count select the rendering budget instead of disabling the
+scene. SSR, loading, missing WebGL, and scene errors leave the green visual container empty; there is
+no alternate SVG or mobile-first implementation.
 
 ## Section-level error isolation
 
@@ -273,25 +275,63 @@ reader's phone — the same hydration bug wearing a different hat.
 Do not reach for `suppressHydrationWarning`. It silences the class of bug rather than fixing
 the instance.
 
-## The 3D hero's three tiers
+## The 3D hero's capability tiers
 
-The landing hero renders one of three things, and the choice is a product decision rather than
-an optimisation (`design.md` Section 9.6, FR-MAP-012):
+The landing hero's capability choice is part of the product contract (`design.md` Section 9.6,
+FR-MAP-012):
 
-| Tier           | Condition                               | Renders                                          |
-| -------------- | --------------------------------------- | ------------------------------------------------ |
-| 3D             | ≥`md` **and** `hardwareConcurrency > 4` | React Three Fiber scene                          |
-| 2D             | anything below that                     | inline SVG isometric, plus a "View in 3D" opt-in |
-| SSR / Suspense | always first paint                      | the same SVG                                     |
+| Tier         | Condition                                  | Renders                                                                                                            |
+| ------------ | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `full`       | `md+`, WebGL, more than four logical cores | R3F at DPR up to 1.5 with shadows, 200 rain instances, and splash rings                                            |
+| `balanced`   | `md+`, WebGL, four or fewer cores          | R3F at DPR 1 with reduced shadows and approximately 132 rain instances                                             |
+| `lean`       | WebGL-capable viewport below `md`          | Same R3F scene and controls at DPR 1, no contact shadows, approximately 80 rain instances, and fewer minor details |
+| Empty visual | SSR, Suspense/loading, no WebGL, or error  | Reserved green container with no alternate scene                                                                   |
 
 `three` is reached only through `dynamic(..., { ssr: false })`, so it lands in its own chunk and
-never enters the landing bundle (NFR-PERF-007). The SVG is server-rendered, which means it costs
-about 3 KB in the document and **zero** against the client-JS budget — cheaper than `next/image`
-with an AVIF, and it needs no binary asset.
+never enters the initial landing bundle (NFR-PERF-007). The hero skeleton and capability boundary
+reserve the same empty visual space, so neither introduces an alternate composition. After the
+splash and dynamically loaded scene are both ready, the single scene stage performs one short
+scale-and-rise entrance; reduced motion reveals it without a transform.
 
 The scene reads its colours from the CSS custom properties at runtime. WebGL materials cannot
 take a Tailwind class, and hardcoding the hazard ramp would put a second copy of the palette
 outside `globals.css`.
+
+The scene is an illustration, not a fourth public map. The muted model-green plinth remains distinct
+from the forest hero container and carries separate terrain masses around a central river, with a
+visible inner drainage canal feeding that channel. The raised neighbourhood is lower, and its one
+continuous perimeter/access road joins the riverside road to the bridge rather than ending at a
+detached apron. Tall blue truss steel spans both the riverside/commercial approach and the river; the
+older river-only truss boundary is obsolete. The far landing resolves through a graded junction.
+Open riverside stalls stay distinct from the inland two-storey commercial buildings; raised homes
+remain above the demonstration flood.
+
+Unconditional opaque river and canal volumes own the calm state. Their geometry remains mounted, but
+their material follows the same blue-to-muddy-blue-grey slider interpolation as the overflow. The
+slider drives a separate continuous solid volume across the channel and widening overflow footprint;
+that volume starts below the permanent surfaces, then changes width, height, and material directly as
+it rises. No fluid or physics engine participates. Separate bank spill meshes and flat cap shapes are
+forbidden because they previously revealed seams or disappeared at calm level. The water reaches the
+far road first, then the market road and stalls, then the commercial ground floors; the bridge deck
+and raised homes stay dry. The wraparound road follows the same reliability rule: overlapping rounded
+slabs form a slender three-sided U around the raised homes: rear bridge-side road, outer-side road, and
+front road into the graded connector. The rear slab physically overlaps the trimmed bridge apron, and
+trees stay outside the complete U footprint. The bridge landing stays plain asphalt; low blue approach
+rails are omitted so the full-height truss remains the only steel hierarchy.
+
+At illustrative high water, the scene's red warning siren activates visually with multiple broad
+radiating waves and a rotating beacon. The hero never starts audio and has no hardware integration.
+Reduced motion keeps the red beacon steadily lit while removing rotation and wave expansion. The
+native range input is vertical, keeps at least a 44px interaction width, and never consumes the live
+river reading. Its thumb-following state tooltip appears only on hover, focus, or drag and includes
+`Demo only`; the permanent screen-reader description carries the full warning. Rain density, streak
+length, speed, and opacity remain at zero for the exact calm state, then rise nonlinearly with the
+level. Fixed orthographic zoom is slightly tighter across all quality tiers; user camera interaction
+remains rotation-only.
+
+Once the splash, canvas, and viewport are ready, the hero runs a single 600ms delay → 6s rise → 3s
+hold → 4s return sequence; direct slider input cancels it. Reduced motion starts and stays calm.
+Hidden or offscreen scenes pause rendering.
 
 ## Things that are easy to get wrong
 

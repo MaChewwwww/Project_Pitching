@@ -1,6 +1,4 @@
-"use client";
-
-import * as React from "react";
+import type { CSSProperties } from "react";
 
 /**
  * Full Left-Column Concentric Water Ripple System (100% Animated Brand Primary Green)
@@ -33,12 +31,14 @@ export function HeroRainOverlay() {
         <div
           key={idx}
           className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
-          style={{
-            left: r.left,
-            top: r.top,
-            width: r.size,
-            height: r.size,
-          }}
+          style={
+            {
+              left: r.left,
+              top: r.top,
+              width: r.size,
+              height: r.size,
+            } as CSSProperties
+          }
         >
           {/* Outer Primary Wave Ring */}
           <div

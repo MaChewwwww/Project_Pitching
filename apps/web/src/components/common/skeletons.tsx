@@ -16,11 +16,12 @@ import { cn } from "@/lib/utils";
  *   page, one per section. Each reproduces its section's real grid so the layout
  *   does not shift when the content streams in (NFR-UX-*, CLS).
  *
- * The section-level fallbacks pair grey shapes with a `WaterSpinner`, because the
+ * Most section-level fallbacks pair grey shapes with a `WaterSpinner`, because the
  * shapes alone are ambiguous during a slow revalidation — a column of grey bars
  * that never resolves is indistinguishable from a broken section. The spinner is
  * the part that says "still working", and it carries the accessible name, so the
- * grey shapes around it are `aria-hidden`.
+ * grey shapes around it are `aria-hidden`. The hero is the deliberate exception:
+ * its visual half reserves empty space while a screen-reader-only status announces loading.
  */
 
 /**
@@ -235,7 +236,7 @@ export function FaqSectionSkeleton() {
     <FallbackSection tone="tint">
       <HeaderSkeleton />
       <SectionFallback label="Loading FAQs" className="mt-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {Array.from({ length: 6 }, (_, i) => (
             <Skeleton key={i} className="h-16 w-full rounded-2xl" />
           ))}
@@ -280,6 +281,9 @@ export function StatBandSectionSkeleton() {
 export function HeroSectionSkeleton() {
   return (
     <section className="relative overflow-hidden bg-white">
+      <span role="status" className="sr-only">
+        Loading current hero information
+      </span>
       <div className="mx-auto grid max-w-[1440px] lg:grid-cols-2">
         <div className="flex flex-col justify-center gap-4 px-4 py-6 max-lg:items-center md:px-6 md:py-8 lg:py-4 lg:pr-8 xl:py-8 xl:pr-12">
           <div aria-hidden className="flex w-full flex-col gap-4 max-lg:items-center">
@@ -292,9 +296,10 @@ export function HeroSectionSkeleton() {
             </div>
           </div>
         </div>
-        <div className="grid min-h-[280px] place-items-center px-4 py-8 md:min-h-[360px] md:px-6">
-          <WaterSpinner size="lg" label="Loading" showLabel />
-        </div>
+        <div
+          aria-hidden
+          className="bg-primary-800 relative min-h-[430px] overflow-hidden md:min-h-[460px] lg:min-h-0"
+        />
       </div>
     </section>
   );

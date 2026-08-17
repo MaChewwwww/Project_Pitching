@@ -430,16 +430,68 @@ press feedback stays quick. The calm `WaterSpinner` tempo is portal-only, leavin
 streaming fallbacks unchanged. Portal skeletons override the primitive pulse with a low-contrast,
 3.2-second opacity drift and staggered phases, so a whole loading grid does not flash in lockstep.
 
-## Animation lives in `globals.css`, not in a client component
+## Keep animation at the smallest viable boundary
 
-`WaterSpinner` and the hero illustrations are animated entirely by CSS classes defined in
-`globals.css` (`.ws-*`, `.hero-*`) over static markup. None of them carry `"use client"`.
+`WaterSpinner` and section entrances use CSS classes from `globals.css` over static markup. They
+remain safe inside `<Suspense fallback>` and cost no client JavaScript. A spinner or fallback must
+never become a client component merely to animate.
 
-That is a hard constraint, not a preference. A spinner is needed inside `<Suspense fallback>` on
-the landing page, and anything with `"use client"` there would pull a JavaScript boundary into
-every section it guards — precisely the cost `SectionBoundary` is designed to keep to one
-component per page (NFR-PERF-006). Reach for a client component only when the animation
-genuinely needs state or measurement, as `StatBandAnimator` does.
+The live `FloodHeroDiorama` is the deliberate exception: its slider, capability checks, WebGL
+scene, visibility lifecycle, and direct manipulation require a narrow `"use client"` island.
+`three` is imported only by the `ssr: false` scene below that island. `HeroSectionSkeleton`, initial
+loading, missing WebGL, and scene-error states deliberately reserve an empty green visual container;
+there is no alternate SVG or mobile illustration. Every WebGL-capable viewport, including mobile,
+loads the same scene and controls by default. Width and core count select `full`, `balanced`, or
+`lean` rendering budgets without changing the composition or interaction model. The scene stays
+hidden until both the public splash and WebGL readiness complete, then uses one 720 ms scale-and-rise
+entrance. Reduced motion skips that entrance and reveals the ready scene immediately.
+
+The WebGL scene sits on the muted model-green plinth specified in
+[`design.md`](../../../docs/design.md) Section 3.4, distinct from the hero's forest container. A visible
+inner drainage canal feeds the central river. The raised neighbourhood is lower,
+and one uninterrupted perimeter/access road wraps it to connect the riverside road to the bridge.
+Tall blue truss steel continues across both the riverside/commercial approach and the main river span;
+do not restore the earlier river-only truss boundary. A graded junction connects the far landing to
+the lower parallel road. Open riverside stalls remain distinct from the inland low district's
+two-storey commercial buildings, while homes sit only on raised terrain.
+
+The river and drainage canal each have an unconditional opaque calm-blue volume. They do not depend
+on the transparent overflow mesh, so the lowest slider state cannot expose the green plinth through
+the channel. Their geometry is permanent, but their material shares the same blue-to-muddy-blue-grey
+scenario interpolation as the overflow; permanent must not mean permanently blue. A separate
+continuous solid flood volume starts below those surfaces, overtakes them as the slider rises, and
+widens across the bank-overflow footprint. Slider interpolation changes its width, height, and
+material directly; there is no fluid or physics engine. Do not restore separate
+bank spill meshes or flat cap geometry: those approaches produced dry cracks and a missing calm
+channel. Water reaches the far road first, then the market road and stalls, then the commercial ground
+floors. Bridge decks and raised homes remain dry.
+
+The raised-neighbourhood road uses overlapping rounded road slabs for the long side, front turn, and
+graded riverside connection. Around the raised homes, three slabs form the explicit U shown in the
+scene reference: rear bridge-side road, outer-side road, and front road. The rear slab overlaps the
+trimmed plain-asphalt bridge apron, and every U corner overlaps enough to survive rounded ends. Keep
+the perimeter road narrower and thinner than the bridge deck and keep its footprint free of trees. Do
+not replace that route with a triangulated flat shape: it disappeared behind the terrace on real scene
+renders and made the road look disconnected. The west and far approaches do not use short blue
+guardrails; only the full-height truss carries the bridge-steel colour.
+
+The diorama's siren is visual-only and local to the illustration. Its horn and beacon are red on a
+matte-black support mast; illustrative high water activates the beacon plus multiple, substantially
+broader radiating waves so the alarm reads across the scene. It never creates an audio context or
+calls a hardware seam. Reduced motion keeps the red beacon steadily lit and suppresses rotation and
+wave expansion.
+
+Vegetation placement treats every road curb as an exclusion boundary. The wraparound loop, graded
+connector, and far-bank lanes stay clear; mobile reduces peripheral planting without changing the
+scene topology.
+
+The flood control is a native vertical range with a 44px interaction width. Only the river icon
+and track remain visible at rest; its state tooltip follows the thumb on hover, focus, or drag and
+includes `Demo only`. `aria-describedby` carries the permanent non-live warning. Rain instances
+remain at zero for the exact calm state, then scale nonlinearly from the first faint drops to dense,
+faster, longer streaks; only `full` quality adds light splash rings. Direct input cancels autoplay,
+and hidden or offscreen scenes stop rendering. Orthographic zoom is fixed per quality tier, with a
+slightly tighter common composition; rotation remains the only camera manipulation.
 
 **Infinite ambient loops need their own `prefers-reduced-motion` guard.** The global kill-switch
 in `@layer base` sets `animation-duration: 0.01ms`, which is right for an entrance animation that
@@ -448,11 +500,10 @@ invisible by it. So `.ws-*` is gated on `prefers-reduced-motion: no-preference`,
 rules are authored to stand alone as a legible static resting state. Test any new loop with
 reduced motion enabled before calling it done.
 
-**3D depth comes from `perspective` + `transform-style: preserve-3d` on inline elements**, not a
-canvas or a WebGL dependency. `WaterSpinner` tilts a ripple plane with `rotateX` and precesses
-two rings by spinning wrappers about Y while the ring inside holds a fixed tilt — so the tilt
-axis rotates rather than the ring spinning flat. Keep transforms that must compose on separate
-nested elements; stacking a squash and a rotation on one node makes both fight.
+`WaterSpinner` still creates its small 3D depth with `perspective` and nested CSS transforms. The
+hero diorama does not reuse that trick: its terrain, one procedural flood surface, instanced rain,
+visual siren, and turntable live entirely inside the dynamically loaded React Three Fiber scene.
+No fluid/physics or audio dependency belongs in that scene chunk.
 
 ## Adding a composite
 

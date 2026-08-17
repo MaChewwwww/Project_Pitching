@@ -214,6 +214,21 @@
   --surface-header: #17532f; /* primary-800 — table headers        */
   --surface-tint: #f2faf5; /* primary-50  — striped rows         */
 
+  /* Landing flood-diorama illustration palette (design.md Section 3.4).
+     These are illustrative materials, not hazard-level map fills. */
+  --hero-scene-background: #17532f;
+  --hero-scene-land: #196a3d;
+  --hero-scene-land-dark: #196a3d;
+  --hero-scene-land-high: #196a3d;
+  --hero-scene-river: #3a8dca;
+  --hero-scene-flood: #9a8b75;
+  --hero-scene-bridge: #315f7d;
+  --hero-scene-concrete: #6b7772;
+  --hero-scene-concrete-light: #cbd3d0;
+  --hero-scene-roof: #c46d4f;
+  --hero-scene-plinth: #246b4a;
+  --hero-scene-plinth-edge: #1b5b3d;
+
   /* Admin sidebar: primary-950 ground, primary-400 accent (design.md 7.2) */
   --sidebar: #0c2a19;
   --sidebar-foreground: #dff3e6;
@@ -524,15 +539,18 @@
     }
   }
 
-  /* Hero illustration motion.
+  .hero-diorama-stage {
+    opacity: 0;
+    transition: opacity 400ms ease-out;
+  }
 
-     All of it is CSS on inline SVG nodes, so the scene animates with zero
-     JavaScript and zero bytes against the landing bundle (NFR-PERF-006). The
-     whole block is gated on `prefers-reduced-motion: no-preference` rather than
-     relying on the global duration kill-switch — these are ambient loops with no
-     end state, and shortening their duration would leave them flickering rather
-     than stopping. `transform-box: fill-box` makes `transform-origin: center`
-     mean the element's own box instead of the SVG viewport origin. */
+  .hero-diorama-stage[data-entered="true"] {
+    opacity: 1;
+  }
+
+  /* CSS-only inline illustration motion. Ambient loops are guarded here instead
+     of relying on the global duration kill-switch, which would leave them
+     flickering rather than stopping. */
   @media (prefers-reduced-motion: no-preference) {
     .iso-rain {
       animation: iso-rain 1.5s linear infinite;
@@ -553,6 +571,77 @@
       transform-origin: left center;
       animation: iso-flag 3.2s ease-in-out infinite;
     }
+  }
+
+  .hero-flood-range {
+    --flood-level: 0%;
+    width: 44px;
+    height: 176px;
+    appearance: none;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .hero-flood-range:focus-visible {
+    outline: none;
+  }
+
+  .hero-flood-range::-webkit-slider-runnable-track {
+    width: 4px;
+    height: 100%;
+    border: 1px solid rgb(255 255 255 / 0.25);
+    border-radius: 999px;
+    background: linear-gradient(
+      to top,
+      var(--hero-scene-river) 0 var(--flood-level),
+      rgb(255 255 255 / 0.2) var(--flood-level) 100%
+    );
+  }
+
+  .hero-flood-range::-webkit-slider-thumb {
+    width: 18px;
+    height: 18px;
+    margin-left: -7px;
+    appearance: none;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    background: var(--hero-scene-river);
+    box-shadow: 0 4px 12px rgb(12 42 25 / 0.45);
+  }
+
+  .hero-flood-range:focus-visible::-webkit-slider-thumb {
+    box-shadow:
+      0 0 0 3px rgb(255 255 255 / 0.35),
+      0 4px 12px rgb(12 42 25 / 0.45);
+  }
+
+  .hero-flood-range::-moz-range-track {
+    width: 4px;
+    height: 100%;
+    border: 1px solid rgb(255 255 255 / 0.25);
+    border-radius: 999px;
+    background: linear-gradient(
+      to top,
+      var(--hero-scene-river) 0 var(--flood-level),
+      rgb(255 255 255 / 0.2) var(--flood-level) 100%
+    );
+  }
+
+  .hero-flood-range::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    background: var(--hero-scene-river);
+    box-shadow: 0 4px 12px rgb(12 42 25 / 0.45);
+  }
+
+  .hero-flood-range:focus-visible::-moz-range-thumb {
+    box-shadow:
+      0 0 0 3px rgb(255 255 255 / 0.35),
+      0 4px 12px rgb(12 42 25 / 0.45);
   }
 
   @keyframes iso-rain {

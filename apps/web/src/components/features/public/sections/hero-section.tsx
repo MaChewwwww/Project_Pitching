@@ -11,8 +11,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/common/button";
-import { Logo3DPlaceholder } from "../illustrations/logo-3d-placeholder";
-import { Hero3DTitleCanvas } from "../illustrations/hero-3d-title-canvas";
+import { FloodHeroVisual } from "../illustrations/flood-hero-visual";
 import { HeroRainOverlay } from "../illustrations/hero-rain-overlay";
 import { HERO } from "@/lib/content/site";
 import { formatNumber } from "@/lib/format";
@@ -80,18 +79,38 @@ export async function HeroSection() {
             </span>
           </div>
 
-          {/* Hidden Accessible H1 for SEO & Screen Readers */}
-          <h1 className="sr-only">
-            {HERO.titleLine1} {HERO.titleLine2}
-          </h1>
-
-          {/* Interactive 3D Title Canvas */}
-          <div
-            className="hero-sleek-cascade relative z-10 my-[-10px]"
+          {/* The diorama is the single 3D focal point; the headline stays semantic and calm. */}
+          <h1
+            className="hero-sleek-cascade font-display relative z-10 text-[2.45rem] leading-[1.06] font-extrabold tracking-[-0.04em] text-neutral-900 sm:text-5xl lg:text-[2.75rem] xl:text-[3.35rem] 2xl:text-6xl"
             style={{ "--hi-delay": "90ms" } as React.CSSProperties}
           >
-            <Hero3DTitleCanvas />
-          </div>
+            <span className="block">{HERO.titleLine1}</span>
+            <span className="text-primary-600 relative inline-block">
+              {HERO.titleLine2}
+              <svg
+                viewBox="0 0 520 18"
+                preserveAspectRatio="none"
+                aria-hidden
+                className="absolute -bottom-2 left-0 h-3 w-full overflow-visible"
+              >
+                <path
+                  d="M4 11 C 138 4, 379 4, 516 10"
+                  fill="none"
+                  stroke="#2e9d62"
+                  strokeWidth="7"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M5 14 C 142 8, 372 8, 514 12"
+                  fill="none"
+                  stroke="#92d4ac"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  opacity="0.9"
+                />
+              </svg>
+            </span>
+          </h1>
 
           <p
             className="hero-sleek-cascade text-body-lg lg:text-body-lg relative z-10 max-w-xl leading-relaxed font-normal text-neutral-600 sm:text-xl xl:text-xl"
@@ -163,7 +182,7 @@ export async function HeroSection() {
 
         {/* --- visual --------------------------------------------------------- */}
         <div
-          className="hero-in from-primary-700 via-primary-800 to-primary-950 relative flex h-full min-h-[300px] flex-col justify-center overflow-hidden bg-gradient-to-br md:min-h-[360px] lg:min-h-0"
+          className="hero-in from-primary-700 via-primary-800 to-primary-950 relative flex h-full min-h-[430px] flex-col justify-center overflow-hidden bg-gradient-to-br md:min-h-[460px] lg:min-h-0"
           style={{ "--hi-delay": "100ms" } as React.CSSProperties}
         >
           {/* Top-Centered Live Weather Floating Metric Pills */}
@@ -240,13 +259,10 @@ export async function HeroSection() {
             </div>
           </div>
 
-          {/* 3D Logo Animation Placeholder */}
-          <div className="absolute inset-0 grid place-items-center p-4 md:p-6">
-            <Logo3DPlaceholder />
-          </div>
+          <FloodHeroVisual />
 
           {/* Quick links to the two routes a resident needs during a flood. */}
-          <div className="absolute inset-x-4 bottom-4 z-10 flex flex-wrap items-center justify-center gap-2.5 md:inset-x-6 md:bottom-6">
+          <div className="absolute right-3 bottom-3 z-40 flex flex-wrap items-center justify-end gap-2 max-sm:inset-x-3 max-sm:justify-center sm:right-4 sm:bottom-4">
             {HERO.quickLinks.map((link) => {
               const Icon = link.icon === "map" ? MapPin : BedDouble;
               return (
