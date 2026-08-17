@@ -8,6 +8,8 @@ import { Reveal } from "@/components/common/reveal";
 import { DriveCard } from "@/components/features/donations/drive-card";
 import { DonationDrivesFilterSelect } from "@/components/features/donations/donation-drives-filter-select";
 import { UTILITY_BAR } from "@/lib/content/site";
+import { PRIMARY_HOTLINE } from "@/lib/fixtures/hotlines";
+import { toTelHref } from "@/lib/format";
 import { getDonationDrives } from "@/lib/api/public";
 
 export const metadata: Metadata = {
@@ -87,11 +89,11 @@ export default async function DonationDrivesPage({
 
             <div className="flex flex-wrap items-center gap-3">
               <a
-                href="tel:0285550100"
+                href={toTelHref(PRIMARY_HOTLINE.number)}
                 className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-emerald-800"
               >
                 <PhoneCall className="size-3.5" />
-                Call (02) 8555-0100
+                Call {PRIMARY_HOTLINE.number}
               </a>
             </div>
           </div>

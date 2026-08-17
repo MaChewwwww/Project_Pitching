@@ -9,7 +9,9 @@ import {
   formatPhtTime,
   phtDayOfMonth,
   phtMonthShort,
+  toTelHref,
 } from "@/lib/format";
+import { PRIMARY_HOTLINE } from "@/lib/fixtures/hotlines";
 import type {
   ActivityDetail,
   ArticleDocument,
@@ -264,7 +266,7 @@ export function ActivityDetailView({
                   </p>
                 )}
 
-                {/* Emergency Hotline Box */}
+                {/* Barangay contact box */}
                 <div className="mt-5 rounded-2xl bg-gradient-to-br from-primary-950 via-primary-900 to-neutral-900 p-4 text-white shadow-xs">
                   <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary-300">
                     <PhoneCall className="size-3.5 shrink-0" />
@@ -274,10 +276,10 @@ export function ActivityDetailView({
                     Have questions about community drills or volunteer programs?
                   </p>
                   <a
-                    href="tel:0285550100"
+                    href={toTelHref(PRIMARY_HOTLINE.number)}
                     className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary-600 px-3.5 py-2 text-xs font-bold text-white transition-colors hover:bg-primary-500"
                   >
-                    Call (02) 8555-0100
+                    Call {PRIMARY_HOTLINE.number}
                   </a>
                 </div>
               </div>

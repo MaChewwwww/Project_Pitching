@@ -14,7 +14,8 @@ import {
 
 import { PageHeader } from "@/components/common/page-header";
 import { DonationDriveImageCarousel } from "@/components/features/public/donation-drive-image-carousel";
-import { formatPhtDateTime } from "@/lib/format";
+import { PRIMARY_HOTLINE } from "@/lib/fixtures/hotlines";
+import { formatPhtDateTime, toTelHref } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { DonationDriveDetail, PublicDonationDrive } from "@/lib/api/public-types";
 
@@ -418,20 +419,20 @@ export function DonationDriveDetailView({
                   <p className="text-xs text-neutral-500">No other active drives.</p>
                 )}
 
-                {/* Emergency & Relief Center Card */}
+                {/* Barangay relief contact card */}
                 <div className="mt-5 rounded-2xl bg-gradient-to-br from-emerald-950 via-emerald-900 to-neutral-900 p-4 text-white shadow-xs">
                   <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-300">
                     <PhoneCall className="size-3.5 shrink-0" />
-                    <span>Relief Operations Center</span>
+                    <span>Barangay San Jose</span>
                   </div>
                   <p className="mt-1.5 text-xs leading-relaxed text-white/80">
                     Questions about drop-off, bulk in-kind relief, or logistics assistance?
                   </p>
                   <a
-                    href="tel:0285550100"
+                    href={toTelHref(PRIMARY_HOTLINE.number)}
                     className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-500"
                   >
-                    Call (02) 8555-0100
+                    Call {PRIMARY_HOTLINE.number}
                   </a>
                 </div>
               </div>

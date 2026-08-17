@@ -25,7 +25,8 @@ import {
 
 import { PageHeader } from "@/components/common/page-header";
 import { AnnouncementImageCarousel } from "@/components/features/public/announcement-image-carousel";
-import { formatPhtDateTime } from "@/lib/format";
+import { PRIMARY_HOTLINE } from "@/lib/fixtures/hotlines";
+import { formatPhtDateTime, toTelHref } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { AnnouncementDetail, AnnouncementType, PublicAnnouncement } from "@/lib/api/public-types";
 
@@ -439,20 +440,20 @@ export function AnnouncementDetailView({
                   <p className="text-xs text-neutral-500">No other notices found.</p>
                 )}
 
-                {/* Emergency Hotline Quick Box */}
+                {/* Barangay contact quick box */}
                 <div className="mt-5 rounded-2xl bg-gradient-to-br from-primary-950 via-primary-900 to-neutral-900 p-4 text-white shadow-xs">
                   <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary-300">
                     <PhoneCall className="size-3.5 shrink-0" />
-                    <span>Emergency Assistance</span>
+                    <span>Barangay San Jose</span>
                   </div>
                   <p className="mt-1.5 text-xs leading-relaxed text-white/80">
-                    Need immediate help? Reach Barangay San Jose operations center.
+                    Questions about this announcement? Reach the Barangay San Jose office.
                   </p>
                   <a
-                    href="tel:0285550100"
+                    href={toTelHref(PRIMARY_HOTLINE.number)}
                     className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary-600 px-3.5 py-2 text-xs font-bold text-white transition-colors hover:bg-primary-500"
                   >
-                    Call (02) 8555-0100
+                    Call {PRIMARY_HOTLINE.number}
                   </a>
                 </div>
               </div>

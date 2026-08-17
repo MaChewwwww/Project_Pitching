@@ -161,3 +161,6 @@ export const HOTLINES: PublicHotline[] = [
  * banner's call action.
  */
 export const PRIMARY_HOTLINE: PublicHotline = HOTLINES[0];
+
+/** National emergency line for immediate rescue or medical danger. */
+export const NATIONAL_EMERGENCY_HOTLINE: PublicHotline = HOTLINES[1];

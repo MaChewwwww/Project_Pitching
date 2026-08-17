@@ -19,9 +19,13 @@
  */
 
 const HOTLINES = [
-  { label: "Barangay San Jose Office", number: "(02) 8555-0100", tel: "+0285550100" },
-  { label: "Barangay Emergency Response", number: "0917-555-0101", tel: "+09175550101" },
-  { label: "Rodriguez MDRRMO", number: "(02) 8555-0102", tel: "+0285550102" },
+  { label: "National Emergency Hotline", number: "911", tel: "911" },
+  { label: "Barangay San Jose", number: "0951-188-7878", tel: "+639511887878" },
+  {
+    label: "Rodriguez MDRRMO",
+    number: "0915-001-6988 / 0969-614-4825",
+    tel: "+639150016988",
+  },
 ];
 
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
