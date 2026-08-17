@@ -24,6 +24,7 @@ import {
   User,
   Wrench,
   X,
+  type LucideIcon,
 } from "lucide-react";
 
 import {
@@ -43,7 +44,7 @@ import type { ArticleImage, ArticleDocument, AnnouncementType } from "@/lib/api/
 /*  Type map                                                                   */
 /* -------------------------------------------------------------------------- */
 
-type CategoryMeta = { label: string; Icon: React.ElementType };
+type CategoryMeta = { label: string; Icon: LucideIcon };
 
 const TYPE_MAP: Record<AnnouncementType, CategoryMeta> = {
   general:              { label: "General",              Icon: Tag            },

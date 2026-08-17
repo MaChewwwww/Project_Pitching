@@ -20,6 +20,7 @@ import {
   TriangleAlert,
   User,
   Wrench,
+  type LucideIcon,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/common/page-header";
@@ -28,7 +29,7 @@ import { formatPhtDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { AnnouncementDetail, AnnouncementType, PublicAnnouncement } from "@/lib/api/public-types";
 
-type CategoryMeta = { label: string; Icon: React.ElementType };
+type CategoryMeta = { label: string; Icon: LucideIcon };
 
 const TYPE_MAP: Record<AnnouncementType, CategoryMeta> = {
   general:               { label: "General",               Icon: Tag           },

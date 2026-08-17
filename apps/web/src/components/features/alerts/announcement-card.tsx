@@ -20,6 +20,7 @@ import {
   TriangleAlert,
   User,
   Wrench,
+  type LucideIcon,
 } from "lucide-react";
 
 import { formatPhtDateTime } from "@/lib/format";
@@ -36,7 +37,7 @@ export interface AnnouncementCardProps {
 }
 
 
-type CategoryMeta = { label: string; Icon: React.ElementType };
+type CategoryMeta = { label: string; Icon: LucideIcon };
 
 const TYPE_MAP: Record<AnnouncementType, CategoryMeta> = {
   general:              { label: "General",              Icon: Tag           },

@@ -14,6 +14,7 @@ import {
   ShieldAlert,
   Users,
   X,
+  type LucideIcon,
 } from "lucide-react";
 
 import {
@@ -31,7 +32,7 @@ import type { PublicFaq } from "@/lib/api/public-types";
  * FAQs, grouped by category with interactive search & filter (FR-PUB-011, FR-PRP-005).
  */
 
-const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
+const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   registration: Home,
   emergencies: ShieldAlert,
   preparedness: AlertTriangle,
@@ -49,7 +50,7 @@ const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
   help: HelpCircle,
 };
 
-function getCategoryIcon(categoryName: string): React.ElementType {
+function getCategoryIcon(categoryName: string): LucideIcon {
   const normalized = categoryName.toLowerCase().trim();
   for (const [key, icon] of Object.entries(CATEGORY_ICON_MAP)) {
     if (normalized.includes(key)) return icon;
