@@ -90,6 +90,8 @@ function renderText(node: Record<string, unknown>, key: string): ReactNode {
 function renderNode(node: Record<string, unknown>, key: string): ReactNode {
   const type = typeof node.type === "string" ? node.type : "";
   switch (type) {
+    case "text":
+      return renderText(node, key);
     case "doc":
       return <div key={key}>{renderChildren(node, key)}</div>;
     case "paragraph":
