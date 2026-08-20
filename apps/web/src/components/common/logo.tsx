@@ -1,22 +1,14 @@
-import * as React from "react";
+import Image from "next/image";
 
-import { APP_NAME, BARANGAY } from "@/lib/brand";
+import { BARANGAY } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 /**
- * Logo placeholder (design.md Section 2, open item D-OI-2).
+ * Shared system logo from the approved transparent PNG asset.
  *
- * **No logo has been designed yet.** design.md reserves the slot and sets three
- * requirements for whoever designs it: legible at 32px, works on both
- * `primary-950` and white, and has a mark that stands alone. The inline SVG below
- * meets those so the layout is real, and swapping it is one file.
- *
- * The mark is a roof over a water line — shelter above rising water, which is the
- * platform in one glyph. Drawn as SVG rather than an image file so it inherits
- * `currentColor` and needs no binary asset.
- *
- * `APP_NAME` is a placeholder too (BRD OI-1). It is read from `lib/brand.ts` and
- * never typed as a literal.
+ * The source is a self-contained square lockup, so the full variant only adds
+ * the barangay descriptor. The `mark` variant keeps the image-only form for
+ * compact console headers.
  */
 
 export interface LogoLockupProps {
@@ -27,40 +19,15 @@ export interface LogoLockupProps {
   className?: string;
 }
 
-function Mark({ size, onDark }: { size: number; onDark: boolean }) {
+function Mark({ size }: { size: number }) {
   return (
-    <svg
-      viewBox="0 0 40 40"
+    <Image
+      src="/logo-transparent.png"
+      alt="SAGIP-SJ logo"
       width={size}
       height={size}
-      role="img"
-      aria-hidden
-      className="shrink-0"
-    >
-      <rect
-        width="40"
-        height="40"
-        rx="10"
-        className={onDark ? "fill-primary-400" : "fill-primary-600"}
-      />
-      {/* Roof */}
-      <path
-        d="M20 9.5 30.5 19h-3.1v.2H12.6V19L20 9.5Z"
-        className={onDark ? "fill-primary-950" : "fill-white"}
-      />
-      <path
-        d="M14.4 20.6h11.2v4.1H14.4z"
-        className={onDark ? "fill-primary-950" : "fill-white"}
-      />
-      {/* Water line */}
-      <path
-        d="M8 28.4c2.4 0 2.4 1.9 4.8 1.9s2.4-1.9 4.8-1.9 2.4 1.9 4.8 1.9 2.4-1.9 4.8-1.9 2.4 1.9 4.8 1.9"
-        fill="none"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        className={onDark ? "stroke-primary-950" : "stroke-white"}
-      />
-    </svg>
+      className="shrink-0 rounded-[25%] object-contain"
+    />
   );
 }
 
@@ -71,23 +38,13 @@ export function LogoLockup({
   className,
 }: LogoLockupProps) {
   return (
-    <span className={cn("inline-flex items-center gap-2 sm:gap-2.5 min-w-0", className)}>
-      <Mark size={size} onDark={onDark} />
+    <span className={cn("inline-flex min-w-0 items-center gap-2 sm:gap-2.5", className)}>
+      <Mark size={size} />
       {variant === "full" ? (
         <span className="flex min-w-0 flex-col leading-none">
           <span
             className={cn(
-              "font-display bg-clip-text text-[16px] sm:text-[18px] font-black tracking-tight text-transparent truncate",
-              onDark
-                ? "via-primary-100 bg-gradient-to-r from-white to-emerald-300"
-                : "from-primary-900 via-primary-600 bg-gradient-to-r to-emerald-600",
-            )}
-          >
-            {APP_NAME}
-          </span>
-          <span
-            className={cn(
-              "mt-0.5 text-[11px] sm:text-[13.5px] leading-tight font-semibold tracking-tight truncate",
+              "mt-0.5 truncate text-[11px] leading-tight font-semibold tracking-tight sm:text-[13.5px]",
               onDark ? "text-neutral-300" : "text-neutral-600",
             )}
           >

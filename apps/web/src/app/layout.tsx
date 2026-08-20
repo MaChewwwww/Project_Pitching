@@ -11,12 +11,9 @@ export const metadata: Metadata = {
   },
   description: `Disaster readiness and community health platform for ${BARANGAY}.`,
   icons: {
-    icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/favicon.svg", type: "image/svg+xml" },
-    ],
-    shortcut: "/icon.svg",
-    apple: "/assets/San Jose Logo.jpg",
+    icon: [{ url: "/logo-transparent.png", type: "image/png", sizes: "2000x2000" }],
+    shortcut: "/logo-transparent.png",
+    apple: [{ url: "/logo-transparent.png", type: "image/png", sizes: "2000x2000" }],
   },
 };
 

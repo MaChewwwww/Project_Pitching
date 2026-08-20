@@ -36,17 +36,18 @@ export const BARANGAY = "Barangay San Jose, Rodriguez, Rizal";
 
 ### Logo
 
-Not yet designed. Reserve the slot and build against a placeholder component so the swap is trivial.
+The approved logo is `apps/web/public/logo-transparent.png`. It is a square, self-contained
+SAGIP-SJ lockup with a transparent surround and works on both white and dark surfaces.
 
 | Context            | Size                 | Form                                                                 |
 | ------------------ | -------------------- | -------------------------------------------------------------------- |
-| Public navbar      | 40px height          | Full lockup — mark + wordmark                                        |
-| Admin sidebar      | 32px mark + wordmark | Mark + name + "ADMIN PORTAL" descriptor beneath, as in the reference |
-| Collapsed sidebar  | 32px                 | Mark only                                                            |
-| Favicon / app icon | 32, 180, 512         | Mark only                                                            |
-| Footer             | 40px                 | Full lockup, single colour                                           |
+| Public navbar      | 40px height          | PNG lockup + barangay descriptor                                    |
+| Admin sidebar      | 32px mark + wordmark | PNG lockup + name + "ADMIN PORTAL" descriptor beneath, as in the reference |
+| Collapsed sidebar  | 32px                 | PNG lockup only                                                      |
+| Favicon / app icon | Browser-scaled PNG   | `logo-transparent.png`                                               |
+| Footer             | 40px                 | PNG lockup + barangay descriptor                                    |
 
-Requirements for whoever designs it: legible at 32px, works on both `primary-950` (dark sidebar) and white, and has a mark that stands alone.
+The shared `LogoLockup` component owns the asset path so application surfaces and metadata stay in sync.
 
 ---
 
@@ -514,7 +515,7 @@ These are the app's actual vocabulary. Each is built from primitives above.
 | `AdminPageHeader` | Soft green/teal, rounded work-surface header: route icon, `h1`, one context line, optional action, and optional metadata. It remains compact relative to the public hero; on small screens the action separates beneath the title    |
 | `SectionHeader`   | Tinted rounded-square icon + title + description line. Used at the top of every content card                                                                                                                                         |
 | `Footer`          | Barangay info, contacts, socials, hotline, copyright (BR-0.12)                                                                                                                                                                       |
-| `LogoLockup`      | Inline SVG mark + `APP_NAME` wordmark, with a variant for dark surfaces; the final logo asset remains an open brand decision                                                                                                         |
+| `LogoLockup`      | Shared PNG logo lockup from `public/logo-transparent.png`, with an optional barangay descriptor and a compact image-only variant                                                                                                  |
 | `Reveal`          | Public-site scroll reveal using CSS `animation-timeline: view()` behind `@supports`, so it needs no observer or JavaScript                                                                                                           |
 
 #### Data display
@@ -949,7 +950,7 @@ Aligns with the build order in BRD 8.
 | #          | Item                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Owner                                 |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
 | ~~D-OI-1~~ | **Resolved: `SAGIP-SJ`** — System for Alert, Guidance, Incident Reporting, and Preparedness (BRD Section 11, D-13). Confirmed by the team's own concept paper, which names the platform outright                                                                                                                                                                                                                                                                                | Resolved                              |
-| D-OI-2     | **Logo design** — mark + wordmark, per Section 2                                                                                                                                                                                                                                                                                                                                                                                                                                | Whoever on the team has design skills |
+| ~~D-OI-2~~ | **Resolved: approved SAGIP-SJ logo** — `apps/web/public/logo-transparent.png` is the shared logo and app-icon asset                                                                                                                                                                                                                                                                                                                                                              | Resolved                              |
 | D-OI-3     | Confirm **Plus Jakarta Sans + Inter**, or substitute                                                                                                                                                                                                                                                                                                                                                                                                                            | Whole team                            |
 | ~~D-OI-4~~ | **Resolved: moot.** Nutrition-assessment data is cut from scope (BRD D-15, closes OI-2) — there is no status to colour                                                                                                                                                                                                                                                                                                                                                          | Resolved                              |
 | ~~D-OI-5~~ | **Resolved: the 3D scene is a hero element on the public landing page.** Section 1's fourth principle already licences it — "the 3D map is the one place to be showy". Every WebGL-capable viewport loads the same dynamically imported scene and controls; viewport width and `hardwareConcurrency` only choose a quality budget. SSR, loading, missing WebGL, and scene errors reserve an empty container, so `three` stays outside the initial landing bundle (NFR-PERF-007) | Resolved                              |

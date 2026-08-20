@@ -354,5 +354,5 @@ Both live in `src/app/layout.tsx`. The three font families load through `next/fo
 The viewport deliberately sets **no** `maximum-scale` and does not disable user scaling — the
 page has to stay usable at 200% zoom (`design.md` Section 10).
 
-`APP_NAME` comes from `src/lib/brand.ts`. It is a placeholder (BRD OI-1); defining it in one
-constant means the rename is one line. Never hardcode it.
+`APP_NAME` comes from `src/lib/brand.ts`. Defining it in one constant means the rename is one
+line. Never hardcode it.
