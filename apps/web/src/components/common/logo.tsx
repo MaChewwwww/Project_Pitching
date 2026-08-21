@@ -26,7 +26,7 @@ function Mark({ size }: { size: number }) {
       alt="SAGIP-SJ logo"
       width={size}
       height={size}
-      className="shrink-0 rounded-[25%] object-contain"
+      className="shrink-0 rounded-[32%] object-contain"
     />
   );
 }
