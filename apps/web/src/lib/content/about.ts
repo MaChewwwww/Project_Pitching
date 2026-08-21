@@ -9,14 +9,14 @@ import { HeartPulse, Leaf, ShieldCheck } from "lucide-react";
  */
 
 export const MISSION =
-  "To equip Barangay San Jose with a centralized digital platform that shifts disaster management from reactive to proactive — profiling households before disaster strikes, delivering timely hazard information and alerts, and coordinating barangay officials, health workers, and residents so that preparedness, response, and recovery are faster and better informed.";
+  "To build a safer, more prepared, and resilient Barangay San Jose where every resident has access to timely disaster information, effective emergency support, and the knowledge needed to protect lives and communities.";
 
 export const VISION =
-  "A disaster-resilient Barangay San Jose where community-based, technology-enabled disaster risk reduction protects every resident — especially those most vulnerable to being overlooked — through accessible information, coordinated barangay action, and a registry that never has to be rebuilt from scratch after the water recedes.";
+  "SAGIP-SJ seeks to enhance disaster readiness and emergency response in Barangay San Jose by offering a user-friendly, community-focused digital platform that links residents with local officials via prompt alerts, specific hazard data, household vulnerability assessments, incident notifications, evacuation instructions, and preparedness materials.";
 
-export const WHAT_IT_IS = `A single place where residents of Barangay San Jose can see what the river is doing, where to go when it rises, and what the barangay has announced — without needing an account, and on whatever phone they already own.
+export const WHAT_IT_IS = `SAGIP-SJ is Barangay San Jose's community-centered digital platform for disaster readiness and emergency response. Residents can check river conditions, view flood hazards, find evacuation guidance, read verified announcements, and access preparedness materials — without needing an account and from any phone.
 
-Everything on this page is maintained by the barangay in one place. Nothing here is copied from another site or entered twice.`;
+SAGIP-SJ brings timely disaster information, emergency support, hazard visibility, and preparedness guidance into one community-focused platform. Local officials can use the same place to share verified updates and coordinate support before, during, and after an emergency.`;
 
 export const MISSION_PILLARS = [
   {
@@ -73,29 +73,29 @@ export interface SdgEntry {
 
 /**
  * BRD Section 12: Primary UN Sustainable Development Goal alignments.
- * SDG 13 (Climate Action), SDG 11 (Sustainable Cities), and SDG 3 (Good Health and Well-being).
+ * SDG 3 (Good Health and Well-being), SDG 11 (Sustainable Cities), and SDG 13 (Climate Action).
  */
 export const SDG_ENTRIES: SdgEntry[] = [
   {
-    number: 13,
-    title: "Climate Action",
-    tag: "Target 13.1 · Resilience & Early Warning",
+    number: 3,
+    title: "Good Health & Well-being",
+    tag: "Target 3.d · Health Risk Early Warning",
     description:
-      "Strengthening resilience and adaptive capacity to climate-induced flash floods and river overflow along the Marikina River basin through live telemetry and geospatial hazard intelligence.",
+      "Protecting community well-being by empowering Barangay Health Workers (BHWs) to track vulnerable demographics, monitor evacuation medical needs, and coordinate rapid emergency rescue.",
     colorScheme: {
-      bg: "bg-sky-500/10",
-      border: "border-sky-500/30",
-      text: "text-sky-700 dark:text-sky-300",
-      badgeBg: "bg-[#007DBC]",
+      bg: "bg-teal-500/10",
+      border: "border-teal-500/30",
+      text: "text-teal-800 dark:text-teal-300",
+      badgeBg: "bg-[#4C9F38]",
       badgeText: "text-white",
-      glow: "from-sky-500/20 to-transparent",
+      glow: "from-teal-500/20 to-transparent",
     },
     highlights: [
-      "DOST-PAGASA river level telemetry integration",
-      "Official Project NOAH flood hazard return-period mapping",
-      "Proactive threshold-based officer alert workflows",
+      "Direct medical & vulnerability flags for pregnant, PWD & elderly",
+      "Digital emergency rescue tracking with geotagged requests",
+      "Sanitation, medical supplies & safety checklist guidance",
     ],
-    icon: Leaf,
+    icon: HeartPulse,
   },
   {
     number: 11,
@@ -119,25 +119,25 @@ export const SDG_ENTRIES: SdgEntry[] = [
     icon: ShieldCheck,
   },
   {
-    number: 3,
-    title: "Good Health & Well-being",
-    tag: "Target 3.d · Health Risk Early Warning",
+    number: 13,
+    title: "Climate Action",
+    tag: "Target 13.1 · Resilience & Early Warning",
     description:
-      "Protecting community well-being by empowering Barangay Health Workers (BHWs) to track vulnerable demographics, monitor evacuation medical needs, and coordinate rapid emergency rescue.",
+      "Strengthening resilience and adaptive capacity to climate-induced flash floods and river overflow along the Marikina River basin through live telemetry and geospatial hazard intelligence.",
     colorScheme: {
-      bg: "bg-teal-500/10",
-      border: "border-teal-500/30",
-      text: "text-teal-800 dark:text-teal-300",
-      badgeBg: "bg-[#4C9F38]",
+      bg: "bg-sky-500/10",
+      border: "border-sky-500/30",
+      text: "text-sky-700 dark:text-sky-300",
+      badgeBg: "bg-[#007DBC]",
       badgeText: "text-white",
-      glow: "from-teal-500/20 to-transparent",
+      glow: "from-sky-500/20 to-transparent",
     },
     highlights: [
-      "Direct medical & vulnerability flags for pregnant, PWD & elderly",
-      "Digital emergency rescue tracking with geotagged requests",
-      "Sanitation, medical supplies & safety checklist guidance",
+      "DOST-PAGASA river level telemetry integration",
+      "Official Project NOAH flood hazard return-period mapping",
+      "Proactive threshold-based officer alert workflows",
     ],
-    icon: HeartPulse,
+    icon: Leaf,
   },
 ];
 

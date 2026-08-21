@@ -169,7 +169,7 @@ export function AboutBandSection() {
 
                 <div className="flex flex-col gap-1.5">
                   <h3 className="text-sm leading-snug font-bold text-neutral-900 sm:text-base">
-                    Proactive Disaster Management
+                    Safer, more prepared, and resilient communities
                   </h3>
                   <p className="text-body-sm leading-relaxed text-neutral-600">
                     {MISSION}
@@ -201,7 +201,7 @@ export function AboutBandSection() {
 
                 <div className="flex flex-col gap-1.5">
                   <h3 className="text-sm leading-snug font-bold text-neutral-900 sm:text-base">
-                    Zero-Overlooked Community Resilience
+                    Connected readiness for every resident
                   </h3>
                   <p className="text-body-sm leading-relaxed text-neutral-600">
                     {VISION}
@@ -212,9 +212,9 @@ export function AboutBandSection() {
           </div>
 
           {/* Right Column: Interdisciplinary Project Team (7 cols on lg) */}
-          <div className="flex min-w-0 flex-col lg:col-span-7">
-            <Reveal delay={2} className="h-full">
-              <div className="shadow-sm-card flex h-full flex-col justify-between rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6">
+          <div className="flex min-w-0 flex-col self-start lg:col-span-7">
+            <Reveal delay={2}>
+              <div className="shadow-sm-card flex flex-col rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6">
                 <div className="flex flex-col gap-4">
                   {/* Header with Title & Live Pulse Badge */}
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-100 pb-3.5">
@@ -231,9 +231,8 @@ export function AboutBandSection() {
                         </p>
                       </div>
                     </div>
-                    <span className="border-primary-200 bg-primary-50 text-primary-900 inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold">
-                      <span className="bg-primary-600 size-1.5 animate-ping rounded-full" />
-                      4 Members
+                    <span className="border-primary-200 bg-primary-50 text-primary-900 inline-flex shrink-0 items-center rounded-full border px-3 py-1 text-[11px] font-bold">
+                      4 members
                     </span>
                   </div>
 
@@ -245,43 +244,43 @@ export function AboutBandSection() {
                         { avatarBg: string; tagClass: string }
                       > = {
                         "member-1": {
-                          avatarBg: "bg-emerald-600",
-                          tagClass: "border-emerald-200 bg-emerald-50/90 text-emerald-800",
+                          avatarBg: "bg-primary-50",
+                          tagClass: "border-primary-200 bg-primary-50/90 text-primary-800",
                         },
                         "member-2": {
-                          avatarBg: "bg-purple-600",
-                          tagClass: "border-purple-200 bg-purple-50/90 text-purple-800",
+                          avatarBg: "bg-primary-50",
+                          tagClass: "border-primary-200 bg-primary-50/90 text-primary-800",
                         },
                         "member-3": {
-                          avatarBg: "bg-amber-600",
-                          tagClass: "border-amber-200 bg-amber-50/90 text-amber-800",
+                          avatarBg: "bg-primary-50",
+                          tagClass: "border-primary-200 bg-primary-50/90 text-primary-800",
                         },
                         "member-4": {
-                          avatarBg: "bg-sky-600",
-                          tagClass: "border-sky-200 bg-sky-50/90 text-sky-800",
+                          avatarBg: "bg-primary-50",
+                          tagClass: "border-primary-200 bg-primary-50/90 text-primary-800",
                         },
                       };
 
                       const theme = themeMap[member.id] ?? {
-                        avatarBg: "bg-primary-700",
-                        tagClass: "border-neutral-200 bg-neutral-50 text-neutral-700",
+                        avatarBg: "bg-primary-50",
+                        tagClass: "border-primary-200 bg-primary-50/90 text-primary-800",
                       };
 
                       return (
                         <div
                           key={member.id}
-                          className="group hover:border-primary-300 relative flex min-w-0 items-center justify-between gap-2.5 rounded-xl border border-neutral-200/80 bg-neutral-50/60 p-2.5 px-3 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xs"
+                          className="group hover:border-primary-300 relative flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-3 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xs"
                         >
                           <div className="flex min-w-0 items-center gap-2.5">
                             <div
-                              className={`relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg ${theme.avatarBg} tabular text-xs font-extrabold text-white shadow-xs`}
+                              className={`relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary-200/80 ${theme.avatarBg} tabular text-xs font-extrabold text-primary-800 shadow-2xs`}
                             >
                               {member.avatarUrl ? (
                                 <Image
                                   src={member.avatarUrl}
                                   alt={`${member.name} profile`}
                                   fill
-                                  sizes="32px"
+                                  sizes="40px"
                                   className="object-cover"
                                 />
                               ) : (
@@ -301,7 +300,7 @@ export function AboutBandSection() {
                           {/* Program Tag */}
                           <span
                             title={member.program}
-                            className={`shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-extrabold shadow-2xs ${theme.tagClass}`}
+                            className={`shrink-0 rounded-lg border px-2.5 py-1 text-[10px] font-extrabold shadow-2xs ${theme.tagClass}`}
                           >
                             {member.programShort}
                           </span>
@@ -310,8 +309,8 @@ export function AboutBandSection() {
                     })}
 
                     {/* Team convergence tile */}
-                    <div className="border-primary-200/80 from-primary-50/80 flex min-w-0 items-center gap-2.5 rounded-xl border bg-gradient-to-r to-emerald-50/80 p-2.5 px-3 shadow-2xs sm:col-span-2">
-                      <span className="bg-primary-700 grid size-8 shrink-0 place-items-center rounded-lg text-white shadow-xs">
+                    <div className="border-primary-200/80 flex min-w-0 items-center gap-3 rounded-2xl border bg-primary-50/70 p-3 shadow-2xs sm:col-span-2">
+                      <span className="bg-primary-700 grid size-10 shrink-0 place-items-center rounded-xl text-white shadow-xs">
                         <GraduationCap aria-hidden className="size-4" />
                       </span>
                       <div className="min-w-0">

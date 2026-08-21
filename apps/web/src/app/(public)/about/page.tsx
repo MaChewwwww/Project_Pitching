@@ -7,7 +7,7 @@ import { AboutSection } from "@/components/features/public/sections/about-sectio
 export const metadata: Metadata = {
   title: "About the Platform",
   description:
-    "What this platform is for, who maintains it, and the Sustainable Development Goals it supports.",
+    "Learn how SAGIP-SJ connects Barangay San Jose residents and local officials through timely disaster information, emergency support, hazard data, and preparedness guidance.",
 };
 
 /**
@@ -19,7 +19,7 @@ export default function AboutPage() {
       <PageHeader
         title="About the"
         titleAccent="SAGIP Platform"
-        description="A unified disaster readiness, community health, and early warning platform engineered for Barangay San Jose."
+        description="A community-focused digital platform connecting Barangay San Jose residents with timely disaster information, emergency support, and the knowledge to protect lives and communities."
         breadcrumb={[{ label: "Home", href: "/" }, { label: "About" }]}
       />
 

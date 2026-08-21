@@ -89,8 +89,8 @@ function TeamAvatarPlaceholder({
  * Full-scale presentation featuring:
  * 1. Platform Identity & Architecture Bento Hero
  * 2. Strategic Directives: Dual Mission & Vision Bento Cards
- * 3. 3 UN Sustainable Development Goals (SDG 13, 11, 3) with animated glowing icons
- * 4. 4-Member Interdisciplinary Team with approved portraits + Convergence Card
+ * 3. 3 UN Sustainable Development Goals (SDG 3, 11, 13) with animated glowing icons
+ * 4. 4-Member Interdisciplinary Team with approved portraits + Convergence Rail
  */
 export function AboutSection() {
   return (
@@ -188,7 +188,7 @@ export function AboutSection() {
                 </div>
 
                 <p className="text-body-sm text-neutral-600 leading-relaxed">
-                  SAGIP-SJ bridges the critical gap between macro-level meteorological warnings and localized sitio action. Built specifically around the river topography, flood markers, and community demographics of Barangay San Jose.
+                  SAGIP-SJ connects official warnings to local action through a user-friendly platform shaped around Barangay San Jose&apos;s river topography, flood markers, and community needs.
                 </p>
 
                 {/* Academic & Interdisciplinary Synergy Box */}
@@ -219,7 +219,7 @@ export function AboutSection() {
               icon={Compass}
               title="Our Mission &"
               titleAccent="Vision"
-              description="Clear institutional mandates driving every system feature, alert threshold, and community workflow."
+              description="The purpose and direction behind how SAGIP-SJ supports safer, more prepared, and resilient communities."
             />
           </Reveal>
 
@@ -243,7 +243,7 @@ export function AboutSection() {
                         Our Mission
                       </span>
                       <h3 className="text-lg sm:text-xl font-extrabold text-neutral-900 mt-1">
-                        Proactive Disaster Management
+                        Safer, more prepared, and resilient communities
                       </h3>
                     </div>
                   </div>
@@ -298,7 +298,7 @@ export function AboutSection() {
                         Our Vision
                       </span>
                       <h3 className="text-lg sm:text-xl font-extrabold text-neutral-900 mt-1">
-                        Zero-Overlooked Community Resilience
+                        Connected readiness for every resident
                       </h3>
                     </div>
                   </div>
@@ -337,7 +337,7 @@ export function AboutSection() {
         </div>
 
         {/* ===================================================================
-            3. UN SUSTAINABLE DEVELOPMENT GOALS (SDGS 13, 11, 3)
+            3. UN SUSTAINABLE DEVELOPMENT GOALS (SDGS 3, 11, 13)
            =================================================================== */}
         <div className="flex flex-col gap-6 md:gap-8">
           <Reveal>
@@ -467,97 +467,51 @@ export function AboutSection() {
             />
           </Reveal>
 
-          {/* 4 Members + 1 Convergence Card in 3-Column Grid */}
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
-            {TEAM_MEMBERS.map((member, i) => {
-              const themeMap: Record<
-                string,
-                { avatarBg: string; tagClass: string; cardHover: string }
-              > = {
-                "member-1": {
-                  avatarBg: "bg-emerald-600",
-                  tagClass: "border-emerald-200 bg-emerald-50 text-emerald-800",
-                  cardHover: "hover:border-emerald-300",
-                },
-                "member-2": {
-                  avatarBg: "bg-purple-600",
-                  tagClass: "border-purple-200 bg-purple-50 text-purple-800",
-                  cardHover: "hover:border-purple-300",
-                },
-                "member-3": {
-                  avatarBg: "bg-amber-600",
-                  tagClass: "border-amber-200 bg-amber-50 text-amber-800",
-                  cardHover: "hover:border-amber-300",
-                },
-                "member-4": {
-                  avatarBg: "bg-sky-600",
-                  tagClass: "border-sky-200 bg-sky-50 text-sky-800",
-                  cardHover: "hover:border-sky-300",
-                },
-              };
+          {/* Four profile cards arranged as a balanced team wall */}
+          <div className="grid items-stretch gap-4 md:grid-cols-2 md:gap-5">
+            {TEAM_MEMBERS.map((member, i) => (
+              <Reveal key={member.id} delay={((i % 2) as 0 | 1)} className="h-full">
+                <article className="group flex h-full flex-col gap-5 overflow-hidden rounded-[28px] border border-neutral-200/90 bg-white p-5 shadow-sm-card transition-all duration-300 hover:-translate-y-1 hover:border-primary-300 hover:shadow-md-card sm:p-6 md:flex-row md:gap-6">
+                  <div className="flex shrink-0 items-start justify-between gap-3 md:w-28 md:flex-col">
+                    <TeamAvatarPlaceholder member={member} themeClass="bg-primary-50" />
+                    <span className="border-primary-200 bg-primary-50 text-primary-800 rounded-full border px-3 py-1 text-center text-caption font-extrabold shadow-2xs md:w-full">
+                      {member.programShort}
+                    </span>
+                  </div>
 
-              const theme = themeMap[member.id] ?? {
-                avatarBg: "bg-primary-700",
-                tagClass: "border-neutral-200 bg-neutral-50 text-neutral-700",
-                cardHover: "hover:border-primary-300",
-              };
-
-              return (
-                <Reveal key={member.id} delay={((i % 3) as 0 | 1 | 2)} className="h-full">
-                  <div
-                    className={`flex h-full flex-col justify-between rounded-3xl border border-neutral-200/90 bg-white p-6 shadow-sm-card transition-all duration-300 hover:-translate-y-1 hover:shadow-md-card ${theme.cardHover}`}
-                  >
-                    <div className="flex flex-col gap-4">
-                      {/* Top row: Avatar & Program Tag */}
-                      <div className="flex items-start justify-between gap-3">
-                        <TeamAvatarPlaceholder
-                          member={member}
-                          themeClass={theme.avatarBg}
-                        />
-
-                        <div className="flex flex-col items-end gap-1.5">
-                          <span
-                            className={`rounded-full border px-3 py-1 text-caption font-extrabold shadow-2xs ${theme.tagClass}`}
-                          >
-                            {member.programShort}
-                          </span>
-                          <span className="text-[11px] font-semibold text-neutral-500">
-                            {member.discipline}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Member Info */}
-                      <div>
-                        <h3 className="text-h4 font-extrabold text-neutral-900">
-                          {member.name}
-                        </h3>
-                        <p className="text-body-sm font-bold text-primary-700 mt-0.5">
-                          {member.role}
-                        </p>
-
-                        {/* Full Academic Degree Title */}
-                        <div className="mt-2.5 flex items-start gap-2 rounded-xl bg-neutral-50 p-2.5 border border-neutral-100">
-                          <GraduationCap className="size-4 text-primary-700 shrink-0 mt-0.5" />
-                          <p className="text-caption font-semibold text-neutral-800 leading-snug">
-                            {member.program}
-                          </p>
-                        </div>
-
-                        {/* Research Contribution Focus */}
-                        <p className="mt-3 text-body-sm text-neutral-600 leading-relaxed">
-                          {member.focus}
-                        </p>
-                      </div>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <div>
+                      <p className="text-overline text-primary-700 font-bold tracking-wider">
+                        {member.discipline}
+                      </p>
+                      <h3 className="text-h3 mt-1 font-extrabold tracking-tight text-neutral-900">
+                        {member.name}
+                      </h3>
+                      <p className="text-body-sm mt-1 font-bold text-primary-700">
+                        {member.role}
+                      </p>
                     </div>
 
-                    {/* Skills Pills */}
-                    <div className="mt-5 border-t border-neutral-100 pt-3.5">
-                      <div className="flex flex-wrap gap-1.5">
+                    <div className="border-primary-100 bg-primary-50/60 mt-4 flex items-start gap-2.5 rounded-2xl border p-3">
+                      <GraduationCap className="text-primary-700 mt-0.5 size-4 shrink-0" />
+                      <p className="text-caption font-semibold leading-snug text-neutral-800">
+                        {member.program}
+                      </p>
+                    </div>
+
+                    <p className="text-body-sm mt-4 leading-relaxed text-neutral-600">
+                      {member.focus}
+                    </p>
+
+                    <div className="mt-auto border-t border-neutral-100 pt-4">
+                      <p className="text-[10px] font-extrabold tracking-wider text-neutral-500 uppercase">
+                        Areas of focus
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
                         {member.skills.map((skill) => (
                           <span
                             key={skill}
-                            className="rounded-md border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[10px] font-medium text-neutral-700"
+                            className="rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1 text-[10px] font-medium text-neutral-700"
                           >
                             {skill}
                           </span>
@@ -565,39 +519,62 @@ export function AboutSection() {
                       </div>
                     </div>
                   </div>
-                </Reveal>
-              );
-            })}
+                </article>
+              </Reveal>
+            ))}
+          </div>
 
-            {/* Team convergence spotlight banner */}
-            <Reveal delay={2} className="h-full lg:col-span-2">
-              <div className="flex h-full flex-col justify-between rounded-3xl border border-primary-800 bg-gradient-to-br from-primary-900 via-primary-950 to-neutral-950 p-6 text-white shadow-md-card md:p-8">
-                <div className="flex flex-col gap-4">
+          {/* Team convergence spotlight */}
+          <Reveal delay={2}>
+            <div className="relative overflow-hidden rounded-[28px] border border-primary-800 bg-primary-950 p-6 text-white shadow-md-card md:p-8">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-primary-700/20 blur-3xl"
+              />
+              <div className="relative grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(240px,0.75fr)] md:items-end">
+                <div>
                   <div className="flex items-center gap-2.5">
-                    <span className="grid size-10 place-items-center rounded-xl bg-primary-500/20 text-primary-300 border border-primary-400/30">
-                      <Sparkles className="size-5 text-primary-300" />
+                    <span className="border-primary-400/30 bg-primary-500/20 text-primary-300 grid size-10 place-items-center rounded-xl border">
+                      <Sparkles className="size-5" />
                     </span>
-                    <span className="rounded-md border border-primary-400/30 bg-primary-800/60 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-primary-200">
-                      Collaborative Synergy
+                    <span className="border-primary-400/30 bg-primary-800/60 text-primary-200 rounded-md border px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider uppercase">
+                      Collaborative synergy
                     </span>
                   </div>
 
-                  <h3 className="text-xl font-extrabold text-white leading-tight">
+                  <h3 className="text-xl leading-tight font-extrabold text-white md:text-2xl">
                     4 Disciplines, 1 Unified Disaster Platform
                   </h3>
-
-                  <p className="text-body-sm text-primary-100/80 leading-relaxed">
-                    Designed to bridge technical development, governance research, public information, and nutrition risk work in local disaster preparedness and response.
+                  <p className="text-body-sm text-primary-100/80 mt-3 max-w-2xl leading-relaxed">
+                    Designed to bridge technical development, governance research,
+                    public information, and nutrition risk work in local disaster
+                    preparedness and response.
                   </p>
                 </div>
 
-                <div className="mt-6 border-t border-primary-800/80 pt-4 flex items-center justify-between text-xs text-primary-300">
-                  <span className="font-bold">SK Project Pitching 2026</span>
-                  <span className="text-primary-400">San Jose, Rizal</span>
+                <div className="grid grid-cols-2 gap-x-5 gap-y-3 border-t border-primary-800/80 pt-4 md:border-t-0 md:border-l md:pt-0 md:pl-6">
+                  {TEAM_MEMBERS.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex flex-col gap-0.5 border-b border-primary-800/80 pb-2"
+                    >
+                      <span className="text-[10px] font-extrabold tracking-wider text-primary-300 uppercase">
+                        {member.programShort}
+                      </span>
+                      <span className="text-[11px] leading-snug text-primary-100/80">
+                        {member.discipline}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </Reveal>
-          </div>
+
+              <div className="relative mt-7 flex items-center justify-between border-t border-primary-800/80 pt-4 text-xs text-primary-300">
+                <span className="font-bold">SK Project Pitching 2026</span>
+                <span className="text-primary-400">San Jose, Rizal</span>
+              </div>
+            </div>
+          </Reveal>
         </div>
       </div>
     </Section>

@@ -171,7 +171,7 @@ export const HERO = {
    */
   titleLine1: "Ready Before",
   titleLine2: "the Water Rises",
-  lead: `Flood readiness, evacuation guidance, and community health information for ${BARANGAY} — updated by the barangay, reachable on any phone.`,
+  lead: `A community-centered platform for flood readiness, evacuation guidance, emergency support, and public health information in ${BARANGAY} — updated by local officials and reachable on any phone.`,
   primaryCta: { label: "See the Hazard Map", href: "/hazard-map" },
   secondaryCta: { label: "Preparedness Guidelines", href: "/guides" },
   /** The two quick links over the hero visual. */

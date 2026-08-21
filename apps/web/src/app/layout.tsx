@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
 import { Providers } from "@/app/providers";
-import { APP_NAME, BARANGAY } from "@/lib/brand";
+import { APP_NAME, SITE_DESCRIPTION } from "@/lib/brand";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     default: `${APP_NAME} | Disaster Readiness & Community Health`,
     template: `${APP_NAME} | %s`,
   },
-  description: `Disaster readiness and community health platform for ${BARANGAY}.`,
+  description: SITE_DESCRIPTION,
   icons: {
     icon: [{ url: "/logo-transparent.png", type: "image/png", sizes: "2000x2000" }],
     shortcut: "/logo-transparent.png",
