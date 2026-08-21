@@ -161,3 +161,8 @@ and progress, one household family-emergency plan, and user-scoped notification 
 schema base for the completed Resident Portal flow; route ownership remains in
 [`modules.md`](./modules.md) and the physical columns in
 [`docs/schema.md`](../../../docs/schema.md).
+
+`0028_refresh_preparedness_guides` refreshes the five project-supplied bilingual preparedness
+articles by their existing slugs. It is intentionally separate from `seed.py` so an existing
+staging database receives the approved content without making application startup overwrite
+future admin edits.

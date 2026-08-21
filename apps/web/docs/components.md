@@ -17,6 +17,14 @@ components/
 The inventory — every composite, what it does, what it must handle — is
 [`design.md`](../../../docs/design.md) Section 7.2. This file is about the mechanics.
 
+## Preparedness guide bodies
+
+`features/preparedness/guide-body-renderer.tsx` is the shared renderer for public guide pages and
+Barangay Portal previews. Guide bodies remain plain text from the API: `##`/`###` headings, `1.`
+numbered steps, `-` bullets, blank lines, and optional `**bold**` or `*italic*` emphasis are
+rendered into the article layout. Keep it deliberately closed to arbitrary HTML; preparedness
+content is authored by barangay staff and does not include image blocks.
+
 ## Component or composition?
 
 Both are reusable design work, but they have different homes:

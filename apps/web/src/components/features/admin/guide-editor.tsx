@@ -7,6 +7,7 @@ import { z } from "zod";
 import { BookOpen, CalendarCheck, Eye, Save } from "lucide-react";
 
 import { Button } from "@/components/common/button";
+import { GuideBodyRenderer } from "@/components/features/preparedness/guide-body-renderer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -289,9 +290,13 @@ export function GuideEditor({
                     {...register("body_fil")}
                     aria-invalid={!!errors.body_fil}
                     rows={13}
-                    placeholder="Gumamit ng ## para sa subheading."
+                    placeholder="Gumamit ng ##/### para sa heading, 1. para sa steps, at blank line sa pagitan ng sections."
                     className="rounded-lg border-emerald-200/80 bg-white text-sm shadow-2xs focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
                   />
+                  <p className="text-xs leading-relaxed text-neutral-500">
+                    Supported format: headings, numbered steps, bullets, at bold o italic
+                    na salita.
+                  </p>
                 </Field>
               </>
             ) : (
@@ -320,9 +325,13 @@ export function GuideEditor({
                     {...register("body_en")}
                     aria-invalid={!!errors.body_en}
                     rows={13}
-                    placeholder="Use ## for section headings."
+                    placeholder="Use ##/### for headings, 1. for steps, and blank lines between sections."
                     className="rounded-lg border-emerald-200/80 bg-white text-sm shadow-2xs focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
                   />
+                  <p className="text-xs leading-relaxed text-neutral-500">
+                    Supported format: headings, numbered steps, bullets, and bold or
+                    italic text.
+                  </p>
                 </Field>
               </>
             )}
@@ -398,9 +407,15 @@ export function GuideEditor({
           <h3 className="mt-2 text-lg leading-snug font-bold text-neutral-900">
             {title || "Guide Title"}
           </h3>
-          <p className="mt-3 text-sm leading-relaxed whitespace-pre-line text-neutral-700">
-            {body || "The selected language appears here as the public guide is written."}
-          </p>
+          {body ? (
+            <div className="border-primary-100 mt-3 max-h-[30rem] overflow-y-auto rounded-xl border bg-white/80 p-3">
+              <GuideBodyRenderer content={body} compact />
+            </div>
+          ) : (
+            <p className="mt-3 text-sm leading-relaxed text-neutral-500">
+              The selected language appears here as the public guide is written.
+            </p>
+          )}
           <p className="border-primary-100 mt-4 border-t pt-3 text-xs text-neutral-600">
             {values.source_attribution || "Source Attribution"}
             {values.last_reviewed_at ? ` · Reviewed ${values.last_reviewed_at}` : ""}

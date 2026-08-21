@@ -6,6 +6,7 @@ run `make types` and commit the diff in the same PR (architecture.md 12.4).
 
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import datetime
 from typing import Literal
@@ -17,7 +18,10 @@ GuidePhase = Literal["before", "during", "after", "n/a"]
 
 
 def _excerpt(body: str, length: int = 160) -> str:
-    body = body.strip()
+    body = re.sub(r"^#{1,6}\s+", "", body, flags=re.MULTILINE)
+    body = re.sub(r"^\s*(?:\d+\.|[-*])\s+", "", body, flags=re.MULTILINE)
+    body = body.replace("**", "").replace("*", "")
+    body = " ".join(body.split())
     return body if len(body) <= length else body[:length].rsplit(" ", 1)[0] + "…"
 
 

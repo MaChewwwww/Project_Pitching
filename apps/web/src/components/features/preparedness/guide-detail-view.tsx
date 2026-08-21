@@ -18,6 +18,7 @@ import {
 
 import { Attribution } from "@/components/common/attribution";
 import { PageHeader } from "@/components/common/page-header";
+import { GuideBodyRenderer } from "@/components/features/preparedness/guide-body-renderer";
 import { NATIONAL_EMERGENCY_HOTLINE } from "@/lib/fixtures/hotlines";
 import { formatPhtDate, toTelHref } from "@/lib/format";
 import { pick, useLanguage } from "@/lib/i18n/language-store";
@@ -46,71 +47,6 @@ function titleCase(value: string) {
     : value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function GuideBodyRenderer({ content }: { content: string }) {
-  const lines = content
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  return (
-    <div className="space-y-4 text-neutral-800">
-      {lines.map((line, index) => {
-        if (line.startsWith("## ")) {
-          return (
-            <h2
-              key={index}
-              className="font-display mb-3 pt-5 text-xl font-bold tracking-tight text-neutral-900 border-b border-neutral-100 pb-2"
-            >
-              {line.slice(3)}
-            </h2>
-          );
-        }
-        if (line.startsWith("### ")) {
-          return (
-            <h3 key={index} className="font-display mb-2 pt-3 text-lg font-bold text-neutral-900">
-              {line.slice(4)}
-            </h3>
-          );
-        }
-        // Numbered step (e.g., "1. Duck...", "2. Cover...")
-        const numMatch = line.match(/^(\d+)\.\s+(.*)/);
-        if (numMatch) {
-          const [, num, text] = numMatch;
-          return (
-            <div
-              key={index}
-              className="my-3 flex items-start gap-3.5 rounded-xl border border-neutral-200/90 bg-white p-4 shadow-2xs"
-            >
-              <span className="bg-primary-700 flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white shadow-2xs">
-                {num}
-              </span>
-              <p className="text-body-lg leading-relaxed text-neutral-800 pt-0.5">
-                {text}
-              </p>
-            </div>
-          );
-        }
-        // Bullet item (e.g., "- ...", "* ...")
-        if (line.startsWith("- ") || line.startsWith("* ")) {
-          return (
-            <div key={index} className="my-2 flex items-start gap-3 pl-1">
-              <span className="bg-primary-600 mt-2 size-2 shrink-0 rounded-full" />
-              <p className="text-body-lg leading-relaxed text-neutral-700">
-                {line.slice(2)}
-              </p>
-            </div>
-          );
-        }
-        return (
-          <p key={index} className="text-body-lg leading-relaxed text-neutral-700">
-            {line}
-          </p>
-        );
-      })}
-    </div>
-  );
-}
-
 export function GuideDetailView({
   guide,
   related,
@@ -136,8 +72,8 @@ export function GuideDetailView({
           { label: title },
         ]}
         action={
-          <div className="flex flex-col items-start justify-center gap-2 shrink-0 sm:items-end sm:self-center">
-            <span className="bg-primary-700 inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-2xs tracking-wide">
+          <div className="flex shrink-0 flex-col items-start justify-center gap-2 sm:items-end sm:self-center">
+            <span className="bg-primary-700 inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold tracking-wide text-white shadow-2xs">
               <HazardIcon className="size-3.5 shrink-0" />
               {titleCase(guide.hazard_type)}
             </span>
@@ -152,13 +88,14 @@ export function GuideDetailView({
         <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
           <article className="lg:col-span-8">
             {/* Phase Callout Box */}
-            <div className="mb-7 rounded-2xl border border-primary-200/80 bg-gradient-to-br from-primary-50/80 via-surface-tint to-white p-5 shadow-xs">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary-800">
+            <div className="border-primary-200/80 from-primary-50/80 via-surface-tint mb-7 rounded-2xl border bg-gradient-to-br to-white p-5 shadow-xs">
+              <div className="text-primary-800 flex items-center gap-2 text-xs font-bold tracking-wider uppercase">
                 <ShieldCheck className="text-primary-700 size-4 shrink-0" />
                 <span>{phaseLabel[guide.phase]}</span>
               </div>
-              <p className="mt-2 text-sm font-medium leading-relaxed text-neutral-700">
-                Follow these official barangay preparedness instructions for safety before, during, and after an emergency.
+              <p className="mt-2 text-sm leading-relaxed font-medium text-neutral-700">
+                Follow these official barangay preparedness instructions for safety
+                before, during, and after an emergency.
               </p>
             </div>
 
@@ -168,7 +105,7 @@ export function GuideDetailView({
           {/* Right Sidebar */}
           <aside className="lg:col-span-4">
             <div className="sticky top-24 space-y-6">
-              <section className="rounded-2xl border border-neutral-200/90 bg-white p-5 md:p-6 shadow-xs">
+              <section className="rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-xs md:p-6">
                 <h3 className="font-display inline-flex items-center gap-2 text-base font-bold text-neutral-900">
                   <ShieldCheck className="text-primary-600 size-4" /> Guide Record
                 </h3>
@@ -185,14 +122,14 @@ export function GuideDetailView({
                     <dt className="text-xs font-bold tracking-wide text-neutral-500 uppercase">
                       When To Use
                     </dt>
-                    <dd className="font-semibold text-neutral-900 text-xs">
+                    <dd className="text-xs font-semibold text-neutral-900">
                       {phaseLabel[guide.phase]}
                     </dd>
                   </div>
                   {guide.source_attribution ? (
                     <div className="border-b border-neutral-100 pb-2.5">
                       <dt className="inline-flex items-center gap-1 text-xs font-bold tracking-wide text-neutral-500 uppercase">
-                        <BookMarked className="size-3 text-primary-600" /> Source
+                        <BookMarked className="text-primary-600 size-3" /> Source
                       </dt>
                       <dd className="mt-1 text-xs leading-relaxed text-neutral-700">
                         {guide.source_attribution}
@@ -202,7 +139,8 @@ export function GuideDetailView({
                   {guide.last_reviewed_at ? (
                     <div>
                       <dt className="inline-flex items-center gap-1 text-xs font-bold tracking-wide text-neutral-500 uppercase">
-                        <CalendarCheck className="size-3 text-primary-600" /> Last Reviewed
+                        <CalendarCheck className="text-primary-600 size-3" /> Last
+                        Reviewed
                       </dt>
                       <dd className="mt-1 text-xs font-semibold text-neutral-900">
                         {formatPhtDate(guide.last_reviewed_at)}
@@ -213,7 +151,7 @@ export function GuideDetailView({
               </section>
 
               {related.length ? (
-                <section className="rounded-2xl border border-neutral-200/90 bg-white p-5 md:p-6 shadow-xs">
+                <section className="rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-xs md:p-6">
                   <div className="mb-3 flex items-center justify-between border-b border-neutral-100 pb-3">
                     <h3 className="font-display text-base font-bold text-neutral-900">
                       Other Guides
@@ -232,9 +170,9 @@ export function GuideDetailView({
                         <Link
                           key={item.id}
                           href={`/guides/${item.slug}`}
-                          className="group flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0 transition-colors"
+                          className="group flex items-center justify-between gap-3 py-3 transition-colors first:pt-0 last:pb-0"
                         >
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="flex min-w-0 flex-1 items-center gap-3">
                             <span className="bg-primary-50 text-primary-700 grid size-8 shrink-0 place-items-center rounded-lg">
                               <ItemIcon className="size-4" />
                             </span>
@@ -242,12 +180,12 @@ export function GuideDetailView({
                               <span className="text-primary-700 block text-[10px] font-bold tracking-wider uppercase">
                                 {titleCase(item.hazard_type)}
                               </span>
-                              <span className="group-hover:text-primary-700 block text-xs font-bold text-neutral-900 truncate">
+                              <span className="group-hover:text-primary-700 block truncate text-xs font-bold text-neutral-900">
                                 {pick(lang, item.title_fil, item.title_en)}
                               </span>
                             </div>
                           </div>
-                          <ChevronRight className="size-4 shrink-0 text-neutral-400 group-hover:text-primary-700 transition-colors" />
+                          <ChevronRight className="group-hover:text-primary-700 size-4 shrink-0 text-neutral-400 transition-colors" />
                         </Link>
                       );
                     })}
@@ -256,8 +194,8 @@ export function GuideDetailView({
               ) : null}
 
               {/* National emergency assistance hotline box */}
-              <div className="rounded-2xl bg-gradient-to-br from-primary-950 via-primary-900 to-neutral-900 p-4 text-white shadow-xs">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary-300">
+              <div className="from-primary-950 via-primary-900 rounded-2xl bg-gradient-to-br to-neutral-900 p-4 text-white shadow-xs">
+                <div className="text-primary-300 flex items-center gap-2 text-xs font-bold tracking-wider uppercase">
                   <PhoneCall className="size-3.5 shrink-0" />
                   <span>Emergency Assistance</span>
                 </div>
@@ -266,7 +204,7 @@ export function GuideDetailView({
                 </p>
                 <a
                   href={toTelHref(NATIONAL_EMERGENCY_HOTLINE.number)}
-                  className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary-600 px-3.5 py-2 text-xs font-bold text-white transition-colors hover:bg-primary-500"
+                  className="bg-primary-600 hover:bg-primary-500 mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold text-white transition-colors"
                 >
                   Call {NATIONAL_EMERGENCY_HOTLINE.number}
                 </a>
@@ -281,4 +219,3 @@ export function GuideDetailView({
     </>
   );
 }
-

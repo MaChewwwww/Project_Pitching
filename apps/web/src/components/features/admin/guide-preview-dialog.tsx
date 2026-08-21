@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BookOpen, CalendarCheck, Eye, X } from "lucide-react";
 
 import { Button } from "@/components/common/button";
+import { GuideBodyRenderer } from "@/components/features/preparedness/guide-body-renderer";
 import {
   Dialog,
   DialogClose,
@@ -34,6 +35,7 @@ export function GuidePreviewDialog({
   title: string;
 }) {
   const [open, setOpen] = React.useState(false);
+  const [language, setLanguage] = React.useState<"fil" | "en">("fil");
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "guides", guideId],
     queryFn: () =>
@@ -57,7 +59,9 @@ export function GuidePreviewDialog({
             <p className="text-primary-700 text-[10px] font-bold tracking-wider uppercase">
               Admin Preview
             </p>
-            <DialogTitle className="mt-1 text-xl">{data?.title_en ?? title}</DialogTitle>
+            <DialogTitle className="mt-1 text-xl">
+              {data ? (language === "fil" ? data.title_fil : data.title_en) : title}
+            </DialogTitle>
           </div>
           <DialogClose asChild>
             <button
@@ -89,10 +93,27 @@ export function GuidePreviewDialog({
                   {data.is_published ? "Published" : "Draft"}
                 </span>
               </div>
-              <h2 className="text-h2">{data.title_en}</h2>
-              <div className="text-body leading-7 whitespace-pre-line text-neutral-700">
-                {data.body_en}
+              <div
+                role="tablist"
+                aria-label="Preview language"
+                className="flex gap-4 border-b border-neutral-100"
+              >
+                {(["fil", "en"] as const).map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    role="tab"
+                    aria-selected={language === item}
+                    onClick={() => setLanguage(item)}
+                    className={`border-b-2 px-1 pb-2 text-xs font-bold ${language === item ? "border-primary-700 text-primary-800" : "border-transparent text-neutral-500"}`}
+                  >
+                    {item === "fil" ? "Filipino" : "English"}
+                  </button>
+                ))}
               </div>
+              <GuideBodyRenderer
+                content={language === "fil" ? data.body_fil : data.body_en}
+              />
               <div className="border-primary-100 bg-primary-50/60 rounded-xl border p-4 text-sm text-neutral-700">
                 <p className="inline-flex items-center gap-2 font-semibold text-neutral-900">
                   <BookOpen className="text-primary-700 size-4" />
