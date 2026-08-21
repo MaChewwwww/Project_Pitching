@@ -174,7 +174,7 @@ already knows.
 
 The sidebar and the topbar breadcrumb read the same `ADMIN_CATEGORIES` array. Every category starts
 open after a reload so the complete console navigation is visible; officers can still collapse a group
-temporarily. On desktop the sidebar is viewport-sticky and does not create a second scroll container.
+temporarily. On desktop the sidebar is viewport-fixed and does not create a second scroll container.
 That is the point
 of the module — when the sidebar owned the list privately, any route rename would have left the
 breadcrumb showing the old label with nothing to catch it.

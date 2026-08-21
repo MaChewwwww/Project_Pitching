@@ -230,8 +230,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
 
   return (
-    <div className="flex min-h-screen bg-neutral-100">
-      <aside className="bg-primary-950 text-primary-50 hidden h-svh w-64 shrink-0 flex-col lg:sticky lg:top-0 lg:flex lg:self-start">
+    <div className="min-h-screen bg-neutral-100 lg:pl-64">
+      <aside className="bg-primary-950 text-primary-50 hidden h-svh w-64 flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex">
         <div className="flex items-center gap-2.5 border-b border-white/10 px-4 py-4">
           <div className="flex min-w-0 items-center gap-2.5">
             <LogoLockup size={32} variant="mark" onDark />

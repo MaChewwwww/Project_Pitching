@@ -1339,14 +1339,14 @@ function DeclareEventDialog({
           <span>Declare Event</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl sm:w-full">
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div className="grid size-11 shrink-0 place-items-center rounded-2xl border border-emerald-200 bg-emerald-100 text-emerald-800 shadow-xs">
                 <Siren className="size-6 text-emerald-700" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <DialogTitle className="text-lg font-black text-slate-950">
                   Declare Emergency Event
                 </DialogTitle>
@@ -1544,14 +1544,14 @@ function EndEventDialog({
           <span>{isEndingAll ? "End All Events" : "End Event"}</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl sm:w-full">
         <div className="flex flex-col gap-5">
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div className="grid size-11 shrink-0 place-items-center rounded-2xl border border-rose-200 bg-rose-100 text-rose-700 shadow-xs">
                 <AlertTriangle className="size-6 stroke-[2.5] text-rose-600" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <DialogTitle className="text-lg font-black text-slate-950">
                   {isEndingAll
                     ? `End All Active Emergency Events (${activeEvents.length})`
@@ -1567,8 +1567,8 @@ function EndEventDialog({
           </DialogHeader>
 
           {/* Event Name Tag */}
-          <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3 shadow-2xs">
-            <div className="flex items-center gap-2 truncate text-xs font-bold text-slate-900">
+          <div className="flex min-w-0 items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3 shadow-2xs">
+            <div className="flex min-w-0 flex-1 items-center gap-2 text-xs font-bold text-slate-900">
               <Siren className="size-4 shrink-0 text-rose-600" />
               <span className="truncate">
                 {isEndingAll
@@ -1576,7 +1576,9 @@ function EndEventDialog({
                   : event.name}
               </span>
             </div>
-            <Badge tone="danger">Active Incident</Badge>
+            <Badge tone="danger" className="shrink-0">
+              Active Incident
+            </Badge>
           </div>
 
           {/* Concluded Date & Time with Backfill support */}

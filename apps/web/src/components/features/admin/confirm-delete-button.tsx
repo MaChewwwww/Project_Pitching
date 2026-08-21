@@ -58,7 +58,7 @@ export function ConfirmDeleteButton({
         </Button>
       </AlertDialogTrigger>
 
-      <AlertDialogContent className="max-w-md rounded-2xl border border-rose-200/90 bg-white p-5 sm:p-6 shadow-2xl overflow-hidden">
+      <AlertDialogContent className="w-[calc(100vw-2rem)] !max-w-md overflow-hidden rounded-2xl border border-rose-200/90 bg-white p-5 shadow-2xl sm:p-6">
         <AlertDialogHeader className="flex flex-col gap-1 text-left">
           <div className="flex items-start gap-3.5">
             <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-rose-100 text-rose-700 border border-rose-200/80 shadow-2xs">
@@ -76,7 +76,7 @@ export function ConfirmDeleteButton({
             </div>
           </div>
 
-          <AlertDialogDescription className="text-xs text-neutral-600 leading-relaxed mt-2.5">
+          <AlertDialogDescription className="mt-2.5 break-words text-xs leading-relaxed text-neutral-600">
             {description ?? (
               <>
                 Are you sure you want to {actionLabel.toLowerCase()}{" "}
@@ -87,7 +87,7 @@ export function ConfirmDeleteButton({
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <AlertDialogFooter className="mt-5 flex items-center justify-end gap-2.5 border-t border-neutral-100 pt-4 -mx-5 -mb-5 sm:-mx-6 sm:-mb-6 p-4 bg-neutral-50/60">
+        <AlertDialogFooter className="-mx-5 -mb-5 mt-5 flex flex-wrap items-center justify-end gap-2.5 border-t border-neutral-100 bg-neutral-50/60 p-4 pt-4 sm:-mx-6 sm:-mb-6 sm:flex-nowrap">
           <AlertDialogCancel className="h-9 rounded-xl border border-neutral-200 bg-white px-4 text-xs font-bold text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 transition-colors cursor-pointer">
             Cancel
           </AlertDialogCancel>
