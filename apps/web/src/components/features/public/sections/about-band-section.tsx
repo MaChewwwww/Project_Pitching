@@ -1,7 +1,17 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Compass, Eye, GraduationCap, Users } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  Compass,
+  Eye,
+  GraduationCap,
+  HeartPulse,
+  Smartphone,
+  Users,
+  UsersRound,
+} from "lucide-react";
 
 import { Button } from "@/components/common/button";
 import { Reveal } from "@/components/common/reveal";
@@ -13,6 +23,13 @@ import {
   WHAT_IT_IS,
 } from "@/lib/content/about";
 import { Section } from "./section";
+
+const TEAM_FOCUS = [
+  { label: "Research", detail: "Understand local risk", icon: BookOpen },
+  { label: "Community", detail: "Listen to residents", icon: UsersRound },
+  { label: "Health", detail: "Protect everyday life", icon: HeartPulse },
+  { label: "Digital reach", detail: "Make help easier to find", icon: Smartphone },
+] as const;
 
 /**
  * Redesigned About Band Section (FR-PUB-002, BR-0.2) for the landing page.
@@ -308,18 +325,66 @@ export function AboutBandSection() {
                       );
                     })}
 
-                    {/* Team convergence tile */}
-                    <div className="border-primary-200/80 flex min-w-0 items-center gap-3 rounded-2xl border bg-primary-50/70 p-3 shadow-2xs sm:col-span-2">
-                      <span className="bg-primary-700 grid size-10 shrink-0 place-items-center rounded-xl text-white shadow-xs">
-                        <GraduationCap aria-hidden className="size-4" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-caption text-primary-950 truncate leading-tight font-extrabold">
-                          BAPE · BPA · BSND · BSIT
+                    {/* Team synthesis panel: turns the remaining card space into a clear shared purpose. */}
+                    <div className="relative min-w-0 overflow-hidden rounded-2xl border border-primary-900/80 bg-gradient-to-br from-primary-950 via-primary-900 to-emerald-950 p-4 text-white shadow-xs sm:col-span-2 sm:p-5">
+                      <div
+                        aria-hidden
+                        className="pointer-events-none absolute -top-16 -right-10 size-40 rounded-full border border-emerald-200/15"
+                      />
+                      <div
+                        aria-hidden
+                        className="pointer-events-none absolute -right-2 -bottom-20 size-44 rounded-full border border-white/10"
+                      />
+
+                      <div className="relative">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="flex min-w-0 items-start gap-2.5">
+                            <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-emerald-300/20 bg-emerald-400/15 text-emerald-200">
+                              <GraduationCap aria-hidden className="size-4" />
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-extrabold tracking-[0.12em] text-emerald-200 uppercase">
+                                Shared focus
+                              </p>
+                              <h4 className="mt-1 text-base leading-tight font-extrabold sm:text-lg">
+                                Four perspectives. One safer next step.
+                              </h4>
+                            </div>
+                          </div>
+                          <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-bold text-emerald-100">
+                            BAPE · BPA · BSND · BSIT
+                          </span>
+                        </div>
+
+                        <p className="mt-3 max-w-2xl text-xs leading-relaxed text-primary-100/75">
+                          Research, community insight, public health, and digital tools come
+                          together to make preparedness easier to understand and act on.
                         </p>
-                        <p className="text-primary-700 mt-0.5 truncate text-[10px] font-medium">
-                          Interdisciplinary DRRM Integration
-                        </p>
+
+                        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                          {TEAM_FOCUS.map((focus) => {
+                            const FocusIcon = focus.icon;
+
+                            return (
+                              <div
+                                key={focus.label}
+                                className="rounded-xl border border-white/10 bg-white/[0.07] p-2.5 transition-colors hover:bg-white/[0.12]"
+                              >
+                                <FocusIcon
+                                  aria-hidden
+                                  className="size-4 text-emerald-200"
+                                  strokeWidth={2.1}
+                                />
+                                <p className="mt-2 text-[11px] font-extrabold text-white">
+                                  {focus.label}
+                                </p>
+                                <p className="mt-0.5 text-[10px] leading-snug text-primary-100/65">
+                                  {focus.detail}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
                   </div>

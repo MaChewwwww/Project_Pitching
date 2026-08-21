@@ -70,7 +70,7 @@ export function HeroAnimatedTitle({
       onPointerCancel={resetTilt}
     >
       <h1
-        className="hero-title-float font-display relative text-[2rem] leading-[1.08] font-extrabold tracking-[-0.04em] text-neutral-900 sm:text-5xl lg:text-[2.75rem] xl:text-[3.35rem] 2xl:text-6xl"
+        className="hero-title-float font-display relative text-[2rem] leading-[1.08] font-extrabold tracking-[-0.04em] text-neutral-900 sm:text-5xl lg:text-[2.75rem] xl:text-[3.05rem] 2xl:text-[3.2rem]"
         style={
           motionAllowed
             ? {
