@@ -14,9 +14,9 @@ export const MISSION =
 export const VISION =
   "SAGIP-SJ seeks to enhance disaster readiness and emergency response in Barangay San Jose by offering a user-friendly, community-focused digital platform that links residents with local officials via prompt alerts, specific hazard data, household vulnerability assessments, incident notifications, evacuation instructions, and preparedness materials.";
 
-export const WHAT_IT_IS = `SAGIP-SJ is Barangay San Jose's community-centered digital platform for disaster readiness and emergency response. Residents can check river conditions, view flood hazards, find evacuation guidance, read verified announcements, and access preparedness materials — without needing an account and from any phone.
+export const WHAT_IT_IS = `SAGIP-SJ is Barangay San Jose's community-centered platform for staying informed, prepared, and supported before, during, and after an emergency. Residents can check river conditions, understand flood hazards, find evacuation centers and guidance, read verified barangay announcements, and access practical preparedness materials — all in one place, without an account and from any phone.
 
-SAGIP-SJ brings timely disaster information, emergency support, hazard visibility, and preparedness guidance into one community-focused platform. Local officials can use the same place to share verified updates and coordinate support before, during, and after an emergency.`;
+Local officials can use the same platform to share timely updates, guide residents, and coordinate community support when it matters most. By bringing trusted information and clear next steps together, SAGIP-SJ helps Barangay San Jose prepare early, respond with confidence, and recover together.`;
 
 export const MISSION_PILLARS = [
   {

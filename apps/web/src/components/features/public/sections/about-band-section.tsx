@@ -356,11 +356,6 @@ export function AboutBandSection() {
                           </span>
                         </div>
 
-                        <p className="mt-3 max-w-2xl text-xs leading-relaxed text-primary-100/75">
-                          Research, community insight, public health, and digital tools come
-                          together to make preparedness easier to understand and act on.
-                        </p>
-
                         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
                           {TEAM_FOCUS.map((focus) => {
                             const FocusIcon = focus.icon;
