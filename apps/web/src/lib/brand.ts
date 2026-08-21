@@ -9,7 +9,7 @@
 export const APP_NAME = "SAGIP-SJ";
 export const APP_TAGLINE = "From Risk We Learn, For Safety We Turn.";
 export const SITE_DESCRIPTION =
-  "A community-centered digital platform for disaster readiness, emergency support, and public safety in Barangay San Jose, Rodriguez, Rizal.";
+  "A community-centered platform for disaster readiness, emergency support, and public safety in San Jose, Rodriguez Rizal.";
 export const BARANGAY = "Barangay San Jose, Rodriguez, Rizal";
 
 /** Barangay San Jose centroid — the clip extent in dataset/README.md. */

@@ -571,7 +571,7 @@ export function AboutSection() {
 
               <div className="relative mt-7 flex items-center justify-between border-t border-primary-800/80 pt-4 text-xs text-primary-300">
                 <span className="font-bold">SK Project Pitching 2026</span>
-                <span className="text-primary-400">San Jose, Rizal</span>
+                <span className="text-primary-400">San Jose, Rodriguez Rizal</span>
               </div>
             </div>
           </Reveal>
