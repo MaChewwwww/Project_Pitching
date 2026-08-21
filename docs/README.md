@@ -26,6 +26,12 @@ Section 6.
 | `services/cron` | [jobs](../services/cron/docs/jobs.md)                                                                                                                                         |
 | `infra`         | [deployment](../infra/docs/deployment.md) · [backup & restore](../infra/docs/backup-restore.md)                                                                               |
 
+## Demo tooling
+
+The guided staging capture suite and runbook are documented in
+[`demo-capture.md`](./demo-capture.md). It is presentation tooling only; generated recordings
+remain under the ignored `artifacts/demo-captures/` directory.
+
 ## Open items
 
 Each document ends with a table of unresolved decisions, owned by a named lead. They are the

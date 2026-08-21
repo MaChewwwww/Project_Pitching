@@ -14,9 +14,18 @@
   "scripts": {
     "lint": "npm run lint --workspace=apps/web",
     "build": "npm run build --workspace=apps/web",
-    "test": "npm run test --workspace=apps/web"
+    "test": "npm run test --workspace=apps/web",
+    "capture:demo": "playwright test -c tools/demo-capture/playwright.config.ts",
+    "capture:demo:preflight": "playwright test -c tools/demo-capture/playwright.config.ts 00-preflight.spec.ts",
+    "capture:demo:public": "playwright test -c tools/demo-capture/playwright.config.ts 00-preflight.spec.ts public.spec.ts",
+    "capture:demo:registration": "playwright test -c tools/demo-capture/playwright.config.ts registration",
+    "capture:demo:safety": "playwright test -c tools/demo-capture/playwright.config.ts safety",
+    "capture:demo:operations": "playwright test -c tools/demo-capture/playwright.config.ts operations",
+    "capture:demo:typecheck": "tsc -p tools/demo-capture/tsconfig.json --noEmit"
   },
   "devDependencies": {
+    "@playwright/test": "^1.51.1",
+    "ffmpeg-static": "^5.2.0",
     "openapi-typescript": "^7.6.1"
   },
   "overrides": {

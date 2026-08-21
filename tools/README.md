@@ -11,6 +11,7 @@ One-off developer scripts. **Not part of the running system** — nothing here i
 | `generate_preview_html.py` | Standalone Leaflet preview of the derived GeoJSON, for eyeballing a clip         |
 | `install_shadcn.py`        | Install every shadcn/ui primitive. `make shadcn`                                 |
 | `make_help.py`             | Renders `make help` — a script so it behaves the same in cmd, PowerShell, and sh |
+| `demo-capture/`            | Playwright staging capture flows and local WebM → H.264 MP4 packaging; see [`docs/demo-capture.md`](../docs/demo-capture.md) |
 
 ## The two halves of `make hazard`, and why they are separate
 

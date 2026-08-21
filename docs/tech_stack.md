@@ -30,6 +30,7 @@
 | Weather data             | Open-Meteo                                                                                                     |
 | Hazard overlay           | Project NOAH — pre-clipped to San Jose, served as a static file                                                |
 | River level              | PAGASA FFWS scraper **with manual fallback**                                                                   |
+| Demo capture             | Playwright Test + `ffmpeg-static` (tools only; no runtime dependency)                                          |
 
 ---
 
@@ -423,6 +424,24 @@ The prototype is deployed to the selected Azure VPS. Revisit sizing only if moni
 | **Backups**                       | `pg_dump` on a cron schedule to a second location. A VPS with no backup is one failed disk away from losing the whole demo          |
 
 ---
+
+## 9.1 Guided staging demo capture
+
+The reusable capture suite in [`tools/demo-capture/`](../tools/demo-capture/) uses Playwright
+Test to drive the hosted staging site at a fixed 1920×1080 viewport. Playwright records the
+original browser video as WebM; `ffmpeg-static` converts it locally to H.264 MP4 and trims
+the named timeline segments. Both files are retained under the ignored
+`artifacts/demo-captures/<run-id>/` directory.
+
+This is a presentation tool, not a product feature. The recorder injects a transient guidance
+overlay (title card, persona, step label, and target ring) into the recording page only. It
+does not modify the frozen product UI or map configuration, and it intentionally produces
+visual-only footage: narration and siren audio can be added during manual editing.
+
+`CAPTURE_BASE_URL` is host-locked to `57-155-90-155.sslip.io`; credentials come from the ignored
+`.env.capture` file and are never written to manifests or logs. Mutating scenarios are disabled
+unless `CAPTURE_MUTATIONS=true`; any created staging records receive the run ID in their names
+and are retained for review.
 
 ## 10. What We Deliberately Did Not Choose
 

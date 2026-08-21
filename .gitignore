@@ -47,3 +47,7 @@ Thumbs.db
 # --- Runtime data (lives on a volume, not in git) ---
 uploads/
 .aider*
+
+# --- Pitch capture output (generated, local-only) ---
+artifacts/demo-captures/
+.env.capture
