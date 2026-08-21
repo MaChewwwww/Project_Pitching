@@ -735,9 +735,9 @@ The human step in the middle is the architecture, not a formality.
 **August 17 demo-release audit.** The Public Information Site, Resident Portal, and Barangay
 Portal are the completed functional demo surfaces. The Resident Portal now contains the
 dashboard, onboarding, household/member management, household-centred maps and history, weather,
-safety, rescue, incident, updates, and preparedness flows documented above. Final About/platform
-and team detail remains a content dependency, not an invitation to add invented profiles or
-screens; [`frs_nfrs.md`](./frs_nfrs.md) Section 2.1 and
+safety, rescue, incident, updates, and preparedness flows documented above. About/platform and
+team detail now uses project-supplied source material; this remains a content surface, not an
+invitation to add invented profiles or screens; [`frs_nfrs.md`](./frs_nfrs.md) Section 2.1 and
 [`demo-freeze.md`](./demo-freeze.md) own that boundary.
 
 ### 10.2 Structure

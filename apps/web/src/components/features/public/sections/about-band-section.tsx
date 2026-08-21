@@ -1,5 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Compass, Eye, GraduationCap, Users } from "lucide-react";
 
 import { Button } from "@/components/common/button";
@@ -18,7 +19,7 @@ import { Section } from "./section";
  *
  * Space-maximizing layout:
  * - Top Row: Preserved signature brand overview title card.
- * - Bottom Row: Balanced 2-column bento grid (Left: Mission, Vision, SDGs; Right: 5-Member Team).
+ * - Bottom Row: Balanced 2-column bento grid (Left: Mission, Vision, SDGs; Right: 4-Member Team).
  */
 export function AboutBandSection() {
   return (
@@ -232,11 +233,11 @@ export function AboutBandSection() {
                     </div>
                     <span className="border-primary-200 bg-primary-50 text-primary-900 inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold">
                       <span className="bg-primary-600 size-1.5 animate-ping rounded-full" />
-                      5 Members
+                      4 Members
                     </span>
                   </div>
 
-                  {/* 5 Members Grid with Themed Discipline Badges */}
+                  {/* 4 Members Grid with portrait thumbnails and discipline badges */}
                   <div className="grid min-w-0 gap-2.5 sm:grid-cols-2">
                     {TEAM_MEMBERS.map((member) => {
                       const themeMap: Record<
@@ -244,8 +245,8 @@ export function AboutBandSection() {
                         { avatarBg: string; tagClass: string }
                       > = {
                         "member-1": {
-                          avatarBg: "bg-blue-600",
-                          tagClass: "border-blue-200 bg-blue-50/90 text-blue-800",
+                          avatarBg: "bg-emerald-600",
+                          tagClass: "border-emerald-200 bg-emerald-50/90 text-emerald-800",
                         },
                         "member-2": {
                           avatarBg: "bg-purple-600",
@@ -256,11 +257,6 @@ export function AboutBandSection() {
                           tagClass: "border-amber-200 bg-amber-50/90 text-amber-800",
                         },
                         "member-4": {
-                          avatarBg: "bg-emerald-600",
-                          tagClass:
-                            "border-emerald-200 bg-emerald-50/90 text-emerald-800",
-                        },
-                        "member-5": {
                           avatarBg: "bg-sky-600",
                           tagClass: "border-sky-200 bg-sky-50/90 text-sky-800",
                         },
@@ -277,11 +273,20 @@ export function AboutBandSection() {
                           className="group hover:border-primary-300 relative flex min-w-0 items-center justify-between gap-2.5 rounded-xl border border-neutral-200/80 bg-neutral-50/60 p-2.5 px-3 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-2xs"
                         >
                           <div className="flex min-w-0 items-center gap-2.5">
-                            {/* Stylized Initials Badge */}
                             <div
                               className={`relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg ${theme.avatarBg} tabular text-xs font-extrabold text-white shadow-xs`}
                             >
-                              {member.initials}
+                              {member.avatarUrl ? (
+                                <Image
+                                  src={member.avatarUrl}
+                                  alt={`${member.name} profile`}
+                                  fill
+                                  sizes="32px"
+                                  className="object-cover"
+                                />
+                              ) : (
+                                member.initials
+                              )}
                             </div>
                             <div className="min-w-0">
                               <p className="text-caption group-hover:text-primary-800 truncate leading-tight font-bold text-neutral-900 transition">
@@ -304,14 +309,14 @@ export function AboutBandSection() {
                       );
                     })}
 
-                    {/* 6th Slot: Discipline Integration Convergence Tile */}
-                    <div className="border-primary-200/80 from-primary-50/80 flex min-w-0 items-center gap-2.5 rounded-xl border bg-gradient-to-r to-emerald-50/80 p-2.5 px-3 shadow-2xs">
+                    {/* Team convergence tile */}
+                    <div className="border-primary-200/80 from-primary-50/80 flex min-w-0 items-center gap-2.5 rounded-xl border bg-gradient-to-r to-emerald-50/80 p-2.5 px-3 shadow-2xs sm:col-span-2">
                       <span className="bg-primary-700 grid size-8 shrink-0 place-items-center rounded-lg text-white shadow-xs">
                         <GraduationCap aria-hidden className="size-4" />
                       </span>
                       <div className="min-w-0">
                         <p className="text-caption text-primary-950 truncate leading-tight font-extrabold">
-                          PolSci · PubAd · Nutrition · IT
+                          BAPE · BPA · BSND · BSIT
                         </p>
                         <p className="text-primary-700 mt-0.5 truncate text-[10px] font-medium">
                           Interdisciplinary DRRM Integration

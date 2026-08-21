@@ -2,7 +2,7 @@
 
 **SAGIP-SJ**: System for Alert, Guidance, Incident Reporting, and Preparedness for Barangay San Jose.
 
-A prototype for an SK Project Pitching competition, built by a five-person interdisciplinary
+A prototype for an SK Project Pitching competition, built by a four-person interdisciplinary
 student team. Registry, hazard mapping, flood watch, alerts, safety check-in, evacuation,
 donations, activities, preparedness, and analytics for **Barangay San Jose, Rodriguez, Rizal**.
 
@@ -11,9 +11,9 @@ donations, activities, preparedness, and analytics for **Barangay San Jose, Rodr
 ## Demo release state
 
 The functional demo is complete across the Public Information Site, Resident Portal, and Barangay
-Portal. The remaining public-content hold is the final **About/platform and team detail** supplied
-by the project team. The existing About route stays intentionally conservative until that source
-material is approved; do not substitute placeholder biographies, portraits, or claims.
+Portal. The public About route now uses the project team's supplied four-person profiles and
+approved portraits. Further changes to that content should use project-supplied source material;
+do not substitute placeholder biographies, portraits, or claims.
 
 [`docs/demo-freeze.md`](./docs/demo-freeze.md) records the release boundary and
 [`apps/web/docs/structure.md`](./apps/web/docs/structure.md) maps the implemented route families.

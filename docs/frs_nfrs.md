@@ -116,7 +116,7 @@ A requirement is `✅` only when all of the following hold:
 | `ANL` | Analytics & Reporting                       |  11   |      0      |         2         |        0        |         7         |       0        |       2       |      **22%**      | Not part of the frozen demo             |
 | `NFR` | Non-Functional Requirements (Cross-Cutting) |  88   |      0      |        15         |        7        |        60         |       6        |       0       |      **27%**      | Validation evidence still pending       |
 
-_Overall Active Completion: **173 / 262 active requirements (66%)** implemented, in progress, or in review. The denominator excludes 33 retired FRs and 6 deferred privacy NFRs. This is the full roadmap metric, **not** the pitch-demo completion metric. The implemented Public, Resident, and Barangay Admin demo flows are complete; their rows remain below `✅` until Definition of Done evidence is recorded. Final About/platform and team detail is the sole pending demo-content input._
+_Overall Active Completion: **173 / 262 active requirements (66%)** implemented, in progress, or in review. The denominator excludes 33 retired FRs and 6 deferred privacy NFRs. This is the full roadmap metric, **not** the pitch-demo completion metric. The implemented Public, Resident, and Barangay Admin demo flows are complete; their rows remain below `✅` until Definition of Done evidence is recorded. The About/platform and team content now has project-supplied source material; Definition of Done evidence and peer review remain pending._
 
 ---
 
@@ -148,7 +148,7 @@ Done; status remains below `✅` until peer review and the required verification
 
 **The functional demo release is complete.** The project owner has completed the Public
 Information Site, Resident Portal, and Barangay Portal development passes for the pitch. Final
-About/platform and team detail awaits project-supplied source material. This release status does
+About/platform and team detail now uses project-supplied source material. This release status does
 not convert individual requirements to `✅` without the required second-team-member review.
 
 **Demo identity boundary.** The pitch has exactly two personas: **Resident** and **Barangay
@@ -160,7 +160,7 @@ schema; BHW, SK Officer, and Super Admin are not separate demo accounts or prese
 | Public Information Site | Landing, announcements, activities, donation drives, preparedness/help, weather/flood history, rescue, authentication, and the three finalized map views are implemented and presentation-frozen. | Keep `/about` limited to approved source content.                               |
 | Barangay Portal         | Registry, emergency operations, weather, asset, evacuation, content, hotline/FAQ, activity, guide, and donation-drive workspaces are implemented and presentation-frozen.                         | Do not redesign this surface without an FR/NFR-scoped demo change.              |
 | Resident Portal         | Dashboard, onboarding, household and member editing, map/history/weather, safety, rescue, incidents, updates, and preparedness workflows are implemented and presentation-ready.                  | Do not merge it with the public or admin visual language.                       |
-| About/team page         | The public About route carries existing approved platform copy.                                                                                                                                   | Await final platform/team details and any approved imagery; do not invent them. |
+| About/team page         | The public About route carries approved platform copy plus the supplied four-person team profiles and portraits.                                                                                    | Keep future content changes grounded in project-supplied material.              |
 
 Do not convert this audit into invented portal screens. New target workflows require a stakeholder decision and permanent FR IDs first.
 

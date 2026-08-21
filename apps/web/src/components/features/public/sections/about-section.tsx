@@ -35,7 +35,7 @@ import {
 import { Section } from "./section";
 
 /**
- * Reusable Team Member Portrait Avatar Placeholder Component.
+ * Reusable Team Member Portrait Avatar Component.
  * Supports a custom uploaded photo via avatarUrl, or renders a modern
  * stylized portrait placeholder frame with silhouette and discipline badge.
  */
@@ -90,7 +90,7 @@ function TeamAvatarPlaceholder({
  * 1. Platform Identity & Architecture Bento Hero
  * 2. Strategic Directives: Dual Mission & Vision Bento Cards
  * 3. 3 UN Sustainable Development Goals (SDG 13, 11, 3) with animated glowing icons
- * 4. 5-Member Interdisciplinary Team with academic discipline colorways + Convergence Card
+ * 4. 4-Member Interdisciplinary Team with approved portraits + Convergence Card
  */
 export function AboutSection() {
   return (
@@ -463,11 +463,11 @@ export function AboutSection() {
               icon={Users}
               title="Interdisciplinary"
               titleAccent="Project Team"
-              description="A 5-person student cohort combining software engineering, public administration, disaster policy, and community nutrition for the SK Project Pitching Competition."
+              description="A four-person student team combining technical development, public administration, political economy, and nutrition and dietetics for the SK Project Pitching Competition."
             />
           </Reveal>
 
-          {/* 5 Members + 1 Convergence Card in 3-Column Grid */}
+          {/* 4 Members + 1 Convergence Card in 3-Column Grid */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
             {TEAM_MEMBERS.map((member, i) => {
               const themeMap: Record<
@@ -475,9 +475,9 @@ export function AboutSection() {
                 { avatarBg: string; tagClass: string; cardHover: string }
               > = {
                 "member-1": {
-                  avatarBg: "bg-blue-600",
-                  tagClass: "border-blue-200 bg-blue-50 text-blue-800",
-                  cardHover: "hover:border-blue-300",
+                  avatarBg: "bg-emerald-600",
+                  tagClass: "border-emerald-200 bg-emerald-50 text-emerald-800",
+                  cardHover: "hover:border-emerald-300",
                 },
                 "member-2": {
                   avatarBg: "bg-purple-600",
@@ -490,11 +490,6 @@ export function AboutSection() {
                   cardHover: "hover:border-amber-300",
                 },
                 "member-4": {
-                  avatarBg: "bg-emerald-600",
-                  tagClass: "border-emerald-200 bg-emerald-50 text-emerald-800",
-                  cardHover: "hover:border-emerald-300",
-                },
-                "member-5": {
                   avatarBg: "bg-sky-600",
                   tagClass: "border-sky-200 bg-sky-50 text-sky-800",
                   cardHover: "hover:border-sky-300",
@@ -574,8 +569,8 @@ export function AboutSection() {
               );
             })}
 
-            {/* 6th Slot: Interdisciplinary Convergence Spotlight Banner */}
-            <Reveal delay={2} className="h-full">
+            {/* Team convergence spotlight banner */}
+            <Reveal delay={2} className="h-full lg:col-span-2">
               <div className="flex h-full flex-col justify-between rounded-3xl border border-primary-800 bg-gradient-to-br from-primary-900 via-primary-950 to-neutral-950 p-6 text-white shadow-md-card md:p-8">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center gap-2.5">
@@ -592,7 +587,7 @@ export function AboutSection() {
                   </h3>
 
                   <p className="text-body-sm text-primary-100/80 leading-relaxed">
-                    Designed to bridge the gap between technical engineering, public administration, legal DRRM frameworks, and public health nutrition in local government calamity response.
+                    Designed to bridge technical development, governance research, public information, and nutrition risk work in local disaster preparedness and response.
                   </p>
                 </div>
 
@@ -608,4 +603,3 @@ export function AboutSection() {
     </Section>
   );
 }
-

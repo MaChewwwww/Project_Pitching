@@ -34,7 +34,7 @@ The following inventory serves as the architectural and design pattern reference
 | `/weather`                                                     | Public weather-and-river reading surface with forecast context and a distinct authoritative river alert gauge                  | `WeatherPanel`, `RiverLevelPanel`, flood-history section                                                     |
 | `/hazard-map`, `/barangay-facilities`                          | Map-first public information views with their finalized, protected map configurations                                          | Isolated public `HazardMap` and `BarangayFacilitiesView`; do not alter their center, zoom, or default layers |
 | `/help`, `/rescue`                                             | Help is a searchable/readable support surface; rescue is a focused, unauthenticated action form with emergency contact context | Preparedness and rescue feature components, not admin operations components                                  |
-| `/about`                                                       | Informational route with approved platform copy; final platform/team details await supplied content                            | Do not add placeholder team content                                                                          |
+| `/about`                                                       | Informational route with approved platform copy and the supplied four-person team profiles and portraits                      | Keep team content grounded in project-supplied material                                                     |
 
 ### 3. Authentication & Onboarding (`(auth)`)
 
@@ -231,9 +231,9 @@ Two consequences worth knowing:
   of not blocking the rest of the page on it.
 
 `AboutBandSection` is synchronous, so it gets a boundary but no `Suspense` — there is nothing
-to wait for. The current `/about` route is the only demo-release content dependency: its final
-platform/team detail and visual revision await approved team content. Do not add placeholder
-biographies or imagery as a substitute.
+to wait for. The `/about` route and landing-page About band read their approved platform and
+four-person team content from `lib/content/about.ts`, including the supplied portraits. Keep
+future content changes in that source module and do not add placeholder biographies or imagery.
 
 ## Verifying in a headless or hidden browser pane
 

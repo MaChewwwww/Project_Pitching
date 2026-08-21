@@ -4,7 +4,7 @@ import { HeartPulse, Leaf, ShieldCheck } from "lucide-react";
 /**
  * "About the Platform" copy & constants (BR-0.2, FR-PUB-002).
  *
- * Grounded in the 5-person interdisciplinary student team (PolSci, PubAd, Nutrition & Dietetics, IT)
+ * Grounded in the 4-person interdisciplinary student team (BAPE, BPA, BSND, BSIT)
  * for the SK Project Pitching competition.
  */
 
@@ -155,74 +155,61 @@ export interface TeamMember {
 }
 
 /**
- * 5-Person Interdisciplinary Student Team (PolSci, PubAd, Nutrition & Dietetics, IT)
+ * 4-Person Interdisciplinary Student Team (BAPE, BPA, BSND, BSIT)
  * for the SK Project Pitching Competition.
  */
 export const TEAM_MEMBERS: TeamMember[] = [
   {
     id: "member-1",
-    name: "Team Member 1",
-    program: "Bachelor of Science in Information Technology",
-    programShort: "BSIT",
-    role: "Full-Stack Development & UI/UX",
-    discipline: "Information Technology",
+    name: "Jann Patrick T. Jusi",
+    program: "Bachelor of Science in Nutrition and Dietetics",
+    programShort: "BSND",
+    role: "Nutrition Risk & Health Preparedness Lead",
+    discipline: "Nutrition & Dietetics",
     focus:
-      "Front-end architecture, high-performance responsive UI, interactive Leaflet GIS hazard mapping, and resident onboarding flows.",
-    skills: ["Next.js", "TypeScript", "Tailwind CSS", "GIS Mapping"],
-    initials: "IT",
-    avatarUrl: null,
+      "Conceptualizes nutrition risk and health disaster preparedness programs, leads research for preparedness guides and technical references, and coordinates evidence-based seminars, training, and stakeholder activities.",
+    skills: ["Public Health", "Disaster Preparedness", "Research", "Nutrition Risk"],
+    initials: "JJ",
+    avatarUrl: "/BSND.JPG",
   },
   {
     id: "member-2",
-    name: "Team Member 2",
-    program: "Bachelor of Arts in Political Science",
-    programShort: "BA PolSci",
-    role: "Disaster Policy & Governance Lead",
-    discipline: "Political Science",
+    name: "Rosemarie F. Astillero",
+    program: "Bachelor of Arts in Political Economy",
+    programShort: "BAPE",
+    role: "Information & Digital Content Lead",
+    discipline: "Political Economy",
     focus:
-      "Aligning system architecture with Philippine DRRM frameworks (RA 10121), LGU accountability protocols, and citizen safety charters.",
-    skills: ["DRRM Policy", "LGU Frameworks", "Civic Rights", "Statutory Compliance"],
-    initials: "PS",
-    avatarUrl: null,
+      "Supports research, information development, and digital content management by gathering, reviewing, and organizing reliable community and emergency resources for public access.",
+    skills: ["Research", "Content Management", "Resource Review", "Public Information"],
+    initials: "RA",
+    avatarUrl: "/BAPE.png",
   },
   {
     id: "member-3",
-    name: "Team Member 3",
+    name: "Ira Maegan T. Vargas",
     program: "Bachelor of Public Administration",
     programShort: "BPA",
-    role: "Public Administration & Operations Specialist",
+    role: "Community & Governance Research Lead",
     discipline: "Public Administration",
     focus:
-      "Designing barangay hall administrative workflows, evacuation logistics, resource tracking, and inter-agency coordination pipelines.",
-    skills: ["Public Logistics", "Incident Command", "Resource Allocation", "Operations"],
-    initials: "PA",
-    avatarUrl: null,
+      "Leads community and governance research, analyzes stakeholders, assesses disaster preparedness needs, reviews policies and programs, and translates findings into system requirements.",
+    skills: ["Governance Research", "Stakeholder Analysis", "Policy Review", "Requirements"],
+    initials: "IV",
+    avatarUrl: "/BPA.png",
   },
   {
     id: "member-4",
-    name: "Team Member 4",
-    program: "Bachelor of Science in Nutrition and Dietetics",
-    programShort: "BSND",
-    role: "Community Nutrition & Public Health Specialist",
-    discipline: "Nutrition & Dietetics",
-    focus:
-      "Formulating vulnerability criteria for maternal-infant health, BHW field coordination, and nutritional resilience during disaster relief.",
-    skills: ["Vulnerability Profiling", "BHW Coordination", "Public Health", "Emergency Relief"],
-    initials: "ND",
-    avatarUrl: null,
-  },
-  {
-    id: "member-5",
-    name: "Team Member 5",
+    name: "John Mathew C. Parocha",
     program: "Bachelor of Science in Information Technology",
     programShort: "BSIT",
-    role: "Backend Systems & Database Architect",
+    role: "Technical Development & Analytics Lead",
     discipline: "Information Technology",
     focus:
-      "FastAPI service development, PostgreSQL geospatial schema design, automated telemetry ingest jobs, and role-based security.",
-    skills: ["FastAPI", "PostgreSQL / PostGIS", "Python", "API Security"],
-    initials: "IT",
-    avatarUrl: null,
+      "Leads technical development, designs system architecture, manages deployment and DevOps, performs analytics engineering, extracts data from approved sources, and validates technical outputs.",
+    skills: ["System Architecture", "DevOps", "Analytics Engineering", "Data Validation"],
+    initials: "JP",
+    avatarUrl: "/BSIT.png",
   },
 ];
 

@@ -736,9 +736,9 @@ The same tokens, deliberately different personalities.
 **Demo-release boundary, not a screen spec.** The Public Information Site, Resident Portal, and
 Barangay Portal presentation is the pitch baseline. The resident flow now includes household and
 member editing, map/history/weather context, safety, rescue, incidents, updates, and preparedness.
-Final About/platform and team detail still awaits approved source material. Preserve the verified
-workflows and do not invent team profiles, images, or additional screens. The cut assistance
-tracker must not return through the redesign.
+About/platform and team detail now uses approved project-supplied source material. Preserve the
+verified workflows and do not invent team profiles, images, or additional screens. The cut
+assistance tracker must not return through the redesign.
 
 > For the comprehensive inventory of finished and implemented pages across Public, Resident Portal,
 > and Barangay Admin surfaces, see [`apps/web/docs/structure.md#core-routes--architectural-reference`](../apps/web/docs/structure.md#core-routes--architectural-reference).

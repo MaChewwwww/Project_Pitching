@@ -12,8 +12,8 @@ recorded. A demo-ready implementation is not silently promoted to `✅` by this 
 ## Owner validation
 
 The project owner has completed the functional development pass for the Public Information Site,
-Resident Portal, and Barangay Portal. The remaining content dependency is final About/platform and
-team detail from the project team. This is a demo-readiness decision, not a replacement for the
+Resident Portal, and Barangay Portal. The project team has now supplied the final four-person
+About/platform and team detail. This is a demo-readiness decision, not a replacement for the
 peer-review evidence needed to mark an individual FR `✅`.
 
 ## Demo personas
@@ -46,7 +46,7 @@ Flood Hazard Map, and Barangay Facilities Map. New portal or console maps use is
 
 | Surface    | Status and next work                                                                                                                                                                                      |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| About page | The existing public route remains intentionally limited to approved platform copy until final platform details, team information, and any approved portraits are supplied. Do not invent these materials. |
+| About page | The public route uses the supplied four-person profiles, roles, biographies, and portraits. Keep future content changes grounded in approved project material. |
 
 ## Returning to active development
 

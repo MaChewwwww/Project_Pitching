@@ -10,7 +10,7 @@ hand (design.md Section 9.1).
 
 The demo release preserves this Barangay Portal alongside the public site and Resident Portal.
 Preserve its workspace shells, content-authoring patterns, and the public-map isolation rule.
-Only final About/platform and team content remains pending; a release freeze does not bypass the
-FR Definition of Done or server-side authorization requirements.
+The About/platform and team content is now supplied and belongs to the public-site content source;
+a release freeze does not bypass the FR Definition of Done or server-side authorization requirements.
 
 Requirements: FR-SYS-009, FR-REG-_, FR-ALT-_, FR-SAF-_, FR-EVC-_, FR-ANL-*.

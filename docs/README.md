@@ -48,9 +48,9 @@ The canonical docs distinguish two kinds of truth:
 - **Demo-release/current** statements describe the completed Public Information Site, Resident
   Portal, and Barangay Portal flows. The route inventory is in
   [`apps/web/docs/structure.md`](../apps/web/docs/structure.md).
-- **Content awaiting approval** is limited to final About/platform and team detail. The route is
-  already live, but source material has not been supplied; it must not be replaced with invented
-  profiles, images, or claims.
+- **About/platform and team content** is now sourced from the project team's approved four-person
+  profiles and portraits. Keep future edits grounded in project-supplied material; do not replace
+  it with invented profiles, images, or claims.
 
 The article CMS, informational donation-drive schema, resident self-service workflows, and active
 flood-response exercise are deployed in this snapshot. Their physical definition belongs in

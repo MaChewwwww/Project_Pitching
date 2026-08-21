@@ -1,8 +1,9 @@
 # Components
 
 The demo release preserves the public-site, Resident Portal, and Barangay Portal presentation
-patterns documented here. Final About/platform and team content is the only pending presentation
-work; do not use it to alter the frozen public or admin map and workspace defaults.
+patterns documented here. About/platform and team content now uses the project-supplied four-person
+profiles and portraits; do not use that content update to alter the frozen public or admin map and
+workspace defaults.
 
 Three layers, and the boundaries between them are the whole point.
 
