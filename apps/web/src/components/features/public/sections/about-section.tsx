@@ -1,11 +1,9 @@
 import * as React from "react";
 import Image from "next/image";
 import {
-  Award,
   CheckCircle2,
   CloudRain,
   Compass,
-  Database,
   Eye,
   GraduationCap,
   HeartPulse,
@@ -13,7 +11,6 @@ import {
   Layers,
   MapPin,
   ShieldCheck,
-  Smartphone,
   Sparkles,
   User,
   Users,
@@ -22,6 +19,7 @@ import {
 import { Card, CardContent } from "@/components/common/card";
 import { Reveal } from "@/components/common/reveal";
 import { SectionHeader } from "@/components/common/section-header";
+import { APP_NAME } from "@/lib/brand";
 import {
   MISSION,
   MISSION_PILLARS,
@@ -30,7 +28,6 @@ import {
   TeamMember,
   VISION,
   VISION_PILLARS,
-  WHAT_IT_IS,
 } from "@/lib/content/about";
 import { Section } from "./section";
 
@@ -107,103 +104,122 @@ export function AboutSection() {
 
       <div className="relative flex flex-col gap-12 md:gap-16">
         {/* ===================================================================
-            1. PLATFORM OVERVIEW & ARCHITECTURE BENTO HERO
+            1. PLATFORM OVERVIEW & COMMUNITY READINESS
            =================================================================== */}
         <Reveal>
-          <div className="relative overflow-hidden rounded-3xl border border-neutral-200/90 bg-white/90 p-6 shadow-sm-card backdrop-blur-sm md:p-10">
-            <div className="relative grid gap-8 lg:grid-cols-12 lg:gap-10 items-center">
-              {/* Left Column (7 cols): Main Title, Pitch, and 3 Core Tenets */}
-              <div className="flex flex-col gap-6 lg:col-span-7">
-                <div className="flex flex-col gap-3.5">
-                  <h2 className="text-2xl font-extrabold tracking-tight text-neutral-900 sm:text-3xl md:text-4xl lg:text-[40px] lg:leading-[1.15]">
-                    System for Alert, Guidance, Incident Reporting &{" "}
-                    <span className="relative inline-block bg-gradient-to-r from-primary-700 via-primary-600 to-emerald-600 bg-clip-text text-transparent">
-                      Preparedness
-                      <span
-                        aria-hidden
-                        className="absolute -bottom-1 left-0 h-[3px] w-full rounded-full bg-primary-500/30"
-                      />
-                    </span>
-                  </h2>
+          <div className="relative overflow-hidden rounded-[32px] border border-primary-900/80 bg-primary-950 text-white shadow-md-card">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -top-40 left-1/3 size-[520px] rounded-full bg-primary-700/20 blur-3xl"
+            />
 
-                  <p className="text-body-lg text-neutral-600 leading-relaxed">
-                    {WHAT_IT_IS}
-                  </p>
+            <div className="relative grid lg:grid-cols-[1.15fr_0.85fr]">
+              {/* Left Column: Plain-language promise and resident outcomes */}
+              <div className="p-6 sm:p-8 md:p-10 lg:p-12">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="border-primary-400/30 bg-primary-800/70 text-primary-200 rounded-full border px-3 py-1 text-[10px] font-extrabold tracking-[0.16em] uppercase">
+                    About {APP_NAME}
+                  </span>
+                  <span className="text-[11px] font-medium text-primary-300/80">
+                    San Jose · Rodriguez Rizal
+                  </span>
                 </div>
 
-                {/* 3 Architectural Tenet Cards */}
-                <div className="grid gap-3 sm:grid-cols-3">
+                <h2 className="mt-7 max-w-2xl text-3xl leading-[1.05] font-extrabold tracking-[-0.03em] text-white sm:text-4xl md:text-5xl">
+                  See the situation.{" "}
+                  <span className="text-primary-300">Know the next step.</span>
+                </h2>
+
+                <p className="text-body-lg mt-5 max-w-2xl leading-relaxed text-primary-100/80">
+                  SAGIP-SJ brings flood information, official updates, evacuation guidance, and preparedness support into one place—so residents and local officials can act with more confidence.
+                </p>
+
+                <div className="mt-9 grid gap-5 border-t border-primary-800/90 pt-5 sm:grid-cols-3 sm:gap-4">
                   {[
                     {
-                      icon: Smartphone,
-                      title: "Universal 3G Access",
-                      desc: "Zero app download barrier. Ultra-light web app designed for low-cost phones.",
+                      icon: CloudRain,
+                      title: "Know what's happening",
+                      desc: "Check river conditions, flood hazards, and trusted barangay updates.",
                     },
                     {
-                      icon: ShieldCheck,
-                      title: "Human-in-the-Loop",
-                      desc: "Officer-verified alerts prevent panic and ensure authentic directives.",
+                      icon: MapPin,
+                      title: "Know where to go",
+                      desc: "Find evacuation centers, maps, and clear guidance before an emergency.",
                     },
                     {
-                      icon: Database,
-                      title: "Persistent Registry",
-                      desc: "Community vulnerability database that endures across recurring flood seasons.",
+                      icon: Users,
+                      title: "Stay ready together",
+                      desc: "Share clear information and coordinate support across the community.",
                     },
-                  ].map((feat) => (
-                    <div
-                      key={feat.title}
-                      className="group flex flex-col gap-2 rounded-2xl border border-neutral-200/80 bg-neutral-50/70 p-4 transition-all duration-300 hover:border-primary-300 hover:bg-white hover:shadow-2xs"
-                    >
-                      <span className="grid size-8 place-items-center rounded-xl bg-primary-100 text-primary-800 border border-primary-200/80 shadow-2xs transition group-hover:bg-primary-700 group-hover:text-white">
-                        <feat.icon className="size-4" />
+                  ].map((benefit) => (
+                    <div key={benefit.title} className="group border-t border-primary-800/80 pt-4">
+                      <span className="bg-primary-400/15 text-primary-200 ring-primary-300/20 grid size-9 place-items-center rounded-xl ring-1 transition group-hover:bg-primary-400/25">
+                        <benefit.icon aria-hidden className="size-4" />
                       </span>
-                      <div>
-                        <p className="text-caption font-bold text-neutral-900 leading-tight">
-                          {feat.title}
-                        </p>
-                        <p className="text-[11px] text-neutral-500 leading-relaxed mt-1">
-                          {feat.desc}
-                        </p>
-                      </div>
+                      <p className="text-caption mt-3 font-extrabold leading-tight text-white">
+                        {benefit.title}
+                      </p>
+                      <p className="mt-1.5 text-[11px] leading-relaxed text-primary-100/65">
+                        {benefit.desc}
+                      </p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Right Column (5 cols): Community DRRM Context & Synergy Box */}
-              <div className="flex flex-col gap-5 rounded-2xl border border-primary-200/90 bg-gradient-to-br from-primary-50/60 via-white to-emerald-50/40 p-6 shadow-sm-card md:p-8 lg:col-span-5">
-                <div className="flex items-center gap-3.5 border-b border-neutral-100 pb-4">
-                  <div className="grid size-12 place-items-center rounded-xl bg-primary-700 text-white shadow-xs">
-                    <Layers className="size-6" />
-                  </div>
+              {/* Right Column: A simple resident-facing view of what the platform offers */}
+              <div className="border-primary-800/90 bg-[#eef8f1] p-6 text-neutral-900 sm:p-8 lg:border-l lg:p-10">
+                <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-base font-extrabold text-neutral-900">
-                      Barangay San Jose Platform
+                    <p className="text-overline font-bold tracking-[0.16em] text-primary-700">
+                      One place for readiness
+                    </p>
+                    <h3 className="mt-2 text-2xl leading-tight font-extrabold tracking-tight text-neutral-900">
+                      What residents can find
                     </h3>
-                    <div className="flex items-center gap-1.5 text-xs text-neutral-500 mt-0.5">
-                      <MapPin className="size-3.5 text-primary-600" />
-                      <span>Rodriguez (Montalban), Rizal</span>
-                    </div>
                   </div>
+                  <span className="bg-primary-700 text-primary-50 grid size-11 shrink-0 place-items-center rounded-2xl shadow-xs">
+                    <Layers aria-hidden className="size-5" />
+                  </span>
                 </div>
 
-                <p className="text-body-sm text-neutral-600 leading-relaxed">
-                  SAGIP-SJ connects official warnings to local action through a user-friendly platform shaped around Barangay San Jose&apos;s river topography, flood markers, and community needs.
-                </p>
-
-                {/* Academic & Interdisciplinary Synergy Box */}
-                <div className="rounded-xl border border-primary-200/80 bg-white/90 p-4 shadow-2xs">
-                  <div className="flex items-start gap-3">
-                    <Award className="size-5 text-primary-700 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-caption font-extrabold text-neutral-900">
-                        Interdisciplinary Innovation
-                      </p>
-                      <p className="text-[11px] text-neutral-600 leading-relaxed mt-0.5">
-                        Cross-domain synergy across Information Technology, Political Science, Public Administration, and Nutrition & Dietetics.
-                      </p>
+                <div className="mt-7 divide-y divide-neutral-200/80 border-y border-neutral-200/80">
+                  {[
+                    {
+                      icon: CloudRain,
+                      title: "Current conditions",
+                      desc: "River, rain, and flood information at a glance.",
+                    },
+                    {
+                      icon: ShieldCheck,
+                      title: "Trusted updates",
+                      desc: "Verified announcements from local officials.",
+                    },
+                    {
+                      icon: MapPin,
+                      title: "Clear next steps",
+                      desc: "Evacuation centers, maps, and preparedness guidance.",
+                    },
+                  ].map((item) => (
+                    <div key={item.title} className="flex items-start gap-3.5 py-4">
+                      <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-primary-200 bg-white text-primary-700 shadow-2xs">
+                        <item.icon aria-hidden className="size-4" />
+                      </span>
+                      <div>
+                        <p className="text-caption font-extrabold text-neutral-900">
+                          {item.title}
+                        </p>
+                        <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
+                          {item.desc}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 flex items-center gap-2.5 rounded-2xl bg-primary-900 px-4 py-3 text-xs font-bold text-primary-50">
+                  <span aria-hidden className="size-2 rounded-full bg-primary-300 shadow-[0_0_0_4px_rgba(134,239,172,0.12)]" />
+                  <span>Public information, accessible from any phone</span>
                 </div>
               </div>
             </div>

@@ -1,6 +1,6 @@
 import type { Route } from "next";
 
-import { APP_TAGLINE, SITE_DESCRIPTION } from "@/lib/brand";
+import { SITE_DESCRIPTION } from "@/lib/brand";
 
 /**
  * Static site copy — navigation, utility bar, footer, hero.
@@ -161,7 +161,7 @@ export const LOGIN_HREF = "/login";
 export const REGISTER_HREF = "/register";
 
 export const HERO = {
-  eyebrow: APP_TAGLINE,
+  eyebrow: "Community disaster readiness",
   /**
    * Two-tone headline (design.md Section 4): the first line renders in
    * `neutral-900`, the second in `primary-600` with an underline accent.
@@ -169,8 +169,8 @@ export const HERO = {
    * This is copy, not the app name. The name itself is still an open item
    * (BRD OI-1) and is rendered from `APP_NAME` wherever it appears.
    */
-  titleLine1: "Ready Before",
-  titleLine2: "the Water Rises",
+  titleLine1: "From Risk We Learn,",
+  titleLine2: "For Safety We Turn.",
   lead: SITE_DESCRIPTION,
   primaryCta: { label: "See the Hazard Map", href: "/hazard-map" },
   secondaryCta: { label: "Preparedness Guidelines", href: "/guides" },
