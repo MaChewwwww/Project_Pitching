@@ -298,7 +298,11 @@ export function AboutBandSection() {
                                   alt={`${member.name} profile`}
                                   fill
                                   sizes="40px"
-                                  className="object-cover"
+                                  className={
+                                    member.avatarFit === "contain"
+                                      ? "object-contain"
+                                      : "object-cover"
+                                  }
                                 />
                               ) : (
                                 member.initials

@@ -152,6 +152,7 @@ export interface TeamMember {
   skills: string[];
   initials: string;
   avatarUrl?: string | null;
+  avatarFit?: "cover" | "contain";
 }
 
 /**
@@ -184,6 +185,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     skills: ["Research", "Content Management", "Resource Review", "Public Information"],
     initials: "RA",
     avatarUrl: "/BAPE.png",
+    avatarFit: "contain",
   },
   {
     id: "member-3",

@@ -50,7 +50,9 @@ function TeamAvatarPlaceholder({
           src={member.avatarUrl}
           alt={member.name}
           fill
-          className="object-cover"
+          className={
+            member.avatarFit === "contain" ? "object-contain" : "object-cover"
+          }
         />
       </div>
     );
