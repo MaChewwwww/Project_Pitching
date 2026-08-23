@@ -17,6 +17,18 @@ Section 6.
 | 5   | [`tech_stack.md`](./tech_stack.md)                       | **Which tools**, why, and what was deliberately rejected                                                                                                     |
 | 6   | [`business-requirements.md`](./business-requirements.md) | **Why**. Only needed when you want the rationale behind a requirement                                                                                        |
 
+## Commercial and procurement planning
+
+[`year-1-budget-overview.md`](./year-1-budget-overview.md) records the approved PHP 700,000-
+PHP 880,000 working budget range for prototype turnover, production preparation, independent
+security review, staff training, infrastructure, first-year maintenance, required SMS alerts,
+optional technical project management, and optional Android-first mobile development.
+
+[`SAGIP-SJ-Year-1-Budgetary-Quotation-Draft.docx`](./SAGIP-SJ-Year-1-Budgetary-Quotation-Draft.docx)
+turns that overview into the developer-side quotation, payment schedule, scope boundaries, and
+negotiation protections. It remains a draft until the contracting developer or supplier details,
+tax treatment, final revision list, selections, and signatures are completed.
+
 ## Local documentation
 
 | Unit            | Docs                                                                                                                                                                          |

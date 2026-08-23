@@ -51,3 +51,7 @@ uploads/
 # --- Pitch capture output (generated, local-only) ---
 artifacts/demo-captures/
 .env.capture
+
+# --- Documentation ---
+docs/year-1-budget-overview.md
+docs/SAGIP-SJ-Year-1-Budgetary-Quotation-Draft.docx
