@@ -19,15 +19,28 @@ Section 6.
 
 ## Commercial and procurement planning
 
-[`year-1-budget-overview.md`](./year-1-budget-overview.md) records the approved PHP 700,000-
-PHP 880,000 working budget range for prototype turnover, production preparation, independent
-security review, staff training, infrastructure, first-year maintenance, required SMS alerts,
-optional technical project management, and optional Android-first mobile development.
+[`year-1-budget-overview.md`](./year-1-budget-overview.md) records the approved PHP 900,000
+base pricing and PHP 900,000-PHP 1,200,000 working budget range for prototype turnover,
+production preparation, staging and cloud infrastructure, staff training, first-year maintenance,
+required SMS alerts, optional technical project management, and optional independent cybersecurity assessment.
 
 [`SAGIP-SJ-Year-1-Budgetary-Quotation-Draft.docx`](./SAGIP-SJ-Year-1-Budgetary-Quotation-Draft.docx)
 turns that overview into the developer-side quotation, payment schedule, scope boundaries, and
 negotiation protections. It remains a draft until the contracting developer or supplier details,
 tax treatment, final revision list, selections, and signatures are completed.
+
+[`SAGIP-SJ-Year-1-Quotation-Annexes-Draft.docx`](./SAGIP-SJ-Year-1-Quotation-Annexes-Draft.docx)
+is the controlled attachment pack incorporated by the quotation: Annex A fixes Year 1 scope and
+acceptance, Annex B freezes the existing prototype baseline, Annex C limits maintenance and
+support, and Annex D records turnover and right-to-use terms. Annex A must not be signed until its
+initial-revision register is completed and initialed.
+
+[`SAGIP-SJ-Annex-B-Existing-Prototype-Baseline.docx`](./SAGIP-SJ-Annex-B-Existing-Prototype-Baseline.docx)
+and [`annex-b-prototype-baseline.md`](./annex-b-prototype-baseline.md) provide the standalone
+specification and turnover inventory for the Championship Prototype Baseline.
+
+[`Business Requirements Document.docx`](./Business Requirements Document.docx) provides the
+formally compiled executive Word document for the finalized Business Requirements Document (v1.0).
 
 ## Local documentation
 

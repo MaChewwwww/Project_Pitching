@@ -43,6 +43,7 @@ infra/backups/*.dump
 .idea/
 .DS_Store
 Thumbs.db
+~$*
 
 # --- Runtime data (lives on a volume, not in git) ---
 uploads/
@@ -52,6 +53,12 @@ uploads/
 artifacts/demo-captures/
 .env.capture
 
-# --- Documentation ---
+# --- Documentation & Doc Build Scripts ---
 docs/year-1-budget-overview.md
 docs/SAGIP-SJ-Year-1-Budgetary-Quotation-Draft.docx
+docs/SAGIP-SJ-Year-1-Quotation-Annexes-Draft.docx
+docs/SAGIP-SJ-Annex-B-Existing-Prototype-Baseline.docx
+tools/build_budget_quotation.py
+tools/build_quotation_annexes.py
+tools/build_brd_docx.py
+tools/build_annex_b.py
