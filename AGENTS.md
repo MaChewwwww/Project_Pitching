@@ -243,3 +243,48 @@ the FR/NFR mapping, Definition of Done, authorization, documentation, lint, or r
 
 See [`docs/demo-freeze.md`](./docs/demo-freeze.md) for the exact release boundary and remaining
 content dependency.
+
+## 10. Document Design Standards & Generated Word Files (.docx)
+
+All formal project specifications, procurement documents, and contract annexes generated as Word documents (`.docx`) must adhere strictly to the following design standards:
+
+### 10.1 Page Setup & Alignment
+- **Page Size:** 8.5" x 11" Letter format.
+- **Margins:** 1.0-inch uniform margins (Top: 1.0", Bottom: 1.0", Left: 1.0", Right: 1.0").
+- **Strict Left Alignment:** Document titles, subtitles, section headings, narrative paragraphs, and tables must be **strictly left-aligned** (`WD_ALIGN_PARAGRAPH.LEFT`). Never center headings or body paragraphs.
+- **Footer:** Right-aligned page numbers in `8.5pt` Muted Gray (`#5F6D66`).
+
+### 10.2 Typography Hierarchy & Color Tokens
+- **Font Family:** `Calibri` across all headings, body text, and tables.
+- **Primary Green Accent:** `#1E653F` (Deep Forest Green) for major titles, subheadings, and table headers.
+- **Secondary Dark Green:** `#164C31` for sub-labels and bold key identifiers.
+- **Body Text Color:** `#1A202C` (Dark Charcoal Ink) for high readability.
+- **Muted Color:** `#5F6D66` for subtitles, document control notes, and footers.
+- **Soft Background Tint:** `#E4F2E7` (or `#EAF4EE`) for table body row shading.
+- **Border Color:** `#709A72` (or `#A3C293`) for thin, clean table grids.
+
+| Element | Font Size | Color Token | Weight / Style | Spacing |
+| --- | :---: | :---: | :---: | :---: |
+| **Document Category** | `14.0pt` | `#1A202C` | Bold Uppercase | 0pt before, 2pt after |
+| **Main Document Title** | `18.0–20.0pt` | `#1E653F` | Bold | 0pt before, 3pt after |
+| **Subtitle / Locality** | `11.0pt` | `#5F6D66` | Regular | 0pt before, 16pt after |
+| **Heading 1** | `13.5–14.0pt` | `#1A202C` | Bold | 16pt before, 6pt after |
+| **Heading 2** | `12.0pt` | `#1E653F` | Bold | 12pt before, 4pt after |
+| **Heading 3** | `11.0pt` | `#1E653F` | Bold | 8pt before, 3pt after |
+| **Heading 4** | `10.5pt` | `#164C31` | Bold | 6pt before, 2pt after |
+| **Body Paragraphs** | `10.5pt` | `#1A202C` | Regular (1.18–1.2 line) | 0pt before, 4–6pt after |
+| **Table Header** | `9.5pt` | `#FFFFFF` | Bold | 80 dxa top/bottom padding |
+| **Table Cell Body** | `9.2–9.5pt` | `#1A202C` | Regular / Key Bold | 80 dxa top/bottom padding |
+
+### 10.3 Table Geometry & Grid Rules
+- **Total Table Width:** Exactly **`9360 dxa`** (6.5 inches) across all columns.
+- **Table Indent:** **`0 dxa`** (`tblInd = 0`) to sit flush with the 1.0-inch left text margin.
+- **Vertical Cell Alignment:** **`WD_CELL_VERTICAL_ALIGNMENT.TOP`** on all cells so multi-line text aligns cleanly at the top.
+- **Repeating Headers:** Every table must include `w:tblHeader` on the first row for clean multi-page splits.
+- **Row Protection:** Every row must include `w:cantSplit` to prevent awkward mid-row page cuts.
+- **Cell Padding:** Explicit cell margins: Top `80 dxa`, Bottom `80 dxa`, Left `120 dxa`, Right `120 dxa`.
+
+### 10.4 Python Generator Tooling
+- All DOCX generators live under `tools/build_*.py` and are gitignored.
+- Every generator must include an automated validation function checking XML integrity, geometry math (`sum == 9360 dxa`), and core content phrases before completing.
+
