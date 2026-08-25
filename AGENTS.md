@@ -251,7 +251,7 @@ All formal project specifications, procurement documents, and contract annexes g
 ### 10.1 Page Setup & Alignment
 - **Page Size:** 8.5" x 11" Letter format.
 - **Margins:** 1.0-inch uniform margins (Top: 1.0", Bottom: 1.0", Left: 1.0", Right: 1.0").
-- **Strict Left Alignment:** Document titles, subtitles, section headings, narrative paragraphs, and tables must be **strictly left-aligned** (`WD_ALIGN_PARAGRAPH.LEFT`). Never center headings or body paragraphs.
+- **Strict Left Alignment:** Document titles, subtitles, section headings, narrative paragraphs, and tables must be **strictly left-aligned** (`WD_ALIGN_PARAGRAPH.LEFT`). Never center headings or body paragraphs. Document closing notices (e.g., `END OF ...`) are explicitly **centered** (`WD_ALIGN_PARAGRAPH.CENTER`).
 - **Footer:** Right-aligned page numbers in `8.5pt` Muted Gray (`#5F6D66`).
 
 ### 10.2 Typography Hierarchy & Color Tokens
