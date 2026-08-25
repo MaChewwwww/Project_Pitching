@@ -288,3 +288,11 @@ All formal project specifications, procurement documents, and contract annexes g
 - All DOCX generators live under `tools/build_*.py` and are gitignored.
 - Every generator must include an automated validation function checking XML integrity, geometry math (`sum == 9360 dxa`), and core content phrases before completing.
 
+### 10.5 Non-Technical Language & Readability Standards
+- **Audience First:** Formal project specifications, procurement documents (Quotation, Annex A, Annex B), and the Business Requirements Document (BRD) are evaluated by **non-IT stakeholders** (Sangguniang Kabataan officials, Barangay Captain and Council, BDRRMC officers, LGU evaluators, and the interdisciplinary student team in PolSci, PubAd, and Nutrition).
+- **Plain-Language Explanations:**
+  - Avoid raw code syntax, database column dumps without explanation, or developer jargon.
+  - When technical architecture or data models are introduced, describe them through their **operational purpose** and **community value** (e.g., "Automated Weather Monitoring Engine" rather than raw cron worker; "Household Vulnerability Directory" rather than relational foreign key schema).
+  - Clearly define all institutional and disaster governance acronyms (BDRRMC, BHW, PWD, MDRRMO, PAGASA, Project NOAH).
+  - Focus descriptions on how the feature protects families, assists barangay workers, streamlines rescue dispatches, or ensures regulatory compliance under RA 10121 and RA 10173.
+
